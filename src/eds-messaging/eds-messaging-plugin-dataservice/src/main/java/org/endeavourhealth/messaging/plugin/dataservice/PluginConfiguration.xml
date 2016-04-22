@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PluginConfiguration>
+	<Listener>
+		<Port>8080</Port>
+		<Protocol>http</Protocol>
+		<Endpoints>
+			<!--<Receiver>
+				<ReceiverId>itk-soap</ReceiverId>
+				<Path>/itk-soap</Path>
+				<IncludeSubPaths>false</IncludeSubPaths>
+				<Methods>get,post</Methods>
+				<EndpointClass>org.endeavour.dataservice.ItkSoapReceiver</ReceiverClass>
+			</Receiver>-->
+			<Receiver>
+				<ReceiverId>fhir-messaging</ReceiverId>
+				<Path>/fhir/$process-message</Path>
+				<IncludeSubPaths>false</IncludeSubPaths>
+				<Methods>get,post</Methods>
+				<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.FhirMessagingReceiver</ReceiverClass>
+			</Receiver>
+			<Receiver>
+				<ReceiverId>fhir-rest</ReceiverId>
+				<Path>/fhir/</Path>
+				<IncludeSubPaths>true</IncludeSubPaths>
+				<Methods>get,post,put,delete,options</Methods>
+				<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.FhirRestReceiver</ReceiverClass>
+			</Receiver>
+		</Endpoints>
+		<Messages>
+		</Messages>
+	</Listener>
+</PluginConfiguration>

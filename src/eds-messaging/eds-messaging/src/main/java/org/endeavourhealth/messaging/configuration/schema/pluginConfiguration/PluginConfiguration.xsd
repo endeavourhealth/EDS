@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="Message">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="MessageId" type="xs:string"/>
+				<xs:element name="Name" type="xs:string"/>
+				<xs:element name="Version" type="xs:string"/>
+				<xs:element name="ProcessorClass" type="xs:string"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Messages">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="Message" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Listener">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Port" type="xs:int"/>
+				<xs:element ref="Protocol"/>
+				<xs:element ref="Receivers"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Protocol">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:enumeration value="http"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	<xs:element name="Receiver">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="ReceiverId" type="xs:string"/>
+				<xs:element name="Path" type="xs:string"/>
+				<xs:element name="IncludeSubPaths" type="xs:boolean"/>
+				<xs:element name="Methods" type="xs:string"/>
+				<xs:element name="ReceiverClass" type="xs:string"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Receivers">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="Receiver" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="PluginConfiguration">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="Listener"/>
+				<xs:element ref="Messages"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

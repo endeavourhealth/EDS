@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PluginConfiguration>
+	<Listener>
+		<Port>8080</Port>
+		<Protocol>http</Protocol>
+		<Endpoints>
+			<Endpoint>
+				<ReceiverId>mig-soap</ReceiverId>
+				<Path>/mig-soap</Path>
+				<IncludeSubPaths>false</IncludeSubPaths>
+				<Methods>post</Methods>
+				<ReceiverClass>org.endeavourhealth.messaging.plugin.gpcim.MigSoapReceiver</ReceiverClass>
+			</Endpoint>
+		</Endpoints>
+		<Messages>
+			<Message>
+                <MessageId>MIG.DATAEXTRACTIONSERVICE.EhrExtractRequest-v0-0-2</MessageId>
+				<Name>MIG.DATAEXTRACTIONSERVICE.EhrExtractRequest</Name>
+				<Version>0.0.2</Version>
+				<ProcessorClass>org.endeavourhealth.messaging.plugin.dataservice.MigExtractionProcessor</ProcessorClass>
+			</Message>
+		</Messages>
+	</Listener>
+</PluginConfiguration>

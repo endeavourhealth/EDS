@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PluginContracts>
+    <Contracts>
+        <Contract>
+            <MessageId>MIG.DATAEXTRACTIONSERVICE.EhrExtractRequest-v0-0-2</MessageId>
+            <Sender>urn:nhs-uk:addressing:ods:R59:oncology</Sender>
+            <Receiver>urn:nhs-uk:addressing:ods:Y88764:G1234567</Receiver>
+            <ClientCertificateThumbprint>956f6055ace064f08c7dced11372114bf3ad631d</ClientCertificateThumbprint>
+        </Contract>
+    </Contracts>
+</PluginContracts>
