@@ -1,62 +1,138 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-	<xs:element name="Message">
-		<xs:complexType>
-			<xs:sequence>
-				<xs:element name="MessageId" type="xs:string"/>
-				<xs:element name="Name" type="xs:string"/>
-				<xs:element name="Version" type="xs:string"/>
-				<xs:element name="ProcessorClass" type="xs:string"/>
-			</xs:sequence>
-		</xs:complexType>
-	</xs:element>
-	<xs:element name="Messages">
-		<xs:complexType>
-			<xs:sequence>
-				<xs:element ref="Message" minOccurs="0" maxOccurs="unbounded"/>
-			</xs:sequence>
-		</xs:complexType>
-	</xs:element>
-	<xs:element name="Listener">
-		<xs:complexType>
-			<xs:sequence>
-				<xs:element name="Port" type="xs:int"/>
-				<xs:element ref="Protocol"/>
-				<xs:element ref="Receivers"/>
-			</xs:sequence>
-		</xs:complexType>
-	</xs:element>
-	<xs:element name="Protocol">
-		<xs:simpleType>
-			<xs:restriction base="xs:string">
-				<xs:enumeration value="http"/>
-			</xs:restriction>
-		</xs:simpleType>
-	</xs:element>
-	<xs:element name="Receiver">
-		<xs:complexType>
-			<xs:sequence>
-				<xs:element name="ReceiverId" type="xs:string"/>
-				<xs:element name="Path" type="xs:string"/>
-				<xs:element name="IncludeSubPaths" type="xs:boolean"/>
-				<xs:element name="Methods" type="xs:string"/>
-				<xs:element name="ReceiverClass" type="xs:string"/>
-			</xs:sequence>
-		</xs:complexType>
-	</xs:element>
-	<xs:element name="Receivers">
-		<xs:complexType>
-			<xs:sequence>
-				<xs:element ref="Receiver" minOccurs="0" maxOccurs="unbounded"/>
-			</xs:sequence>
-		</xs:complexType>
-	</xs:element>
 	<xs:element name="PluginConfiguration">
 		<xs:complexType>
 			<xs:sequence>
-				<xs:element ref="Listener"/>
-				<xs:element ref="Messages"/>
+				<xs:element name="Services">
+					<xs:complexType>
+						<xs:sequence minOccurs="0" maxOccurs="unbounded">
+							<xs:element name="Service" type="ServiceType"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
+	<xs:complexType name="ServiceType">
+		<xs:sequence>
+			<xs:element name="Id" type="xs:string"/>
+			<xs:element name="ReceivePorts">
+				<xs:complexType>
+					<xs:sequence minOccurs="0" maxOccurs="unbounded">
+						<xs:element name="ReceivePort" type="ReceivePortType"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="SendPorts">
+				<xs:complexType>
+					<xs:sequence minOccurs="0" maxOccurs="unbounded">
+						<xs:element name="SendPort" type="SendPortType"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="MessageTypes">
+				<xs:complexType>
+					<xs:sequence minOccurs="0" maxOccurs="unbounded">
+						<xs:element name="MessageType" type="MessageTypeType"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Contracts">
+				<xs:complexType>
+					<xs:sequence minOccurs="0" maxOccurs="unbounded">
+						<xs:element name="Contract" type="ContractType"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ReceivePortType">
+		<xs:sequence>
+			<xs:element name="Id" type="xs:string"/>
+			<xs:choice>
+				<xs:element name="Http">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Port" type="xs:int"/>
+							<xs:element name="Path" type="xs:string"/>
+							<xs:element name="Methods" type="xs:string"/>
+							<xs:element name="IncludeSubPaths" type="xs:string"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Sftp">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Path" type="xs:string"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="RabbitMQ">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="QueueName" type="xs:string"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:choice>
+			<xs:element name="ReceivePortClass" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="SendPortType">
+		<xs:sequence>
+			<xs:element name="Id" type="xs:string"/>
+			<xs:choice>
+				<xs:element name="Http" type="xs:string"/>
+				<xs:element name="RabbitMQ" type="xs:string"/>
+			</xs:choice>
+			<xs:element name="SendPortClass" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="MessageTypeType">
+		<xs:sequence>
+			<xs:element name="Id" type="xs:string"/>
+			<xs:element name="MessageTypeProcessorClass" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ContractType">
+		<xs:sequence>
+			<xs:element name="Id"/>
+			<xs:element name="Sender">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="SenderIdentifier" type="xs:string"/>
+						<xs:element name="SenderCertificateThumbprint"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Recipient">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="RecipientIdentifier" type="xs:string"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="SendPort">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Id"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="ReceivePort">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Id"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="MessageTypes">
+				<xs:complexType>
+					<xs:sequence minOccurs="0" maxOccurs="unbounded">
+						<xs:element name="Id"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
 </xs:schema>

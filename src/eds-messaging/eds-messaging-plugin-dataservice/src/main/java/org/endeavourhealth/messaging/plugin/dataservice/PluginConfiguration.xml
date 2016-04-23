@@ -1,33 +1,91 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PluginConfiguration>
-	<Listener>
-		<Port>8080</Port>
-		<Protocol>http</Protocol>
-		<Receivers>
-			<!--<Receiver>
-				<ReceiverId>itk-soap</ReceiverId>
-				<Path>/itk-soap</Path>
-				<IncludeSubPaths>false</IncludeSubPaths>
-				<Methods>get,post</Methods>
-				<EndpointClass>org.endeavour.dataservice.ItkSoapReceiver</ReceiverClass>
-			</Receiver>-->
-			<Receiver>
-				<ReceiverId>fhir-messaging</ReceiverId>
-				<Path>/fhir/$process-message</Path>
-				<IncludeSubPaths>false</IncludeSubPaths>
-				<Methods>get,post</Methods>
-				<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.FhirMessagingReceiver</ReceiverClass>
-			</Receiver>
-			<Receiver>
-				<ReceiverId>fhir-rest</ReceiverId>
-				<Path>/fhir/</Path>
-				<IncludeSubPaths>true</IncludeSubPaths>
-				<Methods>get,post,put,delete,options</Methods>
-				<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.FhirRestReceiver</ReceiverClass>
-			</Receiver>
-		</Receivers>
-		<Messages>
-		</Messages>
-	</Listener>
+
+	<Services>
+
+		<Service>
+			<Id>fhir-messaging</Id>
+
+			<ReceivePorts>
+				<ReceivePort>
+					<Id>fhir-messaging-http</Id>
+					<Http>
+						<Port>8080</Port>
+						<Path>/fhir/$process-message</Path>
+						<Methods>get,post</Methods>
+						<IncludeSubPaths>false</IncludeSubPaths>
+					</Http>
+					<ReceivePortClass>org.endeavourhealth.messaging.plugin.dataservice.FhirMessagingHttpReceiver</ReceivePortClass>
+				</ReceivePort>
+				<ReceivePort>
+					<Id>fhir-messaging-sftp</Id>
+					<Sftp>
+						<Path>/fhir/messaging</Path>
+					</Sftp>
+					<ReceivePortClass>org.endeavourhealth.messaging.plugin.dataservice.FhirMessagingSftpReceiver</ReceivePortClass>
+				</ReceivePort>
+			</ReceivePorts>
+
+			<MessageTypes>
+				<MessageType>
+					<Id>GetRecord-v0-0-2</Id>
+					<Pattern>synchronous</Pattern>
+					<LogInbound>true</LogInbound>
+					<LogOutbound>true</LogOutbound>
+					<ProcessorClass>org.endeavourhealth.messaging.plugin.dataservice.GetRecord002</ProcessorClass>
+				</MessageType>
+				<MessageType>
+					<Id>UploadEmisOpenPatient-v0-0-2</Id>
+					<Pattern>synchronous</Pattern>
+					<LogInbound>true</LogInbound>
+					<LogOutbound>true</LogOutbound>
+					<ProcessorClass>org.endeavourhealth.messaging.plugin.dataservice.UploadEmisOpenPatient</ProcessorClass>
+				</MessageType>
+				<MessageType>
+					<Id>UploadOpenHRPatient-v0-0-2</Id>
+					<Pattern>synchronous</Pattern>
+					<LogInbound>true</LogInbound>
+					<LogOutbound>true</LogOutbound>
+					<ProcessorClass>org.endeavourhealth.messaging.plugin.dataservice.UploadOpenHRPatient</ProcessorClass>
+				</MessageType>
+			</MessageTypes>
+
+			<SendPorts>
+				<SendPort>
+					<Id>fhir-messaging-rabbitmq</Id>
+					<RabbitMq>
+
+					</RabbitMq>
+					<SendPortClass></SendPortClass>
+				</SendPort>
+			</SendPorts>
+
+			<Contracts>
+				<Contract>
+					<Sender>
+						<SenderIdentifier>urn:nhs-uk:addressing:ods:R59:oncology</SenderIdentifier>
+						<SenderCertificateThumbprint>956f6055ace064f08c7dced11372114bf3ad631d</SenderCertificateThumbprint>
+					</Sender>
+					<Receipient>
+						<ReceiptientIdentifier>dataservice</ReceiptientIdentifier>
+					</Receipient>
+					<SendPort>
+						<Id>fhir-messaging-http</Id>
+					</SendPort>
+					<ReceivePort>
+						<Id>fhir-messaging-rabbitmq</Id>
+					</ReceivePort>
+					<MessageTypes>
+						<Id>UploadEmisOpenPatient-v0-0-2</Id>
+						<Id>UploadOpenHRPatient-v0-0-2</Id>
+					</MessageTypes>
+				</Contract>
+			</Contracts>
+
+		</Service>
+	</Services>
+
+
+
+
 </PluginConfiguration>
-	
