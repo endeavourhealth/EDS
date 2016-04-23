@@ -3,15 +3,15 @@
 	<Listener>
 		<Port>8080</Port>
 		<Protocol>http</Protocol>
-		<Endpoints>
-			<Endpoint>
+		<Receivers>
+			<Receiver>
 				<ReceiverId>mig-soap</ReceiverId>
 				<Path>/mig-soap</Path>
 				<IncludeSubPaths>false</IncludeSubPaths>
 				<Methods>post</Methods>
 				<ReceiverClass>org.endeavourhealth.messaging.plugin.gpcim.MigSoapReceiver</ReceiverClass>
-			</Endpoint>
-		</Endpoints>
+			</Receiver>
+		</Receivers>
 		<Messages>
 			<Message>
                 <MessageId>MIG.DATAEXTRACTIONSERVICE.EhrExtractRequest-v0-0-2</MessageId>

@@ -27,5 +27,10 @@
         <module name="eds-messaging-plugin-gpcim" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="eds-messaging" target="1.8" />
+      <module name="eds-messaging-plugin-dataservice" target="1.8" />
+      <module name="eds-messaging-plugin-gpcim" target="1.8" />
+    </bytecodeTargetLevel>
   </component>
 </project>

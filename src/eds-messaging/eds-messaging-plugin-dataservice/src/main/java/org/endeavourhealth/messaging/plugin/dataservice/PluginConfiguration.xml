@@ -3,7 +3,7 @@
 	<Listener>
 		<Port>8080</Port>
 		<Protocol>http</Protocol>
-		<Endpoints>
+		<Receivers>
 			<!--<Receiver>
 				<ReceiverId>itk-soap</ReceiverId>
 				<Path>/itk-soap</Path>
@@ -25,8 +25,9 @@
 				<Methods>get,post,put,delete,options</Methods>
 				<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.FhirRestReceiver</ReceiverClass>
 			</Receiver>
-		</Endpoints>
+		</Receivers>
 		<Messages>
 		</Messages>
 	</Listener>
 </PluginConfiguration>
+	
