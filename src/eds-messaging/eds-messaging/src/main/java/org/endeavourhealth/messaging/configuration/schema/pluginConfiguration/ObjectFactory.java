@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.messaging.configuration.schema.routeConfiguration;
+package org.endeavourhealth.messaging.configuration.schema.pluginConfiguration;
 
 import javax.xml.bind.annotation.XmlRegistry;
 
@@ -54,11 +54,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link RouteConfiguration }
+     * Create an instance of {@link PluginConfiguration }
      * 
      */
-    public RouteConfiguration createRouteConfiguration() {
-        return new RouteConfiguration();
+    public PluginConfiguration createRouteConfiguration() {
+        return new PluginConfiguration();
     }
 
     /**

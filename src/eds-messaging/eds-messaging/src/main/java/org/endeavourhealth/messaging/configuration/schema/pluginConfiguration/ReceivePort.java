@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.messaging.configuration.schema.routeConfiguration;
+package org.endeavourhealth.messaging.configuration.schema.pluginConfiguration;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.messaging.configuration.schema.routeConfiguration;
+package org.endeavourhealth.messaging.configuration.schema.pluginConfiguration;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -31,8 +31,9 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(name = "", propOrder = {
     "service"
 })
-@XmlRootElement(name = "RouteConfiguration")
-public class RouteConfiguration {
+@XmlRootElement(name = "PluginConfiguration")
+public class PluginConfiguration
+{
 
     @XmlElement(name = "Service", required = true)
     protected Service service;

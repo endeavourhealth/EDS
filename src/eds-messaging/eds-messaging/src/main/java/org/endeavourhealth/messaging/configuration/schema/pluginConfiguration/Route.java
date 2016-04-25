@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.messaging.configuration.schema.routeConfiguration;
+package org.endeavourhealth.messaging.configuration.schema.pluginConfiguration;
 
 import java.util.ArrayList;
 import java.util.List;

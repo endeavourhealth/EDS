@@ -1,17 +1,17 @@
 package org.endeavourhealth.messaging.utilities;
 
+import org.endeavourhealth.messaging.configuration.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Log
 {
-    private static final String LOGGER_NAME = "resolution";
     private static Logger logger = null;
 
     private static void initialise()
     {
         if (logger == null)
-            logger = LoggerFactory.getLogger(LOGGER_NAME);
+            logger = LoggerFactory.getLogger(Constants.LOGGER_NAME);
     }
 
     public static void info()
@@ -31,6 +31,13 @@ public class Log
         initialise();
 
         logger.warn(text);
+    }
+
+    public static void error(String text, Throwable exception)
+    {
+        initialise();
+
+        logger.error(text, exception);
     }
 
     public static void error(String text)

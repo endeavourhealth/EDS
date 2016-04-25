@@ -2,17 +2,11 @@ package org.endeavourhealth.messaging.configuration;
 
 import org.endeavourhealth.messaging.exceptions.ReceiverNotFoundException;
 import org.endeavourhealth.messaging.model.IReceivePortHandler;
-import org.endeavourhealth.messaging.utilities.FileHelper;
 import org.endeavourhealth.messaging.utilities.Log;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.List;
-
-import static org.endeavourhealth.messaging.configuration.PluginLoader.getPluginsPath;
-import static org.endeavourhealth.messaging.configuration.PluginLoader.loadPlugins;
 
 public class Configuration
 {
@@ -30,21 +24,35 @@ public class Configuration
 
     private List<Plugin> plugins;
 
-    protected Configuration() throws Exception
+    protected Configuration()
     {
-        loadConfiguration();
     }
 
-    private void loadConfiguration() throws Exception
+    public void loadPlugins() throws Exception
     {
-        Log.info("Searching for plugins at " + PluginLoader.getPluginsPath());
+        PluginLoader pluginLoader = new PluginLoader(getCodeSourceLocation());
 
-        this.plugins = PluginLoader.loadPlugins();
+        this.plugins = pluginLoader.loadPlugins();
 
         if (plugins.size() > 0)
-            plugins.forEach(t -> Log.info("Loaded plugin " + t.getName()));
+            plugins.forEach(t -> Log.info(" Loaded plugin " + t.getName()));
         else
-            Log.info("No plugins found.");
+            Log.info(" No plugins found.");
+    }
+
+    public String getCodeSourceLocation() throws URISyntaxException
+    {
+        return new File(Configuration.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getAbsolutePath();
+    }
+
+    public Boolean isRunningAsJar() throws URISyntaxException
+    {
+        return getCodeSourceLocation().startsWith("jar:");
+    }
+
+    public String getPluginPath() throws Exception
+    {
+        return new PluginLoader(getCodeSourceLocation()).getPluginsPath();
     }
 
     public List<Plugin> getPlugins()

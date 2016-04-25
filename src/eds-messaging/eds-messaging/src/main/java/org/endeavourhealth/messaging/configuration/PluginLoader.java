@@ -3,6 +3,7 @@ package org.endeavourhealth.messaging.configuration;
 import org.endeavourhealth.messaging.utilities.FileHelper;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
@@ -10,42 +11,35 @@ import java.util.stream.Collectors;
 
 public class PluginLoader
 {
-    private static final String PLUGIN_PREFIX = "org.endeavourhealth.messaging.plugin.";
-    private static final String PLUGIN_CONFIGURATION_XML = "RouteConfiguration.xml";
-    private static final String PLUGIN_SUB_DIRECTORY = "plugins";
 
-    private static String pluginsPath = null;
+    private String pluginsPath = null;
+    private String codeSourceLocation = null;
 
-    private PluginLoader()
+    public PluginLoader(String codeSourceLocation) throws Exception
     {
+        this.codeSourceLocation = codeSourceLocation;
+
+        calculatePluginsPath();
     }
 
-    public static String getPluginsPath() throws Exception
+    public String getPluginsPath() throws Exception
     {
-        if (pluginsPath == null)
-            calculatePluginsPath();
-
         return pluginsPath;
     }
 
-    private static void calculatePluginsPath() throws Exception
+    private void calculatePluginsPath() throws Exception
     {
-        File rootPath = new File(Configuration.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+        String pluginsRootPath = (new File(codeSourceLocation)).getParentFile().getPath();
 
-        String pluginsRootPath = rootPath.getParentFile().getPath();
-
-        pluginsRootPath = FileHelper.combinePaths(pluginsRootPath, PLUGIN_SUB_DIRECTORY);
+        pluginsRootPath = FileHelper.combinePaths(pluginsRootPath, Constants.PLUGIN_SUB_DIRECTORY);
         FileHelper.createDirectory(pluginsRootPath);
 
         pluginsPath = pluginsRootPath;
     }
 
-    public static List<Plugin> loadPlugins() throws Exception
+    public List<Plugin> loadPlugins() throws Exception
     {
-        String pluginsRootPath = getPluginsPath();
-
-        List<Plugin> plugins = getJarPlugins(pluginsRootPath);
-        plugins.addAll(getDirectoryPlugins(pluginsRootPath));
+        List<Plugin> plugins = getPlugins();
 
         addPluginsToClasspath(plugins);
 
@@ -55,45 +49,35 @@ public class PluginLoader
         return plugins;
     }
 
-    private static List<Plugin> getJarPlugins(String pluginRootPath) throws Exception
+    private List<Plugin> getPlugins() throws Exception
     {
         List<Plugin> plugins = new ArrayList<>();
 
-        List<File> jarPaths = Arrays.asList(new File(pluginRootPath).listFiles())
+        List<File> pluginPaths = Arrays.asList(new File(pluginsPath).listFiles())
                 .stream()
-                .filter(t -> (!t.isDirectory()) && (t.getName().toLowerCase().startsWith(PLUGIN_PREFIX)) && (t.getName().toLowerCase().endsWith(".jar")))
+                .filter(t -> t.getName().toLowerCase().startsWith(Constants.PLUGIN_PREFIX))
                 .collect(Collectors.toList());
 
-        for (File jarPath : jarPaths)
+        for (File pluginPath : pluginPaths)
         {
-            String configurationXmlPath = FileHelper.findFileInJar(jarPath, PLUGIN_CONFIGURATION_XML);
-            plugins.add(new Plugin(jarPath.getName(), jarPath.getPath(), configurationXmlPath));
+            if (pluginPath.isDirectory())
+            {
+                String absoluteConfigurationXmlPath = FileHelper.findFileRecursive(pluginPath, Constants.PLUGIN_CONFIGURATION_XML);
+                //String configurationXmlPath = pluginDirectory.toURI().relativize(new File(absoluteConfigurationXmlPath).toURI()).getPath();
+
+                plugins.add(new Plugin(pluginPath.getName(), pluginPath.getPath(), absoluteConfigurationXmlPath));
+            }
+            else if (pluginPath.getName().toLowerCase().endsWith(".jar"))
+            {
+                String configurationXmlPath = FileHelper.findFileInJar(pluginPath, Constants.PLUGIN_CONFIGURATION_XML);
+                plugins.add(new Plugin(pluginPath.getName(), pluginPath.getPath(), configurationXmlPath));
+            }
         }
 
         return plugins;
     }
 
-    private static List<Plugin> getDirectoryPlugins(String pluginRootPath) throws Exception
-    {
-        List<Plugin> plugins = new ArrayList<>();
-
-        List<File> pluginDirectories = Arrays.asList(new File(pluginRootPath).listFiles())
-                .stream()
-                .filter(t -> t.isDirectory() && t.getName().toLowerCase().startsWith(PLUGIN_PREFIX))
-                .collect(Collectors.toList());
-
-        for (File pluginDirectory : pluginDirectories)
-        {
-            String absoluteConfigurationXmlPath = FileHelper.findFileRecursive(pluginDirectory, PLUGIN_CONFIGURATION_XML);
-            //String configurationXmlPath = pluginDirectory.toURI().relativize(new File(absoluteConfigurationXmlPath).toURI()).getPath();
-
-            plugins.add(new Plugin(pluginDirectory.getName(), pluginDirectory.getPath(), absoluteConfigurationXmlPath));
-        }
-
-        return plugins;
-    }
-
-    private static void addPluginsToClasspath(List<Plugin> plugins) throws Exception
+    private void addPluginsToClasspath(List<Plugin> plugins) throws Exception
     {
         ClassLoader currentThreadClassLoader = Thread.currentThread().getContextClassLoader();
 

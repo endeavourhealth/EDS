@@ -1,6 +1,6 @@
 package org.endeavourhealth.messaging.configuration;
 
-import org.endeavourhealth.messaging.configuration.schema.routeConfiguration.*;
+import org.endeavourhealth.messaging.configuration.schema.pluginConfiguration.*;
 import org.endeavourhealth.messaging.configuration.schema.pluginContracts.PluginContracts;
 import org.endeavourhealth.messaging.utilities.FileHelper;
 import org.endeavourhealth.messaging.utilities.XmlHelper;
@@ -12,7 +12,7 @@ public class Plugin
     private String name;
     private String pathOnDisk;
     private String configurationXmlPath;
-    private RouteConfiguration routeConfiguration;
+    private PluginConfiguration pluginConfiguration;
     private PluginContracts pluginContracts;
 
     public Plugin(String name, String pathOnDisk, String configurationXmlPath) throws Exception
@@ -41,15 +41,15 @@ public class Plugin
     {
         String configurationXml = FileHelper.loadStringFile(configurationXmlPath);
 
-        String routeConfigurationXsd = FileHelper.loadStringResource("RouteConfiguration.Xsd");
+        String routeConfigurationXsd = FileHelper.loadStringResource("PluginConfiguration.Xsd");
         XmlHelper.validate(configurationXml, routeConfigurationXsd);
 
-        this.routeConfiguration = XmlHelper.deserialize(configurationXml, RouteConfiguration.class);
+        this.pluginConfiguration = XmlHelper.deserialize(configurationXml, PluginConfiguration.class);
     }
 
     public List<ReceivePort> getReceivePorts()
     {
-        return routeConfiguration.getService().getReceivePorts().getReceivePort();
+        return pluginConfiguration.getService().getReceivePorts().getReceivePort();
     }
 //
 //    public IReceivePortHandler getReceivePortHandler(String method, String path) throws Exception

@@ -4,9 +4,8 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.endeavourhealth.messaging.configuration.Configuration;
 import org.endeavourhealth.messaging.configuration.Plugin;
-import org.endeavourhealth.messaging.configuration.schema.routeConfiguration.ReceivePort;
+import org.endeavourhealth.messaging.configuration.schema.pluginConfiguration.ReceivePort;
 import org.endeavourhealth.messaging.utilities.Log;
-import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,34 +14,51 @@ public class Main
 {
     public static void main(String[] args) throws Exception
     {
-        Log.info("--------------------------------------------------");
-        Log.info("Endeavour Resolution - a healthcare message engine");
-        Log.info("--------------------------------------------------");
+        Log.info("--------------------------------------------");
+        Log.info("Endeavour Msgx - a healthcare message engine");
+        Log.info("--------------------------------------------");
 
-        Configuration configuration = Configuration.getInstance();
+        try
+        {
+            Configuration configuration = Configuration.getInstance();
 
-        Log.info("Creating listeners");
+            Log.info("Is running as JAR = " + configuration.isRunningAsJar().toString());
+            Log.info("Executing path = " + configuration.getCodeSourceLocation());
+            Log.info("Plugin path = " + configuration.getPluginPath());
+            Log.info("--------------------------------------------");
 
-        List<Server> httpListeners = createHttpListeners(configuration);
+            Log.info("Loading plugins:");
 
-        for (Server httpListener : httpListeners)
-            httpListener.start();
+            configuration.loadPlugins();
 
-        Log.info("");
-        Log.info("---------> Press any key to exit");
-        Log.info("");
+            Log.info("Creating listeners:");
 
-        System.in.read();
+            List<Server> httpListeners = createHttpListeners(configuration);
 
-        for (Server httpListener : httpListeners)
-            httpListener.stop();
+            for (Server httpListener : httpListeners)
+                httpListener.start();
 
-        for (Server httpListener : httpListeners)
-            httpListener.join();
+            Log.info("--------------------------------------------");
+            Log.info("Msgx started");
+            Log.info("Press any key to exit...");
 
-        Log.info("--------------------------------------------------");
+            System.in.read();
+
+            for (Server httpListener : httpListeners)
+                httpListener.stop();
+
+            for (Server httpListener : httpListeners)
+                httpListener.join();
+
+        }
+        catch (Exception e)
+        {
+            Log.error("Fatal exception occurred", e);
+        }
+
+        Log.info("--------------------------------------------");
         Log.info("Exiting");
-        Log.info("--------------------------------------------------");
+        Log.info("--------------------------------------------");
     }
 
     private static List<Server> createHttpListeners(Configuration configuration) throws Exception
