@@ -3,6 +3,7 @@ package org.endeavourhealth.messaging.configuration;
 import org.endeavourhealth.messaging.exceptions.ReceiverNotFoundException;
 import org.endeavourhealth.messaging.model.IReceivePortHandler;
 import org.endeavourhealth.messaging.utilities.FileHelper;
+import org.endeavourhealth.messaging.utilities.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,8 +16,6 @@ import static org.endeavourhealth.messaging.configuration.PluginLoader.loadPlugi
 
 public class Configuration
 {
-    private static final String LOGGER_NAME = "resolution";
-
     private static Configuration instance = null;
 
     public static Configuration getInstance() throws Exception
@@ -29,11 +28,6 @@ public class Configuration
         return instance;
     }
 
-    public static Logger getLogger()
-    {
-        return LoggerFactory.getLogger(LOGGER_NAME);
-    }
-
     private List<Plugin> plugins;
 
     protected Configuration() throws Exception
@@ -43,16 +37,14 @@ public class Configuration
 
     private void loadConfiguration() throws Exception
     {
-        Logger logger = getLogger();
-        logger.info("Searching for plugins at " + PluginLoader.getPluginsPath());
+        Log.info("Searching for plugins at " + PluginLoader.getPluginsPath());
 
         this.plugins = PluginLoader.loadPlugins();
 
         if (plugins.size() > 0)
-            plugins.forEach(t -> logger.info("Loaded plugin " + t.getName()));
+            plugins.forEach(t -> Log.info("Loaded plugin " + t.getName()));
         else
-            logger.info("No plugins found.");
-
+            Log.info("No plugins found.");
     }
 
     public List<Plugin> getPlugins()

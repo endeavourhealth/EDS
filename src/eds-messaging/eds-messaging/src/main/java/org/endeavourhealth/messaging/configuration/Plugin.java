@@ -40,6 +40,10 @@ public class Plugin
     public void initialize() throws Exception
     {
         String configurationXml = FileHelper.loadStringFile(configurationXmlPath);
+
+        String routeConfigurationXsd = FileHelper.loadStringResource("RouteConfiguration.Xsd");
+        XmlHelper.validate(configurationXml, routeConfigurationXsd);
+
         this.routeConfiguration = XmlHelper.deserialize(configurationXml, RouteConfiguration.class);
     }
 

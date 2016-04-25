@@ -5,6 +5,7 @@ import org.eclipse.jetty.servlet.ServletHandler;
 import org.endeavourhealth.messaging.configuration.Configuration;
 import org.endeavourhealth.messaging.configuration.Plugin;
 import org.endeavourhealth.messaging.configuration.schema.routeConfiguration.ReceivePort;
+import org.endeavourhealth.messaging.utilities.Log;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -14,24 +15,22 @@ public class Main
 {
     public static void main(String[] args) throws Exception
     {
-        Logger logger = Configuration.getLogger();
-
-        logger.info("--------------------------------------------------");
-        logger.info("Endeavour Resolution - a healthcare message engine");
-        logger.info("--------------------------------------------------");
+        Log.info("--------------------------------------------------");
+        Log.info("Endeavour Resolution - a healthcare message engine");
+        Log.info("--------------------------------------------------");
 
         Configuration configuration = Configuration.getInstance();
 
-        logger.info("Creating listeners");
+        Log.info("Creating listeners");
 
         List<Server> httpListeners = createHttpListeners(configuration);
 
         for (Server httpListener : httpListeners)
             httpListener.start();
 
-        logger.info("");
-        logger.info("---------> Press any key to exit");
-        logger.info("");
+        Log.info("");
+        Log.info("---------> Press any key to exit");
+        Log.info("");
 
         System.in.read();
 
@@ -41,15 +40,13 @@ public class Main
         for (Server httpListener : httpListeners)
             httpListener.join();
 
-        logger.info("--------------------------------------------------");
-        logger.info("Exiting");
-        logger.info("--------------------------------------------------");
+        Log.info("--------------------------------------------------");
+        Log.info("Exiting");
+        Log.info("--------------------------------------------------");
     }
 
     private static List<Server> createHttpListeners(Configuration configuration) throws Exception
     {
-        Logger logger = Configuration.getLogger();
-
         List<Server> httpListeners = new ArrayList<>();
 
         List<Integer> ports = new ArrayList<>();
@@ -60,7 +57,7 @@ public class Main
             {
                 if (receivePort.getHttp() != null)
                 {
-                    logger.info("Created http listener on port " + receivePort.getHttp().getPort());
+                    Log.info("Created http listener on port " + receivePort.getHttp().getPort());
 
                     Server httpListener = createHttpListener(receivePort.getHttp().getPort());
 
