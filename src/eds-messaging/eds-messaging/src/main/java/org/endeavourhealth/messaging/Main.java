@@ -7,7 +7,8 @@ import org.endeavourhealth.messaging.configuration.Plugin;
 import org.endeavourhealth.messaging.configuration.schema.routeConfiguration.ReceivePort;
 import org.slf4j.Logger;
 
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main
 {
@@ -21,53 +22,65 @@ public class Main
 
         Configuration configuration = Configuration.getInstance();
 
+        logger.info("Creating listeners");
 
-        InstantiateReceivePorts(configuration);
+        List<Server> httpListeners = createHttpListeners(configuration);
 
+        for (Server httpListener : httpListeners)
+            httpListener.start();
+
+        logger.info("");
+        logger.info("---------> Press any key to exit");
+        logger.info("");
 
         System.in.read();
 
+        for (Server httpListener : httpListeners)
+            httpListener.stop();
+
+        for (Server httpListener : httpListeners)
+            httpListener.join();
 
         logger.info("--------------------------------------------------");
         logger.info("Exiting");
         logger.info("--------------------------------------------------");
     }
 
-    private static void InstantiateReceivePorts(Configuration configuration) throws Exception
+    private static List<Server> createHttpListeners(Configuration configuration) throws Exception
     {
         Logger logger = Configuration.getLogger();
+
+        List<Server> httpListeners = new ArrayList<>();
+
+        List<Integer> ports = new ArrayList<>();
 
         for (Plugin plugin : configuration.getPlugins())
         {
             for (ReceivePort receivePort : plugin.getReceivePorts())
             {
-                ReceivePort.Http http = receivePort.getHttp();
-                ReceivePort.Sftp sftp = receivePort.getSftp();
-                ReceivePort.RabbitMQ rabbitMQ = receivePort.getRabbitMQ();
-
-                if (http != null)
+                if (receivePort.getHttp() != null)
                 {
-                    Server server = new Server(http.getPort());
+                    logger.info("Created http listener on port " + receivePort.getHttp().getPort());
 
-                    ServletHandler handler = new ServletHandler();
-                    server.setHandler(handler);
+                    Server httpListener = createHttpListener(receivePort.getHttp().getPort());
 
-                    handler.addServletWithMapping(HttpHandler.class, "/*");
-
-                    server.start();
-                    //server.join();
-                }
-                else if (sftp != null)
-                {
-
-                }
-                else if (rabbitMQ != null)
-                {
-
+                    httpListeners.add(httpListener);
                 }
             }
         }
 
+        return httpListeners;
+    }
 
+    private static Server createHttpListener(int port)
+    {
+        Server server = new Server(port);
+
+        ServletHandler handler = new ServletHandler();
+        server.setHandler(handler);
+
+        handler.addServletWithMapping(HttpHandler.class, "/*");
+
+        return server;
     }
 }
