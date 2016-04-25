@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.messaging.configuration.schema.pluginConfiguration;
+package org.endeavourhealth.messaging.configuration.schema.routeConfiguration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,12 +10,12 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for ServiceType complex type.
+ * <p>Java class for Service complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="ServiceType">
+ * &lt;complexType name="Service">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
@@ -25,7 +25,7 @@ import javax.xml.bind.annotation.XmlType;
  *             &lt;complexContent>
  *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *                 &lt;sequence maxOccurs="unbounded" minOccurs="0">
- *                   &lt;element name="ReceivePort" type="{}ReceivePortType"/>
+ *                   &lt;element name="ReceivePort" type="{}ReceivePort"/>
  *                 &lt;/sequence>
  *               &lt;/restriction>
  *             &lt;/complexContent>
@@ -36,7 +36,7 @@ import javax.xml.bind.annotation.XmlType;
  *             &lt;complexContent>
  *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *                 &lt;sequence maxOccurs="unbounded" minOccurs="0">
- *                   &lt;element name="MessageType" type="{}MessageTypeType"/>
+ *                   &lt;element name="MessageType" type="{}MessageType"/>
  *                 &lt;/sequence>
  *               &lt;/restriction>
  *             &lt;/complexContent>
@@ -58,7 +58,7 @@ import javax.xml.bind.annotation.XmlType;
  *             &lt;complexContent>
  *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *                 &lt;sequence>
- *                   &lt;element name="Route" type="{}RouteType"/>
+ *                   &lt;element name="Route" type="{}Route"/>
  *                 &lt;/sequence>
  *               &lt;/restriction>
  *             &lt;/complexContent>
@@ -73,25 +73,25 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "ServiceType", propOrder = {
+@XmlType(name = "Service", propOrder = {
     "id",
     "receivePorts",
     "messageTypes",
     "sendPorts",
     "routes"
 })
-public class ServiceType {
+public class Service {
 
     @XmlElement(name = "Id", required = true)
     protected String id;
     @XmlElement(name = "ReceivePorts", required = true)
-    protected ServiceType.ReceivePorts receivePorts;
+    protected Service.ReceivePorts receivePorts;
     @XmlElement(name = "MessageTypes", required = true)
-    protected ServiceType.MessageTypes messageTypes;
+    protected Service.MessageTypes messageTypes;
     @XmlElement(name = "SendPorts", required = true)
-    protected ServiceType.SendPorts sendPorts;
+    protected Service.SendPorts sendPorts;
     @XmlElement(name = "Routes", required = true)
-    protected ServiceType.Routes routes;
+    protected Service.Routes routes;
 
     /**
      * Gets the value of the id property.
@@ -122,10 +122,10 @@ public class ServiceType {
      * 
      * @return
      *     possible object is
-     *     {@link ServiceType.ReceivePorts }
+     *     {@link Service.ReceivePorts }
      *     
      */
-    public ServiceType.ReceivePorts getReceivePorts() {
+    public Service.ReceivePorts getReceivePorts() {
         return receivePorts;
     }
 
@@ -134,10 +134,10 @@ public class ServiceType {
      * 
      * @param value
      *     allowed object is
-     *     {@link ServiceType.ReceivePorts }
+     *     {@link Service.ReceivePorts }
      *     
      */
-    public void setReceivePorts(ServiceType.ReceivePorts value) {
+    public void setReceivePorts(Service.ReceivePorts value) {
         this.receivePorts = value;
     }
 
@@ -146,10 +146,10 @@ public class ServiceType {
      * 
      * @return
      *     possible object is
-     *     {@link ServiceType.MessageTypes }
+     *     {@link Service.MessageTypes }
      *     
      */
-    public ServiceType.MessageTypes getMessageTypes() {
+    public Service.MessageTypes getMessageTypes() {
         return messageTypes;
     }
 
@@ -158,10 +158,10 @@ public class ServiceType {
      * 
      * @param value
      *     allowed object is
-     *     {@link ServiceType.MessageTypes }
+     *     {@link Service.MessageTypes }
      *     
      */
-    public void setMessageTypes(ServiceType.MessageTypes value) {
+    public void setMessageTypes(Service.MessageTypes value) {
         this.messageTypes = value;
     }
 
@@ -170,10 +170,10 @@ public class ServiceType {
      * 
      * @return
      *     possible object is
-     *     {@link ServiceType.SendPorts }
+     *     {@link Service.SendPorts }
      *     
      */
-    public ServiceType.SendPorts getSendPorts() {
+    public Service.SendPorts getSendPorts() {
         return sendPorts;
     }
 
@@ -182,10 +182,10 @@ public class ServiceType {
      * 
      * @param value
      *     allowed object is
-     *     {@link ServiceType.SendPorts }
+     *     {@link Service.SendPorts }
      *     
      */
-    public void setSendPorts(ServiceType.SendPorts value) {
+    public void setSendPorts(Service.SendPorts value) {
         this.sendPorts = value;
     }
 
@@ -194,10 +194,10 @@ public class ServiceType {
      * 
      * @return
      *     possible object is
-     *     {@link ServiceType.Routes }
+     *     {@link Service.Routes }
      *     
      */
-    public ServiceType.Routes getRoutes() {
+    public Service.Routes getRoutes() {
         return routes;
     }
 
@@ -206,10 +206,10 @@ public class ServiceType {
      * 
      * @param value
      *     allowed object is
-     *     {@link ServiceType.Routes }
+     *     {@link Service.Routes }
      *     
      */
-    public void setRoutes(ServiceType.Routes value) {
+    public void setRoutes(Service.Routes value) {
         this.routes = value;
     }
 
@@ -224,7 +224,7 @@ public class ServiceType {
      *   &lt;complexContent>
      *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
      *       &lt;sequence maxOccurs="unbounded" minOccurs="0">
-     *         &lt;element name="MessageType" type="{}MessageTypeType"/>
+     *         &lt;element name="MessageType" type="{}MessageType"/>
      *       &lt;/sequence>
      *     &lt;/restriction>
      *   &lt;/complexContent>
@@ -240,7 +240,7 @@ public class ServiceType {
     public static class MessageTypes {
 
         @XmlElement(name = "MessageType")
-        protected List<MessageTypeType> messageType;
+        protected List<MessageType> messageType;
 
         /**
          * Gets the value of the messageType property.
@@ -260,13 +260,13 @@ public class ServiceType {
          * 
          * <p>
          * Objects of the following type(s) are allowed in the list
-         * {@link MessageTypeType }
+         * {@link MessageType }
          * 
          * 
          */
-        public List<MessageTypeType> getMessageType() {
+        public List<MessageType> getMessageType() {
             if (messageType == null) {
-                messageType = new ArrayList<MessageTypeType>();
+                messageType = new ArrayList<MessageType>();
             }
             return this.messageType;
         }
@@ -284,7 +284,7 @@ public class ServiceType {
      *   &lt;complexContent>
      *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
      *       &lt;sequence maxOccurs="unbounded" minOccurs="0">
-     *         &lt;element name="ReceivePort" type="{}ReceivePortType"/>
+     *         &lt;element name="ReceivePort" type="{}ReceivePort"/>
      *       &lt;/sequence>
      *     &lt;/restriction>
      *   &lt;/complexContent>
@@ -300,7 +300,7 @@ public class ServiceType {
     public static class ReceivePorts {
 
         @XmlElement(name = "ReceivePort")
-        protected List<ReceivePortType> receivePort;
+        protected List<ReceivePort> receivePort;
 
         /**
          * Gets the value of the receivePort property.
@@ -320,13 +320,13 @@ public class ServiceType {
          * 
          * <p>
          * Objects of the following type(s) are allowed in the list
-         * {@link ReceivePortType }
+         * {@link ReceivePort }
          * 
          * 
          */
-        public List<ReceivePortType> getReceivePort() {
+        public List<ReceivePort> getReceivePort() {
             if (receivePort == null) {
-                receivePort = new ArrayList<ReceivePortType>();
+                receivePort = new ArrayList<ReceivePort>();
             }
             return this.receivePort;
         }
@@ -344,7 +344,7 @@ public class ServiceType {
      *   &lt;complexContent>
      *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
      *       &lt;sequence>
-     *         &lt;element name="Route" type="{}RouteType"/>
+     *         &lt;element name="Route" type="{}Route"/>
      *       &lt;/sequence>
      *     &lt;/restriction>
      *   &lt;/complexContent>
@@ -360,17 +360,17 @@ public class ServiceType {
     public static class Routes {
 
         @XmlElement(name = "Route", required = true)
-        protected RouteType route;
+        protected Route route;
 
         /**
          * Gets the value of the route property.
          * 
          * @return
          *     possible object is
-         *     {@link RouteType }
+         *     {@link Route }
          *     
          */
-        public RouteType getRoute() {
+        public Route getRoute() {
             return route;
         }
 
@@ -379,10 +379,10 @@ public class ServiceType {
          * 
          * @param value
          *     allowed object is
-         *     {@link RouteType }
+         *     {@link Route }
          *     
          */
-        public void setRoute(RouteType value) {
+        public void setRoute(Route value) {
             this.route = value;
         }
 

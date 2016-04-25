@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.messaging.configuration.schema.pluginConfiguration;
+package org.endeavourhealth.messaging.configuration.schema.routeConfiguration;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -8,12 +8,12 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for ReceivePortType complex type.
+ * <p>Java class for ReceivePort complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="ReceivePortType">
+ * &lt;complexType name="ReceivePort">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
@@ -56,7 +56,7 @@ import javax.xml.bind.annotation.XmlType;
  *             &lt;/complexType>
  *           &lt;/element>
  *         &lt;/choice>
- *         &lt;element name="ReceivePortClass" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="ReceivePortHandlerClass" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -66,25 +66,25 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "ReceivePortType", propOrder = {
+@XmlType(name = "ReceivePort", propOrder = {
     "id",
     "http",
     "sftp",
     "rabbitMQ",
-    "receivePortClass"
+    "receivePortHandlerClass"
 })
-public class ReceivePortType {
+public class ReceivePort {
 
     @XmlElement(name = "Id", required = true)
     protected String id;
     @XmlElement(name = "Http")
-    protected ReceivePortType.Http http;
+    protected ReceivePort.Http http;
     @XmlElement(name = "Sftp")
-    protected ReceivePortType.Sftp sftp;
+    protected ReceivePort.Sftp sftp;
     @XmlElement(name = "RabbitMQ")
-    protected ReceivePortType.RabbitMQ rabbitMQ;
-    @XmlElement(name = "ReceivePortClass", required = true)
-    protected String receivePortClass;
+    protected ReceivePort.RabbitMQ rabbitMQ;
+    @XmlElement(name = "ReceivePortHandlerClass", required = true)
+    protected String receivePortHandlerClass;
 
     /**
      * Gets the value of the id property.
@@ -115,10 +115,10 @@ public class ReceivePortType {
      * 
      * @return
      *     possible object is
-     *     {@link ReceivePortType.Http }
+     *     {@link ReceivePort.Http }
      *     
      */
-    public ReceivePortType.Http getHttp() {
+    public ReceivePort.Http getHttp() {
         return http;
     }
 
@@ -127,10 +127,10 @@ public class ReceivePortType {
      * 
      * @param value
      *     allowed object is
-     *     {@link ReceivePortType.Http }
+     *     {@link ReceivePort.Http }
      *     
      */
-    public void setHttp(ReceivePortType.Http value) {
+    public void setHttp(ReceivePort.Http value) {
         this.http = value;
     }
 
@@ -139,10 +139,10 @@ public class ReceivePortType {
      * 
      * @return
      *     possible object is
-     *     {@link ReceivePortType.Sftp }
+     *     {@link ReceivePort.Sftp }
      *     
      */
-    public ReceivePortType.Sftp getSftp() {
+    public ReceivePort.Sftp getSftp() {
         return sftp;
     }
 
@@ -151,10 +151,10 @@ public class ReceivePortType {
      * 
      * @param value
      *     allowed object is
-     *     {@link ReceivePortType.Sftp }
+     *     {@link ReceivePort.Sftp }
      *     
      */
-    public void setSftp(ReceivePortType.Sftp value) {
+    public void setSftp(ReceivePort.Sftp value) {
         this.sftp = value;
     }
 
@@ -163,10 +163,10 @@ public class ReceivePortType {
      * 
      * @return
      *     possible object is
-     *     {@link ReceivePortType.RabbitMQ }
+     *     {@link ReceivePort.RabbitMQ }
      *     
      */
-    public ReceivePortType.RabbitMQ getRabbitMQ() {
+    public ReceivePort.RabbitMQ getRabbitMQ() {
         return rabbitMQ;
     }
 
@@ -175,35 +175,35 @@ public class ReceivePortType {
      * 
      * @param value
      *     allowed object is
-     *     {@link ReceivePortType.RabbitMQ }
+     *     {@link ReceivePort.RabbitMQ }
      *     
      */
-    public void setRabbitMQ(ReceivePortType.RabbitMQ value) {
+    public void setRabbitMQ(ReceivePort.RabbitMQ value) {
         this.rabbitMQ = value;
     }
 
     /**
-     * Gets the value of the receivePortClass property.
+     * Gets the value of the receivePortHandlerClass property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getReceivePortClass() {
-        return receivePortClass;
+    public String getReceivePortHandlerClass() {
+        return receivePortHandlerClass;
     }
 
     /**
-     * Sets the value of the receivePortClass property.
+     * Sets the value of the receivePortHandlerClass property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setReceivePortClass(String value) {
-        this.receivePortClass = value;
+    public void setReceivePortHandlerClass(String value) {
+        this.receivePortHandlerClass = value;
     }
 
 

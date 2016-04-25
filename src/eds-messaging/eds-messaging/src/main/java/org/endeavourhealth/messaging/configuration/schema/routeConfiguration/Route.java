@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.messaging.configuration.schema.pluginConfiguration;
+package org.endeavourhealth.messaging.configuration.schema.routeConfiguration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,12 +10,12 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for RouteType complex type.
+ * <p>Java class for Route complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="RouteType">
+ * &lt;complexType name="Route">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
@@ -42,13 +42,13 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "RouteType", propOrder = {
+@XmlType(name = "Route", propOrder = {
     "id",
     "sendPortId",
     "receivePortId",
     "messageTypes"
 })
-public class RouteType {
+public class Route {
 
     @XmlElement(name = "Id", required = true)
     protected Object id;
@@ -57,7 +57,7 @@ public class RouteType {
     @XmlElement(name = "ReceivePortId", required = true)
     protected Object receivePortId;
     @XmlElement(name = "MessageTypes", required = true)
-    protected RouteType.MessageTypes messageTypes;
+    protected Route.MessageTypes messageTypes;
 
     /**
      * Gets the value of the id property.
@@ -136,10 +136,10 @@ public class RouteType {
      * 
      * @return
      *     possible object is
-     *     {@link RouteType.MessageTypes }
+     *     {@link Route.MessageTypes }
      *     
      */
-    public RouteType.MessageTypes getMessageTypes() {
+    public Route.MessageTypes getMessageTypes() {
         return messageTypes;
     }
 
@@ -148,10 +148,10 @@ public class RouteType {
      * 
      * @param value
      *     allowed object is
-     *     {@link RouteType.MessageTypes }
+     *     {@link Route.MessageTypes }
      *     
      */
-    public void setMessageTypes(RouteType.MessageTypes value) {
+    public void setMessageTypes(Route.MessageTypes value) {
         this.messageTypes = value;
     }
 

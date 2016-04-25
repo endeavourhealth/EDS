@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RouteConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:///../../../eds-messaging/src/main/java/org/endeavourhealth/messaging/configuration/schema/routeConfiguration/RouteConfiguration.xsd">
+	<Service>
+		<Id>fhir-messaging</Id>
+
+		<ReceivePorts>
+			<ReceivePort>
+				<Id>endeavour-envelope-receiver</Id>
+				<Http>
+					<Port>8080</Port>
+					<Path>/dataservice/$post-endeavour-envelope</Path>
+					<Methods>post</Methods>
+					<IncludeSubPaths>false</IncludeSubPaths>
+				</Http>
+				<ReceivePortHandlerClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceivePort</ReceivePortHandlerClass>
+			</ReceivePort>
+		</ReceivePorts>
+		<MessageTypes>
+			<MessageType>
+				<Id>PostEOpenPatientRecord1-0</Id>
+				<LogInbound>true</LogInbound>
+				<LogOutbound>true</LogOutbound>
+				<MessageProcessorClass>org.endeavourhealth.messaging.plugin.dataservice.PostEOpenPatientRecordProcessor</MessageProcessorClass>
+			</MessageType>
+		</MessageTypes>
+		<SendPorts>
+			<SendPort>
+				<Id>fhir-messaging-rabbitmq</Id>
+				<RabbitMQ>
+
+				</RabbitMQ>
+				<SendPortClass/>
+			</SendPort>
+		</SendPorts>
+		<Routes>
+			<Route>
+				<Id/>
+				<SendPortId>fhir-messaging-http</SendPortId>
+				<ReceivePortId>fhir-messaging-rabbitmq</ReceivePortId>
+				<MessageTypes>
+					<Id>UploadEmisOpenPatient-v0-0-2</Id>
+				</MessageTypes>
+			</Route>
+		</Routes>
+	</Service>
+</RouteConfiguration>

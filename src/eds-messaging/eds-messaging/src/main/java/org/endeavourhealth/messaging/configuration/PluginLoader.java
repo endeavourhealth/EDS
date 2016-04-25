@@ -10,29 +10,42 @@ import java.util.stream.Collectors;
 
 public class PluginLoader
 {
-    private static final String PLUGIN_PREFIX = "org.endeavour.resolution.plugin.";
-    private static final String PLUGIN_JAR_DIRECTORY = "plugins";
-    private static final String PLUGIN_CONFIGURATION_XML = "PluginConfiguration.xml";
+    private static final String PLUGIN_PREFIX = "org.endeavourhealth.messaging.plugin.";
+    private static final String PLUGIN_CONFIGURATION_XML = "RouteConfiguration.xml";
+    private static final String PLUGIN_SUB_DIRECTORY = "plugins";
+
+    private static String pluginsPath = null;
 
     private PluginLoader()
     {
     }
 
-    public static List<Plugin> loadPlugins() throws Exception
+    public static String getPluginsPath() throws Exception
     {
-        File rootPath = new File(PluginLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+        if (pluginsPath == null)
+            calculatePluginsPath();
 
-        boolean runningAsJar = (!rootPath.isDirectory());
+        return pluginsPath;
+    }
+
+    private static void calculatePluginsPath() throws Exception
+    {
+        File rootPath = new File(Configuration.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
 
         String pluginsRootPath = rootPath.getParentFile().getPath();
 
-        if (runningAsJar)
-        {
-            pluginsRootPath = FileHelper.combinePaths(pluginsRootPath, PLUGIN_JAR_DIRECTORY);
-            FileHelper.createDirectory(pluginsRootPath);
-        }
+        pluginsRootPath = FileHelper.combinePaths(pluginsRootPath, PLUGIN_SUB_DIRECTORY);
+        FileHelper.createDirectory(pluginsRootPath);
 
-        List<Plugin> plugins = (runningAsJar ? getJarPlugins(pluginsRootPath) : getDirectoryPlugins(pluginsRootPath));
+        pluginsPath = pluginsRootPath;
+    }
+
+    public static List<Plugin> loadPlugins() throws Exception
+    {
+        String pluginsRootPath = getPluginsPath();
+
+        List<Plugin> plugins = getJarPlugins(pluginsRootPath);
+        plugins.addAll(getDirectoryPlugins(pluginsRootPath));
 
         addPluginsToClasspath(plugins);
 
@@ -72,9 +85,9 @@ public class PluginLoader
         for (File pluginDirectory : pluginDirectories)
         {
             String absoluteConfigurationXmlPath = FileHelper.findFileRecursive(pluginDirectory, PLUGIN_CONFIGURATION_XML);
-            String configurationXmlPath = pluginDirectory.toURI().relativize(new File(absoluteConfigurationXmlPath).toURI()).getPath();
+            //String configurationXmlPath = pluginDirectory.toURI().relativize(new File(absoluteConfigurationXmlPath).toURI()).getPath();
 
-            plugins.add(new Plugin(pluginDirectory.getName(), pluginDirectory.getPath(), configurationXmlPath));
+            plugins.add(new Plugin(pluginDirectory.getName(), pluginDirectory.getPath(), absoluteConfigurationXmlPath));
         }
 
         return plugins;

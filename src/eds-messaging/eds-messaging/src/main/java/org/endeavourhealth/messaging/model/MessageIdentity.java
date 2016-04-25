@@ -2,59 +2,70 @@ package org.endeavourhealth.messaging.model;
 
 public class MessageIdentity
 {
-    private String messageName;
-    private String version;
-    private String sender;
-    private String recipient;
-    private String clientCertificateThumbprint;
+    private String messageId;
+    private String conversationId;
+    private String senderId;
+    private String senderCertificateThumbprint;
+    private String recipientId;
+    private String messageTypeId;
 
-    public String getMessageName()
+    public String getMessageId()
     {
-        return messageName;
+        return messageId;
     }
 
-    public void setMessageName(String messageName)
+    public void setMessageId(String messageId)
     {
-        this.messageName = messageName;
+        this.messageId = messageId;
     }
 
-    public String getVersion()
+    public String getConversationId()
     {
-        return version;
+        return conversationId;
     }
 
-    public void setVersion(String version)
+    public void setConversationId(String conversationId)
     {
-        this.version = version;
+        this.conversationId = conversationId;
     }
 
-    public String getSender()
+    public String getSenderId()
     {
-        return sender;
+        return senderId;
     }
 
-    public void setSender(String sender)
+    public void setSenderId(String senderId)
     {
-        this.sender = sender;
+        this.senderId = senderId;
     }
 
-    public String getRecipient()
+    public String getSenderCertificateThumbprint()
     {
-        return recipient;
+        return senderCertificateThumbprint;
     }
 
-    public void setRecipient(String recipient)
+    public void setSenderCertificateThumbprint(String senderCertificateThumbprint)
     {
-        this.recipient = recipient;
+        this.senderCertificateThumbprint = senderCertificateThumbprint;
     }
 
-    public String getClientCertificateThumbprint()
+    public String getRecipientId()
     {
-        return clientCertificateThumbprint;
+        return recipientId;
     }
 
-    public void setClientCertificateThumbprint(String certCName)
+    public void setRecipientId(String recipientId)
     {
-        this.clientCertificateThumbprint = certCName;
+        this.recipientId = recipientId;
+    }
+
+    public String getMessageTypeId()
+    {
+        return messageTypeId;
+    }
+
+    public void setMessageTypeId(String messageTypeId)
+    {
+        this.messageTypeId = messageTypeId;
     }
 }

@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.messaging.configuration.schema.pluginConfiguration;
+package org.endeavourhealth.messaging.configuration.schema.routeConfiguration;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -8,12 +8,12 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for MessageTypeType complex type.
+ * <p>Java class for MessageType complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="MessageTypeType">
+ * &lt;complexType name="MessageType">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
@@ -30,13 +30,13 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "MessageTypeType", propOrder = {
+@XmlType(name = "MessageType", propOrder = {
     "id",
     "logInbound",
     "logOutbound",
     "messageProcessorClass"
 })
-public class MessageTypeType {
+public class MessageType {
 
     @XmlElement(name = "Id", required = true)
     protected String id;

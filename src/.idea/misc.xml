@@ -8,7 +8,6 @@
       <list>
         <option value="$PROJECT_DIR$/eds-messaging/eds-messaging-plugin-dataservice/pom.xml" />
         <option value="$PROJECT_DIR$/eds-messaging/eds-messaging/pom.xml" />
-        <option value="$PROJECT_DIR$/eds-messaging/eds-messaging-plugin-gpcim/pom.xml" />
       </list>
     </option>
   </component>
@@ -25,4 +24,5 @@
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" default="true" assert-keyword="true" jdk-15="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
+  <component name="WebServicesPlugin" addRequiredLibraries="true" />
 </project>
