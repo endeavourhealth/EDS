@@ -1,6 +1,8 @@
 
 package org.endeavourhealth.messaging.configuration.schema.pluginConfiguration;
 
+import java.util.ArrayList;
+import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -18,8 +20,17 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element ref="{}Listener"/>
- *         &lt;element ref="{}Messages"/>
+ *         &lt;element name="Services">
+ *           &lt;complexType>
+ *             &lt;complexContent>
+ *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+ *                 &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *                   &lt;element name="Service" type="{}ServiceType"/>
+ *                 &lt;/sequence>
+ *               &lt;/restriction>
+ *             &lt;/complexContent>
+ *           &lt;/complexType>
+ *         &lt;/element>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -30,63 +41,96 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
-    "listener",
-    "messages"
+    "services"
 })
 @XmlRootElement(name = "PluginConfiguration")
 public class PluginConfiguration {
 
-    @XmlElement(name = "Listener", required = true)
-    protected Listener listener;
-    @XmlElement(name = "Messages", required = true)
-    protected Messages messages;
+    @XmlElement(name = "Services", required = true)
+    protected PluginConfiguration.Services services;
 
     /**
-     * Gets the value of the listener property.
+     * Gets the value of the services property.
      * 
      * @return
      *     possible object is
-     *     {@link Listener }
+     *     {@link PluginConfiguration.Services }
      *     
      */
-    public Listener getListener() {
-        return listener;
+    public PluginConfiguration.Services getServices() {
+        return services;
     }
 
     /**
-     * Sets the value of the listener property.
+     * Sets the value of the services property.
      * 
      * @param value
      *     allowed object is
-     *     {@link Listener }
+     *     {@link PluginConfiguration.Services }
      *     
      */
-    public void setListener(Listener value) {
-        this.listener = value;
+    public void setServices(PluginConfiguration.Services value) {
+        this.services = value;
     }
 
-    /**
-     * Gets the value of the messages property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Messages }
-     *     
-     */
-    public Messages getMessages() {
-        return messages;
-    }
 
     /**
-     * Sets the value of the messages property.
+     * <p>Java class for anonymous complex type.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link Messages }
-     *     
+     * <p>The following schema fragment specifies the expected content contained within this class.
+     * 
+     * <pre>
+     * &lt;complexType>
+     *   &lt;complexContent>
+     *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+     *       &lt;sequence maxOccurs="unbounded" minOccurs="0">
+     *         &lt;element name="Service" type="{}ServiceType"/>
+     *       &lt;/sequence>
+     *     &lt;/restriction>
+     *   &lt;/complexContent>
+     * &lt;/complexType>
+     * </pre>
+     * 
+     * 
      */
-    public void setMessages(Messages value) {
-        this.messages = value;
+    @XmlAccessorType(XmlAccessType.FIELD)
+    @XmlType(name = "", propOrder = {
+        "service"
+    })
+    public static class Services {
+
+        @XmlElement(name = "Service")
+        protected List<ServiceType> service;
+
+        /**
+         * Gets the value of the service property.
+         * 
+         * <p>
+         * This accessor method returns a reference to the live list,
+         * not a snapshot. Therefore any modification you make to the
+         * returned list will be present inside the JAXB object.
+         * This is why there is not a <CODE>set</CODE> method for the service property.
+         * 
+         * <p>
+         * For example, to add a new item, do as follows:
+         * <pre>
+         *    getService().add(newItem);
+         * </pre>
+         * 
+         * 
+         * <p>
+         * Objects of the following type(s) are allowed in the list
+         * {@link ServiceType }
+         * 
+         * 
+         */
+        public List<ServiceType> getService() {
+            if (service == null) {
+                service = new ArrayList<ServiceType>();
+            }
+            return this.service;
+        }
+
     }
 
 }

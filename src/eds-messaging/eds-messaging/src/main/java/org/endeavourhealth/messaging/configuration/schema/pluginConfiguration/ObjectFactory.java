@@ -1,16 +1,13 @@
 
 package org.endeavourhealth.messaging.configuration.schema.pluginConfiguration;
 
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.annotation.XmlElementDecl;
 import javax.xml.bind.annotation.XmlRegistry;
-import javax.xml.namespace.QName;
 
 
 /**
  * This object contains factory methods for each 
  * Java content interface and Java element interface 
- * generated in the org.endeavour.resolution.configuration.schema.pluginConfiguration package.
+ * generated in the org.endeavourhealth.messaging.configuration.schema.pluginConfiguration package. 
  * <p>An ObjectFactory allows you to programatically 
  * construct new instances of the Java representation 
  * for XML content. The Java representation of XML 
@@ -24,53 +21,12 @@ import javax.xml.namespace.QName;
 @XmlRegistry
 public class ObjectFactory {
 
-    private final static QName _Protocol_QNAME = new QName("", "Protocol");
 
     /**
-     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.endeavour.resolution.configuration.schema.pluginConfiguration
+     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.endeavourhealth.messaging.configuration.schema.pluginConfiguration
      * 
      */
     public ObjectFactory() {
-    }
-
-    /**
-     * Create an instance of {@link Receivers }
-     * 
-     */
-    public Receivers createEndpoints() {
-        return new Receivers();
-    }
-
-    /**
-     * Create an instance of {@link Receiver }
-     * 
-     */
-    public Receiver createEndpoint() {
-        return new Receiver();
-    }
-
-    /**
-     * Create an instance of {@link Messages }
-     * 
-     */
-    public Messages createMessages() {
-        return new Messages();
-    }
-
-    /**
-     * Create an instance of {@link Message }
-     * 
-     */
-    public Message createMessage() {
-        return new Message();
-    }
-
-    /**
-     * Create an instance of {@link Listener }
-     * 
-     */
-    public Listener createListener() {
-        return new Listener();
     }
 
     /**
@@ -82,12 +38,115 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link String }{@code >}}
+     * Create an instance of {@link ReceivePortType }
      * 
      */
-    @XmlElementDecl(namespace = "", name = "Protocol")
-    public JAXBElement<String> createProtocol(String value) {
-        return new JAXBElement<String>(_Protocol_QNAME, String.class, null, value);
+    public ReceivePortType createReceivePortType() {
+        return new ReceivePortType();
+    }
+
+    /**
+     * Create an instance of {@link ServiceType }
+     * 
+     */
+    public ServiceType createServiceType() {
+        return new ServiceType();
+    }
+
+    /**
+     * Create an instance of {@link RouteType }
+     * 
+     */
+    public RouteType createRouteType() {
+        return new RouteType();
+    }
+
+    /**
+     * Create an instance of {@link PluginConfiguration.Services }
+     * 
+     */
+    public PluginConfiguration.Services createPluginConfigurationServices() {
+        return new PluginConfiguration.Services();
+    }
+
+    /**
+     * Create an instance of {@link SendPortType }
+     * 
+     */
+    public SendPortType createSendPortType() {
+        return new SendPortType();
+    }
+
+    /**
+     * Create an instance of {@link MessageTypeType }
+     * 
+     */
+    public MessageTypeType createMessageTypeType() {
+        return new MessageTypeType();
+    }
+
+    /**
+     * Create an instance of {@link ReceivePortType.Http }
+     * 
+     */
+    public ReceivePortType.Http createReceivePortTypeHttp() {
+        return new ReceivePortType.Http();
+    }
+
+    /**
+     * Create an instance of {@link ReceivePortType.Sftp }
+     * 
+     */
+    public ReceivePortType.Sftp createReceivePortTypeSftp() {
+        return new ReceivePortType.Sftp();
+    }
+
+    /**
+     * Create an instance of {@link ReceivePortType.RabbitMQ }
+     * 
+     */
+    public ReceivePortType.RabbitMQ createReceivePortTypeRabbitMQ() {
+        return new ReceivePortType.RabbitMQ();
+    }
+
+    /**
+     * Create an instance of {@link ServiceType.ReceivePorts }
+     * 
+     */
+    public ServiceType.ReceivePorts createServiceTypeReceivePorts() {
+        return new ServiceType.ReceivePorts();
+    }
+
+    /**
+     * Create an instance of {@link ServiceType.MessageTypes }
+     * 
+     */
+    public ServiceType.MessageTypes createServiceTypeMessageTypes() {
+        return new ServiceType.MessageTypes();
+    }
+
+    /**
+     * Create an instance of {@link ServiceType.SendPorts }
+     * 
+     */
+    public ServiceType.SendPorts createServiceTypeSendPorts() {
+        return new ServiceType.SendPorts();
+    }
+
+    /**
+     * Create an instance of {@link ServiceType.Routes }
+     * 
+     */
+    public ServiceType.Routes createServiceTypeRoutes() {
+        return new ServiceType.Routes();
+    }
+
+    /**
+     * Create an instance of {@link RouteType.MessageTypes }
+     * 
+     */
+    public RouteType.MessageTypes createRouteTypeMessageTypes() {
+        return new RouteType.MessageTypes();
     }
 
 }

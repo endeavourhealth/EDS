@@ -23,13 +23,6 @@
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>
-			<xs:element name="SendPorts">
-				<xs:complexType>
-					<xs:sequence minOccurs="0" maxOccurs="unbounded">
-						<xs:element name="SendPort" type="SendPortType"/>
-					</xs:sequence>
-				</xs:complexType>
-			</xs:element>
 			<xs:element name="MessageTypes">
 				<xs:complexType>
 					<xs:sequence minOccurs="0" maxOccurs="unbounded">
@@ -37,10 +30,17 @@
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>
-			<xs:element name="Contracts">
+			<xs:element name="SendPorts">
 				<xs:complexType>
 					<xs:sequence minOccurs="0" maxOccurs="unbounded">
-						<xs:element name="Contract" type="ContractType"/>
+						<xs:element name="SendPort" type="SendPortType"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Routes">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Route" type="RouteType"/>
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>
@@ -91,41 +91,16 @@
 	<xs:complexType name="MessageTypeType">
 		<xs:sequence>
 			<xs:element name="Id" type="xs:string"/>
-			<xs:element name="MessageTypeProcessorClass" type="xs:string"/>
+			<xs:element name="LogInbound" type="xs:boolean"/>
+			<xs:element name="LogOutbound" type="xs:boolean"/>
+			<xs:element name="MessageProcessorClass" type="xs:string"/>
 		</xs:sequence>
 	</xs:complexType>
-	<xs:complexType name="ContractType">
+	<xs:complexType name="RouteType">
 		<xs:sequence>
 			<xs:element name="Id"/>
-			<xs:element name="Sender">
-				<xs:complexType>
-					<xs:sequence>
-						<xs:element name="SenderIdentifier" type="xs:string"/>
-						<xs:element name="SenderCertificateThumbprint"/>
-					</xs:sequence>
-				</xs:complexType>
-			</xs:element>
-			<xs:element name="Recipient">
-				<xs:complexType>
-					<xs:sequence>
-						<xs:element name="RecipientIdentifier" type="xs:string"/>
-					</xs:sequence>
-				</xs:complexType>
-			</xs:element>
-			<xs:element name="SendPort">
-				<xs:complexType>
-					<xs:sequence>
-						<xs:element name="Id"/>
-					</xs:sequence>
-				</xs:complexType>
-			</xs:element>
-			<xs:element name="ReceivePort">
-				<xs:complexType>
-					<xs:sequence>
-						<xs:element name="Id"/>
-					</xs:sequence>
-				</xs:complexType>
-			</xs:element>
+			<xs:element name="SendPortId"/>
+			<xs:element name="ReceivePortId"/>
 			<xs:element name="MessageTypes">
 				<xs:complexType>
 					<xs:sequence minOccurs="0" maxOccurs="unbounded">
