@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<PluginConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:///../../../../eds-messaging/src/main/resources/RouteConfiguration.xsd">
+<PluginConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:///../../../../eds-messaging/src/main/java/org/endeavourhealth/messaging/configuration/schema/pluginConfiguration/PluginConfiguration.xsd">
 	<Service>
-		<Id>fhir-messaging</Id>
+		<Id>endeavour-dataservice</Id>
 
 		<ReceivePorts>
 			<ReceivePort>

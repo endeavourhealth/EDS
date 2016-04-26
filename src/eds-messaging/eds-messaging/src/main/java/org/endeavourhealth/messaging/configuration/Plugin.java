@@ -41,7 +41,7 @@ public class Plugin
     public void initialize() throws Exception
     {
         String configurationXml = FileHelper.loadStringFile(configurationXmlPath);
-        String routeConfigurationXsd = FileHelper.loadStringResource(PluginConfiguration.class.getResource("PluginConfiguration.xsd"));
+        String routeConfigurationXsd = FileHelper.loadStringResource(PluginConfiguration.class.getResource(Constants.PLUGIN_CONFIGURATION_XSD));
 
         XmlHelper.validate(configurationXml, routeConfigurationXsd);
 
