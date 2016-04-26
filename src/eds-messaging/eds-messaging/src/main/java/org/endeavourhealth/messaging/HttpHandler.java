@@ -3,12 +3,13 @@ package org.endeavourhealth.messaging;
 import org.eclipse.jetty.http.HttpStatus;
 import org.endeavourhealth.messaging.configuration.Configuration;
 import org.endeavourhealth.messaging.exceptions.ReceiverMethodNotSupportedException;
-import org.endeavourhealth.messaging.html.Html;
+import org.endeavourhealth.messaging.utilities.html.Html;
 import org.endeavourhealth.messaging.model.HttpMessage;
 import org.endeavourhealth.messaging.model.IReceivePortHandler;
 import org.endeavourhealth.messaging.exceptions.ReceiverNotFoundException;
 import org.endeavourhealth.messaging.model.MessageIdentity;
 import org.endeavourhealth.messaging.utilities.HttpContentType;
+import org.endeavourhealth.messaging.utilities.Log;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -61,6 +62,7 @@ public class HttpHandler extends HttpServlet
             catch (Exception e2)
             {
                 // argh?!
+                Log.error("Error occurred handling exception in HttpHandler", e2);
             }
         }
     }

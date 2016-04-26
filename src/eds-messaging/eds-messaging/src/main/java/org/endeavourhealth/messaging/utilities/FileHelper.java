@@ -22,6 +22,11 @@ public class FileHelper
         if (url == null)
             throw new MsgxException(resourceLocation + " not found");
 
+        return loadStringResource(url);
+    }
+
+    public static String loadStringResource(URL url) throws Exception
+    {
         InputStream stream = url.openStream();
         String resource = IOUtils.toString(stream);
         IOUtils.closeQuietly(stream);

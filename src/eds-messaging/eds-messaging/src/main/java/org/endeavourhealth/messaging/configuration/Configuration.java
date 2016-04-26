@@ -30,12 +30,14 @@ public class Configuration
 
     public void loadPlugins() throws Exception
     {
+        Log.info("Loading plugins:");
+
         PluginLoader pluginLoader = new PluginLoader(getCodeSourceLocation());
 
         this.plugins = pluginLoader.loadPlugins();
 
         if (plugins.size() > 0)
-            plugins.forEach(t -> Log.info(" Loaded plugin " + t.getName()));
+            plugins.forEach(t -> Log.info(" Loaded plugin '" + t.getName() + "'."));
         else
             Log.info(" No plugins found.");
     }

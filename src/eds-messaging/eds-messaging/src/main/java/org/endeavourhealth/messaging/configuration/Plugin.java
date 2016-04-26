@@ -1,5 +1,6 @@
 package org.endeavourhealth.messaging.configuration;
 
+import org.apache.commons.io.IOUtils;
 import org.endeavourhealth.messaging.configuration.schema.pluginConfiguration.*;
 import org.endeavourhealth.messaging.configuration.schema.pluginContracts.PluginContracts;
 import org.endeavourhealth.messaging.utilities.FileHelper;
@@ -40,8 +41,8 @@ public class Plugin
     public void initialize() throws Exception
     {
         String configurationXml = FileHelper.loadStringFile(configurationXmlPath);
+        String routeConfigurationXsd = FileHelper.loadStringResource(PluginConfiguration.class.getResource("PluginConfiguration.xsd"));
 
-        String routeConfigurationXsd = FileHelper.loadStringResource("PluginConfiguration.Xsd");
         XmlHelper.validate(configurationXml, routeConfigurationXsd);
 
         this.pluginConfiguration = XmlHelper.deserialize(configurationXml, PluginConfiguration.class);

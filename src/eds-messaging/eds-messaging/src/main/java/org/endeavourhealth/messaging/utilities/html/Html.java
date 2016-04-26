@@ -1,4 +1,4 @@
-package org.endeavourhealth.messaging.html;
+package org.endeavourhealth.messaging.utilities.html;
 
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jetty.http.HttpStatus;

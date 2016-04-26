@@ -27,8 +27,6 @@ public class Main
             Log.info("Plugin path = " + configuration.getPluginPath());
             Log.info("--------------------------------------------");
 
-            Log.info("Loading plugins:");
-
             configuration.loadPlugins();
 
             Log.info("Creating listeners:");

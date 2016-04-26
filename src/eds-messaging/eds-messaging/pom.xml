@@ -46,7 +46,20 @@
         </dependency>
     </dependencies>
     <build>
+
+        <resources>
+            <resource>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>**/*.html</include>
+                    <include>**/*.xml</include>
+                    <include>**/*.xsd</include>
+                </includes>
+            </resource>
+        </resources>
+
         <directory>../target/</directory>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -57,5 +70,6 @@
                 </configuration>
             </plugin>
         </plugins>
+
     </build>
 </project>
