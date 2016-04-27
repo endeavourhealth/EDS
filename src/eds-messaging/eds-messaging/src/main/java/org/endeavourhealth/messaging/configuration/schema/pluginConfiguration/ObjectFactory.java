@@ -46,6 +46,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link ReceivePort.Properties }
+     * 
+     */
+    public ReceivePort.Properties createReceivePortProperties() {
+        return new ReceivePort.Properties();
+    }
+
+    /**
      * Create an instance of {@link Service }
      * 
      */
@@ -57,7 +65,7 @@ public class ObjectFactory {
      * Create an instance of {@link PluginConfiguration }
      * 
      */
-    public PluginConfiguration createRouteConfiguration() {
+    public PluginConfiguration createPluginConfiguration() {
         return new PluginConfiguration();
     }
 
@@ -86,27 +94,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ReceivePort.Http }
+     * Create an instance of {@link ReceivePort.Properties.Entry }
      * 
      */
-    public ReceivePort.Http createReceivePortHttp() {
-        return new ReceivePort.Http();
-    }
-
-    /**
-     * Create an instance of {@link ReceivePort.Sftp }
-     * 
-     */
-    public ReceivePort.Sftp createReceivePortSftp() {
-        return new ReceivePort.Sftp();
-    }
-
-    /**
-     * Create an instance of {@link ReceivePort.RabbitMQ }
-     * 
-     */
-    public ReceivePort.RabbitMQ createReceivePortRabbitMQ() {
-        return new ReceivePort.RabbitMQ();
+    public ReceivePort.Properties.Entry createReceivePortPropertiesEntry() {
+        return new ReceivePort.Properties.Entry();
     }
 
     /**

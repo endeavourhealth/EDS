@@ -6,12 +6,13 @@
 		<ReceivePorts>
 			<ReceivePort>
 				<Id>endeavour-envelope-receiver</Id>
-				<Http>
-					<Port>8080</Port>
-					<Path>/dataservice/$post-endeavour-envelope</Path>
-					<Methods>post</Methods>
-					<IncludeSubPaths>false</IncludeSubPaths>
-				</Http>
+				<Protocol>http</Protocol>
+				<Port>8080</Port>
+				<Properties>
+					<Entry key="Path">/dataservice/$post-endeavour-envelope</Entry>
+					<Entry key="Methods">post</Entry>
+					<Entry key="IncludeSubPaths">false</Entry>
+				</Properties>
 				<ReceivePortHandlerClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceivePort</ReceivePortHandlerClass>
 			</ReceivePort>
 		</ReceivePorts>

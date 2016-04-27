@@ -4,6 +4,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.endeavourhealth.messaging.configuration.Configuration;
 import org.endeavourhealth.messaging.configuration.Plugin;
+import org.endeavourhealth.messaging.configuration.schema.pluginConfiguration.ProtocolType;
 import org.endeavourhealth.messaging.configuration.schema.pluginConfiguration.ReceivePort;
 import org.endeavourhealth.messaging.utilities.Log;
 
@@ -63,28 +64,18 @@ public class Main
     {
         List<Server> httpListeners = new ArrayList<>();
 
-        List<Integer> ports = new ArrayList<>();
-
         for (Plugin plugin : configuration.getPlugins())
-        {
             for (ReceivePort receivePort : plugin.getReceivePorts())
-            {
-                if (receivePort.getHttp() != null)
-                {
-                    Log.info("Created http listener on port " + receivePort.getHttp().getPort());
-
-                    Server httpListener = createHttpListener(receivePort.getHttp().getPort());
-
-                    httpListeners.add(httpListener);
-                }
-            }
-        }
+                if (receivePort.getProtocol().equals(ProtocolType.HTTP))
+                    httpListeners.add(createHttpListener(receivePort.getPort().intValue()));
 
         return httpListeners;
     }
 
     private static Server createHttpListener(int port)
     {
+        Log.info("Created http listener on port " + Integer.toString(port));
+
         Server server = new Server(port);
 
         ServletHandler handler = new ServletHandler();

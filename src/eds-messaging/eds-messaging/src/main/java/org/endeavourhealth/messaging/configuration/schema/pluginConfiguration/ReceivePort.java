@@ -1,10 +1,16 @@
 
 package org.endeavourhealth.messaging.configuration.schema.pluginConfiguration;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.XmlValue;
 
 
 /**
@@ -18,44 +24,27 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="Id" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;choice>
- *           &lt;element name="Http">
- *             &lt;complexType>
- *               &lt;complexContent>
- *                 &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *                   &lt;sequence>
- *                     &lt;element name="Port" type="{http://www.w3.org/2001/XMLSchema}int"/>
- *                     &lt;element name="Path" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *                     &lt;element name="Methods" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *                     &lt;element name="IncludeSubPaths" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *                   &lt;/sequence>
- *                 &lt;/restriction>
- *               &lt;/complexContent>
- *             &lt;/complexType>
- *           &lt;/element>
- *           &lt;element name="Sftp">
- *             &lt;complexType>
- *               &lt;complexContent>
- *                 &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *                   &lt;sequence>
- *                     &lt;element name="Path" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *                   &lt;/sequence>
- *                 &lt;/restriction>
- *               &lt;/complexContent>
- *             &lt;/complexType>
- *           &lt;/element>
- *           &lt;element name="RabbitMQ">
- *             &lt;complexType>
- *               &lt;complexContent>
- *                 &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *                   &lt;sequence>
- *                     &lt;element name="QueueName" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *                   &lt;/sequence>
- *                 &lt;/restriction>
- *               &lt;/complexContent>
- *             &lt;/complexType>
- *           &lt;/element>
- *         &lt;/choice>
+ *         &lt;element name="Protocol" type="{}ProtocolType"/>
+ *         &lt;element name="Port" type="{http://www.w3.org/2001/XMLSchema}integer"/>
+ *         &lt;element name="Properties">
+ *           &lt;complexType>
+ *             &lt;complexContent>
+ *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+ *                 &lt;sequence maxOccurs="unbounded" minOccurs="0">
+ *                   &lt;element name="Entry">
+ *                     &lt;complexType>
+ *                       &lt;simpleContent>
+ *                         &lt;extension base="&lt;http://www.w3.org/2001/XMLSchema>string">
+ *                           &lt;attribute name="key" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />
+ *                         &lt;/extension>
+ *                       &lt;/simpleContent>
+ *                     &lt;/complexType>
+ *                   &lt;/element>
+ *                 &lt;/sequence>
+ *               &lt;/restriction>
+ *             &lt;/complexContent>
+ *           &lt;/complexType>
+ *         &lt;/element>
  *         &lt;element name="ReceivePortHandlerClass" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -68,21 +57,22 @@ import javax.xml.bind.annotation.XmlType;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "ReceivePort", propOrder = {
     "id",
-    "http",
-    "sftp",
-    "rabbitMQ",
+    "protocol",
+    "port",
+    "properties",
     "receivePortHandlerClass"
 })
 public class ReceivePort {
 
     @XmlElement(name = "Id", required = true)
     protected String id;
-    @XmlElement(name = "Http")
-    protected ReceivePort.Http http;
-    @XmlElement(name = "Sftp")
-    protected ReceivePort.Sftp sftp;
-    @XmlElement(name = "RabbitMQ")
-    protected ReceivePort.RabbitMQ rabbitMQ;
+    @XmlElement(name = "Protocol", required = true)
+    @XmlSchemaType(name = "string")
+    protected ProtocolType protocol;
+    @XmlElement(name = "Port", required = true)
+    protected BigInteger port;
+    @XmlElement(name = "Properties", required = true)
+    protected ReceivePort.Properties properties;
     @XmlElement(name = "ReceivePortHandlerClass", required = true)
     protected String receivePortHandlerClass;
 
@@ -111,75 +101,75 @@ public class ReceivePort {
     }
 
     /**
-     * Gets the value of the http property.
+     * Gets the value of the protocol property.
      * 
      * @return
      *     possible object is
-     *     {@link ReceivePort.Http }
+     *     {@link ProtocolType }
      *     
      */
-    public ReceivePort.Http getHttp() {
-        return http;
+    public ProtocolType getProtocol() {
+        return protocol;
     }
 
     /**
-     * Sets the value of the http property.
+     * Sets the value of the protocol property.
      * 
      * @param value
      *     allowed object is
-     *     {@link ReceivePort.Http }
+     *     {@link ProtocolType }
      *     
      */
-    public void setHttp(ReceivePort.Http value) {
-        this.http = value;
+    public void setProtocol(ProtocolType value) {
+        this.protocol = value;
     }
 
     /**
-     * Gets the value of the sftp property.
+     * Gets the value of the port property.
      * 
      * @return
      *     possible object is
-     *     {@link ReceivePort.Sftp }
+     *     {@link BigInteger }
      *     
      */
-    public ReceivePort.Sftp getSftp() {
-        return sftp;
+    public BigInteger getPort() {
+        return port;
     }
 
     /**
-     * Sets the value of the sftp property.
+     * Sets the value of the port property.
      * 
      * @param value
      *     allowed object is
-     *     {@link ReceivePort.Sftp }
+     *     {@link BigInteger }
      *     
      */
-    public void setSftp(ReceivePort.Sftp value) {
-        this.sftp = value;
+    public void setPort(BigInteger value) {
+        this.port = value;
     }
 
     /**
-     * Gets the value of the rabbitMQ property.
+     * Gets the value of the properties property.
      * 
      * @return
      *     possible object is
-     *     {@link ReceivePort.RabbitMQ }
+     *     {@link ReceivePort.Properties }
      *     
      */
-    public ReceivePort.RabbitMQ getRabbitMQ() {
-        return rabbitMQ;
+    public ReceivePort.Properties getProperties() {
+        return properties;
     }
 
     /**
-     * Sets the value of the rabbitMQ property.
+     * Sets the value of the properties property.
      * 
      * @param value
      *     allowed object is
-     *     {@link ReceivePort.RabbitMQ }
+     *     {@link ReceivePort.Properties }
      *     
      */
-    public void setRabbitMQ(ReceivePort.RabbitMQ value) {
-        this.rabbitMQ = value;
+    public void setProperties(ReceivePort.Properties value) {
+        this.properties = value;
     }
 
     /**
@@ -216,11 +206,16 @@ public class ReceivePort {
      * &lt;complexType>
      *   &lt;complexContent>
      *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
-     *       &lt;sequence>
-     *         &lt;element name="Port" type="{http://www.w3.org/2001/XMLSchema}int"/>
-     *         &lt;element name="Path" type="{http://www.w3.org/2001/XMLSchema}string"/>
-     *         &lt;element name="Methods" type="{http://www.w3.org/2001/XMLSchema}string"/>
-     *         &lt;element name="IncludeSubPaths" type="{http://www.w3.org/2001/XMLSchema}string"/>
+     *       &lt;sequence maxOccurs="unbounded" minOccurs="0">
+     *         &lt;element name="Entry">
+     *           &lt;complexType>
+     *             &lt;simpleContent>
+     *               &lt;extension base="&lt;http://www.w3.org/2001/XMLSchema>string">
+     *                 &lt;attribute name="key" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />
+     *               &lt;/extension>
+     *             &lt;/simpleContent>
+     *           &lt;/complexType>
+     *         &lt;/element>
      *       &lt;/sequence>
      *     &lt;/restriction>
      *   &lt;/complexContent>
@@ -231,218 +226,119 @@ public class ReceivePort {
      */
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlType(name = "", propOrder = {
-        "port",
-        "path",
-        "methods",
-        "includeSubPaths"
+        "entry"
     })
-    public static class Http {
+    public static class Properties {
 
-        @XmlElement(name = "Port")
-        protected int port;
-        @XmlElement(name = "Path", required = true)
-        protected String path;
-        @XmlElement(name = "Methods", required = true)
-        protected String methods;
-        @XmlElement(name = "IncludeSubPaths", required = true)
-        protected String includeSubPaths;
+        @XmlElement(name = "Entry")
+        protected List<ReceivePort.Properties.Entry> entry;
 
         /**
-         * Gets the value of the port property.
+         * Gets the value of the entry property.
+         * 
+         * <p>
+         * This accessor method returns a reference to the live list,
+         * not a snapshot. Therefore any modification you make to the
+         * returned list will be present inside the JAXB object.
+         * This is why there is not a <CODE>set</CODE> method for the entry property.
+         * 
+         * <p>
+         * For example, to add a new item, do as follows:
+         * <pre>
+         *    getEntry().add(newItem);
+         * </pre>
+         * 
+         * 
+         * <p>
+         * Objects of the following type(s) are allowed in the list
+         * {@link ReceivePort.Properties.Entry }
+         * 
          * 
          */
-        public int getPort() {
-            return port;
+        public List<ReceivePort.Properties.Entry> getEntry() {
+            if (entry == null) {
+                entry = new ArrayList<ReceivePort.Properties.Entry>();
+            }
+            return this.entry;
         }
 
-        /**
-         * Sets the value of the port property.
-         * 
-         */
-        public void setPort(int value) {
-            this.port = value;
-        }
 
         /**
-         * Gets the value of the path property.
+         * <p>Java class for anonymous complex type.
          * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getPath() {
-            return path;
-        }
-
-        /**
-         * Sets the value of the path property.
+         * <p>The following schema fragment specifies the expected content contained within this class.
          * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setPath(String value) {
-            this.path = value;
-        }
-
-        /**
-         * Gets the value of the methods property.
+         * <pre>
+         * &lt;complexType>
+         *   &lt;simpleContent>
+         *     &lt;extension base="&lt;http://www.w3.org/2001/XMLSchema>string">
+         *       &lt;attribute name="key" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />
+         *     &lt;/extension>
+         *   &lt;/simpleContent>
+         * &lt;/complexType>
+         * </pre>
          * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getMethods() {
-            return methods;
-        }
-
-        /**
-         * Sets the value of the methods property.
          * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
          */
-        public void setMethods(String value) {
-            this.methods = value;
-        }
+        @XmlAccessorType(XmlAccessType.FIELD)
+        @XmlType(name = "", propOrder = {
+            "value"
+        })
+        public static class Entry {
 
-        /**
-         * Gets the value of the includeSubPaths property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getIncludeSubPaths() {
-            return includeSubPaths;
-        }
+            @XmlValue
+            protected String value;
+            @XmlAttribute(name = "key", required = true)
+            protected String key;
 
-        /**
-         * Sets the value of the includeSubPaths property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setIncludeSubPaths(String value) {
-            this.includeSubPaths = value;
-        }
+            /**
+             * Gets the value of the value property.
+             * 
+             * @return
+             *     possible object is
+             *     {@link String }
+             *     
+             */
+            public String getValue() {
+                return value;
+            }
 
-    }
+            /**
+             * Sets the value of the value property.
+             * 
+             * @param value
+             *     allowed object is
+             *     {@link String }
+             *     
+             */
+            public void setValue(String value) {
+                this.value = value;
+            }
 
+            /**
+             * Gets the value of the key property.
+             * 
+             * @return
+             *     possible object is
+             *     {@link String }
+             *     
+             */
+            public String getKey() {
+                return key;
+            }
 
-    /**
-     * <p>Java class for anonymous complex type.
-     * 
-     * <p>The following schema fragment specifies the expected content contained within this class.
-     * 
-     * <pre>
-     * &lt;complexType>
-     *   &lt;complexContent>
-     *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
-     *       &lt;sequence>
-     *         &lt;element name="QueueName" type="{http://www.w3.org/2001/XMLSchema}string"/>
-     *       &lt;/sequence>
-     *     &lt;/restriction>
-     *   &lt;/complexContent>
-     * &lt;/complexType>
-     * </pre>
-     * 
-     * 
-     */
-    @XmlAccessorType(XmlAccessType.FIELD)
-    @XmlType(name = "", propOrder = {
-        "queueName"
-    })
-    public static class RabbitMQ {
+            /**
+             * Sets the value of the key property.
+             * 
+             * @param value
+             *     allowed object is
+             *     {@link String }
+             *     
+             */
+            public void setKey(String value) {
+                this.key = value;
+            }
 
-        @XmlElement(name = "QueueName", required = true)
-        protected String queueName;
-
-        /**
-         * Gets the value of the queueName property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getQueueName() {
-            return queueName;
-        }
-
-        /**
-         * Sets the value of the queueName property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setQueueName(String value) {
-            this.queueName = value;
-        }
-
-    }
-
-
-    /**
-     * <p>Java class for anonymous complex type.
-     * 
-     * <p>The following schema fragment specifies the expected content contained within this class.
-     * 
-     * <pre>
-     * &lt;complexType>
-     *   &lt;complexContent>
-     *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
-     *       &lt;sequence>
-     *         &lt;element name="Path" type="{http://www.w3.org/2001/XMLSchema}string"/>
-     *       &lt;/sequence>
-     *     &lt;/restriction>
-     *   &lt;/complexContent>
-     * &lt;/complexType>
-     * </pre>
-     * 
-     * 
-     */
-    @XmlAccessorType(XmlAccessType.FIELD)
-    @XmlType(name = "", propOrder = {
-        "path"
-    })
-    public static class Sftp {
-
-        @XmlElement(name = "Path", required = true)
-        protected String path;
-
-        /**
-         * Gets the value of the path property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getPath() {
-            return path;
-        }
-
-        /**
-         * Sets the value of the path property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setPath(String value) {
-            this.path = value;
         }
 
     }

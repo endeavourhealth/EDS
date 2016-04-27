@@ -43,32 +43,23 @@
 	<xs:complexType name="ReceivePort">
 		<xs:sequence>
 			<xs:element name="Id" type="xs:string"/>
-			<xs:choice>
-				<xs:element name="Http">
-					<xs:complexType>
-						<xs:sequence>
-							<xs:element name="Port" type="xs:int"/>
-							<xs:element name="Path" type="xs:string"/>
-							<xs:element name="Methods" type="xs:string"/>
-							<xs:element name="IncludeSubPaths" type="xs:string"/>
-						</xs:sequence>
-					</xs:complexType>
-				</xs:element>
-				<xs:element name="Sftp">
-					<xs:complexType>
-						<xs:sequence>
-							<xs:element name="Path" type="xs:string"/>
-						</xs:sequence>
-					</xs:complexType>
-				</xs:element>
-				<xs:element name="RabbitMQ">
-					<xs:complexType>
-						<xs:sequence>
-							<xs:element name="QueueName" type="xs:string"/>
-						</xs:sequence>
-					</xs:complexType>
-				</xs:element>
-			</xs:choice>
+			<xs:element name="Protocol" type="ProtocolType"/>
+			<xs:element name="Port" type="xs:integer"/>
+			<xs:element name="Properties">
+				<xs:complexType>
+					<xs:sequence minOccurs="0" maxOccurs="unbounded">
+						<xs:element name="Entry">
+							<xs:complexType>
+								<xs:simpleContent>
+									<xs:extension base="xs:string">
+										<xs:attribute name="key" type="xs:string" use="required"/>
+									</xs:extension>
+								</xs:simpleContent>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
 			<xs:element name="ReceivePortHandlerClass" type="xs:string"/>
 		</xs:sequence>
 	</xs:complexType>
@@ -104,4 +95,9 @@
 			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
+	<xs:simpleType name="ProtocolType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="http"/>
+		</xs:restriction>
+	</xs:simpleType>
 </xs:schema>

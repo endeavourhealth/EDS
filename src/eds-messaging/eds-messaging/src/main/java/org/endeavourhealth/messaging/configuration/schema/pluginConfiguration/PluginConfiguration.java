@@ -32,8 +32,7 @@ import javax.xml.bind.annotation.XmlType;
     "service"
 })
 @XmlRootElement(name = "PluginConfiguration")
-public class PluginConfiguration
-{
+public class PluginConfiguration {
 
     @XmlElement(name = "Service", required = true)
     protected Service service;

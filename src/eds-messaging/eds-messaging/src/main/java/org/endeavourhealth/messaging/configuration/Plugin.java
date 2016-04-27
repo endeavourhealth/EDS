@@ -3,9 +3,11 @@ package org.endeavourhealth.messaging.configuration;
 import org.apache.commons.io.IOUtils;
 import org.endeavourhealth.messaging.configuration.schema.pluginConfiguration.*;
 import org.endeavourhealth.messaging.configuration.schema.pluginContracts.PluginContracts;
+import org.endeavourhealth.messaging.model.IReceivePortHandler;
 import org.endeavourhealth.messaging.utilities.FileHelper;
 import org.endeavourhealth.messaging.utilities.XmlHelper;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class Plugin
@@ -52,9 +54,9 @@ public class Plugin
     {
         return pluginConfiguration.getService().getReceivePorts().getReceivePort();
     }
-//
-//    public IReceivePortHandler getReceivePortHandler(String method, String path) throws Exception
-//    {
+
+    public IReceivePortHandler getReceivePortHandler(String protocol, String method, String path) throws Exception
+    {
 //        for (ServiceType serviceType : pluginConfiguration.getServices().getService())
 //        {
 //            for (ReceivePortType receivePort : serviceType.getReceivePorts().getReceivePort())
@@ -69,9 +71,9 @@ public class Plugin
 //                }
 //            }
 //        }
-//
-//        return null;
-//    }
+
+        return null;
+    }
 //
 //    public Boolean isContractValid(MessageIdentity messageIdentity) throws MessageNotFoundException
 //    {
