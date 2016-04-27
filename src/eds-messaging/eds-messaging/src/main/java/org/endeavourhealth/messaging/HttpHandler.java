@@ -2,7 +2,9 @@ package org.endeavourhealth.messaging;
 
 import org.eclipse.jetty.http.HttpStatus;
 import org.endeavourhealth.messaging.configuration.Configuration;
+import org.endeavourhealth.messaging.configuration.schema.pluginConfiguration.ProtocolType;
 import org.endeavourhealth.messaging.exceptions.ReceiverMethodNotSupportedException;
+import org.endeavourhealth.messaging.model.ReceivePortProperties;
 import org.endeavourhealth.messaging.utilities.html.Html;
 import org.endeavourhealth.messaging.model.HttpMessage;
 import org.endeavourhealth.messaging.model.IReceivePortHandler;
@@ -28,8 +30,9 @@ public class HttpHandler extends HttpServlet
             Configuration configuration = Configuration.getInstance();
 
             HttpMessage message = HttpMessage.fromServletRequest(request);
+            ReceivePortProperties receivePortProperties = ReceivePortProperties.fromHttpMessage(message);
 
-            IReceivePortHandler receivePortHandler = configuration.getReceivePortHandler(message.getHttpMethod(), message.getPath());
+            IReceivePortHandler receivePortHandler = configuration.getReceivePortHandler(ProtocolType.HTTP, request.getServerPort(), receivePortProperties);
 
             try
             {

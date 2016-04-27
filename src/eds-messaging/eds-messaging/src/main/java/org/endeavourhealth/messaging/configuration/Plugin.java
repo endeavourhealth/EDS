@@ -1,13 +1,13 @@
 package org.endeavourhealth.messaging.configuration;
 
-import org.apache.commons.io.IOUtils;
 import org.endeavourhealth.messaging.configuration.schema.pluginConfiguration.*;
 import org.endeavourhealth.messaging.configuration.schema.pluginContracts.PluginContracts;
 import org.endeavourhealth.messaging.model.IReceivePortHandler;
+import org.endeavourhealth.messaging.model.ReceivePortProperties;
 import org.endeavourhealth.messaging.utilities.FileHelper;
+import org.endeavourhealth.messaging.utilities.ReflectionHelper;
 import org.endeavourhealth.messaging.utilities.XmlHelper;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class Plugin
@@ -35,11 +35,6 @@ public class Plugin
         return pathOnDisk;
     }
 
-    public String getConfigurationXmlPath()
-    {
-        return configurationXmlPath;
-    }
-
     public void initialize() throws Exception
     {
         String configurationXml = FileHelper.loadStringFile(configurationXmlPath);
@@ -55,56 +50,13 @@ public class Plugin
         return pluginConfiguration.getService().getReceivePorts().getReceivePort();
     }
 
-    public IReceivePortHandler getReceivePortHandler(String protocol, String method, String path) throws Exception
+    public IReceivePortHandler getReceivePortHandler(ProtocolType protocol, int port, ReceivePortProperties properties) throws Exception
     {
-//        for (ServiceType serviceType : pluginConfiguration.getServices().getService())
-//        {
-//            for (ReceivePortType receivePort : serviceType.getReceivePorts().getReceivePort())
-//            {
-//                if ((receivePort.isIncludeSubPaths() && (path.startsWith(receivePort.getPath())))
-//                        || (receiver.getPath().equals(path)))
-//                {
-//                    if (Arrays.asList(receiver.getMethods().split(",")).contains(method.toLowerCase()))
-//                        return (IReceivePortHandler) Thread.currentThread().getContextClassLoader().loadClass(receiver.getReceiverClass()).newInstance();
-//
-//                    throw new ReceiverMethodNotSupportedException();
-//                }
-//            }
-//        }
+        for (ReceivePort receivePort : pluginConfiguration.getService().getReceivePorts().getReceivePort())
+            if (receivePort.getProtocol().equals(protocol) && receivePort.getPort().equals(port))
+                if (properties.matchesConfiguration(receivePort.getProperties()))
+                    return (IReceivePortHandler)ReflectionHelper.instantiateObject(receivePort.getReceivePortHandlerClass());
 
         return null;
     }
-//
-//    public Boolean isContractValid(MessageIdentity messageIdentity) throws MessageNotFoundException
-//    {
-//        if (messageIdentity == null)
-//            return false;
-//
-//        String messageId = getMessageId(messageIdentity.getMessageName(), messageIdentity.getVersion());
-//
-//        if (StringUtils.isBlank(messageId))
-//            throw new MessageNotFoundException("Message not found with name = " + messageIdentity.getMessageName() + " and version = " + messageIdentity.getVersion());
-//
-//        for (Contract contract : pluginContracts.getContracts().getContract())
-//        {
-//            if ((StringUtils.equals(contract.getMessageId(), messageId))
-//                    && (StringUtils.equals(contract.getSender(), messageIdentity.getSender()))
-//                    && (StringUtils.equals(contract.getReceiver(), messageIdentity.getRecipient())))
-//            {
-//                return true;
-//            }
-//        }
-//
-//        return false;
-//    }
-//
-//    public String getMessageId(String messageName, String version)
-//    {
-//        for (Message message : pluginConfiguration.getMessages().getMessage())
-//            if (StringUtils.equals(message.getName(), messageName))
-//                if (StringUtils.equals(version, message.getVersion()))
-//                    return message.getMessageId();
-//
-//        return null;
-//    }
 }
