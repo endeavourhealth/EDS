@@ -53,7 +53,7 @@ public class Plugin
     public IReceivePortHandler getReceivePortHandler(ProtocolType protocol, int port, ReceivePortProperties properties) throws Exception
     {
         for (ReceivePort receivePort : pluginConfiguration.getService().getReceivePorts().getReceivePort())
-            if (receivePort.getProtocol().equals(protocol) && receivePort.getPort().equals(port))
+            if (receivePort.getProtocol().equals(protocol) && receivePort.getPort().intValue() == port)
                 if (properties.matchesConfiguration(receivePort.getProperties()))
                     return (IReceivePortHandler)ReflectionHelper.instantiateObject(receivePort.getReceivePortHandlerClass());
 

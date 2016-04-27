@@ -25,8 +25,13 @@ public class HttpHandler extends HttpServlet
 {
     private void HandleRequest(HttpServletRequest request, HttpServletResponse response)
     {
+			String id = getInitParameter("id");
+			System.out.println(id);
+
         try
         {
+
+						// TODO : Get configuration based on message id
             Configuration configuration = Configuration.getInstance();
 
             HttpMessage message = HttpMessage.fromServletRequest(request);
