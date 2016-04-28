@@ -13,7 +13,7 @@
 					<Entry key="Methods">post</Entry>
 					<Entry key="IncludeSubPaths">false</Entry>
 				</Properties>
-				<ReceivePortHandlerClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceivePort</ReceivePortHandlerClass>
+				<ReceivePortHandlerClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceivePortHandler</ReceivePortHandlerClass>
 			</ReceivePort>
 		</ReceivePorts>
 		<MessageTypes>

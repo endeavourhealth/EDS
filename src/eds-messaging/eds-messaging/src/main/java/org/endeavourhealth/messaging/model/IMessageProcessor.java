@@ -1,6 +1,6 @@
 package org.endeavourhealth.messaging.model;
 
-public class IProcessor
+public interface IMessageProcessor
 {
 
 }

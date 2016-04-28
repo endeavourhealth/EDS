@@ -1,7 +1,10 @@
 package org.endeavourhealth.messaging.configuration;
 
+import org.endeavourhealth.messaging.exceptions.MessageNotFoundException;
 import org.endeavourhealth.messaging.exceptions.ReceiverNotFoundException;
+import org.endeavourhealth.messaging.model.IMessageProcessor;
 import org.endeavourhealth.messaging.model.IReceivePortHandler;
+import org.endeavourhealth.messaging.model.MessageIdentity;
 import org.endeavourhealth.messaging.utilities.Log;
 
 import java.io.File;
@@ -28,6 +31,17 @@ public class Configuration
     {
     }
 
+    public String getCodeSourceLocation() throws URISyntaxException
+    {
+        return new File(Configuration.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getAbsolutePath();
+    }
+
+    public Boolean isRunningAsJar() throws URISyntaxException
+    {
+        return getCodeSourceLocation().startsWith("jar:");
+    }
+
+
     public void loadPlugins() throws Exception
     {
         Log.info("Loading plugins:");
@@ -42,16 +56,6 @@ public class Configuration
             Log.info(" No plugins found.");
     }
 
-    public String getCodeSourceLocation() throws URISyntaxException
-    {
-        return new File(Configuration.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getAbsolutePath();
-    }
-
-    public Boolean isRunningAsJar() throws URISyntaxException
-    {
-        return getCodeSourceLocation().startsWith("jar:");
-    }
-
     public String getPluginPath() throws Exception
     {
         return new PluginLoader(getCodeSourceLocation()).getPluginsPath();
@@ -60,6 +64,19 @@ public class Configuration
     public List<Plugin> getPlugins()
     {
         return plugins;
+    }
+
+    public IMessageProcessor getMessageProcessor(MessageIdentity messageIdentity) throws Exception
+    {
+        for (Plugin plugin : plugins)
+        {
+            IMessageProcessor messageProcessor = plugin.getMessageProcessor(messageIdentity.getMessageTypeId());
+
+            if (messageProcessor != null)
+                return messageProcessor;
+        }
+
+        throw new MessageNotFoundException();
     }
 
     public IReceivePortHandler getReceivePortHandler(String receivePortId) throws Exception

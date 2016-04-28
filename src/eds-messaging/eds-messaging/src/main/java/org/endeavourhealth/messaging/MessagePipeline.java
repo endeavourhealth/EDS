@@ -1,13 +1,16 @@
 package org.endeavourhealth.messaging;
 
+import org.endeavourhealth.messaging.configuration.Configuration;
+import org.endeavourhealth.messaging.model.IMessageProcessor;
 import org.endeavourhealth.messaging.model.Message;
 
 public class MessagePipeline
 {
     public void Process(Message message) throws Exception
     {
-        // load message processor by on message identity
-        //MessageRoute messageRoute = configuration.getRoute(messageIdentity);
+        Configuration configuration = Configuration.getInstance();
+
+        IMessageProcessor messageProcessor = configuration.getMessageProcessor(message.getMessageIdentity());
 
         // log message
 
