@@ -22,6 +22,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
+        <module name="eds-core" />
         <module name="eds-messaging-plugin-dataservice" />
       </profile>
       <profile default="false" name="Annotation profile for messaging" enabled="true">
@@ -33,6 +34,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="eds-core" target="1.8" />
       <module name="eds-messaging" target="1.8" />
       <module name="eds-messaging-plugin-dataservice" target="1.8" />
       <module name="eds-messaging-plugin-gpcim" target="1.8" />
