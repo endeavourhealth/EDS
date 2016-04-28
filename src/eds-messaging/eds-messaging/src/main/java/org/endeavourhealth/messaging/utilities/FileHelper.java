@@ -1,7 +1,7 @@
 package org.endeavourhealth.messaging.utilities;
 
 import org.apache.commons.io.IOUtils;
-import org.endeavourhealth.messaging.exceptions.MsgxException;
+import org.endeavourhealth.messaging.exceptions.ResolutionException;
 
 import java.io.*;
 import java.net.URL;
@@ -20,7 +20,7 @@ public class FileHelper
         URL url = Thread.currentThread().getContextClassLoader().getResource(resourceLocation);
 
         if (url == null)
-            throw new MsgxException(resourceLocation + " not found");
+            throw new ResolutionException(resourceLocation + " not found");
 
         return loadStringResource(url);
     }

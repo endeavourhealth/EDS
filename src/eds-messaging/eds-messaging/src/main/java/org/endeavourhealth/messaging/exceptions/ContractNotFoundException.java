@@ -1,6 +1,6 @@
 package org.endeavourhealth.messaging.exceptions;
 
-public class ContractNotFoundException extends MsgxException
+public class ContractNotFoundException extends ResolutionException
 {
     public ContractNotFoundException() {
         super();

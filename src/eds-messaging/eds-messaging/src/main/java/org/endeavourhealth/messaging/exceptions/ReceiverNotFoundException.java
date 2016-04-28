@@ -1,6 +1,6 @@
 package org.endeavourhealth.messaging.exceptions;
 
-public class ReceiverNotFoundException extends MsgxException
+public class ReceiverNotFoundException extends ResolutionException
 {
     public ReceiverNotFoundException() {
         super();

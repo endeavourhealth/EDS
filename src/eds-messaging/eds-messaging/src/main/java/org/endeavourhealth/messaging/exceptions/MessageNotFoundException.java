@@ -1,6 +1,6 @@
 package org.endeavourhealth.messaging.exceptions;
 
-public class MessageNotFoundException extends MsgxException
+public class MessageNotFoundException extends ResolutionException
 {
     public MessageNotFoundException() {
         super();

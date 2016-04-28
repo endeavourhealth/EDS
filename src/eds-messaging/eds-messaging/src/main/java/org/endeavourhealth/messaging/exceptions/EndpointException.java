@@ -1,6 +1,6 @@
 package org.endeavourhealth.messaging.exceptions;
 
-public class EndpointException extends MsgxException
+public class EndpointException extends ResolutionException
 {
     public EndpointException() {
         super();

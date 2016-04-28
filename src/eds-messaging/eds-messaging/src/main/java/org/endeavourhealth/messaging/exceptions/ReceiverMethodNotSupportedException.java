@@ -1,6 +1,6 @@
 package org.endeavourhealth.messaging.exceptions;
 
-public class ReceiverMethodNotSupportedException extends MsgxException
+public class ReceiverMethodNotSupportedException extends ResolutionException
 {
     public ReceiverMethodNotSupportedException() {
         super();
