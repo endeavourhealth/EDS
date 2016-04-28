@@ -26,7 +26,7 @@ public class Main
             configuration.loadServicePlugins();
 
             FrameworkProtocolManager frameworkProtocolManager = new FrameworkProtocolManager();
-            frameworkProtocolManager.createReceivePorts(configuration.getServicePlugins());
+            frameworkProtocolManager.createServices(configuration.getServicePlugins());
 
             frameworkProtocolManager.start();
 

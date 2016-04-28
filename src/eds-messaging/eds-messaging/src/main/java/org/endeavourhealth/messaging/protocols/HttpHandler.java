@@ -1,6 +1,7 @@
-package org.endeavourhealth.messaging;
+package org.endeavourhealth.messaging.protocols;
 
 import org.eclipse.jetty.http.HttpStatus;
+import org.endeavourhealth.messaging.MessagePipeline;
 import org.endeavourhealth.messaging.configuration.Configuration;
 import org.endeavourhealth.messaging.exceptions.ReceiverMethodNotSupportedException;
 import org.endeavourhealth.messaging.utilities.html.Html;
