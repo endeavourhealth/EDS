@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FrameworkProtocolManager {
+
+	public static final String RECEIVE_PORT_ID_KEY = "ReceivePortId";
+
 	private static FrameworkProtocolManager frameworkProtocolManager = null;
 	public static FrameworkProtocolManager getInstance() {
 		if (frameworkProtocolManager == null) {
@@ -75,7 +78,7 @@ public class FrameworkProtocolManager {
 
 		ServletHandler handler = (ServletHandler)server.getHandler();
 		ServletHolder holder = new ServletHolder(HttpHandler.class);
-		holder.setInitParameter("receivePortId", receivePort.getId());
+		holder.setInitParameter(RECEIVE_PORT_ID_KEY, receivePort.getId());
 
 		String path = getPropertiesEntryValueByKey(receivePort.getProperties(), "Path");
 		handler.addServletWithMapping(holder, path);

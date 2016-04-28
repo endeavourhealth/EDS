@@ -7,6 +7,7 @@ public abstract class Message
 {
     protected String body;
     protected HashMap<String, String> headers = new HashMap<>();
+    protected MessageIdentity messageIdentity;
 
     public String getBody()
     {
@@ -21,5 +22,15 @@ public abstract class Message
     public String getHeaderValue(String headerName)
     {
         return headers.get(headerName);
+    }
+
+    public MessageIdentity getMessageIdentity()
+    {
+        return messageIdentity;
+    }
+
+    public void setMessageIdentity(MessageIdentity messageIdentity)
+    {
+        this.messageIdentity = messageIdentity;
     }
 }

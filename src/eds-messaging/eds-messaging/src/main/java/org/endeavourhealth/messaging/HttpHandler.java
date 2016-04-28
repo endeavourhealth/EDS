@@ -23,8 +23,7 @@ public class HttpHandler extends HttpServlet
 {
     private void HandleRequest(HttpServletRequest request, HttpServletResponse response)
     {
-			String receivePortId = getInitParameter("receivePortId");
-			System.out.println(receivePortId);
+		String receivePortId = getInitParameter(FrameworkProtocolManager.RECEIVE_PORT_ID_KEY);
 
         try
         {
@@ -39,6 +38,7 @@ public class HttpHandler extends HttpServlet
             try
             {
                 MessageIdentity messageIdentity = receivePortHandler.identifyMessage(message);
+                message.setMessageIdentity(messageIdentity);
 
                 MessagePipeline pipeline = new MessagePipeline();
                 pipeline.Process(message);
