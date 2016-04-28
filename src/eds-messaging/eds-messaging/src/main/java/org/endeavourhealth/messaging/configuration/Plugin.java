@@ -3,7 +3,6 @@ package org.endeavourhealth.messaging.configuration;
 import org.endeavourhealth.messaging.configuration.schema.pluginConfiguration.*;
 import org.endeavourhealth.messaging.configuration.schema.pluginContracts.PluginContracts;
 import org.endeavourhealth.messaging.model.IReceivePortHandler;
-import org.endeavourhealth.messaging.model.ReceivePortProperties;
 import org.endeavourhealth.messaging.utilities.FileHelper;
 import org.endeavourhealth.messaging.utilities.ReflectionHelper;
 import org.endeavourhealth.messaging.utilities.XmlHelper;
@@ -50,12 +49,11 @@ public class Plugin
         return pluginConfiguration.getService().getReceivePorts().getReceivePort();
     }
 
-    public IReceivePortHandler getReceivePortHandler(ProtocolType protocol, int port, ReceivePortProperties properties) throws Exception
+    public IReceivePortHandler getReceivePortHandler(String receivePortId) throws Exception
     {
         for (ReceivePort receivePort : pluginConfiguration.getService().getReceivePorts().getReceivePort())
-            if (receivePort.getProtocol().equals(protocol) && receivePort.getPort().intValue() == port)
-                if (properties.matchesConfiguration(receivePort.getProperties()))
-                    return (IReceivePortHandler)ReflectionHelper.instantiateObject(receivePort.getReceivePortHandlerClass());
+            if (receivePort.getId() == receivePortId)
+                return (IReceivePortHandler)ReflectionHelper.instantiateObject(receivePort.getReceivePortHandlerClass());
 
         return null;
     }

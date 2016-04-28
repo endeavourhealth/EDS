@@ -22,11 +22,11 @@ public class FrameworkProtocolManager {
 	}
 
 	private List<Server> httpServers;
-	private List<String> ftpServers;
+	// private List<String> sftpServers;
 
 	FrameworkProtocolManager() {
 		httpServers = new ArrayList<>();
-		ftpServers = new ArrayList<>();
+		// sftpServers = new ArrayList<>();
 	}
 
 	public void createListeners(Configuration configuration) throws Exception {
@@ -75,16 +75,16 @@ public class FrameworkProtocolManager {
 
 		ServletHandler handler = (ServletHandler)server.getHandler();
 		ServletHolder holder = new ServletHolder(HttpHandler.class);
-		holder.setInitParameter("id", receivePort.getId());
+		holder.setInitParameter("receivePortId", receivePort.getId());
 
 		String path = getPropertiesEntryValueByKey(receivePort.getProperties(), "Path");
 		handler.addServletWithMapping(holder, path);
 		Log.info("Http receiver [" + receivePort.getId() + "] registered on port [" + port + "] - path [" + path + "]");
 	}
 
-	private void registerSftpReceivePort(ReceivePort receivePort) {
-		// TODO : SFtp receiver
-	}
+	// TODO : SFtp receiver
+//	private void registerSftpReceivePort(ReceivePort receivePort) {
+//	}
 
 	// TODO : Extract to somewhere useful!
 	private String getPropertiesEntryValueByKey(ReceivePort.Properties properties, String key) {

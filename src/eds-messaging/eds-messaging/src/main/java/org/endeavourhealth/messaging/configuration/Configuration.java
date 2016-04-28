@@ -1,15 +1,12 @@
 package org.endeavourhealth.messaging.configuration;
 
-import org.endeavourhealth.messaging.configuration.schema.pluginConfiguration.ProtocolType;
 import org.endeavourhealth.messaging.exceptions.ReceiverNotFoundException;
 import org.endeavourhealth.messaging.model.IReceivePortHandler;
-import org.endeavourhealth.messaging.model.ReceivePortProperties;
 import org.endeavourhealth.messaging.utilities.Log;
 
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.Map;
 
 public class Configuration
 {
@@ -65,11 +62,11 @@ public class Configuration
         return plugins;
     }
 
-    public IReceivePortHandler getReceivePortHandler(ProtocolType protocol, int port, ReceivePortProperties properties) throws Exception
+    public IReceivePortHandler getReceivePortHandler(String receivePortId) throws Exception
     {
         for (Plugin plugin : plugins)
         {
-            IReceivePortHandler receivePortHandler = plugin.getReceivePortHandler(protocol, port, properties);
+            IReceivePortHandler receivePortHandler = plugin.getReceivePortHandler(receivePortId);
 
             if (receivePortHandler != null)
                 return receivePortHandler;
