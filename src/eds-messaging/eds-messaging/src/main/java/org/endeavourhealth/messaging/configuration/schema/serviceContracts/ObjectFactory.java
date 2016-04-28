@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.messaging.configuration.schema.pluginContracts;
+package org.endeavourhealth.messaging.configuration.schema.serviceContracts;
 
 import javax.xml.bind.annotation.XmlRegistry;
 
@@ -7,7 +7,7 @@ import javax.xml.bind.annotation.XmlRegistry;
 /**
  * This object contains factory methods for each 
  * Java content interface and Java element interface 
- * generated in the org.endeavour.resolution.configuration.schema.pluginContracts package.
+ * generated in the org.endeavourhealth.messaging.configuration.schema.serviceContracts package. 
  * <p>An ObjectFactory allows you to programatically 
  * construct new instances of the Java representation 
  * for XML content. The Java representation of XML 
@@ -23,18 +23,18 @@ public class ObjectFactory {
 
 
     /**
-     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.endeavour.resolution.configuration.schema.pluginContracts
+     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.endeavourhealth.messaging.configuration.schema.serviceContracts
      * 
      */
     public ObjectFactory() {
     }
 
     /**
-     * Create an instance of {@link PluginContracts }
+     * Create an instance of {@link ServiceContracts }
      * 
      */
-    public PluginContracts createPluginContracts() {
-        return new PluginContracts();
+    public ServiceContracts createServiceContracts() {
+        return new ServiceContracts();
     }
 
     /**

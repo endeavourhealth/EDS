@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.messaging.configuration.schema.pluginContracts;
+package org.endeavourhealth.messaging.configuration.schema.serviceContracts;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

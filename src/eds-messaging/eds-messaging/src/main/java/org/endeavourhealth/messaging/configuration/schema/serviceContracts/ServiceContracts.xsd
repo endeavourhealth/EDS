@@ -17,7 +17,7 @@
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
-	<xs:element name="PluginContracts">
+	<xs:element name="ServiceContracts">
 		<xs:complexType>
 			<xs:sequence>
 				<xs:element ref="Contracts"/>

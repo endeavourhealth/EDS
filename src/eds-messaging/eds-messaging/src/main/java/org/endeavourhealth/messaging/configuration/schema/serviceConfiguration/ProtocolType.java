@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.messaging.configuration.schema.pluginConfiguration;
+package org.endeavourhealth.messaging.configuration.schema.serviceConfiguration;
 
 import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlEnumValue;

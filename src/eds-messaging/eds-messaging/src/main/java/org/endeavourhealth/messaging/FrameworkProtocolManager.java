@@ -1,100 +1,101 @@
 package org.endeavourhealth.messaging;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.endeavourhealth.messaging.configuration.Configuration;
-import org.endeavourhealth.messaging.configuration.Plugin;
-import org.endeavourhealth.messaging.configuration.schema.pluginConfiguration.ReceivePort;
+import org.endeavourhealth.messaging.configuration.schema.serviceConfiguration.ReceivePort;
+import org.endeavourhealth.messaging.model.ReceivePortProperties;
+import org.endeavourhealth.messaging.model.ServicePlugin;
 import org.endeavourhealth.messaging.utilities.Log;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class FrameworkProtocolManager {
+public class FrameworkProtocolManager
+{
+	private Map<Integer, Server> httpServers;
 
-	public static final String RECEIVE_PORT_ID_KEY = "ReceivePortId";
+	public FrameworkProtocolManager()
+	{
+		httpServers = new HashMap<>();
+	}
 
-	private static FrameworkProtocolManager frameworkProtocolManager = null;
-	public static FrameworkProtocolManager getInstance() {
-		if (frameworkProtocolManager == null) {
-			frameworkProtocolManager = new FrameworkProtocolManager();
+	public void createReceivePorts(List<ServicePlugin> servicePlugins) throws Exception
+	{
+		Log.info("Creating receive ports");
+
+		for (ServicePlugin servicePlugin : servicePlugins)
+		{
+			Log.info(" For service [" + servicePlugin.getServiceId() + "]:");
+
+			for (ReceivePort receivePort : servicePlugin.getReceivePorts())
+				registerReceivePort(servicePlugin.getServiceId(), receivePort);
 		}
-		return frameworkProtocolManager;
+
+		Log.info("Receive ports created");
 	}
 
-	private List<Server> httpServers;
-	// private List<String> sftpServers;
+	public void start() throws Exception
+	{
+		Log.info("Starting receive ports");
 
-	FrameworkProtocolManager() {
-		httpServers = new ArrayList<>();
-		// sftpServers = new ArrayList<>();
+		for (Server server : httpServers.values())
+			server.start();
+
+		Log.info("Receive ports started");
 	}
 
-	public void createListeners(Configuration configuration) throws Exception {
-		for (Plugin plugin : configuration.getPlugins()) {
-			for (ReceivePort receivePort : plugin.getReceivePorts()) {
-				registerReceivePort(receivePort);
-			}
-		}
-	}
+	public void shutdown() throws Exception	{
+		Log.info("Stopping receive ports");
 
-	public void shutdown() throws Exception {
-		for(Server s : httpServers) {
+		for (Server s : httpServers.values()) {
 			s.stop();
 			s.join();
 		}
+
+		Log.info("Receive ports stopped");
 	}
 
-	private void registerReceivePort(ReceivePort receivePort) throws Exception {
-		switch (receivePort.getProtocol()) {
-			case HTTP:
-				registerHttpReceivePort(receivePort);
-				break;
+	private void registerReceivePort(String serviceId, ReceivePort receivePort) throws Exception {
+		switch (receivePort.getProtocol())
+		{
+			case HTTP: registerHttpReceivePort(serviceId, receivePort); break;
+			default: throw new NotImplementedException(receivePort.getProtocol().value());
 		}
 	}
 
-	private void registerHttpReceivePort(ReceivePort receivePort) throws Exception {
-		Server server = null;
+	private void registerHttpReceivePort(String serviceId, ReceivePort receivePort) throws Exception
+	{
+		ReceivePortProperties receivePortProperties = ReceivePortProperties.fromConfiguration(receivePort.getProperties());
 		Integer port = receivePort.getPort().intValue();
+		String path = receivePortProperties.getPath();
 
-		// try to find existing server running on port
-		for(Server s : httpServers){
-			if (((ServerConnector)s.getConnectors()[0]).getLocalPort() == port) {
-				server = s;
-				break;
-			}
-		}
+		Log.info("  Creating receive port [" + receivePort.getId() + "] created with protocol [http], port [" + port.toString() + "],  path [" + path + "]");
 
-		// If none found, create a new one
-		if (server == null) {
+		Server server = getOrCreateHttpServer(port);
+
+		ServletHolder holder = new ServletHolder(HttpHandler.class);
+		holder.setInitParameter(HttpHandler.SERVICEID_KEY, serviceId);
+		holder.setInitParameter(HttpHandler.RECEIVEPORTID_KEY, receivePort.getId());
+
+		ServletHandler handler = (ServletHandler)server.getHandler();
+		handler.addServletWithMapping(holder, path);
+	}
+
+	private Server getOrCreateHttpServer(int port)
+	{
+		Server server = httpServers.getOrDefault(port, null);
+
+		if (server == null)
+		{
 			server = new Server(port);
 			ServletHandler handler = new ServletHandler();
 			server.setHandler(handler);
-			httpServers.add(server);
-			server.start();
+			httpServers.put(port, server);
 		}
 
-		ServletHandler handler = (ServletHandler)server.getHandler();
-		ServletHolder holder = new ServletHolder(HttpHandler.class);
-		holder.setInitParameter(RECEIVE_PORT_ID_KEY, receivePort.getId());
-
-		String path = getPropertiesEntryValueByKey(receivePort.getProperties(), "Path");
-		handler.addServletWithMapping(holder, path);
-		Log.info("Http receiver [" + receivePort.getId() + "] registered on port [" + port + "] - path [" + path + "]");
-	}
-
-	// TODO : SFtp receiver
-//	private void registerSftpReceivePort(ReceivePort receivePort) {
-//	}
-
-	// TODO : Extract to somewhere useful!
-	private String getPropertiesEntryValueByKey(ReceivePort.Properties properties, String key) {
-		for(ReceivePort.Properties.Entry entry : properties.getEntry()) {
-			if (entry.getKey().equals(key))
-				return entry.getValue();
-		}
-		return null;
+		return server;
 	}
 }

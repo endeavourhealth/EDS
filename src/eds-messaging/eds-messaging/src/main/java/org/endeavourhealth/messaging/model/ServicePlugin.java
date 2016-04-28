@@ -1,7 +1,8 @@
-package org.endeavourhealth.messaging.configuration;
+package org.endeavourhealth.messaging.model;
 
-import org.endeavourhealth.messaging.configuration.schema.pluginConfiguration.*;
-import org.endeavourhealth.messaging.configuration.schema.pluginContracts.PluginContracts;
+import org.endeavourhealth.messaging.configuration.Constants;
+import org.endeavourhealth.messaging.configuration.schema.serviceConfiguration.*;
+import org.endeavourhealth.messaging.configuration.schema.serviceContracts.ServiceContracts;
 import org.endeavourhealth.messaging.model.IMessageProcessor;
 import org.endeavourhealth.messaging.model.IReceivePortHandler;
 import org.endeavourhealth.messaging.utilities.FileHelper;
@@ -10,15 +11,15 @@ import org.endeavourhealth.messaging.utilities.XmlHelper;
 
 import java.util.List;
 
-public class Plugin
+public class ServicePlugin
 {
     private String name;
     private String pathOnDisk;
     private String configurationXmlPath;
-    private PluginConfiguration pluginConfiguration;
-    private PluginContracts pluginContracts;
+    private ServiceConfiguration serviceConfiguration;
+    private ServiceContracts serviceContracts;
 
-    public Plugin(String name, String pathOnDisk, String configurationXmlPath) throws Exception
+    public ServicePlugin(String name, String pathOnDisk, String configurationXmlPath) throws Exception
     {
         this.name = name;
         this.pathOnDisk = pathOnDisk;
@@ -38,21 +39,26 @@ public class Plugin
     public void initialize() throws Exception
     {
         String configurationXml = FileHelper.loadStringFile(configurationXmlPath);
-        String routeConfigurationXsd = FileHelper.loadStringResource(PluginConfiguration.class.getResource(Constants.PLUGIN_CONFIGURATION_XSD));
+        String serviceConfigurationXsd = FileHelper.loadStringResource(ServiceConfiguration.class.getResource(Constants.SERVICE_CONFIGURATION_XSD));
 
-        XmlHelper.validate(configurationXml, routeConfigurationXsd);
+        XmlHelper.validate(configurationXml, serviceConfigurationXsd);
 
-        this.pluginConfiguration = XmlHelper.deserialize(configurationXml, PluginConfiguration.class);
+        this.serviceConfiguration = XmlHelper.deserialize(configurationXml, ServiceConfiguration.class);
     }
 
     public List<ReceivePort> getReceivePorts()
     {
-        return pluginConfiguration.getService().getReceivePorts().getReceivePort();
+        return serviceConfiguration.getService().getReceivePorts().getReceivePort();
+    }
+
+    public String getServiceId()
+    {
+        return serviceConfiguration.getService().getId();
     }
 
     public IReceivePortHandler getReceivePortHandler(String receivePortId) throws Exception
     {
-        for (ReceivePort receivePort : pluginConfiguration.getService().getReceivePorts().getReceivePort())
+        for (ReceivePort receivePort : serviceConfiguration.getService().getReceivePorts().getReceivePort())
             if (receivePort.getId().equals(receivePortId))
                 return (IReceivePortHandler)ReflectionHelper.instantiateObject(receivePort.getReceivePortHandlerClass());
 
@@ -61,7 +67,7 @@ public class Plugin
 
     public IMessageProcessor getMessageProcessor(String messageTypeId) throws Exception
     {
-        for (MessageType messageType : pluginConfiguration.getService().getMessageTypes().getMessageType())
+        for (MessageType messageType : serviceConfiguration.getService().getMessageTypes().getMessageType())
             if (messageType.getId().equals(messageTypeId))
                 return (IMessageProcessor)ReflectionHelper.instantiateObject(messageType.getMessageProcessorClass());
 

@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.messaging.configuration.schema.pluginConfiguration;
+package org.endeavourhealth.messaging.configuration.schema.serviceConfiguration;
 
 import java.math.BigInteger;
 import java.util.ArrayList;

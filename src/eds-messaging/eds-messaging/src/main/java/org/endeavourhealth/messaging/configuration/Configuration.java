@@ -5,6 +5,7 @@ import org.endeavourhealth.messaging.exceptions.ReceiverNotFoundException;
 import org.endeavourhealth.messaging.model.IMessageProcessor;
 import org.endeavourhealth.messaging.model.IReceivePortHandler;
 import org.endeavourhealth.messaging.model.MessageIdentity;
+import org.endeavourhealth.messaging.model.ServicePlugin;
 import org.endeavourhealth.messaging.utilities.Log;
 
 import java.io.File;
@@ -25,7 +26,7 @@ public class Configuration
         return instance;
     }
 
-    private List<Plugin> plugins;
+    private List<ServicePlugin> servicePlugins;
 
     protected Configuration()
     {
@@ -41,36 +42,37 @@ public class Configuration
         return getCodeSourceLocation().startsWith("jar:");
     }
 
-
-    public void loadPlugins() throws Exception
+    public void loadServicePlugins() throws Exception
     {
-        Log.info("Loading plugins:");
+        Log.info("Loading service plugins:");
 
-        PluginLoader pluginLoader = new PluginLoader(getCodeSourceLocation());
+        ServicePluginLoader servicePluginLoader = new ServicePluginLoader(getCodeSourceLocation());
 
-        this.plugins = pluginLoader.loadPlugins();
+        this.servicePlugins = servicePluginLoader.loadServicePlugins();
 
-        if (plugins.size() > 0)
-            plugins.forEach(t -> Log.info(" Loaded plugin '" + t.getName() + "'."));
+        if (servicePlugins.size() > 0)
+            servicePlugins.forEach(t -> Log.info(" Loaded plugin [" + t.getName() + "] containing service [" + t.getServiceId() + "]"));
         else
-            Log.info(" No plugins found.");
+            Log.info(" No service plugins found.");
+
+        Log.info("Service plugins loaded");
     }
 
-    public String getPluginPath() throws Exception
+    public String getServicePluginPath() throws Exception
     {
-        return new PluginLoader(getCodeSourceLocation()).getPluginsPath();
+        return new ServicePluginLoader(getCodeSourceLocation()).getPluginsPath();
     }
 
-    public List<Plugin> getPlugins()
+    public List<ServicePlugin> getServicePlugins()
     {
-        return plugins;
+        return servicePlugins;
     }
 
     public IMessageProcessor getMessageProcessor(MessageIdentity messageIdentity) throws Exception
     {
-        for (Plugin plugin : plugins)
+        for (ServicePlugin servicePlugin : servicePlugins)
         {
-            IMessageProcessor messageProcessor = plugin.getMessageProcessor(messageIdentity.getMessageTypeId());
+            IMessageProcessor messageProcessor = servicePlugin.getMessageProcessor(messageIdentity.getMessageTypeId());
 
             if (messageProcessor != null)
                 return messageProcessor;
@@ -81,9 +83,9 @@ public class Configuration
 
     public IReceivePortHandler getReceivePortHandler(String receivePortId) throws Exception
     {
-        for (Plugin plugin : plugins)
+        for (ServicePlugin servicePlugin : servicePlugins)
         {
-            IReceivePortHandler receivePortHandler = plugin.getReceivePortHandler(receivePortId);
+            IReceivePortHandler receivePortHandler = servicePlugin.getReceivePortHandler(receivePortId);
 
             if (receivePortHandler != null)
                 return receivePortHandler;

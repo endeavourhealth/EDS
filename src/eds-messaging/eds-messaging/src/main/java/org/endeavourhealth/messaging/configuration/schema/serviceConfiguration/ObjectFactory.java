@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.messaging.configuration.schema.pluginConfiguration;
+package org.endeavourhealth.messaging.configuration.schema.serviceConfiguration;
 
 import javax.xml.bind.annotation.XmlRegistry;
 
@@ -62,11 +62,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link PluginConfiguration }
+     * Create an instance of {@link ServiceConfiguration }
      * 
      */
-    public PluginConfiguration createPluginConfiguration() {
-        return new PluginConfiguration();
+    public ServiceConfiguration createServiceConfiguration() {
+        return new ServiceConfiguration();
     }
 
     /**

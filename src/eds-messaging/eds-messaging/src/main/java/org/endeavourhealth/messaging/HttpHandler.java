@@ -21,14 +21,16 @@ import java.util.Collections;
 
 public class HttpHandler extends HttpServlet
 {
+    public static final String SERVICEID_KEY = "ServiceId";
+    public static final String RECEIVEPORTID_KEY = "ReceivePortId";
+
     private void HandleRequest(HttpServletRequest request, HttpServletResponse response)
     {
-		String receivePortId = getInitParameter(FrameworkProtocolManager.RECEIVE_PORT_ID_KEY);
+        String serviceId = getInitParameter(HttpHandler.SERVICEID_KEY);
+        String receivePortId = getInitParameter(HttpHandler.RECEIVEPORTID_KEY);
 
         try
         {
-
-						// TODO : Get configuration based on message id
             Configuration configuration = Configuration.getInstance();
 
             HttpMessage message = HttpMessage.fromServletRequest(request);

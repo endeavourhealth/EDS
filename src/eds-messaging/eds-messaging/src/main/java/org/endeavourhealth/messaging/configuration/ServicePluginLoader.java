@@ -1,5 +1,7 @@
 package org.endeavourhealth.messaging.configuration;
 
+import org.endeavourhealth.messaging.configuration.schema.serviceConfiguration.Service;
+import org.endeavourhealth.messaging.model.ServicePlugin;
 import org.endeavourhealth.messaging.utilities.FileHelper;
 
 import java.io.File;
@@ -9,13 +11,12 @@ import java.net.URLClassLoader;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class PluginLoader
+public class ServicePluginLoader
 {
-
     private String pluginsPath = null;
     private String codeSourceLocation = null;
 
-    public PluginLoader(String codeSourceLocation) throws Exception
+    public ServicePluginLoader(String codeSourceLocation) throws Exception
     {
         this.codeSourceLocation = codeSourceLocation;
 
@@ -37,21 +38,21 @@ public class PluginLoader
         pluginsPath = pluginsRootPath;
     }
 
-    public List<Plugin> loadPlugins() throws Exception
+    public List<ServicePlugin> loadServicePlugins() throws Exception
     {
-        List<Plugin> plugins = getPlugins();
+        List<ServicePlugin> servicePlugins = getServicePlugins();
 
-        addPluginsToClasspath(plugins);
+        addServicePluginsToClasspath(servicePlugins);
 
-        for (Plugin plugin : plugins)
-            plugin.initialize();
+        for (ServicePlugin servicePlugin : servicePlugins)
+            servicePlugin.initialize();
 
-        return plugins;
+        return servicePlugins;
     }
 
-    private List<Plugin> getPlugins() throws Exception
+    private List<ServicePlugin> getServicePlugins() throws Exception
     {
-        List<Plugin> plugins = new ArrayList<>();
+        List<ServicePlugin> servicePlugins = new ArrayList<>();
 
         List<File> pluginPaths = Arrays.asList(new File(pluginsPath).listFiles())
                 .stream()
@@ -60,31 +61,29 @@ public class PluginLoader
 
         for (File pluginPath : pluginPaths)
         {
-            if (pluginPath.isDirectory())
-            {
-                String absoluteConfigurationXmlPath = FileHelper.findFileRecursive(pluginPath, Constants.PLUGIN_CONFIGURATION_XML);
-                //String configurationXmlPath = pluginDirectory.toURI().relativize(new File(absoluteConfigurationXmlPath).toURI()).getPath();
+            String configurationXmlPath;
 
-                plugins.add(new Plugin(pluginPath.getName(), pluginPath.getPath(), absoluteConfigurationXmlPath));
-            }
+            if (pluginPath.isDirectory())
+                configurationXmlPath = FileHelper.findFileRecursive(pluginPath, Constants.SERVICE_CONFIGURATION_XML);
             else if (pluginPath.getName().toLowerCase().endsWith(".jar"))
-            {
-                String configurationXmlPath = FileHelper.findFileInJar(pluginPath, Constants.PLUGIN_CONFIGURATION_XML);
-                plugins.add(new Plugin(pluginPath.getName(), pluginPath.getPath(), configurationXmlPath));
-            }
+                configurationXmlPath = FileHelper.findFileInJar(pluginPath, Constants.SERVICE_CONFIGURATION_XML);
+            else
+                continue;
+
+            servicePlugins.add(new ServicePlugin(pluginPath.getName(), pluginPath.getPath(), configurationXmlPath));
         }
 
-        return plugins;
+        return servicePlugins;
     }
 
-    private void addPluginsToClasspath(List<Plugin> plugins) throws Exception
+    private void addServicePluginsToClasspath(List<ServicePlugin> servicePlugins) throws Exception
     {
         ClassLoader currentThreadClassLoader = Thread.currentThread().getContextClassLoader();
 
         List<URL> urls = new ArrayList<>();
 
-        for (Plugin plugin : plugins)
-            urls.add(new File(plugin.getPathOnDisk()).toURI().toURL());
+        for (ServicePlugin servicePlugin : servicePlugins)
+            urls.add(new File(servicePlugin.getPathOnDisk()).toURI().toURL());
 
         URLClassLoader urlClassLoader = new URLClassLoader(urls.toArray(new URL[0]), currentThreadClassLoader);
 

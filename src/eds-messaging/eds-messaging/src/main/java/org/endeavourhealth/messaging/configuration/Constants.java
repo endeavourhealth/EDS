@@ -3,9 +3,10 @@ package org.endeavourhealth.messaging.configuration;
 public class Constants
 {
     public static final String PLUGIN_PREFIX = "org.endeavourhealth.messaging.plugin.";
-    public static final String PLUGIN_CONFIGURATION_XML = "PluginConfiguration.xml";
-    public static final String PLUGIN_CONFIGURATION_XSD = "PluginConfiguration.xsd";
     public static final String PLUGIN_SUB_DIRECTORY = "plugins";
 
-    public static final String LOGGER_NAME = "msgx";
+    public static final String SERVICE_CONFIGURATION_XML = "ServiceConfiguration.xml";
+    public static final String SERVICE_CONFIGURATION_XSD = "ServiceConfiguration.xsd";
+
+    public static final String LOGGER_NAME = "resolution";
 }

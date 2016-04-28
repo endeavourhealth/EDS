@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.messaging.configuration.schema.pluginContracts;
+package org.endeavourhealth.messaging.configuration.schema.serviceContracts;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -31,8 +31,8 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(name = "", propOrder = {
     "contracts"
 })
-@XmlRootElement(name = "PluginContracts")
-public class PluginContracts {
+@XmlRootElement(name = "ServiceContracts")
+public class ServiceContracts {
 
     @XmlElement(name = "Contracts", required = true)
     protected Contracts contracts;

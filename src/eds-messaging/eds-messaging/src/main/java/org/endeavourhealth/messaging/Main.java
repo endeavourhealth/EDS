@@ -7,9 +7,9 @@ public class Main
 {
     public static void main(String[] args) throws Exception
     {
-        Log.info("--------------------------------------------");
-        Log.info("Endeavour Msgx - a healthcare message engine");
-        Log.info("--------------------------------------------");
+        Log.info("--------------------------------------------------");
+        Log.info("Endeavour Resolution - a healthcare message engine");
+        Log.info("--------------------------------------------------");
 
         try
         {
@@ -17,30 +17,31 @@ public class Main
 
             Log.info("Is running as JAR = " + configuration.isRunningAsJar().toString());
             Log.info("Executing path = " + configuration.getCodeSourceLocation());
-            Log.info("Plugin path = " + configuration.getPluginPath());
-            Log.info("--------------------------------------------");
+            Log.info("Service plugin path = " + configuration.getServicePluginPath());
+            Log.info("--------------------------------------------------");
 
-            configuration.loadPlugins();
+            configuration.loadServicePlugins();
 
-            Log.info("Creating listeners:");
+            FrameworkProtocolManager frameworkProtocolManager = new FrameworkProtocolManager();
+            frameworkProtocolManager.createReceivePorts(configuration.getServicePlugins());
 
-						FrameworkProtocolManager.getInstance().createListeners(configuration);
+            frameworkProtocolManager.start();
 
-            Log.info("--------------------------------------------");
-            Log.info("Msgx started");
+            Log.info("--------------------------------------------------");
+            Log.info("Resolution started");
             Log.info("Press any key to exit...");
 
             System.in.read();
 
-						FrameworkProtocolManager.getInstance().shutdown();
+            frameworkProtocolManager.shutdown();
         }
         catch (Exception e)
         {
             Log.error("Fatal exception occurred", e);
         }
 
-        Log.info("--------------------------------------------");
+        Log.info("--------------------------------------------------");
         Log.info("Exiting");
-        Log.info("--------------------------------------------");
+        Log.info("--------------------------------------------------");
     }
 }
