@@ -7,7 +7,8 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.endeavourhealth.messaging.configuration.schema.serviceConfiguration.ReceivePort;
 import org.endeavourhealth.messaging.model.ReceivePortProperties;
 import org.endeavourhealth.messaging.model.ServicePlugin;
-import org.endeavourhealth.messaging.utilities.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +16,8 @@ import java.util.Map;
 
 public class FrameworkProtocolManager
 {
+	private static final Logger LOG = LoggerFactory.getLogger(FrameworkProtocolManager.class);
+
 	private Map<Integer, Server> httpServers;
 
 	public FrameworkProtocolManager()
@@ -24,38 +27,38 @@ public class FrameworkProtocolManager
 
 	public void createReceivePorts(List<ServicePlugin> servicePlugins) throws Exception
 	{
-		Log.info("Creating receive ports");
+		LOG.info("Creating receive ports");
 
 		for (ServicePlugin servicePlugin : servicePlugins)
 		{
-			Log.info(" For service [" + servicePlugin.getServiceId() + "]:");
+			LOG.info(" For service [" + servicePlugin.getServiceId() + "]:");
 
 			for (ReceivePort receivePort : servicePlugin.getReceivePorts())
 				registerReceivePort(servicePlugin.getServiceId(), receivePort);
 		}
 
-		Log.info("Receive ports created");
+		LOG.info("Receive ports created");
 	}
 
 	public void start() throws Exception
 	{
-		Log.info("Starting receive ports");
+		LOG.info("Starting receive ports");
 
 		for (Server server : httpServers.values())
 			server.start();
 
-		Log.info("Receive ports started");
+		LOG.info("Receive ports started");
 	}
 
 	public void shutdown() throws Exception	{
-		Log.info("Stopping receive ports");
+		LOG.info("Stopping receive ports");
 
 		for (Server s : httpServers.values()) {
 			s.stop();
 			s.join();
 		}
 
-		Log.info("Receive ports stopped");
+		LOG.info("Receive ports stopped");
 	}
 
 	private void registerReceivePort(String serviceId, ReceivePort receivePort) throws Exception {
@@ -72,7 +75,7 @@ public class FrameworkProtocolManager
 		Integer port = receivePort.getPort().intValue();
 		String path = receivePortProperties.getPath();
 
-		Log.info("  Creating receive port [" + receivePort.getId() + "] created with protocol [http], port [" + port.toString() + "],  path [" + path + "]");
+		LOG.info("  Creating receive port [" + receivePort.getId() + "] created with protocol [http], port [" + port.toString() + "],  path [" + path + "]");
 
 		Server server = getOrCreateHttpServer(port);
 

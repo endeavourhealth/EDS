@@ -1,24 +1,27 @@
 package org.endeavourhealth.messaging;
 
 import org.endeavourhealth.messaging.configuration.Configuration;
-import org.endeavourhealth.messaging.utilities.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Main
 {
+    private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+
     public static void main(String[] args) throws Exception
     {
-        Log.info("--------------------------------------------------");
-        Log.info("Endeavour Resolution - a healthcare message engine");
-        Log.info("--------------------------------------------------");
+        LOG.info("--------------------------------------------------");
+        LOG.info("Endeavour Resolution - a healthcare message engine");
+        LOG.info("--------------------------------------------------");
 
         try
         {
             Configuration configuration = Configuration.getInstance();
 
-            Log.info("Is running as JAR = " + configuration.isRunningAsJar().toString());
-            Log.info("Executing path = " + configuration.getCodeSourceLocation());
-            Log.info("Service plugin path = " + configuration.getServicePluginPath());
-            Log.info("--------------------------------------------------");
+            LOG.info("Is running as JAR = " + configuration.isRunningAsJar().toString());
+            LOG.info("Executing path = " + configuration.getCodeSourceLocation());
+            LOG.info("Service plugin path = " + configuration.getServicePluginPath());
+            LOG.info("--------------------------------------------------");
 
             configuration.loadServicePlugins();
 
@@ -27,9 +30,9 @@ public class Main
 
             frameworkProtocolManager.start();
 
-            Log.info("--------------------------------------------------");
-            Log.info("Resolution started");
-            Log.info("Press any key to exit...");
+            LOG.info("--------------------------------------------------");
+            LOG.info("Resolution started");
+            LOG.info("Press any key to exit...");
 
             System.in.read();
 
@@ -37,11 +40,11 @@ public class Main
         }
         catch (Exception e)
         {
-            Log.error("Fatal exception occurred", e);
+            LOG.error("Fatal exception occurred", e);
         }
 
-        Log.info("--------------------------------------------------");
-        Log.info("Exiting");
-        Log.info("--------------------------------------------------");
+        LOG.info("--------------------------------------------------");
+        LOG.info("Exiting");
+        LOG.info("--------------------------------------------------");
     }
 }

@@ -6,7 +6,8 @@ import org.endeavourhealth.messaging.model.IMessageProcessor;
 import org.endeavourhealth.messaging.model.IReceivePortHandler;
 import org.endeavourhealth.messaging.model.MessageIdentity;
 import org.endeavourhealth.messaging.model.ServicePlugin;
-import org.endeavourhealth.messaging.utilities.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -14,6 +15,7 @@ import java.util.List;
 
 public class Configuration
 {
+    private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
     private static Configuration instance = null;
 
     public static Configuration getInstance() throws Exception
@@ -44,18 +46,18 @@ public class Configuration
 
     public void loadServicePlugins() throws Exception
     {
-        Log.info("Loading service plugins:");
+        LOG.info("Loading service plugins:");
 
         ServicePluginLoader servicePluginLoader = new ServicePluginLoader(getCodeSourceLocation());
 
         this.servicePlugins = servicePluginLoader.loadServicePlugins();
 
         if (servicePlugins.size() > 0)
-            servicePlugins.forEach(t -> Log.info(" Loaded plugin [" + t.getName() + "] containing service [" + t.getServiceId() + "]"));
+            servicePlugins.forEach(t -> LOG.info(" Loaded plugin [" + t.getName() + "] containing service [" + t.getServiceId() + "]"));
         else
-            Log.info(" No service plugins found.");
+            LOG.info(" No service plugins found.");
 
-        Log.info("Service plugins loaded");
+        LOG.info("Service plugins loaded");
     }
 
     public String getServicePluginPath() throws Exception

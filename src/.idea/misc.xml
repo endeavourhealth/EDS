@@ -8,6 +8,7 @@
       <list>
         <option value="$PROJECT_DIR$/eds-messaging/eds-messaging-plugin-dataservice/pom.xml" />
         <option value="$PROJECT_DIR$/eds-messaging/eds-messaging/pom.xml" />
+        <option value="$PROJECT_DIR$/eds-core/pom.xml" />
       </list>
     </option>
   </component>

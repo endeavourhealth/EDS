@@ -9,7 +9,8 @@ import org.endeavourhealth.messaging.model.IReceivePortHandler;
 import org.endeavourhealth.messaging.exceptions.ReceiverNotFoundException;
 import org.endeavourhealth.messaging.model.MessageIdentity;
 import org.endeavourhealth.messaging.utilities.HttpContentType;
-import org.endeavourhealth.messaging.utilities.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -21,6 +22,8 @@ import java.util.Collections;
 
 public class HttpHandler extends HttpServlet
 {
+    private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
+
     public static final String SERVICEID_KEY = "ServiceId";
     public static final String RECEIVEPORTID_KEY = "ReceivePortId";
 
@@ -69,7 +72,7 @@ public class HttpHandler extends HttpServlet
             catch (Exception e2)
             {
                 // argh?!
-                Log.error("Error occurred handling exception in HttpHandler", e2);
+                LOG.error("Error occurred handling exception in HttpHandler", e2);
             }
         }
     }
