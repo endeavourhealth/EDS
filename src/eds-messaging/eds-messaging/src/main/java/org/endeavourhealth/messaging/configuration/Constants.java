@@ -7,6 +7,4 @@ public class Constants
 
     public static final String SERVICE_CONFIGURATION_XML = "ServiceConfiguration.xml";
     public static final String SERVICE_CONFIGURATION_XSD = "ServiceConfiguration.xsd";
-
-    public static final String LOGGER_NAME = "resolution";
 }
