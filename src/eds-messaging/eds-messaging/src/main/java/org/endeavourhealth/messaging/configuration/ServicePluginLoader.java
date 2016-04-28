@@ -1,11 +1,9 @@
 package org.endeavourhealth.messaging.configuration;
 
-import org.endeavourhealth.messaging.configuration.schema.serviceConfiguration.Service;
 import org.endeavourhealth.messaging.model.ServicePlugin;
 import org.endeavourhealth.messaging.utilities.FileHelper;
 
 import java.io.File;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;

@@ -5,7 +5,7 @@ import org.endeavourhealth.messaging.configuration.Configuration;
 import org.endeavourhealth.messaging.exceptions.ReceiverMethodNotSupportedException;
 import org.endeavourhealth.messaging.utilities.html.Html;
 import org.endeavourhealth.messaging.model.HttpMessage;
-import org.endeavourhealth.messaging.model.IReceivePortHandler;
+import org.endeavourhealth.messaging.model.IReceiver;
 import org.endeavourhealth.messaging.exceptions.ReceiverNotFoundException;
 import org.endeavourhealth.messaging.model.MessageIdentity;
 import org.endeavourhealth.messaging.utilities.HttpContentType;
@@ -38,7 +38,7 @@ public class HttpHandler extends HttpServlet
 
             HttpMessage message = HttpMessage.fromServletRequest(request);
 
-            IReceivePortHandler receivePortHandler = configuration.getReceivePortHandler(receivePortId);
+            IReceiver receivePortHandler = configuration.getReceivePortHandler(receivePortId);
 
             try
             {
@@ -109,7 +109,7 @@ public class HttpHandler extends HttpServlet
         response.getWriter().write(content);
     }
 
-    private void PrintInfo(HttpServletRequest request, HttpServletResponse response, IReceivePortHandler receiver) throws IOException
+    private void PrintInfo(HttpServletRequest request, HttpServletResponse response, IReceiver receiver) throws IOException
     {
         response.setContentType(HttpContentType.TEXT_HTML);
         response.setStatus(HttpServletResponse.SC_OK);

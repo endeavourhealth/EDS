@@ -7,7 +7,7 @@ import javax.xml.bind.annotation.XmlRegistry;
 /**
  * This object contains factory methods for each 
  * Java content interface and Java element interface 
- * generated in the org.endeavourhealth.messaging.configuration.schema.pluginConfiguration package. 
+ * generated in the org.endeavourhealth.messaging.configuration.schema.serviceConfiguration package. 
  * <p>An ObjectFactory allows you to programatically 
  * construct new instances of the Java representation 
  * for XML content. The Java representation of XML 
@@ -23,34 +23,26 @@ public class ObjectFactory {
 
 
     /**
-     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.endeavourhealth.messaging.configuration.schema.pluginConfiguration
+     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.endeavourhealth.messaging.configuration.schema.serviceConfiguration
      * 
      */
     public ObjectFactory() {
     }
 
     /**
-     * Create an instance of {@link Route }
+     * Create an instance of {@link RabbitListener }
      * 
      */
-    public Route createRoute() {
-        return new Route();
+    public RabbitListener createRabbitListener() {
+        return new RabbitListener();
     }
 
     /**
-     * Create an instance of {@link ReceivePort }
+     * Create an instance of {@link RabbitListener.Nodes }
      * 
      */
-    public ReceivePort createReceivePort() {
-        return new ReceivePort();
-    }
-
-    /**
-     * Create an instance of {@link ReceivePort.Properties }
-     * 
-     */
-    public ReceivePort.Properties createReceivePortProperties() {
-        return new ReceivePort.Properties();
+    public RabbitListener.Nodes createRabbitListenerNodes() {
+        return new RabbitListener.Nodes();
     }
 
     /**
@@ -70,11 +62,27 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link SendPortType }
+     * Create an instance of {@link HttpReceiver }
      * 
      */
-    public SendPortType createSendPortType() {
-        return new SendPortType();
+    public HttpReceiver createHttpReceiver() {
+        return new HttpReceiver();
+    }
+
+    /**
+     * Create an instance of {@link HttpListener }
+     * 
+     */
+    public HttpListener createHttpListener() {
+        return new HttpListener();
+    }
+
+    /**
+     * Create an instance of {@link RabbitReceiver }
+     * 
+     */
+    public RabbitReceiver createRabbitReceiver() {
+        return new RabbitReceiver();
     }
 
     /**
@@ -86,27 +94,27 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link Route.MessageTypes }
+     * Create an instance of {@link RabbitListener.Credentials }
      * 
      */
-    public Route.MessageTypes createRouteMessageTypes() {
-        return new Route.MessageTypes();
+    public RabbitListener.Credentials createRabbitListenerCredentials() {
+        return new RabbitListener.Credentials();
     }
 
     /**
-     * Create an instance of {@link ReceivePort.Properties.Entry }
+     * Create an instance of {@link RabbitListener.Nodes.NodeHostName }
      * 
      */
-    public ReceivePort.Properties.Entry createReceivePortPropertiesEntry() {
-        return new ReceivePort.Properties.Entry();
+    public RabbitListener.Nodes.NodeHostName createRabbitListenerNodesNodeHostName() {
+        return new RabbitListener.Nodes.NodeHostName();
     }
 
     /**
-     * Create an instance of {@link Service.ReceivePorts }
+     * Create an instance of {@link Service.Listeners }
      * 
      */
-    public Service.ReceivePorts createServiceReceivePorts() {
-        return new Service.ReceivePorts();
+    public Service.Listeners createServiceListeners() {
+        return new Service.Listeners();
     }
 
     /**
@@ -115,22 +123,6 @@ public class ObjectFactory {
      */
     public Service.MessageTypes createServiceMessageTypes() {
         return new Service.MessageTypes();
-    }
-
-    /**
-     * Create an instance of {@link Service.SendPorts }
-     * 
-     */
-    public Service.SendPorts createServiceSendPorts() {
-        return new Service.SendPorts();
-    }
-
-    /**
-     * Create an instance of {@link Service.Routes }
-     * 
-     */
-    public Service.Routes createServiceRoutes() {
-        return new Service.Routes();
     }
 
 }

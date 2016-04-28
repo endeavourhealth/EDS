@@ -3,7 +3,7 @@ package org.endeavourhealth.messaging.configuration;
 import org.endeavourhealth.messaging.exceptions.MessageNotFoundException;
 import org.endeavourhealth.messaging.exceptions.ReceiverNotFoundException;
 import org.endeavourhealth.messaging.model.IMessageProcessor;
-import org.endeavourhealth.messaging.model.IReceivePortHandler;
+import org.endeavourhealth.messaging.model.IReceiver;
 import org.endeavourhealth.messaging.model.MessageIdentity;
 import org.endeavourhealth.messaging.model.ServicePlugin;
 import org.slf4j.Logger;
@@ -83,11 +83,11 @@ public class Configuration
         throw new MessageNotFoundException();
     }
 
-    public IReceivePortHandler getReceivePortHandler(String receivePortId) throws Exception
+    public IReceiver getReceivePortHandler(String receivePortId) throws Exception
     {
         for (ServicePlugin servicePlugin : servicePlugins)
         {
-            IReceivePortHandler receivePortHandler = servicePlugin.getReceivePortHandler(receivePortId);
+            IReceiver receivePortHandler = null; //servicePlugin.getReceivePortHandler(receivePortId);
 
             if (receivePortHandler != null)
                 return receivePortHandler;

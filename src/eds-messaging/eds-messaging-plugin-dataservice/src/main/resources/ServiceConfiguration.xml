@@ -2,20 +2,37 @@
 <ServiceConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:///../../../../eds-messaging/src/main/java/org/endeavourhealth/messaging/configuration/schema/serviceConfiguration/ServiceConfiguration.xsd">
 	<Service>
 		<Id>endeavour-dataservice</Id>
-
-		<ReceivePorts>
-			<ReceivePort>
-				<Id>endeavour-envelope-receiver</Id>
-				<Protocol>http</Protocol>
+		<Listeners>
+			<HttpListener>
 				<Port>8080</Port>
-				<Properties>
-					<Entry key="Path">/dataservice/$post-endeavour-envelope</Entry>
-					<Entry key="Methods">post</Entry>
-					<Entry key="IncludeSubPaths">false</Entry>
-				</Properties>
-				<ReceivePortHandlerClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceivePortHandler</ReceivePortHandlerClass>
-			</ReceivePort>
-		</ReceivePorts>
+				<Receiver>
+					<Path>/dataservice/$post-endeavour-envelope</Path>
+					<Methods>post</Methods>
+					<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
+				</Receiver>
+				<Receiver>
+					<Path>/dataservice/rest/</Path>
+					<IncludeSubPaths>true</IncludeSubPaths>
+					<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
+				</Receiver>
+			</HttpListener>
+			<RabbitListener>
+				<Credentials>
+					<Username>username</Username>
+					<Password>password</Password>
+				</Credentials>
+				<Nodes>
+					<NodeHostName>127.0.0.1</NodeHostName>
+					<NodeHostName port="10001">127.0.0.1</NodeHostName>
+				</Nodes>
+				<Receiver>
+					<Queue>MyQueue</Queue>
+					<RoutingKey>MyQueue</RoutingKey>
+					<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
+				</Receiver>
+			</RabbitListener>
+		</Listeners>
+
 		<MessageTypes>
 			<MessageType>
 				<Id>PostEOpenPatientRecord1-0</Id>
@@ -24,24 +41,6 @@
 				<MessageProcessorClass>org.endeavourhealth.messaging.plugin.dataservice.PostEOpenPatientRecordProcessor</MessageProcessorClass>
 			</MessageType>
 		</MessageTypes>
-		<SendPorts>
-			<SendPort>
-				<Id>fhir-messaging-rabbitmq</Id>
-				<RabbitMQ>
 
-				</RabbitMQ>
-				<SendPortClass/>
-			</SendPort>
-		</SendPorts>
-		<Routes>
-			<Route>
-				<Id/>
-				<SendPortId>fhir-messaging-http</SendPortId>
-				<ReceivePortId>fhir-messaging-rabbitmq</ReceivePortId>
-				<MessageTypes>
-					<Id>UploadEmisOpenPatient-v0-0-2</Id>
-				</MessageTypes>
-			</Route>
-		</Routes>
 	</Service>
 </ServiceConfiguration>

@@ -1,13 +1,13 @@
 package org.endeavourhealth.messaging.plugin.dataservice;
 
 import org.endeavourhealth.messaging.exceptions.EndpointException;
-import org.endeavourhealth.messaging.model.IReceivePortHandler;
+import org.endeavourhealth.messaging.model.IReceiver;
 import org.endeavourhealth.messaging.model.Message;
 import org.endeavourhealth.messaging.model.MessageIdentity;
 import org.endeavourhealth.messaging.utilities.XmlHelper;
 import org.w3c.dom.Document;
 
-public class EndeavourEnvelopeReceivePortHandler implements IReceivePortHandler
+public class EndeavourEnvelopeReceiver implements IReceiver
 {
     @Override
     public MessageIdentity identifyMessage(Message message) throws EndpointException

@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2014 rel. 2 sp1 (x64) (http://www.altova.com) by Jonny Rylands (Egton Medical Information System) -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:simpleType name="nonEmptyString">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:pattern value=".*[^\s].*"/>
+		</xs:restriction>
+	</xs:simpleType>
 	<xs:element name="ServiceConfiguration">
 		<xs:complexType>
 			<xs:sequence>
@@ -9,11 +16,12 @@
 	</xs:element>
 	<xs:complexType name="Service">
 		<xs:sequence>
-			<xs:element name="Id" type="xs:string"/>
-			<xs:element name="ReceivePorts">
+			<xs:element name="Id" type="nonEmptyString"/>
+			<xs:element name="Listeners">
 				<xs:complexType>
-					<xs:sequence minOccurs="0" maxOccurs="unbounded">
-						<xs:element name="ReceivePort" type="ReceivePort"/>
+					<xs:sequence>
+						<xs:element name="HttpListener" type="HttpListener" minOccurs="0" maxOccurs="unbounded"/>
+						<xs:element name="RabbitListener" type="RabbitListener" minOccurs="0" maxOccurs="unbounded"/>
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>
@@ -24,53 +32,6 @@
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>
-			<xs:element name="SendPorts">
-				<xs:complexType>
-					<xs:sequence minOccurs="0" maxOccurs="unbounded">
-						<xs:element name="SendPort" type="SendPortType"/>
-					</xs:sequence>
-				</xs:complexType>
-			</xs:element>
-			<xs:element name="Routes">
-				<xs:complexType>
-					<xs:sequence>
-						<xs:element name="Route" type="Route"/>
-					</xs:sequence>
-				</xs:complexType>
-			</xs:element>
-		</xs:sequence>
-	</xs:complexType>
-	<xs:complexType name="ReceivePort">
-		<xs:sequence>
-			<xs:element name="Id" type="xs:string"/>
-			<xs:element name="Protocol" type="ProtocolType"/>
-			<xs:element name="Port" type="xs:integer"/>
-			<xs:element name="Properties">
-				<xs:complexType>
-					<xs:sequence minOccurs="0" maxOccurs="unbounded">
-						<xs:element name="Entry">
-							<xs:complexType>
-								<xs:simpleContent>
-									<xs:extension base="xs:string">
-										<xs:attribute name="key" type="xs:string" use="required"/>
-									</xs:extension>
-								</xs:simpleContent>
-							</xs:complexType>
-						</xs:element>
-					</xs:sequence>
-				</xs:complexType>
-			</xs:element>
-			<xs:element name="ReceivePortHandlerClass" type="xs:string"/>
-		</xs:sequence>
-	</xs:complexType>
-	<xs:complexType name="SendPortType">
-		<xs:sequence>
-			<xs:element name="Id" type="xs:string"/>
-			<xs:choice>
-				<xs:element name="Http" type="xs:string"/>
-				<xs:element name="RabbitMQ" type="xs:string"/>
-			</xs:choice>
-			<xs:element name="SendPortClass" type="xs:string"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="MessageType">
@@ -81,23 +42,53 @@
 			<xs:element name="MessageProcessorClass" type="xs:string"/>
 		</xs:sequence>
 	</xs:complexType>
-	<xs:complexType name="Route">
+	<xs:complexType name="HttpListener">
 		<xs:sequence>
-			<xs:element name="Id"/>
-			<xs:element name="SendPortId"/>
-			<xs:element name="ReceivePortId"/>
-			<xs:element name="MessageTypes">
+			<xs:element name="Port" type="xs:int"/>
+			<xs:element name="Receiver" type="HttpReceiver" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="RabbitListener">
+		<xs:sequence>
+			<xs:element name="Credentials">
 				<xs:complexType>
-					<xs:sequence minOccurs="0" maxOccurs="unbounded">
-						<xs:element name="Id"/>
+					<xs:sequence>
+						<xs:element name="Username" type="nonEmptyString"/>
+						<xs:element name="Password" type="nonEmptyString"/>
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>
+			<xs:element name="Nodes">
+				<xs:complexType>
+					<xs:sequence maxOccurs="unbounded">
+						<xs:element name="NodeHostName">
+							<xs:complexType>
+								<xs:simpleContent>
+									<xs:extension base="nonEmptyString">
+										<xs:attribute name="port" type="xs:int" use="optional"/>
+									</xs:extension>
+								</xs:simpleContent>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Receiver" type="RabbitReceiver" minOccurs="0" maxOccurs="unbounded"/>
 		</xs:sequence>
 	</xs:complexType>
-	<xs:simpleType name="ProtocolType">
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="http"/>
-		</xs:restriction>
-	</xs:simpleType>
+	<xs:complexType name="HttpReceiver">
+		<xs:sequence>
+			<xs:element name="Path" type="nonEmptyString"/>
+			<xs:element name="Methods" type="nonEmptyString" minOccurs="0"/>
+			<xs:element name="IncludeSubPaths" type="xs:boolean" default="false" minOccurs="0"/>
+			<xs:element name="ReceiverClass" type="nonEmptyString"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="RabbitReceiver">
+		<xs:sequence>
+			<xs:element name="Queue" type="nonEmptyString"/>
+			<xs:element name="RoutingKey" type="nonEmptyString"/>
+			<xs:element name="ReceiverClass" type="nonEmptyString"/>
+		</xs:sequence>
+	</xs:complexType>
 </xs:schema>

@@ -3,13 +3,9 @@ package org.endeavourhealth.messaging.model;
 import org.endeavourhealth.messaging.configuration.Constants;
 import org.endeavourhealth.messaging.configuration.schema.serviceConfiguration.*;
 import org.endeavourhealth.messaging.configuration.schema.serviceContracts.ServiceContracts;
-import org.endeavourhealth.messaging.model.IMessageProcessor;
-import org.endeavourhealth.messaging.model.IReceivePortHandler;
 import org.endeavourhealth.messaging.utilities.FileHelper;
 import org.endeavourhealth.messaging.utilities.ReflectionHelper;
 import org.endeavourhealth.messaging.utilities.XmlHelper;
-
-import java.util.List;
 
 public class ServicePlugin
 {
@@ -46,23 +42,14 @@ public class ServicePlugin
         this.serviceConfiguration = XmlHelper.deserialize(configurationXml, ServiceConfiguration.class);
     }
 
-    public List<ReceivePort> getReceivePorts()
+    public Service.Listeners getListeners()
     {
-        return serviceConfiguration.getService().getReceivePorts().getReceivePort();
+        return serviceConfiguration.getService().getListeners();
     }
 
     public String getServiceId()
     {
         return serviceConfiguration.getService().getId();
-    }
-
-    public IReceivePortHandler getReceivePortHandler(String receivePortId) throws Exception
-    {
-        for (ReceivePort receivePort : serviceConfiguration.getService().getReceivePorts().getReceivePort())
-            if (receivePort.getId().equals(receivePortId))
-                return (IReceivePortHandler)ReflectionHelper.instantiateObject(receivePort.getReceivePortHandlerClass());
-
-        return null;
     }
 
     public IMessageProcessor getMessageProcessor(String messageTypeId) throws Exception

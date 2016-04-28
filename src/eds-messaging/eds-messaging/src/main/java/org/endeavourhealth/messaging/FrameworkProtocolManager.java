@@ -1,11 +1,11 @@
 package org.endeavourhealth.messaging;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.endeavourhealth.messaging.configuration.schema.serviceConfiguration.ReceivePort;
-import org.endeavourhealth.messaging.model.ReceivePortProperties;
+import org.endeavourhealth.messaging.configuration.schema.serviceConfiguration.HttpListener;
+import org.endeavourhealth.messaging.configuration.schema.serviceConfiguration.HttpReceiver;
+import org.endeavourhealth.messaging.configuration.schema.serviceConfiguration.RabbitListener;
 import org.endeavourhealth.messaging.model.ServicePlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,14 +27,28 @@ public class FrameworkProtocolManager
 
 	public void createReceivePorts(List<ServicePlugin> servicePlugins) throws Exception
 	{
-		LOG.info("Creating receive ports");
+		LOG.info("Creating listeners");
 
 		for (ServicePlugin servicePlugin : servicePlugins)
 		{
 			LOG.info(" For service [" + servicePlugin.getServiceId() + "]:");
 
-			for (ReceivePort receivePort : servicePlugin.getReceivePorts())
-				registerReceivePort(servicePlugin.getServiceId(), receivePort);
+			for (HttpListener httpListener : servicePlugin.getListeners().getHttpListener())
+			{
+				LOG.info("   Created http listener protocol on port " + Integer.toString(httpListener.getPort()));
+
+				Server server = getOrCreateHttpServer(httpListener.getPort());
+
+				for (HttpReceiver httpReceiver : httpListener.getReceiver())
+				{
+					createHttpReceivers(servicePlugin.getServiceId(), server, httpReceiver);
+				}
+			}
+
+			for (RabbitListener rabbitListener : servicePlugin.getListeners().getRabbitListener())
+			{
+
+			}
 		}
 
 		LOG.info("Receive ports created");
@@ -50,41 +64,17 @@ public class FrameworkProtocolManager
 		LOG.info("Receive ports started");
 	}
 
-	public void shutdown() throws Exception	{
+	public void shutdown() throws Exception
+	{
 		LOG.info("Stopping receive ports");
 
-		for (Server s : httpServers.values()) {
+		for (Server s : httpServers.values())
+		{
 			s.stop();
 			s.join();
 		}
 
 		LOG.info("Receive ports stopped");
-	}
-
-	private void registerReceivePort(String serviceId, ReceivePort receivePort) throws Exception {
-		switch (receivePort.getProtocol())
-		{
-			case HTTP: registerHttpReceivePort(serviceId, receivePort); break;
-			default: throw new NotImplementedException(receivePort.getProtocol().value());
-		}
-	}
-
-	private void registerHttpReceivePort(String serviceId, ReceivePort receivePort) throws Exception
-	{
-		ReceivePortProperties receivePortProperties = ReceivePortProperties.fromConfiguration(receivePort.getProperties());
-		Integer port = receivePort.getPort().intValue();
-		String path = receivePortProperties.getPath();
-
-		LOG.info("  Creating receive port [" + receivePort.getId() + "] created with protocol [http], port [" + port.toString() + "],  path [" + path + "]");
-
-		Server server = getOrCreateHttpServer(port);
-
-		ServletHolder holder = new ServletHolder(HttpHandler.class);
-		holder.setInitParameter(HttpHandler.SERVICEID_KEY, serviceId);
-		holder.setInitParameter(HttpHandler.RECEIVEPORTID_KEY, receivePort.getId());
-
-		ServletHandler handler = (ServletHandler)server.getHandler();
-		handler.addServletWithMapping(holder, path);
 	}
 
 	private Server getOrCreateHttpServer(int port)
@@ -100,5 +90,16 @@ public class FrameworkProtocolManager
 		}
 
 		return server;
+	}
+
+	private void createHttpReceivers(String serviceId, Server server, HttpReceiver httpReceiver) throws Exception
+	{
+		LOG.info("   Creating receiver at path [" + httpReceiver.getPath() + "]");
+
+		ServletHolder holder = new ServletHolder(HttpHandler.class);
+		holder.setInitParameter(HttpHandler.SERVICEID_KEY, serviceId);
+
+		ServletHandler handler = (ServletHandler)server.getHandler();
+		handler.addServletWithMapping(holder, httpReceiver.getPath());
 	}
 }
