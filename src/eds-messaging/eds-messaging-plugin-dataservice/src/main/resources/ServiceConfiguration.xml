@@ -27,7 +27,8 @@
 				</Nodes>
 				<Receiver>
 					<Queue>MyQueue</Queue>
-					<RoutingKey>MyQueue</RoutingKey>
+					<Exchange>MyExchange</Exchange>
+					<RoutingKey>MyKey</RoutingKey>
 					<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
 				</Receiver>
 			</RabbitListener>

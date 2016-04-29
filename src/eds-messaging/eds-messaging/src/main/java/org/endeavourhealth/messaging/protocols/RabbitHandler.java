@@ -6,6 +6,7 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import org.endeavourhealth.messaging.MessagePipeline;
 import org.endeavourhealth.messaging.configuration.Configuration;
+import org.endeavourhealth.messaging.configuration.schema.serviceConfiguration.RabbitReceiver;
 import org.endeavourhealth.messaging.model.IReceiver;
 import org.endeavourhealth.messaging.model.Message;
 import org.endeavourhealth.messaging.model.MessageIdentity;
@@ -18,27 +19,34 @@ import java.util.concurrent.TimeoutException;
 public class RabbitHandler extends DefaultConsumer{
 	private Channel channel;
 	private String serviceId;
-	private String queueName;
+	private RabbitReceiver receiver;
 	private IReceiver receivePortHandler;
 
-	public RabbitHandler(Channel channel, String serviceId, String queueName, String receiverClass) throws Exception {
+	public RabbitHandler(Channel channel, String serviceId, RabbitReceiver receiver) throws Exception {
 		super(channel);
 		this.channel = channel;
 		this.serviceId = serviceId;
-		this.queueName = queueName;
+		this.receiver = receiver;
 		Configuration configuration = Configuration.getInstance();
 
-		receivePortHandler = configuration.getReceivePortHandler(receiverClass);
+		receivePortHandler = configuration.getReceivePortHandler(receiver.getReceiverClass());
 
 		channel.basicQos(1);
-		channel.queueDeclare(queueName, false, false, false, null);
+		channel.queueDeclare(receiver.getQueue(), false, false, false, null);
 	}
 
 	public void start() throws IOException {
-		channel.basicConsume(queueName, true, this);
+		// If exchange is given then bind
+		if (receiver.getExchange() != null && receiver.getRoutingKey() != null)
+			channel.queueBind(receiver.getQueue(), receiver.getExchange(), receiver.getRoutingKey());
+
+		channel.basicConsume(receiver.getQueue(), true, this);
 	}
 
 	public void stop() throws IOException, TimeoutException {
+		if (receiver.getExchange() != null && receiver.getRoutingKey() != null)
+			channel.queueUnbind(receiver.getQueue(), receiver.getExchange(), receiver.getRoutingKey());
+
 		channel.close();
 	}
 

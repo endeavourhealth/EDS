@@ -18,7 +18,8 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="Queue" type="{}nonEmptyString"/>
- *         &lt;element name="RoutingKey" type="{}nonEmptyString"/>
+ *         &lt;element name="Exchange" type="{}nonEmptyString" minOccurs="0"/>
+ *         &lt;element name="RoutingKey" type="{}nonEmptyString" minOccurs="0"/>
  *         &lt;element name="ReceiverClass" type="{}nonEmptyString"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -31,6 +32,7 @@ import javax.xml.bind.annotation.XmlType;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "RabbitReceiver", propOrder = {
     "queue",
+    "exchange",
     "routingKey",
     "receiverClass"
 })
@@ -38,7 +40,9 @@ public class RabbitReceiver {
 
     @XmlElement(name = "Queue", required = true)
     protected String queue;
-    @XmlElement(name = "RoutingKey", required = true)
+    @XmlElement(name = "Exchange")
+    protected String exchange;
+    @XmlElement(name = "RoutingKey")
     protected String routingKey;
     @XmlElement(name = "ReceiverClass", required = true)
     protected String receiverClass;
@@ -65,6 +69,30 @@ public class RabbitReceiver {
      */
     public void setQueue(String value) {
         this.queue = value;
+    }
+
+    /**
+     * Gets the value of the exchange property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getExchange() {
+        return exchange;
+    }
+
+    /**
+     * Sets the value of the exchange property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setExchange(String value) {
+        this.exchange = value;
     }
 
     /**

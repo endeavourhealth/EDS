@@ -26,7 +26,7 @@ public class RabbitReceivePortManager {
 		// Create a channel & consumer for each receiver
 		for (RabbitReceiver receiver : rabbitListener.getReceiver()) {
 			Channel channel = connection.createChannel();
-			RabbitHandler consumer = new RabbitHandler(channel, serviceId, receiver.getQueue(), receiver.getReceiverClass());
+			RabbitHandler consumer = new RabbitHandler(channel, serviceId, receiver);
 			consumers.add(consumer);
 		}
 	}
