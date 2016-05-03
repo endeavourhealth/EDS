@@ -38,14 +38,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link RabbitListener.Nodes }
-     * 
-     */
-    public RabbitListener.Nodes createRabbitListenerNodes() {
-        return new RabbitListener.Nodes();
-    }
-
-    /**
      * Create an instance of {@link Service }
      * 
      */
@@ -99,14 +91,6 @@ public class ObjectFactory {
      */
     public RabbitListener.Credentials createRabbitListenerCredentials() {
         return new RabbitListener.Credentials();
-    }
-
-    /**
-     * Create an instance of {@link RabbitListener.Nodes.NodeHostName }
-     * 
-     */
-    public RabbitListener.Nodes.NodeHostName createRabbitListenerNodesNodeHostName() {
-        return new RabbitListener.Nodes.NodeHostName();
     }
 
     /**

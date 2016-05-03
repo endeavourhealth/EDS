@@ -36,23 +36,9 @@ public class RabbitReceivePortManager {
 		connectionFactory.setUsername(rabbitListener.getCredentials().getUsername());
 		connectionFactory.setPassword(rabbitListener.getCredentials().getPassword());
 
-		Address[] addresses = getAddressesFromNodeHostNameList(rabbitListener.getNodes().getNodeHostName());
-		Connection connection = connectionFactory.newConnection(addresses);
+		Address[] addresses = Address.parseAddresses(rabbitListener.getNodes());
 
-		return connection;
-	}
-
-	private Address[] getAddressesFromNodeHostNameList(List<RabbitListener.Nodes.NodeHostName> nodeHostNameList) {
-		Address[] addresses = new Address[nodeHostNameList.size()];
-		for (int i = 0; i < nodeHostNameList.size(); i++) {
-			RabbitListener.Nodes.NodeHostName nodeHostName = nodeHostNameList.get(i);
-			if (nodeHostName.getPort() == null)
-				addresses[i] = new Address(nodeHostName.getValue());
-			else
-				addresses[i] = new Address(nodeHostName.getValue(), nodeHostName.getPort());
-		}
-
-		return addresses;
+		return connectionFactory.newConnection(addresses);
 	}
 
 	public void start() throws IOException {

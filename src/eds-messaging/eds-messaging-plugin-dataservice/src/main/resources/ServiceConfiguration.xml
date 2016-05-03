@@ -21,10 +21,7 @@
 					<Username>username</Username>
 					<Password>password</Password>
 				</Credentials>
-				<Nodes>
-					<NodeHostName>127.0.0.1</NodeHostName>
-					<NodeHostName port="10001">127.0.0.1</NodeHostName>
-				</Nodes>
+				<Nodes>192.168.0.1, 192.168.0.2:10001, 192.168.0.3:12345</Nodes>
 				<Receiver>
 					<Queue>MyQueue</Queue>
 					<Exchange>MyExchange</Exchange>

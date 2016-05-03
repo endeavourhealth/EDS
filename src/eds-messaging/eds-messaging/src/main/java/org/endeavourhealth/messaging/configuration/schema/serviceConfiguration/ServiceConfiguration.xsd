@@ -58,21 +58,7 @@
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>
-			<xs:element name="Nodes">
-				<xs:complexType>
-					<xs:sequence maxOccurs="unbounded">
-						<xs:element name="NodeHostName">
-							<xs:complexType>
-								<xs:simpleContent>
-									<xs:extension base="nonEmptyString">
-										<xs:attribute name="port" type="xs:int" use="optional"/>
-									</xs:extension>
-								</xs:simpleContent>
-							</xs:complexType>
-						</xs:element>
-					</xs:sequence>
-				</xs:complexType>
-			</xs:element>
+			<xs:element name="Nodes" type="nonEmptyString" minOccurs="0"/>
 			<xs:element name="Receiver" type="RabbitReceiver" minOccurs="0" maxOccurs="unbounded"/>
 		</xs:sequence>
 	</xs:complexType>
