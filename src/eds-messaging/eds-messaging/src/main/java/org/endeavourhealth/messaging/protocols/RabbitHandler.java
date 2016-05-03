@@ -40,7 +40,7 @@ public class RabbitHandler extends DefaultConsumer{
 		if (receiver.getExchange() != null && receiver.getRoutingKey() != null)
 			channel.queueBind(receiver.getQueue(), receiver.getExchange(), receiver.getRoutingKey());
 
-		channel.basicConsume(receiver.getQueue(), true, this);
+		channel.basicConsume(receiver.getQueue(), false, this);
 	}
 
 	public void stop() throws IOException, TimeoutException {
@@ -61,6 +61,8 @@ public class RabbitHandler extends DefaultConsumer{
 
 			MessagePipeline pipeline = new MessagePipeline();
 			pipeline.Process(message);
+			// Acknowledge message successfully processed
+			channel.basicAck(envelope.getDeliveryTag(), false);
 		}
 		catch (Exception e)
 		{

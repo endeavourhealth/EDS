@@ -33,6 +33,8 @@ public class RabbitReceivePortManager {
 
 	private Connection createRabbitConnection(RabbitListener rabbitListener) throws IOException, TimeoutException {
 		ConnectionFactory connectionFactory = new ConnectionFactory();
+		connectionFactory.setAutomaticRecoveryEnabled(true);
+		connectionFactory.setTopologyRecoveryEnabled(true);
 		connectionFactory.setUsername(rabbitListener.getCredentials().getUsername());
 		connectionFactory.setPassword(rabbitListener.getCredentials().getPassword());
 
