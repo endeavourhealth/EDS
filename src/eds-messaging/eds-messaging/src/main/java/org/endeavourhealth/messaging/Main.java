@@ -1,6 +1,9 @@
 package org.endeavourhealth.messaging;
 
 import org.endeavourhealth.messaging.configuration.Configuration;
+import org.endeavourhealth.messaging.configuration.schema.engineConfiguration.EngineConfiguration;
+import org.endeavourhealth.messaging.configuration.schema.engineConfiguration.EngineConfigurationSerializer;
+import org.endeavourhealth.messaging.logging.CassandraDbAppender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,8 +17,17 @@ public class Main
         LOG.info("Endeavour Resolution - a healthcare message engine");
         LOG.info("--------------------------------------------------");
 
+        //register the DB logger explicitly, as too diificult to handle errors
+        //if initialised via logback.xml
+        try {
+            CassandraDbAppender.registerDbAppender();
+        } catch (Exception e) {
+            LOG.error("Failed to initialise DB logging appender");
+        }
+
         try
         {
+
             Configuration configuration = Configuration.getInstance();
 
             LOG.info("Is running as JAR = " + configuration.isRunningAsJar().toString());

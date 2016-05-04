@@ -5,7 +5,9 @@ import org.endeavourhealth.messaging.exceptions.ResolutionException;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -36,9 +38,14 @@ public class FileHelper
 
     public static String loadStringFile(String location) throws IOException
     {
-        byte[] encoded = Files.readAllBytes(Paths.get(location));
+        return loadStringFile(Paths.get(location));
+    }
+    public static String loadStringFile(Path path) throws IOException
+    {
+        byte[] encoded = Files.readAllBytes(path);
         return new String(encoded, "UTF-8");
     }
+
 
     public static String combinePaths(String path1, String path2)
     {
@@ -99,4 +106,7 @@ public class FileHelper
 
         return null;
     }
+
+
+
 }

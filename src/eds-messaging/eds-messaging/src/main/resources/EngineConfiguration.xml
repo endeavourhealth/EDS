@@ -1,0 +1,15 @@
+<engineConfiguration>
+
+  <!-- Cassandra settings -->
+  <cassandra>
+    <!--<username>string</username>-->
+    <!--<password>string</password>-->
+    <node>127.0.01</node>
+  </cassandra>
+
+  <!-- non-logback logging settings (see logback.xml for others) -->
+  <logging>
+    <keyspace>logging</keyspace>
+  </logging>
+
+</engineConfiguration>
