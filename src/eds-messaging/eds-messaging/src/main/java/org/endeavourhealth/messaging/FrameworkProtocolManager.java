@@ -2,9 +2,11 @@ package org.endeavourhealth.messaging;
 
 import org.endeavourhealth.messaging.configuration.schema.serviceConfiguration.HttpListener;
 import org.endeavourhealth.messaging.configuration.schema.serviceConfiguration.RabbitListener;
+import org.endeavourhealth.messaging.configuration.schema.serviceConfiguration.SftpListener;
 import org.endeavourhealth.messaging.model.ServicePlugin;
 import org.endeavourhealth.messaging.protocols.HttpReceivePortManager;
 import org.endeavourhealth.messaging.protocols.RabbitReceivePortManager;
+import org.endeavourhealth.messaging.protocols.SftpReceivePortManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,11 +17,13 @@ public class FrameworkProtocolManager
 	private static final Logger LOG = LoggerFactory.getLogger(FrameworkProtocolManager.class);
 	private HttpReceivePortManager httpReceivePortManager;
 	private RabbitReceivePortManager rabbitReceivePortManager;
+	private SftpReceivePortManager sftpReceivePortManager;
 
 	public FrameworkProtocolManager()
 	{
 		httpReceivePortManager = new HttpReceivePortManager();
 		rabbitReceivePortManager = new RabbitReceivePortManager();
+		sftpReceivePortManager = new SftpReceivePortManager();
 	}
 
 	public void createServices(List<ServicePlugin> servicePlugins) throws Exception
@@ -35,6 +39,9 @@ public class FrameworkProtocolManager
 
 			for (RabbitListener rabbitListener : servicePlugin.getListeners().getRabbitListener())
 				rabbitReceivePortManager.registerListener(servicePlugin.getServiceId(), rabbitListener);
+
+			for (SftpListener sftpListener : servicePlugin.getListeners().getSftpListener())
+				sftpReceivePortManager.registerListener(servicePlugin.getServiceId(), sftpListener);
 		}
 
 		LOG.info("Receive ports created");
@@ -45,6 +52,7 @@ public class FrameworkProtocolManager
 		LOG.info("Starting receive ports");
 		httpReceivePortManager.start();
 		rabbitReceivePortManager.start();
+		sftpReceivePortManager.start();
 		LOG.info("Receive ports started");
 	}
 
@@ -52,6 +60,7 @@ public class FrameworkProtocolManager
 		LOG.info("Stopping receive ports");
 		httpReceivePortManager.shutdown();
 		rabbitReceivePortManager.shutdown();
+		sftpReceivePortManager.shutdown();
 		LOG.info("Receive ports stopped");
 	}
 }

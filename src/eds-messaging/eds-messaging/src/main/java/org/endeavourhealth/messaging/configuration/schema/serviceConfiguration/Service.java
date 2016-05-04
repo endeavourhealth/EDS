@@ -27,6 +27,7 @@ import javax.xml.bind.annotation.XmlType;
  *                 &lt;sequence>
  *                   &lt;element name="HttpListener" type="{}HttpListener" maxOccurs="unbounded" minOccurs="0"/>
  *                   &lt;element name="RabbitListener" type="{}RabbitListener" maxOccurs="unbounded" minOccurs="0"/>
+ *                   &lt;element name="SftpListener" type="{}SftpListener" maxOccurs="unbounded" minOccurs="0"/>
  *                 &lt;/sequence>
  *               &lt;/restriction>
  *             &lt;/complexContent>
@@ -151,6 +152,7 @@ public class Service {
      *       &lt;sequence>
      *         &lt;element name="HttpListener" type="{}HttpListener" maxOccurs="unbounded" minOccurs="0"/>
      *         &lt;element name="RabbitListener" type="{}RabbitListener" maxOccurs="unbounded" minOccurs="0"/>
+     *         &lt;element name="SftpListener" type="{}SftpListener" maxOccurs="unbounded" minOccurs="0"/>
      *       &lt;/sequence>
      *     &lt;/restriction>
      *   &lt;/complexContent>
@@ -162,7 +164,8 @@ public class Service {
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlType(name = "", propOrder = {
         "httpListener",
-        "rabbitListener"
+        "rabbitListener",
+        "sftpListener"
     })
     public static class Listeners {
 
@@ -170,6 +173,8 @@ public class Service {
         protected List<HttpListener> httpListener;
         @XmlElement(name = "RabbitListener")
         protected List<RabbitListener> rabbitListener;
+        @XmlElement(name = "SftpListener")
+        protected List<SftpListener> sftpListener;
 
         /**
          * Gets the value of the httpListener property.
@@ -227,6 +232,35 @@ public class Service {
                 rabbitListener = new ArrayList<RabbitListener>();
             }
             return this.rabbitListener;
+        }
+
+        /**
+         * Gets the value of the sftpListener property.
+         * 
+         * <p>
+         * This accessor method returns a reference to the live list,
+         * not a snapshot. Therefore any modification you make to the
+         * returned list will be present inside the JAXB object.
+         * This is why there is not a <CODE>set</CODE> method for the sftpListener property.
+         * 
+         * <p>
+         * For example, to add a new item, do as follows:
+         * <pre>
+         *    getSftpListener().add(newItem);
+         * </pre>
+         * 
+         * 
+         * <p>
+         * Objects of the following type(s) are allowed in the list
+         * {@link SftpListener }
+         * 
+         * 
+         */
+        public List<SftpListener> getSftpListener() {
+            if (sftpListener == null) {
+                sftpListener = new ArrayList<SftpListener>();
+            }
+            return this.sftpListener;
         }
 
     }

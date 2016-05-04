@@ -38,6 +38,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link SftpListener }
+     * 
+     */
+    public SftpListener createSftpListener() {
+        return new SftpListener();
+    }
+
+    /**
      * Create an instance of {@link Service }
      * 
      */
@@ -70,6 +78,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link SftpReceiver }
+     * 
+     */
+    public SftpReceiver createSftpReceiver() {
+        return new SftpReceiver();
+    }
+
+    /**
      * Create an instance of {@link RabbitReceiver }
      * 
      */
@@ -91,6 +107,14 @@ public class ObjectFactory {
      */
     public RabbitListener.Credentials createRabbitListenerCredentials() {
         return new RabbitListener.Credentials();
+    }
+
+    /**
+     * Create an instance of {@link SftpListener.Credentials }
+     * 
+     */
+    public SftpListener.Credentials createSftpListenerCredentials() {
+        return new SftpListener.Credentials();
     }
 
     /**

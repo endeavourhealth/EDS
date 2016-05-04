@@ -29,6 +29,20 @@
 					<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
 				</Receiver>
 			</RabbitListener>
+            <SftpListener>
+                <Host></Host>
+                <Port></Port>
+                <Credentials>
+                    <Username>username</Username>
+                    <Password>password</Password>
+                </Credentials>
+                <Receiver>
+                    <Path></Path>
+                    <Filename></Filename>
+                    <PollTime></PollTime>
+                    <ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
+                </Receiver>
+            </SftpListener>
 		</Listeners>
 
 		<MessageTypes>

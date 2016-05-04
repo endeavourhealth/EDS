@@ -35,5 +35,6 @@
     <orderEntry type="library" name="Maven: org.eclipse.jetty:jetty-security:9.3.3.v20150827" level="project" />
     <orderEntry type="library" name="Maven: org.postgresql:postgresql:9.4.1207.jre7" level="project" />
     <orderEntry type="library" name="Maven: com.rabbitmq:amqp-client:3.5.5" level="project" />
+    <orderEntry type="library" name="Maven: com.jcraft:jsch:0.1.53" level="project" />
   </component>
 </module>

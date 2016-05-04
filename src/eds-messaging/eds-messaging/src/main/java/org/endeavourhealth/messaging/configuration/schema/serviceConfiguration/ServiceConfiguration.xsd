@@ -22,6 +22,7 @@
 					<xs:sequence>
 						<xs:element name="HttpListener" type="HttpListener" minOccurs="0" maxOccurs="unbounded"/>
 						<xs:element name="RabbitListener" type="RabbitListener" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="SftpListener" type="SftpListener" minOccurs="0" maxOccurs="unbounded"/>
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>
@@ -62,6 +63,21 @@
 			<xs:element name="Receiver" type="RabbitReceiver" minOccurs="0" maxOccurs="unbounded"/>
 		</xs:sequence>
 	</xs:complexType>
+    <xs:complexType name="SftpListener">
+        <xs:sequence>
+            <xs:element name="Host" type="nonEmptyString"/>
+            <xs:element name="Port" type="xs:int"/>
+            <xs:element name="Credentials">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Username" type="nonEmptyString"/>
+                        <xs:element name="Password" type="nonEmptyString"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="Receiver" type="SftpReceiver" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
 	<xs:complexType name="HttpReceiver">
 		<xs:sequence>
 			<xs:element name="Path" type="nonEmptyString"/>
@@ -78,4 +94,12 @@
 			<xs:element name="ReceiverClass" type="nonEmptyString"/>
 		</xs:sequence>
 	</xs:complexType>
+    <xs:complexType name="SftpReceiver">
+        <xs:sequence>
+            <xs:element name="Path" type="nonEmptyString"/>
+            <xs:element name="Filename" type="nonEmptyString" minOccurs="0"/>
+            <xs:element name="PollTime" type="xs:int"/>
+            <xs:element name="ReceiverClass" type="nonEmptyString"/>
+        </xs:sequence>
+    </xs:complexType>
 </xs:schema>
