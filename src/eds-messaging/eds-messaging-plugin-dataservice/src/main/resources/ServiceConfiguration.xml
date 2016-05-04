@@ -16,30 +16,30 @@
 					<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
 				</Receiver>
 			</HttpListener>
-			<RabbitListener>
-				<Credentials>
-					<Username>username</Username>
-					<Password>password</Password>
-				</Credentials>
-				<Nodes>192.168.0.1, 192.168.0.2:10001, 192.168.0.3:12345</Nodes>
-				<Receiver>
-					<Queue>MyQueue</Queue>
-					<Exchange>MyExchange</Exchange>
-					<RoutingKey>MyKey</RoutingKey>
-					<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
-				</Receiver>
-			</RabbitListener>
+			<!--<RabbitListener>-->
+				<!--<Credentials>-->
+					<!--<Username>username</Username>-->
+					<!--<Password>password</Password>-->
+				<!--</Credentials>-->
+				<!--<Nodes>192.168.0.1, 192.168.0.2:10001, 192.168.0.3:12345</Nodes>-->
+				<!--<Receiver>-->
+					<!--<Queue>MyQueue</Queue>-->
+					<!--<Exchange>MyExchange</Exchange>-->
+					<!--<RoutingKey>MyKey</RoutingKey>-->
+					<!--<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>-->
+				<!--</Receiver>-->
+			<!--</RabbitListener>-->
             <SftpListener>
-                <Host></Host>
-                <Port></Port>
+                <Host>127.0.0.1</Host>
+                <Port>80</Port>
                 <Credentials>
                     <Username>username</Username>
                     <Password>password</Password>
                 </Credentials>
                 <Receiver>
-                    <Path></Path>
-                    <Filename></Filename>
-                    <PollTime></PollTime>
+                    <Path>./</Path>
+                    <Filename>*.dat</Filename>
+                    <PollTime>30</PollTime>
                     <ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
                 </Receiver>
             </SftpListener>

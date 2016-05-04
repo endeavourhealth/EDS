@@ -14,12 +14,15 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 
-public class SftpHandler {
+public class SftpHandler extends TimerTask {
 	private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
 	private Session session;
 	private SftpReceiver receiver;
+	private Timer timer;
 
 	public SftpHandler(String username, String password, String host, Integer port, SftpReceiver receiver) {
 		JSch jSch = new JSch();
@@ -38,14 +41,17 @@ public class SftpHandler {
 	}
 
 	public void start() {
-		// Start timer thread
+		timer = new Timer(true);
+		timer.scheduleAtFixedRate(this, 0, receiver.getPollTime()*100);
 	}
 
 	public void stop() {
-		// start timer thread
+		timer.cancel();
+		timer = null;
 	}
 
-	private void ProcessFiles() {
+	@Override
+	public void run() {
 		Channel channel = null;
 
 		try {
