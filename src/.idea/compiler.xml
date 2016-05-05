@@ -17,6 +17,15 @@
       <profile default="true" name="Default" enabled="false">
         <processorPath useClasspath="true" />
       </profile>
+      <profile default="false" name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="eds-core" />
+        <module name="eds-messaging-plugin-dataservice" />
+        <module name="eds-transforms" />
+      </profile>
       <profile default="false" name="Annotation profile for messaging" enabled="true">
         <sourceOutputDir name="../target/generated-sources/annotations" />
         <sourceTestOutputDir name="../target/generated-test-sources/test-annotations" />
@@ -24,26 +33,13 @@
         <processorPath useClasspath="true" />
         <module name="eds-messaging" />
       </profile>
-      <profile default="false" name="Annotation profile for eds-core" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="eds-core" />
-      </profile>
-      <profile default="false" name="Annotation profile for eds-messaging-plugin-dataservice" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="eds-messaging-plugin-dataservice" />
-      </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="eds-core" target="1.8" />
       <module name="eds-messaging" target="1.8" />
       <module name="eds-messaging-plugin-dataservice" target="1.8" />
       <module name="eds-messaging-plugin-gpcim" target="1.8" />
+      <module name="eds-transforms" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
