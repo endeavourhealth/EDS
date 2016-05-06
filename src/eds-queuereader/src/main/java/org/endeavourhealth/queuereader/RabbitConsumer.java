@@ -4,19 +4,18 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
-import org.endeavourhealth.messaging.exchange.Exchange;
-import org.endeavourhealth.messaging.pipeline.PipelineFactory;
-import org.endeavourhealth.queuereader.configuration.model.QueueReaderConfiguration;
-import org.endeavourhealth.messaging.pipeline.MessagePipeline;
+import org.endeavourhealth.core.messaging.exchange.Exchange;
+import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
+import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 
 import java.io.UnsupportedEncodingException;
 
 public class RabbitConsumer extends DefaultConsumer {
-	MessagePipeline pipeline;
+	PipelineProcessor pipeline;
 
 	public RabbitConsumer(Channel channel, QueueReaderConfiguration configuration) {
 		super(channel);
-		pipeline = PipelineFactory.create(configuration.getMessagePipelineClass());
+		pipeline = new PipelineProcessor(configuration.getPipeline());
 	}
 
 	@Override
@@ -28,6 +27,6 @@ public class RabbitConsumer extends DefaultConsumer {
 		exchange.body = message;
 
 		// Process the message
-		pipeline.process(exchange);
+		pipeline.execute(exchange);
 	}
 }

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:include schemaLocation="ValidateSender.xsd"/>
+    <xs:include schemaLocation="ValidateMessageType.xsd"/>
+    <xs:include schemaLocation="PostMessageToQueue.xsd"/>
+    <xs:complexType name="Pipeline">
+        <xs:sequence>
+            <xs:choice minOccurs="1" maxOccurs="unbounded">
+                <xs:element name="ValidateSender" type="ValidateSender" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="ValidateMessageType" type="ValidateMessageType" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="PostMessageToQueue" type="PostMessageToQueue" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>

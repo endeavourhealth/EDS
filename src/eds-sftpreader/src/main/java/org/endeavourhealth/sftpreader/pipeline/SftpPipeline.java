@@ -1,10 +1,8 @@
 package org.endeavourhealth.sftpreader.pipeline;
 
-import org.endeavourhealth.messaging.exchange.Exchange;
-import org.endeavourhealth.messaging.pipeline.MessagePipeline;
+import org.endeavourhealth.core.messaging.exchange.Exchange;
 
-public class SftpPipeline implements MessagePipeline {
-	@Override
+public class SftpPipeline  {
 	public void process(Exchange exchange) {
 		// Preliminary checks
 		// Do something

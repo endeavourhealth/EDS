@@ -1,7 +1,7 @@
 package org.endeavourhealth.queuereader;
 
 import com.rabbitmq.client.*;
-import org.endeavourhealth.queuereader.configuration.model.QueueReaderConfiguration;
+import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;

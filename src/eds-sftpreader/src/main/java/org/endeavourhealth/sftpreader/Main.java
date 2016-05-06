@@ -1,7 +1,7 @@
 package org.endeavourhealth.sftpreader;
 
-import org.endeavourhealth.sftpreader.configuration.ConfigManager;
-import org.endeavourhealth.sftpreader.configuration.model.SftpReaderConfiguration;
+import org.endeavourhealth.core.configuration.SftpReaderConfiguration;
+import org.endeavourhealth.core.utilities.XmlSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +21,7 @@ public class Main {
 
 		// Load config
 		LOG.info("Loading configuration file (" + args[0] + ")");
-		SftpReaderConfiguration configuration = ConfigManager.readFromFile(args[0]);
+		SftpReaderConfiguration configuration = XmlSerializer.deserializeFromFile(SftpReaderConfiguration.class, args[0], null);
 
 		// Create SFTP reader
 		SftpHandler sftpHandler = new SftpHandler(configuration);

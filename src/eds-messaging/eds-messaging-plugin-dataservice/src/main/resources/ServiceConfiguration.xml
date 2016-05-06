@@ -8,12 +8,12 @@
 				<Receiver>
 					<Path>/dataservice/$post-endeavour-envelope</Path>
 					<Methods>post</Methods>
-					<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
+					<ReceiverClass>org.endeavourhealth.core.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
 				</Receiver>
 				<Receiver>
 					<Path>/dataservice/rest/</Path>
 					<IncludeSubPaths>true</IncludeSubPaths>
-					<ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
+					<ReceiverClass>org.endeavourhealth.core.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
 				</Receiver>
 			</HttpListener>
 			<!--<RabbitListener>-->
@@ -40,7 +40,7 @@
                     <Path>./</Path>
                     <Filename>*.dat</Filename>
                     <PollTime>30</PollTime>
-                    <ReceiverClass>org.endeavourhealth.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
+                    <ReceiverClass>org.endeavourhealth.core.messaging.plugin.dataservice.EndeavourEnvelopeReceiver</ReceiverClass>
                 </Receiver>
             </SftpListener>
 		</Listeners>
@@ -50,7 +50,7 @@
 				<Id>PostEOpenPatientRecord1-0</Id>
 				<LogInbound>true</LogInbound>
 				<LogOutbound>true</LogOutbound>
-				<MessageProcessorClass>org.endeavourhealth.messaging.plugin.dataservice.PostEOpenPatientRecordProcessor</MessageProcessorClass>
+				<MessageProcessorClass>org.endeavourhealth.core.messaging.plugin.dataservice.PostEOpenPatientRecordProcessor</MessageProcessorClass>
 			</MessageType>
 		</MessageTypes>
 

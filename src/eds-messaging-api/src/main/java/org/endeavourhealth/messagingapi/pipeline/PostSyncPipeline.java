@@ -1,10 +1,8 @@
 package org.endeavourhealth.messagingapi.pipeline;
 
-import org.endeavourhealth.messaging.exchange.Exchange;
-import org.endeavourhealth.messaging.pipeline.MessagePipeline;
+import org.endeavourhealth.core.messaging.exchange.Exchange;
 
-public class PostSyncPipeline implements MessagePipeline {
-	@Override
+public class PostSyncPipeline {
 	public void process(Exchange exchange) {
 		// Validate Sender
 		// Validate Message Type

@@ -1,7 +1,7 @@
 package org.endeavourhealth.queuereader;
 
-import org.endeavourhealth.queuereader.configuration.ConfigManager;
-import org.endeavourhealth.queuereader.configuration.model.QueueReaderConfiguration;
+import org.endeavourhealth.core.utilities.XmlSerializer;
+import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +21,7 @@ public class Main {
 
 		// Load config
 		LOG.info("Loading configuration file (" + args[0] + ")");
-		QueueReaderConfiguration configuration = ConfigManager.readFromFile(args[0]);
+		QueueReaderConfiguration configuration = XmlSerializer.deserializeFromFile(QueueReaderConfiguration.class, args[0], null);
 
 		// Instantiate rabbit handler
 		LOG.info("Creating EDS queue reader");

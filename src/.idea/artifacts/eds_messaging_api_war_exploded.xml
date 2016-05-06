@@ -6,6 +6,8 @@
       <element id="directory" name="WEB-INF">
         <element id="directory" name="classes">
           <element id="module-output" name="eds-messaging-api" />
+          <element id="directory" name="WEB-INF" />
+          <element id="module-output" name="eds-messaging-core" />
         </element>
         <element id="directory" name="lib">
           <element id="library" level="project" name="Maven: javax.servlet:javax.servlet-api:3.1.0" />
@@ -34,6 +36,9 @@
           <element id="library" level="project" name="Maven: com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.5.4" />
           <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.5.4" />
           <element id="library" level="project" name="Maven: com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.5.4" />
+          <element id="library" level="project" name="Maven: com.google.guava:guava:16.0.1" />
+          <element id="library" level="project" name="Maven: com.rabbitmq:amqp-client:3.5.5" />
+          <element id="library" level="project" name="Maven: commons-io:commons-io:1.3.2" />
         </element>
       </element>
     </root>

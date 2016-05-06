@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xs:include schemaLocation="Pipeline.xsd"/>
+    <xs:simpleType name="nonEmptyString">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:pattern value=".*[^\s].*"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:element name="ApiConfiguration">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="GetData">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="Pipeline" type="Pipeline" minOccurs="1" maxOccurs="1"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="GetDataAsync">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="Pipeline" type="Pipeline" minOccurs="1" maxOccurs="1"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="PostMessage">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="Pipeline" type="Pipeline" minOccurs="1" maxOccurs="1"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="PostMessageAsync">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="Pipeline" type="Pipeline" minOccurs="1" maxOccurs="1"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

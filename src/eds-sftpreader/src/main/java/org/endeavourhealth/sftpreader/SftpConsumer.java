@@ -2,10 +2,9 @@ package org.endeavourhealth.sftpreader;
 
 import com.jcraft.jsch.*;
 import org.apache.commons.io.IOUtils;
-import org.endeavourhealth.messaging.exchange.Exchange;
-import org.endeavourhealth.messaging.pipeline.MessagePipeline;
-import org.endeavourhealth.messaging.pipeline.PipelineFactory;
-import org.endeavourhealth.sftpreader.configuration.model.SftpReaderConfiguration;
+import org.endeavourhealth.core.configuration.SftpReaderConfiguration;
+import org.endeavourhealth.core.messaging.exchange.Exchange;
+import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,13 +13,13 @@ import java.util.TimerTask;
 import java.util.Vector;
 
 public class SftpConsumer extends TimerTask {
-	private MessagePipeline pipeline;
+	private PipelineProcessor pipeline;
 	private SftpReaderConfiguration configuration;
 	private Session session;
 
 	public SftpConsumer(SftpReaderConfiguration configuration) {
 		this.configuration = configuration;
-		pipeline = PipelineFactory.create(configuration.getMessagePipelineClass());
+		pipeline = new PipelineProcessor(configuration.getPipeline());
 		JSch jSch = new JSch();
 		try {
 			session = jSch.getSession(
@@ -56,7 +55,7 @@ public class SftpConsumer extends TimerTask {
 				String messageData = IOUtils.toString(stream);
 				Exchange exchange = new Exchange();
 				exchange.body = messageData;
-				pipeline.process(exchange);
+				pipeline.execute(exchange);
 			}
 		} catch (JSchException e) {
 			e.printStackTrace();

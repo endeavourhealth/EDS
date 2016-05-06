@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ApiConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:noNamespaceSchemaLocation="../../../../eds-messaging-core/src/main/resources/ApiConfiguration.xsd">
+  <GetData>
+    <Pipeline>
+      <ValidateSender/>
+      <ValidateMessageType/>
+    </Pipeline>
+  </GetData>
+  <GetDataAsync>
+    <Pipeline>
+      <ValidateMessageType/>
+    </Pipeline>
+  </GetDataAsync>
+  <PostMessage>
+    <Pipeline>
+      <ValidateMessageType/>
+    </Pipeline>
+  </PostMessage>
+  <PostMessageAsync>
+    <Pipeline>
+      <ValidateMessageType/>
+    </Pipeline>
+  </PostMessageAsync>
+</ApiConfiguration>
