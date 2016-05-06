@@ -17,4 +17,6 @@
         </xs:sequence>
     </xs:complexType>
 
+    <xs:complexType name="ReturnResponseAcknowledgementConfig"/>
+
 </xs:schema>

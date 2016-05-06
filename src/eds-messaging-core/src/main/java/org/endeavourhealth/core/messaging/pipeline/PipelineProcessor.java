@@ -2,10 +2,7 @@ package org.endeavourhealth.core.messaging.pipeline;
 
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToLog;
-import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToQueue;
-import org.endeavourhealth.core.messaging.pipeline.components.ValidateMessageType;
-import org.endeavourhealth.core.messaging.pipeline.components.ValidateSender;
+import org.endeavourhealth.core.messaging.pipeline.components.*;
 
 public class PipelineProcessor {
 	private Pipeline pipeline;
@@ -40,6 +37,8 @@ public class PipelineProcessor {
 				return new PostMessageToLog((PostMessageToLogConfig) processConfig);
 			case "PostMessageToQueueConfig":
 				return new PostMessageToQueue((PostMessageToQueueConfig) processConfig);
+			case "ReturnResponseAcknowledgementConfig":
+				return new ReturnResponseAcknowledgement((ReturnResponseAcknowledgementConfig) processConfig);
 			default:
 				return null;
 		}
