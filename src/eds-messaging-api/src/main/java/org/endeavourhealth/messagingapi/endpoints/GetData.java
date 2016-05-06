@@ -24,11 +24,26 @@ public class GetData {
 			exchange.headers.put(key, headers.getHeaderString(key));
 		exchange.body = body;
 
-		String async = headers.getRequestHeaders().getFirst("async");
-		if (async != null && async.equals("true"))
-			new GetAsyncPipeline().process(exchange);
-		else
-			new GetSyncPipeline().process(exchange);
+		new GetSyncPipeline().process(exchange);
+
+		return Response
+				.status(200)
+				.entity(exchange.body)
+				.build();
+	}
+
+	@GET
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/GetDataAsync")
+	public Response GetDataAsync(@Context HttpHeaders headers, String body) {
+		Exchange exchange = new Exchange();
+
+		for (String key : headers.getRequestHeaders().keySet())
+			exchange.headers.put(key, headers.getHeaderString(key));
+		exchange.body = body;
+
+		new GetAsyncPipeline().process(exchange);
 
 		return Response
 				.status(200)

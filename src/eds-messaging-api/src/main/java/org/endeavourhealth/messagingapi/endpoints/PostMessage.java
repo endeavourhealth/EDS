@@ -24,16 +24,30 @@ public class PostMessage {
 			exchange.headers.put(key, headers.getHeaderString(key));
 		exchange.body = body;
 
-
-		String async = headers.getRequestHeaders().getFirst("async");
-		if (async != null && async.equals("true"))
-			new PostAsyncPipeline().process(exchange);
-		else
-			new PostSyncPipeline().process(exchange);
+		new PostSyncPipeline().process(exchange);
 
 		return Response
 				.status(200)
 				.entity(exchange.body)
 				.build();
 	}
-}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/PostMessageAsync")
+	public Response postMessageAsync(@Context HttpHeaders headers, String body) {
+		Exchange exchange = new Exchange();
+
+		for (String key : headers.getRequestHeaders().keySet())
+			exchange.headers.put(key, headers.getHeaderString(key));
+		exchange.body = body;
+
+
+		new PostAsyncPipeline().process(exchange);
+
+		return Response
+				.status(200)
+				.entity(exchange.body)
+				.build();
+	}}
