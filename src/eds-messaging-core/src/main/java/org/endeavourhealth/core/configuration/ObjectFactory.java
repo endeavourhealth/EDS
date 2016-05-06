@@ -30,19 +30,27 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link PostMessageToQueue }
+     * Create an instance of {@link PostMessageToQueueConfig }
      * 
      */
-    public PostMessageToQueue createPostMessageToQueue() {
-        return new PostMessageToQueue();
+    public PostMessageToQueueConfig createPostMessageToQueueConfig() {
+        return new PostMessageToQueueConfig();
     }
 
     /**
-     * Create an instance of {@link ValidateSender }
+     * Create an instance of {@link ValidateMessageTypeConfig }
      * 
      */
-    public ValidateSender createValidateSender() {
-        return new ValidateSender();
+    public ValidateMessageTypeConfig createValidateMessageTypeConfig() {
+        return new ValidateMessageTypeConfig();
+    }
+
+    /**
+     * Create an instance of {@link ValidateSenderConfig }
+     * 
+     */
+    public ValidateSenderConfig createValidateSenderConfig() {
+        return new ValidateSenderConfig();
     }
 
     /**
@@ -51,14 +59,6 @@ public class ObjectFactory {
      */
     public Credentials createCredentials() {
         return new Credentials();
-    }
-
-    /**
-     * Create an instance of {@link ValidateMessageType }
-     * 
-     */
-    public ValidateMessageType createValidateMessageType() {
-        return new ValidateMessageType();
     }
 
     /**

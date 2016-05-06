@@ -21,9 +21,9 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;choice maxOccurs="unbounded">
- *           &lt;element name="ValidateSender" type="{}ValidateSender" maxOccurs="unbounded" minOccurs="0"/>
- *           &lt;element name="ValidateMessageType" type="{}ValidateMessageType" maxOccurs="unbounded" minOccurs="0"/>
- *           &lt;element name="PostMessageToQueue" type="{}PostMessageToQueue" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="ValidateSender" type="{}ValidateSenderConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="ValidateMessageType" type="{}ValidateMessageTypeConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="PostMessageToQueue" type="{}PostMessageToQueueConfig" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;/choice>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -40,9 +40,9 @@ import javax.xml.bind.annotation.XmlType;
 public class Pipeline {
 
     @XmlElements({
-        @XmlElement(name = "ValidateSender", type = ValidateSender.class),
-        @XmlElement(name = "ValidateMessageType", type = ValidateMessageType.class),
-        @XmlElement(name = "PostMessageToQueue", type = PostMessageToQueue.class)
+        @XmlElement(name = "ValidateSender", type = ValidateSenderConfig.class),
+        @XmlElement(name = "ValidateMessageType", type = ValidateMessageTypeConfig.class),
+        @XmlElement(name = "PostMessageToQueue", type = PostMessageToQueueConfig.class)
     })
     protected List<Object> validateSenderOrValidateMessageTypeOrPostMessageToQueue;
 
@@ -64,9 +64,9 @@ public class Pipeline {
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
-     * {@link ValidateSender }
-     * {@link ValidateMessageType }
-     * {@link PostMessageToQueue }
+     * {@link ValidateSenderConfig }
+     * {@link ValidateMessageTypeConfig }
+     * {@link PostMessageToQueueConfig }
      * 
      * 
      */

@@ -1,12 +1,13 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import org.endeavourhealth.core.configuration.ValidateMessageTypeConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 
 public class ValidateMessageType implements PipelineComponent {
-	private org.endeavourhealth.core.configuration.ValidateMessageType config;
+	private ValidateMessageTypeConfig config;
 
-	public ValidateMessageType(org.endeavourhealth.core.configuration.ValidateMessageType config) {
+	public ValidateMessageType(ValidateMessageTypeConfig config) {
 		this.config = config;
 	}
 

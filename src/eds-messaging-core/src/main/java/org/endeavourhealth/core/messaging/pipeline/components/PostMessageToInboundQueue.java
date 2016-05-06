@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.rabbitmq.client.*;
-import org.endeavourhealth.core.configuration.PostMessageToQueue;
+import org.endeavourhealth.core.configuration.PostMessageToQueueConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 
@@ -9,9 +9,9 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 public class PostMessageToInboundQueue implements PipelineComponent {
-	private PostMessageToQueue config;
+	private PostMessageToQueueConfig config;
 
-	public PostMessageToInboundQueue(PostMessageToQueue config) {
+	public PostMessageToInboundQueue(PostMessageToQueueConfig config) {
 		this.config = config;
 	}
 

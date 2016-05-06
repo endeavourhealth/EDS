@@ -1,7 +1,9 @@
 package org.endeavourhealth.core.messaging.pipeline;
 
 import org.endeavourhealth.core.configuration.Pipeline;
-import org.endeavourhealth.core.configuration.PostMessageToQueue;
+import org.endeavourhealth.core.configuration.PostMessageToQueueConfig;
+import org.endeavourhealth.core.configuration.ValidateMessageTypeConfig;
+import org.endeavourhealth.core.configuration.ValidateSenderConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToInboundQueue;
 import org.endeavourhealth.core.messaging.pipeline.components.ValidateMessageType;
@@ -33,11 +35,11 @@ public class PipelineProcessor {
 
 		switch(xmlTagName) {
 			case "ValidateSender":
-				return new ValidateSender((org.endeavourhealth.core.configuration.ValidateSender) processConfig);
+				return new ValidateSender((ValidateSenderConfig) processConfig);
 			case "ValidateMessageType":
-				return new ValidateMessageType((org.endeavourhealth.core.configuration.ValidateMessageType) processConfig);
+				return new ValidateMessageType((ValidateMessageTypeConfig) processConfig);
 			case "PostMessageToQueue":
-				return new PostMessageToInboundQueue((PostMessageToQueue) processConfig);
+				return new PostMessageToInboundQueue((PostMessageToQueueConfig) processConfig);
 			default:
 				return null;
 		}

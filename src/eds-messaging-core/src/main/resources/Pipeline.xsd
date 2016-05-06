@@ -6,9 +6,9 @@
     <xs:complexType name="Pipeline">
         <xs:sequence>
             <xs:choice minOccurs="1" maxOccurs="unbounded">
-                <xs:element name="ValidateSender" type="ValidateSender" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="ValidateMessageType" type="ValidateMessageType" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="PostMessageToQueue" type="PostMessageToQueue" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="ValidateSender" type="ValidateSenderConfig" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="ValidateMessageType" type="ValidateMessageTypeConfig" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="PostMessageToQueue" type="PostMessageToQueueConfig" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
         </xs:sequence>
     </xs:complexType>

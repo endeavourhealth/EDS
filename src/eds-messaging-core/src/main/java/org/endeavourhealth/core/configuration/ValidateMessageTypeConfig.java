@@ -7,12 +7,12 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for ValidateMessageType complex type.
+ * <p>Java class for ValidateMessageTypeConfig complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="ValidateMessageType">
+ * &lt;complexType name="ValidateMessageTypeConfig">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *     &lt;/restriction>
@@ -23,8 +23,8 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "ValidateMessageType")
-public class ValidateMessageType {
+@XmlType(name = "ValidateMessageTypeConfig")
+public class ValidateMessageTypeConfig {
 
 
 }
