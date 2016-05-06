@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SftpReaderConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="SftpReaderConfiguration.xsd">
+  <Credentials>
+    <Username>username</Username>
+    <Password>password</Password>
+  </Credentials>
+  <Host>ftp.hostname.com</Host>
+  <Port>8081</Port>
+  <Path>/uploads</Path>
+  <Filename>*.xml</Filename>
+  <Polltime>10</Polltime>
+  <MessagePipelineClass>org.endeavourhealth.sftpreader.pipeline.SftpPipeline</MessagePipelineClass>
+</SftpReaderConfiguration>

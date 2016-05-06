@@ -3,8 +3,12 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/eds-core/eds-core.iml" filepath="$PROJECT_DIR$/eds-core/eds-core.iml" group="core" />
-      <module fileurl="file://$PROJECT_DIR$/eds-messaging/eds-messaging/eds-messaging.iml" filepath="$PROJECT_DIR$/eds-messaging/eds-messaging/eds-messaging.iml" group="messaging" />
-      <module fileurl="file://$PROJECT_DIR$/eds-messaging/eds-messaging-plugin-dataservice/eds-messaging-plugin-dataservice.iml" filepath="$PROJECT_DIR$/eds-messaging/eds-messaging-plugin-dataservice/eds-messaging-plugin-dataservice.iml" group="messaging" />
+      <module fileurl="file://$PROJECT_DIR$/eds-messaging/eds-messaging/eds-messaging.iml" filepath="$PROJECT_DIR$/eds-messaging/eds-messaging/eds-messaging.iml" group="obsolete" />
+      <module fileurl="file://$PROJECT_DIR$/eds-messaging-api/eds-messaging-api.iml" filepath="$PROJECT_DIR$/eds-messaging-api/eds-messaging-api.iml" group="messaging" />
+      <module fileurl="file://$PROJECT_DIR$/eds-messaging-core/eds-messaging-core.iml" filepath="$PROJECT_DIR$/eds-messaging-core/eds-messaging-core.iml" group="messaging" />
+      <module fileurl="file://$PROJECT_DIR$/eds-messaging/eds-messaging-plugin-dataservice/eds-messaging-plugin-dataservice.iml" filepath="$PROJECT_DIR$/eds-messaging/eds-messaging-plugin-dataservice/eds-messaging-plugin-dataservice.iml" group="obsolete" />
+      <module fileurl="file://$PROJECT_DIR$/eds-queuereader/eds-queuereader.iml" filepath="$PROJECT_DIR$/eds-queuereader/eds-queuereader.iml" group="messaging" />
+      <module fileurl="file://$PROJECT_DIR$/eds-sftpreader/eds-sftpreader.iml" filepath="$PROJECT_DIR$/eds-sftpreader/eds-sftpreader.iml" group="messaging" />
       <module fileurl="file://$PROJECT_DIR$/eds-transforms/eds-transforms.iml" filepath="$PROJECT_DIR$/eds-transforms/eds-transforms.iml" group="core" />
       <module fileurl="file://$PROJECT_DIR$/eds-ui/eds-ui.iml" filepath="$PROJECT_DIR$/eds-ui/eds-ui.iml" group="core" />
     </modules>

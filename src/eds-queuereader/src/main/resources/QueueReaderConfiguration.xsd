@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:simpleType name="nonEmptyString">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:pattern value=".*[^\s].*"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:element name="QueueReaderConfiguration">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Credentials">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="Username" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
+                            <xs:element name="Password" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="Nodes" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="Exchange" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="Queue" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="RoutingKeys" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="MessagePipelineClass" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

@@ -10,6 +10,10 @@
         <option value="$PROJECT_DIR$/eds-messaging/eds-messaging/pom.xml" />
         <option value="$PROJECT_DIR$/eds-core/pom.xml" />
         <option value="$PROJECT_DIR$/eds-transforms/pom.xml" />
+        <option value="$PROJECT_DIR$/eds-queuereader/pom.xml" />
+        <option value="$PROJECT_DIR$/eds-messaging-core/pom.xml" />
+        <option value="$PROJECT_DIR$/eds-messaging-api/pom.xml" />
+        <option value="$PROJECT_DIR$/eds-sftpreader/pom.xml" />
       </list>
     </option>
   </component>
