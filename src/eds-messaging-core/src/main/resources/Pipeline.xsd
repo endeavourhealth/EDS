@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-    <xs:include schemaLocation="ValidateSender.xsd"/>
-    <xs:include schemaLocation="ValidateMessageType.xsd"/>
-    <xs:include schemaLocation="PostMessageToQueue.xsd"/>
+    <xs:include schemaLocation="PipelineComponentConfig.xsd"/>
+
     <xs:complexType name="Pipeline">
         <xs:sequence>
             <xs:choice minOccurs="1" maxOccurs="unbounded">
                 <xs:element name="ValidateSender" type="ValidateSenderConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="ValidateMessageType" type="ValidateMessageTypeConfig" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="PostMessageToLog" type="PostMessageToLogConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="PostMessageToQueue" type="PostMessageToQueueConfig" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
         </xs:sequence>

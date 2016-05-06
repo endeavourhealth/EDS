@@ -1,6 +1,13 @@
 <?xml version="1.0"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-    <xs:include schemaLocation="Credentials.xsd"/>
+    <xs:include schemaLocation="Common.xsd"/>
+
+    <xs:complexType name="ValidateSenderConfig"/>
+
+    <xs:complexType name="ValidateMessageTypeConfig"/>
+
+    <xs:complexType name="PostMessageToLogConfig"/>
+
     <xs:complexType name="PostMessageToQueueConfig">
         <xs:sequence>
             <xs:element name="Credentials" type="Credentials" minOccurs="1" maxOccurs="1"/>
@@ -9,4 +16,5 @@
             <xs:element name="RoutingKeys" type="xs:string" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
+
 </xs:schema>

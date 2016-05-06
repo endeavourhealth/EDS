@@ -70,7 +70,7 @@ public class SftpReaderConfiguration {
     @XmlElement(name = "Polltime")
     protected int polltime;
     @XmlElement(name = "Pipeline", required = true)
-    protected org.endeavourhealth.core.configuration.Pipeline pipeline;
+    protected Pipeline pipeline;
 
     /**
      * Gets the value of the credentials property.
@@ -213,10 +213,10 @@ public class SftpReaderConfiguration {
      * 
      * @return
      *     possible object is
-     *     {@link org.endeavourhealth.core.configuration.Pipeline }
+     *     {@link Pipeline }
      *     
      */
-    public org.endeavourhealth.core.configuration.Pipeline getPipeline() {
+    public Pipeline getPipeline() {
         return pipeline;
     }
 
@@ -225,10 +225,10 @@ public class SftpReaderConfiguration {
      * 
      * @param value
      *     allowed object is
-     *     {@link org.endeavourhealth.core.configuration.Pipeline }
+     *     {@link Pipeline }
      *     
      */
-    public void setPipeline(org.endeavourhealth.core.configuration.Pipeline value) {
+    public void setPipeline(Pipeline value) {
         this.pipeline = value;
     }
 

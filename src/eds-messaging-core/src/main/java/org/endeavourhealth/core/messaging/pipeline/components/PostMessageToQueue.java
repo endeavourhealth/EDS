@@ -8,10 +8,10 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
-public class PostMessageToInboundQueue implements PipelineComponent {
+public class PostMessageToQueue implements PipelineComponent {
 	private PostMessageToQueueConfig config;
 
-	public PostMessageToInboundQueue(PostMessageToQueueConfig config) {
+	public PostMessageToQueue(PostMessageToQueueConfig config) {
 		this.config = config;
 	}
 

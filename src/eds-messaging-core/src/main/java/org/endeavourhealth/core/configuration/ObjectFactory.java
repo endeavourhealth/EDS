@@ -30,6 +30,54 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link ApiConfiguration }
+     * 
+     */
+    public ApiConfiguration createApiConfiguration() {
+        return new ApiConfiguration();
+    }
+
+    /**
+     * Create an instance of {@link ApiConfiguration.GetData }
+     * 
+     */
+    public ApiConfiguration.GetData createApiConfigurationGetData() {
+        return new ApiConfiguration.GetData();
+    }
+
+    /**
+     * Create an instance of {@link ApiConfiguration.GetDataAsync }
+     * 
+     */
+    public ApiConfiguration.GetDataAsync createApiConfigurationGetDataAsync() {
+        return new ApiConfiguration.GetDataAsync();
+    }
+
+    /**
+     * Create an instance of {@link ApiConfiguration.PostMessage }
+     * 
+     */
+    public ApiConfiguration.PostMessage createApiConfigurationPostMessage() {
+        return new ApiConfiguration.PostMessage();
+    }
+
+    /**
+     * Create an instance of {@link ApiConfiguration.PostMessageAsync }
+     * 
+     */
+    public ApiConfiguration.PostMessageAsync createApiConfigurationPostMessageAsync() {
+        return new ApiConfiguration.PostMessageAsync();
+    }
+
+    /**
+     * Create an instance of {@link PostMessageToLogConfig }
+     * 
+     */
+    public PostMessageToLogConfig createPostMessageToLogConfig() {
+        return new PostMessageToLogConfig();
+    }
+
+    /**
      * Create an instance of {@link PostMessageToQueueConfig }
      * 
      */

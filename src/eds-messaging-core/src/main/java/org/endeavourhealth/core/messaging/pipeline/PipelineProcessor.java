@@ -1,11 +1,9 @@
 package org.endeavourhealth.core.messaging.pipeline;
 
-import org.endeavourhealth.core.configuration.Pipeline;
-import org.endeavourhealth.core.configuration.PostMessageToQueueConfig;
-import org.endeavourhealth.core.configuration.ValidateMessageTypeConfig;
-import org.endeavourhealth.core.configuration.ValidateSenderConfig;
+import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToInboundQueue;
+import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToLog;
+import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToQueue;
 import org.endeavourhealth.core.messaging.pipeline.components.ValidateMessageType;
 import org.endeavourhealth.core.messaging.pipeline.components.ValidateSender;
 
@@ -18,7 +16,7 @@ public class PipelineProcessor {
 
 	public boolean execute(Exchange exchange) {
 		try {
-			for (Object processConfig : pipeline.getValidateSenderOrValidateMessageTypeOrPostMessageToQueue()) {
+			for (Object processConfig : pipeline.getValidateSenderOrValidateMessageTypeOrPostMessageToLog()) {
 				PipelineComponent component = getComponent(processConfig);
 				component.process(exchange);
 			}
@@ -34,12 +32,14 @@ public class PipelineProcessor {
 		String xmlTagName = processConfig.getClass().getSimpleName();
 
 		switch(xmlTagName) {
-			case "ValidateSender":
+			case "ValidateSenderConfig":
 				return new ValidateSender((ValidateSenderConfig) processConfig);
-			case "ValidateMessageType":
+			case "ValidateMessageTypeConfig":
 				return new ValidateMessageType((ValidateMessageTypeConfig) processConfig);
-			case "PostMessageToQueue":
-				return new PostMessageToInboundQueue((PostMessageToQueueConfig) processConfig);
+			case "PostMessageToLogConfig":
+				return new PostMessageToLog((PostMessageToLogConfig) processConfig);
+			case "PostMessageToQueueConfig":
+				return new PostMessageToQueue((PostMessageToQueueConfig) processConfig);
 			default:
 				return null;
 		}

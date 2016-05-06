@@ -23,6 +23,7 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;choice maxOccurs="unbounded">
  *           &lt;element name="ValidateSender" type="{}ValidateSenderConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="ValidateMessageType" type="{}ValidateMessageTypeConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="PostMessageToLog" type="{}PostMessageToLogConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostMessageToQueue" type="{}PostMessageToQueueConfig" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;/choice>
  *       &lt;/sequence>
@@ -35,30 +36,31 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Pipeline", propOrder = {
-    "validateSenderOrValidateMessageTypeOrPostMessageToQueue"
+    "validateSenderOrValidateMessageTypeOrPostMessageToLog"
 })
 public class Pipeline {
 
     @XmlElements({
         @XmlElement(name = "ValidateSender", type = ValidateSenderConfig.class),
         @XmlElement(name = "ValidateMessageType", type = ValidateMessageTypeConfig.class),
+        @XmlElement(name = "PostMessageToLog", type = PostMessageToLogConfig.class),
         @XmlElement(name = "PostMessageToQueue", type = PostMessageToQueueConfig.class)
     })
-    protected List<Object> validateSenderOrValidateMessageTypeOrPostMessageToQueue;
+    protected List<Object> validateSenderOrValidateMessageTypeOrPostMessageToLog;
 
     /**
-     * Gets the value of the validateSenderOrValidateMessageTypeOrPostMessageToQueue property.
+     * Gets the value of the validateSenderOrValidateMessageTypeOrPostMessageToLog property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the validateSenderOrValidateMessageTypeOrPostMessageToQueue property.
+     * This is why there is not a <CODE>set</CODE> method for the validateSenderOrValidateMessageTypeOrPostMessageToLog property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getValidateSenderOrValidateMessageTypeOrPostMessageToQueue().add(newItem);
+     *    getValidateSenderOrValidateMessageTypeOrPostMessageToLog().add(newItem);
      * </pre>
      * 
      * 
@@ -66,15 +68,16 @@ public class Pipeline {
      * Objects of the following type(s) are allowed in the list
      * {@link ValidateSenderConfig }
      * {@link ValidateMessageTypeConfig }
+     * {@link PostMessageToLogConfig }
      * {@link PostMessageToQueueConfig }
      * 
      * 
      */
-    public List<Object> getValidateSenderOrValidateMessageTypeOrPostMessageToQueue() {
-        if (validateSenderOrValidateMessageTypeOrPostMessageToQueue == null) {
-            validateSenderOrValidateMessageTypeOrPostMessageToQueue = new ArrayList<Object>();
+    public List<Object> getValidateSenderOrValidateMessageTypeOrPostMessageToLog() {
+        if (validateSenderOrValidateMessageTypeOrPostMessageToLog == null) {
+            validateSenderOrValidateMessageTypeOrPostMessageToLog = new ArrayList<Object>();
         }
-        return this.validateSenderOrValidateMessageTypeOrPostMessageToQueue;
+        return this.validateSenderOrValidateMessageTypeOrPostMessageToLog;
     }
 
 }
