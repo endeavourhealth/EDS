@@ -24,4 +24,6 @@
     <xs:complexType name="PostToEventLogConfig"/>
 
     <xs:complexType name="RunDataDistributionProtocolsConfig"/>
+
+    <xs:complexType name="PostToSubscriberWebServiceConfig"/>
 </xs:schema>

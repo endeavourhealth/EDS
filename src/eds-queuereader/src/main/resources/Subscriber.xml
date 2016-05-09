@@ -5,20 +5,10 @@
         <Password>password</Password>
     </Credentials>
     <Nodes>192.168.0.1:1000, 192.168.0.2:2000</Nodes>
-    <Exchange>Interim</Exchange>
-    <Queue>Interim-Orgs1000-2000</Queue>
+    <Exchange>Subscriber</Exchange>
+    <Queue>Subscriber-Orgs1000-2000</Queue>
     <RoutingKeys>Org1,Org2,Org3</RoutingKeys>
     <Pipeline>
-        <RunDataDitributionProtocols/>
-        <MessageTransform/>
-        <PostMessageToLog/>
-        <PostMessageToQueue>
-            <Credentials>
-                <Username>username</Username>
-                <Password>password</Password>
-            </Credentials>
-            <Nodes>192.168.0.1:1001, 192.168.0.2:1002</Nodes>
-            <Exchange>EdsResponse</Exchange>
-        </PostMessageToQueue>
+        <PostToSubscriberWebService/>
     </Pipeline>
 </QueueReaderConfiguration>

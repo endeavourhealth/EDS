@@ -28,6 +28,8 @@ import javax.xml.bind.annotation.XmlType;
  *           &lt;element name="ReturnResponseAcknowledgement" type="{}ReturnResponseAcknowledgementConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="MessageTransform" type="{}MessageTransformConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostToEventLog" type="{}PostToEventLogConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="RunDataDitributionProtocols" type="{}RunDataDistributionProtocolsConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="PostToSubscriberWebService" type="{}PostToSubscriberWebServiceConfig" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;/choice>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -50,7 +52,9 @@ public class Pipeline {
         @XmlElement(name = "PostMessageToQueue", type = PostMessageToQueueConfig.class),
         @XmlElement(name = "ReturnResponseAcknowledgement", type = ReturnResponseAcknowledgementConfig.class),
         @XmlElement(name = "MessageTransform", type = MessageTransformConfig.class),
-        @XmlElement(name = "PostToEventLog", type = PostToEventLogConfig.class)
+        @XmlElement(name = "PostToEventLog", type = PostToEventLogConfig.class),
+        @XmlElement(name = "RunDataDitributionProtocols", type = RunDataDistributionProtocolsConfig.class),
+        @XmlElement(name = "PostToSubscriberWebService", type = PostToSubscriberWebServiceConfig.class)
     })
     protected List<Object> validateSenderOrValidateMessageTypeOrPostMessageToLog;
 
@@ -79,6 +83,8 @@ public class Pipeline {
      * {@link ReturnResponseAcknowledgementConfig }
      * {@link MessageTransformConfig }
      * {@link PostToEventLogConfig }
+     * {@link RunDataDistributionProtocolsConfig }
+     * {@link PostToSubscriberWebServiceConfig }
      * 
      * 
      */

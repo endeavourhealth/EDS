@@ -43,6 +43,10 @@ public class PipelineProcessor {
 				return new MessageTransform((MessageTransformConfig) processConfig);
 			case "PostToEventLogConfig":
 				return new PostToEventLog((PostToEventLogConfig) processConfig);
+			case "RunDataDistributionProtocolsConfig":
+				return new RunDataDistributionProtocols((RunDataDistributionProtocolsConfig) processConfig);
+			case "PostToSubscriberWebServiceConfig":
+				return new PostToSubscriberWebService((PostToSubscriberWebServiceConfig) processConfig);
 			default:
 				return null;
 		}

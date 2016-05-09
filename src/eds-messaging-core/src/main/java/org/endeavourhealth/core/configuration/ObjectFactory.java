@@ -78,6 +78,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link PostToSubscriberWebServiceConfig }
+     * 
+     */
+    public PostToSubscriberWebServiceConfig createPostToSubscriberWebServiceConfig() {
+        return new PostToSubscriberWebServiceConfig();
+    }
+
+    /**
      * Create an instance of {@link PostToEventLogConfig }
      * 
      */
@@ -99,6 +107,14 @@ public class ObjectFactory {
      */
     public Credentials createCredentials() {
         return new Credentials();
+    }
+
+    /**
+     * Create an instance of {@link Pipeline }
+     * 
+     */
+    public Pipeline createPipeline() {
+        return new Pipeline();
     }
 
 }
