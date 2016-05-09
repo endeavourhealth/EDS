@@ -54,6 +54,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link RunDataDistributionProtocolsConfig }
+     * 
+     */
+    public RunDataDistributionProtocolsConfig createRunDataDistributionProtocolsConfig() {
+        return new RunDataDistributionProtocolsConfig();
+    }
+
+    /**
      * Create an instance of {@link ReturnResponseAcknowledgementConfig }
      * 
      */
@@ -91,14 +99,6 @@ public class ObjectFactory {
      */
     public Credentials createCredentials() {
         return new Credentials();
-    }
-
-    /**
-     * Create an instance of {@link Pipeline }
-     * 
-     */
-    public Pipeline createPipeline() {
-        return new Pipeline();
     }
 
 }

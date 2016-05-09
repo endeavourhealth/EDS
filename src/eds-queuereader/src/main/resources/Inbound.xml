@@ -11,5 +11,21 @@
     <Pipeline>
         <MessageTransform/>
         <PostToEventLog/>
+        <PostMessageToQueue>
+            <Credentials>
+                <Username>username</Username>
+                <Password>password</Password>
+            </Credentials>
+            <Nodes>192.168.0.1:1001, 192.168.0.2:1002</Nodes>
+            <Exchange>EdsResponse</Exchange>
+        </PostMessageToQueue>
+        <PostMessageToQueue>
+            <Credentials>
+                <Username>username</Username>
+                <Password>password</Password>
+            </Credentials>
+            <Nodes>192.168.0.1:1001, 192.168.0.2:1002</Nodes>
+            <Exchange>EdsInterim</Exchange>
+        </PostMessageToQueue>
     </Pipeline>
 </QueueReaderConfiguration>

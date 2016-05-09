@@ -22,4 +22,6 @@
     <xs:complexType name="MessageTransformConfig"/>
 
     <xs:complexType name="PostToEventLogConfig"/>
+
+    <xs:complexType name="RunDataDistributionProtocolsConfig"/>
 </xs:schema>

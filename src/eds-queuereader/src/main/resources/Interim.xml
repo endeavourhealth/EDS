@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<QueueReaderConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="QueueReaderConfiguration.xsd">
+<QueueReaderConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../eds-messaging-core/src/main/resources/QueueReaderConfiguration.xsd">
     <Credentials>
         <Username>username</Username>
         <Password>password</Password>
@@ -8,5 +8,7 @@
     <Exchange>Interim</Exchange>
     <Queue>Interim-Orgs1000-2000</Queue>
     <RoutingKeys>Org1,Org2,Org3</RoutingKeys>
-    <MessagePipelineClass>org.endeavourhealth.queuereader.pipeline.InterimPipeline</MessagePipelineClass>
+    <Pipeline>
+        <RunDataDitributionProtocols/>
+    </Pipeline>
 </QueueReaderConfiguration>
