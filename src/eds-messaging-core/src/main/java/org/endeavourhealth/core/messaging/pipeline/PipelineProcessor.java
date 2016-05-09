@@ -47,6 +47,8 @@ public class PipelineProcessor {
 				return new RunDataDistributionProtocols((RunDataDistributionProtocolsConfig) processConfig);
 			case "PostToSubscriberWebServiceConfig":
 				return new PostToSubscriberWebService((PostToSubscriberWebServiceConfig) processConfig);
+			case "PostToSenderConfig":
+				return new PostToSender((PostToSenderConfig) processConfig);
 			default:
 				return null;
 		}

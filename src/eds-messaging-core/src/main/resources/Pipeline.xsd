@@ -14,6 +14,7 @@
                 <xs:element name="PostToEventLog" type="PostToEventLogConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="RunDataDitributionProtocols" type="RunDataDistributionProtocolsConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="PostToSubscriberWebService" type="PostToSubscriberWebServiceConfig" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="PostToSender" type="PostToSenderConfig" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
         </xs:sequence>
     </xs:complexType>
