@@ -46,6 +46,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link MessageTransformConfig }
+     * 
+     */
+    public MessageTransformConfig createMessageTransformConfig() {
+        return new MessageTransformConfig();
+    }
+
+    /**
      * Create an instance of {@link ReturnResponseAcknowledgementConfig }
      * 
      */
@@ -62,6 +70,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link PostToEventLogConfig }
+     * 
+     */
+    public PostToEventLogConfig createPostToEventLogConfig() {
+        return new PostToEventLogConfig();
+    }
+
+    /**
      * Create an instance of {@link ValidateSenderConfig }
      * 
      */
@@ -75,6 +91,14 @@ public class ObjectFactory {
      */
     public Credentials createCredentials() {
         return new Credentials();
+    }
+
+    /**
+     * Create an instance of {@link Pipeline }
+     * 
+     */
+    public Pipeline createPipeline() {
+        return new Pipeline();
     }
 
 }
