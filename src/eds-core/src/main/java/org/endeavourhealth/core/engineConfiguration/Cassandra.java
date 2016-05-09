@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.core.messaging.configuration.schema.engineConfiguration;
+package org.endeavourhealth.core.engineConfiguration;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.core.messaging.configuration.schema.engineConfiguration;
+package org.endeavourhealth.core.engineConfiguration;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -19,6 +19,7 @@ import javax.xml.bind.annotation.XmlType;
  *       &lt;sequence>
  *         &lt;element name="cassandra" type="{}cassandra"/>
  *         &lt;element name="logging" type="{}logging"/>
+ *         &lt;element name="audit" type="{}audit"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -30,7 +31,8 @@ import javax.xml.bind.annotation.XmlType;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "engineConfiguration", propOrder = {
     "cassandra",
-    "logging"
+    "logging",
+    "audit"
 })
 public class EngineConfiguration {
 
@@ -38,6 +40,8 @@ public class EngineConfiguration {
     protected Cassandra cassandra;
     @XmlElement(required = true)
     protected Logging logging;
+    @XmlElement(required = true)
+    protected Audit audit;
 
     /**
      * Gets the value of the cassandra property.
@@ -85,6 +89,30 @@ public class EngineConfiguration {
      */
     public void setLogging(Logging value) {
         this.logging = value;
+    }
+
+    /**
+     * Gets the value of the audit property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link Audit }
+     *     
+     */
+    public Audit getAudit() {
+        return audit;
+    }
+
+    /**
+     * Sets the value of the audit property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link Audit }
+     *     
+     */
+    public void setAudit(Audit value) {
+        this.audit = value;
     }
 
 }

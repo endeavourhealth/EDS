@@ -21,7 +21,7 @@ public abstract class AbstractEndpoint {
 		processor.execute(exchange);
 
 		return Response
-				.status(200)
+				.ok()
 				.entity(exchange.body)
 				.build();
 

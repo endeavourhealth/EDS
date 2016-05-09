@@ -9,7 +9,8 @@
     <version>1.0-SNAPSHOT</version>
 
     <dependencies>
-        <!-- dependent on EDS-core -->
+
+        <!-- dependent on EDS-core and EDS-messaging-core -->
         <dependency>
             <groupId>org.endeavourhealth</groupId>
             <artifactId>eds-core</artifactId>
@@ -20,11 +21,14 @@
             <artifactId>messaging-core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+
+        <!-- rabbit MQ -->
         <dependency>
             <groupId>com.rabbitmq</groupId>
             <artifactId>amqp-client</artifactId>
             <version>3.5.5</version>
         </dependency>
+
     </dependencies>
 
     <build>

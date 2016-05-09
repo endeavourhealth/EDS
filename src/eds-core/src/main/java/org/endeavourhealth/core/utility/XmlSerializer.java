@@ -1,4 +1,4 @@
-package org.endeavourhealth.core.utilities;
+package org.endeavourhealth.core.utility;
 
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -12,7 +12,9 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.*;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public abstract class XmlSerializer {
 
@@ -27,6 +29,15 @@ public abstract class XmlSerializer {
         Document document = docBuilder.parse(is);
 
         return deserializeFromXmlDocument(cls, document, xsdName);
+    }
+
+
+    public static <T> T deserializeFromFile(Class cls, String filename, String xsdName) throws IOException, JAXBException, ParserConfigurationException, SAXException {
+        Path path = Paths.get(filename);
+        byte[] encoded = Files.readAllBytes(path);
+        String configXml = new String(encoded, "UTF-8");
+        T configuration = deserializeFromString(cls, configXml, xsdName);
+        return configuration;
     }
 
     public static <T> T deserializeFromResource(Class cls, String xmlResourceName, String xsdName) throws ParserConfigurationException, JAXBException, IOException, SAXException {

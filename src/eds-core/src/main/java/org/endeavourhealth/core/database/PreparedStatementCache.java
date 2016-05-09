@@ -1,4 +1,4 @@
-package org.endeavourhealth.core.messaging.database;
+package org.endeavourhealth.core.database;
 
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.RegularStatement;

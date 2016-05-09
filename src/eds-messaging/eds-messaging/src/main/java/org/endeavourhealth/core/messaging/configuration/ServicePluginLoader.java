@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.messaging.configuration;
 
 import org.endeavourhealth.core.messaging.model.ServicePlugin;
-import org.endeavourhealth.core.utilities.FileHelper;
+import org.endeavourhealth.core.utility.FileHelper;
 
 import java.io.File;
 import java.net.URL;

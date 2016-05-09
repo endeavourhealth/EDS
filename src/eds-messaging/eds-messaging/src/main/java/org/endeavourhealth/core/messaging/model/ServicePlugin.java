@@ -3,9 +3,9 @@ package org.endeavourhealth.core.messaging.model;
 import org.endeavourhealth.core.messaging.configuration.Constants;
 import org.endeavourhealth.core.messaging.configuration.schema.serviceConfiguration.*;
 import org.endeavourhealth.core.messaging.configuration.schema.serviceContracts.ServiceContracts;
-import org.endeavourhealth.core.utilities.FileHelper;
+import org.endeavourhealth.core.utility.FileHelper;
 import org.endeavourhealth.core.utilities.ReflectionHelper;
-import org.endeavourhealth.core.utilities.XmlHelper;
+import org.endeavourhealth.core.utility.XmlHelper;
 
 public class ServicePlugin
 {

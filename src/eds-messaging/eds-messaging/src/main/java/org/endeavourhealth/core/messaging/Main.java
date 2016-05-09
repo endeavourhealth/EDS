@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.messaging;
 
 import org.endeavourhealth.core.messaging.configuration.Configuration;
-import org.endeavourhealth.core.messaging.logging.CassandraDbAppender;
+import org.endeavourhealth.core.logging.CassandraDbAppender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +20,7 @@ public class Main
         try {
             CassandraDbAppender.registerDbAppender();
         } catch (Exception e) {
-            LOG.error("Failed to initialise DB logging appender");
+            LOG.error("Failed to initialise DB logging appender", e);
         }
 
         try

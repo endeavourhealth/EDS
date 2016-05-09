@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.core.messaging.configuration.schema.engineConfiguration;
+package org.endeavourhealth.core.engineConfiguration;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

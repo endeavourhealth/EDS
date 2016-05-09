@@ -22,35 +22,24 @@
         <sourceTestOutputDir name="../target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="eds-messaging" />
       </profile>
       <profile default="false" name="Annotation profile for eds-core" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="eds-core" />
       </profile>
       <profile default="false" name="Annotation profile for eds-messaging-plugin-dataservice" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="eds-messaging-plugin-dataservice" />
-      </profile>
-      <profile default="false" name="Annotation profile for eds-sftpreader" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="eds-sftpreader" />
       </profile>
       <profile default="false" name="Annotation profile for eds-transforms" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="eds-transforms" />
       </profile>
       <profile default="false" name="Annotation profile for eds-messaging-core" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
@@ -59,6 +48,20 @@
         <processorPath useClasspath="true" />
         <module name="eds-messaging-core" />
       </profile>
+      <profile default="false" name="Annotation profile for eds-queuereader" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="eds-queuereader" />
+      </profile>
+      <profile default="false" name="Annotation profile for eds-messaging" enabled="true">
+        <sourceOutputDir name="../target/generated-sources/annotations" />
+        <sourceTestOutputDir name="../target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="eds-messaging" />
+      </profile>
       <profile default="false" name="Annotation profile for eds-messaging-api" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
@@ -66,12 +69,12 @@
         <processorPath useClasspath="true" />
         <module name="eds-messaging-api" />
       </profile>
-      <profile default="false" name="Annotation profile for eds-queuereader" enabled="true">
+      <profile default="false" name="Annotation profile for eds-sftpreader" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="eds-queuereader" />
+        <module name="eds-sftpreader" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

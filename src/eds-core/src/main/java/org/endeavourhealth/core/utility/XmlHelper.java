@@ -1,4 +1,4 @@
-package org.endeavourhealth.core.utilities;
+package org.endeavourhealth.core.utility;
 
 import com.sun.xml.internal.ws.encoding.soap.SerializationException;
 import org.w3c.dom.Document;

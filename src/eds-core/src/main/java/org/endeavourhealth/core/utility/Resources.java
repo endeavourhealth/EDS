@@ -1,4 +1,4 @@
-package org.endeavourhealth.core.utilities;
+package org.endeavourhealth.core.utility;
 
 import com.google.common.base.Charsets;
 

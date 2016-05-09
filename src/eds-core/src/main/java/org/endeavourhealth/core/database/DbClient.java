@@ -1,11 +1,11 @@
-package org.endeavourhealth.core.messaging.database;
+package org.endeavourhealth.core.database;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import com.google.common.base.Strings;
-import org.endeavourhealth.core.messaging.configuration.schema.engineConfiguration.Cassandra;
-import org.endeavourhealth.core.messaging.configuration.schema.engineConfiguration.EngineConfiguration;
-import org.endeavourhealth.core.messaging.configuration.schema.engineConfiguration.EngineConfigurationSerializer;
+import org.endeavourhealth.core.engineConfiguration.Cassandra;
+import org.endeavourhealth.core.engineConfiguration.EngineConfiguration;
+import org.endeavourhealth.core.engineConfiguration.EngineConfigurationSerializer;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;

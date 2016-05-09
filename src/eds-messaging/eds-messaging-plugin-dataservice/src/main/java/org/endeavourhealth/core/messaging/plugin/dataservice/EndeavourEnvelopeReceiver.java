@@ -4,7 +4,7 @@ import org.endeavourhealth.core.messaging.exceptions.EndpointException;
 import org.endeavourhealth.core.messaging.model.IReceiver;
 import org.endeavourhealth.core.messaging.model.Message;
 import org.endeavourhealth.core.messaging.model.MessageIdentity;
-import org.endeavourhealth.core.utilities.XmlHelper;
+import org.endeavourhealth.core.utility.XmlHelper;
 import org.w3c.dom.Document;
 
 public class EndeavourEnvelopeReceiver implements IReceiver

@@ -1,8 +1,6 @@
-package org.endeavourhealth.core.utilities;
+package org.endeavourhealth.core.utility;
 
 import org.apache.commons.io.IOUtils;
-import org.endeavourhealth.core.messaging.exceptions.ResolutionException;
-
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
@@ -21,7 +19,7 @@ public class FileHelper
         URL url = Thread.currentThread().getContextClassLoader().getResource(resourceLocation);
 
         if (url == null)
-            throw new ResolutionException(resourceLocation + " not found");
+            throw new RuntimeException(resourceLocation + " not found");
 
         return loadStringResource(url);
     }

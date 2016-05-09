@@ -12,4 +12,9 @@
     <keyspace>logging</keyspace>
   </logging>
 
+  <!-- audit settings -->
+  <audit>
+    <keyspace>audit</keyspace>
+  </audit>
+
 </engineConfiguration>

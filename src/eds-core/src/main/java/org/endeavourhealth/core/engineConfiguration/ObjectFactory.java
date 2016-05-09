@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.core.messaging.configuration.schema.engineConfiguration;
+package org.endeavourhealth.core.engineConfiguration;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlElementDecl;
@@ -10,7 +10,7 @@ import javax.xml.namespace.QName;
 /**
  * This object contains factory methods for each 
  * Java content interface and Java element interface 
- * generated in the org.endeavourhealth.messaging.configuration.schema.engineConfiguration package. 
+ * generated in the org.endeavourhealth.core.engineConfiguration package. 
  * <p>An ObjectFactory allows you to programatically 
  * construct new instances of the Java representation 
  * for XML content. The Java representation of XML 
@@ -27,7 +27,7 @@ public class ObjectFactory {
     private final static QName _EngineConfiguration_QNAME = new QName("", "engineConfiguration");
 
     /**
-     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.endeavourhealth.messaging.configuration.schema.engineConfiguration
+     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.endeavourhealth.core.engineConfiguration
      * 
      */
     public ObjectFactory() {
@@ -47,6 +47,14 @@ public class ObjectFactory {
      */
     public Cassandra createCassandra() {
         return new Cassandra();
+    }
+
+    /**
+     * Create an instance of {@link Audit }
+     * 
+     */
+    public Audit createAudit() {
+        return new Audit();
     }
 
     /**

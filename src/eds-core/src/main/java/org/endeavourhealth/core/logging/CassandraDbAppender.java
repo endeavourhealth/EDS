@@ -1,4 +1,4 @@
-package org.endeavourhealth.core.messaging.logging;
+package org.endeavourhealth.core.logging;
 
 import ch.qos.logback.classic.AsyncAppender;
 import ch.qos.logback.classic.db.DBHelper;
@@ -8,28 +8,30 @@ import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
-import org.endeavourhealth.core.messaging.configuration.schema.engineConfiguration.EngineConfiguration;
-import org.endeavourhealth.core.messaging.configuration.schema.engineConfiguration.EngineConfigurationSerializer;
-import org.endeavourhealth.core.messaging.configuration.schema.engineConfiguration.Logging;
-import org.endeavourhealth.core.messaging.database.DbClient;
-import org.endeavourhealth.core.messaging.database.PreparedStatementCache;
+import org.endeavourhealth.core.engineConfiguration.EngineConfiguration;
+import org.endeavourhealth.core.engineConfiguration.EngineConfigurationSerializer;
+import org.endeavourhealth.core.engineConfiguration.Logging;
+import org.endeavourhealth.core.database.DbClient;
+import org.endeavourhealth.core.database.PreparedStatementCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.Date;
 
-public class CassandraDbAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
+public final class CassandraDbAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
-    private final String SQL_EVENT = "INSERT INTO logging_event ("
+    private static final Logger LOG = LoggerFactory.getLogger(CassandraDbAppender.class);
+
+    private final String CQL_EVENT = "INSERT INTO logging_event ("
             + "timestmp, formatted_message, logger_name, level_string, thread_name, reference_flag, "
             + "arg0, arg1, arg2, arg3, caller_filename, caller_class, caller_method, caller_line, "
             + "event_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    private final String SQL_EVENT_PROPERTY = "INSERT INTO logging_event_property ("
+    private final String CQL_EVENT_PROPERTY = "INSERT INTO logging_event_property ("
             + "event_id, mapped_key, mapped_value) VALUES (?, ?, ?)";
 
-    private final String SQL_EVENT_EXCEPTION = "INSERT INTO logging_event_exception ("
+    private final String CQL_EVENT_EXCEPTION = "INSERT INTO logging_event_exception ("
             + "event_id, i, trace_line) VALUES (?, ?, ?)";
 
     private Session session = null;
@@ -91,7 +93,7 @@ public class CassandraDbAppender extends UnsynchronizedAppenderBase<ILoggingEven
         Object[] args = event.getArgumentArray();
 
         PreparedStatementCache cache = DbClient.getInstance().getStatementCache(session);
-        PreparedStatement preparedStatement = cache.getOrAdd(SQL_EVENT);
+        PreparedStatement preparedStatement = cache.getOrAdd(CQL_EVENT);
 
         BoundStatement boundStatement = preparedStatement.
                 bind().
@@ -142,7 +144,7 @@ public class CassandraDbAppender extends UnsynchronizedAppenderBase<ILoggingEven
         }
 
         PreparedStatementCache cache = DbClient.getInstance().getStatementCache(session);
-        PreparedStatement preparedStatement = cache.getOrAdd(SQL_EVENT_PROPERTY);
+        PreparedStatement preparedStatement = cache.getOrAdd(CQL_EVENT_PROPERTY);
 
         for (String key : propertiesKeys) {
             String value = mergedMap.get(key);
@@ -164,7 +166,7 @@ public class CassandraDbAppender extends UnsynchronizedAppenderBase<ILoggingEven
         }
 
         PreparedStatementCache cache = DbClient.getInstance().getStatementCache(session);
-        PreparedStatement preparedStatement = cache.getOrAdd(SQL_EVENT_EXCEPTION);
+        PreparedStatement preparedStatement = cache.getOrAdd(CQL_EVENT_EXCEPTION);
 
         int lineNumber = 0;
         while (tp != null) {
@@ -263,5 +265,16 @@ public class CassandraDbAppender extends UnsynchronizedAppenderBase<ILoggingEven
         asyncAppender.start();
 
         rootLogger.addAppender(asyncAppender);
+    }
+
+    public static void tryRegisterDbAppender() {
+
+        //register the DB logger explicitly, as too diificult to handle errors
+        //if initialised via logback.xml
+        try {
+            registerDbAppender();
+        } catch (Exception e) {
+            LOG.error("Failed to initialise DB logging appender", e);
+        }
     }
 }
