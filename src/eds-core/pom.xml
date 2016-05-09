@@ -41,6 +41,13 @@
             <version>1.3.2</version>
         </dependency>
 
+        <!-- base FHIR resources (to be replaced with Endeavour extensions -->
+        <dependency>
+            <groupId>me.fhir</groupId>
+            <artifactId>fhir-dstu2</artifactId>
+            <version>1.0.0.6881</version>
+        </dependency>
+
     </dependencies>
 
     <build>
