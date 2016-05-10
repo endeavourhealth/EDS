@@ -11,18 +11,17 @@ public abstract class AbstractEndpoint {
 
 	protected Response Process(HttpHeaders headers, String body, Pipeline pipeline) {
 
-		Exchange exchange = new Exchange();
+		Exchange exchange = new Exchange(body);
 
 		for (String key : headers.getRequestHeaders().keySet())
-			exchange.headers.put(key, headers.getHeaderString(key));
-		exchange.body = body;
+			exchange.setHeader(key, headers.getHeaderString(key));
 
 		PipelineProcessor processor = new PipelineProcessor(pipeline);
 		processor.execute(exchange);
 
 		return Response
 				.ok()
-				.entity(exchange.body)
+				.entity(exchange.getBody())
 				.build();
 
 	}

@@ -26,6 +26,6 @@ public class PostMessageToLog implements PipelineComponent {
 			LOG.error("Error writing exchange to audit", e);
 		}
 
-		exchange.body = exchange.body + "Message posted to log" + System.lineSeparator();
+		exchange.setBody(exchange.getBody() + "Message posted to log" + System.lineSeparator());
 	}
 }

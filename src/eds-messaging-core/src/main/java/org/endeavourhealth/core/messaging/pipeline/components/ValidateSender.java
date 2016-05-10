@@ -12,6 +12,6 @@ public class ValidateSender implements PipelineComponent {
 	}
 	@Override
 	public void process(Exchange exchange) {
-		exchange.body = exchange.body + "Sender validated" + System.lineSeparator();
+		exchange.setBody(exchange.getBody() + "Sender validated" + System.lineSeparator());
 	}
 }

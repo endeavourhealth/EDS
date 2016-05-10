@@ -53,8 +53,7 @@ public class SftpConsumer extends TimerTask {
 			for (int i = 0; i<fileList.size(); i++) {
 				InputStream stream = channelSftp.get(fileList.get(i).toString());
 				String messageData = IOUtils.toString(stream);
-				Exchange exchange = new Exchange();
-				exchange.body = messageData;
+				Exchange exchange = new Exchange(messageData);
 				pipeline.execute(exchange);
 			}
 		} catch (JSchException e) {

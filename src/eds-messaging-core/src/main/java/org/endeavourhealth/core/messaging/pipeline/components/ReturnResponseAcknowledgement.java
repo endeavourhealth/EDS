@@ -13,6 +13,6 @@ public class ReturnResponseAcknowledgement implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		exchange.body = exchange.body + "Acknowledgment sent" + System.lineSeparator();
+		exchange.setBody(exchange.getBody() + "Acknowledgment sent" + System.lineSeparator());
 	}
 }

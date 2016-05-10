@@ -30,14 +30,14 @@ public class PostMessageToQueue implements PipelineComponent {
 
 		AMQP.BasicProperties properties = new AMQP.BasicProperties();
 
-		for (String key : exchange.headers.keySet())
-			properties.getHeaders().put(key, exchange.headers.get(key));
+		for (String key : exchange.getHeaders().keySet())
+			properties.getHeaders().put(key, exchange.getHeader(key));
 
 		channel.basicPublish(
 				config.getExchange(),
 				"DETERMINE_KEY_SOMEHOW!!!",		// TODO
 				properties,
-				exchange.body.getBytes());
+				exchange.getBody().getBytes());
 	}
 
 	private Connection getConnection(String username, String password, String nodes) throws IOException, TimeoutException {

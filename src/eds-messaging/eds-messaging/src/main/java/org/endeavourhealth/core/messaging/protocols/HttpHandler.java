@@ -127,8 +127,8 @@ public class HttpHandler extends HttpServlet
 
         writer.println("<ul>");
 
-        for (String headerName : Collections.list(request.getHeaderNames()))
-            writer.println("<li>" + headerName + " = " + request.getHeader(headerName) + "</li>");
+        for (Object headerName : Collections.list(request.getHeaderNames()))
+            writer.println("<li>" + headerName + " = " + request.getHeader((String)headerName) + "</li>");
 
         writer.println("</ul>");
 

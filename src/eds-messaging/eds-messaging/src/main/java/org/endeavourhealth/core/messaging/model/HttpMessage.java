@@ -20,8 +20,8 @@ public class HttpMessage extends Message
         message.queryString = request.getQueryString();
         message.body = IOUtils.toString(request.getReader());
 
-        for (String headerName : Collections.list(request.getHeaderNames()))
-            message.headers.put(headerName, request.getHeader(headerName));
+        for (Object headerName : Collections.list(request.getHeaderNames()))
+            message.headers.put((String)headerName, request.getHeader((String)headerName));
 
         return message;
     }

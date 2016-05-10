@@ -23,8 +23,7 @@ public class RabbitConsumer extends DefaultConsumer {
 		// Decode the message
 		String message = new String(bytes, "UTF-8");
 
-		Exchange exchange = new Exchange();
-		exchange.body = message;
+		Exchange exchange = new Exchange(message);
 
 		// Process the message
 		pipeline.execute(exchange);

@@ -13,6 +13,6 @@ public class PostToSubscriberWebService implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		exchange.body = exchange.body + "Message posted to log" + System.lineSeparator();
+		exchange.setBody(exchange.getBody() + "Message posted to log" + System.lineSeparator());
 	}
 }

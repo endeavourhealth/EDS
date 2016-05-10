@@ -13,6 +13,6 @@ public class ValidateMessageType implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		exchange.body = exchange.body + "Message validated" + System.lineSeparator();
+		exchange.setBody(exchange.getBody() + "Message validated" + System.lineSeparator());
 	}
 }
