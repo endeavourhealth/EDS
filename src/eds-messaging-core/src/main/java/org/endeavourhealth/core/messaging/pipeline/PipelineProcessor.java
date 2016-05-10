@@ -19,7 +19,13 @@ public class PipelineProcessor {
 			}
 			return true;
 		}
+		catch (PipelineException e) {
+			// Gracefully handle pipeline error and send response
+			e.printStackTrace();
+			return false;
+		}
 		catch (Exception e) {
+			// Fatal error
 			e.printStackTrace();
 			return false;
 		}

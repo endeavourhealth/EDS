@@ -1,10 +1,24 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import org.apache.http.HttpStatus;
 import org.endeavourhealth.core.configuration.PostToSenderConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
+import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
+import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.glassfish.jersey.filter.LoggingFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.client.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.glassfish.jersey.client.ClientConfig;
 
 public class PostToSender implements PipelineComponent {
+	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+
 	private PostToSenderConfig config;
 
 	public PostToSender(PostToSenderConfig config) {
@@ -12,7 +26,29 @@ public class PostToSender implements PipelineComponent {
 	}
 
 	@Override
-	public void process(Exchange exchange) {
-		exchange.setBody(exchange.getBody() + "Message posted to log" + System.lineSeparator());
+	public void process(Exchange exchange) throws PipelineException {
+		String responseAddress = (String)exchange.getProperty(PropertyKeys.ResponseAddress);
+		if (responseAddress == null || responseAddress.isEmpty()) {
+			LOG.info("Response address not provided");
+			return;
+		}
+
+		Client client = ClientBuilder.newClient( new ClientConfig().register( LoggingFilter.class ) );
+		WebTarget webTarget = client.target(responseAddress);
+
+		Invocation.Builder invocationBuilder =  webTarget.request(MediaType.APPLICATION_XML);
+
+		for(String key : exchange.getHeaders().keySet())
+			invocationBuilder.header(key, exchange.getHeader(key));
+		Entity entity = Entity.entity(exchange.getBody(), MediaType.WILDCARD_TYPE);			// TODO : MediaType
+
+		Response response = invocationBuilder.post(entity);
+
+		if (response.getStatus() == HttpStatus.SC_OK)
+			LOG.info("Message posted to log");
+		else {
+			LOG.error("Error posting response to sender");
+			throw new PipelineException("Error posting to sender");
+		}
 	}
 }

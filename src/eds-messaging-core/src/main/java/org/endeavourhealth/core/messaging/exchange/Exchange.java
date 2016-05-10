@@ -1,11 +1,16 @@
 package org.endeavourhealth.core.messaging.exchange;
 
+import org.endeavourhealth.core.messaging.EDSMethod;
+
 import java.util.*;
 
 public class Exchange {
-	// Properties are internal only.
-	// Use to pass data between components
+	// Properties are internal only. Use to pass data between components
 	private Properties properties;
+
+	private EDSMethod method;
+	private String requester;
+
 	// Headers will remain outbound
 	private Map<String, String> headers;
 	private UUID exchangeId = null;
@@ -55,6 +60,18 @@ public class Exchange {
 		return headers.get(key);
 	}
 
+	public Map<String, String> getHeaders() {
+		return headers;
+	}
+
+	public void setMethod(EDSMethod method) {
+		this.method = method;
+	}
+
+	public EDSMethod getMethod() {
+		return this.method;
+	}
+
 	public void setProperty(String key, Object value) {
 		properties.put(key, value);
 	}
@@ -63,7 +80,11 @@ public class Exchange {
 		return properties.get(key);
 	}
 
-	public Map<String, String> getHeaders() {
-		return headers;
+	public String getRequester() {
+		return requester;
+	}
+
+	public void setRequester(String requester) {
+		this.requester = requester;
 	}
 }
