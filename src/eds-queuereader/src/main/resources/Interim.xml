@@ -10,7 +10,12 @@
     <RoutingKeys>Org1,Org2,Org3</RoutingKeys>
     <Pipeline>
         <RunDataDistributionProtocols/>
-        <MessageTransform/>
+        <MessageTransform>
+            <ExchangeProperties>
+                <Property Key="TransformFrom">OpenHR</Property>
+                <Property Key="TransformTo">OpenHR</Property>
+            </ExchangeProperties>
+        </MessageTransform>
         <PostMessageToLog/>
         <PostMessageToQueue>
             <Credentials>
