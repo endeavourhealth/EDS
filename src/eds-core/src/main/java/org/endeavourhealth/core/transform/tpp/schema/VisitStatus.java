@@ -7,20 +7,15 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for AppointmentStatus.
+ * <p>Java class for VisitStatus.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * <p>
  * <pre>
- * &lt;simpleType name="AppointmentStatus">
+ * &lt;simpleType name="VisitStatus">
  *   &lt;restriction base="{http://www.w3.org/2001/XMLSchema}string">
  *     &lt;enumeration value="Booked"/>
- *     &lt;enumeration value="Arrived"/>
- *     &lt;enumeration value="Waiting"/>
- *     &lt;enumeration value="In Progress"/>
  *     &lt;enumeration value="Finished"/>
- *     &lt;enumeration value="Did Not Attend"/>
- *     &lt;enumeration value="Patient Walked Out"/>
  *     &lt;enumeration value="Cancelled by Patient"/>
  *     &lt;enumeration value="Cancelled by Organisation"/>
  *   &lt;/restriction>
@@ -28,31 +23,21 @@ import javax.xml.bind.annotation.XmlType;
  * </pre>
  * 
  */
-@XmlType(name = "AppointmentStatus")
+@XmlType(name = "VisitStatus")
 @XmlEnum
-public enum AppointmentStatus {
+public enum VisitStatus {
 
     @XmlEnumValue("Booked")
     BOOKED("Booked"),
-    @XmlEnumValue("Arrived")
-    ARRIVED("Arrived"),
-    @XmlEnumValue("Waiting")
-    WAITING("Waiting"),
-    @XmlEnumValue("In Progress")
-    IN_PROGRESS("In Progress"),
     @XmlEnumValue("Finished")
     FINISHED("Finished"),
-    @XmlEnumValue("Did Not Attend")
-    DID_NOT_ATTEND("Did Not Attend"),
-    @XmlEnumValue("Patient Walked Out")
-    PATIENT_WALKED_OUT("Patient Walked Out"),
     @XmlEnumValue("Cancelled by Patient")
     CANCELLED_BY_PATIENT("Cancelled by Patient"),
     @XmlEnumValue("Cancelled by Organisation")
     CANCELLED_BY_ORGANISATION("Cancelled by Organisation");
     private final String value;
 
-    AppointmentStatus(String v) {
+    VisitStatus(String v) {
         value = v;
     }
 
@@ -60,8 +45,8 @@ public enum AppointmentStatus {
         return value;
     }
 
-    public static AppointmentStatus fromValue(String v) {
-        for (AppointmentStatus c: AppointmentStatus.values()) {
+    public static VisitStatus fromValue(String v) {
+        for (VisitStatus c: VisitStatus.values()) {
             if (c.value.equals(v)) {
                 return c;
             }

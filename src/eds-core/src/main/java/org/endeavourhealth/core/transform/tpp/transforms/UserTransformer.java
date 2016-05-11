@@ -42,7 +42,7 @@ public class UserTransformer {
                 Identifier fhirIdentifier = Fhir.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nationalId, FhirUris.IDENTIFIER_SYSTEM_GMC_NUMBER);
                 fhirPractitioner.addIdentifier(fhirIdentifier);
             } else {
-                //TODO - need to work out enumeration of possible options
+                //TODO - does the profile need to support other staff/user national ID types
             }
         }
 

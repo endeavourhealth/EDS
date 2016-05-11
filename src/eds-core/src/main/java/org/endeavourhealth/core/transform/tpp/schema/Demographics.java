@@ -25,6 +25,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="Surname" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="KnownAs" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="DateOfBirth" type="{http://www.w3.org/2001/XMLSchema}date"/>
+ *         &lt;element name="DateOfDeath" type="{http://www.w3.org/2001/XMLSchema}date" minOccurs="0"/>
  *         &lt;element name="Sex" type="{}Sex"/>
  *         &lt;element name="MaritalStatus" type="{}Code" minOccurs="0"/>
  *         &lt;element name="Ethnicity" type="{}Code" minOccurs="0"/>
@@ -57,6 +58,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "surname",
     "knownAs",
     "dateOfBirth",
+    "dateOfDeath",
     "sex",
     "maritalStatus",
     "ethnicity",
@@ -89,6 +91,9 @@ public class Demographics {
     @XmlElement(name = "DateOfBirth", required = true)
     @XmlSchemaType(name = "date")
     protected XMLGregorianCalendar dateOfBirth;
+    @XmlElement(name = "DateOfDeath")
+    @XmlSchemaType(name = "date")
+    protected XMLGregorianCalendar dateOfDeath;
     @XmlElement(name = "Sex", required = true)
     @XmlSchemaType(name = "string")
     protected Sex sex;
@@ -269,6 +274,30 @@ public class Demographics {
      */
     public void setDateOfBirth(XMLGregorianCalendar value) {
         this.dateOfBirth = value;
+    }
+
+    /**
+     * Gets the value of the dateOfDeath property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link XMLGregorianCalendar }
+     *     
+     */
+    public XMLGregorianCalendar getDateOfDeath() {
+        return dateOfDeath;
+    }
+
+    /**
+     * Sets the value of the dateOfDeath property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link XMLGregorianCalendar }
+     *     
+     */
+    public void setDateOfDeath(XMLGregorianCalendar value) {
+        this.dateOfDeath = value;
     }
 
     /**

@@ -55,6 +55,7 @@
             <xs:element name="Surname" type="xs:string"/>
             <xs:element name="KnownAs" minOccurs="0" type="xs:string"/>
             <xs:element name="DateOfBirth" type="xs:date"/>
+            <xs:element name="DateOfDeath" minOccurs="0" type="xs:date"/>
             <xs:element name="Sex" type="Sex"/>
             <xs:element name="MaritalStatus" minOccurs="0" type="Code"/>
             <xs:element name="Ethnicity" minOccurs="0" type="Code"/>
@@ -708,9 +709,14 @@
     <xs:simpleType name="AppointmentStatus">
         <xs:restriction base="xs:string">
             <xs:enumeration value="Booked"/>
+            <xs:enumeration value="Arrived"/>
             <xs:enumeration value="Waiting"/>
             <xs:enumeration value="In Progress"/>
             <xs:enumeration value="Finished"/>
+            <xs:enumeration value="Did Not Attend"/>
+            <xs:enumeration value="Patient Walked Out"/>
+            <xs:enumeration value="Cancelled by Patient"/>
+            <xs:enumeration value="Cancelled by Organisation"/>
         </xs:restriction>
     </xs:simpleType>
 
@@ -730,6 +736,15 @@
         </xs:sequence>
     </xs:complexType>
 
+    <xs:simpleType name="VisitStatus">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Booked"/>
+            <xs:enumeration value="Finished"/>
+            <xs:enumeration value="Cancelled by Patient"/>
+            <xs:enumeration value="Cancelled by Organisation"/>
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:complexType name="Visit">
         <xs:sequence>
             <xs:element name="DateTime" type="xs:dateTime"/>
@@ -737,7 +752,7 @@
             <xs:element name="Comments" minOccurs="0" type="xs:string"/>
             <xs:element name="UserName" type="xs:string"/>
             <xs:element name="LinkedReferralUID" minOccurs="0" type="xs:string"/>
-            <xs:element name="Status" type="xs:string"/>
+            <xs:element name="Status" type="VisitStatus"/>
             <xs:element name="VisitUID" type="xs:string"/>
         </xs:sequence>
     </xs:complexType>

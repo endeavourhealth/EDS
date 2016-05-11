@@ -18,11 +18,13 @@ public final class TppTransformer {
 
         List<Resource> fhirResources = new ArrayList<>();
 
+        //transform the metadata first, as a lot of the clinical entities require it
         Metadata tppMetadata = tppRecord.getMetadata();
         MetadataTransformer.transform(tppMetadata, fhirResources);
 
         Patient tppPatient = tppRecord.getPatient();
-        PatientTransformer.transform(tppPatient, fhirResources);
+        String patientUid = tppRecord.getPatientUID();
+        PatientTransformer.transform(patientUid, tppPatient, fhirResources);
 
         return fhirResources;
     }

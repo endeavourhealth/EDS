@@ -8,8 +8,14 @@ import java.util.List;
 
 public class AddressTransformer {
 
-    public static Address tranformHomeAddress(org.endeavourhealth.core.transform.tpp.schema.Address tppAddress) {
+    public static Address tranformWorkAddress(org.endeavourhealth.core.transform.tpp.schema.Address tppAddress) {
+        return tranformAddress(tppAddress, Address.AddressUse.WORK);
+    }
 
+    public static Address tranformHomeAddress(org.endeavourhealth.core.transform.tpp.schema.Address tppAddress) {
+        return tranformAddress(tppAddress, Address.AddressUse.HOME);
+    }
+    public static Address tranformAddress(org.endeavourhealth.core.transform.tpp.schema.Address tppAddress, Address.AddressUse use) {
         String houseName = tppAddress.getHouseName();
         String houseNum = tppAddress.getHouseNumber();
         String road = tppAddress.getRoad();
@@ -20,8 +26,8 @@ public class AddressTransformer {
         List<String> tokens = new ArrayList<>();
 
         Address ret = new Address();
-        ret.setUse(Address.AddressUse.HOME); //address type isn't provided, but assume it's the home address
-        ret.setType(Address.AddressType.BOTH);
+        ret.setUse(use);
+        ret.setType(Address.AddressType.BOTH); //assume all addresses are pbysical and postal
 
         if (!Strings.isNullOrEmpty(houseName)) {
             ret.addLine(houseName);
