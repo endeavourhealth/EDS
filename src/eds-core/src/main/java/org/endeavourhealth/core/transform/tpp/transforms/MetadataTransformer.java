@@ -13,8 +13,10 @@ public class MetadataTransformer {
 
     public static void transform(Metadata tppMetadata, List<Resource> fhirResources) {
 
+        boolean first = true;
         for (Site site : tppMetadata.getSite()) {
-            SiteTransformer.transform(site, fhirResources);
+            SiteTransformer.transform(site, first, fhirResources);
+            first = false;
         }
 
         for (User user : tppMetadata.getUser()) {
@@ -26,27 +28,21 @@ public class MetadataTransformer {
 
     private static void linkOrganisations(List<Resource> fhirResources) {
 
-        //the first site is the "main site" that the following ones belong to
-        //e.g. the GP practice and then branch sites
-        //so link the subsequent ones to the first
-        List<Organization> fhirOrganisations = fhirResources
+        Organization fhirOrganisation = Fhir.findOrganisation(fhirResources);
+        String orgId = fhirOrganisation.getId();
+
+        //link all locations to the organisation
+        List<Location> fhirLocations = fhirResources
                 .stream()
-                .filter(t -> t instanceof Organization)
-                .map(t -> (Organization)t)
+                .filter(t -> t instanceof Location)
+                .map(t -> (Location)t)
                 .collect(Collectors.toList());
 
-        if (fhirOrganisations.isEmpty()) {
-            return;
+        for (Location fhirLocation: fhirLocations) {
+            fhirLocation.setManagingOrganization(Fhir.createReference(ResourceType.Organization, orgId));
         }
 
-        Organization firstOrg = fhirOrganisations.remove(0);
-        String id = firstOrg.getId();
-
-        for (Organization org: fhirOrganisations) {
-            org.setPartOf(Fhir.createReference(ResourceType.Organization, id));
-        }
-
-        //link all the users to the organisation as well
+        //link all users to the organisation
         List<Practitioner> fhirPractitioners = fhirResources
                 .stream()
                 .filter(t -> t instanceof Practitioner)
@@ -54,9 +50,10 @@ public class MetadataTransformer {
                 .collect(Collectors.toList());
 
         for (Practitioner fhirPractitioner: fhirPractitioners) {
+
             List<Practitioner.PractitionerPractitionerRoleComponent> fhirRoles = fhirPractitioner.getPractitionerRole();
             for (Practitioner.PractitionerPractitionerRoleComponent fhirRole: fhirRoles) {
-                fhirRole.setManagingOrganization(Fhir.createReference(ResourceType.Organization, id));
+                fhirRole.setManagingOrganization(Fhir.createReference(ResourceType.Organization, orgId));
             }
 
         }

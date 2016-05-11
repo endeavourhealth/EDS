@@ -10,6 +10,7 @@ import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.Patient;
 
 import javax.xml.datatype.XMLGregorianCalendar;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -20,38 +21,88 @@ public class DemographicTransformer {
     private static final String ENGLISH_SECOND_CODE = "161140009";
     private static final String ENGLISH_SECOND_TERM = "English as a second language";
 
-    public static void transform(Identity tppId, Demographics tppDemographics, List<Resource> fhirResources) {
-
+    public static void transform(String patientUid, Identity tppId, Demographics tppDemographics, List<Resource> fhirResources) {
 
         Patient fhirPatient = new Patient();
+        fhirPatient.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_PATIENT));
+        fhirPatient.setId(patientUid);
         fhirResources.add(fhirPatient);
+
+        String orgId = Fhir.findOrganisationId(fhirResources);
+        fhirPatient.setManagingOrganization(Fhir.createReference(ResourceType.Organization, orgId));
 
         transformIdentity(fhirPatient, tppId);
         transformName(fhirPatient, tppDemographics);
         transformDob(fhirPatient, tppDemographics);
+        transformDod(fhirPatient, tppDemographics);
         transformGender(fhirPatient, tppDemographics);
         transformMaritalStatus(fhirPatient, tppDemographics);
         transformEthnicity(fhirPatient, tppDemographics);
         transformLanguage(fhirPatient, tppDemographics);
         transformAddress(fhirPatient, tppDemographics);
         transformCommunications(fhirPatient, tppDemographics);
+        transformUsualGp(fhirPatient, tppDemographics, fhirResources);
+        transformCareDates(fhirPatient, tppDemographics, fhirResources);
+        transformRegistrationType(fhirPatient, tppDemographics);
+    }
 
-/**
+    private static void transformRegistrationType(Patient fhirPatient, Demographics tppDemographics) {
 
+        //TODO - need to get proper object type for registrationType
+        String registrationType = tppDemographics.getRegistrationType();
 
+        Extension ext = Fhir.createExtension(FhirUris.EXTENSION_URI_REGISTRATION_TYPE, new StringType(registrationType));
+        fhirPatient.addExtension(ext);
+    }
 
+    private static void transformCareDates(Patient fhirPatient, Demographics tppDemographics, List<Resource> fhirResources) {
 
- @XmlElement(name = "UsualGPUserName")
- protected String usualGPUserName;
- @XmlElement(name = "CareStartDate")
- @XmlSchemaType(name = "date")
- @XmlElement(name = "CareEndDate")
- @XmlSchemaType(name = "date")
- protected XMLGregorianCalendar careStartDate;
- @XmlElement(name = "RegistrationType", required = true)
- protected String registrationType;
- */
+        XMLGregorianCalendar startDate = tppDemographics.getCareStartDate();
+        XMLGregorianCalendar endDate = tppDemographics.getCareEndDate();
 
+        //there may be future-dated end date, so compare against now and ignore if so
+        if (endDate != null) {
+            Instant ins = endDate.toGregorianCalendar().toInstant();
+            if (!ins.isAfter(Instant.now())) {
+                endDate = null;
+            }
+        }
+
+        fhirPatient.setActive(endDate == null);
+
+        //also need to create the EpisodeOfCare resource
+        EpisodeOfCare fhirEpisode = new EpisodeOfCare();
+        fhirEpisode.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_EPISODE_OF_CARE));
+        fhirResources.add(fhirEpisode);
+
+        Period fhirPeriod = new Period();
+        fhirEpisode.setPeriod(fhirPeriod);
+        fhirPeriod.setStart(startDate.toGregorianCalendar().getTime());
+
+        if (endDate == null) {
+            fhirEpisode.setStatus(EpisodeOfCare.EpisodeOfCareStatus.ACTIVE);
+        } else {
+            fhirEpisode.setStatus(EpisodeOfCare.EpisodeOfCareStatus.FINISHED);
+            fhirPeriod.setEnd(endDate.toGregorianCalendar().getTime());
+        }
+
+        String patientId = fhirPatient.getId();
+        fhirEpisode.setPatient(Fhir.createReference(ResourceType.Patient, patientId));
+
+        String orgId = Fhir.findOrganisationId(fhirResources);
+        fhirEpisode.setManagingOrganization(Fhir.createReference(ResourceType.Organization, orgId));
+    }
+
+    private static void transformUsualGp(Patient fhirPatient, Demographics tppDemographics, List<Resource> fhirResources) {
+
+        String usualGpUserName = tppDemographics.getUsualGPUserName();
+        if (Strings.isNullOrEmpty(usualGpUserName)) {
+            return;
+        }
+
+        Practitioner fhirPractitioner = Fhir.findPractitionerForId(fhirResources, usualGpUserName);
+        String practitionerId = fhirPractitioner.getId();
+        fhirPatient.addCareProvider(Fhir.createReference(ResourceType.Practitioner, practitionerId));
     }
 
     private static void transformCommunications(Patient fhirPatient, Demographics tppDemographics) {
@@ -93,7 +144,7 @@ public class DemographicTransformer {
             fhirPatient.addTelecom(contactPoint);
         }
 
-        //TODO - store SMS consent in FHIR
+        //TODO - store SMS consent in FHIR?
     }
 
     private static void transformAddress(Patient fhirPatient, Demographics tppDemographics) {
@@ -135,7 +186,7 @@ public class DemographicTransformer {
 
     private static void transformEthnicity(Patient fhirPatient, Demographics tppDemographics) {
 
-        //TODO - finish ethnicity
+        //TODO - does FHIR have anywhere for ethnicity?
     }
 
 
@@ -152,6 +203,17 @@ public class DemographicTransformer {
         //TPP doesn't distinguish between gender and sex, and FHIR only supports gender, so just copy sex->gender
         Sex tppSex = tppDemographics.getSex();
         fhirPatient.setGender(SexTransformer.transform(tppSex));
+    }
+
+    private static void transformDod(Patient fhirPatient, Demographics tppDemographics) {
+
+        XMLGregorianCalendar cal = tppDemographics.getDateOfDeath();
+        if (cal == null) {
+            return;
+        }
+
+        Date dod = cal.toGregorianCalendar().getTime();
+        fhirPatient.setDeceased(new DateTimeType(dod));
     }
 
     private static void transformDob(Patient fhirPatient, Demographics tppDemographics) {

@@ -7,11 +7,11 @@ import java.util.List;
 
 public class PatientTransformer {
 
-    public static void transform(Patient tppPatient, List<Resource> resources) {
+    public static void transform(String patientUid, Patient tppPatient, List<Resource> resources) {
 
         Identity id = tppPatient.getIdentity();
         Demographics demographics = tppPatient.getDemographics();
-        DemographicTransformer.transform(id, demographics, resources);
+        DemographicTransformer.transform(patientUid, id, demographics, resources);
 
         Clinical clinical = tppPatient.getClinical();
         ClinicalTransformer.transform(clinical, resources);

@@ -17,11 +17,11 @@ public class NonClinicalTransformer {
         }
 
         for (Visit tppVisit: tppNonClinical.getVisit()) {
-
+            VisitTransformer.transform(tppVisit, fhirResources);
         }
 
         for (Task tppTask: tppNonClinical.getTask()) {
-
+            TaskTransformer.transform(tppTask, fhirResources);
         }
     }
 }

@@ -13,6 +13,7 @@ public class VaccinationTransformer {
     public static void transform(Event tppEvent, Vaccination tppVaccination, List<Resource> fhirResources) {
 
      /*   Immunization fhirImmunisation = new Immunization();
+     ..set profile
         fhirResources.add(fhirImmunisation);
 
         fhirImmunisation.set

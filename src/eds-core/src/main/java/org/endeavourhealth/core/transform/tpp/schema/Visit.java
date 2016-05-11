@@ -25,7 +25,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="Comments" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="UserName" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="LinkedReferralUID" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="Status" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="Status" type="{}VisitStatus"/>
  *         &lt;element name="VisitUID" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -59,7 +59,8 @@ public class Visit {
     @XmlElement(name = "LinkedReferralUID")
     protected String linkedReferralUID;
     @XmlElement(name = "Status", required = true)
-    protected String status;
+    @XmlSchemaType(name = "string")
+    protected VisitStatus status;
     @XmlElement(name = "VisitUID", required = true)
     protected String visitUID;
 
@@ -188,10 +189,10 @@ public class Visit {
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link VisitStatus }
      *     
      */
-    public String getStatus() {
+    public VisitStatus getStatus() {
         return status;
     }
 
@@ -200,10 +201,10 @@ public class Visit {
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link VisitStatus }
      *     
      */
-    public void setStatus(String value) {
+    public void setStatus(VisitStatus value) {
         this.status = value;
     }
 
