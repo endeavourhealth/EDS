@@ -15,14 +15,14 @@ import javax.xml.bind.annotation.XmlType;
  * <pre>
  * &lt;complexType name="PostMessageToQueueConfig">
  *   &lt;complexContent>
- *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+ *     &lt;extension base="{}ComponentConfig">
  *       &lt;sequence>
  *         &lt;element name="Credentials" type="{}Credentials"/>
  *         &lt;element name="Nodes" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="Exchange" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="RoutingKeys" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *       &lt;/sequence>
- *     &lt;/restriction>
+ *     &lt;/extension>
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
@@ -36,7 +36,9 @@ import javax.xml.bind.annotation.XmlType;
     "exchange",
     "routingKeys"
 })
-public class PostMessageToQueueConfig {
+public class PostMessageToQueueConfig
+    extends ComponentConfig
+{
 
     @XmlElement(name = "Credentials", required = true)
     protected Credentials credentials;

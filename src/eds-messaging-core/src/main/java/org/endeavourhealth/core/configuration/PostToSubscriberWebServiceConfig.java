@@ -14,8 +14,8 @@ import javax.xml.bind.annotation.XmlType;
  * <pre>
  * &lt;complexType name="PostToSubscriberWebServiceConfig">
  *   &lt;complexContent>
- *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *     &lt;/restriction>
+ *     &lt;extension base="{}ComponentConfig">
+ *     &lt;/extension>
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
@@ -24,7 +24,9 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "PostToSubscriberWebServiceConfig")
-public class PostToSubscriberWebServiceConfig {
+public class PostToSubscriberWebServiceConfig
+    extends ComponentConfig
+{
 
 
 }

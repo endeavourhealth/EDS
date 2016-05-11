@@ -13,4 +13,24 @@
             <xs:element name="Password" type="xs:string" minOccurs="1" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
+
+    <xs:complexType name="ExchangeProperty">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="Key" type="xs:string"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="ExchangeProperties">
+        <xs:sequence>
+            <xs:element name="Property" type="ExchangeProperty" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ComponentConfig">
+        <xs:sequence>
+            <xs:element name="ExchangeProperties" type="ExchangeProperties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
 </xs:schema>

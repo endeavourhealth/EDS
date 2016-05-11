@@ -17,7 +17,8 @@ public class PipelineProcessor {
 
 	public boolean execute(Exchange exchange) {
 		try {
-			for (Object processConfig : pipeline.getValidateSenderOrValidateMessageTypeOrPostMessageToLog()) {
+			for (Object processConfig : pipeline.getReadMessageEnvelopeOrValidateSenderOrValidateMessageType()) {
+				PopulateExchangeParameters(exchange, processConfig);
 				PipelineComponent component = getComponent(processConfig);
 				component.process(exchange);
 			}
@@ -64,6 +65,17 @@ public class PipelineProcessor {
 				return new PostToSender((PostToSenderConfig) processConfig);
 			default:
 				return null;
+		}
+	}
+
+	private void PopulateExchangeParameters(Exchange exchange, Object processConfig) {
+		if (ComponentConfig.class.isAssignableFrom(processConfig.getClass())) {
+			ComponentConfig config = ((ComponentConfig) processConfig);
+			if (config.getExchangeProperties() != null && config.getExchangeProperties().getProperty() != null) {
+				for (ExchangeProperty exchangeProperty : config.getExchangeProperties().getProperty()) {
+					exchange.setProperty(exchangeProperty.getKey(), exchangeProperty.getValue());
+				}
+			}
 		}
 	}
 }

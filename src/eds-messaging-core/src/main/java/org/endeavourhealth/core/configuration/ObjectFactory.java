@@ -62,6 +62,30 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link ExchangeProperty }
+     * 
+     */
+    public ExchangeProperty createExchangeProperty() {
+        return new ExchangeProperty();
+    }
+
+    /**
+     * Create an instance of {@link Pipeline }
+     * 
+     */
+    public Pipeline createPipeline() {
+        return new Pipeline();
+    }
+
+    /**
+     * Create an instance of {@link ExchangeProperties }
+     * 
+     */
+    public ExchangeProperties createExchangeProperties() {
+        return new ExchangeProperties();
+    }
+
+    /**
      * Create an instance of {@link PostMessageToLogConfig }
      * 
      */
@@ -83,6 +107,14 @@ public class ObjectFactory {
      */
     public MessageTransformConfig createMessageTransformConfig() {
         return new MessageTransformConfig();
+    }
+
+    /**
+     * Create an instance of {@link ComponentConfig }
+     * 
+     */
+    public ComponentConfig createComponentConfig() {
+        return new ComponentConfig();
     }
 
     /**
