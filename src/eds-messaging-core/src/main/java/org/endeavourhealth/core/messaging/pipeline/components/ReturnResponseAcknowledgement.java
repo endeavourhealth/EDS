@@ -3,8 +3,12 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import org.endeavourhealth.core.configuration.ReturnResponseAcknowledgementConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ReturnResponseAcknowledgement implements PipelineComponent {
+	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+
 	private ReturnResponseAcknowledgementConfig config;
 
 	public ReturnResponseAcknowledgement(ReturnResponseAcknowledgementConfig config) {
@@ -13,6 +17,8 @@ public class ReturnResponseAcknowledgement implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		exchange.setBody(exchange.getBody() + "Acknowledgment sent" + System.lineSeparator());
+		// NOTE: Doesnt actually return response here, just sets response body to be returned by AbstractEndpoint process()
+		exchange.setBody("Insert confirmation message body here");
+		LOG.info("Message posted to log");
 	}
 }

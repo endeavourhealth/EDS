@@ -4,11 +4,16 @@ import com.rabbitmq.client.*;
 import org.endeavourhealth.core.configuration.PostMessageToQueueConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
+import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 public class PostMessageToQueue implements PipelineComponent {
+	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+
 	private PostMessageToQueueConfig config;
 
 	public PostMessageToQueue(PostMessageToQueueConfig config) {
@@ -16,28 +21,34 @@ public class PostMessageToQueue implements PipelineComponent {
 	}
 
 	@Override
-	public void process(Exchange exchange) throws IOException, TimeoutException {
-		Connection connection = getConnection(
-				config.getCredentials().getUsername(),
-				config.getCredentials().getPassword(),
-				config.getNodes()
-		);
+	public void process(Exchange exchange) throws IOException, PipelineException {
+		try {
+			Connection connection = getConnection(
+					config.getCredentials().getUsername(),
+					config.getCredentials().getPassword(),
+					config.getNodes()
+			);
 
-		Channel channel = connection.createChannel();
-		channel.exchangeDeclare(
-				config.getExchange(),
-				"TOPIC");
+			Channel channel = connection.createChannel();
+			channel.exchangeDeclare(
+					config.getExchange(),
+					"TOPIC");
 
-		AMQP.BasicProperties properties = new AMQP.BasicProperties();
+			AMQP.BasicProperties properties = new AMQP.BasicProperties();
 
-		for (String key : exchange.getHeaders().keySet())
-			properties.getHeaders().put(key, exchange.getHeader(key));
+			for (String key : exchange.getHeaders().keySet())
+				properties.getHeaders().put(key, exchange.getHeader(key));
 
-		channel.basicPublish(
-				config.getExchange(),
-				"DETERMINE_KEY_SOMEHOW!!!",		// TODO
-				properties,
-				exchange.getBody().getBytes());
+			channel.basicPublish(
+					config.getExchange(),
+					"DETERMINE_KEY_SOMEHOW!!!",    // TODO
+					properties,
+					exchange.getBody().getBytes());
+		}
+		catch (TimeoutException e) {
+			LOG.error("Queue connection timed out");
+			throw new PipelineException(e.getMessage());
+		}
 	}
 
 	private Connection getConnection(String username, String password, String nodes) throws IOException, TimeoutException {

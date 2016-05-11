@@ -3,6 +3,7 @@
                   xsi:noNamespaceSchemaLocation="../../../../eds-messaging-core/src/main/resources/ApiConfiguration.xsd">
     <GetData>
         <Pipeline>
+            <ReadMessageEnvelope/>
             <ValidateSender/>
             <ValidateMessageType/>
             <PostMessageToLog/>

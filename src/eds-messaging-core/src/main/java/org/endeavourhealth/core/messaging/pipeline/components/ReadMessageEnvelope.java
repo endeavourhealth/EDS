@@ -1,22 +1,22 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import org.endeavourhealth.core.configuration.PostToEventLogConfig;
+import org.endeavourhealth.core.configuration.ReadMessageEnvelopeConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PostToEventLog implements PipelineComponent {
+public class ReadMessageEnvelope implements PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
 
-	private PostToEventLogConfig config;
+	private ReadMessageEnvelopeConfig config;
 
-	public PostToEventLog(PostToEventLogConfig config) {
+	public ReadMessageEnvelope(ReadMessageEnvelopeConfig config) {
 		this.config = config;
 	}
 
 	@Override
 	public void process(Exchange exchange) {
-		LOG.info("Message posted to event log");
+		LOG.info("Message envelope processed");
 	}
 }

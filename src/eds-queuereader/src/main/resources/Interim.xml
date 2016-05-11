@@ -9,7 +9,7 @@
     <Queue>Interim-Orgs1000-2000</Queue>
     <RoutingKeys>Org1,Org2,Org3</RoutingKeys>
     <Pipeline>
-        <RunDataDitributionProtocols/>
+        <RunDataDistributionProtocols/>
         <MessageTransform/>
         <PostMessageToLog/>
         <PostMessageToQueue>

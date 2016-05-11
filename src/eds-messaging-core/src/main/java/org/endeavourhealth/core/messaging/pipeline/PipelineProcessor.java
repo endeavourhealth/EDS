@@ -3,8 +3,12 @@ package org.endeavourhealth.core.messaging.pipeline;
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.components.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PipelineProcessor {
+	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+
 	private Pipeline pipeline;
 
 	public PipelineProcessor(Pipeline pipeline) {
@@ -21,7 +25,8 @@ public class PipelineProcessor {
 		}
 		catch (PipelineException e) {
 			// Gracefully handle pipeline error and send response
-			e.printStackTrace();
+			LOG.error("Pipeline exception");
+			// e.printStackTrace();
 			return false;
 		}
 		catch (Exception e) {
@@ -35,6 +40,8 @@ public class PipelineProcessor {
 		String xmlTagName = processConfig.getClass().getSimpleName();
 
 		switch(xmlTagName) {
+			case "ReadMessageEnvelopeConfig":
+				return new ReadMessageEnvelope((ReadMessageEnvelopeConfig) processConfig);
 			case "ValidateSenderConfig":
 				return new ValidateSender((ValidateSenderConfig) processConfig);
 			case "ValidateMessageTypeConfig":

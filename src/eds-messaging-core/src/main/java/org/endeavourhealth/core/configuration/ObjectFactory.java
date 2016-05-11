@@ -30,27 +30,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link PostMessageToLogConfig }
+     * Create an instance of {@link ReadMessageEnvelopeConfig }
      * 
      */
-    public PostMessageToLogConfig createPostMessageToLogConfig() {
-        return new PostMessageToLogConfig();
-    }
-
-    /**
-     * Create an instance of {@link PostMessageToQueueConfig }
-     * 
-     */
-    public PostMessageToQueueConfig createPostMessageToQueueConfig() {
-        return new PostMessageToQueueConfig();
-    }
-
-    /**
-     * Create an instance of {@link MessageTransformConfig }
-     * 
-     */
-    public MessageTransformConfig createMessageTransformConfig() {
-        return new MessageTransformConfig();
+    public ReadMessageEnvelopeConfig createReadMessageEnvelopeConfig() {
+        return new ReadMessageEnvelopeConfig();
     }
 
     /**
@@ -75,6 +59,30 @@ public class ObjectFactory {
      */
     public ValidateMessageTypeConfig createValidateMessageTypeConfig() {
         return new ValidateMessageTypeConfig();
+    }
+
+    /**
+     * Create an instance of {@link PostMessageToLogConfig }
+     * 
+     */
+    public PostMessageToLogConfig createPostMessageToLogConfig() {
+        return new PostMessageToLogConfig();
+    }
+
+    /**
+     * Create an instance of {@link PostMessageToQueueConfig }
+     * 
+     */
+    public PostMessageToQueueConfig createPostMessageToQueueConfig() {
+        return new PostMessageToQueueConfig();
+    }
+
+    /**
+     * Create an instance of {@link MessageTransformConfig }
+     * 
+     */
+    public MessageTransformConfig createMessageTransformConfig() {
+        return new MessageTransformConfig();
     }
 
     /**

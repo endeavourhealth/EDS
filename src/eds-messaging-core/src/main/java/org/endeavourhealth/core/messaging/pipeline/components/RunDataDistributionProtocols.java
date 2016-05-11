@@ -3,8 +3,12 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RunDataDistributionProtocols implements PipelineComponent {
+	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+
 	private RunDataDistributionProtocolsConfig config;
 
 	public RunDataDistributionProtocols(RunDataDistributionProtocolsConfig config) {
@@ -13,6 +17,6 @@ public class RunDataDistributionProtocols implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		exchange.setBody(exchange.getBody() + "Message posted to log" + System.lineSeparator());
+		LOG.info("Message posted to log");
 	}
 }
