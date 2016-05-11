@@ -2,32 +2,76 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <xs:include schemaLocation="Common.xsd"/>
 
-    <xs:complexType name="ReadMessageEnvelopeConfig"/>
-
-    <xs:complexType name="ValidateSenderConfig"/>
-
-    <xs:complexType name="ValidateMessageTypeConfig"/>
-
-    <xs:complexType name="PostMessageToLogConfig"/>
-
-    <xs:complexType name="PostMessageToQueueConfig">
-        <xs:sequence>
-            <xs:element name="Credentials" type="Credentials" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="Nodes" type="xs:string" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="Exchange" type="xs:string" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="RoutingKeys" type="xs:string" minOccurs="0" maxOccurs="1"/>
-        </xs:sequence>
+    <xs:complexType name="ReadMessageEnvelopeConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
     </xs:complexType>
 
-    <xs:complexType name="ReturnResponseAcknowledgementConfig"/>
+    <xs:complexType name="ValidateSenderConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
 
-    <xs:complexType name="MessageTransformConfig"/>
+    <xs:complexType name="ValidateMessageTypeConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
 
-    <xs:complexType name="PostToEventLogConfig"/>
+    <xs:complexType name="PostMessageToLogConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
 
-    <xs:complexType name="RunDataDistributionProtocolsConfig"/>
+    <xs:complexType name="PostMessageToQueueConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig">
+                <xs:sequence>
+                    <xs:element name="Credentials" type="Credentials" minOccurs="1" maxOccurs="1"/>
+                    <xs:element name="Nodes" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                    <xs:element name="Exchange" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                    <xs:element name="RoutingKeys" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
 
-    <xs:complexType name="PostToSubscriberWebServiceConfig"/>
+    <xs:complexType name="ReturnResponseAcknowledgementConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
 
-    <xs:complexType name="PostToSenderConfig"/>
+    <xs:complexType name="MessageTransformConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="PostToEventLogConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="RunDataDistributionProtocolsConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="PostToSubscriberWebServiceConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="PostToSenderConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
 </xs:schema>
