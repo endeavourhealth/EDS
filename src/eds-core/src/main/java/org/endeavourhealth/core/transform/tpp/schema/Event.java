@@ -43,8 +43,10 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *       &lt;attribute name="UserName" type="{http://www.w3.org/2001/XMLSchema}string" />
  *       &lt;attribute name="DoneBy" type="{http://www.w3.org/2001/XMLSchema}string" />
  *       &lt;attribute name="DoneAt" type="{http://www.w3.org/2001/XMLSchema}string" />
+ *       &lt;attribute name="Software" type="{http://www.w3.org/2001/XMLSchema}string" />
  *       &lt;attribute name="Method" type="{}EventMethod" />
  *       &lt;attribute name="LinkedReferralUID" type="{http://www.w3.org/2001/XMLSchema}string" />
+ *       &lt;attribute name="EventUID" type="{http://www.w3.org/2001/XMLSchema}string" />
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -114,10 +116,14 @@ public class Event {
     protected String doneBy;
     @XmlAttribute(name = "DoneAt")
     protected String doneAt;
+    @XmlAttribute(name = "Software")
+    protected String software;
     @XmlAttribute(name = "Method")
     protected EventMethod method;
     @XmlAttribute(name = "LinkedReferralUID")
     protected String linkedReferralUID;
+    @XmlAttribute(name = "EventUID")
+    protected String eventUID;
 
     /**
      * Gets the value of the medication property.
@@ -680,6 +686,30 @@ public class Event {
     }
 
     /**
+     * Gets the value of the software property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getSoftware() {
+        return software;
+    }
+
+    /**
+     * Sets the value of the software property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setSoftware(String value) {
+        this.software = value;
+    }
+
+    /**
      * Gets the value of the method property.
      * 
      * @return
@@ -725,6 +755,30 @@ public class Event {
      */
     public void setLinkedReferralUID(String value) {
         this.linkedReferralUID = value;
+    }
+
+    /**
+     * Gets the value of the eventUID property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getEventUID() {
+        return eventUID;
+    }
+
+    /**
+     * Sets the value of the eventUID property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setEventUID(String value) {
+        this.eventUID = value;
     }
 
 }

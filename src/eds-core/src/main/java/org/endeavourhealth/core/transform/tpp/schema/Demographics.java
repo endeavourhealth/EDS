@@ -38,7 +38,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="EmailAddress" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="SMSConsent" type="{}SMSConsent" minOccurs="0"/>
  *         &lt;element name="UsualGPUserName" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="CareStartDate" type="{http://www.w3.org/2001/XMLSchema}date" minOccurs="0"/>
+ *         &lt;element name="CareStartDate" type="{http://www.w3.org/2001/XMLSchema}date"/>
+ *         &lt;element name="CareEndDate" type="{http://www.w3.org/2001/XMLSchema}date" minOccurs="0"/>
  *         &lt;element name="RegistrationType" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -70,6 +71,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "smsConsent",
     "usualGPUserName",
     "careStartDate",
+    "careEndDate",
     "registrationType"
 })
 public class Demographics {
@@ -116,9 +118,12 @@ public class Demographics {
     protected SMSConsent smsConsent;
     @XmlElement(name = "UsualGPUserName")
     protected String usualGPUserName;
-    @XmlElement(name = "CareStartDate")
+    @XmlElement(name = "CareStartDate", required = true)
     @XmlSchemaType(name = "date")
     protected XMLGregorianCalendar careStartDate;
+    @XmlElement(name = "CareEndDate")
+    @XmlSchemaType(name = "date")
+    protected XMLGregorianCalendar careEndDate;
     @XmlElement(name = "RegistrationType", required = true)
     protected String registrationType;
 
@@ -600,6 +605,30 @@ public class Demographics {
      */
     public void setCareStartDate(XMLGregorianCalendar value) {
         this.careStartDate = value;
+    }
+
+    /**
+     * Gets the value of the careEndDate property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link XMLGregorianCalendar }
+     *     
+     */
+    public XMLGregorianCalendar getCareEndDate() {
+        return careEndDate;
+    }
+
+    /**
+     * Sets the value of the careEndDate property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link XMLGregorianCalendar }
+     *     
+     */
+    public void setCareEndDate(XMLGregorianCalendar value) {
+        this.careEndDate = value;
     }
 
     /**

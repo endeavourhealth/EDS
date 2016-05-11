@@ -27,7 +27,7 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="Role" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="RoleCode" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="NationalID" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="NationalIDType" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="NationalIDType" type="{}NationalIDType" minOccurs="0"/>
  *         &lt;element name="AccessRights" type="{}AccessRights"/>
  *         &lt;element name="UserGroups" type="{}UserGroups"/>
  *       &lt;/sequence>
@@ -75,7 +75,8 @@ public class User {
     @XmlElement(name = "NationalID")
     protected String nationalID;
     @XmlElement(name = "NationalIDType")
-    protected String nationalIDType;
+    @XmlSchemaType(name = "string")
+    protected NationalIDType nationalIDType;
     @XmlElement(name = "AccessRights", required = true)
     protected AccessRights accessRights;
     @XmlElement(name = "UserGroups", required = true)
@@ -302,10 +303,10 @@ public class User {
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link NationalIDType }
      *     
      */
-    public String getNationalIDType() {
+    public NationalIDType getNationalIDType() {
         return nationalIDType;
     }
 
@@ -314,10 +315,10 @@ public class User {
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link NationalIDType }
      *     
      */
-    public void setNationalIDType(String value) {
+    public void setNationalIDType(NationalIDType value) {
         this.nationalIDType = value;
     }
 

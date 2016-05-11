@@ -26,6 +26,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="UserName" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="LinkedReferralUID" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="Status" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="VisitUID" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -41,7 +42,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "comments",
     "userName",
     "linkedReferralUID",
-    "status"
+    "status",
+    "visitUID"
 })
 public class Visit {
 
@@ -58,6 +60,8 @@ public class Visit {
     protected String linkedReferralUID;
     @XmlElement(name = "Status", required = true)
     protected String status;
+    @XmlElement(name = "VisitUID", required = true)
+    protected String visitUID;
 
     /**
      * Gets the value of the dateTime property.
@@ -201,6 +205,30 @@ public class Visit {
      */
     public void setStatus(String value) {
         this.status = value;
+    }
+
+    /**
+     * Gets the value of the visitUID property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getVisitUID() {
+        return visitUID;
+    }
+
+    /**
+     * Sets the value of the visitUID property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setVisitUID(String value) {
+        this.visitUID = value;
     }
 
 }

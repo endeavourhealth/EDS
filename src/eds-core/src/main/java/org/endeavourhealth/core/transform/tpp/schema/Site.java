@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="Mame" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="Name" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="ID" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="Telephone" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="Fax" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
@@ -33,7 +33,7 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Site", propOrder = {
-    "mame",
+    "name",
     "id",
     "telephone",
     "fax",
@@ -42,8 +42,8 @@ import javax.xml.bind.annotation.XmlType;
 })
 public class Site {
 
-    @XmlElement(name = "Mame", required = true)
-    protected String mame;
+    @XmlElement(name = "Name", required = true)
+    protected String name;
     @XmlElement(name = "ID", required = true)
     protected String id;
     @XmlElement(name = "Telephone")
@@ -56,27 +56,27 @@ public class Site {
     protected Address address;
 
     /**
-     * Gets the value of the mame property.
+     * Gets the value of the name property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getMame() {
-        return mame;
+    public String getName() {
+        return name;
     }
 
     /**
-     * Sets the value of the mame property.
+     * Sets the value of the name property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setMame(String value) {
-        this.mame = value;
+    public void setName(String value) {
+        this.name = value;
     }
 
     /**

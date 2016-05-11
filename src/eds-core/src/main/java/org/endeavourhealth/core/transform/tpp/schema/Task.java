@@ -24,6 +24,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="Content" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="UserNameAssigned" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="GroupNameAssigned" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="TaskUID" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -38,7 +39,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "due",
     "content",
     "userNameAssigned",
-    "groupNameAssigned"
+    "groupNameAssigned",
+    "taskUID"
 })
 public class Task {
 
@@ -53,6 +55,8 @@ public class Task {
     protected String userNameAssigned;
     @XmlElement(name = "GroupNameAssigned")
     protected String groupNameAssigned;
+    @XmlElement(name = "TaskUID", required = true)
+    protected String taskUID;
 
     /**
      * Gets the value of the taskType property.
@@ -172,6 +176,30 @@ public class Task {
      */
     public void setGroupNameAssigned(String value) {
         this.groupNameAssigned = value;
+    }
+
+    /**
+     * Gets the value of the taskUID property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getTaskUID() {
+        return taskUID;
+    }
+
+    /**
+     * Sets the value of the taskUID property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setTaskUID(String value) {
+        this.taskUID = value;
     }
 
 }

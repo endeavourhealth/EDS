@@ -68,7 +68,8 @@
             <xs:element name="EmailAddress" minOccurs="0" type="xs:string"/>
             <xs:element name="SMSConsent" minOccurs="0" type="SMSConsent"/>
             <xs:element name="UsualGPUserName" minOccurs="0" type="xs:string"/>
-            <xs:element name="CareStartDate" minOccurs="0" type="xs:date"/>
+            <xs:element name="CareStartDate" type="xs:date"/>
+            <xs:element name="CareEndDate" minOccurs="0" type="xs:date"/>
             <xs:element name="RegistrationType" type="xs:string"/>
         </xs:sequence>
     </xs:complexType>
@@ -691,9 +692,10 @@
         <!--DoneBy allows a free-text person or organisation to be stated as the source of the data-->
         <xs:attribute name="DoneAt" type="xs:string"/>
         <!--DoneAt allows a free-text location to be stated as the source of the data-->
+        <xs:attribute name="Software" type="xs:string"/>
         <xs:attribute name="Method" type="EventMethod"/>
         <xs:attribute name="LinkedReferralUID" type="xs:string"/>
-        <!--LinkedReferralUID will cause this event to be linked to the specified referral-->
+        <xs:attribute name="EventUID" type="xs:string"/>
     </xs:complexType>
 
 
@@ -703,42 +705,40 @@
         </xs:sequence>
     </xs:complexType>
 
-    <xs:complexType name="Clinic">
-        <xs:sequence>
-            <xs:element name="UserName" type="xs:string"/>
-            <xs:element name="SiteName" type="xs:string"/>
-            <xs:element name="ClinicType" type="xs:string"/>
-        </xs:sequence>
-    </xs:complexType>
-
-    <xs:complexType name="Slot">
-        <xs:sequence>
-            <xs:element name="SlotType" type="xs:string"/>
-            <xs:element name="DateTimeStart" type="xs:dateTime"/>
-            <xs:element name="Duration" type="xs:integer"/>
-        </xs:sequence>
-    </xs:complexType>
+    <xs:simpleType name="AppointmentStatus">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Booked"/>
+            <xs:enumeration value="Waiting"/>
+            <xs:enumeration value="In Progress"/>
+            <xs:enumeration value="Finished"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:complexType name="Appointment">
         <xs:sequence>
-            <xs:element name="Clinic" type="Clinic"/>
-            <xs:element name="Slot" type="Slot"/>
+            <xs:element name="DateTime" type="xs:dateTime"/>
+            <xs:element name="Duration" type="xs:decimal"/>
+            <xs:element name="Clinician" type="xs:string"/>
+            <xs:element name="UserName" type="xs:string"/>
+            <xs:element name="Site" type="xs:string"/>
+            <xs:element name="ClinicType" type="xs:string"/>
+            <xs:element name="AppointmentUID" type="xs:string"/>
+            <xs:element name="Status" type="AppointmentStatus"/>
             <xs:element name="Comments" minOccurs="0" type="xs:string"/>
             <xs:element name="LinkedReferralUID" minOccurs="0" type="xs:string"/>
-            <xs:element name="Status" type="xs:string"/>
             <xs:element name="Flag" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
         </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="Visit">
         <xs:sequence>
-            <!--The below requirements are for creating a visit, not updating an existing one-->
             <xs:element name="DateTime" type="xs:dateTime"/>
             <xs:element name="Duration" type="xs:integer"/>
             <xs:element name="Comments" minOccurs="0" type="xs:string"/>
             <xs:element name="UserName" type="xs:string"/>
             <xs:element name="LinkedReferralUID" minOccurs="0" type="xs:string"/>
             <xs:element name="Status" type="xs:string"/>
+            <xs:element name="VisitUID" type="xs:string"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -749,6 +749,7 @@
             <xs:element name="Content" type="xs:string"/>
             <xs:element name="UserNameAssigned" minOccurs="0" type="xs:string"/>
             <xs:element name="GroupNameAssigned" minOccurs="0" type="xs:string"/>
+            <xs:element name="TaskUID" type="xs:string"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -771,7 +772,7 @@
 
     <xs:complexType name="Site">
         <xs:sequence>
-            <xs:element name="Mame" type="xs:string"/>
+            <xs:element name="Name" type="xs:string"/>
             <xs:element name="ID" type="xs:string"/>
             <xs:element name="Telephone" minOccurs="0" type="xs:string"/>
             <xs:element name="Fax" minOccurs="0" type="xs:string"/>
@@ -792,6 +793,15 @@
         </xs:sequence>
     </xs:complexType>
 
+    <xs:simpleType name="NationalIDType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="GMC"/>
+            <xs:enumeration value="NMCC"/>
+            <xs:enumeration value="UKCC"/>
+            <xs:enumeration value="Other"/>
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:complexType name="User">
         <xs:sequence>
             <xs:element name="Title" type="xs:string"/>
@@ -803,7 +813,7 @@
             <xs:element name="Role" type="xs:string"/>
             <xs:element name="RoleCode" minOccurs="0" type="xs:string"/>
             <xs:element name="NationalID" minOccurs="0" type="xs:string"/>
-            <xs:element name="NationalIDType" minOccurs="0" type="xs:string"/>
+            <xs:element name="NationalIDType" minOccurs="0" type="NationalIDType"/>
             <xs:element name="AccessRights" type="AccessRights"/>
             <xs:element name="UserGroups" type="UserGroups"/>
         </xs:sequence>

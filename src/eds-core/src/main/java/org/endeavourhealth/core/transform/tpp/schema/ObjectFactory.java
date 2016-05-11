@@ -186,14 +186,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link Slot }
-     * 
-     */
-    public Slot createSlot() {
-        return new Slot();
-    }
-
-    /**
      * Create an instance of {@link CarePlanInstruction }
      * 
      */
@@ -319,14 +311,6 @@ public class ObjectFactory {
      */
     public Patient createPatient() {
         return new Patient();
-    }
-
-    /**
-     * Create an instance of {@link Clinic }
-     * 
-     */
-    public Clinic createClinic() {
-        return new Clinic();
     }
 
     /**

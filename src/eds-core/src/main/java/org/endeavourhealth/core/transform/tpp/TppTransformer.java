@@ -1,10 +1,7 @@
 package org.endeavourhealth.core.transform.tpp;
 
 import org.endeavourhealth.core.transform.tpp.schema.*;
-import org.endeavourhealth.core.transform.tpp.transforms.ClinicalTransformer;
-import org.endeavourhealth.core.transform.tpp.transforms.DemographicTransformer;
-import org.endeavourhealth.core.transform.tpp.transforms.NonClinicalTransformer;
-import org.endeavourhealth.core.transform.tpp.transforms.PatientTransformer;
+import org.endeavourhealth.core.transform.tpp.transforms.*;
 import org.endeavourhealth.core.utility.XmlSerializer;
 import org.hl7.fhir.instance.model.Resource;
 
@@ -20,6 +17,9 @@ public final class TppTransformer {
         PatientRecord tppRecord = XmlSerializer.deserializeFromString(PatientRecord.class, xml, XSD);
 
         List<Resource> fhirResources = new ArrayList<>();
+
+        Metadata tppMetadata = tppRecord.getMetadata();
+        MetadataTransformer.transform(tppMetadata, fhirResources);
 
         Patient tppPatient = tppRecord.getPatient();
         PatientTransformer.transform(tppPatient, fhirResources);
