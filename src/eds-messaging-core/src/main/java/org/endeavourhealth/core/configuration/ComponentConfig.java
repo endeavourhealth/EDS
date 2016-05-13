@@ -36,6 +36,7 @@ import javax.xml.bind.annotation.XmlType;
     RunDataDistributionProtocolsConfig.class,
     ReturnResponseAcknowledgementConfig.class,
     ValidateMessageTypeConfig.class,
+    LoadSenderConfigurationConfig.class,
     PostMessageToLogConfig.class,
     PostMessageToQueueConfig.class,
     MessageTransformConfig.class,

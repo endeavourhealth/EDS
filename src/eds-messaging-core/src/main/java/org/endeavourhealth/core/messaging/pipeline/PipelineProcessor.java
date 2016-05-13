@@ -43,6 +43,8 @@ public class PipelineProcessor {
 		switch(xmlTagName) {
 			case "ReadMessageEnvelopeConfig":
 				return new ReadMessageEnvelope((ReadMessageEnvelopeConfig) processConfig);
+			case "LoadSenderConfigurationConfig":
+				return new LoadSenderConfiguration((LoadSenderConfigurationConfig) processConfig);
 			case "ValidateSenderConfig":
 				return new ValidateSender((ValidateSenderConfig) processConfig);
 			case "LoadDataDistributionProtocolsConfig":

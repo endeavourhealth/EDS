@@ -8,6 +8,12 @@
         </xs:complexContent>
     </xs:complexType>
 
+    <xs:complexType name="LoadSenderConfigurationConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
+
     <xs:complexType name="ValidateSenderConfig">
         <xs:complexContent>
             <xs:extension base="ComponentConfig"/>

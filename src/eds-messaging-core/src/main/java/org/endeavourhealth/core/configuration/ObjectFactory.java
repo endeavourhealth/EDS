@@ -62,6 +62,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link LoadSenderConfigurationConfig }
+     * 
+     */
+    public LoadSenderConfigurationConfig createLoadSenderConfigurationConfig() {
+        return new LoadSenderConfigurationConfig();
+    }
+
+    /**
      * Create an instance of {@link ExchangeProperty }
      * 
      */

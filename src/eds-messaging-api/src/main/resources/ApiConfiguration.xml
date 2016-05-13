@@ -5,7 +5,7 @@
         <Pipeline>
             <ReadMessageEnvelope/>
             <ValidateSender/>
-            <LoadDataDistributionProtocols/>
+            <LoadSenderConfiguration/>
             <ValidateMessageType/>
             <!--<PostMessageToLog/>-->
             <PostMessageToQueue>

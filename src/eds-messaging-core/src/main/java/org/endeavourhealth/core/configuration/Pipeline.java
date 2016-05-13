@@ -22,6 +22,7 @@ import javax.xml.bind.annotation.XmlType;
  *       &lt;sequence>
  *         &lt;choice maxOccurs="unbounded">
  *           &lt;element name="ReadMessageEnvelope" type="{}ReadMessageEnvelopeConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="LoadSenderConfiguration" type="{}LoadSenderConfigurationConfig" minOccurs="0"/>
  *           &lt;element name="LoadDataDistributionProtocols" type="{}LoadDataDistributionProtocolsConfig" minOccurs="0"/>
  *           &lt;element name="ValidateSender" type="{}ValidateSenderConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="ValidateMessageType" type="{}ValidateMessageTypeConfig" maxOccurs="unbounded" minOccurs="0"/>
@@ -50,6 +51,7 @@ public class Pipeline {
 
     @XmlElements({
         @XmlElement(name = "ReadMessageEnvelope", type = ReadMessageEnvelopeConfig.class),
+        @XmlElement(name = "LoadSenderConfiguration", type = LoadSenderConfigurationConfig.class),
         @XmlElement(name = "LoadDataDistributionProtocols", type = LoadDataDistributionProtocolsConfig.class),
         @XmlElement(name = "ValidateSender", type = ValidateSenderConfig.class),
         @XmlElement(name = "ValidateMessageType", type = ValidateMessageTypeConfig.class),
@@ -83,6 +85,7 @@ public class Pipeline {
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link ReadMessageEnvelopeConfig }
+     * {@link LoadSenderConfigurationConfig }
      * {@link LoadDataDistributionProtocolsConfig }
      * {@link ValidateSenderConfig }
      * {@link ValidateMessageTypeConfig }
