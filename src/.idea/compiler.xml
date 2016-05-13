@@ -76,14 +76,23 @@
         <processorPath useClasspath="true" />
         <module name="eds-sftpreader" />
       </profile>
+      <profile default="false" name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="eds-admin" />
+        <module name="eds-clinical" />
+      </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="eds-admin" target="1.8" />
+      <module name="eds-clinical" target="1.8" />
       <module name="eds-core" target="1.8" />
       <module name="eds-messaging" target="1.8" />
       <module name="eds-messaging-api" target="1.8" />
       <module name="eds-messaging-core" target="1.8" />
       <module name="eds-messaging-plugin-dataservice" target="1.8" />
-      <module name="eds-messaging-plugin-gpcim" target="1.8" />
       <module name="eds-queuereader" target="1.8" />
       <module name="eds-sftpreader" target="1.8" />
       <module name="eds-transforms" target="1.8" />

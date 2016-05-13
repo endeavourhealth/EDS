@@ -4,32 +4,22 @@ CREATE KEYSPACE ehr WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replicatio
 
 USE ehr;
 
-DROP TABLE IF EXISTS patient_resource;
+DROP MATERIALIZED VIEW IF EXISTS person_resource_metadata_by_date;
 
-CREATE TABLE patient_resource (  patient_id uuid,  service_id uuid,  resource_type text,  resource_id uuid,  effective_date timestamp,
-  last_updated timestamp,  resource_meta_data text,  schema_version text,  resource_data text,  PRIMARY KEY ((patient_id), service_id, resource_type, resource_id));
+DROP TABLE IF EXISTS person_resource;
 
-CREATE MATERIALIZED VIEW patient_resource_by_date AS
-SELECT patient_id, resource_type, effective_date, service_id, resource_id, resource_meta_data
-FROM patient_resource
-WHERE patient_id IS NOT NULL
+CREATE TABLE person_resource (  person_id uuid,  resource_type text,  service_id uuid,  system_instance_id uuid,  resource_id text,
+  effective_date timestamp,
+  last_updated timestamp,  resource_metadata text,  schema_version text,  resource_data text,  PRIMARY KEY ((person_id), resource_type, service_id, system_instance_id, resource_id));
+
+CREATE MATERIALIZED VIEW person_resource_metadata_by_date AS
+SELECT person_id, resource_type, effective_date, service_id, system_instance_id, resource_id, resource_metadata
+FROM person_resource
+WHERE person_id IS NOT NULL
   AND resource_type IS NOT NULL
   AND effective_date IS NOT NULL
   AND service_id IS NOT NULL
+  AND system_instance_id IS NOT NULL
   AND resource_id IS NOT NULL
-PRIMARY KEY((patient_id), resource_type, effective_date, service_id, resource_id)
-WITH CLUSTERING ORDER BY (resource_type ASC, effective_date DESC, service_id ASC, resource_id ASC);
-
-
-
-
-
-DROP TABLE IF EXISTS clinical_resource;
-
-CREATE TABLE clinical_resource (  patient_id uuid,  service_id uuid,  resource_type text,  resource_id uuid,  effective_year int,
-  last_updated timestamp,  schema_version text,  resource_data text,  PRIMARY KEY ((patient_id), service_id, resource_type, resource_id));
-
-DROP TABLE IF EXISTS clinical_resource_index;
-
-CREATE TABLE clinical_resource_index (  patient_id uuid,  resource_type text,  effective_year int,  meta_data text,  PRIMARY KEY ((patient_id), resource_type, effective_year))
-WITH CLUSTERING ORDER BY (resource_type ASC, effective_year DESC);
+PRIMARY KEY((person_id), resource_type, effective_date, service_id, system_instance_id, resource_id)
+WITH CLUSTERING ORDER BY (resource_type ASC, effective_date DESC, service_id ASC, system_instance_id ASC, resource_id ASC);
