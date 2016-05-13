@@ -157,4 +157,12 @@ public class ObjectFactory {
         return new Credentials();
     }
 
+    /**
+     * Create an instance of {@link LoadDataDistributionProtocolsConfig }
+     * 
+     */
+    public LoadDataDistributionProtocolsConfig createLoadDataDistributionProtocolsConfig() {
+        return new LoadDataDistributionProtocolsConfig();
+    }
+
 }

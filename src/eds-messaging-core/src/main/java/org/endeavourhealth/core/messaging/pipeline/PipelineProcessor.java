@@ -17,7 +17,7 @@ public class PipelineProcessor {
 
 	public boolean execute(Exchange exchange) {
 		try {
-			for (Object processConfig : pipeline.getReadMessageEnvelopeOrValidateSenderOrValidateMessageType()) {
+			for (Object processConfig : pipeline.getPipelineComponents()) {
 				PopulateExchangeParameters(exchange, processConfig);
 				PipelineComponent component = getComponent(processConfig);
 				component.process(exchange);
@@ -45,6 +45,8 @@ public class PipelineProcessor {
 				return new ReadMessageEnvelope((ReadMessageEnvelopeConfig) processConfig);
 			case "ValidateSenderConfig":
 				return new ValidateSender((ValidateSenderConfig) processConfig);
+			case "LoadDataDistributionProtocolsConfig":
+				return new LoadDataDistributionProtocols((LoadDataDistributionProtocolsConfig) processConfig);
 			case "ValidateMessageTypeConfig":
 				return new ValidateMessageType((ValidateMessageTypeConfig) processConfig);
 			case "PostMessageToLogConfig":

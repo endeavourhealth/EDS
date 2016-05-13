@@ -22,6 +22,7 @@ import javax.xml.bind.annotation.XmlType;
  *       &lt;sequence>
  *         &lt;choice maxOccurs="unbounded">
  *           &lt;element name="ReadMessageEnvelope" type="{}ReadMessageEnvelopeConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="LoadDataDistributionProtocols" type="{}LoadDataDistributionProtocolsConfig" minOccurs="0"/>
  *           &lt;element name="ValidateSender" type="{}ValidateSenderConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="ValidateMessageType" type="{}ValidateMessageTypeConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostMessageToLog" type="{}PostMessageToLogConfig" maxOccurs="unbounded" minOccurs="0"/>
@@ -43,12 +44,13 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Pipeline", propOrder = {
-    "readMessageEnvelopeOrValidateSenderOrValidateMessageType"
+    "pipelineComponents"
 })
 public class Pipeline {
 
     @XmlElements({
         @XmlElement(name = "ReadMessageEnvelope", type = ReadMessageEnvelopeConfig.class),
+        @XmlElement(name = "LoadDataDistributionProtocols", type = LoadDataDistributionProtocolsConfig.class),
         @XmlElement(name = "ValidateSender", type = ValidateSenderConfig.class),
         @XmlElement(name = "ValidateMessageType", type = ValidateMessageTypeConfig.class),
         @XmlElement(name = "PostMessageToLog", type = PostMessageToLogConfig.class),
@@ -60,27 +62,28 @@ public class Pipeline {
         @XmlElement(name = "PostToSubscriberWebService", type = PostToSubscriberWebServiceConfig.class),
         @XmlElement(name = "PostToSender", type = PostToSenderConfig.class)
     })
-    protected List<ComponentConfig> readMessageEnvelopeOrValidateSenderOrValidateMessageType;
+    protected List<ComponentConfig> pipelineComponents;
 
     /**
-     * Gets the value of the readMessageEnvelopeOrValidateSenderOrValidateMessageType property.
+     * Gets the value of the pipelineComponents property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the readMessageEnvelopeOrValidateSenderOrValidateMessageType property.
+     * This is why there is not a <CODE>set</CODE> method for the pipelineComponents property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getReadMessageEnvelopeOrValidateSenderOrValidateMessageType().add(newItem);
+     *    getPipelineComponents().add(newItem);
      * </pre>
      * 
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
      * {@link ReadMessageEnvelopeConfig }
+     * {@link LoadDataDistributionProtocolsConfig }
      * {@link ValidateSenderConfig }
      * {@link ValidateMessageTypeConfig }
      * {@link PostMessageToLogConfig }
@@ -94,11 +97,11 @@ public class Pipeline {
      * 
      * 
      */
-    public List<ComponentConfig> getReadMessageEnvelopeOrValidateSenderOrValidateMessageType() {
-        if (readMessageEnvelopeOrValidateSenderOrValidateMessageType == null) {
-            readMessageEnvelopeOrValidateSenderOrValidateMessageType = new ArrayList<ComponentConfig>();
+    public List<ComponentConfig> getPipelineComponents() {
+        if (pipelineComponents == null) {
+            pipelineComponents = new ArrayList<ComponentConfig>();
         }
-        return this.readMessageEnvelopeOrValidateSenderOrValidateMessageType;
+        return this.pipelineComponents;
     }
 
 }

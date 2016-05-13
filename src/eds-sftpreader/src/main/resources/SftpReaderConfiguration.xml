@@ -11,6 +11,8 @@
   <Filename>*.xml</Filename>
   <Polltime>10</Polltime>
     <Pipeline>
+        <ReadMessageEnvelope/>
+        <LoadDataDistributionProtocols/>
         <ValidateMessageType/>
     </Pipeline>
 </SftpReaderConfiguration>
