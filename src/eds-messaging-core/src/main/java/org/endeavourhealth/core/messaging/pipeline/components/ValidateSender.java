@@ -7,7 +7,6 @@ import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.glassfish.jersey.spi.Contract;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

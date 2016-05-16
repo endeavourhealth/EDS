@@ -3,20 +3,7 @@
                   xsi:noNamespaceSchemaLocation="../../../../eds-messaging-core/src/main/resources/ApiConfiguration.xsd">
     <GetData>
         <Pipeline>
-            <ReadMessageEnvelope/>
-            <ValidateSender/>
-            <LoadSenderConfiguration/>
             <ValidateMessageType/>
-            <!--<PostMessageToLog/>-->
-            <PostMessageToQueue>
-                <Credentials>
-                    <Username>username</Username>
-                    <Password>password</Password>
-                </Credentials>
-                <Nodes>192.168.0.1:1001, 192.168.0.2:1002</Nodes>
-                <Exchange>EdsInbound</Exchange>
-            </PostMessageToQueue>
-            <ReturnResponseAcknowledgement/>
         </Pipeline>
     </GetData>
     <GetDataAsync>
@@ -31,7 +18,20 @@
     </PostMessage>
     <PostMessageAsync>
         <Pipeline>
+            <ReadMessageEnvelope/>
+            <ValidateSender/>
+            <LoadSenderConfiguration/>
             <ValidateMessageType/>
+            <!--<PostMessageToLog/>-->
+            <PostMessageToQueue>
+                <Credentials>
+                    <Username>username</Username>
+                    <Password>password</Password>
+                </Credentials>
+                <Nodes>192.168.0.1:1001, 192.168.0.2:1002</Nodes>
+                <Exchange>EdsInbound</Exchange>
+            </PostMessageToQueue>
+            <ReturnResponseAcknowledgement/>
         </Pipeline>
     </PostMessageAsync>
 </ApiConfiguration>

@@ -1,7 +1,6 @@
 package org.endeavourhealth.messagingapi.configuration;
 
 import org.endeavourhealth.core.configuration.ApiConfiguration;
-import org.endeavourhealth.core.engineConfiguration.EngineConfiguration;
 import org.endeavourhealth.core.utility.XmlSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
