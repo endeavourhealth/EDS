@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import org.apache.http.HttpStatus;
-import org.endeavourhealth.core.configuration.PostToSenderConfig;
+import org.endeavourhealth.core.configuration.PostToRestConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
@@ -16,18 +16,18 @@ import javax.ws.rs.core.Response;
 
 import org.glassfish.jersey.client.ClientConfig;
 
-public class PostToSender implements PipelineComponent {
+public class PostToRest implements PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
 
-	private PostToSenderConfig config;
+	private PostToRestConfig config;
 
-	public PostToSender(PostToSenderConfig config) {
+	public PostToRest(PostToRestConfig config) {
 		this.config = config;
 	}
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
-		String responseAddress = (String)exchange.getProperty(PropertyKeys.ResponseAddress);
+		String responseAddress = (String)exchange.getProperty(PropertyKeys.DestinationAddress);
 		if (responseAddress == null || responseAddress.isEmpty()) {
 			LOG.info("Response address not provided");
 			return;
@@ -45,7 +45,7 @@ public class PostToSender implements PipelineComponent {
 		Response response = invocationBuilder.post(entity);
 
 		if (response.getStatus() == HttpStatus.SC_OK)
-			LOG.info("Message posted to log");
+			LOG.info("Message posted");
 		else {
 			LOG.error("Error posting response to sender");
 			throw new PipelineException("Error posting to sender");

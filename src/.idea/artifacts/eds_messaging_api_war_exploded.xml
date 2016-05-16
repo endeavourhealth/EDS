@@ -43,7 +43,6 @@
           <element id="library" level="project" name="Maven: ch.qos.logback:logback-classic:1.1.3" />
           <element id="library" level="project" name="Maven: ch.qos.logback:logback-core:1.1.3" />
           <element id="library" level="project" name="Maven: org.slf4j:slf4j-api:1.7.7" />
-          <element id="library" level="project" name="Maven: com.datastax.cassandra:cassandra-driver-core:3.0.0" />
           <element id="library" level="project" name="Maven: io.netty:netty-handler:4.0.33.Final" />
           <element id="library" level="project" name="Maven: io.netty:netty-buffer:4.0.33.Final" />
           <element id="library" level="project" name="Maven: io.netty:netty-common:4.0.33.Final" />
@@ -67,6 +66,7 @@
           <element id="library" level="project" name="Maven: org.apache.httpcomponents:httpcore:4.2.2" />
           <element id="library" level="project" name="Maven: org.jdom:jdom:1.1.3" />
           <element id="library" level="project" name="Maven: com.google.code.gson:gson:2.3" />
+          <element id="library" level="project" name="Maven: com.datastax.cassandra:cassandra-driver-core:3.0.1" />
         </element>
       </element>
     </root>

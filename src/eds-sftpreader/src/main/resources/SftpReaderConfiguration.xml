@@ -11,8 +11,16 @@
   <Filename>*.xml</Filename>
   <Polltime>10</Polltime>
     <Pipeline>
-        <ReadMessageEnvelope/>
-        <LoadDataDistributionProtocols/>
-        <ValidateMessageType/>
+        <EnvelopMessage>
+            <ExchangeProperties>
+                <Property Key="Sender">ODS0000</Property>
+                <Property Key="ResponseAddress">http://EMISCallBackRest.co.uk</Property>
+            </ExchangeProperties>
+        </EnvelopMessage>
+        <PostToRest>
+            <ExchangeProperties>
+                <Property Key="DestinationAddress">http://localhost:8080/api/PostMessageAsync</Property>
+            </ExchangeProperties>
+        </PostToRest>
     </Pipeline>
 </SftpReaderConfiguration>

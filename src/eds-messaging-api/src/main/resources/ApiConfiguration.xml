@@ -18,11 +18,11 @@
     </PostMessage>
     <PostMessageAsync>
         <Pipeline>
-            <ReadMessageEnvelope/>
+            <OpenEnvelope/>
             <ValidateSender/>
             <LoadSenderConfiguration/>
             <ValidateMessageType/>
-            <!--<PostMessageToLog/>-->
+            <PostMessageToLog/>
             <PostMessageToQueue>
                 <Credentials>
                     <Username>username</Username>

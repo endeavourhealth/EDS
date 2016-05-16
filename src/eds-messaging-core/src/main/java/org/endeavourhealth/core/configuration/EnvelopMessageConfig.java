@@ -7,12 +7,12 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for ReadMessageEnvelopeConfig complex type.
+ * <p>Java class for EnvelopMessageConfig complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="ReadMessageEnvelopeConfig">
+ * &lt;complexType name="EnvelopMessageConfig">
  *   &lt;complexContent>
  *     &lt;extension base="{}ComponentConfig">
  *     &lt;/extension>
@@ -23,8 +23,8 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "ReadMessageEnvelopeConfig")
-public class ReadMessageEnvelopeConfig
+@XmlType(name = "EnvelopMessageConfig")
+public class EnvelopMessageConfig
     extends ComponentConfig
 {
 

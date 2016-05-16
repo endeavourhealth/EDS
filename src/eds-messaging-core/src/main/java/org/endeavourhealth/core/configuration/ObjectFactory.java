@@ -30,11 +30,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ReadMessageEnvelopeConfig }
+     * Create an instance of {@link PostToRestConfig }
      * 
      */
-    public ReadMessageEnvelopeConfig createReadMessageEnvelopeConfig() {
-        return new ReadMessageEnvelopeConfig();
+    public PostToRestConfig createPostToRestConfig() {
+        return new PostToRestConfig();
     }
 
     /**
@@ -118,19 +118,19 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link EnvelopMessageConfig }
+     * 
+     */
+    public EnvelopMessageConfig createEnvelopMessageConfig() {
+        return new EnvelopMessageConfig();
+    }
+
+    /**
      * Create an instance of {@link ComponentConfig }
      * 
      */
     public ComponentConfig createComponentConfig() {
         return new ComponentConfig();
-    }
-
-    /**
-     * Create an instance of {@link PostToSenderConfig }
-     * 
-     */
-    public PostToSenderConfig createPostToSenderConfig() {
-        return new PostToSenderConfig();
     }
 
     /**
@@ -147,6 +147,14 @@ public class ObjectFactory {
      */
     public PostToEventLogConfig createPostToEventLogConfig() {
         return new PostToEventLogConfig();
+    }
+
+    /**
+     * Create an instance of {@link OpenEnvelopeConfig }
+     * 
+     */
+    public OpenEnvelopeConfig createOpenEnvelopeConfig() {
+        return new OpenEnvelopeConfig();
     }
 
     /**

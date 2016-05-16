@@ -19,7 +19,7 @@ public class SftpHandler {
 
 	public void start() {
 		timer = new Timer(true);
-		timer.scheduleAtFixedRate(consumer, 0, configuration.getPolltime()*100);
+		timer.scheduleAtFixedRate(consumer, 0, configuration.getPolltime()*1000);
 	}
 
 	public void stop() {

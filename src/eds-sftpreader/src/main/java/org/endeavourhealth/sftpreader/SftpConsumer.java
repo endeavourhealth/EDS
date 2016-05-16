@@ -43,6 +43,10 @@ public class SftpConsumer extends TimerTask {
 	public void run() {
 		Channel channel = null;
 
+		Exchange exchange = new Exchange("{}");
+		pipeline.execute(exchange);
+
+		/*
 		try {
 			session.connect();
 			channel = session.openChannel("sftp");
@@ -67,6 +71,6 @@ public class SftpConsumer extends TimerTask {
 				channel.disconnect();
 			if (session.isConnected())
 				session.disconnect();
-		}
+		} */
 	}
 }

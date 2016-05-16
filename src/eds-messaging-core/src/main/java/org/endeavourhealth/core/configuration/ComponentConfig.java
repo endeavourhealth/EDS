@@ -32,7 +32,7 @@ import javax.xml.bind.annotation.XmlType;
     "exchangeProperties"
 })
 @XmlSeeAlso({
-    ReadMessageEnvelopeConfig.class,
+    PostToRestConfig.class,
     RunDataDistributionProtocolsConfig.class,
     ReturnResponseAcknowledgementConfig.class,
     ValidateMessageTypeConfig.class,
@@ -40,9 +40,10 @@ import javax.xml.bind.annotation.XmlType;
     PostMessageToLogConfig.class,
     PostMessageToQueueConfig.class,
     MessageTransformConfig.class,
-    PostToSenderConfig.class,
+    EnvelopMessageConfig.class,
     PostToSubscriberWebServiceConfig.class,
     PostToEventLogConfig.class,
+    OpenEnvelopeConfig.class,
     ValidateSenderConfig.class,
     LoadDataDistributionProtocolsConfig.class
 })

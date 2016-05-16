@@ -12,7 +12,8 @@
                         <jaxb:property name="PipelineComponents"/>
                     </xs:appinfo>
                 </xs:annotation>
-                <xs:element name="ReadMessageEnvelope" type="ReadMessageEnvelopeConfig" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="OpenEnvelope" type="OpenEnvelopeConfig" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="EnvelopMessage" type="EnvelopMessageConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="LoadSenderConfiguration" type="LoadSenderConfigurationConfig" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="LoadDataDistributionProtocols" type="LoadDataDistributionProtocolsConfig" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="ValidateSender" type="ValidateSenderConfig" minOccurs="0" maxOccurs="unbounded"/>
@@ -24,7 +25,7 @@
                 <xs:element name="PostToEventLog" type="PostToEventLogConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="RunDataDistributionProtocols" type="RunDataDistributionProtocolsConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="PostToSubscriberWebService" type="PostToSubscriberWebServiceConfig" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="PostToSender" type="PostToSenderConfig" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="PostToRest" type="PostToRestConfig" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
         </xs:sequence>
     </xs:complexType>

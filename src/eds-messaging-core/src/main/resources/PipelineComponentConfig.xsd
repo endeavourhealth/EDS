@@ -2,7 +2,7 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <xs:include schemaLocation="Common.xsd"/>
 
-    <xs:complexType name="ReadMessageEnvelopeConfig">
+    <xs:complexType name="OpenEnvelopeConfig">
         <xs:complexContent>
             <xs:extension base="ComponentConfig"/>
         </xs:complexContent>
@@ -81,7 +81,13 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:complexType name="PostToSenderConfig">
+    <xs:complexType name="EnvelopMessageConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="PostToRestConfig">
         <xs:complexContent>
             <xs:extension base="ComponentConfig"/>
         </xs:complexContent>

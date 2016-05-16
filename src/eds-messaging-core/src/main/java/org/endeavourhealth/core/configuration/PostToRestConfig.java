@@ -7,12 +7,12 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for PostToSenderConfig complex type.
+ * <p>Java class for PostToRestConfig complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="PostToSenderConfig">
+ * &lt;complexType name="PostToRestConfig">
  *   &lt;complexContent>
  *     &lt;extension base="{}ComponentConfig">
  *     &lt;/extension>
@@ -23,8 +23,8 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "PostToSenderConfig")
-public class PostToSenderConfig
+@XmlType(name = "PostToRestConfig")
+public class PostToRestConfig
     extends ComponentConfig
 {
 

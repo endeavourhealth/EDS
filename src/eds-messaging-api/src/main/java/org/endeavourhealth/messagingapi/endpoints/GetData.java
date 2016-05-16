@@ -12,20 +12,18 @@ import javax.ws.rs.core.Response;
 @Path("/")
 public class GetData extends AbstractEndpoint {
 	@GET
-	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/GetData")
-	public Response GetData(@Context HttpHeaders headers, String body) {
+	public Response GetData(@Context HttpHeaders headers) {
 		Pipeline pipeline = ConfigManager.getInstance().getGetData().getPipeline();
-		return Process(headers, body, pipeline);
+		return Process(headers, null, pipeline);
 	}
 
 	@GET
-	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/GetDataAsync")
-	public Response GetDataAsync(@Context HttpHeaders headers, String body) {
+	public Response GetDataAsync(@Context HttpHeaders headers) {
 		Pipeline pipeline = ConfigManager.getInstance().getGetDataAsync().getPipeline();
-		return Process(headers, body, pipeline);
+		return Process(headers, null, pipeline);
 	}
 }

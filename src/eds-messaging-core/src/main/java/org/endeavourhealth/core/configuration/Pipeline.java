@@ -21,7 +21,8 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;choice maxOccurs="unbounded">
- *           &lt;element name="ReadMessageEnvelope" type="{}ReadMessageEnvelopeConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="OpenEnvelope" type="{}OpenEnvelopeConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="EnvelopMessage" type="{}EnvelopMessageConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="LoadSenderConfiguration" type="{}LoadSenderConfigurationConfig" minOccurs="0"/>
  *           &lt;element name="LoadDataDistributionProtocols" type="{}LoadDataDistributionProtocolsConfig" minOccurs="0"/>
  *           &lt;element name="ValidateSender" type="{}ValidateSenderConfig" maxOccurs="unbounded" minOccurs="0"/>
@@ -33,7 +34,7 @@ import javax.xml.bind.annotation.XmlType;
  *           &lt;element name="PostToEventLog" type="{}PostToEventLogConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="RunDataDistributionProtocols" type="{}RunDataDistributionProtocolsConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostToSubscriberWebService" type="{}PostToSubscriberWebServiceConfig" maxOccurs="unbounded" minOccurs="0"/>
- *           &lt;element name="PostToSender" type="{}PostToSenderConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="PostToRest" type="{}PostToRestConfig" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;/choice>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -50,7 +51,8 @@ import javax.xml.bind.annotation.XmlType;
 public class Pipeline {
 
     @XmlElements({
-        @XmlElement(name = "ReadMessageEnvelope", type = ReadMessageEnvelopeConfig.class),
+        @XmlElement(name = "OpenEnvelope", type = OpenEnvelopeConfig.class),
+        @XmlElement(name = "EnvelopMessage", type = EnvelopMessageConfig.class),
         @XmlElement(name = "LoadSenderConfiguration", type = LoadSenderConfigurationConfig.class),
         @XmlElement(name = "LoadDataDistributionProtocols", type = LoadDataDistributionProtocolsConfig.class),
         @XmlElement(name = "ValidateSender", type = ValidateSenderConfig.class),
@@ -62,7 +64,7 @@ public class Pipeline {
         @XmlElement(name = "PostToEventLog", type = PostToEventLogConfig.class),
         @XmlElement(name = "RunDataDistributionProtocols", type = RunDataDistributionProtocolsConfig.class),
         @XmlElement(name = "PostToSubscriberWebService", type = PostToSubscriberWebServiceConfig.class),
-        @XmlElement(name = "PostToSender", type = PostToSenderConfig.class)
+        @XmlElement(name = "PostToRest", type = PostToRestConfig.class)
     })
     protected List<ComponentConfig> pipelineComponents;
 
@@ -84,7 +86,8 @@ public class Pipeline {
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
-     * {@link ReadMessageEnvelopeConfig }
+     * {@link OpenEnvelopeConfig }
+     * {@link EnvelopMessageConfig }
      * {@link LoadSenderConfigurationConfig }
      * {@link LoadDataDistributionProtocolsConfig }
      * {@link ValidateSenderConfig }
@@ -96,7 +99,7 @@ public class Pipeline {
      * {@link PostToEventLogConfig }
      * {@link RunDataDistributionProtocolsConfig }
      * {@link PostToSubscriberWebServiceConfig }
-     * {@link PostToSenderConfig }
+     * {@link PostToRestConfig }
      * 
      * 
      */

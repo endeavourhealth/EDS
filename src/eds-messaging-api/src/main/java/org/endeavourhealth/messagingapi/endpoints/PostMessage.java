@@ -22,8 +22,8 @@ public class PostMessage extends AbstractEndpoint {
 	}
 
 	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
+	// @Consumes(MediaType.APPLICATION_JSON)
+	// @Produces(MediaType.APPLICATION_JSON)
 	@Path("/PostMessageAsync")
 	public Response postMessageAsync(@Context HttpHeaders headers, String body) {
 		Pipeline pipeline = ConfigManager.getInstance().getPostMessageAsync().getPipeline();

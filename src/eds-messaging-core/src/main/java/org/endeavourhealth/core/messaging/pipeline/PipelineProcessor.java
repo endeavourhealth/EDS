@@ -41,8 +41,10 @@ public class PipelineProcessor {
 		String xmlTagName = processConfig.getClass().getSimpleName();
 
 		switch(xmlTagName) {
-			case "ReadMessageEnvelopeConfig":
-				return new ReadMessageEnvelope((ReadMessageEnvelopeConfig) processConfig);
+			case "OpenEnvelopeConfig":
+				return new OpenEnvelope((OpenEnvelopeConfig) processConfig);
+			case "EnvelopMessageConfig":
+				return new EnvelopMessage((EnvelopMessageConfig) processConfig);
 			case "LoadSenderConfigurationConfig":
 				return new LoadSenderConfiguration((LoadSenderConfigurationConfig) processConfig);
 			case "ValidateSenderConfig":
@@ -65,8 +67,8 @@ public class PipelineProcessor {
 				return new RunDataDistributionProtocols((RunDataDistributionProtocolsConfig) processConfig);
 			case "PostToSubscriberWebServiceConfig":
 				return new PostToSubscriberWebService((PostToSubscriberWebServiceConfig) processConfig);
-			case "PostToSenderConfig":
-				return new PostToSender((PostToSenderConfig) processConfig);
+			case "PostToRestConfig":
+				return new PostToRest((PostToRestConfig) processConfig);
 			default:
 				return null;
 		}
