@@ -83,8 +83,7 @@
     </xs:simpleType>
 
     <xs:complexType name="Drug">
-        <xs:sequence>
-        </xs:sequence>
+        <xs:attribute name="FullName" use="required" type="xs:string"/>
         <xs:attribute name="Scheme" use="required" type="DrugScheme"/>
         <xs:attribute name="ProductID" use="required" type="xs:string"/>
         <xs:attribute name="PackID" type="xs:integer"/>
@@ -99,6 +98,14 @@
         </xs:restriction>
     </xs:simpleType>
 
+    <xs:simpleType name="MedicationEndReason">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="End of Course"/>
+            <xs:enumeration value="Side Effect"/>
+            <!--need to find the full list of end reasons-->
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:complexType name="Medication">
         <xs:sequence>
             <xs:element name="MedicationType" type="MedicationType"/>
@@ -107,6 +114,7 @@
             <xs:element name="Quantity" type="xs:string"/>
             <xs:element name="StartDate" type="xs:date"/>
             <xs:element name="EndDate" type="xs:date"/>
+            <xs:element name="EndReason" minOccurs="0" type="MedicationEndReason"/>
             <xs:element name="RepeatIssue" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                 </xs:complexType>
@@ -144,6 +152,14 @@
             <!--The problem end date is only used if a problem severity is also specified-->
             <xs:element name="FreeText" minOccurs="0" type="xs:string"/>
             <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+            <xs:element name="IsAllergy" minOccurs="0">
+                <xs:complexType>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="IsFamilyHistory" minOccurs="0">
+                <xs:complexType>
+                </xs:complexType>
+            </xs:element>
         </xs:sequence>
     </xs:complexType>
 
@@ -233,6 +249,8 @@
             <xs:element name="Dose" type="xs:string"/>
             <xs:element name="Quantity" type="xs:string"/>
             <xs:element name="StartDate" type="xs:date"/>
+            <xs:element name="EndDate" minOccurs="0" type="xs:date"/>
+            <xs:element name="EndReason" minOccurs="0" type="MedicationEndReason"/>
             <xs:element name="MaxIssues" minOccurs="0" type="xs:integer"/>
             <xs:element name="ReviewDate" minOccurs="0" type="xs:date"/>
             <xs:element name="IssueDurationDays" type="xs:integer"/>

@@ -30,6 +30,22 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="ProblemEndDate" type="{http://www.w3.org/2001/XMLSchema}date" minOccurs="0"/>
  *         &lt;element name="FreeText" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="LinkedProblemUID" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="IsAllergy" minOccurs="0">
+ *           &lt;complexType>
+ *             &lt;complexContent>
+ *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+ *               &lt;/restriction>
+ *             &lt;/complexContent>
+ *           &lt;/complexType>
+ *         &lt;/element>
+ *         &lt;element name="IsFamilyHistory" minOccurs="0">
+ *           &lt;complexType>
+ *             &lt;complexContent>
+ *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+ *               &lt;/restriction>
+ *             &lt;/complexContent>
+ *           &lt;/complexType>
+ *         &lt;/element>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -47,7 +63,9 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "problemSeverity",
     "problemEndDate",
     "freeText",
-    "linkedProblemUID"
+    "linkedProblemUID",
+    "isAllergy",
+    "isFamilyHistory"
 })
 public class ClinicalCode {
 
@@ -70,6 +88,10 @@ public class ClinicalCode {
     protected String freeText;
     @XmlElement(name = "LinkedProblemUID")
     protected List<String> linkedProblemUID;
+    @XmlElement(name = "IsAllergy")
+    protected ClinicalCode.IsAllergy isAllergy;
+    @XmlElement(name = "IsFamilyHistory")
+    protected ClinicalCode.IsFamilyHistory isFamilyHistory;
 
     /**
      * Gets the value of the code property.
@@ -266,6 +288,102 @@ public class ClinicalCode {
             linkedProblemUID = new ArrayList<String>();
         }
         return this.linkedProblemUID;
+    }
+
+    /**
+     * Gets the value of the isAllergy property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link ClinicalCode.IsAllergy }
+     *     
+     */
+    public ClinicalCode.IsAllergy getIsAllergy() {
+        return isAllergy;
+    }
+
+    /**
+     * Sets the value of the isAllergy property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link ClinicalCode.IsAllergy }
+     *     
+     */
+    public void setIsAllergy(ClinicalCode.IsAllergy value) {
+        this.isAllergy = value;
+    }
+
+    /**
+     * Gets the value of the isFamilyHistory property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link ClinicalCode.IsFamilyHistory }
+     *     
+     */
+    public ClinicalCode.IsFamilyHistory getIsFamilyHistory() {
+        return isFamilyHistory;
+    }
+
+    /**
+     * Sets the value of the isFamilyHistory property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link ClinicalCode.IsFamilyHistory }
+     *     
+     */
+    public void setIsFamilyHistory(ClinicalCode.IsFamilyHistory value) {
+        this.isFamilyHistory = value;
+    }
+
+
+    /**
+     * <p>Java class for anonymous complex type.
+     * 
+     * <p>The following schema fragment specifies the expected content contained within this class.
+     * 
+     * <pre>
+     * &lt;complexType>
+     *   &lt;complexContent>
+     *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+     *     &lt;/restriction>
+     *   &lt;/complexContent>
+     * &lt;/complexType>
+     * </pre>
+     * 
+     * 
+     */
+    @XmlAccessorType(XmlAccessType.FIELD)
+    @XmlType(name = "")
+    public static class IsAllergy {
+
+
+    }
+
+
+    /**
+     * <p>Java class for anonymous complex type.
+     * 
+     * <p>The following schema fragment specifies the expected content contained within this class.
+     * 
+     * <pre>
+     * &lt;complexType>
+     *   &lt;complexContent>
+     *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+     *     &lt;/restriction>
+     *   &lt;/complexContent>
+     * &lt;/complexType>
+     * </pre>
+     * 
+     * 
+     */
+    @XmlAccessorType(XmlAccessType.FIELD)
+    @XmlType(name = "")
+    public static class IsFamilyHistory {
+
+
     }
 
 }

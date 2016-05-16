@@ -17,8 +17,7 @@ import javax.xml.bind.annotation.XmlType;
  * &lt;complexType name="Drug">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *       &lt;sequence>
- *       &lt;/sequence>
+ *       &lt;attribute name="FullName" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />
  *       &lt;attribute name="Scheme" use="required" type="{}DrugScheme" />
  *       &lt;attribute name="ProductID" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />
  *       &lt;attribute name="PackID" type="{http://www.w3.org/2001/XMLSchema}integer" />
@@ -33,12 +32,38 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(name = "Drug")
 public class Drug {
 
+    @XmlAttribute(name = "FullName", required = true)
+    protected String fullName;
     @XmlAttribute(name = "Scheme", required = true)
     protected DrugScheme scheme;
     @XmlAttribute(name = "ProductID", required = true)
     protected String productID;
     @XmlAttribute(name = "PackID")
     protected BigInteger packID;
+
+    /**
+     * Gets the value of the fullName property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getFullName() {
+        return fullName;
+    }
+
+    /**
+     * Sets the value of the fullName property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setFullName(String value) {
+        this.fullName = value;
+    }
 
     /**
      * Gets the value of the scheme property.

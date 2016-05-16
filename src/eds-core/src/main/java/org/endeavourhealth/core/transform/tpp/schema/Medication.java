@@ -27,6 +27,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="Quantity" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="StartDate" type="{http://www.w3.org/2001/XMLSchema}date"/>
  *         &lt;element name="EndDate" type="{http://www.w3.org/2001/XMLSchema}date"/>
+ *         &lt;element name="EndReason" type="{}MedicationEndReason" minOccurs="0"/>
  *         &lt;element name="RepeatIssue" minOccurs="0">
  *           &lt;complexType>
  *             &lt;complexContent>
@@ -52,6 +53,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "quantity",
     "startDate",
     "endDate",
+    "endReason",
     "repeatIssue",
     "linkedProblemUID"
 })
@@ -72,6 +74,9 @@ public class Medication {
     @XmlElement(name = "EndDate", required = true)
     @XmlSchemaType(name = "date")
     protected XMLGregorianCalendar endDate;
+    @XmlElement(name = "EndReason")
+    @XmlSchemaType(name = "string")
+    protected MedicationEndReason endReason;
     @XmlElement(name = "RepeatIssue")
     protected Medication.RepeatIssue repeatIssue;
     @XmlElement(name = "LinkedProblemUID")
@@ -219,6 +224,30 @@ public class Medication {
      */
     public void setEndDate(XMLGregorianCalendar value) {
         this.endDate = value;
+    }
+
+    /**
+     * Gets the value of the endReason property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link MedicationEndReason }
+     *     
+     */
+    public MedicationEndReason getEndReason() {
+        return endReason;
+    }
+
+    /**
+     * Sets the value of the endReason property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link MedicationEndReason }
+     *     
+     */
+    public void setEndReason(MedicationEndReason value) {
+        this.endReason = value;
     }
 
     /**

@@ -42,6 +42,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link ClinicalCode }
+     * 
+     */
+    public ClinicalCode createClinicalCode() {
+        return new ClinicalCode();
+    }
+
+    /**
      * Create an instance of {@link Medication }
      * 
      */
@@ -194,14 +202,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ClinicalCode }
-     * 
-     */
-    public ClinicalCode createClinicalCode() {
-        return new ClinicalCode();
-    }
-
-    /**
      * Create an instance of {@link FollowUpAction }
      * 
      */
@@ -343,6 +343,22 @@ public class ObjectFactory {
      */
     public Report.FollowUpActions createReportFollowUpActions() {
         return new Report.FollowUpActions();
+    }
+
+    /**
+     * Create an instance of {@link ClinicalCode.IsAllergy }
+     * 
+     */
+    public ClinicalCode.IsAllergy createClinicalCodeIsAllergy() {
+        return new ClinicalCode.IsAllergy();
+    }
+
+    /**
+     * Create an instance of {@link ClinicalCode.IsFamilyHistory }
+     * 
+     */
+    public ClinicalCode.IsFamilyHistory createClinicalCodeIsFamilyHistory() {
+        return new ClinicalCode.IsFamilyHistory();
     }
 
     /**

@@ -34,8 +34,7 @@ public class VisitTransformer {
         fhirAppointment.setMinutesDuration(durationInt);
 
         String userName = tppVisit.getUserName();
-        Practitioner fhirPractitioner = Fhir.findPractitionerForId(fhirResources, userName);
-        fhirAppointment.addParticipant(Fhir.createParticipant(ResourceType.Practitioner, fhirPractitioner.getId()));
+        fhirAppointment.addParticipant(Fhir.createParticipant(ResourceType.Practitioner, userName));
 
         String comments = tppVisit.getComments();
         if (Strings.isNullOrEmpty(comments)) {

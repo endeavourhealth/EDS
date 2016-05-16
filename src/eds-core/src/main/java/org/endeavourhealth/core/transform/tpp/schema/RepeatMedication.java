@@ -26,6 +26,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="Dose" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="Quantity" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="StartDate" type="{http://www.w3.org/2001/XMLSchema}date"/>
+ *         &lt;element name="EndDate" type="{http://www.w3.org/2001/XMLSchema}date" minOccurs="0"/>
+ *         &lt;element name="EndReason" type="{}MedicationEndReason" minOccurs="0"/>
  *         &lt;element name="MaxIssues" type="{http://www.w3.org/2001/XMLSchema}integer" minOccurs="0"/>
  *         &lt;element name="ReviewDate" type="{http://www.w3.org/2001/XMLSchema}date" minOccurs="0"/>
  *         &lt;element name="IssueDurationDays" type="{http://www.w3.org/2001/XMLSchema}integer"/>
@@ -45,6 +47,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "dose",
     "quantity",
     "startDate",
+    "endDate",
+    "endReason",
     "maxIssues",
     "reviewDate",
     "issueDurationDays",
@@ -62,6 +66,12 @@ public class RepeatMedication {
     @XmlElement(name = "StartDate", required = true)
     @XmlSchemaType(name = "date")
     protected XMLGregorianCalendar startDate;
+    @XmlElement(name = "EndDate")
+    @XmlSchemaType(name = "date")
+    protected XMLGregorianCalendar endDate;
+    @XmlElement(name = "EndReason")
+    @XmlSchemaType(name = "string")
+    protected MedicationEndReason endReason;
     @XmlElement(name = "MaxIssues")
     protected BigInteger maxIssues;
     @XmlElement(name = "ReviewDate")
@@ -169,6 +179,54 @@ public class RepeatMedication {
      */
     public void setStartDate(XMLGregorianCalendar value) {
         this.startDate = value;
+    }
+
+    /**
+     * Gets the value of the endDate property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link XMLGregorianCalendar }
+     *     
+     */
+    public XMLGregorianCalendar getEndDate() {
+        return endDate;
+    }
+
+    /**
+     * Sets the value of the endDate property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link XMLGregorianCalendar }
+     *     
+     */
+    public void setEndDate(XMLGregorianCalendar value) {
+        this.endDate = value;
+    }
+
+    /**
+     * Gets the value of the endReason property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link MedicationEndReason }
+     *     
+     */
+    public MedicationEndReason getEndReason() {
+        return endReason;
+    }
+
+    /**
+     * Sets the value of the endReason property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link MedicationEndReason }
+     *     
+     */
+    public void setEndReason(MedicationEndReason value) {
+        this.endReason = value;
     }
 
     /**

@@ -34,8 +34,7 @@ public class AppointmentTransformer {
         fhirAppointment.setMinutesDuration(durationInt);
 
         String userName = tppAppointment.getUserName();
-        Practitioner fhirPractitioner = Fhir.findPractitionerForId(fhirResources, userName);
-        fhirAppointment.addParticipant(Fhir.createParticipant(ResourceType.Practitioner, fhirPractitioner.getId()));
+        fhirAppointment.addParticipant(Fhir.createParticipant(ResourceType.Practitioner, userName));
 
         String site = tppAppointment.getSite();
         Location fhirLocation = Fhir.findLocationForName(fhirResources, site);

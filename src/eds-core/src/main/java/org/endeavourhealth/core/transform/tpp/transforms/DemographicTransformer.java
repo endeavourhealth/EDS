@@ -100,9 +100,7 @@ public class DemographicTransformer {
             return;
         }
 
-        Practitioner fhirPractitioner = Fhir.findPractitionerForId(fhirResources, usualGpUserName);
-        String practitionerId = fhirPractitioner.getId();
-        fhirPatient.addCareProvider(Fhir.createReference(ResourceType.Practitioner, practitionerId));
+        fhirPatient.addCareProvider(Fhir.createReference(ResourceType.Practitioner, usualGpUserName));
     }
 
     private static void transformCommunications(Patient fhirPatient, Demographics tppDemographics) {

@@ -187,4 +187,29 @@ public final class Fhir {
                 .setStatus(status);
     }
 
+    public static Reference createPatientReference(List<Resource> fhirResources) {
+        String patientId = findPatientId(fhirResources);
+        return createReference(ResourceType.Patient, patientId);
+    }
+    public static Reference createPractitionerReference(String practitionerId) {
+        if (Strings.isNullOrEmpty(practitionerId)) {
+            return null;
+        }
+
+        return createReference(ResourceType.Practitioner, practitionerId);
+    }
+    public static Reference createEncounterReference(Encounter fhirEncounter) {
+        if (fhirEncounter == null) {
+            return null;
+        }
+        String encounterId = fhirEncounter.getId();
+        return createReference(ResourceType.Encounter, encounterId);
+    }
+    public static Annotation createAnnotation(String notes) {
+        if (Strings.isNullOrEmpty(notes)) {
+            return null;
+        }
+
+        return new Annotation().setText(notes);
+    }
 }
