@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.tpp.transforms;
 
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.tpp.schema.Metadata;
 import org.endeavourhealth.transform.tpp.schema.Site;
@@ -11,7 +12,7 @@ import java.util.stream.Collectors;
 
 public class MetadataTransformer {
 
-    public static void transform(Metadata tppMetadata, List<Resource> fhirResources) {
+    public static void transform(Metadata tppMetadata, List<Resource> fhirResources) throws TransformException {
 
         boolean first = true;
         for (Site site : tppMetadata.getSite()) {
@@ -26,7 +27,7 @@ public class MetadataTransformer {
         linkOrganisations(fhirResources);
     }
 
-    private static void linkOrganisations(List<Resource> fhirResources) {
+    private static void linkOrganisations(List<Resource> fhirResources) throws TransformException {
 
         Organization fhirOrganisation = Fhir.findOrganisation(fhirResources);
         String orgId = fhirOrganisation.getId();

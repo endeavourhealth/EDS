@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.emisopen.transforms;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.ReferenceHelper;
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenDateTransformer;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.AppointmentStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.HolderStruct;
@@ -15,7 +16,7 @@ import java.util.List;
 
 public class AppointmentTransformer
 {
-    public static List<Appointment> transform(String patientGuid, PatientAppointmentList patientAppointmentList)
+    public static List<Appointment> transform(String patientGuid, PatientAppointmentList patientAppointmentList) throws TransformException
     {
         List<Appointment> appointments = new ArrayList<Appointment>();
 
@@ -25,7 +26,7 @@ public class AppointmentTransformer
         return appointments;
     }
 
-    public static Appointment transformToAppointment(String patientGuid, AppointmentStruct appointmentStruct)
+    public static Appointment transformToAppointment(String patientGuid, AppointmentStruct appointmentStruct) throws TransformException
     {
         Appointment appointment = new Appointment();
 
@@ -63,7 +64,7 @@ public class AppointmentTransformer
         return appointment;
     }
 
-    private static Appointment.AppointmentParticipantComponent createParticipant(ResourceType resourceType, String id, Appointment.ParticipantRequired required, Appointment.ParticipationStatus status)
+    private static Appointment.AppointmentParticipantComponent createParticipant(ResourceType resourceType, String id, Appointment.ParticipantRequired required, Appointment.ParticipationStatus status) throws TransformException
     {
         return new Appointment.AppointmentParticipantComponent()
                 .setActor(ReferenceHelper.createReference(resourceType, id))

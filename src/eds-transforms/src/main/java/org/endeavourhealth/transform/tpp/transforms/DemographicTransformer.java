@@ -21,7 +21,7 @@ public class DemographicTransformer {
     private static final String ENGLISH_SECOND_CODE = "161140009";
     private static final String ENGLISH_SECOND_TERM = "English as a second language";
 
-    public static void transform(String patientUid, Identity tppId, Demographics tppDemographics, List<Resource> fhirResources) {
+    public static void transform(String patientUid, Identity tppId, Demographics tppDemographics, List<Resource> fhirResources) throws TransformException {
 
         Patient fhirPatient = new Patient();
         fhirPatient.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_PATIENT));
@@ -55,7 +55,7 @@ public class DemographicTransformer {
         fhirPatient.addExtension(ext);
     }
 
-    private static void transformCareDates(Patient fhirPatient, Demographics tppDemographics, List<Resource> fhirResources) {
+    private static void transformCareDates(Patient fhirPatient, Demographics tppDemographics, List<Resource> fhirResources) throws TransformException {
 
         XMLGregorianCalendar startDate = tppDemographics.getCareStartDate();
         XMLGregorianCalendar endDate = tppDemographics.getCareEndDate();
@@ -91,7 +91,7 @@ public class DemographicTransformer {
         fhirEpisode.setManagingOrganization(Fhir.createReference(ResourceType.Organization, orgId));
     }
 
-    private static void transformUsualGp(Patient fhirPatient, Demographics tppDemographics, List<Resource> fhirResources) {
+    private static void transformUsualGp(Patient fhirPatient, Demographics tppDemographics, List<Resource> fhirResources) throws TransformException {
 
         String usualGpUserName = tppDemographics.getUsualGPUserName();
         if (Strings.isNullOrEmpty(usualGpUserName)) {
@@ -149,7 +149,7 @@ public class DemographicTransformer {
         fhirPatient.addAddress(fhirAddress);
     }
 
-    private static void transformLanguage(Patient fhirPatient, Demographics tppDemographics) {
+    private static void transformLanguage(Patient fhirPatient, Demographics tppDemographics) throws TransformException {
 
         Code tppCode = tppDemographics.getMainLanguage();
         if (tppCode != null) {
@@ -186,7 +186,7 @@ public class DemographicTransformer {
     }
 
 
-    private static void transformMaritalStatus(Patient fhirPatient, Demographics tppDemographics) {
+    private static void transformMaritalStatus(Patient fhirPatient, Demographics tppDemographics) throws TransformException {
         Code tppCode = tppDemographics.getMaritalStatus();
         if (tppCode != null) {
             CodeableConcept fhirConcept = CodeTransformer.transform(tppCode);
@@ -194,7 +194,7 @@ public class DemographicTransformer {
         }
     }
 
-    private static void transformGender(Patient fhirPatient, Demographics tppDemographics) {
+    private static void transformGender(Patient fhirPatient, Demographics tppDemographics) throws TransformException {
 
         //TPP doesn't distinguish between gender and sex, and FHIR only supports gender, so just copy sex->gender
         Sex tppSex = tppDemographics.getSex();

@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.tpp.transforms;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUris;
 import org.endeavourhealth.transform.tpp.schema.*;
@@ -10,7 +11,7 @@ import java.util.List;
 
 public class UserTransformer {
 
-    public static void transform(User tppUser, List<Resource> fhirResources) {
+    public static void transform(User tppUser, List<Resource> fhirResources) throws TransformException {
 
         String userName = tppUser.getUserName();
 

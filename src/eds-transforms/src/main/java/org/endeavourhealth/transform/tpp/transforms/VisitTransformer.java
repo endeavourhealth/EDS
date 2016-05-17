@@ -14,7 +14,7 @@ import java.util.List;
 
 public class VisitTransformer {
 
-    public static void transform(Visit tppVisit, List<Resource> fhirResources) {
+    public static void transform(Visit tppVisit, List<Resource> fhirResources) throws TransformException {
 
         Appointment fhirAppointment = new Appointment();
         fhirAppointment.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_APPOINTMENT));
@@ -56,7 +56,7 @@ public class VisitTransformer {
         fhirAppointment.addParticipant(Fhir.createParticipant(ResourceType.Patient, patientId));
     }
 
-    private static Appointment.AppointmentStatus convertStatus(VisitStatus tppStatus) {
+    private static Appointment.AppointmentStatus convertStatus(VisitStatus tppStatus) throws TransformException {
 
         if (tppStatus == VisitStatus.BOOKED) {
             return Appointment.AppointmentStatus.BOOKED;

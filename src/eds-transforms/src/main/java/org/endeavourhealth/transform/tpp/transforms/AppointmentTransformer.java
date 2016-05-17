@@ -13,7 +13,7 @@ import java.util.List;
 
 public class AppointmentTransformer {
 
-    public static void transform(org.endeavourhealth.transform.tpp.schema.Appointment tppAppointment, List<Resource> fhirResources) {
+    public static void transform(org.endeavourhealth.transform.tpp.schema.Appointment tppAppointment, List<Resource> fhirResources) throws TransformException {
 
         Appointment fhirAppointment = new Appointment();
         fhirAppointment.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_APPOINTMENT));
@@ -60,7 +60,7 @@ public class AppointmentTransformer {
     }
 
 
-    private static Appointment.AppointmentStatus convertStatus(AppointmentStatus tppStatus) {
+    private static Appointment.AppointmentStatus convertStatus(AppointmentStatus tppStatus) throws TransformException {
         if (tppStatus == AppointmentStatus.BOOKED) {
             return Appointment.AppointmentStatus.BOOKED;
 

@@ -16,7 +16,7 @@ import java.util.List;
 
 public class SlotTransformer
 {
-    public static List<Slot> transform(SlotListStruct appointmentSlotList)
+    public static List<Slot> transform(SlotListStruct appointmentSlotList) throws TransformException
     {
         ArrayList<Slot> fhirSlots = new ArrayList<>();
 
@@ -26,7 +26,7 @@ public class SlotTransformer
         return fhirSlots;
     }
 
-    private static Slot transform(SlotStruct appointmentSlot)
+    private static Slot transform(SlotStruct appointmentSlot) throws TransformException
     {
         Slot slot = new Slot();
 
@@ -52,7 +52,7 @@ public class SlotTransformer
         return slot;
     }
 
-    private static Slot.SlotStatus getSlotStatus(String slotStatus)
+    private static Slot.SlotStatus getSlotStatus(String slotStatus) throws TransformException
     {
         switch (slotStatus)
         {

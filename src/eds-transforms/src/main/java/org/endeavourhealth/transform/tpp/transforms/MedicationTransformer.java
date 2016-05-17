@@ -14,13 +14,13 @@ import java.util.List;
 
 public class MedicationTransformer {
 
-    public static void transform(List<Medication> medications, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) {
+    public static void transform(List<Medication> medications, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) throws TransformException {
         for (Medication medication: medications) {
             transform(medication, tppEvent, fhirEncounter, fhirResources);
         }
     }
 
-    public static void transform(Medication medication, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) {
+    public static void transform(Medication medication, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) throws TransformException {
 
         MedicationOrder fhirMedicationOrder = new MedicationOrder();
         fhirMedicationOrder.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_MEDICATION_ORDER));
@@ -70,7 +70,7 @@ public class MedicationTransformer {
 
     }
 
-    private static Type convertMedication(Drug tppDrug) {
+    private static Type convertMedication(Drug tppDrug) throws TransformException {
         String productId = tppDrug.getProductID();
         DrugScheme scheme = tppDrug.getScheme();
         String fullName = tppDrug.getFullName();

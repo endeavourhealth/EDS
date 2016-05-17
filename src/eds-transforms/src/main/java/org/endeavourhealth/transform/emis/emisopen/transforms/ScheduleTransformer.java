@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms;
 
 import org.endeavourhealth.transform.common.ReferenceHelper;
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenDateTransformer;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.AppointmentSessionList;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.AppointmentSessionStruct;
@@ -14,7 +15,7 @@ import java.util.stream.Collectors;
 
 public class ScheduleTransformer
 {
-    public static List<Schedule> transform(AppointmentSessionList appointmentSessionList)
+    public static List<Schedule> transform(AppointmentSessionList appointmentSessionList) throws TransformException
     {
         ArrayList<Schedule> result = new ArrayList<>();
 
@@ -24,7 +25,7 @@ public class ScheduleTransformer
         return result;
     }
 
-    private static Schedule transformToSchedule(AppointmentSessionStruct appointmentSession)
+    private static Schedule transformToSchedule(AppointmentSessionStruct appointmentSession) throws TransformException
     {
         Schedule schedule = new Schedule();
 

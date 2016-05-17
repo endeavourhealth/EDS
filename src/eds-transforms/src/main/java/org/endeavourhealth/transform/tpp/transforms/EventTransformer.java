@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.tpp.transforms;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUris;
 import org.endeavourhealth.transform.tpp.schema.*;
@@ -12,7 +13,7 @@ import java.util.List;
 
 public class EventTransformer {
 
-    public static void transform(Event tppEvent, List<Resource> fhirResources) {
+    public static void transform(Event tppEvent, List<Resource> fhirResources) throws TransformException {
 
         Encounter fhirEncounter = createEncounter(tppEvent, fhirResources);
 
@@ -35,7 +36,7 @@ public class EventTransformer {
 
     }
 
-    private static Encounter createEncounter(Event tppEvent, List<Resource> fhirResources) {
+    private static Encounter createEncounter(Event tppEvent, List<Resource> fhirResources) throws TransformException {
 
         //TODO - need a way to work out what Events should become FHIR Encounters or not
 

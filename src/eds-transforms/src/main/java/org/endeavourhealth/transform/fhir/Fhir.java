@@ -15,6 +15,9 @@ public final class Fhir {
     public static Identifier createNhsNumberIdentifier(String value) {
         return createIdentifier(Identifier.IdentifierUse.OFFICIAL, value, FhirUris.IDENTIFIER_SYSTEM_NHSNUMBER);
     }
+    public static Identifier createOdsOrganisationIdentifier(String value) {
+        return createIdentifier(Identifier.IdentifierUse.OFFICIAL, value, FhirUris.IDENTIFIER_SYSTEM_ODS_CODE);
+    }
 
     public static Identifier createIdentifier(Identifier.IdentifierUse use, String value, String system) {
 
@@ -101,7 +104,7 @@ public final class Fhir {
                 .setValue(value);
     }
 
-    public static Reference createReference(ResourceType resourceType, String value) {
+    public static Reference createReference(ResourceType resourceType, String value) throws TransformException {
         if (Strings.isNullOrEmpty(value)) {
             throw new TransformException("Missing value when creating " + resourceType + "referece");
         }
@@ -113,7 +116,7 @@ public final class Fhir {
         return resourceType.toString() + "/" + id;
     }
 
-    public static Practitioner findPractitionerForId(List<Resource> fhirResources, String id) {
+    public static Practitioner findPractitionerForId(List<Resource> fhirResources, String id) throws TransformException {
 
         Optional<Practitioner> ret = fhirResources
                 .stream()
@@ -128,10 +131,10 @@ public final class Fhir {
         return ret.get();
     }
 
-    public static String findOrganisationId(List<Resource> fhirResources) {
+    public static String findOrganisationId(List<Resource> fhirResources) throws TransformException {
         return findOrganisation(fhirResources).getId();
     }
-    public static Organization findOrganisation(List<Resource> fhirResources) {
+    public static Organization findOrganisation(List<Resource> fhirResources) throws TransformException {
 
         Optional<Organization> ret = fhirResources
                 .stream()
@@ -146,7 +149,7 @@ public final class Fhir {
         return ret.get();
     }
 
-    public static Location findLocationForName(List<Resource> fhirResources, String name) {
+    public static Location findLocationForName(List<Resource> fhirResources, String name) throws TransformException {
 
         Optional<Location> ret = fhirResources
                 .stream()
@@ -161,10 +164,10 @@ public final class Fhir {
         return ret.get();
     }
 
-    public static String findPatientId(List<Resource> fhirResources) {
+    public static String findPatientId(List<Resource> fhirResources) throws TransformException {
         return findPatient(fhirResources).getId();
     }
-    public static Patient findPatient(List<Resource> fhirResources) {
+    public static Patient findPatient(List<Resource> fhirResources) throws TransformException {
         Optional<Patient> ret = fhirResources
                 .stream()
                 .filter(t -> t instanceof Patient)
@@ -184,28 +187,33 @@ public final class Fhir {
                 .setValue(value);
     }
 
-    public static Appointment.AppointmentParticipantComponent createParticipant(ResourceType resourceType, String id) {
+    public static Appointment.AppointmentParticipantComponent createParticipant(ResourceType resourceType, String id) throws TransformException {
         return createParticipant(resourceType, id, Appointment.ParticipantRequired.REQUIRED, Appointment.ParticipationStatus.ACCEPTED);
     }
-    public static Appointment.AppointmentParticipantComponent createParticipant(ResourceType resourceType, String id, Appointment.ParticipantRequired required, Appointment.ParticipationStatus status) {
+    public static Appointment.AppointmentParticipantComponent createParticipant(ResourceType resourceType, String id, Appointment.ParticipantRequired required, Appointment.ParticipationStatus status) throws TransformException {
         return new Appointment.AppointmentParticipantComponent()
                 .setActor(Fhir.createReference(resourceType, id))
                 .setRequired(required)
                 .setStatus(status);
     }
 
-    public static Reference createPatientReference(List<Resource> fhirResources) {
+    public static Reference createPatientReference(List<Resource> fhirResources) throws TransformException{
         String patientId = findPatientId(fhirResources);
         return createReference(ResourceType.Patient, patientId);
     }
-    public static Reference createPractitionerReference(String practitionerId) {
+    public static Reference createPatientReference(Patient fhirPatient) throws TransformException {
+        String patientId = fhirPatient.getId();
+        return createReference(ResourceType.Patient, patientId);
+    }
+
+    public static Reference createPractitionerReference(String practitionerId) throws TransformException {
         if (Strings.isNullOrEmpty(practitionerId)) {
             return null;
         }
 
         return createReference(ResourceType.Practitioner, practitionerId);
     }
-    public static Reference createEncounterReference(Encounter fhirEncounter) {
+    public static Reference createEncounterReference(Encounter fhirEncounter) throws TransformException {
         if (fhirEncounter == null) {
             return null;
         }
@@ -236,5 +244,13 @@ public final class Fhir {
         fhirPeriod.setStart(start);
         fhirPeriod.setEnd(end);
         return fhirPeriod;
+    }
+
+    public static boolean isActive(EpisodeOfCare episodeOfCare) {
+        return isActive(episodeOfCare.getPeriod());
+    }
+    public static boolean isActive(Period period) {
+        return (period.getEnd() == null
+                || period.getEnd().after(new Date()));
     }
 }

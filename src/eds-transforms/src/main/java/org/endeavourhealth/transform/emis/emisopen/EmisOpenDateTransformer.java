@@ -13,7 +13,7 @@ public class EmisOpenDateTransformer
     public final static SimpleDateFormat EMISOPEN_DATEFORMAT = new SimpleDateFormat("dd/MM/yyyy");
     public final static SimpleDateFormat EMISOPEN_TIMEFORMAT = new SimpleDateFormat("HH:mm");
 
-    public static Date getDateAndTime(String dateString, String timeString)
+    public static Date getDateAndTime(String dateString, String timeString) throws TransformException
     {
         try
         {
@@ -25,7 +25,7 @@ public class EmisOpenDateTransformer
         }
     }
 
-    public static Date getDate(String dateString)
+    public static Date getDate(String dateString) throws TransformException
     {
         try
         {
@@ -37,7 +37,7 @@ public class EmisOpenDateTransformer
         }
     }
 
-    public static Time getTime(String timeString)
+    public static Time getTime(String timeString) throws TransformException
     {
         try
         {

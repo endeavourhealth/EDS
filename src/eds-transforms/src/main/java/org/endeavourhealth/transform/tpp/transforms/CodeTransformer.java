@@ -9,7 +9,7 @@ import org.hl7.fhir.instance.model.CodeableConcept;
 
 public class CodeTransformer {
 
-    public static CodeableConcept transform(Code tppCode) {
+    public static CodeableConcept transform(Code tppCode)  throws TransformException {
 
         String code = tppCode.getCode();
         CodeScheme scheme = tppCode.getScheme();

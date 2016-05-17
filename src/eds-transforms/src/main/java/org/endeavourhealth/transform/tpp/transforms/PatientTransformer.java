@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.tpp.transforms;
 
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.tpp.schema.*;
 import org.hl7.fhir.instance.model.Resource;
 
@@ -7,7 +8,7 @@ import java.util.List;
 
 public class PatientTransformer {
 
-    public static void transform(String patientUid, Patient tppPatient, List<Resource> resources) {
+    public static void transform(String patientUid, Patient tppPatient, List<Resource> resources)  throws TransformException {
 
         Identity id = tppPatient.getIdentity();
         Demographics demographics = tppPatient.getDemographics();

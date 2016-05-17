@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.tpp.transforms;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUris;
 import org.endeavourhealth.transform.tpp.schema.Event;
@@ -12,13 +13,13 @@ import java.util.List;
 
 public class NarrativeTransformer {
 
-    public static void transform(List<Narrative> tppNarratives, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) {
+    public static void transform(List<Narrative> tppNarratives, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) throws TransformException {
         for (Narrative tppNarrative: tppNarratives) {
             transform(tppNarrative, tppEvent, fhirEncounter, fhirResources);
         }
     }
 
-    public static void transform(Narrative tppNarrative, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) {
+    public static void transform(Narrative tppNarrative, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) throws TransformException {
 
         String line = tppNarrative.getLine();
         List<String> linkedProblemUIDs = tppNarrative.getLinkedProblemUID();

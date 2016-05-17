@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.tpp.transforms;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUris;
 import org.endeavourhealth.transform.tpp.schema.*;
@@ -12,13 +13,13 @@ import java.util.List;
 
 public class ClinicalCodeTransformer {
 
-    public static void transform(List<ClinicalCode> tppClinicalCodes, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) {
+    public static void transform(List<ClinicalCode> tppClinicalCodes, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) throws TransformException {
         for (ClinicalCode tppCode: tppClinicalCodes) {
             transform(tppCode, tppEvent, fhirEncounter, fhirResources);
         }
     }
 
-    public static void transform(ClinicalCode tppCode, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) {
+    public static void transform(ClinicalCode tppCode, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) throws TransformException {
 
         if (tppCode.getIsAllergy() != null) {
             createAllergy(tppCode, tppEvent, fhirEncounter, fhirResources);
@@ -52,7 +53,7 @@ public class ClinicalCodeTransformer {
         }
     }
 
-    private static void createProblem(ClinicalCode tppCode, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) {
+    private static void createProblem(ClinicalCode tppCode, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) throws TransformException {
 
         Condition fhirProblem = new Condition();
         fhirProblem.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_PROBLEM));

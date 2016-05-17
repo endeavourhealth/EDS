@@ -11,7 +11,7 @@ public class ReferenceHelper
         return resourceType.toString() + "/" + id;
     }
 
-    public static Reference createReference(ResourceType resourceType, String id)
+    public static Reference createReference(ResourceType resourceType, String id) throws TransformException
     {
         if (StringUtils.isBlank(id))
             throw new TransformException("Blank id when creating reference for " + resourceType.toString());

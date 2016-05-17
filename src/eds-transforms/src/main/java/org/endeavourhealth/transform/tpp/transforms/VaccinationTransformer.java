@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.tpp.transforms;
 
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUris;
 import org.endeavourhealth.transform.tpp.schema.Event;
@@ -10,13 +11,13 @@ import java.util.List;
 
 public class VaccinationTransformer {
 
-    public static void transform(List<Vaccination> tppVaccinations, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) {
+    public static void transform(List<Vaccination> tppVaccinations, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) throws TransformException {
         for (Vaccination tppVaccination: tppVaccinations) {
             transform(tppVaccination, tppEvent, fhirEncounter, fhirResources);
         }
     }
 
-    public static void transform(Vaccination tppVaccination, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) {
+    public static void transform(Vaccination tppVaccination, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) throws TransformException {
 
         String batchNumber = tppVaccination.getBatchNumber();
         String notes = tppVaccination.getNotes();
