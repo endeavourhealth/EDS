@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.emisopen.transforms;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.ReferenceHelper;
 import org.endeavourhealth.transform.common.TransformException;
-import org.endeavourhealth.transform.emis.emisopen.EmisOpenDateTransformer;
+import org.endeavourhealth.transform.emis.emisopen.transforms.converters.DateConverter;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomslotsforsession.SlotListStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomslotsforsession.SlotStruct;
 import org.endeavourhealth.transform.fhir.FhirUris;
@@ -40,11 +40,11 @@ public class SlotTransformer
         if (!StringUtils.isBlank(slotStatus))
             slot.setFreeBusyType(getSlotStatus(slotStatus));
 
-        Time startTime = EmisOpenDateTransformer.getTime(appointmentSlot.getStartTime());
-        Time endTime = EmisOpenDateTransformer.addMinutesToTime(startTime, Integer.parseInt(appointmentSlot.getSlotLength()));
+        Time startTime = DateConverter.getTime(appointmentSlot.getStartTime());
+        Time endTime = DateConverter.addMinutesToTime(startTime, Integer.parseInt(appointmentSlot.getSlotLength()));
 
-        Date startDate = EmisOpenDateTransformer.getDateAndTime(appointmentSlot.getDate(), appointmentSlot.getStartTime());
-        Date endDate = EmisOpenDateTransformer.getDateAndTime(appointmentSlot.getDate(), endTime.toString());
+        Date startDate = DateConverter.getDateAndTime(appointmentSlot.getDate(), appointmentSlot.getStartTime());
+        Date endDate = DateConverter.getDateAndTime(appointmentSlot.getDate(), endTime.toString());
 
         slot.setStart(startDate);
         slot.setEnd(endDate);
