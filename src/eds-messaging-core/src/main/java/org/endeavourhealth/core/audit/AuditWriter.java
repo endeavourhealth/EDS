@@ -1,16 +1,13 @@
 package org.endeavourhealth.core.audit;
 
-import ch.qos.logback.classic.db.DBHelper;
+
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.endeavourhealth.core.database.DbClient;
-import org.endeavourhealth.core.database.PreparedStatementCache;
-import org.endeavourhealth.core.engineConfiguration.Audit;
-import org.endeavourhealth.core.engineConfiguration.EngineConfiguration;
-import org.endeavourhealth.core.engineConfiguration.EngineConfigurationSerializer;
+import org.endeavourhealth.core.data.CassandraConnector;
+import org.endeavourhealth.core.data.PreparedStatementCache;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,24 +19,11 @@ import java.util.UUID;
 public final class AuditWriter {
     private static final Logger LOG = LoggerFactory.getLogger(AuditWriter.class);
 
-    private static final String CQL_EXCHANGE = "INSERT INTO exchange ("
+    private static final String CQL_EXCHANGE = "INSERT INTO audit.exchange ("
             + "timestamp, exchangeId, headers, body) VALUES (?, ?, ?, ?)";
 
-    private static final String CQL_ECHANGE_EVENT = "INSERT INTO exchangeEvent ("
+    private static final String CQL_ECHANGE_EVENT = "INSERT INTO audit.exchangeEvent ("
             + "timestamp, exchangeId, event) VALUES (?, ?, ?)";
-
-    private static Session cachedSession = null;
-
-    private static Session getSession() {
-        if (cachedSession == null) {
-            EngineConfiguration config = EngineConfigurationSerializer.getConfig();
-            Audit logging = config.getAudit();
-            String keyspace = logging.getKeyspace();
-
-            cachedSession = DbClient.getInstance().getSession(keyspace);
-        }
-       return cachedSession;
-    }
 
     private static void writeAudit(Exchange ex) throws Exception {
 
@@ -57,8 +41,8 @@ public final class AuditWriter {
         ObjectMapper mapper = new ObjectMapper();
         String headersJson = mapper.writeValueAsString(headers);
 
-        Session session = getSession();
-        PreparedStatementCache cache = DbClient.getInstance().getStatementCache(session);
+        Session session = CassandraConnector.getInstance().getSession();
+        PreparedStatementCache cache = CassandraConnector.getInstance().getStatementCache();
         PreparedStatement preparedStatement = cache.getOrAdd(CQL_EXCHANGE);
 
         BoundStatement boundStatement = preparedStatement.
@@ -83,8 +67,8 @@ public final class AuditWriter {
             uuid = ex.getExchangeId();
         }
 
-        Session session = getSession();
-        PreparedStatementCache cache = DbClient.getInstance().getStatementCache(session);
+        Session session = CassandraConnector.getInstance().getSession();
+        PreparedStatementCache cache = CassandraConnector.getInstance().getStatementCache();
         PreparedStatement preparedStatement = cache.getOrAdd(CQL_ECHANGE_EVENT);
 
         BoundStatement boundStatement = preparedStatement.

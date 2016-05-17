@@ -8,11 +8,10 @@ import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
+import org.endeavourhealth.core.data.CassandraConnector;
+import org.endeavourhealth.core.data.PreparedStatementCache;
 import org.endeavourhealth.core.engineConfiguration.EngineConfiguration;
 import org.endeavourhealth.core.engineConfiguration.EngineConfigurationSerializer;
-import org.endeavourhealth.core.engineConfiguration.Logging;
-import org.endeavourhealth.core.database.DbClient;
-import org.endeavourhealth.core.database.PreparedStatementCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,18 +22,16 @@ public final class CassandraDbAppender extends UnsynchronizedAppenderBase<ILoggi
 
     private static final Logger LOG = LoggerFactory.getLogger(CassandraDbAppender.class);
 
-    private final String CQL_EVENT = "INSERT INTO logging_event ("
+    private final String CQL_EVENT = "INSERT INTO logging.logging_event ("
             + "timestmp, formatted_message, logger_name, level_string, thread_name, reference_flag, "
             + "arg0, arg1, arg2, arg3, caller_filename, caller_class, caller_method, caller_line, "
             + "event_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    private final String CQL_EVENT_PROPERTY = "INSERT INTO logging_event_property ("
+    private final String CQL_EVENT_PROPERTY = "INSERT INTO logging.logging_event_property ("
             + "event_id, mapped_key, mapped_value) VALUES (?, ?, ?)";
 
-    private final String CQL_EVENT_EXCEPTION = "INSERT INTO logging_event_exception ("
+    private final String CQL_EVENT_EXCEPTION = "INSERT INTO logging.logging_event_exception ("
             + "event_id, i, trace_line) VALUES (?, ?, ?)";
-
-    private Session session = null;
 
     public CassandraDbAppender() {
 
@@ -45,10 +42,6 @@ public final class CassandraDbAppender extends UnsynchronizedAppenderBase<ILoggi
     public void start() {
 
         EngineConfiguration config = EngineConfigurationSerializer.getConfig();
-        Logging logging = config.getLogging();
-        String keyspace = logging.getKeyspace();
-
-        this.session = DbClient.getInstance().getSession(keyspace);
 
         //only call into the super-class start() if all the above was successfu
         super.start();
@@ -66,6 +59,7 @@ public final class CassandraDbAppender extends UnsynchronizedAppenderBase<ILoggi
         insertEventProperties(batch, event, eventUuid);
         insertEventException(batch, event, eventUuid);
 
+        Session session = CassandraConnector.getInstance().getSession();
         ResultSet rs = session.execute(batch);
         if (!rs.wasApplied()) {
             addWarn("Failed to insert loggingEvent/property/exception");
@@ -92,7 +86,7 @@ public final class CassandraDbAppender extends UnsynchronizedAppenderBase<ILoggi
         StackTraceElement caller = extractFirstCaller(event.getCallerData());
         Object[] args = event.getArgumentArray();
 
-        PreparedStatementCache cache = DbClient.getInstance().getStatementCache(session);
+        PreparedStatementCache cache = CassandraConnector.getInstance().getStatementCache();
         PreparedStatement preparedStatement = cache.getOrAdd(CQL_EVENT);
 
         BoundStatement boundStatement = preparedStatement.
@@ -143,7 +137,7 @@ public final class CassandraDbAppender extends UnsynchronizedAppenderBase<ILoggi
             return;
         }
 
-        PreparedStatementCache cache = DbClient.getInstance().getStatementCache(session);
+        PreparedStatementCache cache = CassandraConnector.getInstance().getStatementCache();
         PreparedStatement preparedStatement = cache.getOrAdd(CQL_EVENT_PROPERTY);
 
         for (String key : propertiesKeys) {
@@ -165,7 +159,7 @@ public final class CassandraDbAppender extends UnsynchronizedAppenderBase<ILoggi
             return;
         }
 
-        PreparedStatementCache cache = DbClient.getInstance().getStatementCache(session);
+        PreparedStatementCache cache = CassandraConnector.getInstance().getStatementCache();
         PreparedStatement preparedStatement = cache.getOrAdd(CQL_EVENT_EXCEPTION);
 
         int lineNumber = 0;

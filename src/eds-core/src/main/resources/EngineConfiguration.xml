@@ -8,13 +8,13 @@
   </cassandra>
 
   <!-- non-logback logging settings (see logback.xml for others) -->
-  <logging>
+  <!--<logging>
     <keyspace>logging</keyspace>
-  </logging>
+  </logging>-->
 
   <!-- audit settings -->
-  <audit>
+  <!--<audit>
     <keyspace>audit</keyspace>
-  </audit>
+  </audit>-->
 
 </engineConfiguration>

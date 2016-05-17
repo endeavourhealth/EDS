@@ -8,6 +8,25 @@
     <artifactId>eds-transforms</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+
+    <dependencies>
+
+        <!-- dependent on EDS-core -->
+        <dependency>
+            <groupId>org.endeavourhealth</groupId>
+            <artifactId>eds-core</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <!-- base FHIR resources (to be replaced with Endeavour extensions -->
+        <dependency>
+            <groupId>me.fhir</groupId>
+            <artifactId>fhir-dstu2</artifactId>
+            <version>1.0.0.6881</version>
+        </dependency>
+
+    </dependencies>
+
     <build>
 
     <plugins>

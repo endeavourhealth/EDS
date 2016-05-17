@@ -50,22 +50,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link Audit }
-     * 
-     */
-    public Audit createAudit() {
-        return new Audit();
-    }
-
-    /**
-     * Create an instance of {@link Logging }
-     * 
-     */
-    public Logging createLogging() {
-        return new Logging();
-    }
-
-    /**
      * Create an instance of {@link JAXBElement }{@code <}{@link EngineConfiguration }{@code >}}
      * 
      */
