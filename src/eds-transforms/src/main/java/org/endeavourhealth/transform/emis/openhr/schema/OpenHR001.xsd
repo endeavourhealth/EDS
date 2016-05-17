@@ -1,0 +1,1915 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2006 sp2 U (http://www.altova.com) by Development (EMIS) -->
+<!-- edited with XMLSPY v5 rel. 4 U (http://www.xmlspy.com) by Carolyn  Meakin (Emis) -->
+<xs:schema xmlns="http://www.e-mis.com/emisopen" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.e-mis.com/emisopen" elementFormDefault="qualified" attributeFormDefault="unqualified" version="2.1.1">
+	<!--Author: Jonathan Homer (jonathan.homer@e-mis.com)-->
+	<!--Version: 2.1.4-->
+	<xs:include schemaLocation="datatypes.xsd"/>
+	<xs:include schemaLocation="vocabulary.xsd"/>
+	<xs:element name="openHealthRecord" type="OpenHR001.OpenHealthRecord"/>
+	<xs:complexType name="OpenHR001.OpenHealthRecord">
+		<xs:sequence>
+			<xs:element name="id" type="dt.uid">
+				<xs:annotation>
+					<xs:documentation>Message unique identifier</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="creationTime" type="dt.DateTime">
+				<xs:annotation>
+					<xs:documentation>Date and time of message generation on originating system</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="author" type="OpenHR001.MessageAuthor">
+				<xs:annotation>
+					<xs:documentation>Author of this message</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="contentSpecification" type="OpenHR001.ContentSpecification">
+				<xs:annotation>
+					<xs:documentation>Specifies the constraints applied to the content of this message</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="requestMessage" type="dt.uid" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Provides a reference to the unique identifier of the requesting message.  Deprecated.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="adminDomain" type="OpenHR001.AdminDomain" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Administrative information</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="healthDomain" type="OpenHR001.HealthDomain" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Health and Clinical Management information</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="schemaVersion" type="dt.Version" use="optional" default="1.3.0"/>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.MessageAuthor">
+		<xs:sequence>
+			<xs:element name="system" type="OpenHR001.AuthorSystem">
+				<xs:annotation>
+					<xs:documentation>Name and Version of the system</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="organisation" type="dt.uid" minOccurs="0"/>
+			<xs:element name="SDSIdentifier" type="xs:token" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>A valid SDS identifier that uniquely identifies the Organisation</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="nationalCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Example: National GP Practice Code</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="20"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="displayName" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="100"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.AuthorSystem">
+		<xs:sequence>
+			<xs:element name="systemType" type="voc.MessageAuthorSystemType"/>
+			<xs:element name="displayName" type="xs:string" minOccurs="0"/>
+			<xs:element name="version" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.AdminDomain">
+		<xs:sequence>
+			<xs:element name="person" type="OpenHR001.Person" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Demographic information for Patients and Users</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="patient" type="OpenHR001.Patient" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Information defining patients</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="organisation" type="OpenHR001.Organisation" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Information describing organisations</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="location" type="OpenHR001.Location" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Detailed information about physical locations related to organisations</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="user" type="OpenHR001.User" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Information relating to users</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="role" type="OpenHR001.Role" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Information relating to job roles at an organisation</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="userInRole" type="OpenHR001.UserInRole" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Information relating to a user's relatiionship with an organisation</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="localMixture" type="OpenHR001.LocalMixture" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Information defining local mixtures of drugs</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="auditTrail" type="OpenHR001.AuditTrail" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Deprecated audit trail information</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="confidentialityPolicy" type="OpenHR001.ConfidentialityPolicy" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Information relating to confidentiality policies</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.HealthDomain">
+		<xs:sequence>
+			<xs:element name="encounter" type="OpenHR001.Encounter" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Details of an encouter between the auther and patient. An encouter contains a collection of other events</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="event" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The patient record components. Each component represents a discrete transaction between an author and the patient record</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="OpenHR001.Event"/>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="problem" type="OpenHR001.Problem" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="document" type="OpenHR001.Document" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="task" type="OpenHR001.PatientTask" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Person">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="birthDate" type="dt.Date" minOccurs="0"/>
+					<xs:element name="sex" type="voc.Sex" minOccurs="0"/>
+					<xs:element name="forenames" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="108"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="callingName" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="35"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="surname" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="100"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="birthSurname" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="100"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="previousSurname" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="100"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="title" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="50"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="address" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>Address information for the person.  No more than one of each type is permitted</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:complexContent>
+								<xs:extension base="dt.Address">
+									<xs:attribute name="updateMode" type="voc.UpdateMode" use="optional" default="none"/>
+									<xs:attribute name="auditDeleteDate" type="dt.DateTime" use="optional"/>
+									<xs:attribute name="auditDeleteUserInRole" type="dt.uid" use="optional"/>
+									<xs:attribute name="auditDeleteInfo" type="xs:string" use="optional"/>
+								</xs:extension>
+							</xs:complexContent>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="contact" type="dt.Contact" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>Contact information for the person.  No more than one of each type is permitted</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="maritalStatus" type="dt.Code" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="ethnicGroup" type="dt.Code" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="religion" type="dt.Code" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="nationality" type="dt.Code" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Patient">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="patientIdentifier" type="dt.PatientIdentifier" minOccurs="0" maxOccurs="unbounded"/>
+					<xs:element name="patientPerson" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Links back to an entry in the person list</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="registeredGPUserInRole" type="dt.uid" minOccurs="0"/>
+					<xs:element name="previousGPName" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="150"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="usualGPUserInRole" type="dt.uid" minOccurs="0"/>
+					<xs:element name="dateOfEntryCountry" type="dt.Date" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="dateOfEntryArea" type="dt.Date" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="dateOfDeath" type="dt.Date" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The date of a patient's death.  Should be used in conjunction with an appropriate registration status in caseloadPatient/caseloadPatientHistory</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="dead" type="dt.bool" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="archived" type="dt.bool" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Indicates that the patient should not appear in search results.  Only applicable to deceased/inactive patients</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="confidentialityPolicy" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>An optional confidentiality policy that should apply to viewing of any part of the patient's record</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="caseloadPatient" type="OpenHR001.CaseloadPatient" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>Indicates the current patient status at the organisation</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="caseloadPatientHistory" type="OpenHR001.CaseloadPatient" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>Indicates historical patient status entries</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="consent" type="dt.ConsentValue" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="PatientCarerDetails" type="OpenHR001.PatientCarer" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>Details of the patient's carer(s).  Not to be used to indicate patient contacts e.g. family members unless in a caring role</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="PatientContact" type="OpenHR001.PatientContact" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.CaseloadPatient">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid" minOccurs="0"/>
+					<xs:element name="organisation" type="dt.uid"/>
+					<xs:element name="dateRecorded" type="dt.DateTime"/>
+					<xs:element name="dateEnded" type="dt.DateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="patientStatus" type="OpenHR001.PatientStatus"/>
+					<xs:element name="patientType">
+						<xs:complexType>
+							<xs:simpleContent>
+								<xs:extension base="voc.PatientType">
+									<xs:attribute name="dummy" type="dt.bool" use="optional" fixed="false">
+										<xs:annotation>
+											<xs:documentation>For 'Other' patients, indicates that the patient type denotes a ficticious/test patient</xs:documentation>
+										</xs:annotation>
+									</xs:attribute>
+									<xs:attribute name="userDefined" type="dt.bool" use="optional" fixed="false">
+										<xs:annotation>
+											<xs:documentation>For 'Other' patients, Indicates that the patient type is a locally defined type</xs:documentation>
+										</xs:annotation>
+									</xs:attribute>
+									<xs:attribute name="originalTerm" type="xs:string" use="optional">
+										<xs:annotation>
+											<xs:documentation>For 'Other' patients, this is the description of the patient type on the originating system</xs:documentation>
+										</xs:annotation>
+									</xs:attribute>
+								</xs:extension>
+							</xs:simpleContent>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="property" type="OpenHR001.CaseloadPatientProperty" minOccurs="0" maxOccurs="unbounded"/>
+					<xs:element name="customRegistrationField" type="OpenHR001.CustomRegistration" minOccurs="0" maxOccurs="unbounded"/>
+					<xs:element name="emisPatientNumber" type="xs:int" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The patient number on the originating system - not necessarily just an 'EMIS' patient number.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="preferredHCPUserInRole" type="dt.uid" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.CaseloadPatientProperty">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="name" type="voc.CaseloadPatientProperty"/>
+					<xs:element name="value">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="255"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Organisation">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="name" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="100"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="organisationType" type="dt.Code" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Uncoded description of the organisation type</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="speciality" minOccurs="0">
+						<xs:complexType>
+							<xs:complexContent>
+								<xs:extension base="dt.Code">
+									<xs:attribute name="nationalCode" type="xs:int" use="optional"/>
+									<xs:attribute name="specialityAbbreviation" use="optional">
+										<xs:simpleType>
+											<xs:restriction base="xs:string">
+												<xs:maxLength value="10"/>
+											</xs:restriction>
+										</xs:simpleType>
+									</xs:attribute>
+								</xs:extension>
+							</xs:complexContent>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="cdb" type="xs:int" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>For EMIS practices, the customer database number (CDB)</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="nationalPracticeCode" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="20"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="mainLocation" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Primary location associated with the organisation</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="locations" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>All locations associated with the organisation.  This list must include the mainLocation</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:complexContent>
+								<xs:extension base="dt.dbo">
+									<xs:sequence>
+										<xs:element name="location" type="dt.uid"/>
+									</xs:sequence>
+								</xs:extension>
+							</xs:complexContent>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="caseload" type="OpenHR001.Caseload" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="parentOrganisation" type="dt.uid" minOccurs="0"/>
+					<xs:element name="openDate" type="dt.DateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The date the organisation became active</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="closeDate" type="dt.DateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The date the organisation closed</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Location">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="name" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="100"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="locationType" type="OpenHR001.LocationType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Uncoded description of the location type e.g. Hospital or GP Surgery</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="parentLocation" type="dt.uid" minOccurs="0"/>
+					<xs:element name="mainContactPerson" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="notes" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="255"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="openDate" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="closeDate" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="address" type="dt.Address" minOccurs="0"/>
+					<xs:element name="contact" type="dt.Contact" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>Contact information for the location.  No more than one of each contact type is supported, and only 'W' and 'EM' are supported in this context</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.LocationType">
+		<xs:complexContent>
+			<xs:extension base="dt.Code"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Caseload">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="title">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="100"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="referredOnly" type="dt.bool"/>
+					<xs:element name="includeReferrals" type="dt.bool"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.UserInRole">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="user" type="dt.uid">
+						<xs:annotation>
+							<xs:documentation>Points to an entry in the User list</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="role" type="dt.uid">
+						<xs:annotation>
+							<xs:documentation>Points to an entry in the Role list</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="contractualRelationship" type="voc.ContractualRelationship"/>
+					<xs:element name="contractStart" type="dt.Date"/>
+					<xs:element name="contractEnd" type="dt.Date" minOccurs="0"/>
+					<xs:element name="filingConfidentialityPolicy" type="dt.uid">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="userIdentifier" type="dt.UserIdentifier" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>Professional codes for the UIR</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="authoriseScripts" type="xs:boolean" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Indicates that the UIR can authorise prescriptions</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="consulter" type="xs:boolean" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Indicates that the UIR is permitted to consult with patients</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="sessionHolder" type="xs:boolean" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Indicates that the UIR may hold appointment sessions</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Role">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="name">
+						<xs:annotation>
+							<xs:documentation>The role's job description e.g. Practice Nurse, Receptionist, Principal</xs:documentation>
+						</xs:annotation>
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="150"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="userCategory" type="dt.Code">
+						<xs:annotation>
+							<xs:documentation>Uncoded description of the role's job description e.g. Practice Nurse, Receptionist, Principal</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="organisation" type="dt.uid"/>
+					<xs:element name="confidentialityPolicy" type="dt.uid">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.User">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="userPerson" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Links back to an entry in the Person list</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="mnemonic" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="15"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="loginName" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="20"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="active" type="dt.bool" minOccurs="0"/>
+					<xs:element name="defaultUserInRole" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="password" type="xs:base64Binary" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Encounter">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="patient" type="dt.uid"/>
+					<xs:element name="effectiveTime" type="dt.DatePart" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The clinically relevant date/time of the encounter</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="availabilityTimeStamp" type="dt.DateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The date and time that the encounter was entered onto the clinical system</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="authorisingUserInRole" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The person clinically responsible for the encounter</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="enteredByUserInRole" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The person who entered the encounter onto the clinical system</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="organisation" type="dt.uid" minOccurs="0" maxOccurs="unbounded"/>
+					<xs:element name="confidentialityPolicy" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The confidentiality policy that applies to this encounter</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="consultationType" type="voc.ConsultationType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="location" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The physical location that the encounter took place at</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="locationType" type="OpenHR001.LocationType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The location type, or virtual location type (e.g. "Telephone Call") that the encounter took place at</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="accompanyingHCP" type="dt.uid" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>Details of any additional healthcare professionals present at the consultation</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="duration" type="dt.Duration" minOccurs="0"/>
+					<xs:element name="travelTime" type="dt.Duration" minOccurs="0"/>
+					<xs:element name="appointmentEvent" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="template" type="OpenHR001.TemplateIdentifier" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="sectionData" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="component" type="OpenHR001.Component" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>Pointers to clinical events or free text entries in the Events list that make up the consultation's content</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="clinicalPurpose" type="dt.CodeQualified" minOccurs="0"/>
+					<xs:element name="externalConsulter" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The name of any external person involved in this encounter (free text)</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+				<xs:attribute name="complete" type="dt.bool" use="optional" default="true"/>
+				<xs:attribute name="removeComponentsOnDelete" type="dt.bool" default="false"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Event">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="patient" type="dt.uid"/>
+					<xs:element name="eventType" type="voc.EventType" minOccurs="0"/>
+					<xs:element name="effectiveTime" type="dt.DatePart" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The clinically relevant date/time of the event</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="availabilityTimeStamp" type="dt.DateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The date and time that the event was entered onto the clinical system</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="authorisingUserInRole" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The person clinically responsible for the event</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="enteredByUserInRole" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The person who entered the event onto the clinical system</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="code" type="dt.CodeQualified" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The clinical code for the event (can be omitted for free text events relating to consultations)</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="displayTerm" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The original description of the code from the original system - not necessarily the term from the coding dictionary</xs:documentation>
+						</xs:annotation>
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="200"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="associatedText" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>One or more items of associated text associated with the entry</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:complexContent>
+								<xs:extension base="OpenHR001.AssociatedText"/>
+							</xs:complexContent>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="organisation" type="dt.uid" minOccurs="0" maxOccurs="unbounded"/>
+					<xs:element name="confidentialityPolicy" type="dt.uid" minOccurs="0"/>
+					<xs:element name="hidden" type="dt.bool" default="false" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="template" type="OpenHR001.TemplateIdentifier" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:choice minOccurs="0">
+						<xs:element name="observation" type="OpenHR001.Observation"/>
+						<xs:element name="diary" type="OpenHR001.Diary"/>
+						<xs:element name="referral" type="OpenHR001.Referral"/>
+						<xs:element name="medication" type="OpenHR001.Medication"/>
+						<xs:element name="medicationIssue" type="OpenHR001.MedicationIssue"/>
+						<xs:element name="report" type="OpenHR001.Report"/>
+						<xs:element name="orderHeader" type="OpenHR001.OrderHeader">
+							<xs:annotation>
+								<xs:documentation>Test Request details, for EMIS internal use only</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="alert" type="OpenHR001.Alert"/>
+						<xs:element name="allergy" type="OpenHR001.Allergy">
+							<xs:annotation>
+								<xs:documentation>Deprecated</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+					</xs:choice>
+					<xs:element name="annotations" type="OpenHR001.Annotations" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Annotation information, for EMIS internal use only</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+				<xs:attribute name="unFiled" type="dt.bool"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Component">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="event" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>A pointer to an entry in the Events list</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="problemPage" type="xs:unsignedByte" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Denotes which 'Page' the event relates to.  Entries for different clinical problems are expected to be on different pages</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="heading" type="dt.Code" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The uncoded description of the section (e.g. Problem, History, Examination) that the event refers to.  Entries relating to the same heading on the same page should be grouped together</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Observation">
+		<xs:sequence>
+			<xs:element name="value" type="OpenHR001.ObservationValue" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The value and range information for the event</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="abnormal" type="OpenHR001.Abnormal" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>For lab-derived results, indicates that the result is normal (not necessarily out of range).  Should not be used for entries added directly to the clinical system</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="complexObservation" type="OpenHR001.ComplexObservation" minOccurs="0"/>
+			<xs:element name="episodicity" type="voc.Episodicity" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The episodicity of the event,  for observations relating to problems.  </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="referenceDocument" type="dt.uid" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>A pointer to the documents list, for documents</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="resultStatus" type="voc.ObservationResultStatus"/>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.ObservationValue">
+		<xs:sequence>
+			<xs:element name="availableRange" type="OpenHR001.Range" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:choice>
+				<xs:element name="numeric" type="OpenHR001.NumericValue"/>
+				<xs:element name="text" type="OpenHR001.TextValue"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.NumericValue">
+		<xs:sequence>
+			<xs:element name="operator" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="10"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="value" type="xs:decimal"/>
+			<xs:element name="units" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="range" type="OpenHR001.Range" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.TextValue">
+		<xs:sequence>
+			<xs:element name="value" type="xs:string"/>
+			<xs:element name="range" type="OpenHR001.Range" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Range">
+		<xs:sequence>
+			<xs:choice>
+				<xs:element name="description">
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="50"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				<xs:element name="numericRange" type="OpenHR001.NumericRange"/>
+				<xs:element name="textRange" type="OpenHR001.TextRange"/>
+			</xs:choice>
+			<xs:element name="units" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="sex" type="voc.Sex" minOccurs="0"/>
+			<xs:element name="ageRange" type="dt.AgeRange" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="qualifier" type="voc.RangeQualifier"/>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.NumericRange">
+		<xs:sequence>
+			<xs:element name="low" type="OpenHR001.RangeValue" minOccurs="0"/>
+			<xs:element name="high" type="OpenHR001.RangeValue" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.TextRange">
+		<xs:sequence>
+			<xs:element name="low" type="xs:string" minOccurs="0"/>
+			<xs:element name="high" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.RangeValue">
+		<xs:attribute name="value" type="xs:decimal" use="required"/>
+		<xs:attribute name="operator" use="optional">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:maxLength value="10"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.AssociatedText">
+		<xs:sequence>
+			<xs:element name="value" type="xs:string"/>
+		</xs:sequence>
+		<xs:attribute name="associatedTextType" type="voc.AssociatedTextType" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Diary">
+		<xs:sequence>
+			<xs:element name="durationTerm" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Deprecated</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="locationType" type="OpenHR001.LocationType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The location type that the diary should relate to</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="reminder" type="OpenHR001.DiaryReminder" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Details of any reminders that have been sent to the patient for this diary entry</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Referral">
+		<xs:sequence>
+			<xs:element name="speciality" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>An uncoded description of the speciality.  However only certain values are expected - see the MIM</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="dt.Code">
+							<xs:attribute name="nationalCode" type="xs:int" use="optional"/>
+							<xs:attribute name="specialityAbbreviation" use="optional">
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:maxLength value="10"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="targetUserInRole" type="dt.uid" minOccurs="0"/>
+			<xs:element name="targetOrganisation" type="dt.uid" minOccurs="0"/>
+			<xs:element name="requestType" type="voc.ReferralRequestType" minOccurs="0"/>
+			<xs:element name="reason" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="community" type="dt.bool" minOccurs="0"/>
+			<xs:element name="urgency" type="voc.ReferralUrgency" minOccurs="0"/>
+			<xs:element name="NHS" type="dt.bool" minOccurs="0"/>
+			<xs:element name="transport" type="voc.ReferralTransport" minOccurs="0"/>
+			<xs:element name="referralRef" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Deprecated</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="direction" type="voc.ReferralDirection" minOccurs="0"/>
+			<xs:element name="sourceOrganisation" type="dt.uid" minOccurs="0"/>
+			<xs:element name="datedReferral" type="dt.Date" minOccurs="0"/>
+			<xs:element name="rejectedReason" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="200"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="referralMode" type="voc.ReferralMode" minOccurs="0"/>
+			<xs:element name="UBRN" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This identifier is unique within the eBooking Service. It identifies the Unique Booking Reference Number allocated to the service request.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="referralActivity" type="dt.uid" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Pointers to any related events</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Medication">
+		<xs:sequence>
+			<xs:element name="reviewDate" type="dt.Date" minOccurs="0"/>
+			<xs:element name="expiryDate" type="dt.Date" minOccurs="0"/>
+			<xs:element name="localMixture" type="dt.uid" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>A pointer to the localMixture list, only where the drug is not also coded</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="dosage">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="quantity" type="xs:decimal"/>
+			<xs:element name="quantityUnit">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="60"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="quantityRepresentation" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Full textual representation of the quantity</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="durationOfIssue" type="xs:int"/>
+			<xs:element name="prescriptionType" type="voc.PrescriptionType"/>
+			<xs:element name="pharmacyText" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Text to display on the left hand side of the prescription immediately below the dosage directions</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="patientText" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Text to display on the right hand side of the prescription</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="drugStatus" type="voc.DrugStatus"/>
+			<xs:element name="private" type="dt.bool"/>
+			<xs:element name="minNextIssueDays" type="xs:int" minOccurs="0"/>
+			<xs:element name="maxNextIssueDays" type="xs:int" minOccurs="0"/>
+			<xs:element name="firstIssueDate" type="dt.Date" minOccurs="0"/>
+			<xs:element name="mostRecentIssueDate" type="dt.Date" minOccurs="0"/>
+			<xs:element name="numberOfIssues" type="xs:int" minOccurs="0"/>
+			<xs:element name="authorisedIssues" type="OpenHR001.AuthorisedIssue" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="averageCompliance" type="xs:int" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Deprecated</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="mostRecentIssueMethod" type="voc.DrugIssueType" minOccurs="0"/>
+			<xs:element name="prescribedAsContraceptive" type="dt.bool" minOccurs="0"/>
+			<xs:element name="cancellation" type="OpenHR001.MedicationCancel" minOccurs="0"/>
+			<xs:element name="dmdUnitOfMeasure" type="xs:long" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Deprecated</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.MedicationIssue">
+		<xs:sequence>
+			<xs:element name="medication" type="dt.uid" minOccurs="0"/>
+			<xs:element name="localMixture" type="dt.uid" minOccurs="0"/>
+			<xs:element name="dosage">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="quantity" type="xs:decimal"/>
+			<xs:element name="quantityUnit">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="60"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="quantityRepresentation" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Full textual representation of the quantity</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="durationOfIssue" type="xs:int"/>
+			<xs:element name="compliance" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Deprecated</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:short">
+						<xs:minInclusive value="0"/>
+						<xs:maxInclusive value="100"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="prescriptionType" type="voc.PrescriptionType"/>
+			<xs:element name="estimatedNHSCost" type="xs:decimal"/>
+			<xs:element name="pharmacyStamp" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The pharmacy stamp displayed at the top left of a FP10/GP10</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="issueMethod" type="voc.DrugIssueType"/>
+			<xs:element name="pharmacyText" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Text to display on the left hand side of the prescription immediately below the dosage directions</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="patientText" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Text to display on the right hand side of the prescription</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="pharmacyMessage" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Text to display on the left hand side of the prescription, immediately below the pharmacyText</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="patientMessage" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Text to display on the right hand side of the prescription, immediately below the patientText</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="private" type="dt.bool"/>
+			<xs:element name="cancelled" type="dt.bool"/>
+			<xs:element name="prescribedAsContraceptive" type="dt.bool" minOccurs="0"/>
+			<xs:element name="dmdUnitOfMeasure" type="xs:long" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Deprecated</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="repeatDispensingInterval" type="xs:int" minOccurs="0"/>
+			<xs:element name="repeatDispensingIssueCount" type="xs:int" minOccurs="0"/>
+			<xs:element name="batchNumber" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.AuthorisedIssue">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="authorisedDate" type="dt.Date"/>
+					<xs:element name="authorisingUserInRole" type="dt.uid"/>
+					<xs:element name="enteredByUserInRole" type="dt.uid"/>
+					<xs:element name="authorisedIssues" type="xs:int"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.LocalMixture">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="name" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The name of the local mixture</xs:documentation>
+						</xs:annotation>
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="255"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="organisation" type="dt.uid" minOccurs="0"/>
+					<xs:element name="deleted" type="dt.bool" minOccurs="0"/>
+					<xs:element name="createdTime" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="creatingUserInRole" type="dt.uid" minOccurs="0"/>
+					<xs:element name="editedTime" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="editedUserInRole" type="dt.uid" minOccurs="0"/>
+					<xs:element name="constituent" type="OpenHR001.LocalMixtureConstituent" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.LocalMixtureConstituent">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="preparation" type="dt.Code"/>
+					<xs:element name="strength">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="20"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Problem">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid">
+						<xs:annotation>
+							<xs:documentation>Defining event identifier</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="status" type="voc.ProblemStatus" minOccurs="0"/>
+					<xs:element name="significance" type="voc.ProblemSignificance" minOccurs="0"/>
+					<xs:element name="expectedDuration" type="dt.Duration" minOccurs="0"/>
+					<xs:element name="endTime" type="dt.DatePart" minOccurs="0"/>
+					<xs:element name="owner" type="voc.ProblemOwner" minOccurs="0"/>
+					<xs:element name="parentProblem" type="OpenHR001.ProblemHierarchy" minOccurs="0" maxOccurs="unbounded"/>
+					<xs:element name="childProblem" type="OpenHR001.ProblemHierarchy" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="eventLink" type="OpenHR001.ProblemEventLink" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.ProblemEventLink">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="eventType" type="voc.EventType" minOccurs="0"/>
+					<xs:element name="eventLinkType" type="voc.ProblemEventLinkType" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.EpisodeProblemLink">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="problem" type="dt.uid"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Document">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="name" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="500"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="description" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="1000"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="uploadUserInRole" type="dt.uid" minOccurs="0"/>
+					<xs:element name="producedTime" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="deleted" type="dt.bool" minOccurs="0"/>
+					<xs:element name="folder" type="OpenHR001.DocumentFolder" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="observation" type="dt.uid" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="locator" type="voc.AttachmentLocator" minOccurs="0"/>
+					<xs:element name="data" type="dt.DocumentData" minOccurs="0"/>
+					<xs:element name="code" type="dt.CodeQualified" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.DocumentFolder">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="folderType" type="voc.DocumentFolderType"/>
+					<xs:element name="name">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="200"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="deleted" type="dt.bool" default="false"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Attachment">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="attachmentType" type="voc.AttachmentType"/>
+					<xs:element name="uploadedUserInRole" type="dt.uid" minOccurs="0"/>
+					<xs:element name="uploadedTime" type="dt.DateTime"/>
+					<xs:element name="data" type="dt.DocumentData"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.CustomRegistration">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="template" type="dt.uid" minOccurs="0"/>
+					<xs:element name="name" type="xs:string">
+						<xs:annotation>
+							<xs:documentation>Custom registration field name</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="value" type="xs:string" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>Value for this custom registration field</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.ContentSpecification">
+		<xs:sequence>
+			<xs:element name="specification" type="voc.ContentSpecification"/>
+			<xs:element name="effectiveTime" type="dt.TimeRange" minOccurs="0"/>
+			<xs:element name="dataSet" type="voc.DataSet" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The data set acting as a filter on the message content</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.PatientStatus">
+		<xs:sequence>
+			<xs:element name="status" type="voc.PatientStatus"/>
+			<xs:element name="caseloadStatus" type="voc.CaseloadPatientStatus" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Deprecated</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.ComplexObservation">
+		<xs:sequence>
+			<xs:element name="parentLink" type="dt.uid" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Deprecated</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="childLink" type="dt.uid" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.ProblemHierarchy">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="relationshipType" type="voc.ProblemRelationshipType"/>
+					<xs:element name="organisation" type="dt.uid">
+						<xs:annotation>
+							<xs:documentation>Deprecated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.DocumentType">
+		<xs:sequence>
+			<xs:element name="id" type="dt.uid" minOccurs="0"/>
+			<xs:element name="displayName">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.DiaryReminder">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="reminderType" type="voc.ReminderType"/>
+					<xs:element name="reminderTime" type="dt.DateTime"/>
+					<xs:element name="userInRole" type="dt.uid"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Report">
+		<xs:sequence>
+			<xs:element name="abnormal" type="dt.bool" minOccurs="0"/>
+			<xs:element name="issueDate" type="dt.Date" minOccurs="0"/>
+			<xs:element name="receivedDate" type="dt.DateTime" minOccurs="0"/>
+			<xs:element name="dataType" type="voc.PathReportDataType" minOccurs="0"/>
+			<xs:element name="reportLabId" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="requestLabId" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="requestDateTimeLab" type="dt.DateTime" minOccurs="0"/>
+			<xs:element name="serviceOrganisation" type="dt.uid" minOccurs="0"/>
+			<xs:element name="serviceLocation" type="dt.uid" minOccurs="0"/>
+			<xs:element name="servicePerson" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="messageId" type="xs:int" minOccurs="0"/>
+			<xs:element name="messageInterchange" type="OpenHR001.MessageInterchange" minOccurs="0"/>
+			<xs:element name="orderHeader" type="dt.uid" minOccurs="0"/>
+			<xs:element name="reportSummary" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="viewerUserInRole" type="dt.uid" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="patientIdentifier" type="OpenHR001.ReportPatientIdentifier" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Original/Matched Patient Details.  Deprecated</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="component" minOccurs="0" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:choice>
+						<xs:element name="specimen" type="OpenHR001.Specimen"/>
+						<xs:element name="battery" type="dt.uid"/>
+						<xs:element name="test" type="dt.url"/>
+					</xs:choice>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.ReportPatientIdentifier">
+		<xs:sequence>
+			<xs:element name="originalDetails" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Information relating to the details sent by the lab</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="OpenHR001.ReportPatientIdentifierDetail">
+							<xs:sequence>
+								<xs:element name="labSubjectId" type="xs:token" minOccurs="0"/>
+							</xs:sequence>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="matchedDetails" minOccurs="0">
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="OpenHR001.ReportPatientIdentifierDetail">
+							<xs:sequence>
+								<xs:element name="patient" type="dt.uid" minOccurs="0"/>
+							</xs:sequence>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.ReportPatientIdentifierDetail">
+		<xs:sequence>
+			<xs:element name="forenames" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="108"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="surname" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="100"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="birthDate" type="dt.Date" minOccurs="0"/>
+			<xs:element name="nhs" type="xs:token" minOccurs="0"/>
+			<xs:element name="address" type="dt.Address" minOccurs="0"/>
+			<xs:element name="sex" type="voc.Sex" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.MessageInterchange">
+		<xs:sequence>
+			<xs:element name="id" type="dt.uid"/>
+			<xs:element name="senderEDICode">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="receiverEDICode">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="50"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="interchange">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="500"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="messageType" type="voc.PathMessageType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.UserComment">
+		<xs:sequence>
+			<xs:element name="comment" type="xs:string"/>
+			<xs:element name="userInRole" type="dt.uid"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Specimen">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="labSpecimenReference" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="100"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="specimenType" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="100"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="fastingStatus" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="50"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="volume" type="xs:decimal" minOccurs="0"/>
+					<xs:element name="volumeUnits" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="50"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="collectionProcedure" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="50"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="anatomicalOrigin" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="50"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="sampleDateTime" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="collectionStartDate" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="collectionEndDate" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="dateTimeReceivedByLab" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="comment" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+					<xs:element name="battery" type="dt.uid" minOccurs="0" maxOccurs="unbounded"/>
+					<xs:element name="test" type="dt.uid" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.OrderHeader">
+		<xs:sequence>
+			<xs:element name="Urgent" type="dt.bool" minOccurs="0"/>
+			<xs:element name="inoculationRisk" type="dt.bool" minOccurs="0"/>
+			<xs:element name="fasted" type="dt.bool" minOccurs="0"/>
+			<xs:element name="clinicalDetails" type="xs:string" minOccurs="0"/>
+			<xs:element name="sampleWorkflowTaskId" type="dt.uid" minOccurs="0"/>
+			<xs:element name="sampledByUserInRole" type="dt.uid" minOccurs="0"/>
+			<xs:element name="requestMode" type="voc.RequestMode" minOccurs="0"/>
+			<xs:element name="onlineTrackerGUID" type="dt.uid" minOccurs="0"/>
+			<xs:element name="orderBatch" type="OpenHR001.OrderBatch" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.OrderBatch">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="observationGUID" type="dt.uid" minOccurs="0"/>
+					<xs:element name="orderReference" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="100"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="status" type="voc.OrderBatchStatus" minOccurs="0"/>
+					<xs:element name="testStatusDate" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="inboundReportGUID" type="dt.uid" minOccurs="0"/>
+					<xs:element name="labDisplayTerm" type="xs:string" minOccurs="0"/>
+					<xs:element name="bottleCode" type="dt.Code" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.TemplateIdentifier">
+		<xs:sequence>
+			<xs:element name="id" type="dt.uid"/>
+			<xs:element name="instance" type="dt.uid"/>
+			<xs:element name="inputPrompt" type="dt.uid" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Alert">
+		<xs:sequence>
+			<xs:element name="triggerBookSlot" type="dt.bool">
+				<xs:annotation>
+					<xs:documentation>Warn user when booking appointment</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="triggerAriveSwap" type="dt.bool">
+				<xs:annotation>
+					<xs:documentation>Warn user on swap patient and arrive in appointment book</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="showConsultation" type="dt.bool">
+				<xs:annotation>
+					<xs:documentation>Warn user when commencing a consultation</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="expires" type="dt.Date" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Deprecated</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Abnormal">
+		<xs:attribute name="value" type="dt.bool" use="required"/>
+		<xs:attribute name="description" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.MedicationCancel">
+		<xs:sequence>
+			<xs:element name="id" type="dt.uid">
+				<xs:annotation>
+					<xs:documentation>Deprecated</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="cancelledByUserInRole" type="dt.uid"/>
+			<xs:element name="cancellationDateTime" type="dt.DateTime"/>
+			<xs:element name="cancellationText" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Reason for cancellation</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="linkedEvent" type="dt.uid" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.ConfidentialityPolicy">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="name" type="xs:string"/>
+					<xs:element name="notificationType" type="voc.ConfidentialityPolicyNotificationType"/>
+					<xs:element name="ownerUser" type="dt.uid" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Owner User Id</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="showHiddenRecordIndicator" type="dt.bool"/>
+					<xs:element name="organisation" type="dt.uid"/>
+					<xs:element name="restrictToOrganisation" type="dt.bool"/>
+					<xs:element name="userCategory" type="dt.Code" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.AuditTrail">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.PatientTask">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="id" type="dt.uid"/>
+					<xs:element name="patient" type="dt.uid" minOccurs="0"/>
+					<xs:element name="taskType" type="voc.TaskType" minOccurs="0"/>
+					<xs:element name="creatingUserInRole" type="dt.uid" minOccurs="0"/>
+					<xs:element name="owningUserInRole" type="dt.uid" minOccurs="0" maxOccurs="unbounded"/>
+					<xs:element name="priority" type="voc.TaskPriority" minOccurs="0"/>
+					<xs:element name="status" type="voc.TaskStatus" minOccurs="0"/>
+					<xs:element name="createdDate" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="actionByDate" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="expiryDate" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="completionDate" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="subject" minOccurs="0">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:maxLength value="512"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="description" type="xs:string" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Allergy">
+		<xs:sequence>
+			<xs:element name="targetDrug" type="dt.Code" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>If an allergy was originally recorded against a specific preparation, the targetDrug element specifies that preparation.  E.g. an allergy to Penicillins may have a targetDrug of Amoxicillin 250mg Tablets.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="resultStatus" type="voc.ObservationResultStatus"/>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.PatientCarer">
+		<xs:complexContent>
+			<xs:extension base="dt.dbo">
+				<xs:sequence>
+					<xs:element name="PersonGUID" type="xs:string" minOccurs="0"/>
+					<xs:element name="ResponsiblePCT" type="xs:string" minOccurs="0"/>
+					<xs:element name="AuthorisationDate" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="Relationship" type="xs:string" minOccurs="0"/>
+					<xs:element name="Title" type="xs:string" minOccurs="0"/>
+					<xs:element name="Forenames" type="xs:string" minOccurs="0"/>
+					<xs:element name="Surname" type="xs:string" minOccurs="0"/>
+					<xs:element name="Sex" type="xs:string" minOccurs="0"/>
+					<xs:element name="DateOfBirth" type="dt.DateTime" minOccurs="0"/>
+					<xs:element name="CarerAddress" type="dt.Address" minOccurs="0" maxOccurs="unbounded"/>
+					<xs:element name="Telephone1" type="xs:string" minOccurs="0"/>
+					<xs:element name="Telephone2" type="xs:string" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.Annotations">
+		<xs:sequence>
+			<xs:element name="annotation" type="xs:string"/>
+			<xs:element name="imageGUID" type="dt.uid"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="OpenHR001.PatientContact">
+		<xs:sequence>
+			<xs:element name="ContactGUID" type="xs:string"/>
+			<xs:element name="PatientAssociateTypeId" type="xs:int"/>
+			<xs:element name="Title" type="xs:string"/>
+			<xs:element name="Forenames" type="xs:string"/>
+			<xs:element name="Surname" type="xs:string"/>
+			<xs:element name="HomePhone" type="xs:string" minOccurs="0"/>
+			<xs:element name="WorkPhone" type="xs:string" minOccurs="0"/>
+			<xs:element name="MobilePhone" type="xs:string" minOccurs="0"/>
+			<xs:element name="NextOfKin" type="xs:boolean"/>
+			<xs:element name="EmergencyContact" type="xs:boolean"/>
+			<xs:element name="CanDiscussRecord" type="xs:boolean"/>
+			<xs:element name="Notes" type="xs:string" minOccurs="0"/>
+			<xs:element name="LinkedPatientId" type="xs:string" minOccurs="0"/>
+			<xs:element name="PatientAssociateTypeUserSpecified" type="xs:string" minOccurs="0"/>
+			<xs:element name="ContactAddress" type="dt.Address" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>

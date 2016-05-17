@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.e-mis.com/emisopen/MedicalRecord" targetNamespace="http://www.e-mis.com/emisopen/MedicalRecord" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:complexType name="SlotTypeList">
+		<xs:sequence>
+			<xs:element name="SlotType" type="SlotsStruct" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="HolderList">
+		<xs:sequence>
+			<xs:element name="Holder" type="HolderStruct" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="AppointmentSessionStruct">
+		<xs:sequence>
+			<xs:element name="DBID" type="xs:int"/>
+			<xs:element name="GUID" type="xs:string"/>
+			<xs:element name="Name" type="xs:string"/>
+			<xs:element name="Date" type="xs:string"/>
+			<xs:element name="StartTime" type="xs:string"/>
+			<xs:element name="EndTime" type="xs:string"/>
+			<xs:element name="SlotLength" type="xs:string"/>
+			<xs:element name="SlotTypeList" type="SlotTypeList"/>
+			<xs:element name="Site" type="SiteStruct"/>
+			<xs:element name="HolderList" type="HolderList"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="HolderStruct">
+		<xs:sequence>
+			<xs:element name="DBID" type="xs:int"/>
+			<xs:element name="RefID" type="xs:int"/>
+			<xs:element name="GUID" type="xs:string"/>
+			<xs:element name="Title" type="xs:string"/>
+			<xs:element name="FirstNames" type="xs:string"/>
+			<xs:element name="LastName" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="SiteStruct">
+		<xs:sequence>
+			<xs:element name="DBID" type="xs:int"/>
+			<xs:element name="GUID" type="xs:string"/>
+			<xs:element name="Name" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="SlotsStruct">
+		<xs:sequence>
+			<xs:element name="TypeID" type="xs:string"/>
+			<xs:element name="Description" type="xs:string"/>
+			<xs:element name="Total" type="xs:int"/>
+			<xs:element name="Booked" type="xs:int"/>
+			<xs:element name="Blocked" type="xs:int"/>
+			<xs:element name="Embargoed" type="xs:int"/>
+			<xs:element name="Available" type="xs:int"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="AppointmentSessionList">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="AppointmentSession" type="AppointmentSessionStruct" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

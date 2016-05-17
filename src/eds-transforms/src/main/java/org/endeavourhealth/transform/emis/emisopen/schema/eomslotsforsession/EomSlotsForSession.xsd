@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:complexType name="SlotListStruct">
+		<xs:sequence>
+			<xs:element name="Slot" type="SlotStruct" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="SlotStruct">
+		<xs:sequence>
+			<xs:element name="DBID" type="xs:int"/>
+			<xs:element name="RefID" type="xs:int"/>
+			<xs:element name="GUID" type="xs:string"/>
+			<xs:element name="SessionGUID" type="xs:string"/>
+			<xs:element name="Date" type="xs:string"/>
+			<xs:element name="StartTime" type="xs:string"/>
+			<xs:element name="SlotLength" type="xs:string"/>
+			<xs:element name="Type" type="TypeStruct"/>
+			<xs:element name="Status" type="xs:string"/>
+			<xs:element name="PatientList" type="PatientListStruct" minOccurs="0"/>
+			<xs:element name="Notes" type="xs:string" minOccurs="0"/>
+			<xs:element name="Reason" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="PatientListStruct">
+		<xs:sequence>
+			<xs:element name="Patient" type="PatientStruct"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="PatientStruct">
+		<xs:sequence>
+			<xs:element name="DBID" type="xs:int"/>
+			<xs:element name="RefID" type="xs:int"/>
+			<xs:element name="GUID" type="xs:string"/>
+			<xs:element name="Title" type="xs:string"/>
+			<xs:element name="FirstNames" type="xs:string"/>
+			<xs:element name="Surname" type="xs:string"/>
+			<xs:element name="FullName" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TypeStruct">
+		<xs:sequence>
+			<xs:element name="TypeID" type="xs:string"/>
+			<xs:element name="Description" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="SlotList" type="SlotListStruct"/>
+</xs:schema>

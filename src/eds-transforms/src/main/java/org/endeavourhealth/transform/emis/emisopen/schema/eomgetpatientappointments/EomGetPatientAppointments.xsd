@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.e-mis.com/emisopen/MedicalRecord" targetNamespace="http://www.e-mis.com/emisopen/MedicalRecord" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:complexType name="AppointmentStruct">
+		<xs:sequence>
+			<xs:element name="SlotID" type="xs:int"/>
+			<xs:element name="SlotGUID" type="xs:string"/>
+			<xs:element name="SiteID" type="xs:int"/>
+			<xs:element name="SiteGUID" type="xs:string"/>
+			<xs:element name="Date" type="xs:string"/>
+			<xs:element name="StartTime" type="xs:string"/>
+			<xs:element name="Duration" type="xs:string"/>
+			<xs:element name="Notes" type="xs:string"/>
+			<xs:element name="Reason" type="xs:string"/>
+			<xs:element name="SessionName" type="xs:string"/>
+			<xs:element name="SessionDBID" type="xs:int"/>
+			<xs:element name="SessionGUID" type="xs:string"/>
+			<xs:element name="HolderList" type="HolderList" minOccurs="0"/>
+			<xs:element name="Status" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="HolderList">
+		<xs:sequence>
+			<xs:element name="Holder" type="HolderStruct" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="HolderStruct">
+		<xs:sequence>
+			<xs:element name="DBID" type="xs:int"/>
+			<xs:element name="RefID" type="xs:int"/>
+			<xs:element name="GUID" type="xs:string"/>
+			<xs:element name="Title" type="xs:string"/>
+			<xs:element name="FirstNames" type="xs:string"/>
+			<xs:element name="LastName" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="PatientAppointmentList">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Appointment" type="AppointmentStruct" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

@@ -6,8 +6,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLInputFactory;
@@ -20,6 +19,7 @@ import javax.xml.validation.Validator;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.StringReader;
+import java.io.StringWriter;
 
 public class XmlHelper
 {
@@ -39,6 +39,22 @@ public class XmlHelper
         catch (Exception e)
         {
             throw new SerializationException(String.format("Error deserialising %s", objectClass.getTypeName()), e);
+        }
+    }
+
+    public static <T> String serialize(JAXBElement<T> object) throws SerializationException
+    {
+        try
+        {
+            JAXBContext jaxbContext = JAXBContext.newInstance(object.getClass());
+            Marshaller m = jaxbContext.createMarshaller();
+            StringWriter stringWriter = new StringWriter();
+            m.marshal(object, stringWriter);
+            return stringWriter.toString();
+        }
+        catch (JAXBException e)
+        {
+            throw new SerializationException(String.format("Error serialising %s", object.getClass().getTypeName()), e);
         }
     }
 
@@ -73,9 +89,4 @@ public class XmlHelper
             throw e;
         }
     }
-
-
-
-
-
 }
