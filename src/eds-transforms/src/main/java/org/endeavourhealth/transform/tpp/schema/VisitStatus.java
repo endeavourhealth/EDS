@@ -16,7 +16,7 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;restriction base="{http://www.w3.org/2001/XMLSchema}string">
  *     &lt;enumeration value="Booked"/>
  *     &lt;enumeration value="Finished"/>
- *     &lt;enumeration value="Cancelled by Patient"/>
+ *     &lt;enumeration value="Cancelled by CsvPatient"/>
  *     &lt;enumeration value="Cancelled by Organisation"/>
  *   &lt;/restriction>
  * &lt;/simpleType>
@@ -31,8 +31,8 @@ public enum VisitStatus {
     BOOKED("Booked"),
     @XmlEnumValue("Finished")
     FINISHED("Finished"),
-    @XmlEnumValue("Cancelled by Patient")
-    CANCELLED_BY_PATIENT("Cancelled by Patient"),
+    @XmlEnumValue("Cancelled by CsvPatient")
+    CANCELLED_BY_PATIENT("Cancelled by CsvPatient"),
     @XmlEnumValue("Cancelled by Organisation")
     CANCELLED_BY_ORGANISATION("Cancelled by Organisation");
     private final String value;

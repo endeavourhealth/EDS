@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlType;
  * &lt;simpleType name="CarePlanInstructionResponsibility">
  *   &lt;restriction base="{http://www.w3.org/2001/XMLSchema}string">
  *     &lt;enumeration value="Nurse"/>
- *     &lt;enumeration value="Patient"/>
+ *     &lt;enumeration value="CsvPatient"/>
  *     &lt;enumeration value="Carer"/>
  *     &lt;enumeration value="Therapist"/>
  *     &lt;enumeration value="Assistant"/>
@@ -32,8 +32,8 @@ public enum CarePlanInstructionResponsibility {
 
     @XmlEnumValue("Nurse")
     NURSE("Nurse"),
-    @XmlEnumValue("Patient")
-    PATIENT("Patient"),
+    @XmlEnumValue("CsvPatient")
+    PATIENT("CsvPatient"),
     @XmlEnumValue("Carer")
     CARER("Carer"),
     @XmlEnumValue("Therapist")

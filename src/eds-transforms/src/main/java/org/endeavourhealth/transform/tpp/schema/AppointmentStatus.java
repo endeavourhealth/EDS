@@ -20,8 +20,8 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;enumeration value="In Progress"/>
  *     &lt;enumeration value="Finished"/>
  *     &lt;enumeration value="Did Not Attend"/>
- *     &lt;enumeration value="Patient Walked Out"/>
- *     &lt;enumeration value="Cancelled by Patient"/>
+ *     &lt;enumeration value="CsvPatient Walked Out"/>
+ *     &lt;enumeration value="Cancelled by CsvPatient"/>
  *     &lt;enumeration value="Cancelled by Organisation"/>
  *   &lt;/restriction>
  * &lt;/simpleType>
@@ -44,10 +44,10 @@ public enum AppointmentStatus {
     FINISHED("Finished"),
     @XmlEnumValue("Did Not Attend")
     DID_NOT_ATTEND("Did Not Attend"),
-    @XmlEnumValue("Patient Walked Out")
-    PATIENT_WALKED_OUT("Patient Walked Out"),
-    @XmlEnumValue("Cancelled by Patient")
-    CANCELLED_BY_PATIENT("Cancelled by Patient"),
+    @XmlEnumValue("CsvPatient Walked Out")
+    PATIENT_WALKED_OUT("CsvPatient Walked Out"),
+    @XmlEnumValue("Cancelled by CsvPatient")
+    CANCELLED_BY_PATIENT("Cancelled by CsvPatient"),
     @XmlEnumValue("Cancelled by Organisation")
     CANCELLED_BY_ORGANISATION("Cancelled by Organisation");
     private final String value;

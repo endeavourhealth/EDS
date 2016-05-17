@@ -19,7 +19,7 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="Event" type="{}Event" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="CsvEvent" type="{}CsvEvent" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -34,7 +34,7 @@ import javax.xml.bind.annotation.XmlType;
 })
 public class Clinical {
 
-    @XmlElement(name = "Event")
+    @XmlElement(name = "CsvEvent")
     protected List<Event> event;
 
     /**

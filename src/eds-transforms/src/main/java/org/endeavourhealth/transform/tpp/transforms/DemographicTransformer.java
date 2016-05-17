@@ -75,15 +75,13 @@ public class DemographicTransformer {
         fhirEpisode.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_EPISODE_OF_CARE));
         fhirResources.add(fhirEpisode);
 
-        Period fhirPeriod = new Period();
+        Period fhirPeriod = Fhir.createPeriod(startDate, endDate);
         fhirEpisode.setPeriod(fhirPeriod);
-        fhirPeriod.setStart(startDate.toGregorianCalendar().getTime());
 
         if (endDate == null) {
             fhirEpisode.setStatus(EpisodeOfCare.EpisodeOfCareStatus.ACTIVE);
         } else {
             fhirEpisode.setStatus(EpisodeOfCare.EpisodeOfCareStatus.FINISHED);
-            fhirPeriod.setEnd(endDate.toGregorianCalendar().getTime());
         }
 
         String patientId = fhirPatient.getId();

@@ -46,7 +46,7 @@ public class VisitTransformer {
 
         //we need to indicate that this was at the patient's home
         //TODO - how to properly indicate a visit was performed at the patient's home?
-        CodeableConcept fhirCode = Fhir.createCodeableConcept("Patient's Home");
+        CodeableConcept fhirCode = Fhir.createCodeableConcept("CsvPatient's Home");
         fhirAppointment.addParticipant(new Appointment.AppointmentParticipantComponent()
                 .addType(fhirCode)
                 .setRequired(Appointment.ParticipantRequired.REQUIRED)

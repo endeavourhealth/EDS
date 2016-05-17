@@ -16,8 +16,8 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;restriction base="{http://www.w3.org/2001/XMLSchema}string">
  *     &lt;enumeration value="Major Episode"/>
  *     &lt;enumeration value="Minor Episode"/>
- *     &lt;enumeration value="Major Event"/>
- *     &lt;enumeration value="Minor Event"/>
+ *     &lt;enumeration value="Major CsvEvent"/>
+ *     &lt;enumeration value="Minor CsvEvent"/>
  *   &lt;/restriction>
  * &lt;/simpleType>
  * </pre>
@@ -31,10 +31,10 @@ public enum ProblemSeverity {
     MAJOR_EPISODE("Major Episode"),
     @XmlEnumValue("Minor Episode")
     MINOR_EPISODE("Minor Episode"),
-    @XmlEnumValue("Major Event")
-    MAJOR_EVENT("Major Event"),
-    @XmlEnumValue("Minor Event")
-    MINOR_EVENT("Minor Event");
+    @XmlEnumValue("Major CsvEvent")
+    MAJOR_EVENT("Major CsvEvent"),
+    @XmlEnumValue("Minor CsvEvent")
+    MINOR_EVENT("Minor CsvEvent");
     private final String value;
 
     ProblemSeverity(String v) {

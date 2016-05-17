@@ -20,8 +20,8 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="MessageUID" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="PatientUID" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="OrganisationID" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;element name="Patient" type="{}Patient"/>
- *         &lt;element name="Metadata" type="{}Metadata"/>
+ *         &lt;element name="CsvPatient" type="{}CsvPatient"/>
+ *         &lt;element name="CsvMetadata" type="{}CsvMetadata"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -46,9 +46,9 @@ public class PatientRecord {
     protected String patientUID;
     @XmlElement(name = "OrganisationID", required = true)
     protected String organisationID;
-    @XmlElement(name = "Patient", required = true)
+    @XmlElement(name = "CsvPatient", required = true)
     protected Patient patient;
-    @XmlElement(name = "Metadata", required = true)
+    @XmlElement(name = "CsvMetadata", required = true)
     protected Metadata metadata;
 
     /**

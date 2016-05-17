@@ -4,14 +4,23 @@ import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
 import org.hl7.fhir.instance.model.*;
 
+import javax.xml.datatype.XMLGregorianCalendar;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 public final class Fhir {
 
+    public static Identifier createNhsNumberIdentifier(String value) {
+        return createIdentifier(Identifier.IdentifierUse.OFFICIAL, value, FhirUris.IDENTIFIER_SYSTEM_NHSNUMBER);
+    }
 
     public static Identifier createIdentifier(Identifier.IdentifierUse use, String value, String system) {
+
+        if (Strings.isNullOrEmpty(value)) {
+            return null;
+        }
 
         return new Identifier()
                 .setUse(use)
@@ -209,5 +218,23 @@ public final class Fhir {
         }
 
         return new Annotation().setText(notes);
+    }
+
+    public static Period createPeriod(XMLGregorianCalendar xmlStart, XMLGregorianCalendar xmlEnd) {
+        Date start = null;
+        if (xmlStart != null) {
+            start = xmlStart.toGregorianCalendar().getTime();
+        }
+        Date end = null;
+        if (xmlEnd != null) {
+            end = xmlEnd.toGregorianCalendar().getTime();
+        }
+        return createPeriod(start, end);
+    }
+    public static Period createPeriod(Date start, Date end) {
+        Period fhirPeriod = new Period();
+        fhirPeriod.setStart(start);
+        fhirPeriod.setEnd(end);
+        return fhirPeriod;
     }
 }

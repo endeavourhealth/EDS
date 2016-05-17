@@ -20,8 +20,8 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;enumeration value="Need to speak to doctor"/>
  *     &lt;enumeration value="Need to repeat test"/>
  *     &lt;enumeration value="Request Notes"/>
- *     &lt;enumeration value="Patient To Pick Up Script"/>
- *     &lt;enumeration value="Communicate Patient"/>
+ *     &lt;enumeration value="CsvPatient To Pick Up Script"/>
+ *     &lt;enumeration value="Communicate CsvPatient"/>
  *     &lt;enumeration value="Need to speak to nurse"/>
  *     &lt;enumeration value="Other"/>
  *   &lt;/restriction>
@@ -45,10 +45,10 @@ public enum FollowUpActionType {
     NEED_TO_REPEAT_TEST("Need to repeat test"),
     @XmlEnumValue("Request Notes")
     REQUEST_NOTES("Request Notes"),
-    @XmlEnumValue("Patient To Pick Up Script")
-    PATIENT_TO_PICK_UP_SCRIPT("Patient To Pick Up Script"),
-    @XmlEnumValue("Communicate Patient")
-    COMMUNICATE_PATIENT("Communicate Patient"),
+    @XmlEnumValue("CsvPatient To Pick Up Script")
+    PATIENT_TO_PICK_UP_SCRIPT("CsvPatient To Pick Up Script"),
+    @XmlEnumValue("Communicate CsvPatient")
+    COMMUNICATE_PATIENT("Communicate CsvPatient"),
     @XmlEnumValue("Need to speak to nurse")
     NEED_TO_SPEAK_TO_NURSE("Need to speak to nurse"),
     @XmlEnumValue("Other")
