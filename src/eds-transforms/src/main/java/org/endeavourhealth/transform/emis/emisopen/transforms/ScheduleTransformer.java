@@ -2,10 +2,10 @@ package org.endeavourhealth.transform.emis.emisopen.transforms;
 
 import org.endeavourhealth.transform.common.ReferenceHelper;
 import org.endeavourhealth.transform.common.TransformException;
-import org.endeavourhealth.transform.emis.emisopen.EmisOpenDateTransformer;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.AppointmentSessionList;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.AppointmentSessionStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.HolderStruct;
+import org.endeavourhealth.transform.emis.emisopen.transforms.converters.DateConverter;
 import org.endeavourhealth.transform.fhir.FhirUris;
 import org.hl7.fhir.instance.model.*;
 
@@ -34,8 +34,8 @@ public class ScheduleTransformer
         schedule.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_SCHEDULE));
 
         Period period = new Period()
-            .setStart(EmisOpenDateTransformer.getDateAndTime(appointmentSession.getDate(), appointmentSession.getStartTime()))
-            .setEnd(EmisOpenDateTransformer.getDateAndTime(appointmentSession.getDate(), appointmentSession.getEndTime()));
+            .setStart(DateConverter.getDateAndTime(appointmentSession.getDate(), appointmentSession.getStartTime()))
+            .setEnd(DateConverter.getDateAndTime(appointmentSession.getDate(), appointmentSession.getEndTime()));
 
         schedule.setPlanningHorizon(period);
 

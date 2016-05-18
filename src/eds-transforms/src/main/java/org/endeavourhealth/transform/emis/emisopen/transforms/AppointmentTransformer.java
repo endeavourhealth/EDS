@@ -3,10 +3,10 @@ package org.endeavourhealth.transform.emis.emisopen.transforms;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.ReferenceHelper;
 import org.endeavourhealth.transform.common.TransformException;
-import org.endeavourhealth.transform.emis.emisopen.EmisOpenDateTransformer;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.AppointmentStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.HolderStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.PatientAppointmentList;
+import org.endeavourhealth.transform.emis.emisopen.transforms.converters.DateConverter;
 import org.endeavourhealth.transform.fhir.FhirUris;
 import org.hl7.fhir.instance.model.*;
 
@@ -43,10 +43,10 @@ public class AppointmentTransformer
             appointment.setReason(codeableConcept);
         }
 
-        Date startTime = EmisOpenDateTransformer.getDateAndTime(appointmentStruct.getDate(), appointmentStruct.getStartTime());
+        Date startTime = DateConverter.getDateAndTime(appointmentStruct.getDate(), appointmentStruct.getStartTime());
         appointment.setStart(startTime);
 
-        Date endTime = EmisOpenDateTransformer.addMinutesToTime(startTime, Integer.parseInt(appointmentStruct.getDuration()));
+        Date endTime = DateConverter.addMinutesToTime(startTime, Integer.parseInt(appointmentStruct.getDuration()));
         appointment.setEnd(endTime);
 
         appointment.addSlot(ReferenceHelper.createReference(ResourceType.Slot, appointmentStruct.getSlotGUID()));
