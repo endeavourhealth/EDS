@@ -15,47 +15,30 @@ import java.util.Vector;
 public class SftpConsumer extends TimerTask {
 	private PipelineProcessor pipeline;
 	private SftpReaderConfiguration configuration;
-	private Session session;
+	private JSch jSch;
 
 	public SftpConsumer(SftpReaderConfiguration configuration) {
 		this.configuration = configuration;
-		pipeline = new PipelineProcessor(configuration.getPipeline());
-		JSch jSch = new JSch();
-		try {
-			session = jSch.getSession(
-					configuration.getCredentials().getUsername(),
-					configuration.getHost(),
-					configuration.getPort());
-			session.setPassword(configuration.getCredentials().getPassword());
-			Properties properties = new Properties();
-			properties.put("StrictHostKeyChecking", "no");
-			session.setConfig(properties);
-
-		} catch (JSchException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
+		this.pipeline = new PipelineProcessor(configuration.getPipeline());
+		this.jSch = new JSch();
 	}
 
 	@Override
 	public void run() {
+		Session session = null;
 		Channel channel = null;
 
-		Exchange exchange = new Exchange("hello world");
-		pipeline.execute(exchange);
-
-		/*
 		try {
+			session = getSession();
 			session.connect();
 			channel = session.openChannel("sftp");
 			channel.connect();
 			ChannelSftp channelSftp = (ChannelSftp)channel;
 			channelSftp.cd(configuration.getPath());
-			Vector fileList = channelSftp.ls(configuration.getPath());
+			Vector fileList = channelSftp.ls(configuration.getFilename());
 			for (int i = 0; i<fileList.size(); i++) {
-				InputStream stream = channelSftp.get(fileList.get(i).toString());
+				ChannelSftp.LsEntry entry = (ChannelSftp.LsEntry)fileList.get(i);
+				InputStream stream = channelSftp.get(entry.getFilename());
 				String messageData = IOUtils.toString(stream);
 				Exchange exchange = new Exchange(messageData);
 				pipeline.execute(exchange);
@@ -69,8 +52,20 @@ public class SftpConsumer extends TimerTask {
 		} finally {
 			if (channel != null && channel.isConnected())
 				channel.disconnect();
-			if (session.isConnected())
+			if (session != null && session.isConnected())
 				session.disconnect();
-		} */
+		}
+	}
+
+	private Session getSession() throws JSchException {
+			Session session = jSch.getSession(
+					configuration.getCredentials().getUsername(),
+					configuration.getHost(),
+					configuration.getPort());
+			session.setPassword(configuration.getCredentials().getPassword());
+			Properties properties = new Properties();
+			properties.put("StrictHostKeyChecking", "no");
+			session.setConfig(properties);
+			return session;
 	}
 }
