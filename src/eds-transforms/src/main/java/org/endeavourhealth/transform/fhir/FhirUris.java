@@ -49,7 +49,10 @@ public class FhirUris {
     public final static String EXTENSION_URI_TASKSTATUS = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-task-status-extension";
     public final static String EXTENSION_URI_TASKPRIORITY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-task-priority-extension";
     public final static String EXTENSION_URI_REGISTRATION_TYPE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-patient-registration-type-extension";
-
     public final static String EXTENSION_URI_MEDICATIONAUTHORISATIONQUANTITY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-authorisation-quantity-extension";
     public final static String EXTENSION_URI_MEDICATIONAUTHORISATIONMOSTRECENTISSUEDATE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-authorisation-mostrecentissuedate-extension";
+
+    public final static String VALUE_SET_FAMILY_MEMBER = "http://hl7.org/fhir/ValueSet/v3-FamilyMember";
+    public final static String VALUE_SET_FAMILY_MEMBER_TERM = "family member";
+    public final static String VALUE_SET_FAMILY_MEMBER_CODE = "FAMMEMB";
 }
