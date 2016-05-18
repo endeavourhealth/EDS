@@ -40,7 +40,10 @@ public class PostToRest implements PipelineComponent {
 
 		for(String key : exchange.getHeaders().keySet())
 			invocationBuilder.header(key, exchange.getHeader(key));
-		Entity entity = Entity.entity(exchange.getBody(), MediaType.WILDCARD_TYPE);			// TODO : MediaType
+
+		String format = (String)exchange.getProperty(PropertyKeys.Format);
+
+		Entity entity = Entity.entity(exchange.getBody(), format);
 
 		Response response = invocationBuilder.post(entity);
 

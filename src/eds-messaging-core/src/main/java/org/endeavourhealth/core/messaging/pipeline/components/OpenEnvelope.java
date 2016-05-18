@@ -72,7 +72,7 @@ public class OpenEnvelope implements PipelineComponent {
 	}
 
 	private void processHeader(Exchange exchange, MessageHeader messageHeader) {
-		exchange.setProperty(PropertyKeys.Sender, messageHeader.getSource().getEndpoint());
+		exchange.setProperty(PropertyKeys.Sender, messageHeader.getSource().getName());
 		exchange.setProperty(PropertyKeys.ResponseUri, messageHeader.getSource().getEndpoint());
 		exchange.setProperty(PropertyKeys.SourceSystem, messageHeader.getSource().getSoftware());
 		exchange.setProperty(PropertyKeys.DestinationAddress, getDestinationList(messageHeader));

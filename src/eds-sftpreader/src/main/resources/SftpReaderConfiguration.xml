@@ -13,8 +13,11 @@
     <Pipeline>
         <EnvelopMessage>
             <ExchangeProperties>
+                <Property Key="Format">text/xml</Property>
                 <Property Key="Sender">ODS0000</Property>
-                <Property Key="ResponseAddress">http://EMISCallBackRest.co.uk</Property>
+                <Property Key="SourceSystem">EDS_FTP_Poller</Property>
+                <Property Key="ResponseUri">http://EDS_POLLER_BusinessAck.co.uk</Property>
+                <Property Key="DestinationAddress">192.168.0.1, 192.168.0.2, 192.168.0.3</Property>
             </ExchangeProperties>
         </EnvelopMessage>
         <PostToRest>

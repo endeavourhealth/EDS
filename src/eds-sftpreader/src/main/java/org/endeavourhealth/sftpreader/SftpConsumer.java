@@ -43,7 +43,7 @@ public class SftpConsumer extends TimerTask {
 	public void run() {
 		Channel channel = null;
 
-		Exchange exchange = new Exchange("{}");
+		Exchange exchange = new Exchange("hello world");
 		pipeline.execute(exchange);
 
 		/*
