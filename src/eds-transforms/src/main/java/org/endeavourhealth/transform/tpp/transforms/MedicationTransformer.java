@@ -80,7 +80,7 @@ public class MedicationTransformer {
         if (scheme == DrugScheme.DMD) {
             return Fhir.createCodeableConcept(FhirUris.CODE_SYSTEM_SNOMED_CT, fullName, productId);
         } else if (scheme == DrugScheme.MULTILEX) {
-            throw new TransformException("Cannot support Multilex drug codes");
+            return Fhir.createCodeableConcept(fullName);
         } else {
             throw new TransformException("Unsupported drug scheme " + scheme);
         }

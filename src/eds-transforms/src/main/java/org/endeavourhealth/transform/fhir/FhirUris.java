@@ -11,8 +11,6 @@ public class FhirUris {
 
     public final static String CODE_SYSTEM_READ2 = "http://endeavourhealth.org/fhir/read2";
     public final static String CODE_SYSTEM_SNOMED_CT = "http://snomed.info/sct";
-    public final static String CODE_SYSTEM_EMISSNOMED = "http://www.endeavourhealth.org/fhir/emis-snomed";
-    public final static String CODE_SYSTEM_EMISPREPARATION = "http://www.endeavourhealth.org/fhir/emis-prepration";
     public final static String CODE_SYSTEM_CTV3 = "http://endeavourhealth.org/fhir/ctv3";
 
     public final static String PROFILE_URI_ORGANIZATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-organization";
@@ -49,4 +47,7 @@ public class FhirUris {
     public final static String EXTENSION_URI_TASKSTATUS = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-task-status-extension";
     public final static String EXTENSION_URI_TASKPRIORITY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-task-priority-extension";
     public final static String EXTENSION_URI_REGISTRATION_TYPE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-patient-registration-type-extension";
+
+    public final static String EXTENSION_URI_MEDICATIONAUTHORISATIONQUANTITY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-authorisation-quantity-extension";
+    public final static String EXTENSION_URI_MEDICATIONAUTHORISATIONMOSTRECENTISSUEDATE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-authorisation-mostrecentissuedate-extension";
 }

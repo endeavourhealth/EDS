@@ -205,13 +205,29 @@ public final class Fhir {
         String patientId = fhirPatient.getId();
         return createReference(ResourceType.Patient, patientId);
     }
+    public static Reference createPatientReference(String patientId) throws TransformException {
+        return createReference(ResourceType.Patient, patientId);
+    }
 
+    public static Reference createPractitionerReference(Practitioner fhirPractitioner) throws TransformException {
+        String practitionerId = fhirPractitioner.getId();
+        return createReference(ResourceType.Practitioner, practitionerId);
+    }
     public static Reference createPractitionerReference(String practitionerId) throws TransformException {
         if (Strings.isNullOrEmpty(practitionerId)) {
             return null;
         }
 
         return createReference(ResourceType.Practitioner, practitionerId);
+    }
+
+    public static Reference createOrganisationReference(List<Resource> fhirResources) throws TransformException {
+        String orgId = findOrganisationId(fhirResources);
+        return createReference(ResourceType.Organization, orgId);
+    }
+    public static Reference createOrganisationReference(Organization fhirOrganisation) throws TransformException {
+        String orgId = fhirOrganisation.getId();
+        return createReference(ResourceType.Organization, orgId);
     }
     public static Reference createEncounterReference(Encounter fhirEncounter) throws TransformException {
         if (fhirEncounter == null) {

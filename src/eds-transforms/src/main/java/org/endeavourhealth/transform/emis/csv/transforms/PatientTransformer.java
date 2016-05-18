@@ -4,37 +4,40 @@ import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.CsvPatient;
 import org.endeavourhealth.transform.emis.csv.schema.CsvSex;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUris;
 import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.valuesets.PractitionerRole;
 
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class PatientTransformer {
 
-    private static String DATE_FORMAT = "yyyyMMdd";
+    public static void transform(CSVParser patientCsv, Map<String, List<Resource>> fhirMap, int patientCount) throws Exception {
 
-    public static void transform(CSVParser patientCsv, Map<String, List<Resource>> fhirMap) throws Exception {
-
+        int row = 0;
         for (CSVRecord csvRecord : patientCsv) {
             transform(csvRecord, fhirMap);
+            row ++;
+        }
+
+        if (row != patientCount) {
+            throw new TransformException("Mismatch in number of patient rows. Expected " + patientCount + " got " + row);
         }
     }
 
     public static void transform(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
 
         Organization fhirOrganisation = transformOrganisation(csvRecord);
-        Practitioner fhirPractitioner = transformPractitioner(csvRecord);
-        Patient fhirPatient = transformPatient(csvRecord);
-        EpisodeOfCare fhirEpisodeOfCare = transformEpisodeOfCare(csvRecord, fhirPatient);
+        Practitioner fhirPractitioner = transformPractitioner(csvRecord, fhirOrganisation);
+        Patient fhirPatient = transformPatient(csvRecord, fhirOrganisation, fhirPractitioner);
+        EpisodeOfCare fhirEpisodeOfCare = transformEpisodeOfCare(csvRecord, fhirPatient, fhirOrganisation, fhirPractitioner);
 
         //add to map, keying on care record ID
         List<Resource> fhirResources = new ArrayList<>();
@@ -60,20 +63,33 @@ public abstract class PatientTransformer {
         return fhirOrganisation;
     }
 
-    private static Practitioner transformPractitioner(CSVRecord csvRecord) {
+    private static Practitioner transformPractitioner(CSVRecord csvRecord, Organization fhirOrganisation) throws TransformException {
         String usualGp = csvRecord.get(CsvPatient.USUALGP.getValue());
 
         Practitioner fhirPractitioner = new Practitioner();
         fhirPractitioner.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_PRACTITIONER));
+        fhirPractitioner.setId(UUID.randomUUID().toString()); //no ID, so assign a UUID
 
-        //set id
-        //name
-        //practitioner role
+        //FHIR requires a family name, so assume the last word in the string is it. This
+        //will be incorrect for doctors with two-word surnames, but there's no way to accurately tell.
+        String[] names = usualGp.split(" ");
+        String surname = names[names.length-1];
+
+        HumanName fhirName = new HumanName();
+        fhirName.setUse(HumanName.NameUse.OFFICIAL);
+        fhirName.addFamily(surname);
+        fhirName.setText(usualGp);
+        fhirPractitioner.setName(fhirName);
+
+        Practitioner.PractitionerPractitionerRoleComponent fhirRole = new Practitioner.PractitionerPractitionerRoleComponent();
+        fhirRole.setManagingOrganization(Fhir.createOrganisationReference(fhirOrganisation));
+        fhirRole.setRole(Fhir.createCodeableConcept("http://hl7.org/fhir/practitioner-role", "Doctor", "doctor"));
+        fhirPractitioner.addPractitionerRole(fhirRole);
 
         return fhirPractitioner;
     }
 
-    private static Patient transformPatient(CSVRecord csvRecord) throws Exception {
+    private static Patient transformPatient(CSVRecord csvRecord, Organization fhirOrganisation, Practitioner fhirPractitioner) throws Exception {
         Patient fhirPatient = new Patient();
         fhirPatient.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_PATIENT));
 
@@ -92,7 +108,7 @@ public abstract class PatientTransformer {
         String sex = csvRecord.get(CsvPatient.SEX.getValue());
         fhirPatient.setGender(convertSex(sex));
 
-        DateFormat df = new SimpleDateFormat(DATE_FORMAT); //using old date API as FHIR does
+        DateFormat df = new SimpleDateFormat(EmisCsvTransformer.DATE_FORMAT); //using old date API as FHIR does
 
         String dobStr = csvRecord.get(CsvPatient.DATEOFBIRTH.getValue());
         fhirPatient.setBirthDate(df.parse(dobStr));
@@ -104,10 +120,8 @@ public abstract class PatientTransformer {
 
         fhirPatient.addAddress(transformAddress(csvRecord));
 
-
-
-        //set managing org
-        //care provider
+        fhirPatient.setManagingOrganization(Fhir.createOrganisationReference(fhirOrganisation));
+        fhirPatient.addCareProvider(Fhir.createPractitionerReference(fhirPractitioner));
 
 
         return fhirPatient;
@@ -124,12 +138,12 @@ public abstract class PatientTransformer {
         return fhirAddress;
     }
 
-    private static EpisodeOfCare transformEpisodeOfCare(CSVRecord csvRecord, Patient fhirPatient) throws Exception {
+    private static EpisodeOfCare transformEpisodeOfCare(CSVRecord csvRecord, Patient fhirPatient, Organization fhirOrganisation, Practitioner fhirPractitioner) throws Exception {
 
         EpisodeOfCare fhirEpisodeOfCare = new EpisodeOfCare();
         fhirEpisodeOfCare.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_EPISODE_OF_CARE));
 
-        DateFormat df = new SimpleDateFormat(DATE_FORMAT); //using old date API as FHIR does
+        DateFormat df = new SimpleDateFormat(EmisCsvTransformer.DATE_FORMAT); //using old date API as FHIR does
         String regDateStr = csvRecord.get(CsvPatient.REGDATE.getValue());
         String dedDateStr = csvRecord.get(CsvPatient.DEREGDATE.getValue());
 
@@ -153,12 +167,8 @@ public abstract class PatientTransformer {
         }
 
         fhirEpisodeOfCare.setPatient(Fhir.createPatientReference(fhirPatient));
-
-
-
-        //set managing org
-        //set care manager
-
+        fhirEpisodeOfCare.setManagingOrganization(Fhir.createOrganisationReference(fhirOrganisation));
+        fhirEpisodeOfCare.setCareManager(Fhir.createPractitionerReference(fhirPractitioner));
 
         return fhirEpisodeOfCare;
     }
