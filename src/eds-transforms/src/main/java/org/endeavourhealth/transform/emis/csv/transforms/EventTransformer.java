@@ -10,6 +10,7 @@ import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUris;
 import org.endeavourhealth.transform.terminology.TerminologyService;
 import org.hl7.fhir.instance.model.AllergyIntolerance;
+import org.hl7.fhir.instance.model.Condition;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.Resource;
 
@@ -71,19 +72,18 @@ public abstract class EventTransformer {
 
     }
 
+    /**
+     ID(0),
+     CARERECORDID(1),
+     PracticeCode(2),
+     ODATE(3),
+     READCODE(4),
+     READTERM(5),
+     NUMRESULT(6),
+     NUMRESULT2(7);
+     */
+
     private static void transformProblem(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
-
-    }
-
-    private static void transformObservation(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
-
-    }
-
-    private static void transformFamilyHistory(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
-
-    }
-
-    private static void transformCondition(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
 
     }
 
@@ -98,6 +98,66 @@ public abstract class EventTransformer {
      NUMRESULT2(7);
      */
 
+    private static void transformObservation(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
+
+    }
+
+    /**
+     ID(0),
+     CARERECORDID(1),
+     PracticeCode(2),
+     ODATE(3),
+     READCODE(4),
+     READTERM(5),
+     NUMRESULT(6),
+     NUMRESULT2(7);
+     */
+
+    private static void transformFamilyHistory(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
+
+    }
+
+    /**
+     ID(0),
+     CARERECORDID(1),
+     PracticeCode(2),
+     ODATE(3),
+     READCODE(4),
+     READTERM(5),
+     NUMRESULT(6),
+     NUMRESULT2(7);
+     */
+
+    private static void transformCondition(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
+
+        Condition fhirCondition = new Condition();
+        fhirCondition.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_CONDITION));
+
+        String id = csvRecord.get(CsvEvent.ID.getValue());
+        fhirCondition.setId(id);
+
+        String careRecordId = csvRecord.get(CsvEvent.CARERECORDID.getValue());
+        fhirCondition.setPatient(Fhir.createPatientReference(careRecordId));
+
+        //add the resource to the map
+        addToMap(fhirCondition, careRecordId, fhirMap);
+
+        String dateStr = csvRecord.get(CsvEvent.ODATE.getValue());
+        Date date = new SimpleDateFormat(EmisCsvTransformer.DATE_FORMAT).parse(dateStr);
+        fhirCondition.setDateRecorded(date);
+
+        String code = csvRecord.get(CsvEvent.READCODE.getValue());
+        String term = csvRecord.get(CsvEvent.READTERM.getValue());
+        fhirCondition.setCode(Fhir.createCodeableConcept(FhirUris.CODE_SYSTEM_READ2, term, code));
+
+        //TODO - set clinicalStatus on Condition resource
+        //fhirCondition.setClinicalStatusElement(ClinicalStatus))
+
+        fhirCondition.setVerificationStatus(Condition.ConditionVerificationStatus.CONFIRMED);
+
+        //TODO - set asserter on Condition resource
+    }
+
     private static void transformAllergyIntolerance(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
 
         AllergyIntolerance fhirAllergy = new AllergyIntolerance();
@@ -110,26 +170,25 @@ public abstract class EventTransformer {
         fhirAllergy.setPatient(Fhir.createPatientReference(careRecordId));
 
         //add the resource to the map
+        addToMap(fhirAllergy, careRecordId, fhirMap);
+
+        String dateStr = csvRecord.get(CsvEvent.ODATE.getValue());
+        Date date = new SimpleDateFormat(EmisCsvTransformer.DATE_FORMAT).parse(dateStr);
+        fhirAllergy.setRecordedDate(date);
+
+        //TODO - must set the recorder on AllergyIntolerance resource
+        //TODO - must set the substance on AllergyIntolerance resource
+
+    }
+
+    private static void addToMap(Resource resource, String careRecordId, Map<String, List<Resource>> fhirMap) throws TransformException {
+
         List<Resource> fhirResources = fhirMap.get(careRecordId);
         if (fhirResources == null){
             throw new TransformException("No patient resource for care record ID " + careRecordId);
         }
-        fhirResources.add(fhirAllergy);
 
-        String dateStr = csvRecord.get(CsvEvent.ODATE);
-        DateFormat df = new SimpleDateFormat(EmisCsvTransformer.DATE_FORMAT);
-        Date date = df.parse(dateStr);
-        fhirAllergy.setRecordedDate(date);
-
-        //recorder (practitioner or patient)
-        //substance
-
+        fhirResources.add(resource);
     }
 
-    /**
-     READCODE(4),
-     READTERM(5),
-     NUMRESULT(6),
-     NUMRESULT2(7);
-     */
 }

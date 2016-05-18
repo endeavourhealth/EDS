@@ -12,6 +12,8 @@ public class FhirUris {
     public final static String CODE_SYSTEM_READ2 = "http://endeavourhealth.org/fhir/read2";
     public final static String CODE_SYSTEM_SNOMED_CT = "http://snomed.info/sct";
     public final static String CODE_SYSTEM_CTV3 = "http://endeavourhealth.org/fhir/ctv3";
+    public final static String CODE_SYSTEM_EMISSNOMED = "http://www.endeavourhealth.org/fhir/emis-snomed";
+    public final static String CODE_SYSTEM_EMISPREPARATION = "http://www.endeavourhealth.org/fhir/emis-prepration";
 
     public final static String PROFILE_URI_ORGANIZATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-organization";
     public final static String PROFILE_URI_LOCATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-location";
