@@ -1,0 +1,28 @@
+<Bundle xmlns="http://hl7.org/fhir">
+    <type value="collection"/>
+    <entry>
+        <resource>
+            <MessageHeader>
+                <id value="MESSAGE_HEADER_ID"/>
+                <timestamp value="2001-10-26T21:32:52"/>
+                <event/>
+                <source>
+                    <software value="EMISWeb"/>
+                    <endpoint value="http://source.uri.com"/>
+                </source>
+                <data>
+                    <reference value="Binary/DATA_ID"/>
+                </data>
+            </MessageHeader>
+        </resource>
+    </entry>
+    <entry>
+        <resource>
+            <Binary>
+                <id value="DATA_ID"/>
+                <contentType value="text/xml"/>
+                <content value="aGVsbG8gd29ybGQ="/>
+            </Binary>
+        </resource>
+    </entry>
+</Bundle>

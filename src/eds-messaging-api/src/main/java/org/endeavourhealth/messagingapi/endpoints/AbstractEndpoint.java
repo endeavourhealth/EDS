@@ -18,8 +18,8 @@ public abstract class AbstractEndpoint {
 		for (String key : headers.getRequestHeaders().keySet())
 			exchange.setHeader(key, headers.getHeaderString(key));
 
-		exchange.setProperty(PropertyKeys.Sender, "Some request org identifier/structure");
-		exchange.setProperty(PropertyKeys.Method, EDSMethod.GetAllergies);
+		if (headers.getHeaderString("Content-Type") != null)
+			exchange.setProperty(PropertyKeys.Format, headers.getHeaderString("Content-Type"));
 
 		PipelineProcessor processor = new PipelineProcessor(pipeline);
 		processor.execute(exchange);
