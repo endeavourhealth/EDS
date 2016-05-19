@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.openhr.transforms;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.transform.common.ReferenceHelper;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Organisation;
 import org.endeavourhealth.transform.emis.openhr.transforms.converters.DateConverter;

@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms;
 
-import org.endeavourhealth.transform.common.ReferenceHelper;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.AppointmentSessionList;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.AppointmentSessionStruct;

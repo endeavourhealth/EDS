@@ -1,14 +1,14 @@
 package org.endeavourhealth.transform.emis.openhr.transforms;
 
-import org.endeavourhealth.transform.common.ReferenceHelper;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001AdminDomain;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Patient;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Person;
+import org.endeavourhealth.transform.emis.openhr.transforms.converters.NameConverter;
 import org.endeavourhealth.transform.emis.openhr.transforms.helpers.OpenHRHelper;
 import org.endeavourhealth.transform.emis.openhr.transforms.converters.DateConverter;
 import org.endeavourhealth.transform.emis.openhr.transforms.converters.IdentifierConverter;
-import org.endeavourhealth.transform.emis.openhr.transforms.converters.NameConverter;
 import org.endeavourhealth.transform.emis.openhr.transforms.converters.SexConverter;
 import org.hl7.fhir.instance.model.*;
 

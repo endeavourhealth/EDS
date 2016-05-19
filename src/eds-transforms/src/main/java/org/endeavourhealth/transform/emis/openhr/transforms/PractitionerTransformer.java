@@ -1,12 +1,12 @@
 package org.endeavourhealth.transform.emis.openhr.transforms;
 
 import org.endeavourhealth.core.utility.StreamExtension;
-import org.endeavourhealth.transform.common.ReferenceHelper;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.*;
 import org.endeavourhealth.transform.emis.openhr.transforms.helpers.OpenHRHelper;
 import org.endeavourhealth.transform.emis.openhr.transforms.converters.ContactPointConverter;
-import org.endeavourhealth.transform.emis.openhr.transforms.converters.NameConverter;
+import org.endeavourhealth.transform.fhir.NameConverter;
 import org.endeavourhealth.transform.emis.openhr.transforms.converters.SexConverter;
 import org.endeavourhealth.transform.fhir.FhirUris;
 import org.hl7.fhir.instance.model.*;

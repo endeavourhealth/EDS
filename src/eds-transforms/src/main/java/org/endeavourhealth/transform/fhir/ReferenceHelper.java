@@ -1,6 +1,7 @@
-package org.endeavourhealth.transform.common;
+package org.endeavourhealth.transform.fhir;
 
 import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.transform.common.TransformException;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
 

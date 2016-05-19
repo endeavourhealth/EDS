@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.emis.openhr.transforms;
 
-import org.endeavourhealth.transform.common.ReferenceHelper;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001HealthDomain;
 import org.endeavourhealth.transform.emis.openhr.transforms.converters.CodeConverter;
@@ -8,8 +8,6 @@ import org.endeavourhealth.transform.emis.openhr.transforms.converters.DateConve
 import org.endeavourhealth.transform.emis.openhr.transforms.helpers.EventEncounterMap;
 import org.endeavourhealth.transform.fhir.FhirUris;
 import org.hl7.fhir.instance.model.*;
-
-import java.math.BigInteger;
 
 public class MedicationOrderTransformer implements ClinicalResourceTransformer
 {
