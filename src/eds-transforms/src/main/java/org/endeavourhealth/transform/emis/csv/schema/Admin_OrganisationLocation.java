@@ -4,10 +4,10 @@ import org.apache.commons.csv.CSVParser;
 
 import java.util.UUID;
 
-public class AdminOrganisationLocation extends AbstractCsvTransformer {
+public class Admin_OrganisationLocation extends AbstractCsvTransformer {
 
 
-    public AdminOrganisationLocation(CSVParser csvReader, String dateFormat, String timeFormat) {
+    public Admin_OrganisationLocation(CSVParser csvReader, String dateFormat, String timeFormat) {
         super(csvReader, dateFormat, timeFormat);
     }
 

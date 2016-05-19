@@ -4,8 +4,8 @@ import org.apache.commons.csv.CSVParser;
 
 import java.util.UUID;
 
-public class AppointmentSessionUser extends AbstractCsvTransformer {
-    public AppointmentSessionUser(CSVParser csvReader, String dateFormat, String timeFormat) {
+public class Appointment_SessionUser extends AbstractCsvTransformer {
+    public Appointment_SessionUser(CSVParser csvReader, String dateFormat, String timeFormat) {
         super(csvReader, dateFormat, timeFormat);
     }
 

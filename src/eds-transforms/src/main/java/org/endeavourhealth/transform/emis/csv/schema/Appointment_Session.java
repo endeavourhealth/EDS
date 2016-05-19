@@ -6,10 +6,10 @@ import org.endeavourhealth.transform.common.TransformException;
 import java.util.Date;
 import java.util.UUID;
 
-public class AppointmentSession extends AbstractCsvTransformer {
+public class Appointment_Session extends AbstractCsvTransformer {
 
 
-    public AppointmentSession(CSVParser csvReader, String dateFormat, String timeFormat) {
+    public Appointment_Session(CSVParser csvReader, String dateFormat, String timeFormat) {
         super(csvReader, dateFormat, timeFormat);
     }
 

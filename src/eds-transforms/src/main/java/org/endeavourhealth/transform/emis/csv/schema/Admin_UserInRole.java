@@ -6,10 +6,10 @@ import org.endeavourhealth.transform.common.TransformException;
 import java.util.Date;
 import java.util.UUID;
 
-public class AdminUserInRole extends AbstractCsvTransformer {
+public class Admin_UserInRole extends AbstractCsvTransformer {
 
 
-    public AdminUserInRole(CSVParser csvReader, String dateFormat, String timeFormat) {
+    public Admin_UserInRole(CSVParser csvReader, String dateFormat, String timeFormat) {
         super(csvReader, dateFormat, timeFormat);
     }
 

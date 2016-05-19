@@ -6,8 +6,8 @@ import org.endeavourhealth.transform.common.TransformException;
 import java.util.Date;
 import java.util.UUID;
 
-public class CareRecordObservation extends AbstractCsvTransformer {
-    public CareRecordObservation(CSVParser csvReader, String dateFormat, String timeFormat) {
+public class CareRecord_Observation extends AbstractCsvTransformer {
+    public CareRecord_Observation(CSVParser csvReader, String dateFormat, String timeFormat) {
         super(csvReader, dateFormat, timeFormat);
     }
 

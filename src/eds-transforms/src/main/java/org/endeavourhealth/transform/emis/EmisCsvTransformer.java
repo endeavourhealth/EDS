@@ -16,63 +16,19 @@ import java.util.Map;
 
 public abstract class EmisCsvTransformer {
 
-    public static String DATE_FORMAT = "yyyyMMdd";
+    public static String DATE_FORMAT = "dd/MM/yyyy";
+    public static String TIME_FORMAT = "hh:mm:ss";
 
-    /**
-     * Assumed file formats:
-     *
-     * CsvPatient CSV:
-     *      	ID	int not null,
-     *      	CARERECORDID	uniqueidentifier not null,
-     *      	PracticeCode	varchar(20) not null,
-     *      	AGE	int not null,
-     *      	DATEOFBIRTH	datetime	not null,
-     *      	SEX	char	not null,
-     *      	REGDATE	datetime	not null,
-     *      	REGSTATUS	char	not null,
-     *      	DEREGDATE	datetime null,
-     *      	DEREGREASON	varchar(60)	null,
-     *      	DATEOFDEATH	datetime	null,
-     *      	MOSAICCODE	varchar(100) null,
-     *      	NHSNUMBER	varchar(50) null,
-     *      	POSTCODE	varchar(8)	not null,
-     *      	YYYYMMOFBIRTH	varchar(6)	not null,
-     *      	REGGP	varchar(263)	not null,
-     *      	USUALGP	varchar(263)	not null,
-     *      	FORENAME	varchar(297)	not null,
-     *      	SURNAME	varchar(1000)	not null
-     *
-     * CsvPrescription CSV:
-     *      	ID	int	not null,
-     *      	CARERECORDID	uniqueidentifier	not null,
-     *      	PracticeCode	varchar(20) not null,
-     *      	ISSUEDATE	datetime	not null,
-     *      	ISSUETYPE	varchar(50) not null,
-     *      	READCODE varchar(50)	null,
-     *      	DRUG varchar(510)	null,
-     *      	SUPPLY varchar(max) not null,
-     *      	EMISCODE varchar(50)	null,
-     *      	[STATUS] char	not null,
-     *      	[LAST ISSUE DATE] datetime null,
-     *      	DIRECTIONS	varchar(400)	null
-     *
-     * CsvEvent CSV:
-     *      	ID	int not null,
-     *      	CARERECORDID	uniqueidentifier not null,
-     *      	PracticeCode	varchar(20) not null,
-     *      	ODATE	datetime	not null,
-     *      	READCODE	varchar(50)	null,
-     *      	READTERM	varchar(200)	null,
-     *      	NUMRESULT	decimal(19,3)	null,
-     *      	NUMRESULT2	decimal(19,3)	null
-     *
-     * Meta CSV:
-     *      	AUDITDATE	datetime	not null,
-     *      	RUNDATE	datetime	not null,
-     *      	PATIENTCOUNT	int	not null,
-     *      	EVENTCOUNT	int	not null,
-     *      	PRESCRIPTIONCOUNT	int	not null
-     */
+    public static Map<String, List<Resource>> transform(String folderPath) {
+
+
+        Map<String, List<Resource>> ret = new HashMap<>();
+
+        
+
+        return ret;
+    }
+
 
     public static Map<String, List<Resource>> transform(String patientCsvFile, String prescriptionCsvFile,
                                                         String eventCsvFile, String metadataCsvFile) throws Exception {

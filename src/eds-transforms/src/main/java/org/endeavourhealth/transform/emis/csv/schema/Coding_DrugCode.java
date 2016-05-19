@@ -2,8 +2,8 @@ package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVParser;
 
-public class CodingDrugCode extends AbstractCsvTransformer {
-    public CodingDrugCode(CSVParser csvReader, String dateFormat, String timeFormat) {
+public class Coding_DrugCode extends AbstractCsvTransformer {
+    public Coding_DrugCode(CSVParser csvReader, String dateFormat, String timeFormat) {
         super(csvReader, dateFormat, timeFormat);
     }
 

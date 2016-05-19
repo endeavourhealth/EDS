@@ -6,12 +6,12 @@ import org.endeavourhealth.transform.common.TransformException;
 import java.util.Date;
 import java.util.UUID;
 
-public class PrescribingIssueRecord extends AbstractCsvTransformer {
-    public PrescribingIssueRecord(CSVParser csvReader, String dateFormat, String timeFormat) {
+public class Prescribing_DrugRecord extends AbstractCsvTransformer {
+    public Prescribing_DrugRecord(CSVParser csvReader, String dateFormat, String timeFormat) {
         super(csvReader, dateFormat, timeFormat);
     }
 
-    public UUID getIssueRecordGuid() {
+    public UUID getDrugRecordGuid() {
         return super.getUniqueIdentifier(0);
     }
     public UUID getPatientGuid() {
@@ -26,7 +26,7 @@ public class PrescribingIssueRecord extends AbstractCsvTransformer {
     public String getEffectiveDatePrecision() {
         return super.getString(4);
     }
-    public Date getEffectiveDateTime() throws TransformException {
+    public Date getEnteredDateTime() throws TransformException {
         return super.getDateTime(5, 6);
     }
     public UUID getClinicianUserInRoleGuid() {
@@ -38,34 +38,40 @@ public class PrescribingIssueRecord extends AbstractCsvTransformer {
     public Long getCodeId() {
         return super.getLong(9);
     }
+    public String getDosage() {
+        return super.getString(10);
+    }
     public Double getQuantity() {
-        return super.getDouble(10);
+        return super.getDouble(11);
     }
-    public Integer getCourseDurationInDays() {
-        return super.getInt(11);
-    }
-    public Double getEstimatedNhsCost() {
-        return super.getDouble(12);
+    public String getQuantityUnit() {
+        return super.getString(12);
     }
     public UUID getProblemObservationGuid() {
         return super.getUniqueIdentifier(13);
     }
-    public String getDosage() {
+    public String getPrescriptionType() {
         return super.getString(14);
     }
-    public String getQuantityUnit() {
-        return super.getString(15);
+    public boolean getIsActive() {
+        return super.getBoolean(15);
     }
-    public UUID getDrugRecordGuid() {
-        return super.getUniqueIdentifier(16);
+    public Date getCancellationDate() throws TransformException {
+        return super.getDate(16);
     }
-    public boolean getDeleted() {
-        return super.getBoolean(17);
+    public Integer getNumberOfIssues() {
+        return super.getInt(17);
     }
-    public Integer getProcessingId() {
+    public Integer getNumberOfIssuesAuthorised() {
         return super.getInt(18);
     }
-    public boolean getIsConfidential() {
+    public boolean getDeleted() {
         return super.getBoolean(19);
+    }
+    public Integer getProcessingId() {
+        return super.getInt(20);
+    }
+    public boolean getIsConfidential() {
+        return super.getBoolean(21);
     }
 }
