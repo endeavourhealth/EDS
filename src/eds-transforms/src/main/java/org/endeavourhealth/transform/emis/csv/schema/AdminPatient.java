@@ -1,0 +1,127 @@
+package org.endeavourhealth.transform.emis.csv.schema;
+
+import org.apache.commons.csv.CSVParser;
+import org.endeavourhealth.transform.common.TransformException;
+
+import java.util.Date;
+import java.util.UUID;
+
+public class AdminPatient extends AbstractCsvTransformer {
+
+
+    public AdminPatient(CSVParser csvReader, String dateFormat, String timeFormat) {
+        super(csvReader, dateFormat, timeFormat);
+    }
+
+    public UUID getPatientGuid() {
+        return super.getUniqueIdentifier(0);
+    }
+    public UUID getOrganisationGuid() {
+        return super.getUniqueIdentifier(1);
+    }
+    public String getSex() {
+        return super.getString(2);
+    }
+    public Date getDateOfBirth() throws TransformException {
+        return super.getDate(3);
+    }
+    public Date getDateOfDeath() throws TransformException {
+        return super.getDate(4);
+    }
+    public String getTitle() {
+        return super.getString(5);
+    }
+    public String getGivenName() {
+        return super.getString(6);
+    }
+    public String getMiddleNames() {
+        return super.getString(7);
+    }
+    public String getSurname() {
+        return super.getString(8);
+    }
+    public Date getDateOfRegistration() throws TransformException {
+        return super.getDate(9);
+    }
+    public String getNhsNumber() {
+        return super.getString(10);
+    }
+    public int getPatientNumber() {
+        return super.getInt(11);
+    }
+    public String getPatientTypedescription() {
+        return super.getString(12);
+    }
+    public boolean getDummyType() {
+        return super.getBoolean(13);
+    }
+    public String getHouseNameFlatNumber() {
+        return super.getString(14);
+    }
+    public String getNumberAndStreet() {
+        return super.getString(15);
+    }
+    public String getVillage() {
+        return super.getString(16);
+    }
+    public String getTown() {
+        return super.getString(17);
+    }
+    public String getCounty() {
+        return super.getString(18);
+    }
+    public String getPostcode() {
+        return super.getString(19);
+    }
+    public String getEmailAddress() {
+        return super.getString(20);
+    }
+    public String getHomePhone() {
+        return super.getString(21);
+    }
+    public String getMobilePhone() {
+        return super.getString(22);
+    }
+    public String getResidentialInstituteCode() {
+        return super.getString(23);
+    }
+    public String getNHSNumberStatus() {
+        return super.getString(24);
+    }
+    public String getCarerName() {
+        return super.getString(25);
+    }
+    public String getCarerRelation() {
+        return super.getString(26);
+    }
+    public UUID getPersonGUID() {
+        return super.getUniqueIdentifier(27);
+    }
+    public UUID getUsualGpUserInRoleGuid() {
+        return super.getUniqueIdentifier(28);
+    }
+    public UUID getExternalUsualGPGuid() {
+        return super.getUniqueIdentifier(29);
+    }
+    public String getExternalUsualGP() {
+        return super.getString(30);
+    }
+    public UUID getExternalUsualGPOrganisation() {
+        return super.getUniqueIdentifier(31);
+    }
+    public boolean getSpineSensitive() {
+        return super.getBoolean(32);
+    }
+    public Integer getProcessingId() {
+        return super.getInt(33);
+    }
+    public Date getDateOfDeactivation() throws TransformException {
+        return super.getDate(34);
+    }
+    public boolean getDeleted() {
+        return super.getBoolean(35);
+    }
+    public boolean getIsConfidential() {
+        return super.getBoolean(36);
+    }
+}

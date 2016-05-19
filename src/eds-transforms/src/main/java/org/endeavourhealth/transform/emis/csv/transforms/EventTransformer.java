@@ -131,6 +131,8 @@ public abstract class EventTransformer {
             fhirComponent.setCode(Fhir.createCodeableConcept("Diastolic"));
             fhirComponent.setValue(q2);
         }
+
+        //TODO - we have no units in EMIS CSV file
     }
 
     private static Quantity createQuantity(String valueStr) {
@@ -231,7 +233,10 @@ public abstract class EventTransformer {
         Date date = new SimpleDateFormat(EmisCsvTransformer.DATE_FORMAT).parse(dateStr);
         fhirAllergy.setRecordedDate(date);
 
-        //TODO - must set the substance on AllergyIntolerance resource
+        //the substance requires a "substance code", but we don't have one, so uze the free-text term as a textual code
+        //String code = csvRecord.get(CsvEvent.READCODE.getValue());
+        String term = csvRecord.get(CsvEvent.READTERM.getValue());
+        fhirAllergy.setSubstance(Fhir.createCodeableConcept(term));
 
         //ensure there are no numeric values that will be ignored
         ensureNoValues(csvRecord);
