@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Timer;
 
 public class SftpHandler {
-	private static final Logger LOG = LoggerFactory.getLogger(SftpHandler.class);
 	private SftpReaderConfiguration configuration;
 	private SftpConsumer consumer;
 	private Timer timer;

@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 public class PostMessageToQueue implements PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToQueue.class);
 
 	private PostMessageToQueueConfig config;
 

@@ -7,6 +7,7 @@ import java.util.*;
 public class Exchange {
 	// Properties are internal only. Use to pass data between components
 	private Properties properties;
+	private Exception exception;
 
 	private EDSMethod method;
 	private String requester;
@@ -86,5 +87,13 @@ public class Exchange {
 
 	public void setRequester(String requester) {
 		this.requester = requester;
+	}
+
+	public Exception getException() {
+		return exception;
+	}
+
+	public void setException(Exception exception) {
+		this.exception = exception;
 	}
 }

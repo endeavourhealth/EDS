@@ -17,7 +17,7 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientConfig;
 
 public class PostToRest implements PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+	private static final Logger LOG = LoggerFactory.getLogger(PostToRest.class);
 
 	private PostToRestConfig config;
 
@@ -47,11 +47,13 @@ public class PostToRest implements PipelineComponent {
 
 		Response response = invocationBuilder.post(entity);
 
+		exchange.setBody(response.readEntity(String.class));
+
 		if (response.getStatus() == HttpStatus.SC_OK)
-			LOG.info("Message posted");
+			LOG.debug("Message posted");
 		else {
 			LOG.error("Error posting response to sender");
-			throw new PipelineException("Error posting to sender");
+			throw new PipelineException(exchange.getBody());
 		}
 	}
 }

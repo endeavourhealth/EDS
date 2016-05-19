@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ValidateMessageType implements PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ValidateMessageType.class);
 
 	private ValidateMessageTypeConfig config;
 
@@ -25,6 +25,6 @@ public class ValidateMessageType implements PipelineComponent {
 
 		// Ensure type is valid for sender
 
-		LOG.info("Message validated");
+		LOG.debug("Message validated");
 	}
 }

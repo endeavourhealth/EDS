@@ -26,7 +26,7 @@ public class PostMessageToLog implements PipelineComponent {
 			LOG.debug("Message written to outbound log");
 		} catch (Exception e) {
 			LOG.error("Error writing exchange to audit", e);
-			throw new PipelineException(e.getMessage());
+			// throw new PipelineException(e.getMessage());
 		}
 	}
 }

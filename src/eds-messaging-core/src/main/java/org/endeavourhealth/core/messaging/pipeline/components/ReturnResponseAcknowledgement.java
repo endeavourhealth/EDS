@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ReturnResponseAcknowledgement implements PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ReturnResponseAcknowledgement.class);
 
 	private ReturnResponseAcknowledgementConfig config;
 
@@ -19,6 +19,6 @@ public class ReturnResponseAcknowledgement implements PipelineComponent {
 	public void process(Exchange exchange) {
 		// NOTE: Doesnt actually return response here, just sets response body to be returned by AbstractEndpoint process()
 		exchange.setBody("Insert confirmation message body here");
-		LOG.info("Message posted to log");
+		LOG.debug("Message posted to log");
 	}
 }

@@ -20,12 +20,6 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:complexType name="LoadDataDistributionProtocolsConfig">
-        <xs:complexContent>
-            <xs:extension base="ComponentConfig"/>
-        </xs:complexContent>
-    </xs:complexType>
-
     <xs:complexType name="ValidateMessageTypeConfig">
         <xs:complexContent>
             <xs:extension base="ComponentConfig"/>

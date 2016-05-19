@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PostToSubscriberWebService implements PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+	private static final Logger LOG = LoggerFactory.getLogger(PostToSubscriberWebService.class);
 
 	private PostToSubscriberWebServiceConfig config;
 
@@ -17,6 +17,6 @@ public class PostToSubscriberWebService implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		LOG.info("Message posted to subscriber web service");
+		LOG.debug("Message posted to subscriber web service");
 	}
 }

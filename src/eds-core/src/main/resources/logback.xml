@@ -7,10 +7,11 @@
     </encoder>
   </appender>
 
-  <logger name="org.endeavour.enterprise" level="TRACE"/>  <!-- have ALL logging for Endeavour code -->
+  <logger name="org.endeavour.enterprise" level="DEBUG"/>  <!-- have ALL logging for Endeavour code -->
   <logger name="com.mchange" level="INFO"/>  <!--not interested in logback debug logging -->
+  <logger name="com.datastax" level="INFO"/>  <!-- not bothered about datastax debug -->
 
-  <root level="info">
+  <root level="DEBUG">
     <appender-ref ref="STDOUT" />
   </root>
 

@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MessageTransform implements PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+	private static final Logger LOG = LoggerFactory.getLogger(MessageTransform.class);
 
 	private MessageTransformConfig config;
 
@@ -17,6 +17,6 @@ public class MessageTransform implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		LOG.info("Message transformed");
+		LOG.debug("Message transformed");
 	}
 }

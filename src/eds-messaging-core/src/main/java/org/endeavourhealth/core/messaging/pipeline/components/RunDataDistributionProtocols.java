@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RunDataDistributionProtocols implements PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+	private static final Logger LOG = LoggerFactory.getLogger(RunDataDistributionProtocols.class);
 
 	private RunDataDistributionProtocolsConfig config;
 
@@ -17,6 +17,6 @@ public class RunDataDistributionProtocols implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		LOG.info("Message posted to log");
+		LOG.debug("Message posted to log");
 	}
 }

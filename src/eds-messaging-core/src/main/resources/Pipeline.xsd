@@ -15,7 +15,6 @@
                 <xs:element name="OpenEnvelope" type="OpenEnvelopeConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="EnvelopMessage" type="EnvelopMessageConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="LoadSenderConfiguration" type="LoadSenderConfigurationConfig" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="LoadDataDistributionProtocols" type="LoadDataDistributionProtocolsConfig" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="ValidateSender" type="ValidateSenderConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="ValidateMessageType" type="ValidateMessageTypeConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="PostMessageToLog" type="PostMessageToLogConfig" minOccurs="0" maxOccurs="unbounded"/>

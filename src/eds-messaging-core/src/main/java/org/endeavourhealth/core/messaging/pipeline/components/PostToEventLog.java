@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PostToEventLog implements PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+	private static final Logger LOG = LoggerFactory.getLogger(PostToEventLog.class);
 
 	private PostToEventLogConfig config;
 
@@ -17,6 +17,6 @@ public class PostToEventLog implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		LOG.info("Message posted to event log");
+		LOG.debug("Message posted to event log");
 	}
 }

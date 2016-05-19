@@ -20,7 +20,7 @@ import java.util.Base64;
 import java.util.List;
 
 public class OpenEnvelope implements PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+	private static final Logger LOG = LoggerFactory.getLogger(OpenEnvelope.class);
 
 	private OpenEnvelopeConfig config;
 
@@ -68,7 +68,7 @@ public class OpenEnvelope implements PipelineComponent {
 			throw new PipelineException(e.getMessage());
 		}
 
-		LOG.info("Message envelope processed");
+		LOG.debug("Message envelope processed");
 	}
 
 	private void processHeader(Exchange exchange, MessageHeader messageHeader) {

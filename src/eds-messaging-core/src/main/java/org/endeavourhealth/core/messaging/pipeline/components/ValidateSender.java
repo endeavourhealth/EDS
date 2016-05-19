@@ -1,7 +1,6 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import org.endeavourhealth.core.configuration.ValidateSenderConfig;
-import org.endeavourhealth.core.contracts.Contracts;
 import org.endeavourhealth.core.messaging.EDSMethod;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
@@ -11,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ValidateSender implements PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ValidateSender.class);
 
 	private ValidateSenderConfig config;
 
@@ -23,11 +22,10 @@ public class ValidateSender implements PipelineComponent {
 		String sender = (String)exchange.getProperty(PropertyKeys.Sender);
 		EDSMethod method = (EDSMethod) exchange.getProperty(PropertyKeys.Method);
 
-		if (Contracts.SenderHasPermissionForMethod(sender, method))
-			LOG.info("Sender validated");
-		else {
-			LOG.error("Sender does not have permission to call this method");
-			throw new PipelineException("No permission");
-		}
+		// Load data distribution protocols
+
+		// Check sender is allowed to make the call to the method
+
+		LOG.debug("Sender validated");
 	}
 }

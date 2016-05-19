@@ -5,14 +5,16 @@ import org.apache.commons.io.IOUtils;
 import org.endeavourhealth.core.configuration.SftpReaderConfiguration;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
+import org.slf4j.*;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.TimerTask;
 import java.util.Vector;
 
 public class SftpConsumer extends TimerTask {
+	private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(SftpConsumer.class);
+
 	private PipelineProcessor pipeline;
 	private SftpReaderConfiguration configuration;
 	private JSch jSch;
@@ -43,12 +45,8 @@ public class SftpConsumer extends TimerTask {
 				Exchange exchange = new Exchange(messageData);
 				pipeline.execute(exchange);
 			}
-		} catch (JSchException e) {
-			e.printStackTrace();
-		} catch (SftpException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			LOG.error(e.getMessage());
 		} finally {
 			if (channel != null && channel.isConnected())
 				channel.disconnect();

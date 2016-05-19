@@ -24,7 +24,6 @@ import javax.xml.bind.annotation.XmlType;
  *           &lt;element name="OpenEnvelope" type="{}OpenEnvelopeConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="EnvelopMessage" type="{}EnvelopMessageConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="LoadSenderConfiguration" type="{}LoadSenderConfigurationConfig" minOccurs="0"/>
- *           &lt;element name="LoadDataDistributionProtocols" type="{}LoadDataDistributionProtocolsConfig" minOccurs="0"/>
  *           &lt;element name="ValidateSender" type="{}ValidateSenderConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="ValidateMessageType" type="{}ValidateMessageTypeConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostMessageToLog" type="{}PostMessageToLogConfig" maxOccurs="unbounded" minOccurs="0"/>
@@ -54,7 +53,6 @@ public class Pipeline {
         @XmlElement(name = "OpenEnvelope", type = OpenEnvelopeConfig.class),
         @XmlElement(name = "EnvelopMessage", type = EnvelopMessageConfig.class),
         @XmlElement(name = "LoadSenderConfiguration", type = LoadSenderConfigurationConfig.class),
-        @XmlElement(name = "LoadDataDistributionProtocols", type = LoadDataDistributionProtocolsConfig.class),
         @XmlElement(name = "ValidateSender", type = ValidateSenderConfig.class),
         @XmlElement(name = "ValidateMessageType", type = ValidateMessageTypeConfig.class),
         @XmlElement(name = "PostMessageToLog", type = PostMessageToLogConfig.class),
@@ -89,7 +87,6 @@ public class Pipeline {
      * {@link OpenEnvelopeConfig }
      * {@link EnvelopMessageConfig }
      * {@link LoadSenderConfigurationConfig }
-     * {@link LoadDataDistributionProtocolsConfig }
      * {@link ValidateSenderConfig }
      * {@link ValidateMessageTypeConfig }
      * {@link PostMessageToLogConfig }

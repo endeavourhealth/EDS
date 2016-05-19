@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LoadSenderConfiguration implements PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+	private static final Logger LOG = LoggerFactory.getLogger(LoadSenderConfiguration.class);
 
 	private LoadSenderConfigurationConfig config;
 
@@ -17,6 +17,6 @@ public class LoadSenderConfiguration implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		LOG.info("Sender specific configuration loaded");
+		LOG.debug("Sender specific configuration loaded");
 	}
 }

@@ -44,8 +44,7 @@ import javax.xml.bind.annotation.XmlType;
     PostToSubscriberWebServiceConfig.class,
     PostToEventLogConfig.class,
     OpenEnvelopeConfig.class,
-    ValidateSenderConfig.class,
-    LoadDataDistributionProtocolsConfig.class
+    ValidateSenderConfig.class
 })
 public class ComponentConfig {
 

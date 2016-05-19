@@ -14,12 +14,11 @@ import org.hl7.fhir.instance.model.MessageHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.List;
 
 public class EnvelopMessage implements PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+	private static final Logger LOG = LoggerFactory.getLogger(EnvelopMessage.class);
 
 	private EnvelopMessageConfig config;
 
@@ -50,7 +49,7 @@ public class EnvelopMessage implements PipelineComponent {
 		}
 
 
-		LOG.info("Message wrapped in envelope");
+		LOG.debug("Message wrapped in envelope");
 	}
 
 	private MessageHeader buildMessageHeader(Exchange exchange) {

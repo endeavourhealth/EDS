@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PipelineProcessor {
-	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
+	private static final Logger LOG = LoggerFactory.getLogger(PipelineProcessor.class);
 
 	private Pipeline pipeline;
 
@@ -26,13 +26,14 @@ public class PipelineProcessor {
 		}
 		catch (PipelineException e) {
 			// Gracefully handle pipeline error and send response
-			LOG.error("Pipeline exception");
-			// e.printStackTrace();
+			LOG.error("Pipeline exception : " + e.getMessage());
+			exchange.setException(e);
 			return false;
 		}
 		catch (Exception e) {
 			// Fatal error
-			e.printStackTrace();
+			LOG.error("Fatal error : " + e.getMessage());
+			exchange.setException(e);
 			return false;
 		}
 	}
@@ -49,8 +50,6 @@ public class PipelineProcessor {
 				return new LoadSenderConfiguration((LoadSenderConfigurationConfig) processConfig);
 			case "ValidateSenderConfig":
 				return new ValidateSender((ValidateSenderConfig) processConfig);
-			case "LoadDataDistributionProtocolsConfig":
-				return new LoadDataDistributionProtocols((LoadDataDistributionProtocolsConfig) processConfig);
 			case "ValidateMessageTypeConfig":
 				return new ValidateMessageType((ValidateMessageTypeConfig) processConfig);
 			case "PostMessageToLogConfig":

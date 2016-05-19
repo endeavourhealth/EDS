@@ -1,5 +1,6 @@
 package org.endeavourhealth.messagingapi.endpoints;
 
+import org.apache.http.HttpStatus;
 import org.endeavourhealth.core.configuration.Pipeline;
 import org.endeavourhealth.core.messaging.EDSMethod;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -22,11 +23,15 @@ public abstract class AbstractEndpoint {
 			exchange.setProperty(PropertyKeys.Format, headers.getHeaderString("Content-Type"));
 
 		PipelineProcessor processor = new PipelineProcessor(pipeline);
-		processor.execute(exchange);
-
-		return Response
+		if (processor.execute(exchange))
+			return Response
 				.ok()
 				.entity(exchange.getBody())
+				.build();
+		else
+			return Response
+				.status(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+				.entity(exchange.getException().getMessage())
 				.build();
 
 	}
