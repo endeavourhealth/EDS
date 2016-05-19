@@ -25,10 +25,10 @@
             <PostMessageToLog/>
             <PostMessageToQueue>
                 <Credentials>
-                    <Username>username</Username>
-                    <Password>password</Password>
+                    <Username>guest</Username>
+                    <Password>guest</Password>
                 </Credentials>
-                <Nodes>192.168.0.1:1001, 192.168.0.2:1002</Nodes>
+                <Nodes>localhost:5672</Nodes>
                 <Exchange>EdsInbound</Exchange>
             </PostMessageToQueue>
             <ReturnResponseAcknowledgement/>

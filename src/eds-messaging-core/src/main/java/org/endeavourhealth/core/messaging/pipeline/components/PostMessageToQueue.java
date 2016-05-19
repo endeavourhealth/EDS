@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 public class PostMessageToQueue implements PipelineComponent {
@@ -32,16 +34,17 @@ public class PostMessageToQueue implements PipelineComponent {
 			Channel channel = connection.createChannel();
 			channel.exchangeDeclare(
 					config.getExchange(),
-					"TOPIC");
+					"topic");
 
-			AMQP.BasicProperties properties = new AMQP.BasicProperties();
-
+			Map<String, Object> headers = new HashMap<>();
 			for (String key : exchange.getHeaders().keySet())
-				properties.getHeaders().put(key, exchange.getHeader(key));
+				headers.put(key, exchange.getHeader(key));
+
+			AMQP.BasicProperties properties = new AMQP.BasicProperties().builder().headers(headers).build();
 
 			channel.basicPublish(
 					config.getExchange(),
-					"DETERMINE_KEY_SOMEHOW!!!",    // TODO
+					"DETERMINE_KEY_SOMEHOW!!!",    // TODO : based on sender or destination??
 					properties,
 					exchange.getBody().getBytes());
 		}
