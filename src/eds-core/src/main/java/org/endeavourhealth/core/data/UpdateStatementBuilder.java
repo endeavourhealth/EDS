@@ -103,6 +103,6 @@ public class UpdateStatementBuilder extends BoundStatementBuilder {
             where = where.and(clauses[i]);
         }
 
-        return super.build(where, parameters);
+        return super.build (where, parameters);
     }
 }

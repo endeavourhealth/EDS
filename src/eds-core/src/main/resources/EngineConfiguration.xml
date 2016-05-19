@@ -4,7 +4,7 @@
   <cassandra>
     <!--<username>string</username>-->
     <!--<password>string</password>-->
-    <node>127.0.01</node>
+    <node>127.0.0.1</node>
   </cassandra>
 
   <!-- non-logback logging settings (see logback.xml for others) -->

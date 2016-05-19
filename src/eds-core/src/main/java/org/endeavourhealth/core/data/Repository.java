@@ -6,7 +6,7 @@ public abstract class Repository {
     private Session session;
     private PreparedStatementCache statementCache;
 
-    protected Session getSession() throws RepositoryException {
+    protected Session getSession() {
         if (session == null) {
             session = CassandraConnector.getInstance().getSession();
         }
@@ -14,7 +14,7 @@ public abstract class Repository {
         return session;
     }
 
-    protected PreparedStatementCache getStatementCache() throws RepositoryException {
+    protected PreparedStatementCache getStatementCache() {
         if (statementCache == null) {
             statementCache = CassandraConnector.getInstance().getStatementCache();
         }
