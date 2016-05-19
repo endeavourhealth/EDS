@@ -3,6 +3,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import com.rabbitmq.client.*;
 import org.endeavourhealth.core.configuration.PostMessageToQueueConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
+import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.slf4j.Logger;
@@ -44,7 +45,7 @@ public class PostMessageToQueue implements PipelineComponent {
 
 			channel.basicPublish(
 					config.getExchange(),
-					"DETERMINE_KEY_SOMEHOW!!!",    // TODO : based on sender or destination??
+					(String)exchange.getProperty(PropertyKeys.Sender),
 					properties,
 					exchange.getBody().getBytes());
 		}

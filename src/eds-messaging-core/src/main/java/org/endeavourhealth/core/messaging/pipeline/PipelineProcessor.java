@@ -58,7 +58,7 @@ public class PipelineProcessor {
 				return new PostMessageToQueue((PostMessageToQueueConfig) processConfig);
 			case "ReturnResponseAcknowledgementConfig":
 				return new ReturnResponseAcknowledgement((ReturnResponseAcknowledgementConfig) processConfig);
-			case "TransformMessageConfig":
+			case "MessageTransformConfig":
 				return new MessageTransform((MessageTransformConfig) processConfig);
 			case "PostToEventLogConfig":
 				return new PostToEventLog((PostToEventLogConfig) processConfig);

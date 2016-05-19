@@ -8,6 +8,7 @@
   </appender>
 
   <logger name="org.endeavour.enterprise" level="DEBUG"/>  <!-- have ALL logging for Endeavour code -->
+  <logger name="org.endeavourhealth" level="DEBUG"/>  <!-- have ALL logging for Endeavour code -->
   <logger name="com.mchange" level="INFO"/>  <!--not interested in logback debug logging -->
   <logger name="com.datastax" level="INFO"/>  <!-- not bothered about datastax debug -->
 
