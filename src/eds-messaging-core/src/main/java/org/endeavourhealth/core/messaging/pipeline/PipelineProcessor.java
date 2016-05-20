@@ -38,7 +38,7 @@ public class PipelineProcessor {
 		}
 	}
 
-	private PipelineComponent getComponent(Object processConfig) {
+	private PipelineComponent getComponent(Object processConfig) throws PipelineException {
 		String xmlTagName = processConfig.getClass().getSimpleName();
 
 		switch(xmlTagName) {
@@ -54,8 +54,8 @@ public class PipelineProcessor {
 				return new ValidateMessageType((ValidateMessageTypeConfig) processConfig);
 			case "PostMessageToLogConfig":
 				return new PostMessageToLog((PostMessageToLogConfig) processConfig);
-			case "PostMessageToQueueConfig":
-				return new PostMessageToQueue((PostMessageToQueueConfig) processConfig);
+			case "PostMessageToExchangeConfig":
+				return new PostMessageToExchange((PostMessageToExchangeConfig) processConfig);
 			case "ReturnResponseAcknowledgementConfig":
 				return new ReturnResponseAcknowledgement((ReturnResponseAcknowledgementConfig) processConfig);
 			case "MessageTransformConfig":
@@ -69,7 +69,7 @@ public class PipelineProcessor {
 			case "PostToRestConfig":
 				return new PostToRest((PostToRestConfig) processConfig);
 			default:
-				return null;
+				throw new PipelineException("Unknown component : " + xmlTagName);
 		}
 	}
 

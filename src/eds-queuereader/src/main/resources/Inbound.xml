@@ -9,7 +9,7 @@
     <Pipeline>
         <MessageTransform/>
         <PostToEventLog/>
-        <PostMessageToQueue>
+        <PostMessageToExchange>
             <ExchangeProperties>
                 <Property Key="Sender">ODS0000</Property>
             </ExchangeProperties>
@@ -19,14 +19,14 @@
             </Credentials>
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsResponse</Exchange>
-        </PostMessageToQueue>
-        <PostMessageToQueue>
+        </PostMessageToExchange>
+        <PostMessageToExchange>
             <Credentials>
                 <Username>guest</Username>
                 <Password>guest</Password>
             </Credentials>
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsInterim</Exchange>
-        </PostMessageToQueue>
+        </PostMessageToExchange>
     </Pipeline>
 </QueueReaderConfiguration>

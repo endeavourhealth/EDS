@@ -8,12 +8,12 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for PostMessageToQueueConfig complex type.
+ * <p>Java class for PostMessageToExchangeConfig complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="PostMessageToQueueConfig">
+ * &lt;complexType name="PostMessageToExchangeConfig">
  *   &lt;complexContent>
  *     &lt;extension base="{}ComponentConfig">
  *       &lt;sequence>
@@ -29,12 +29,12 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "PostMessageToQueueConfig", propOrder = {
+@XmlType(name = "PostMessageToExchangeConfig", propOrder = {
     "credentials",
     "nodes",
     "exchange"
 })
-public class PostMessageToQueueConfig
+public class PostMessageToExchangeConfig
     extends ComponentConfig
 {
 

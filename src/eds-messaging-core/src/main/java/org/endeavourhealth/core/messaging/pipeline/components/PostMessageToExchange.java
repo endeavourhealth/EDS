@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.rabbitmq.client.*;
-import org.endeavourhealth.core.configuration.PostMessageToQueueConfig;
+import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
@@ -18,12 +18,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-public class PostMessageToQueue implements PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToQueue.class);
+public class PostMessageToExchange implements PipelineComponent {
+	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToExchange.class);
 
-	private PostMessageToQueueConfig config;
+	private PostMessageToExchangeConfig config;
 
-	public PostMessageToQueue(PostMessageToQueueConfig config) {
+	public PostMessageToExchange(PostMessageToExchangeConfig config) {
 		this.config = config;
 	}
 

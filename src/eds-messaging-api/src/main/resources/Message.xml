@@ -7,7 +7,7 @@
                 <timestamp value="2001-10-26T21:32:52"/>
                 <event/>
                 <source>
-                    <name value="ORG1234"/>
+                    <name value="Org1234"/>
                     <software value="EMISWeb"/>
                     <endpoint value="http://source.uri.com"/>
                 </source>

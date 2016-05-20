@@ -27,7 +27,7 @@ import javax.xml.bind.annotation.XmlType;
  *           &lt;element name="ValidateSender" type="{}ValidateSenderConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="ValidateMessageType" type="{}ValidateMessageTypeConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostMessageToLog" type="{}PostMessageToLogConfig" maxOccurs="unbounded" minOccurs="0"/>
- *           &lt;element name="PostMessageToQueue" type="{}PostMessageToQueueConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="PostMessageToExchange" type="{}PostMessageToExchangeConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="ReturnResponseAcknowledgement" type="{}ReturnResponseAcknowledgementConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="MessageTransform" type="{}MessageTransformConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostToEventLog" type="{}PostToEventLogConfig" maxOccurs="unbounded" minOccurs="0"/>
@@ -56,7 +56,7 @@ public class Pipeline {
         @XmlElement(name = "ValidateSender", type = ValidateSenderConfig.class),
         @XmlElement(name = "ValidateMessageType", type = ValidateMessageTypeConfig.class),
         @XmlElement(name = "PostMessageToLog", type = PostMessageToLogConfig.class),
-        @XmlElement(name = "PostMessageToQueue", type = PostMessageToQueueConfig.class),
+        @XmlElement(name = "PostMessageToExchange", type = PostMessageToExchangeConfig.class),
         @XmlElement(name = "ReturnResponseAcknowledgement", type = ReturnResponseAcknowledgementConfig.class),
         @XmlElement(name = "MessageTransform", type = MessageTransformConfig.class),
         @XmlElement(name = "PostToEventLog", type = PostToEventLogConfig.class),
@@ -90,7 +90,7 @@ public class Pipeline {
      * {@link ValidateSenderConfig }
      * {@link ValidateMessageTypeConfig }
      * {@link PostMessageToLogConfig }
-     * {@link PostMessageToQueueConfig }
+     * {@link PostMessageToExchangeConfig }
      * {@link ReturnResponseAcknowledgementConfig }
      * {@link MessageTransformConfig }
      * {@link PostToEventLogConfig }

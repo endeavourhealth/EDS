@@ -102,14 +102,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link PostMessageToQueueConfig }
-     * 
-     */
-    public PostMessageToQueueConfig createPostMessageToQueueConfig() {
-        return new PostMessageToQueueConfig();
-    }
-
-    /**
      * Create an instance of {@link MessageTransformConfig }
      * 
      */
@@ -131,6 +123,14 @@ public class ObjectFactory {
      */
     public ComponentConfig createComponentConfig() {
         return new ComponentConfig();
+    }
+
+    /**
+     * Create an instance of {@link PostMessageToExchangeConfig }
+     * 
+     */
+    public PostMessageToExchangeConfig createPostMessageToExchangeConfig() {
+        return new PostMessageToExchangeConfig();
     }
 
     /**

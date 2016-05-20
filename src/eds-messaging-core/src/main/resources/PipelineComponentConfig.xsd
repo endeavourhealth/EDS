@@ -32,7 +32,7 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:complexType name="PostMessageToQueueConfig">
+    <xs:complexType name="PostMessageToExchangeConfig">
         <xs:complexContent>
             <xs:extension base="ComponentConfig">
                 <xs:sequence>
