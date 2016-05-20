@@ -5,6 +5,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
+import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 
@@ -24,6 +25,7 @@ public class RabbitConsumer extends DefaultConsumer {
 		String message = new String(bytes, "UTF-8");
 
 		Exchange exchange = new Exchange(message);
+		exchange.setProperty(PropertyKeys.Sender, envelope.getRoutingKey());
 
 		// Process the message
 		if (pipeline.execute(exchange)) {

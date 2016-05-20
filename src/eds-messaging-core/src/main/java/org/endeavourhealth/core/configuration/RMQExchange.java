@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.core.queueing;
+package org.endeavourhealth.core.configuration;
 
 import java.util.ArrayList;
 import java.util.List;

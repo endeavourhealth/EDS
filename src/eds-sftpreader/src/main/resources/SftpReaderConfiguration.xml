@@ -5,16 +5,16 @@
     <Username>username</Username>
     <Password>password</Password>
   </Credentials>
-  <Host>ftp.hostname.com</Host>
-  <Port>8081</Port>
-  <Path>/uploads</Path>
-  <Filename>*.xml</Filename>
-  <Polltime>10</Polltime>
+  <Host>localhost</Host>
+  <Port>22</Port>
+  <Path>/</Path>
+  <Filename>Message.xml</Filename>
+  <Polltime>60</Polltime>
     <Pipeline>
         <EnvelopMessage>
             <ExchangeProperties>
                 <Property Key="Format">text/xml</Property>
-                <Property Key="Sender">ODS0000</Property>
+                <Property Key="Sender">ODS00000</Property>
                 <Property Key="SourceSystem">EDS_FTP_Poller</Property>
                 <Property Key="ResponseUri">http://EDS_POLLER_BusinessAck.co.uk</Property>
                 <Property Key="DestinationAddress">192.168.0.1, 192.168.0.2, 192.168.0.3</Property>

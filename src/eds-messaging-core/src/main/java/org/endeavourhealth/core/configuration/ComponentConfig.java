@@ -4,7 +4,6 @@ package org.endeavourhealth.core.configuration;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
 
 
@@ -30,21 +29,6 @@ import javax.xml.bind.annotation.XmlType;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "ComponentConfig", propOrder = {
     "exchangeProperties"
-})
-@XmlSeeAlso({
-    PostToRestConfig.class,
-    RunDataDistributionProtocolsConfig.class,
-    ReturnResponseAcknowledgementConfig.class,
-    ValidateMessageTypeConfig.class,
-    LoadSenderConfigurationConfig.class,
-    PostMessageToLogConfig.class,
-    MessageTransformConfig.class,
-    EnvelopMessageConfig.class,
-    PostMessageToExchangeConfig.class,
-    PostToSubscriberWebServiceConfig.class,
-    PostToEventLogConfig.class,
-    OpenEnvelopeConfig.class,
-    ValidateSenderConfig.class
 })
 public class ComponentConfig {
 

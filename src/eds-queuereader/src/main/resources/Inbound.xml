@@ -10,9 +10,6 @@
         <MessageTransform/>
         <PostToEventLog/>
         <PostMessageToExchange>
-            <ExchangeProperties>
-                <Property Key="Sender">ODS0000</Property>
-            </ExchangeProperties>
             <Credentials>
                 <Username>guest</Username>
                 <Password>guest</Password>

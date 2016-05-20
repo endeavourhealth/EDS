@@ -2,12 +2,12 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.rabbitmq.client.*;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
+import org.endeavourhealth.core.configuration.RMQExchange;
+import org.endeavourhealth.core.configuration.RMQQueue;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.queueing.RMQExchange;
-import org.endeavourhealth.core.queueing.RMQQueue;
 import org.endeavourhealth.core.queueing.RabbitConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
