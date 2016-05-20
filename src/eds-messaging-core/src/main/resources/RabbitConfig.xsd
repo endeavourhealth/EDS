@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+           jaxb:version="2.0">
+    <xs:include schemaLocation="Common.xsd"/>
+
+    <xs:element name="RabbitConfig" type="RMQConfig"/>
+
+    <xs:complexType name="RMQConfig">
+        <xs:sequence>
+            <xs:element name="Exchange" type="RMQExchange" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="RMQExchange">
+        <xs:sequence>
+            <xs:element name="Name" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="Queue" type="RMQQueue" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="RMQQueue">
+        <xs:sequence>
+            <xs:element name="Name" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="RoutingKey" type="nonEmptyString" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>

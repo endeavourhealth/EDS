@@ -31,9 +31,7 @@ import javax.xml.bind.annotation.XmlType;
  *           &lt;/complexType>
  *         &lt;/element>
  *         &lt;element name="Nodes" type="{}nonEmptyString" minOccurs="0"/>
- *         &lt;element name="Exchange" type="{}nonEmptyString" minOccurs="0"/>
  *         &lt;element name="Queue" type="{}nonEmptyString" minOccurs="0"/>
- *         &lt;element name="RoutingKeys" type="{}nonEmptyString" minOccurs="0"/>
  *         &lt;element name="Pipeline" type="{}Pipeline"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -47,9 +45,7 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(name = "", propOrder = {
     "credentials",
     "nodes",
-    "exchange",
     "queue",
-    "routingKeys",
     "pipeline"
 })
 @XmlRootElement(name = "QueueReaderConfiguration")
@@ -59,12 +55,8 @@ public class QueueReaderConfiguration {
     protected QueueReaderConfiguration.Credentials credentials;
     @XmlElement(name = "Nodes")
     protected String nodes;
-    @XmlElement(name = "Exchange")
-    protected String exchange;
     @XmlElement(name = "Queue")
     protected String queue;
-    @XmlElement(name = "RoutingKeys")
-    protected String routingKeys;
     @XmlElement(name = "Pipeline", required = true)
     protected Pipeline pipeline;
 
@@ -117,30 +109,6 @@ public class QueueReaderConfiguration {
     }
 
     /**
-     * Gets the value of the exchange property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getExchange() {
-        return exchange;
-    }
-
-    /**
-     * Sets the value of the exchange property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setExchange(String value) {
-        this.exchange = value;
-    }
-
-    /**
      * Gets the value of the queue property.
      * 
      * @return
@@ -162,30 +130,6 @@ public class QueueReaderConfiguration {
      */
     public void setQueue(String value) {
         this.queue = value;
-    }
-
-    /**
-     * Gets the value of the routingKeys property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getRoutingKeys() {
-        return routingKeys;
-    }
-
-    /**
-     * Sets the value of the routingKeys property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setRoutingKeys(String value) {
-        this.routingKeys = value;
     }
 
     /**

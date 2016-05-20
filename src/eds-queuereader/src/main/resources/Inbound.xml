@@ -5,15 +5,13 @@
         <Password>guest</Password>
     </Credentials>
     <Nodes>localhost:5672</Nodes>
-    <Exchange>EdsInbound</Exchange>
     <Queue>Inbound-Orgs1000-2000</Queue>
-    <RoutingKeys>ORG1234</RoutingKeys>
     <Pipeline>
         <MessageTransform/>
         <PostToEventLog/>
         <PostMessageToQueue>
             <ExchangeProperties>
-                <Property Key="Sender">ORG1234</Property>
+                <Property Key="Sender">ODS0000</Property>
             </ExchangeProperties>
             <Credentials>
                 <Username>guest</Username>

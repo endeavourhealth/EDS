@@ -2,8 +2,10 @@ package org.endeavourhealth.queuereader;
 
 import com.rabbitmq.client.*;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.endeavourhealth.core.queueing.RabbitConfig;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 public class RabbitHandler {
@@ -39,30 +41,15 @@ public class RabbitHandler {
 	}
 
 	public void start() throws IOException {
-		// Declare queue
-		channel.queueDeclare(configuration.getQueue(), false, false, false, null);
-
-		// Bind queue to exchange on all routing keys
-		String routingKeyList = configuration.getRoutingKeys();
-		String[] routingKeys = routingKeyList.split(",", -1);
-
-		for(String routingKey : routingKeys)
-			channel.queueBind(configuration.getQueue(), configuration.getExchange(), routingKey);
-
 		// Begin consuming messages
 		channel.basicConsume(configuration.getQueue(), false, consumer);
 	}
 
 	public void stop() throws IOException, TimeoutException {
-		// Unbind queue from exchange on all routing keys
-		String routingKeyList = configuration.getRoutingKeys();
-		String[] routingKeys = routingKeyList.split(",", -1);
-
-		for(String routingKey : routingKeys)
-			channel.queueUnbind(configuration.getQueue(), configuration.getExchange(), routingKey);
-
 		// Close channel
 		channel.close();
-	}
 
+		// Close connection
+		connection.close();
+	}
 }

@@ -6,11 +6,15 @@ import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.queueing.RMQExchange;
+import org.endeavourhealth.core.queueing.RMQQueue;
+import org.endeavourhealth.core.queueing.RabbitConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
@@ -33,9 +37,8 @@ public class PostMessageToQueue implements PipelineComponent {
 			);
 
 			Channel channel = connection.createChannel();
-			channel.exchangeDeclare(
-					config.getExchange(),
-					"topic");
+
+			CreateExchangePlusQueueAndBind(channel);
 
 			Map<String, Object> headers = new HashMap<>();
 			for (String key : exchange.getHeaders().keySet())
@@ -52,6 +55,29 @@ public class PostMessageToQueue implements PipelineComponent {
 		catch (TimeoutException e) {
 			LOG.error("Queue connection timed out");
 			throw new PipelineException(e.getMessage());
+		}
+	}
+
+	private void CreateExchangePlusQueueAndBind(Channel channel) throws IOException {
+		// Declare exchange
+		channel.exchangeDeclare(
+				config.getExchange(),
+				"topic");
+
+		// Bind exchanges to queues
+		RMQExchange rmqExchange = RabbitConfig.getInstance().getExchange(config.getExchange());
+
+		if (rmqExchange != null) {
+
+			for (RMQQueue rmqQueue : rmqExchange.getQueue()) {
+				// Declare rabbit queue
+				channel.queueDeclare(rmqQueue.getName(), false, false, false, null);
+				// bind with keys
+				List<String> routingKeys = rmqQueue.getRoutingKey();
+
+				for (String routingKey : routingKeys)
+					channel.queueBind(rmqQueue.getName(), config.getExchange(), routingKey);
+			}
 		}
 	}
 

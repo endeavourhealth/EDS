@@ -5,9 +5,7 @@
         <Password>password</Password>
     </Credentials>
     <Nodes>192.168.0.1:1000, 192.168.0.2:2000</Nodes>
-    <Exchange>Subscriber</Exchange>
     <Queue>Subscriber-Orgs1000-2000</Queue>
-    <RoutingKeys>Org1,Org2,Org3</RoutingKeys>
     <Pipeline>
         <PostToRest/>
     </Pipeline>

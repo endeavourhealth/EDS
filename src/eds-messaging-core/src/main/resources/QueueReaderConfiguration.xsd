@@ -15,9 +15,7 @@
                     </xs:complexType>
                 </xs:element>
                 <xs:element name="Nodes" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="Exchange" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="Queue" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="RoutingKeys" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="Pipeline" type="Pipeline" minOccurs="1" maxOccurs="1"/>
             </xs:sequence>
         </xs:complexType>

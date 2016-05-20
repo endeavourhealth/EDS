@@ -39,7 +39,6 @@
                     <xs:element name="Credentials" type="Credentials" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="Nodes" type="xs:string" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="Exchange" type="xs:string" minOccurs="1" maxOccurs="1"/>
-                    <xs:element name="RoutingKeys" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>

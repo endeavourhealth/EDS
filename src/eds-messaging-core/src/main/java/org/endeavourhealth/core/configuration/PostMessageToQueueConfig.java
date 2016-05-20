@@ -20,7 +20,6 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="Credentials" type="{}Credentials"/>
  *         &lt;element name="Nodes" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="Exchange" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;element name="RoutingKeys" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/extension>
  *   &lt;/complexContent>
@@ -33,8 +32,7 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(name = "PostMessageToQueueConfig", propOrder = {
     "credentials",
     "nodes",
-    "exchange",
-    "routingKeys"
+    "exchange"
 })
 public class PostMessageToQueueConfig
     extends ComponentConfig
@@ -46,8 +44,6 @@ public class PostMessageToQueueConfig
     protected String nodes;
     @XmlElement(name = "Exchange", required = true)
     protected String exchange;
-    @XmlElement(name = "RoutingKeys")
-    protected String routingKeys;
 
     /**
      * Gets the value of the credentials property.
@@ -119,30 +115,6 @@ public class PostMessageToQueueConfig
      */
     public void setExchange(String value) {
         this.exchange = value;
-    }
-
-    /**
-     * Gets the value of the routingKeys property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getRoutingKeys() {
-        return routingKeys;
-    }
-
-    /**
-     * Sets the value of the routingKeys property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setRoutingKeys(String value) {
-        this.routingKeys = value;
     }
 
 }
