@@ -1,6 +1,6 @@
 package org.endeavourhealth.core.data.ehr.models;
 
-public enum EventLogAction {
+public enum EventStoreMode {
     insert,
     update,
     delete

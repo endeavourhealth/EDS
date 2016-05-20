@@ -8,7 +8,7 @@ import org.endeavourhealth.core.data.InsertStatementBuilder;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.UpdateStatementBuilder;
 import org.endeavourhealth.core.data.ehr.filters.PersonResourceFilter;
-import org.endeavourhealth.core.data.ehr.models.EventLogAction;
+import org.endeavourhealth.core.data.ehr.models.EventStoreMode;
 import org.endeavourhealth.core.data.ehr.models.PersonResource;
 import org.endeavourhealth.core.utility.StreamExtension;
 
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class PersonResourceRepository extends Repository {
     private static final String KEYSPACE = "ehr";
     private static final String PERSON_RESOURCE_TABLE = "person_resource";
-    private static final String PERSON_RESOURCE_EVENT_LOG_TABLE = "person_resource_event_log";
+    private static final String PERSON_RESOURCE_EVENT_STORE_TABLE = "person_resource_event_store";
 
     public void insert(PersonResource personResource){
         if (personResource == null)
@@ -40,7 +40,7 @@ public class PersonResourceRepository extends Repository {
                 .addColumnString("resource_data", personResource.getResourceData())
                 .build();
 
-        BoundStatement eventLogInsertStatement = buildEventLogInsertStatement(personResource, EventLogAction.insert);
+        BoundStatement eventLogInsertStatement = buildEventLogInsertStatement(personResource, EventStoreMode.insert);
 
         BatchStatement batch = new BatchStatement()
                 .add(personResourceInsertStatement)
@@ -75,7 +75,7 @@ public class PersonResourceRepository extends Repository {
                 .addParameterString("resource_id", personResource.getResourceId())
                 .build();
 
-        BoundStatement eventLogInsertStatement = buildEventLogInsertStatement(personResource, EventLogAction.update);
+        BoundStatement eventLogInsertStatement = buildEventLogInsertStatement(personResource, EventStoreMode.update);
 
         BatchStatement batch = new BatchStatement()
                 .add(personResourceUpdateStatement)
@@ -104,7 +104,7 @@ public class PersonResourceRepository extends Repository {
                 .addParameterString("resource_id", personResource.getResourceId())
                 .build();
 
-        BoundStatement eventLogInsertStatement = buildEventLogInsertStatement(personResource, EventLogAction.delete);
+        BoundStatement eventLogInsertStatement = buildEventLogInsertStatement(personResource, EventStoreMode.delete);
 
         BatchStatement batch = new BatchStatement()
                 .add(personResourceDeleteStatement)
@@ -152,18 +152,18 @@ public class PersonResourceRepository extends Repository {
                 .collect(Collectors.toList());
     }
 
-    private BoundStatement buildEventLogInsertStatement(PersonResource personResource, EventLogAction action) {
-        Date eventTime = new Date();
+    private BoundStatement buildEventLogInsertStatement(PersonResource personResource, EventStoreMode mode) {
+        Date createdTime = new Date();
 
-        return new InsertStatementBuilder(getStatementCache(), KEYSPACE, PERSON_RESOURCE_EVENT_LOG_TABLE)
+        return new InsertStatementBuilder(getStatementCache(), KEYSPACE, PERSON_RESOURCE_EVENT_STORE_TABLE)
                 .addColumnUUID("person_id", personResource.getPersonId())
                 .addColumnString("resource_type", personResource.getResourceType())
                 .addColumnUUID("service_id", personResource.getServiceId())
                 .addColumnUUID("system_instance_id", personResource.getSystemInstanceId())
                 .addColumnString("resource_id", personResource.getResourceId())
                 .addColumnString("version", personResource.getVersion())
-                .addColumnTimestamp("event_time", eventTime)
-                .addColumnString("event_action", action.toString())
+                .addColumnTimestamp("created", createdTime)
+                .addColumnString("mode", mode.toString())
                 .addColumnString("resource_metadata", personResource.getResourceMetadata())
                 .addColumnString("schema_version", personResource.getSchemaVersion())
                 .addColumnString("resource_data", personResource.getResourceData())
