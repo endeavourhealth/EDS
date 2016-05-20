@@ -7,6 +7,7 @@ import org.endeavourhealth.core.data.DeleteStatementBuilder;
 import org.endeavourhealth.core.data.InsertStatementBuilder;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.UpdateStatementBuilder;
+import org.endeavourhealth.core.data.ehr.filters.PersonResourceFilter;
 import org.endeavourhealth.core.data.ehr.models.EventLogAction;
 import org.endeavourhealth.core.data.ehr.models.PersonResource;
 import org.endeavourhealth.core.utility.StreamExtension;
@@ -121,10 +122,10 @@ public class PersonResourceRepository extends Repository {
                 .all()
                 .from(KEYSPACE, PERSON_RESOURCE_TABLE)
                 .where(QueryBuilder.eq("person_id", QueryBuilder.bindMarker("person_id")))
-                    .and(QueryBuilder.eq("resource_type", QueryBuilder.bindMarker("resource_type")))
-                    .and(QueryBuilder.eq("service_id", QueryBuilder.bindMarker("service_id")))
-                    .and(QueryBuilder.eq("system_instance_id", QueryBuilder.bindMarker("system_instance_id")))
-                    .and(QueryBuilder.eq("resource_id", QueryBuilder.bindMarker("resource_id"))));
+                .and(QueryBuilder.eq("resource_type", QueryBuilder.bindMarker("resource_type")))
+                .and(QueryBuilder.eq("service_id", QueryBuilder.bindMarker("service_id")))
+                .and(QueryBuilder.eq("system_instance_id", QueryBuilder.bindMarker("system_instance_id")))
+                .and(QueryBuilder.eq("resource_id", QueryBuilder.bindMarker("resource_id"))));
 
         BoundStatement boundStatement = preparedStatement
                 .bind()
@@ -134,42 +135,27 @@ public class PersonResourceRepository extends Repository {
                 .setUUID("system_instance_id", systemInstanceId)
                 .setString("resource_id", resourceId);
 
-        Row row = getSession().execute(boundStatement)
+        return getSession().execute(boundStatement)
                 .all()
                 .stream()
+                .map(this::mapRowToPersonResource)
                 .collect(StreamExtension.singleOrNullCollector());
-
-        if (row == null)
-            return null;
-
-        return mapRowToPersonResource(row);
     }
 
-    public List<PersonResource> getByResoureType(UUID personId, String resourceType) {
-        PreparedStatement preparedStatement = getStatementCache().getOrAdd(QueryBuilder.select()
-                .all()
-                .from(KEYSPACE, PERSON_RESOURCE_TABLE)
-                .where(QueryBuilder.eq("person_id", QueryBuilder.bindMarker("person_id")))
-                .and(QueryBuilder.eq("resource_type", QueryBuilder.bindMarker("resource_type"))));
+    public List<PersonResource> getApplyFilter(PersonResourceFilter filter) {
+        BoundStatement boundStatement = filter.toStatement(getStatementCache(), KEYSPACE, PERSON_RESOURCE_TABLE);
 
-        BoundStatement boundStatement = preparedStatement
-                .bind()
-                .setUUID("person_id", personId)
-                .setString("resource_type", resourceType);
-
-        List<PersonResource> results = getSession().execute(boundStatement)
+        return getSession().execute(boundStatement)
                 .all()
                 .stream()
-                .map(r -> mapRowToPersonResource(r))
+                .map(this::mapRowToPersonResource)
                 .collect(Collectors.toList());
-
-        return results;
     }
 
     private BoundStatement buildEventLogInsertStatement(PersonResource personResource, EventLogAction action) {
         Date eventTime = new Date();
 
-        BoundStatement boundStatement = new InsertStatementBuilder(getStatementCache(), KEYSPACE, PERSON_RESOURCE_EVENT_LOG_TABLE)
+        return new InsertStatementBuilder(getStatementCache(), KEYSPACE, PERSON_RESOURCE_EVENT_LOG_TABLE)
                 .addColumnUUID("person_id", personResource.getPersonId())
                 .addColumnString("resource_type", personResource.getResourceType())
                 .addColumnUUID("service_id", personResource.getServiceId())
@@ -182,7 +168,6 @@ public class PersonResourceRepository extends Repository {
                 .addColumnString("schema_version", personResource.getSchemaVersion())
                 .addColumnString("resource_data", personResource.getResourceData())
                 .build();
-        return boundStatement;
     }
 
     private PersonResource mapRowToPersonResource(Row row) {
@@ -200,5 +185,4 @@ public class PersonResourceRepository extends Repository {
         resource.setResourceData(row.getString("resource_data"));
         return resource;
     }
-
 }
