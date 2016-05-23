@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 public class EnvelopMessage implements PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(EnvelopMessage.class);
@@ -31,7 +32,7 @@ public class EnvelopMessage implements PipelineComponent {
 		MessageHeader messageHeader = buildMessageHeader(exchange);
 		Binary binary = buildBinary(exchange);
 
-		Bundle bundle = buildBundle(exchange, messageHeader, binary);
+		Bundle bundle = buildBundle(messageHeader, binary);
 
 		try {
 			String format = (String)exchange.getProperty(PropertyKeys.Format);
@@ -53,13 +54,14 @@ public class EnvelopMessage implements PipelineComponent {
 	}
 
 	private MessageHeader buildMessageHeader(Exchange exchange) {
-		MessageHeader messageHeader = new MessageHeader();
-
 		MessageHeader.MessageSourceComponent source = new MessageHeader.MessageSourceComponent();
 
 		source.setName((String)exchange.getProperty(PropertyKeys.Sender));
 		source.setEndpoint((String)exchange.getProperty(PropertyKeys.ResponseUri));
 		source.setSoftware((String)exchange.getProperty(PropertyKeys.SourceSystem));
+
+		MessageHeader messageHeader = new MessageHeader();
+		messageHeader.setId(UUID.randomUUID().toString());
 		messageHeader.setSource(source);
 
 		String addresses = (String)exchange.getProperty(PropertyKeys.DestinationAddress);
@@ -82,7 +84,7 @@ public class EnvelopMessage implements PipelineComponent {
 		return binary;
 	}
 
-	private Bundle buildBundle(Exchange exchange, MessageHeader messageHeader, Binary binary) {
+	private Bundle buildBundle(MessageHeader messageHeader, Binary binary) {
 		Bundle bundle = new Bundle();
 		bundle.setType(Bundle.BundleType.COLLECTION);
 
