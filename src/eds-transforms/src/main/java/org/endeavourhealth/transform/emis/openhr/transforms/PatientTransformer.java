@@ -33,11 +33,6 @@ public class PatientTransformer
         if (names != null)
             names.forEach(targetPatient::addName);
 
-        List<ContactPoint> telecoms = ContactPointConverter.convert(sourcePerson.getContact());
-
-        if (telecoms != null)
-            telecoms.forEach(targetPatient::addTelecom);
-
         AdministrativeGender gender = SexConverter.convertSex(sourcePerson.getSex());
         targetPatient.setGender(gender);
 
@@ -50,6 +45,11 @@ public class PatientTransformer
 
         if (addressList != null)
             addressList.forEach(targetPatient::addAddress);
+
+        List<ContactPoint> telecoms = ContactPointConverter.convert(sourcePerson.getContact());
+
+        if (telecoms != null)
+            telecoms.forEach(targetPatient::addTelecom);
 
         String organisationGuid = OpenHRHelper.getPatientOrganisationGuid(sourcePatient);
 

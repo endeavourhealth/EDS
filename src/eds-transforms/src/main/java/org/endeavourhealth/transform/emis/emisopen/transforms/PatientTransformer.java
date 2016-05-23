@@ -4,9 +4,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.RegistrationType;
+import org.endeavourhealth.transform.emis.emisopen.transforms.converters.DateConverter;
 import org.endeavourhealth.transform.fhir.FhirUris;
-import org.hl7.fhir.instance.model.Identifier;
-import org.hl7.fhir.instance.model.Patient;
+import org.endeavourhealth.transform.fhir.NameConverter;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.hl7.fhir.instance.model.*;
+import org.endeavourhealth.transform.emis.emisopen.transforms.converters.SexConverter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +33,29 @@ public class PatientTransformer
         for (Identifier identifier : transformIdentifiers(source))
             target.addIdentifier(identifier);
 
+        List<HumanName> names = NameConverter.convert(
+                source.getTitle(),
+                source.getFirstNames(),
+                source.getFamilyName(),
+                source.getCallingName(),
+                "",
+                source.getPreviousNames());
 
+        for (HumanName name : names)
+            target.addName(name);
+
+        target.setGender(SexConverter.convertSex(source.getSex()));
+
+        target.setBirthDate(DateConverter.getDate(source.getDateOfBirth()));
+
+        if (source.getDateOfDeath() != null)
+            target.setDeceased(new DateTimeType(DateConverter.getDate(source.getDateOfDeath())));
+
+        // addresses
+
+        // contacts
+
+        target.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, medicalRecord.getOriginator().getOrganisation().getGUID()));
 
         return target;
     }
