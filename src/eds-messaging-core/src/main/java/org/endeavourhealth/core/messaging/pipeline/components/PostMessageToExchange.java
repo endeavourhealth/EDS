@@ -8,6 +8,7 @@ import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.queueing.ConnectionManager;
 import org.endeavourhealth.core.queueing.RabbitConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,7 @@ public class PostMessageToExchange implements PipelineComponent {
 	@Override
 	public void process(Exchange exchange) throws IOException, PipelineException {
 		try {
-			Connection connection = getConnection(
+			Connection connection = ConnectionManager.getConnection(
 					config.getCredentials().getUsername(),
 					config.getCredentials().getPassword(),
 					config.getNodes()
@@ -79,17 +80,5 @@ public class PostMessageToExchange implements PipelineComponent {
 					channel.queueBind(rmqQueue.getName(), config.getExchange(), routingKey);
 			}
 		}
-	}
-
-	private Connection getConnection(String username, String password, String nodes) throws IOException, TimeoutException {
-		ConnectionFactory connectionFactory = new ConnectionFactory();
-		connectionFactory.setAutomaticRecoveryEnabled(true);
-		connectionFactory.setTopologyRecoveryEnabled(true);
-		connectionFactory.setUsername(username);
-		connectionFactory.setPassword(password);
-
-		Address[] addresses = Address.parseAddresses(nodes);
-
-		return connectionFactory.newConnection(addresses);
 	}
 }
