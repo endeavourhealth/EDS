@@ -7,7 +7,7 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.PatientAppointmentList;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomslotsforsession.SlotListStruct;
-import org.endeavourhealth.transform.emis.emisopen.transforms.*;
+import org.endeavourhealth.transform.emis.emisopen.transforms.admin.*;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -33,7 +33,6 @@ public final class EmisOpenTransformer
         result.add(PatientTransformer.transform(emisOpenMedicalRecord, organisationGuid));
         result.addAll(OrganizationAndLocationTransformer.transform(emisOpenMedicalRecord));
         result.addAll(PractitionerTransformer.transform(emisOpenMedicalRecord, organisationGuid));
-
 
         return result;
     }

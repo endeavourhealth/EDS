@@ -3,7 +3,11 @@ package org.endeavourhealth.transform.emis;
 import org.endeavourhealth.core.utility.XmlHelper;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001OpenHealthRecord;
-import org.endeavourhealth.transform.emis.openhr.transforms.*;
+import org.endeavourhealth.transform.emis.openhr.transforms.admin.LocationTransformer;
+import org.endeavourhealth.transform.emis.openhr.transforms.admin.OrganisationTransformer;
+import org.endeavourhealth.transform.emis.openhr.transforms.admin.PatientTransformer;
+import org.endeavourhealth.transform.emis.openhr.transforms.admin.PractitionerTransformer;
+import org.endeavourhealth.transform.emis.openhr.transforms.clinical.HealthDomainTransformer;
 import org.hl7.fhir.instance.model.Resource;
 
 import java.util.ArrayList;
