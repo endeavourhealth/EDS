@@ -45,32 +45,59 @@ public class HealthDomainTransformer
     private static ClinicalResourceTransformer getTransformerForEvent(OpenHR001HealthDomain healthDomain, OpenHR001HealthDomain.Event event) throws TransformException
     {
         if (isProblem(healthDomain.getProblem(), event))
-            return new ProblemTransformer();
+            return null;  //return new ProblemTransformer();
 
         switch (event.getEventType())
         {
-            case OBS:                                            // Observation
+            // Observation
+            case OBS:
             {
                 if (isProcedure(event))
-                    return new ProcedureTransformer();
+                    return null;   //return new ProcedureTransformer();
                 else // if condition
                     return new ConditionTransformer();
                 //else
                 //    return new ObservationTransformer();
             }
-            case VAL:                                            // Value
-            case INV:                                            // Investigation
-            case ATT: return new ObservationTransformer();       // Attachment
-            case DRY: return new ProcedureRequestTransformer();  // Diary
-            case ISS: return new MedicationOrderTransformer();   // Medication Issue
-            case MED: return new MedicationStatementTransformer();        // Medication
-            case TR:  return new DiagnosticOrderTransformer();   // Test Request
-            case REF: return new ReferralTransformer();          // Referral
-            case ALT: return new AlertTransformer();             // Alert
-            case ALL: return new AllergyTransformer();           // Allergy
-            case FH:  return new FamilyHistoryTransformer();     // Family history
-            case IMM: return new ImmunisationTransformer();      // Immunisation
-            case REP: return new DiagnosticReportTransformer();  // Report
+
+            // Value
+            case VAL: return new ObservationTransformer();
+
+            // Investigation
+            case INV: return new ObservationTransformer();
+
+            // Attachment
+            case ATT: return new ObservationTransformer();
+
+            // Diary
+            case DRY: return null; //new ProcedureRequestTransformer();
+
+            // Medication Issue
+            case ISS: return new MedicationOrderTransformer();
+
+            // Medication
+            case MED: return new MedicationStatementTransformer();
+
+            // Test Request
+            case TR:  return null; //new DiagnosticOrderTransformer();
+
+            // Referral
+            case REF: return null; //new ReferralTransformer();
+
+            // Alert
+            case ALT: return null; //new AlertTransformer();
+
+            // Allergy
+            case ALL: return new AllergyTransformer();
+
+            // Family history
+            case FH:  return null; //new FamilyHistoryTransformer();
+
+            // Immunisation
+            case IMM: return new ImmunisationTransformer();
+
+            // Report
+            case REP: return null; //new DiagnosticReportTransformer();
 
             default: throw new TransformException("Event Type not supported: " + event.getEventType().toString());
         }
