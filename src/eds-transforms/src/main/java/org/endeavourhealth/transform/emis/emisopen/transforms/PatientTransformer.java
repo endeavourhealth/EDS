@@ -53,13 +53,8 @@ public class PatientTransformer
         if (source.getDateOfDeath() != null)
             target.setDeceased(new DateTimeType(DateConverter.getDate(source.getDateOfDeath())));
 
-        if (target.getAddress() != null)
-        {
-            AddressType address = source.getAddress();
-
-            if (address != null)
-                target.addAddress(AddressConverter.createAddress(Address.AddressUse.HOME, address.getHouseNameFlat(), address.getStreet(), address.getVillage(), address.getTown(), address.getCounty(), address.getPostCode()));
-        }
+        if (source.getAddress() != null)
+            target.addAddress(org.endeavourhealth.transform.emis.emisopen.transforms.converters.AddressConverter.convert(source.getAddress(), Address.AddressUse.HOME));
 
         for (ContactPoint contactPoint : createContacts(source))
             target.addTelecom(contactPoint);
