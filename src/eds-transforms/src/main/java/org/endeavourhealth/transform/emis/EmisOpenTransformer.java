@@ -1,15 +1,13 @@
 package org.endeavourhealth.transform.emis;
 
+import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.core.utility.XmlHelper;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.AppointmentSessionList;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.PatientAppointmentList;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomslotsforsession.SlotListStruct;
-import org.endeavourhealth.transform.emis.emisopen.transforms.AppointmentTransformer;
-import org.endeavourhealth.transform.emis.emisopen.transforms.PatientTransformer;
-import org.endeavourhealth.transform.emis.emisopen.transforms.ScheduleTransformer;
-import org.endeavourhealth.transform.emis.emisopen.transforms.SlotTransformer;
+import org.endeavourhealth.transform.emis.emisopen.transforms.*;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -21,9 +19,21 @@ public final class EmisOpenTransformer
     {
         MedicalRecordType emisOpenMedicalRecord = XmlHelper.deserialize(eomMedicalRecord38Xml, MedicalRecordType.class);
 
+        String organisationGuid = null;
+
+        if (emisOpenMedicalRecord.getOriginator() != null)
+            if (emisOpenMedicalRecord.getOriginator().getOrganisation() != null)
+                organisationGuid = emisOpenMedicalRecord.getOriginator().getOrganisation().getGUID();
+
+        if (StringUtils.isBlank(organisationGuid))
+            throw new TransformException("Could not determine current organisation guid");
+
         List<Resource> result = new ArrayList<>();
 
-        result.add(PatientTransformer.transform(emisOpenMedicalRecord));
+        result.add(PatientTransformer.transform(emisOpenMedicalRecord, organisationGuid));
+        result.addAll(OrganizationAndLocationTransformer.transform(emisOpenMedicalRecord));
+        result.addAll(PractitionerTransformer.transform(emisOpenMedicalRecord, organisationGuid));
+
 
         return result;
     }

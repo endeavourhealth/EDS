@@ -5,6 +5,7 @@ import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.DtContact;
 import org.endeavourhealth.transform.emis.openhr.schema.VocContactType;
 import org.endeavourhealth.transform.emis.openhr.transforms.helpers.OpenHRHelper;
+import org.endeavourhealth.transform.fhir.ContactPointCreater;
 import org.hl7.fhir.instance.model.ContactPoint;
 
 import java.util.ArrayList;
@@ -39,12 +40,7 @@ public class ContactPointConverter
 
         OpenHRHelper.ensureDboNotDelete(source);
 
-        ContactPoint contact = new ContactPoint();
-        contact.setSystem(convertContactSystem(source.getContactType()));
-        contact.setUse(convertContactInfoUse(source.getContactType()));
-        contact.setValue(value);
-
-        return contact;
+        return ContactPointCreater.create(value, convertContactSystem(source.getContactType()), convertContactInfoUse(source.getContactType()));
     }
 
     private static ContactPoint.ContactPointSystem convertContactSystem(VocContactType openHRType) throws TransformException

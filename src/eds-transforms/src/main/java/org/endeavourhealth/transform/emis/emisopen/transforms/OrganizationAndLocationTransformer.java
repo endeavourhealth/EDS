@@ -6,12 +6,15 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.Loc
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.TypeOfLocationType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.converters.AddressConverter;
+import org.endeavourhealth.transform.fhir.ContactPointCreater;
 import org.endeavourhealth.transform.fhir.FhirUris;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.endeavourhealth.transform.fhir.ContactPointCreater.createWorkContactPoints;
 
 public class OrganizationAndLocationTransformer
 {
@@ -61,39 +64,14 @@ public class OrganizationAndLocationTransformer
         if (locationType.getAddress() != null)
             location.setAddress(AddressConverter.convert(locationType.getAddress(), Address.AddressUse.WORK));
 
-        for (ContactPoint contactPoint : createContactPoints(locationType))
+        List<ContactPoint> contactPoints = createWorkContactPoints(locationType.getTelephone1(), locationType.getTelephone2(), locationType.getFax(), locationType.getEmail());
+
+        for (ContactPoint contactPoint : contactPoints)
             location.addTelecom(contactPoint);
 
         location.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, locationType.getGUID()));
 
         return location;
-    }
-
-    private static List<ContactPoint> createContactPoints(LocationType locationType)
-    {
-        List<ContactPoint> contactPoints = new ArrayList<>();
-
-        if (StringUtils.isNotBlank(locationType.getTelephone1()))
-            contactPoints.add(createWorkContactPoint(locationType.getTelephone1(), ContactPoint.ContactPointSystem.PHONE));
-
-        if (StringUtils.isNotBlank(locationType.getTelephone2()))
-            contactPoints.add(createWorkContactPoint(locationType.getTelephone2(), ContactPoint.ContactPointSystem.PHONE));
-
-        if (StringUtils.isNotBlank(locationType.getEmail()))
-            contactPoints.add(createWorkContactPoint(locationType.getEmail(), ContactPoint.ContactPointSystem.EMAIL));
-
-        if (StringUtils.isNotBlank(locationType.getFax()))
-            contactPoints.add(createWorkContactPoint(locationType.getFax(), ContactPoint.ContactPointSystem.FAX));
-
-        return contactPoints;
-    }
-
-    private static ContactPoint createWorkContactPoint(String value, ContactPoint.ContactPointSystem contactPointSystem)
-    {
-        return new ContactPoint()
-                .setSystem(contactPointSystem)
-                .setUse(ContactPoint.ContactPointUse.WORK)
-                .setValue(value);
     }
 
     private static TypeOfLocationType getTypeOfLocationType(LocationType locationType, List<TypeOfLocationType> typeOfLocationTypes)

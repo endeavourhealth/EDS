@@ -39,10 +39,8 @@ public class PractitionerTransformer
         practitioner.setId(userInRole.getId());
         practitioner.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_PRACTITIONER));
 
-        List<Identifier> identifiers = convertIdentifiers(userInRole.getUserIdentifier());
-
-        if (identifiers != null)
-            identifiers.forEach(practitioner::addIdentifier);
+        for (Identifier identifier : convertIdentifiers(userInRole.getUserIdentifier()))
+            practitioner.addIdentifier(identifier);
 
         practitioner.setName(NameConverter.convert(
                 person.getForenames(),
@@ -59,10 +57,7 @@ public class PractitionerTransformer
 
         Practitioner.PractitionerPractitionerRoleComponent practitionerRole =  practitioner.addPractitionerRole();
         practitionerRole.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, role.getOrganisation()));
-
-        DtCode userCategory = role.getUserCategory();
-
-        practitionerRole.setRole(new CodeableConcept().setText(role.getName() + ". " + userCategory.getDisplayName()));
+        practitionerRole.setRole(new CodeableConcept().setText(role.getName() + ". " + role.getUserCategory().getDisplayName()));
 
         return practitioner;
     }
@@ -123,16 +118,16 @@ public class PractitionerTransformer
 
     private static List<Identifier> convertIdentifiers(List<DtUserIdentifier> sourceIdentifiers) throws TransformException
     {
-        if (sourceIdentifiers == null || sourceIdentifiers.isEmpty())
-            return null;
-
         List<Identifier> targetIdentifiers = new ArrayList<>();
 
-        for (DtUserIdentifier source: sourceIdentifiers)
+        if (sourceIdentifiers != null)
         {
-            targetIdentifiers.add(new Identifier()
-                .setSystem(convertIdentifierType(source.getIdentifierType()))
-                .setValue(source.getValue()));
+            for (DtUserIdentifier source : sourceIdentifiers)
+            {
+                targetIdentifiers.add(new Identifier()
+                        .setSystem(convertIdentifierType(source.getIdentifierType()))
+                        .setValue(source.getValue()));
+            }
         }
 
         return targetIdentifiers;

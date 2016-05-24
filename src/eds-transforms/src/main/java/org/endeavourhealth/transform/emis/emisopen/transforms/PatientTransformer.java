@@ -5,11 +5,8 @@ import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.AddressType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.RegistrationType;
-import org.endeavourhealth.transform.fhir.AddressConverter;
+import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.converters.DateConverter;
-import org.endeavourhealth.transform.fhir.FhirUris;
-import org.endeavourhealth.transform.fhir.NameConverter;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.converters.SexConverter;
 
@@ -18,7 +15,7 @@ import java.util.List;
 
 public class PatientTransformer
 {
-    public static Patient transform(MedicalRecordType medicalRecord) throws TransformException
+    public static Patient transform(MedicalRecordType medicalRecord, String organisationGuid) throws TransformException
     {
         RegistrationType source = medicalRecord.getRegistration();
 
@@ -59,7 +56,7 @@ public class PatientTransformer
         for (ContactPoint contactPoint : createContacts(source))
             target.addTelecom(contactPoint);
 
-        target.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, medicalRecord.getOriginator().getOrganisation().getGUID()));
+        target.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, organisationGuid));
 
         return target;
     }
@@ -94,36 +91,16 @@ public class PatientTransformer
         List<ContactPoint> contactPoints = new ArrayList<>();
 
         if (StringUtils.isNotBlank(registration.getHomeTelephone()))
-        {
-            ContactPoint contact = new ContactPoint()
-                    .setSystem(ContactPoint.ContactPointSystem.PHONE)
-                    .setUse(ContactPoint.ContactPointUse.HOME)
-                    .setValue(registration.getHomeTelephone());
-        }
+            contactPoints.add(ContactPointCreater.create(registration.getHomeTelephone(),  ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.HOME));
 
         if (StringUtils.isNotBlank(registration.getWorkTelephone()))
-        {
-            ContactPoint contact = new ContactPoint()
-                    .setSystem(ContactPoint.ContactPointSystem.PHONE)
-                    .setUse(ContactPoint.ContactPointUse.WORK)
-                    .setValue(registration.getWorkTelephone());
-        }
+            contactPoints.add(ContactPointCreater.create(registration.getWorkTelephone(),  ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.WORK));
 
         if (StringUtils.isNotBlank(registration.getMobile()))
-        {
-            ContactPoint contact = new ContactPoint()
-                    .setSystem(ContactPoint.ContactPointSystem.PHONE)
-                    .setUse(ContactPoint.ContactPointUse.MOBILE)
-                    .setValue(registration.getMobile());
-        }
+            contactPoints.add(ContactPointCreater.create(registration.getMobile(),  ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.MOBILE));
 
         if (StringUtils.isNotBlank(registration.getEmail()))
-        {
-            ContactPoint contact = new ContactPoint()
-                    .setSystem(ContactPoint.ContactPointSystem.EMAIL)
-                    .setUse(ContactPoint.ContactPointUse.HOME)
-                    .setValue(registration.getMobile());
-        }
+            contactPoints.add(ContactPointCreater.create(registration.getEmail(),  ContactPoint.ContactPointSystem.EMAIL, ContactPoint.ContactPointUse.HOME));
 
         return contactPoints;
     }
