@@ -29,7 +29,8 @@ public class PostMessageToExchange implements PipelineComponent {
 	}
 
 	@Override
-	public void process(Exchange exchange) throws IOException, PipelineException {
+	public void process(Exchange exchange) throws IOException, PipelineException, TimeoutException {
+		Channel channel = null;
 		try {
 			Connection connection = ConnectionManager.getConnection(
 					config.getCredentials().getUsername(),
@@ -37,9 +38,7 @@ public class PostMessageToExchange implements PipelineComponent {
 					config.getNodes()
 			);
 
-			Channel channel = connection.createChannel();
-
-			CreateExchangePlusQueueAndBind(channel);
+			channel = ConnectionManager.getPublishChannel(connection, config.getExchange());
 
 			Map<String, Object> headers = new HashMap<>();
 			for (String key : exchange.getHeaders().keySet())
@@ -56,29 +55,10 @@ public class PostMessageToExchange implements PipelineComponent {
 		catch (TimeoutException e) {
 			LOG.error("Queue connection timed out");
 			throw new PipelineException(e.getMessage());
+		} finally {
+			if (channel != null)
+				channel.close();
 		}
 	}
 
-	private void CreateExchangePlusQueueAndBind(Channel channel) throws IOException {
-		// Declare exchange
-		channel.exchangeDeclare(
-				config.getExchange(),
-				"topic");
-
-		// Bind exchanges to queues
-		RMQExchange rmqExchange = RabbitConfig.getInstance().getExchange(config.getExchange());
-
-		if (rmqExchange != null) {
-
-			for (RMQQueue rmqQueue : rmqExchange.getQueue()) {
-				// Declare rabbit queue
-				channel.queueDeclare(rmqQueue.getName(), false, false, false, null);
-				// bind with keys
-				List<String> routingKeys = rmqQueue.getRoutingKey();
-
-				for (String routingKey : routingKeys)
-					channel.queueBind(rmqQueue.getName(), config.getExchange(), routingKey);
-			}
-		}
-	}
 }

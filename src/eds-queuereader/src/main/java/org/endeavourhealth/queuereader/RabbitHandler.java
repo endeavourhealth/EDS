@@ -42,6 +42,7 @@ public class RabbitHandler {
 
 	public void start() throws IOException {
 		// Begin consuming messages
+		channel.queueDeclare(configuration.getQueue(), false, false, false, null);
 		channel.basicConsume(configuration.getQueue(), false, consumer);
 	}
 

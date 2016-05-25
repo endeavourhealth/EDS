@@ -1,13 +1,17 @@
 package org.endeavourhealth.core.queueing;
 
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import org.endeavourhealth.core.configuration.RMQExchange;
+import org.endeavourhealth.core.configuration.RMQQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
@@ -35,5 +39,57 @@ public class ConnectionManager {
 		}
 
 		return connection;
+	}
+
+	public static Channel getPublishChannel(Connection connection, String exchangeName) throws IOException {
+		// Dead letter names
+		String deadLetterExchange = exchangeName + "-DLE";
+		String deadLetterQueue = exchangeName + "-DLQ";
+
+		// Create a new channel
+		Channel channel = connection.createChannel();
+
+		// Declare exchange arguments (for DeadLetter routing)
+		Map<String, Object> args = new HashMap<>();
+		args.put("alternate-exchange", deadLetterExchange);
+
+		// Declare exchange
+		channel.exchangeDeclare(
+				exchangeName,
+				"topic",
+				false,
+				false,
+				args);
+
+		// Declare dead-letter exchange
+		channel.exchangeDeclare(deadLetterExchange, "fanout");
+
+		// Declare dead-letter queue
+		channel.queueDeclare(deadLetterQueue, false, false, false, null);
+
+		// Bind dead letter queue to dead letter exchange
+		channel.queueBind(deadLetterQueue, deadLetterExchange, "");
+
+		// declareQueuesAndBind(exchangeName, channel);
+
+		return channel;
+	}
+
+	private static void declareQueuesAndBind(String exchangeName, Channel channel) throws IOException {
+		// Bind exchanges to queues ??? Should this be done externally!??!?!
+		RMQExchange rmqExchange = RabbitConfig.getInstance().getExchange(exchangeName);
+
+		if (rmqExchange != null) {
+
+			for (RMQQueue rmqQueue : rmqExchange.getQueue()) {
+				// Declare rabbit queue
+				channel.queueDeclare(rmqQueue.getName(), false, false, false, null);
+				// bind with keys
+				List<String> routingKeys = rmqQueue.getRoutingKey();
+
+				for (String routingKey : routingKeys)
+					channel.queueBind(rmqQueue.getName(), exchangeName, routingKey);
+			}
+		}
 	}
 }

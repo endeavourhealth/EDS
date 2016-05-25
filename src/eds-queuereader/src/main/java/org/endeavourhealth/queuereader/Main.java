@@ -46,9 +46,9 @@ public class Main {
 		System.in.read();
 
 		// Shutdown
-		LOG.info("Shutting down");
+		LOG.info("Shutting down rabbit handler...");
 		rabbitHandler.stop();
 
-		LOG.info("Done");
+		LOG.info("Waiting for Async logger to shutdown...");
 	}
 }

@@ -50,25 +50,4 @@ public class RabbitConfig {
 
 		return null;
 	}
-
-	public RMQQueue getExchangeQueue(String exchangeName, String queueName) {
-		RMQExchange rmqExchange = getExchange(exchangeName);
-
-		if (rmqExchange != null) {
-			for (RMQQueue rmqQueue : rmqExchange.getQueue()) {
-				if (rmqQueue.getName().equals(queueName))
-					return rmqQueue;
-			}
-		}
-
-		return null;
-	}
-
-	public List<String> getRoutingKeys(String exchangeName, String queueName) {
-		RMQQueue rmqQueue = getExchangeQueue(exchangeName, queueName);
-		if (rmqQueue != null)
-			return rmqQueue.getRoutingKey();
-		else
-			return null;
-	}
 }
