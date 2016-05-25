@@ -1,6 +1,7 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.rabbitmq.client.*;
+import org.endeavourhealth.core.configuration.Pipeline;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.RMQExchange;
 import org.endeavourhealth.core.configuration.RMQQueue;
@@ -44,17 +45,27 @@ public class PostMessageToExchange implements PipelineComponent {
 			for (String key : exchange.getHeaders().keySet())
 				headers.put(key, exchange.getHeader(key));
 
-			AMQP.BasicProperties properties = new AMQP.BasicProperties().builder().headers(headers).build();
+			AMQP.BasicProperties properties = new AMQP.BasicProperties()
+					.builder()
+					.deliveryMode(2)		// Persistent message
+					.headers(headers)
+					.build();
 
+			channel.confirmSelect();
 			channel.basicPublish(
 					config.getExchange(),
 					(String)exchange.getProperty(PropertyKeys.Sender),
 					properties,
 					exchange.getBody().getBytes());
+			if (!channel.waitForConfirms())
+				throw new PipelineException("Messages posted but not confirmed");
 		}
 		catch (TimeoutException e) {
 			LOG.error("Queue connection timed out");
 			throw new PipelineException(e.getMessage());
+		} catch (InterruptedException e) {
+			LOG.error("Unable to post message");
+			throw new PipelineException("Unable to post message to exchange");
 		} finally {
 			if (channel != null)
 				channel.close();

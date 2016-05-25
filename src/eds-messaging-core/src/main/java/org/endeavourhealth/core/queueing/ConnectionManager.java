@@ -57,15 +57,27 @@ public class ConnectionManager {
 		channel.exchangeDeclare(
 				exchangeName,
 				"topic",
-				false,
-				false,
+				true,		// Durable
+				false,	// Auto delete
+				false,	// Internal
 				args);
 
 		// Declare dead-letter exchange
-		channel.exchangeDeclare(deadLetterExchange, "fanout");
+		channel.exchangeDeclare(
+				deadLetterExchange,
+				"fanout",
+				true,		// Durable
+				false,	// Auto delete
+				false,	// Internal
+				null);
 
 		// Declare dead-letter queue
-		channel.queueDeclare(deadLetterQueue, false, false, false, null);
+		channel.queueDeclare(
+				deadLetterQueue,
+				true,		// Durable
+				false,	// Exclusive
+				false,	// Auto delete
+				null);
 
 		// Bind dead letter queue to dead letter exchange
 		channel.queueBind(deadLetterQueue, deadLetterExchange, "");
