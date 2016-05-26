@@ -8,8 +8,8 @@ import com.datastax.driver.mapping.annotations.Table;
 import java.util.Date;
 import java.util.UUID;
 
-@Table(keyspace = "ehr", name = "person_resource")
-public class PersonResource {
+@Table(keyspace = "ehr", name = "person_resource_event_store")
+public class PersonResourceEventStore {
     @PartitionKey
     @Column(name = "person_id")
     private UUID personId;
@@ -25,11 +25,10 @@ public class PersonResource {
     @ClusteringColumn(3)
     @Column(name = "resource_id")
     private String resourceId;
-    @Column(name = "effective_date")
-    private Date effectiveDate;
+    @ClusteringColumn(4)
     private String version;
-    @Column(name = "last_updated")
-    private Date lastUpdated;
+    private Date created;
+    private EventStoreMode mode;
     @Column(name = "resource_metadata")
     private String resourceMetadata;
     @Column(name = "schema_version")
@@ -77,14 +76,6 @@ public class PersonResource {
         this.resourceId = resourceId;
     }
 
-    public Date getEffectiveDate() {
-        return effectiveDate;
-    }
-
-    public void setEffectiveDate(Date effectiveDate) {
-        this.effectiveDate = effectiveDate;
-    }
-
     public String getVersion() {
         return version;
     }
@@ -93,12 +84,20 @@ public class PersonResource {
         this.version = version;
     }
 
-    public Date getLastUpdated() {
-        return lastUpdated;
+    public Date getCreated() {
+        return created;
     }
 
-    public void setLastUpdated(Date lastUpdated) {
-        this.lastUpdated = lastUpdated;
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public EventStoreMode getMode() {
+        return mode;
+    }
+
+    public void setMode(EventStoreMode mode) {
+        this.mode = mode;
     }
 
     public String getResourceMetadata() {
@@ -125,3 +124,4 @@ public class PersonResource {
         this.resourceData = resourceData;
     }
 }
+

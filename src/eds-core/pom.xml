@@ -28,6 +28,16 @@
             <artifactId>cassandra-driver-core</artifactId>
             <version>3.0.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-mapping</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-extras</artifactId>
+            <version>3.0.0</version>
+        </dependency>
 
         <!-- apache commons, for useful file IO -->
         <dependency>

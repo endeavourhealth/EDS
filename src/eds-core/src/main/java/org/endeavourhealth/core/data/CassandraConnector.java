@@ -2,6 +2,8 @@ package org.endeavourhealth.core.data;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.mapping.MappingManager;
+import org.endeavourhealth.core.data.ehr.EnumRegistry;
 import org.endeavourhealth.core.engineConfiguration.Cassandra;
 import org.endeavourhealth.core.engineConfiguration.EngineConfigurationSerializer;
 
@@ -11,6 +13,7 @@ public class CassandraConnector {
     private final Cluster cluster;
     private final Session session;
     private final PreparedStatementCache statementCache;
+    private final MappingManager mappingManager;
 
     private CassandraConnector() {
         Cassandra config = EngineConfigurationSerializer.getConfig().getCassandra();
@@ -25,6 +28,9 @@ public class CassandraConnector {
         cluster = builder.build();
         session = cluster.connect();
         statementCache =  new PreparedStatementCache(session);
+        mappingManager = new MappingManager(session);
+
+        registerCustomCodecs();
     }
 
     public Session getSession() {
@@ -33,6 +39,14 @@ public class CassandraConnector {
 
     public PreparedStatementCache getStatementCache() {
         return statementCache;
+    }
+
+    public MappingManager getMappingManager() {
+        return mappingManager;
+    }
+
+    private void registerCustomCodecs() {
+        EnumRegistry.register();
     }
 
     public static CassandraConnector getInstance() {
