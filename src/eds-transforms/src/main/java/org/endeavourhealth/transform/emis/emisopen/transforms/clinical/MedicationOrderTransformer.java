@@ -40,7 +40,7 @@ public class MedicationOrderTransformer
 
         medicationOrder.setDispenseRequest(getDispenseRequest(issueType));
 
-        medicationOrder.setMedication(CodeConverter.convert(issueType.getDrug()));
+        medicationOrder.setMedication(CodeConverter.convert(issueType.getDrug().getPreparationID()));
 
         return medicationOrder;
     }
