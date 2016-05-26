@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.emisopen.transforms.common;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.helpers.Transform;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.DtDatePart;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
@@ -21,9 +22,14 @@ public class DateConverter
 
     public static Date getDateAndTime(String dateString, String timeString) throws TransformException
     {
+        return getDateAndTime(dateString + " " + timeString);
+    }
+
+    public static Date getDateAndTime(String dateAndTimeString) throws TransformException
+    {
         try
         {
-            return DateConverter.EMISOPEN_DATEANDTIMEFORMAT.parse(dateString + " " + timeString);
+            return DateConverter.EMISOPEN_DATEANDTIMEFORMAT.parse(dateAndTimeString);
         }
         catch (ParseException e)
         {
