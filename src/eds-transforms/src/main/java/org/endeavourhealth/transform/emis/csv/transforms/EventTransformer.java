@@ -6,15 +6,12 @@ import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.CsvEvent;
-import org.endeavourhealth.transform.emis.csv.schema.CsvPrescription;
 import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.terminology.TerminologyService;
 import org.hl7.fhir.instance.model.*;
-import org.hl7.fhir.instance.model.valuesets.ConditionClinicalEnumFactory;
 
 import java.math.BigDecimal;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -57,7 +54,7 @@ public abstract class EventTransformer {
     private static void transformProcedure(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
 
         Procedure fhirProcedure = new Procedure();
-        fhirProcedure.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_PROCEDURE));
+        fhirProcedure.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROCEDURE));
 
         String id = csvRecord.get(CsvEvent.ID.getValue());
         fhirProcedure.setId(id);
@@ -74,7 +71,7 @@ public abstract class EventTransformer {
 
         String code = csvRecord.get(CsvEvent.READCODE.getValue());
         String term = csvRecord.get(CsvEvent.READTERM.getValue());
-        fhirProcedure.setCode(Fhir.createCodeableConcept(FhirUris.CODE_SYSTEM_READ2, term, code));
+        fhirProcedure.setCode(Fhir.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, term, code));
 
         fhirProcedure.setStatus(Procedure.ProcedureStatus.COMPLETED);
 
@@ -84,7 +81,7 @@ public abstract class EventTransformer {
 
     private static void transformObservation(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
         Observation fhirObservation = new Observation();
-        fhirObservation.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_OBSERVATION));
+        fhirObservation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_OBSERVATION));
 
         String id = csvRecord.get(CsvEvent.ID.getValue());
         fhirObservation.setId(id);
@@ -101,7 +98,7 @@ public abstract class EventTransformer {
 
         String code = csvRecord.get(CsvEvent.READCODE.getValue());
         String term = csvRecord.get(CsvEvent.READTERM.getValue());
-        fhirObservation.setCode(Fhir.createCodeableConcept(FhirUris.CODE_SYSTEM_READ2, term, code));
+        fhirObservation.setCode(Fhir.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, term, code));
 
         fhirObservation.setStatus(Observation.ObservationStatus.FINAL);
 
@@ -156,7 +153,7 @@ public abstract class EventTransformer {
     private static void transformFamilyHistory(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
 
         FamilyMemberHistory fhirFamilyHistory = new FamilyMemberHistory();
-        fhirFamilyHistory.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_FAMILY_MEMBER_HISTORY));
+        fhirFamilyHistory.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_FAMILY_MEMBER_HISTORY));
 
         String id = csvRecord.get(CsvEvent.ID.getValue());
         fhirFamilyHistory.setId(id);
@@ -173,12 +170,12 @@ public abstract class EventTransformer {
 
         fhirFamilyHistory.setStatus(FamilyMemberHistory.FamilyHistoryStatus.COMPLETED);
 
-        fhirFamilyHistory.setRelationship(Fhir.createCodeableConcept(FhirUris.VALUE_SET_FAMILY_MEMBER, FhirUris.VALUE_SET_FAMILY_MEMBER_TERM, FhirUris.VALUE_SET_FAMILY_MEMBER_CODE));
+        fhirFamilyHistory.setRelationship(Fhir.createCodeableConcept(FhirUri.VALUE_SET_FAMILY_MEMBER, FhirUri.VALUE_SET_FAMILY_MEMBER_TERM, FhirUri.VALUE_SET_FAMILY_MEMBER_CODE));
 
         String code = csvRecord.get(CsvEvent.READCODE.getValue());
         String term = csvRecord.get(CsvEvent.READTERM.getValue());
         FamilyMemberHistory.FamilyMemberHistoryConditionComponent fhirComponent = fhirFamilyHistory.addCondition();
-        fhirComponent.setCode(Fhir.createCodeableConcept(FhirUris.CODE_SYSTEM_READ2, term, code));
+        fhirComponent.setCode(Fhir.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, term, code));
 
         //ensure there are no numeric values that will be ignored
         ensureNoValues(csvRecord);
@@ -187,7 +184,7 @@ public abstract class EventTransformer {
     private static void transformCondition(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
 
         Condition fhirCondition = new Condition();
-        fhirCondition.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_CONDITION));
+        fhirCondition.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_CONDITION));
 
         String id = csvRecord.get(CsvEvent.ID.getValue());
         fhirCondition.setId(id);
@@ -204,7 +201,7 @@ public abstract class EventTransformer {
 
         String code = csvRecord.get(CsvEvent.READCODE.getValue());
         String term = csvRecord.get(CsvEvent.READTERM.getValue());
-        fhirCondition.setCode(Fhir.createCodeableConcept(FhirUris.CODE_SYSTEM_READ2, term, code));
+        fhirCondition.setCode(Fhir.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, term, code));
 
         //TODO - set clinicalStatus on Condition resource
         //fhirCondition.setClinicalStatusElement(ClinicalStatus))
@@ -218,7 +215,7 @@ public abstract class EventTransformer {
     private static void transformAllergyIntolerance(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
 
         AllergyIntolerance fhirAllergy = new AllergyIntolerance();
-        fhirAllergy.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_ALLERGY_INTOLERANCE));
+        fhirAllergy.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ALLERGY_INTOLERANCE));
 
         String id = csvRecord.get(CsvEvent.ID.getValue());
         fhirAllergy.setId(id);

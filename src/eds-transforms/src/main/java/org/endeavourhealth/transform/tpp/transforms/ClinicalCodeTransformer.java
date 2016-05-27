@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.tpp.transforms;
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.tpp.schema.*;
 import org.hl7.fhir.instance.model.*;
 
@@ -56,7 +56,7 @@ public class ClinicalCodeTransformer {
     private static void createProblem(ClinicalCode tppCode, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) throws TransformException {
 
         Condition fhirProblem = new Condition();
-        fhirProblem.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_PROBLEM));
+        fhirProblem.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROBLEM));
         fhirResources.add(fhirProblem);
 
         String patientId = Fhir.findPatientId(fhirResources);

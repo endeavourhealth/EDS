@@ -7,7 +7,7 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointme
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.HolderStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.PatientAppointmentList;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -31,7 +31,7 @@ public class AppointmentTransformer
         Appointment appointment = new Appointment();
 
         appointment.setId(appointmentStruct.getSlotGUID());
-        appointment.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_APPOINTMENT));
+        appointment.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_APPOINTMENT));
 
         appointment.setStatus(getAppointmentStatus(appointmentStruct.getStatus()));
 

@@ -2,25 +2,26 @@ package org.endeavourhealth.transform.tpp.transforms;
 
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.tpp.schema.Task;
 import org.hl7.fhir.instance.model.*;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.util.List;
 
-public class TaskTransformer {
-
-    public static void transform(Task tppTask, List<Resource> fhirResources) throws TransformException {
-
+public class TaskTransformer
+{
+    public static void transform(Task tppTask, List<Resource> fhirResources) throws TransformException
+    {
         Order fhirTask = new Order();
-        fhirTask.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_TASK));
+        fhirTask.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_TASK));
         fhirTask.setId(tppTask.getTaskUID());
         fhirResources.add(fhirTask);
 
         String taskType = tppTask.getTaskType();
         fhirTask.addExtension(new Extension()
-                .setUrl(FhirUris.EXTENSION_URI_TASKTYPE)
+                .setUrl(FhirExtensionUri.TASK_TYPE)
                 .setValue(new CodeType().setValue(taskType)));
 
 

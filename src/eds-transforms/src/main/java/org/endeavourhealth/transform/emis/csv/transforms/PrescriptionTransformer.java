@@ -8,9 +8,8 @@ import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.CsvDrugStatus;
 import org.endeavourhealth.transform.emis.csv.schema.CsvPrescription;
 import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUris;
-import org.endeavourhealth.transform.tpp.schema.Drug;
-import org.endeavourhealth.transform.tpp.schema.DrugScheme;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.text.DateFormat;
@@ -37,7 +36,7 @@ public abstract class PrescriptionTransformer {
     public static void transform(CSVRecord csvRecord, Map<String, List<Resource>> fhirMap) throws Exception {
 
         MedicationStatement fhirMedication = new MedicationStatement();
-        fhirMedication.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_MEDICATION_AUTHORISATION));
+        fhirMedication.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_AUTHORISATION));
 
         String id = csvRecord.get(CsvPrescription.ID.getValue());
         fhirMedication.setId(id);
@@ -64,12 +63,12 @@ public abstract class PrescriptionTransformer {
         fhirDosage.setText(dose);
 
         String quantity = csvRecord.get(CsvPrescription.SUPPLY.getValue());
-        fhirMedication.addExtension(Fhir.createExtension(FhirUris.EXTENSION_URI_MEDICATIONAUTHORISATIONQUANTITY, new StringType(quantity)));
+        fhirMedication.addExtension(Fhir.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_QUANTITY, new StringType(quantity)));
 
         String lastIssueDateStr = csvRecord.get(CsvPrescription.LAST_ISSUE_DATE.getValue());
         if (!Strings.isNullOrEmpty(lastIssueDateStr)) {
             Date lastIssueDate = df.parse(lastIssueDateStr);
-            fhirMedication.addExtension(Fhir.createExtension(FhirUris.EXTENSION_URI_MEDICATIONAUTHORISATIONMOSTRECENTISSUEDATE, new DateType(lastIssueDate)));
+            fhirMedication.addExtension(Fhir.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_MOST_RECENT_ISSUE_DATE, new DateType(lastIssueDate)));
         }
 
         String status = csvRecord.get(CsvPrescription.STATUS.getValue());
@@ -89,7 +88,7 @@ public abstract class PrescriptionTransformer {
         //String emisCode = csvRecord.get(CsvPrescription.EMISCODE.getValue());
 
         if (!Strings.isNullOrEmpty(readCode)) {
-            return Fhir.createCodeableConcept(FhirUris.CODE_SYSTEM_READ2, drugName, readCode);
+            return Fhir.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, drugName, readCode);
         } else {
             return Fhir.createCodeableConcept(drugName);
         }

@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.openhr.transforms.admin;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.core.utility.StreamExtension;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001AdminDomain;
@@ -11,7 +12,7 @@ import org.endeavourhealth.transform.emis.openhr.transforms.common.OpenHRHelper;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.AddressConverter;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.ContactPointConverter;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.DateConverter;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -36,7 +37,7 @@ public class LocationTransformer
 		Location target = new Location();
 
 		target.setId(source.getId());
-        target.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_LOCATION));
+        target.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_LOCATION));
 
 		target.setName(source.getName());
 
@@ -55,7 +56,7 @@ public class LocationTransformer
             if (source.getCloseDate() != null)
                 period.setEnd(DateConverter.toDate(source.getCloseDate()));
 
-            target.getStatusElement().addExtension(new Extension().setUrl(FhirUris.EXTENSION_URI_ACTIVEPERIOD).setValue(period));
+            target.getStatusElement().addExtension(new Extension().setUrl(FhirExtensionUri.ACTIVE_PERIOD).setValue(period));
         }
 
         if (source.getAddress() != null)

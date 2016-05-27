@@ -8,11 +8,9 @@ import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.CsvPatient;
 import org.endeavourhealth.transform.emis.csv.schema.CsvSex;
 import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
-import org.hl7.fhir.instance.model.valuesets.PractitionerRole;
 
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -53,10 +51,10 @@ public abstract class PatientTransformer {
         String practiceCode = csvRecord.get(CsvPatient.PracticeCode.getValue());
 
         Organization fhirOrganisation = new Organization();
-        fhirOrganisation.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_ORGANIZATION));
+        fhirOrganisation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ORGANIZATION));
         fhirOrganisation.setId(practiceCode);
         fhirOrganisation.addIdentifier(Fhir.createOdsOrganisationIdentifier(practiceCode));
-        fhirOrganisation.setType(Fhir.createCodeableConcept(FhirUris.IDENTIFIER_SYSTEM_ODS_CODE, "GP Practices in England and Wales", "PR"));
+        fhirOrganisation.setType(Fhir.createCodeableConcept(FhirUri.IDENTIFIER_SYSTEM_ODS_CODE, "GP Practices in England and Wales", "PR"));
 
         //TODO - need to be able to look up Org name from ODS code
 
@@ -67,7 +65,7 @@ public abstract class PatientTransformer {
         String usualGp = csvRecord.get(CsvPatient.USUALGP.getValue());
 
         Practitioner fhirPractitioner = new Practitioner();
-        fhirPractitioner.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_PRACTITIONER));
+        fhirPractitioner.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PRACTITIONER));
         fhirPractitioner.setId(UUID.randomUUID().toString()); //no ID, so assign a UUID
 
         //FHIR requires a family name, so assume the last word in the string is it. This
@@ -91,7 +89,7 @@ public abstract class PatientTransformer {
 
     private static Patient transformPatient(CSVRecord csvRecord, Organization fhirOrganisation, Practitioner fhirPractitioner) throws Exception {
         Patient fhirPatient = new Patient();
-        fhirPatient.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_PATIENT));
+        fhirPatient.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PATIENT));
 
         String careRecordId = csvRecord.get(CsvPatient.CARERECORDID.getValue());
         fhirPatient.setId(careRecordId);
@@ -141,7 +139,7 @@ public abstract class PatientTransformer {
     private static EpisodeOfCare transformEpisodeOfCare(CSVRecord csvRecord, Patient fhirPatient, Organization fhirOrganisation, Practitioner fhirPractitioner) throws Exception {
 
         EpisodeOfCare fhirEpisodeOfCare = new EpisodeOfCare();
-        fhirEpisodeOfCare.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_EPISODE_OF_CARE));
+        fhirEpisodeOfCare.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_EPISODE_OF_CARE));
 
         DateFormat df = new SimpleDateFormat(EmisCsvTransformer.DATE_FORMAT); //using old date API as FHIR does
         String regDateStr = csvRecord.get(CsvPatient.REGDATE.getValue());

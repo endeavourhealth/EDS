@@ -6,7 +6,7 @@ import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomslotsforsession.SlotListStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomslotsforsession.SlotStruct;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.sql.Time;
@@ -31,7 +31,7 @@ public class SlotTransformer
         Slot slot = new Slot();
 
         slot.setId(appointmentSlot.getGUID());
-        slot.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_SLOT));
+        slot.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SLOT));
 
         slot.setSchedule(ReferenceHelper.createReference(ResourceType.Schedule, appointmentSlot.getSessionGUID()));
 

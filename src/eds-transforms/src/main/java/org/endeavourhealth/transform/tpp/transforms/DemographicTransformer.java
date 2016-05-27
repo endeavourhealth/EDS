@@ -3,7 +3,8 @@ package org.endeavourhealth.transform.tpp.transforms;
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.tpp.schema.*;
 import org.endeavourhealth.transform.tpp.schema.Address;
 import org.hl7.fhir.instance.model.*;
@@ -24,7 +25,7 @@ public class DemographicTransformer {
     public static void transform(String patientUid, Identity tppId, Demographics tppDemographics, List<Resource> fhirResources) throws TransformException {
 
         Patient fhirPatient = new Patient();
-        fhirPatient.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_PATIENT));
+        fhirPatient.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PATIENT));
         fhirPatient.setId(patientUid);
         fhirResources.add(fhirPatient);
 
@@ -51,7 +52,7 @@ public class DemographicTransformer {
         //TODO - need to get proper object type for registrationType
         String registrationType = tppDemographics.getRegistrationType();
 
-        Extension ext = Fhir.createExtension(FhirUris.EXTENSION_URI_REGISTRATION_TYPE, new StringType(registrationType));
+        Extension ext = Fhir.createExtension(FhirExtensionUri.REGISTRATION_TYPE, new StringType(registrationType));
         fhirPatient.addExtension(ext);
     }
 
@@ -72,7 +73,7 @@ public class DemographicTransformer {
 
         //also need to create the EpisodeOfCare resource
         EpisodeOfCare fhirEpisode = new EpisodeOfCare();
-        fhirEpisode.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_EPISODE_OF_CARE));
+        fhirEpisode.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_EPISODE_OF_CARE));
         fhirResources.add(fhirEpisode);
 
         Period fhirPeriod = Fhir.createPeriod(startDate, endDate);
@@ -167,7 +168,7 @@ public class DemographicTransformer {
                 || (tppCode.getScheme() == CodeScheme.CTV_3 && !tppCode.getCode().equals(ENGLISH_MAIN_CODE_CTV3))
                 || (tppCode.getScheme() == CodeScheme.SNOMED && !tppCode.getCode().equals(ENGLISH_MAIN_CODE_SNOMED))) {
 
-                CodeableConcept fhirConcept = Fhir.createCodeableConcept(FhirUris.CODE_SYSTEM_SNOMED_CT, ENGLISH_SECOND_CODE, ENGLISH_SECOND_TERM);
+                CodeableConcept fhirConcept = Fhir.createCodeableConcept(FhirUri.CODE_SYSTEM_SNOMED_CT, ENGLISH_SECOND_CODE, ENGLISH_SECOND_TERM);
                 Patient.PatientCommunicationComponent fhirCommunication = fhirPatient.addCommunication();
                 fhirCommunication.setLanguage(fhirConcept);
             }
@@ -244,7 +245,7 @@ public class DemographicTransformer {
         //NHS number OR psudeo number will be provided
         String nhsNumber = tppId.getNHSNumber();
         if (nhsNumber != null) {
-            Identifier fhirIdentifier = Fhir.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nhsNumber, FhirUris.IDENTIFIER_SYSTEM_NHSNUMBER);
+            Identifier fhirIdentifier = Fhir.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nhsNumber, FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER);
             fhirPatient.addIdentifier(fhirIdentifier);
         } else {
             //the pseudo number is unique to TPP only, so no point adding to FHIR

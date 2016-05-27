@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.tpp.transforms;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.tpp.schema.Address;
 import org.endeavourhealth.transform.tpp.schema.Site;
 import org.hl7.fhir.instance.model.*;
@@ -25,7 +25,7 @@ public class SiteTransformer {
     private static void createLocation(Site tppSite, List<Resource> fhirResources) {
 
         Location fhirLocation = new Location();
-        fhirLocation.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_LOCATION));
+        fhirLocation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_LOCATION));
         fhirLocation.setId(UUID.randomUUID().toString()); //we don't have unique IDs for these, so sub in a UUID
         fhirResources.add(fhirLocation);
 
@@ -67,14 +67,14 @@ public class SiteTransformer {
         String id = tppSite.getID();
 
         Organization fhirOrganisation = new Organization();
-        fhirOrganisation.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_ORGANIZATION));
+        fhirOrganisation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ORGANIZATION));
         fhirOrganisation.setId(id);
         fhirResources.add(fhirOrganisation);
 
         String name = tppSite.getName();
         fhirOrganisation.setName(name);
 
-        Identifier fhirIdentifier = Fhir.createIdentifier(Identifier.IdentifierUse.OFFICIAL, id, FhirUris.IDENTIFIER_SYSTEM_ODS_CODE);
+        Identifier fhirIdentifier = Fhir.createIdentifier(Identifier.IdentifierUse.OFFICIAL, id, FhirUri.IDENTIFIER_SYSTEM_ODS_CODE);
         //TODO - some sites will have local identifiers and not ODS codes. Need to differentiate somehow.
         fhirOrganisation.addIdentifier(fhirIdentifier);
 

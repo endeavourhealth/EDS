@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.fhir;
 
-public class FhirUris {
-
+public class FhirUri
+{
     public final static String IDENTIFIER_SYSTEM_NHSNUMBER = "http://fhir.nhs.net/Id/nhs-number";
     public final static String IDENTIFIER_SYSTEM_CHINUMBER = "http://www.endeavourhealth.org/fhir/Identifier/chinumber";
     public final static String IDENTIFIER_SYSTEM_ODS_CODE = "http://fhir.nhs.net/Id/ods-organization-code";
@@ -40,17 +40,6 @@ public class FhirUris {
     public final static String PROFILE_URI_PATIENT = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-patient";
     public final static String PROFILE_URI_EPISODE_OF_CARE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-episode-of-care";
     public final static String PROFILE_URI_TASK = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-task";
-
-    public final static String EXTENSION_URI_ACTIVEPERIOD = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-activeperiod-extension";
-    public final static String EXTENSION_URI_MAINLOCATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-mainlocation-extension";
-    public final static String EXTENSION_URI_LOCATIONEXTENSION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-location-extension";
-    public final static String EXTENSION_URI_ADDITIONALACTOREXTENSION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-additional-actor-extension";
-    public final static String EXTENSION_URI_TASKTYPE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-task-type-extension";
-    public final static String EXTENSION_URI_TASKSTATUS = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-task-status-extension";
-    public final static String EXTENSION_URI_TASKPRIORITY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-task-priority-extension";
-    public final static String EXTENSION_URI_REGISTRATION_TYPE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-patient-registration-type-extension";
-    public final static String EXTENSION_URI_MEDICATIONAUTHORISATIONQUANTITY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-authorisation-quantity-extension";
-    public final static String EXTENSION_URI_MEDICATIONAUTHORISATIONMOSTRECENTISSUEDATE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-authorisation-mostrecentissuedate-extension";
 
     public final static String VALUE_SET_FAMILY_MEMBER = "http://hl7.org/fhir/ValueSet/v3-FamilyMember";
     public final static String VALUE_SET_FAMILY_MEMBER_TERM = "family member";

@@ -13,10 +13,10 @@ import java.util.Optional;
 public final class Fhir {
 
     public static Identifier createNhsNumberIdentifier(String value) {
-        return createIdentifier(Identifier.IdentifierUse.OFFICIAL, value, FhirUris.IDENTIFIER_SYSTEM_NHSNUMBER);
+        return createIdentifier(Identifier.IdentifierUse.OFFICIAL, value, FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER);
     }
     public static Identifier createOdsOrganisationIdentifier(String value) {
-        return createIdentifier(Identifier.IdentifierUse.OFFICIAL, value, FhirUris.IDENTIFIER_SYSTEM_ODS_CODE);
+        return createIdentifier(Identifier.IdentifierUse.OFFICIAL, value, FhirUri.IDENTIFIER_SYSTEM_ODS_CODE);
     }
 
     public static Identifier createIdentifier(Identifier.IdentifierUse use, String value, String system) {

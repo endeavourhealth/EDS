@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.tpp.transforms;
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.tpp.schema.*;
 import org.hl7.fhir.instance.model.*;
 
@@ -16,7 +16,7 @@ public class UserTransformer {
         String userName = tppUser.getUserName();
 
         Practitioner fhirPractitioner = new Practitioner();
-        fhirPractitioner.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_PRACTITIONER));
+        fhirPractitioner.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PRACTITIONER));
         fhirPractitioner.setId(userName); //user name is unique, so use as the ID
         fhirResources.add(fhirPractitioner);
 
@@ -40,7 +40,7 @@ public class UserTransformer {
         NationalIDType nationalIdType = tppUser.getNationalIDType();
         if (!Strings.isNullOrEmpty(nationalId)) {
             if (nationalIdType == NationalIDType.GMC) {
-                Identifier fhirIdentifier = Fhir.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nationalId, FhirUris.IDENTIFIER_SYSTEM_GMC_NUMBER);
+                Identifier fhirIdentifier = Fhir.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nationalId, FhirUri.IDENTIFIER_SYSTEM_GMC_NUMBER);
                 fhirPractitioner.addIdentifier(fhirIdentifier);
             } else {
                 //TODO - does the profile need to support other staff/user national ID types

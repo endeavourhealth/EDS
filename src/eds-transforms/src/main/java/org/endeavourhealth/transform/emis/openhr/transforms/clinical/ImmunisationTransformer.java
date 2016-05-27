@@ -6,7 +6,7 @@ import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001HealthDomain;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.DateConverter;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.EventEncounterMap;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
 
 public class ImmunisationTransformer implements ClinicalResourceTransformer
@@ -15,7 +15,7 @@ public class ImmunisationTransformer implements ClinicalResourceTransformer
     {
         Immunization target = new Immunization();
         target.setId(source.getId());
-        target.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_IMMUNIZATION));
+        target.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_IMMUNIZATION));
 
         target.setStatus(MedicationAdministration.MedicationAdministrationStatus.COMPLETED.toCode());
         target.setDateElement(DateConverter.convertPartialDateTimeToDateTimeType(source.getEffectiveTime()));

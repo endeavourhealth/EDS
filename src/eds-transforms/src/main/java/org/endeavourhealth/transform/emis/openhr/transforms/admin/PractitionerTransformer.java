@@ -8,7 +8,7 @@ import org.endeavourhealth.transform.emis.openhr.transforms.common.OpenHRHelper;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.ContactPointConverter;
 import org.endeavourhealth.transform.fhir.NameConverter;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.SexConverter;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ public class PractitionerTransformer
         Practitioner practitioner = new Practitioner();
         
         practitioner.setId(userInRole.getId());
-        practitioner.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_PRACTITIONER));
+        practitioner.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PRACTITIONER));
 
         for (Identifier identifier : convertIdentifiers(userInRole.getUserIdentifier()))
             practitioner.addIdentifier(identifier);
@@ -137,9 +137,9 @@ public class PractitionerTransformer
     {
         switch (openHRType)
         {
-            case GP: return FhirUris.IDENTIFIER_SYSTEM_GMC_NUMBER;
-            case NAT: return FhirUris.IDENTIFIER_SYSTEM_DOCTOR_INDEX_NUMBER;
-            case PRES: return FhirUris.IDENTIFIER_SYSTEM_GMP_PPD_CODE;
+            case GP: return FhirUri.IDENTIFIER_SYSTEM_GMC_NUMBER;
+            case NAT: return FhirUri.IDENTIFIER_SYSTEM_DOCTOR_INDEX_NUMBER;
+            case PRES: return FhirUri.IDENTIFIER_SYSTEM_GMP_PPD_CODE;
             default: throw new TransformException("VocUserIdentifierType not supported: " + openHRType.toString());
         }
     }

@@ -67,7 +67,7 @@ public class PatientTransformer
         if (StringUtils.isNotBlank(registrationType.getNhsNumber()))
         {
             Identifier identifier = new Identifier()
-                    .setSystem(FhirUris.IDENTIFIER_SYSTEM_NHSNUMBER)
+                    .setSystem(FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER)
                     .setValue(registrationType.getNhsNumber());
 
             identifiers.add(identifier);
@@ -76,7 +76,7 @@ public class PatientTransformer
         if (StringUtils.isNotBlank(registrationType.getCHINumber()))
         {
             Identifier identifier = new Identifier()
-                    .setSystem(FhirUris.IDENTIFIER_SYSTEM_CHINUMBER)
+                    .setSystem(FhirUri.IDENTIFIER_SYSTEM_CHINUMBER)
                     .setValue(registrationType.getCHINumber());
 
             identifiers.add(identifier);

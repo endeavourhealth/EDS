@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.tpp.transforms;
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.tpp.schema.Event;
 import org.endeavourhealth.transform.tpp.schema.Narrative;
 import org.hl7.fhir.instance.model.*;
@@ -26,7 +26,7 @@ public class NarrativeTransformer {
         //TODO - decide what to do with linked problem IDs
 
         Observation fhirObsrvation = new Observation();
-        fhirObsrvation.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_OBSERVATION));
+        fhirObsrvation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_OBSERVATION));
         fhirResources.add(fhirObsrvation);
 
         fhirObsrvation.setStatus(Observation.ObservationStatus.FINAL);

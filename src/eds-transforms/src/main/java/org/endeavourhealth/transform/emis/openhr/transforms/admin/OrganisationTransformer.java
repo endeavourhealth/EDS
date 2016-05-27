@@ -1,12 +1,13 @@
 package org.endeavourhealth.transform.emis.openhr.transforms.admin;
 
 import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Organisation;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.DateConverter;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.OpenHRHelper;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -31,10 +32,10 @@ public class OrganisationTransformer
 		Organization target = new Organization();
 
         target.setId(source.getId());
-        target.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_ORGANIZATION));
+        target.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ORGANIZATION));
 
         if (StringUtils.isNotBlank(source.getNationalPracticeCode()))
-            target.addIdentifier(new Identifier().setSystem(FhirUris.IDENTIFIER_SYSTEM_ODS_CODE).setValue(source.getNationalPracticeCode()));
+            target.addIdentifier(new Identifier().setSystem(FhirUri.IDENTIFIER_SYSTEM_ODS_CODE).setValue(source.getNationalPracticeCode()));
 
         target.setActive(source.getCloseDate() == null);
 
@@ -48,7 +49,7 @@ public class OrganisationTransformer
             if (source.getCloseDate() != null)
                 period.setEnd(DateConverter.toDate(source.getCloseDate()));
 
-            target.getActiveElement().addExtension(new Extension().setUrl(FhirUris.EXTENSION_URI_ACTIVEPERIOD).setValue(period));
+            target.getActiveElement().addExtension(new Extension().setUrl(FhirExtensionUri.ACTIVE_PERIOD).setValue(period));
         }
 
         target.setName(source.getName());
@@ -58,7 +59,7 @@ public class OrganisationTransformer
             target.setPartOf(ReferenceHelper.createReference(ResourceType.Organization, source.getParentOrganisation()));
 
         if (!StringUtils.isBlank(source.getMainLocation()))
-            target.addExtension(new Extension().setUrl(FhirUris.EXTENSION_URI_MAINLOCATION).setValue(ReferenceHelper.createReference(ResourceType.Location, source.getMainLocation())));
+            target.addExtension(new Extension().setUrl(FhirExtensionUri.MAIN_LOCATION).setValue(ReferenceHelper.createReference(ResourceType.Location, source.getMainLocation())));
 
 		return target;
 	}

@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.openhr.transforms.common;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.DtCodeQualified;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.Coding;
 
@@ -50,13 +50,13 @@ public class CodeConverter
         switch (sourceCodeSystem)
         {
             case OPENHR_IDENTIFIER_READ2:
-                return FhirUris.CODE_SYSTEM_READ2;
+                return FhirUri.CODE_SYSTEM_READ2;
             case OPENHR_IDENTIFIER_SNOMED:
-                return FhirUris.CODE_SYSTEM_SNOMED_CT;
+                return FhirUri.CODE_SYSTEM_SNOMED_CT;
             case OPENHR_IDENTIFIER_EMIS_SNOMED:
-                return FhirUris.CODE_SYSTEM_EMISSNOMED;
+                return FhirUri.CODE_SYSTEM_EMISSNOMED;
             case OPENHR_IDENTIFIER_EMIS_PREPARATION:
-                return FhirUris.CODE_SYSTEM_EMISPREPARATION;
+                return FhirUri.CODE_SYSTEM_EMISPREPARATION;
             default:
                 throw new TransformException("CodeSystem not supported: " + sourceCodeSystem);
         }

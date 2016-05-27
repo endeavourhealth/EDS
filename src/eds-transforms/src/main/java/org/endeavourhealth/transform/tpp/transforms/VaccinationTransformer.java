@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.tpp.transforms;
 
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.tpp.schema.Event;
 import org.endeavourhealth.transform.tpp.schema.Vaccination;
 import org.hl7.fhir.instance.model.*;
@@ -27,7 +27,7 @@ public class VaccinationTransformer {
         List<String> linkedProblemUID = tppVaccination.getLinkedProblemUID();
 
         Immunization fhirImmunisation = new Immunization();
-        fhirImmunisation.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_IMMUNIZATION));
+        fhirImmunisation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_IMMUNIZATION));
         fhirResources.add(fhirImmunisation);
 
         fhirImmunisation.setPatient(Fhir.createPatientReference(fhirResources));

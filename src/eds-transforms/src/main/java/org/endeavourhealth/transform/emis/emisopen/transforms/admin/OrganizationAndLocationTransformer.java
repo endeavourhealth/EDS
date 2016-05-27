@@ -6,7 +6,8 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.Loc
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.TypeOfLocationType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.AddressConverter;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
@@ -35,18 +36,18 @@ public class OrganizationAndLocationTransformer
         Organization organization = new Organization();
 
         organization.setId(locationType.getGUID());
-        organization.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_ORGANIZATION));
+        organization.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ORGANIZATION));
 
         organization.setName(locationType.getLocationName());
 
         if (!StringUtils.isBlank(locationType.getNationalCode()))
-            organization.addIdentifier(new Identifier().setSystem(FhirUris.IDENTIFIER_SYSTEM_ODS_CODE).setValue(locationType.getNationalCode()));
+            organization.addIdentifier(new Identifier().setSystem(FhirUri.IDENTIFIER_SYSTEM_ODS_CODE).setValue(locationType.getNationalCode()));
 
         if (typeOfLocationType != null)
             if (StringUtils.isNotBlank(typeOfLocationType.getDescription()))
                 organization.setType(new CodeableConcept().setText(typeOfLocationType.getDescription()));
 
-        organization.addExtension(new Extension().setUrl(FhirUris.EXTENSION_URI_MAINLOCATION).setValue(ReferenceHelper.createReference(ResourceType.Location, locationType.getGUID())));
+        organization.addExtension(new Extension().setUrl(FhirExtensionUri.MAIN_LOCATION).setValue(ReferenceHelper.createReference(ResourceType.Location, locationType.getGUID())));
 
         return organization;
     }
@@ -56,7 +57,7 @@ public class OrganizationAndLocationTransformer
         Location location = new Location();
 
         location.setId(locationType.getGUID());
-        location.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_LOCATION));
+        location.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_LOCATION));
 
         location.setName(locationType.getLocationName());
 

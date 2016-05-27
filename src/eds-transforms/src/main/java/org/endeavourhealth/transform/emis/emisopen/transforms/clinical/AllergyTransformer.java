@@ -4,7 +4,7 @@ import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.AllergyType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
@@ -27,7 +27,7 @@ public class AllergyTransformer
     {
         AllergyIntolerance allergy = new AllergyIntolerance();
         allergy.setId(allergyType.getGUID());
-        allergy.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_ALLERGY_INTOLERANCE));
+        allergy.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ALLERGY_INTOLERANCE));
 
         allergy.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientUuid));
         allergy.setRecorder(ReferenceHelper.createReference(ResourceType.Practitioner, allergyType.getOriginalAuthor().getUser().getGUID()));

@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.tpp.transforms;
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.tpp.schema.*;
 import org.endeavourhealth.transform.tpp.schema.Medication;
 import org.hl7.fhir.instance.model.*;
@@ -23,7 +23,7 @@ public class MedicationTransformer {
     public static void transform(Medication medication, Event tppEvent, Encounter fhirEncounter, List<Resource> fhirResources) throws TransformException {
 
         MedicationOrder fhirMedicationOrder = new MedicationOrder();
-        fhirMedicationOrder.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_MEDICATION_ORDER));
+        fhirMedicationOrder.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_ORDER));
         fhirResources.add(fhirMedicationOrder);
 
         MedicationType medicationType = medication.getMedicationType();
@@ -78,7 +78,7 @@ public class MedicationTransformer {
         //BigInteger packId = tppDrug.getPackID();
 
         if (scheme == DrugScheme.DMD) {
-            return Fhir.createCodeableConcept(FhirUris.CODE_SYSTEM_SNOMED_CT, fullName, productId);
+            return Fhir.createCodeableConcept(FhirUri.CODE_SYSTEM_SNOMED_CT, fullName, productId);
         } else if (scheme == DrugScheme.MULTILEX) {
             return Fhir.createCodeableConcept(fullName);
         } else {

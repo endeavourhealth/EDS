@@ -6,7 +6,7 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.Med
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.PersonType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.AddressConverter;
 import org.endeavourhealth.transform.fhir.ContactPointCreater;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.NameConverter;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
@@ -31,7 +31,7 @@ public class PractitionerTransformer
         Practitioner practitioner = new Practitioner();
 
         practitioner.setId(personType.getGUID());
-        practitioner.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_PRACTITIONER));
+        practitioner.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PRACTITIONER));
 
         List<Identifier> identifiers = createIdentifiers(personType.getGmcCode().toString(), personType.getNationalCode(), personType.getPrescriptionCode());
 
@@ -67,21 +67,21 @@ public class PractitionerTransformer
         if (StringUtils.isNotBlank(gmcNumber))
         {
             identifiers.add(new Identifier()
-                            .setSystem(FhirUris.IDENTIFIER_SYSTEM_GMC_NUMBER)
+                            .setSystem(FhirUri.IDENTIFIER_SYSTEM_GMC_NUMBER)
                             .setValue(gmcNumber));
         }
 
         if (StringUtils.isNotBlank(doctorIndexNumber))
         {
             identifiers.add(new Identifier()
-                    .setSystem(FhirUris.IDENTIFIER_SYSTEM_DOCTOR_INDEX_NUMBER)
+                    .setSystem(FhirUri.IDENTIFIER_SYSTEM_DOCTOR_INDEX_NUMBER)
                     .setValue(doctorIndexNumber));
         }
 
         if (StringUtils.isNotBlank(gmpPpdCode))
         {
             identifiers.add(new Identifier()
-                    .setSystem(FhirUris.IDENTIFIER_SYSTEM_GMP_PPD_CODE)
+                    .setSystem(FhirUri.IDENTIFIER_SYSTEM_GMP_PPD_CODE)
                     .setValue(gmpPpdCode));
         }
 

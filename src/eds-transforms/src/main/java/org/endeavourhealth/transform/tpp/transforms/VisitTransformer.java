@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.tpp.transforms;
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUris;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.tpp.schema.Visit;
 import org.endeavourhealth.transform.tpp.schema.VisitStatus;
 import org.hl7.fhir.instance.model.*;
@@ -17,7 +17,7 @@ public class VisitTransformer {
     public static void transform(Visit tppVisit, List<Resource> fhirResources) throws TransformException {
 
         Appointment fhirAppointment = new Appointment();
-        fhirAppointment.setMeta(new Meta().addProfile(FhirUris.PROFILE_URI_APPOINTMENT));
+        fhirAppointment.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_APPOINTMENT));
         fhirResources.add(fhirAppointment);
 
         fhirAppointment.setId(tppVisit.getVisitUID());
