@@ -12,6 +12,7 @@ public class FhirExtensionUri
     public final static String REGISTRATION_TYPE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-patient-registration-type-extension";
 
     public final static String MEDICATION_AUTHORISATION_QUANTITY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-authorisation-quantity-extension";
+    public final static String MEDICATION_ORDER_AUTHORISATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-order-authorisation-extension";
     public final static String MEDICATION_AUTHORISATION_NUMBER_OF_REPEATS_ALLOWED = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-authorisation-numberofrepeatsallowed-extension";
     public final static String MEDICATION_AUTHORISATION_NUMBER_OF_REPEATS_ISSUED = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-authorisation-numberofrepeatsissued-extension";
     public final static String MEDICATION_AUTHORISATION_EXPECTED_SUPPLY_DURATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-authorisation-expectedsupplyduration-extension";

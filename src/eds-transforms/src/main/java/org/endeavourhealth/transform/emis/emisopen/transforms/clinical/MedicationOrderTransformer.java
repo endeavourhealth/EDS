@@ -41,18 +41,39 @@ public class MedicationOrderTransformer
         medicationOrder.setDispenseRequest(getDispenseRequest(issueType));
         medicationOrder.setMedication(CodeConverter.convert(issueType.getDrug().getPreparationID()));
 
+        if (issueType.getMedicationLink() != null)
+        {
+            medicationOrder
+                    .addExtension()
+                    .setUrl(FhirExtensionUri.MEDICATION_ORDER_AUTHORISATION)
+                    .setValue(new StringType(issueType.getMedicationLink().getGUID()));
+        }
+
         if (StringUtils.isNotBlank(issueType.getPharmacyText()))
         {
-            medicationOrder.addExtension(new Extension()
+            medicationOrder
+                    .addExtension()
                     .setUrl(FhirExtensionUri.PHARMACY_TEXT)
-                    .setValue(new StringType(issueType.getPharmacyText())));
+                    .setValue(new StringType(issueType.getPharmacyText()));
         }
 
         if (issueType.getEstimatedCost() != null)
         {
-            medicationOrder.addExtension(new Extension()
-                .setUrl(FhirExtensionUri.MEDICATION_AUTHORISATION_QUANTITY)
-                .setValue(new SimpleQuantity().setValue(BigDecimal.valueOf(issueType.getEstimatedCost()))));
+            medicationOrder
+                    .addExtension()
+                    .setUrl(FhirExtensionUri.MEDICATION_AUTHORISATION_QUANTITY)
+                    .setValue(new SimpleQuantity().setValue(BigDecimal.valueOf(issueType.getEstimatedCost())));
+        }
+
+        if (issueType.getContraceptiveIssue() != null)
+        {
+            if (!issueType.getContraceptiveIssue().equals(0))
+            {
+                medicationOrder
+                        .addExtension()
+                        .setUrl(FhirExtensionUri.PRESCRIBED_AS_CONTRACEPTION)
+                        .setValue(new BooleanType(true));
+            }
         }
 
         return medicationOrder;
