@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.IssueType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicationLinkType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
@@ -12,6 +13,7 @@ import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,39 +44,16 @@ public class MedicationOrderTransformer
         medicationOrder.setMedication(CodeConverter.convert(issueType.getDrug().getPreparationID()));
 
         if (issueType.getMedicationLink() != null)
-        {
-            medicationOrder
-                    .addExtension()
-                    .setUrl(FhirExtensionUri.MEDICATION_ORDER_AUTHORISATION)
-                    .setValue(new StringType(issueType.getMedicationLink().getGUID()));
-        }
+            medicationOrder.addExtension(getMedicationOrderAuthorisationExtension(issueType.getMedicationLink()));
 
         if (StringUtils.isNotBlank(issueType.getPharmacyText()))
-        {
-            medicationOrder
-                    .addExtension()
-                    .setUrl(FhirExtensionUri.PHARMACY_TEXT)
-                    .setValue(new StringType(issueType.getPharmacyText()));
-        }
+            medicationOrder.addExtension(getPharmacyTextExtension(issueType.getPharmacyText()));
 
         if (issueType.getEstimatedCost() != null)
-        {
-            medicationOrder
-                    .addExtension()
-                    .setUrl(FhirExtensionUri.MEDICATION_AUTHORISATION_QUANTITY)
-                    .setValue(new SimpleQuantity().setValue(BigDecimal.valueOf(issueType.getEstimatedCost())));
-        }
+            medicationOrder.addExtension(getEstimatedCostExtension(issueType.getEstimatedCost()));
 
         if (issueType.getContraceptiveIssue() != null)
-        {
-            if (!issueType.getContraceptiveIssue().equals(0))
-            {
-                medicationOrder
-                        .addExtension()
-                        .setUrl(FhirExtensionUri.PRESCRIBED_AS_CONTRACEPTION)
-                        .setValue(new BooleanType(true));
-            }
-        }
+            medicationOrder.addExtension(getPrescribedAsContraceptionExtension(issueType.getContraceptiveIssue()));
 
         return medicationOrder;
     }
@@ -97,5 +76,33 @@ public class MedicationOrderTransformer
         return new MedicationOrder.MedicationOrderDispenseRequestComponent()
                 .setQuantity(simpleQuantity);
 
+    }
+
+    private static Extension getMedicationOrderAuthorisationExtension(MedicationLinkType medicationLinkType)
+    {
+        return new Extension()
+                .setUrl(FhirExtensionUri.MEDICATION_ORDER_AUTHORISATION)
+                .setValue(new StringType(medicationLinkType.getGUID()));
+    }
+
+    private static Extension getPharmacyTextExtension(String pharmacyText)
+    {
+        return new Extension()
+                .setUrl(FhirExtensionUri.PHARMACY_TEXT)
+                .setValue(new StringType(pharmacyText));
+    }
+
+    private static Extension getEstimatedCostExtension(Double estimatedCost)
+    {
+        return new Extension()
+            .setUrl(FhirExtensionUri.MEDICATION_AUTHORISATION_QUANTITY)
+            .setValue(new SimpleQuantity().setValue(BigDecimal.valueOf(estimatedCost)));
+    }
+
+    private static Extension getPrescribedAsContraceptionExtension(BigInteger contraceptiveIssue)
+    {
+        return new Extension()
+                .setUrl(FhirExtensionUri.PRESCRIBED_AS_CONTRACEPTION)
+                .setValue(new BooleanType((!contraceptiveIssue.equals(0))));
     }
 }
