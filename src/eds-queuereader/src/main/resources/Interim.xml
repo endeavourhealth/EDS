@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <QueueReaderConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../eds-messaging-core/src/main/resources/QueueReaderConfiguration.xsd">
     <Credentials>
-        <Username>username</Username>
-        <Password>password</Password>
+        <Username>guest</Username>
+        <Password>guest</Password>
     </Credentials>
-    <Nodes>192.168.0.1:1000, 192.168.0.2:2000</Nodes>
-    <Queue>Interim-Orgs1000-2000</Queue>
+    <Nodes>localhost:5672</Nodes>
+    <Queue>EdsInterim-DLQ</Queue>
     <Pipeline>
         <RunDataDistributionProtocols/>
         <MessageTransform>
@@ -14,14 +14,14 @@
                 <Property Key="TransformTo">OpenHR</Property>
             </ExchangeProperties>
         </MessageTransform>
-        <PostMessageToLog/>
-        <PostMessageToQueue>
+        <!--<PostMessageToLog/>-->
+        <PostMessageToExchange>
             <Credentials>
-                <Username>username</Username>
-                <Password>password</Password>
+                <Username>guest</Username>
+                <Password>guest</Password>
             </Credentials>
-            <Nodes>192.168.0.1:1001, 192.168.0.2:1002</Nodes>
-            <Exchange>EdsResponse</Exchange>
-        </PostMessageToQueue>
+            <Nodes>localhost:5672</Nodes>
+            <Exchange>EdsSubscriber</Exchange>
+        </PostMessageToExchange>
     </Pipeline>
 </QueueReaderConfiguration>

@@ -47,7 +47,7 @@ public class ReturnResponseAcknowledgement implements PipelineComponent {
 		} catch (Exception e) {
 			throw new PipelineException("Unable to serialize message header");
 		}
-		LOG.debug("Message posted to log");
+		LOG.debug("Business acknowledgement sent");
 	}
 
 	private MessageHeader buildMessageHeader(Exchange exchange) {

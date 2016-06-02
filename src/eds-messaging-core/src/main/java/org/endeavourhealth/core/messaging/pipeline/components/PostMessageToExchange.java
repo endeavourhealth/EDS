@@ -1,16 +1,13 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.rabbitmq.client.*;
-import org.endeavourhealth.core.configuration.Pipeline;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
-import org.endeavourhealth.core.configuration.RMQExchange;
-import org.endeavourhealth.core.configuration.RMQQueue;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.queueing.ConnectionManager;
-import org.endeavourhealth.core.queueing.RabbitConfig;
+import org.endeavourhealth.core.queueing.RoutingManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,13 +49,22 @@ public class PostMessageToExchange implements PipelineComponent {
 					.build();
 
 			channel.confirmSelect();
-			channel.basicPublish(
-					config.getExchange(),
-					(String)exchange.getProperty(PropertyKeys.Sender),
-					properties,
-					exchange.getBody().getBytes());
+
+			// Publish message for each routing key
+			String[] routingKeys = ((String)exchange.getProperty(PropertyKeys.RoutingKey)).split(",", -1);
+
+			for (String routingKey : routingKeys) {
+				channel.basicPublish(
+						config.getExchange(),
+						RoutingManager.getInstance().getRoutingKeyForIdentifier(routingKey),
+						properties,
+						exchange.getBody().getBytes());
+			}
+
 			if (!channel.waitForConfirms())
 				throw new PipelineException("Messages posted but not confirmed");
+			else
+				LOG.debug("Message posted to exchange");
 		}
 		catch (TimeoutException e) {
 			LOG.error("Queue connection timed out");
@@ -71,5 +77,4 @@ public class PostMessageToExchange implements PipelineComponent {
 				channel.close();
 		}
 	}
-
 }

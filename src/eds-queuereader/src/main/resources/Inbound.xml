@@ -5,7 +5,7 @@
         <Password>guest</Password>
     </Credentials>
     <Nodes>localhost:5672</Nodes>
-    <Queue>Inbound-Orgs1000-2000</Queue>
+    <Queue>EdsInbound-DLQ</Queue>
     <Pipeline>
         <MessageTransform/>
         <PostToEventLog/>

@@ -8,4 +8,5 @@ public abstract class PropertyKeys {
 	public static final String Format = "Format";
 	public static final String SourceSystem = "SourceSystem";
 	public static final String MessageId = "MessageId";
+	public static final String RoutingKey = "RoutingKey";
 }

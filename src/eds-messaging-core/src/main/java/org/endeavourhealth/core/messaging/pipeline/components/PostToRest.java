@@ -50,7 +50,7 @@ public class PostToRest implements PipelineComponent {
 		exchange.setBody(response.readEntity(String.class));
 
 		if (response.getStatus() == HttpStatus.SC_OK)
-			LOG.debug("Message posted");
+			LOG.debug("Message posted to REST endpoint");
 		else {
 			LOG.error("Error posting response to sender");
 			throw new PipelineException(exchange.getBody());

@@ -7,10 +7,30 @@
                 <timestamp value="2001-10-26T21:32:52"/>
                 <event/>
                 <source>
-                    <name value="Org1234"/>
+                    <name value="Y00001"/>
                     <software value="EMISWeb"/>
                     <endpoint value="http://source.uri.com"/>
                 </source>
+                <destination>
+                    <name value="YGM01"/>
+                    <endpoint value="http://localhost"/>
+                </destination>
+                <destination>
+                    <name value="S00001"/>
+                    <endpoint value="http://localhost"/>
+                </destination>
+                <destination>
+                    <name value="W00001"/>
+                    <endpoint value="http://localhost"/>
+                </destination>
+                <destination>
+                    <name value="0AA"/>
+                    <endpoint value="http://localhost"/>
+                </destination>
+                <destination>
+                    <name value="V20052"/>
+                    <endpoint value="http://localhost"/>
+                </destination>
                 <data>
                     <reference value="Binary/DATA_ID"/>
                 </data>

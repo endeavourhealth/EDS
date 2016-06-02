@@ -2,6 +2,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
+import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,10 @@ public class RunDataDistributionProtocols implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		LOG.debug("Message posted to log");
+		// Get subscriber list for DDPs
+
+		exchange.setProperty(PropertyKeys.RoutingKey, "A,B,C");
+
+		LOG.debug("Data distribution protocols executed");
 	}
 }

@@ -76,7 +76,8 @@ public class OpenEnvelope implements PipelineComponent {
 		exchange.setProperty(PropertyKeys.Sender, messageHeader.getSource().getName());
 		exchange.setProperty(PropertyKeys.ResponseUri, messageHeader.getSource().getEndpoint());
 		exchange.setProperty(PropertyKeys.SourceSystem, messageHeader.getSource().getSoftware());
-		exchange.setProperty(PropertyKeys.DestinationAddress, getDestinationList(messageHeader));
+
+		processDestinations(exchange, messageHeader);
 	}
 
 	private void processBody(Exchange exchange, Binary binary) {
@@ -85,17 +86,25 @@ public class OpenEnvelope implements PipelineComponent {
 		}
 	}
 
-	private List<String> getDestinationList(MessageHeader messageHeader) {
-		List<String> destinationList = new ArrayList<>();
+	private void processDestinations(Exchange exchange, MessageHeader messageHeader) {
+		List<String> destinationNameList = new ArrayList<>();
+		List<String> destinationUriList = new ArrayList<>();
 
 		if (messageHeader.hasDestination()) {
 			List<MessageHeader.MessageDestinationComponent> messageDestinationComponents = messageHeader.getDestination();
 
 			for (MessageHeader.MessageDestinationComponent messageDestinationComponent : messageDestinationComponents) {
-				destinationList.add(messageDestinationComponent.getEndpoint());
+				destinationNameList.add(messageDestinationComponent.getName());
+				destinationUriList.add(messageDestinationComponent.getEndpoint());
 			}
+
+			// Routing key based on destination
+			exchange.setProperty(PropertyKeys.RoutingKey, String.join(",",destinationNameList));
+		} else {
+			// If no destination then use source
+			exchange.setProperty(PropertyKeys.RoutingKey, messageHeader.getSource().getName());
 		}
 
-		return destinationList;
+		exchange.setProperty(PropertyKeys.DestinationAddress, destinationUriList);
 	}
 }

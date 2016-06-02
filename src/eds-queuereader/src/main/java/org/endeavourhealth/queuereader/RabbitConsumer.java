@@ -25,7 +25,7 @@ public class RabbitConsumer extends DefaultConsumer {
 		String message = new String(bytes, "UTF-8");
 
 		Exchange exchange = new Exchange(message);
-		exchange.setProperty(PropertyKeys.Sender, envelope.getRoutingKey());
+		exchange.setProperty(PropertyKeys.RoutingKey, envelope.getRoutingKey());
 
 		// Process the message
 		if (pipeline.execute(exchange)) {

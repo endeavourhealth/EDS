@@ -16,23 +16,31 @@ public class PipelineProcessor {
 	}
 
 	public boolean execute(Exchange exchange) {
+		PipelineComponent component = null;
 		try {
 			for (Object processConfig : pipeline.getPipelineComponents()) {
 				PopulateExchangeParameters(exchange, processConfig);
-				PipelineComponent component = getComponent(processConfig);
+				component = getComponent(processConfig);
 				component.process(exchange);
 			}
 			return true;
 		}
 		catch (PipelineException e) {
 			// Gracefully handle pipeline error and send response
-			LOG.error("Pipeline exception : " + e.getMessage());
+			if (component != null)
+				LOG.error("Pipeline exception (" + component.toString() + ") : " + e.getMessage());
+			else
+				LOG.error("Pipeline exception (null) : " + e.getMessage());
 			exchange.setException(e);
 			return false;
 		}
 		catch (Exception e) {
 			// Fatal error
-			LOG.error("Fatal error : " + e.getMessage());
+			if (component != null)
+				LOG.error("Fatal error (" + component.toString() + ") : " + e.getMessage());
+			else
+				LOG.error("Fatal error (null) : " + e.getMessage());
+
 			exchange.setException(e);
 			return false;
 		}
