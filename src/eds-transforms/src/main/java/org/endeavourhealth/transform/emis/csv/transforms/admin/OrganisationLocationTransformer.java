@@ -6,7 +6,6 @@ import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Location;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_OrganisationLocation;
 import org.endeavourhealth.transform.fhir.AddressConverter;
-import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;

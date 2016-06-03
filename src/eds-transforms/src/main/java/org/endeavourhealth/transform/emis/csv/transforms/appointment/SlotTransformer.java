@@ -4,7 +4,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.Appointment_Slot;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Consultation;
-import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
