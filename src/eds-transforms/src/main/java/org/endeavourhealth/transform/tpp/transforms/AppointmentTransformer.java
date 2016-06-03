@@ -2,8 +2,7 @@ package org.endeavourhealth.transform.tpp.transforms;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
-import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.tpp.schema.AppointmentStatus;
 import org.hl7.fhir.instance.model.*;
 
@@ -34,18 +33,18 @@ public class AppointmentTransformer {
         fhirAppointment.setMinutesDuration(durationInt);
 
         String userName = tppAppointment.getUserName();
-        fhirAppointment.addParticipant(Fhir.createParticipant(ResourceType.Practitioner, userName));
+        fhirAppointment.addParticipant(ParticipantHelper.createParticipant(ResourceType.Practitioner, userName));
 
         String site = tppAppointment.getSite();
-        Location fhirLocation = Fhir.findLocationForName(fhirResources, site);
-        fhirAppointment.addParticipant(Fhir.createParticipant(ResourceType.Location, fhirLocation.getId()));
+        Location fhirLocation = LocationHelper.findLocationForName(fhirResources, site);
+        fhirAppointment.addParticipant(ParticipantHelper.createParticipant(ResourceType.Location, fhirLocation.getId()));
 
         String clincType = tppAppointment.getClinicType();
-        fhirAppointment.setType(Fhir.createCodeableConcept(clincType));
+        fhirAppointment.setType(CodeableConceptHelper.createCodeableConcept(clincType));
 
         String comments = tppAppointment.getComments();
         if (Strings.isNullOrEmpty(comments)) {
-            fhirAppointment.setReason(Fhir.createCodeableConcept(comments));
+            fhirAppointment.setReason(CodeableConceptHelper.createCodeableConcept(comments));
         }
 
         //TODO - do we need to represent links from Appts and Events to Referrals?
@@ -54,8 +53,8 @@ public class AppointmentTransformer {
         //flags aren't important to third parties
         //List<String> flags = tppAppointment.getFlag();
 
-        String patientId = Fhir.findPatientId(fhirResources);
-        fhirAppointment.addParticipant(Fhir.createParticipant(ResourceType.Patient, patientId));
+        String patientId = ResourceHelper.findResourceId(Patient.class, fhirResources);
+        fhirAppointment.addParticipant(ParticipantHelper.createParticipant(ResourceType.Patient, patientId));
 
     }
 

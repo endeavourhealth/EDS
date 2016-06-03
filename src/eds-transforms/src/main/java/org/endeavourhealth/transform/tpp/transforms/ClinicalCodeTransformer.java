@@ -4,8 +4,10 @@ import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.tpp.schema.*;
 import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Patient;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.math.BigDecimal;
@@ -59,12 +61,11 @@ public class ClinicalCodeTransformer {
         fhirProblem.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROBLEM));
         fhirResources.add(fhirProblem);
 
-        String patientId = Fhir.findPatientId(fhirResources);
-        fhirProblem.setPatient(Fhir.createReference(ResourceType.Patient, patientId));
+        fhirProblem.setPatient(ReferenceHelper.createReference(Patient.class, fhirResources));
 
         if (fhirEncounter != null) {
             String encounterId = fhirEncounter.getId();
-            fhirProblem.setEncounter(Fhir.createReference(ResourceType.Encounter, encounterId));
+            fhirProblem.setEncounter(ReferenceHelper.createReference(ResourceType.Encounter, encounterId));
         }
 
         Code code = tppCode.getCode();
@@ -78,7 +79,7 @@ public class ClinicalCodeTransformer {
 
         String userName = tppEvent.getUserName();
         if (!Strings.isNullOrEmpty(userName)) {
-            fhirProblem.setAsserter(Fhir.createReference(ResourceType.Practitioner, userName));
+            fhirProblem.setAsserter(ReferenceHelper.createReference(ResourceType.Practitioner, userName));
         }
 
         fhirProblem.setCode(CodeTransformer.transform(code));

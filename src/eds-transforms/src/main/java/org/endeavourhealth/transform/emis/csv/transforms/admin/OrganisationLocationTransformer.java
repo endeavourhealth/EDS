@@ -15,23 +15,23 @@ import java.util.*;
 
 public class OrganisationLocationTransformer {
 
-    public static HashMap<UUID, UUID> transformOrganisationLocations(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static HashMap<UUID, UUID> transform(String folderPath, CSVFormat csvFormat) throws Exception {
 
         HashMap<UUID, UUID> hmLocationToOrganisation = new HashMap<>();
 
-        Admin_OrganisationLocation organisationLocationParser = new Admin_OrganisationLocation(folderPath, csvFormat);
+        Admin_OrganisationLocation parser = new Admin_OrganisationLocation(folderPath, csvFormat);
         try {
-            while (organisationLocationParser.nextRecord()) {
-                transformOrganisationLocation(organisationLocationParser, hmLocationToOrganisation);
+            while (parser.nextRecord()) {
+                createLocationOrgansationMapping(parser, hmLocationToOrganisation);
             }
         } finally {
-            organisationLocationParser.close();
+            parser.close();
         }
 
         return hmLocationToOrganisation;
     }
 
-    private static void transformOrganisationLocation(Admin_OrganisationLocation organisationLocationParser, HashMap<UUID, UUID> hmLocationToOrganisation) throws Exception {
+    private static void createLocationOrgansationMapping(Admin_OrganisationLocation organisationLocationParser, HashMap<UUID, UUID> hmLocationToOrganisation) throws Exception {
 
         //skip any deleted links
         if (organisationLocationParser.getDeleted()) {

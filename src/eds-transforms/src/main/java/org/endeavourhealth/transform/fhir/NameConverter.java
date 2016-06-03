@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.fhir;
 
+import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Person;
 import org.hl7.fhir.instance.model.HumanName;
@@ -81,13 +82,6 @@ public class NameConverter
         return name;
     }
 
-    private static List<String> split(String input)
-    {
-        if (input == null)
-            return null;
-
-        return new ArrayList<String>(Arrays.asList(input.split(" ")));
-    }
 
     private static String buildDisplayFormat(String title, String forenames, String surname)
     {
@@ -112,5 +106,56 @@ public class NameConverter
 
         return sb.toString();
     }
+
+
+
+    public static HumanName createHumanName(HumanName.NameUse use, String title, String firstName, String middleNames, String surname) {
+        HumanName ret = new HumanName();
+        ret.setUse(use);
+
+        //build up full name in standard format; SURNAME, firstname (title)
+        StringBuilder displayName = new StringBuilder();
+
+        if (!Strings.isNullOrEmpty(surname)) {
+            List<String> v = split(surname);
+            v.forEach(ret::addFamily);
+
+            displayName.append(surname.toUpperCase());
+        }
+
+        if (!Strings.isNullOrEmpty(firstName)) {
+            List<String> v = split(firstName);
+            v.forEach(ret::addGiven);
+
+            displayName.append(", ");
+            displayName.append(firstName);
+        }
+
+        if (!Strings.isNullOrEmpty(middleNames)) {
+            List<String> v = split(middleNames);
+            v.forEach(ret::addGiven);
+        }
+
+        if (!Strings.isNullOrEmpty(title)) {
+            List<String> v = split(title);
+            v.forEach(ret::addPrefix);
+
+            displayName.append(" (");
+            displayName.append(title);
+            displayName.append(")");
+        }
+
+        ret.setText(displayName.toString());
+
+        return ret;
+    }
+
+    private static List<String> split(String s) {
+        if (Strings.isNullOrEmpty(s)) {
+            return null;
+        }
+        return Arrays.asList(s.split(" "));
+    }
+
 }
 

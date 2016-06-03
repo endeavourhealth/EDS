@@ -8,6 +8,7 @@ import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Consultation;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
@@ -17,19 +18,19 @@ import java.util.UUID;
 
 public class ConsultationTransformer {
 
-    public static void transformConsultations(String folderPath, CSVFormat csvFormat, Map<String, List<Resource>> fhirResources) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, Map<String, List<Resource>> fhirResources) throws Exception {
 
-        CareRecord_Consultation consultationParser = new CareRecord_Consultation(folderPath, csvFormat);
+        CareRecord_Consultation parser = new CareRecord_Consultation(folderPath, csvFormat);
         try {
-            while (consultationParser.nextRecord()) {
-                transformConsultation(consultationParser, fhirResources);
+            while (parser.nextRecord()) {
+                createEncounter(parser, fhirResources);
             }
         } finally {
-            consultationParser.close();
+            parser.close();
         }
     }
 
-    private static void transformConsultation(CareRecord_Consultation consultationParser, Map<String, List<Resource>> fhirResources) throws Exception {
+    private static void createEncounter(CareRecord_Consultation consultationParser, Map<String, List<Resource>> fhirResources) throws Exception {
 
         //ignore deleted consultations
         if (consultationParser.getDeleted()) {
@@ -52,17 +53,17 @@ public class ConsultationTransformer {
 
         fhirEncounter.setStatus(Encounter.EncounterState.FINISHED);
 
-        fhirEncounter.setPatient(Fhir.createReference(ResourceType.Patient, patientGuid.toString()));
+        fhirEncounter.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientGuid.toString()));
 
         UUID appointmentGuid = consultationParser.getAppointmentSlotGuid();
         if (appointmentGuid != null) {
-            fhirEncounter.setAppointment(Fhir.createReference(ResourceType.Appointment, appointmentGuid.toString()));
+            fhirEncounter.setAppointment(ReferenceHelper.createReference(ResourceType.Appointment, appointmentGuid.toString()));
         }
 
         UUID clinicianUuid = consultationParser.getClinicianUserInRoleGuid();
         if (clinicianUuid != null) {
             Encounter.EncounterParticipantComponent fhirParticipant = fhirEncounter.addParticipant();
-            fhirParticipant.setIndividual(Fhir.createReference(ResourceType.Practitioner, clinicianUuid.toString()));
+            fhirParticipant.setIndividual(ReferenceHelper.createReference(ResourceType.Practitioner, clinicianUuid.toString()));
         }
 
         Date date = consultationParser.getEffectiveDate();

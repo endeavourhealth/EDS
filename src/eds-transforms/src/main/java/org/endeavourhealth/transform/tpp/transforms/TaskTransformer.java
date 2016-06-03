@@ -4,6 +4,7 @@ import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.tpp.schema.Task;
 import org.hl7.fhir.instance.model.*;
 
@@ -40,8 +41,7 @@ public class TaskTransformer
         //String userGroupAssigned = tppTask.getGroupNameAssigned();
 
         //link back to the patient
-        String patientId = Fhir.findPatientId(fhirResources);
-        fhirTask.setSubject(Fhir.createReference(ResourceType.Patient, patientId));
+        fhirTask.setSubject(ReferenceHelper.createReference(Patient.class, fhirResources));
 
         //TODO - not sure if we can set the required Status and Priority fields on the FHIR resource
     }

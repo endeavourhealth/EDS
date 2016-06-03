@@ -2,8 +2,10 @@ package org.endeavourhealth.transform.tpp.transforms;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.tpp.schema.Event;
 import org.endeavourhealth.transform.tpp.schema.Narrative;
 import org.hl7.fhir.instance.model.*;
@@ -30,14 +32,13 @@ public class NarrativeTransformer {
         fhirResources.add(fhirObsrvation);
 
         fhirObsrvation.setStatus(Observation.ObservationStatus.FINAL);
-        fhirObsrvation.setCode(Fhir.createCodeableConcept(line));
+        fhirObsrvation.setCode(CodeableConceptHelper.createCodeableConcept(line));
 
-        String patientId = Fhir.findPatientId(fhirResources);
-        fhirObsrvation.setSubject(Fhir.createReference(ResourceType.Patient, patientId));
+        fhirObsrvation.setSubject(ReferenceHelper.createReference(Patient.class, fhirResources));
 
         if (fhirEncounter != null) {
             String encounterId = fhirEncounter.getId();
-            fhirObsrvation.setEncounter(Fhir.createReference(ResourceType.Encounter, encounterId));
+            fhirObsrvation.setEncounter(ReferenceHelper.createReference(ResourceType.Encounter, encounterId));
         }
 
         XMLGregorianCalendar date = tppEvent.getDateTime();
@@ -45,11 +46,10 @@ public class NarrativeTransformer {
 
         String userName = tppEvent.getUserName();
         if (!Strings.isNullOrEmpty(userName)) {
-            fhirObsrvation.addPerformer(Fhir.createReference(ResourceType.Encounter, userName));
+            fhirObsrvation.addPerformer(ReferenceHelper.createReference(ResourceType.Encounter, userName));
         } else {
             //if we have no formal performer from the consultation, just fall back on using the organisation
-            String orgId = Fhir.findOrganisationId(fhirResources);
-            fhirObsrvation.addPerformer(Fhir.createReference(ResourceType.Organization, orgId));
+            fhirObsrvation.addPerformer(ReferenceHelper.createReference(Organization.class, fhirResources));
         }
     }
 }

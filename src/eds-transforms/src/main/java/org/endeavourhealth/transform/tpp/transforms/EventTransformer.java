@@ -2,10 +2,13 @@ package org.endeavourhealth.transform.tpp.transforms;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.tpp.schema.*;
 import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Patient;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.time.Instant;
@@ -67,12 +70,12 @@ public class EventTransformer {
 
         if (!Strings.isNullOrEmpty(userName)) {
             //if a userName is present, use that to link to the practitioner resource
-            Reference fhirReference = Fhir.createReference(ResourceType.Practitioner, userName);
+            Reference fhirReference = ReferenceHelper.createReference(ResourceType.Practitioner, userName);
             fhirEncounter.addParticipant(new Encounter.EncounterParticipantComponent().setIndividual(fhirReference));
 
         } else if (!Strings.isNullOrEmpty(doneBy)) {
             //if no userName is present, the textual doneBy to indicate the participant
-            fhirEncounter.addParticipant(new Encounter.EncounterParticipantComponent().addType(Fhir.createCodeableConcept(doneBy)));
+            fhirEncounter.addParticipant(new Encounter.EncounterParticipantComponent().addType(CodeableConceptHelper.createCodeableConcept(doneBy)));
         }
 
         String doneAt = tppEvent.getDoneAt();
@@ -83,9 +86,7 @@ public class EventTransformer {
         EventMethod method = tppEvent.getMethod();
         String linkedReferralUID = tppEvent.getLinkedReferralUID();
 
-
-        String patientId = Fhir.findPatientId(fhirResources);
-        fhirEncounter.setPatient(Fhir.createReference(ResourceType.Patient, patientId));
+        fhirEncounter.setPatient(ReferenceHelper.createReference(Patient.class, fhirResources));
 
         return fhirEncounter;
     }

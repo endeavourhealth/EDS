@@ -2,8 +2,11 @@ package org.endeavourhealth.transform.fhir;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.TransformException;
-import org.hl7.fhir.instance.model.Reference;
-import org.hl7.fhir.instance.model.ResourceType;
+import org.hl7.fhir.instance.model.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ReferenceHelper
 {
@@ -53,4 +56,32 @@ public class ReferenceHelper
 
         return id.equals(referenceId);
     }
+
+    public static Reference createReference(Resource resource) throws TransformException {
+        return createReference(resource.getResourceType(), resource.getId());
+    }
+
+    public static Reference createPractitionerReference(String id) throws TransformException {
+        return createReference(ResourceType.Practitioner, id);
+    }
+    public static Reference createEncounterReference(String id) throws TransformException {
+        return createReference(ResourceType.Encounter, id);
+    }
+    public static Reference createPatientReference(String id) throws TransformException {
+        return createReference(ResourceType.Patient, id);
+    }
+
+
+
+
+    public static <T extends Resource> Reference createReference(Class<T> type, List<Resource> resources) throws TransformException {
+        T resource = ResourceHelper.findResourceOfType(type, resources);
+        if (resource != null) {
+            return createReference(resource);
+        } else {
+            return null;
+        }
+    }
+
+
 }

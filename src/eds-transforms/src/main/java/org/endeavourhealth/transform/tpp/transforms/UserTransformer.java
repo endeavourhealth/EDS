@@ -4,6 +4,8 @@ import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.IdentifierHelper;
+import org.endeavourhealth.transform.fhir.NameConverter;
 import org.endeavourhealth.transform.tpp.schema.*;
 import org.hl7.fhir.instance.model.*;
 
@@ -24,7 +26,7 @@ public class UserTransformer {
         String firstName = tppUser.getFirstName();
         String middleNames = tppUser.getMiddleNames();
         String surname = tppUser.getSurname();
-        HumanName fhirName = Fhir.createHumanName(HumanName.NameUse.OFFICIAL, title, firstName, middleNames, surname);
+        HumanName fhirName = NameConverter.createHumanName(HumanName.NameUse.OFFICIAL, title, firstName, middleNames, surname);
         fhirPractitioner.setName(fhirName);
 
         Sex tppSex = tppUser.getGender();
@@ -40,7 +42,7 @@ public class UserTransformer {
         NationalIDType nationalIdType = tppUser.getNationalIDType();
         if (!Strings.isNullOrEmpty(nationalId)) {
             if (nationalIdType == NationalIDType.GMC) {
-                Identifier fhirIdentifier = Fhir.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nationalId, FhirUri.IDENTIFIER_SYSTEM_GMC_NUMBER);
+                Identifier fhirIdentifier = IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nationalId, FhirUri.IDENTIFIER_SYSTEM_GMC_NUMBER);
                 fhirPractitioner.addIdentifier(fhirIdentifier);
             } else {
                 //TODO - does the profile need to support other staff/user national ID types

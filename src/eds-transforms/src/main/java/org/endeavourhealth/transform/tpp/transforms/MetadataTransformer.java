@@ -2,6 +2,8 @@ package org.endeavourhealth.transform.tpp.transforms;
 
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.Fhir;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.transform.fhir.ResourceHelper;
 import org.endeavourhealth.transform.tpp.schema.Metadata;
 import org.endeavourhealth.transform.tpp.schema.Site;
 import org.endeavourhealth.transform.tpp.schema.User;
@@ -29,7 +31,7 @@ public class MetadataTransformer {
 
     private static void linkOrganisations(List<Resource> fhirResources) throws TransformException {
 
-        Organization fhirOrganisation = Fhir.findOrganisation(fhirResources);
+        Organization fhirOrganisation = ResourceHelper.findResourceOfType(Organization.class, fhirResources);
         String orgId = fhirOrganisation.getId();
 
         //link all locations to the organisation
@@ -40,7 +42,7 @@ public class MetadataTransformer {
                 .collect(Collectors.toList());
 
         for (Location fhirLocation: fhirLocations) {
-            fhirLocation.setManagingOrganization(Fhir.createReference(ResourceType.Organization, orgId));
+            fhirLocation.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, orgId));
         }
 
         //link all users to the organisation
@@ -54,7 +56,7 @@ public class MetadataTransformer {
 
             List<Practitioner.PractitionerPractitionerRoleComponent> fhirRoles = fhirPractitioner.getPractitionerRole();
             for (Practitioner.PractitionerPractitionerRoleComponent fhirRole: fhirRoles) {
-                fhirRole.setManagingOrganization(Fhir.createReference(ResourceType.Organization, orgId));
+                fhirRole.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, orgId));
             }
 
         }

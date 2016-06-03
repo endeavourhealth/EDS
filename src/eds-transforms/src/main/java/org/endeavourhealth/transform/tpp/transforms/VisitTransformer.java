@@ -2,8 +2,7 @@ package org.endeavourhealth.transform.tpp.transforms;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
-import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.tpp.schema.Visit;
 import org.endeavourhealth.transform.tpp.schema.VisitStatus;
 import org.hl7.fhir.instance.model.*;
@@ -34,11 +33,11 @@ public class VisitTransformer {
         fhirAppointment.setMinutesDuration(durationInt);
 
         String userName = tppVisit.getUserName();
-        fhirAppointment.addParticipant(Fhir.createParticipant(ResourceType.Practitioner, userName));
+        fhirAppointment.addParticipant(ParticipantHelper.createParticipant(ResourceType.Practitioner, userName));
 
         String comments = tppVisit.getComments();
         if (Strings.isNullOrEmpty(comments)) {
-            fhirAppointment.setReason(Fhir.createCodeableConcept(comments));
+            fhirAppointment.setReason(CodeableConceptHelper.createCodeableConcept(comments));
         }
 
         //TODO - do we need to represent links from Visits to Referrals?
@@ -46,14 +45,14 @@ public class VisitTransformer {
 
         //we need to indicate that this was at the patient's home
         //TODO - how to properly indicate a visit was performed at the patient's home?
-        CodeableConcept fhirCode = Fhir.createCodeableConcept("CsvPatient's Home");
+        CodeableConcept fhirCode = CodeableConceptHelper.createCodeableConcept("CsvPatient's Home");
         fhirAppointment.addParticipant(new Appointment.AppointmentParticipantComponent()
                 .addType(fhirCode)
                 .setRequired(Appointment.ParticipantRequired.REQUIRED)
                 .setStatus(Appointment.ParticipationStatus.ACCEPTED));
 
-        String patientId = Fhir.findPatientId(fhirResources);
-        fhirAppointment.addParticipant(Fhir.createParticipant(ResourceType.Patient, patientId));
+        String patientId = ResourceHelper.findResourceId(Patient.class, fhirResources);
+        fhirAppointment.addParticipant(ParticipantHelper.createParticipant(ResourceType.Patient, patientId));
     }
 
     private static Appointment.AppointmentStatus convertStatus(VisitStatus tppStatus) throws TransformException {

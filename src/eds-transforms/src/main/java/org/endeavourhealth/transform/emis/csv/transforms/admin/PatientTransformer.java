@@ -8,6 +8,7 @@ import org.endeavourhealth.transform.emis.csv.schema.Coding_ClinicalCode;
 import org.endeavourhealth.transform.emis.openhr.schema.VocSex;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.SexConverter;
 import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.fhir.ExtensionHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.io.IOException;
@@ -15,19 +16,19 @@ import java.util.*;
 
 public class PatientTransformer {
 
-    public static void transformPatients(String folderPath, CSVFormat csvFormat, Map<String, List<Resource>> fhirResources) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, Map<String, List<Resource>> fhirResources) throws Exception {
 
-        Admin_Patient patientParser = new Admin_Patient(folderPath, csvFormat);
+        Admin_Patient parser = new Admin_Patient(folderPath, csvFormat);
         try {
-            while (patientParser.nextRecord()) {
-                transformPatient(patientParser, fhirResources);
+            while (parser.nextRecord()) {
+                createPatient(parser, fhirResources);
             }
         } finally {
-            patientParser.close();
+            parser.close();
         }
     }
 
-    private static void transformPatient(Admin_Patient patientParser, Map<String, List<Resource>> fhirResources) throws Exception {
+    private static void createPatient(Admin_Patient patientParser, Map<String, List<Resource>> fhirResources) throws Exception {
 
         if (patientParser.getDeleted()) {
             //TODO - how to process Deleted EMIS records so they should be deleted from EDS?
@@ -49,7 +50,7 @@ public class PatientTransformer {
         EmisCsvTransformer.addToMap(patientGuid, fhirPatient, fhirResources);
 
         String nhsNumber = patientParser.getNhsNumber();
-        fhirPatient.addIdentifier(Fhir.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nhsNumber, FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER));
+        fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nhsNumber, FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER));
 
         Date dob = patientParser.getDateOfBirth();
         fhirPatient.setBirthDate(dob);
@@ -84,24 +85,24 @@ public class PatientTransformer {
 
         String homePhone = patientParser.getHomePhone();
         if (!Strings.isNullOrEmpty(homePhone)) {
-            ContactPoint fhirContact = Fhir.createContactPoint(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.HOME, homePhone);
+            ContactPoint fhirContact = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.HOME, homePhone);
             fhirPatient.addTelecom(fhirContact);
         }
 
         String mobilePhone = patientParser.getMobilePhone();
         if (!Strings.isNullOrEmpty(mobilePhone)) {
-            ContactPoint fhirContact = Fhir.createContactPoint(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.MOBILE, mobilePhone);
+            ContactPoint fhirContact = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.MOBILE, mobilePhone);
             fhirPatient.addTelecom(fhirContact);
         }
 
         String email = patientParser.getEmailAddress();
         if (!Strings.isNullOrEmpty(email)) {
-            ContactPoint fhirContact = Fhir.createContactPoint(ContactPoint.ContactPointSystem.EMAIL, ContactPoint.ContactPointUse.HOME, email);
+            ContactPoint fhirContact = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.EMAIL, ContactPoint.ContactPointUse.HOME, email);
             fhirPatient.addTelecom(fhirContact);
         }
 
         UUID organisationGuid = patientParser.getOrganisationGuid();
-        fhirPatient.setManagingOrganization(Fhir.createReference(ResourceType.Organization, organisationGuid.toString()));
+        fhirPatient.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, organisationGuid.toString()));
 
         String carerName = patientParser.getCarerName();
         String carerRelationship = patientParser.getCarerRelation();
@@ -110,7 +111,7 @@ public class PatientTransformer {
             Patient.ContactComponent fhirContact = new Patient.ContactComponent();
 
             if (!Strings.isNullOrEmpty(carerRelationship)) {
-                fhirContact.addRelationship(Fhir.createCodeableConcept(carerRelationship));
+                fhirContact.addRelationship(CodeableConceptHelper.createCodeableConcept(carerRelationship));
             }
 
             //TODO - need to tokenise carerName to populate fields on FHIR resource?
@@ -122,24 +123,24 @@ public class PatientTransformer {
         }
 
         String patientType = patientParser.getPatientTypedescription();
-        fhirPatient.addExtension(Fhir.createExtension(FhirExtensionUri.REGISTRATION_TYPE, new StringType(patientType)));
+        fhirPatient.addExtension(ExtensionHelper.createExtension(FhirExtensionUri.REGISTRATION_TYPE, new StringType(patientType)));
 
         //TODO - store admin_patient SpineSensitive in FHIR?
         //TODO - store admin_patient IsConfidential in FHIR?
 
         UUID usualGpGuid = patientParser.getUsualGpUserInRoleGuid();
         if (usualGpGuid != null) {
-            fhirPatient.addCareProvider(Fhir.createReference(ResourceType.Practitioner, usualGpGuid.toString()));
+            fhirPatient.addCareProvider(ReferenceHelper.createReference(ResourceType.Practitioner, usualGpGuid.toString()));
 
         } else {
             UUID externalGpGuid = patientParser.getExternalUsualGPGuid();
             if (externalGpGuid != null) {
-                fhirPatient.addCareProvider(Fhir.createReference(ResourceType.Practitioner, externalGpGuid.toString()));
+                fhirPatient.addCareProvider(ReferenceHelper.createReference(ResourceType.Practitioner, externalGpGuid.toString()));
 
             } else {
                 UUID externalOrgGuid = patientParser.getExternalUsualGPOrganisation();
                 if (externalOrgGuid != null) {
-                    fhirPatient.addCareProvider(Fhir.createReference(ResourceType.Organization, externalOrgGuid.toString()));
+                    fhirPatient.addCareProvider(ReferenceHelper.createReference(ResourceType.Organization, externalOrgGuid.toString()));
                 }
             }
         }
@@ -149,21 +150,21 @@ public class PatientTransformer {
 
         EmisCsvTransformer.addToMap(patientGuid, fhirEpisode, fhirResources);
 
-        fhirEpisode.setPatient(Fhir.createReference(ResourceType.Patient, patientGuid.toString()));
+        fhirEpisode.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientGuid.toString()));
 
         UUID orgUuid = patientParser.getOrganisationGuid();
-        fhirEpisode.setManagingOrganization(Fhir.createReference(ResourceType.Organization, orgUuid.toString()));
+        fhirEpisode.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, orgUuid.toString()));
 
         if (usualGpGuid != null) {
-            fhirEpisode.setCareManager(Fhir.createReference(ResourceType.Practitioner, usualGpGuid.toString()));
+            fhirEpisode.setCareManager(ReferenceHelper.createReference(ResourceType.Practitioner, usualGpGuid.toString()));
         }
 
         Date regDate = patientParser.getDateOfRegistration();
         Date dedDate = patientParser.getDateOfDeactivation();
-        Period fhirPeriod = Fhir.createPeriod(regDate, dedDate);
+        Period fhirPeriod = PeriodHelper.createPeriod(regDate, dedDate);
         fhirEpisode.setPeriod(fhirPeriod);
 
-        boolean active = Fhir.isActive(fhirPeriod);
+        boolean active = PeriodHelper.isActive(fhirPeriod);
         fhirPatient.setActive(active);
         if (active) {
             fhirEpisode.setStatus(EpisodeOfCare.EpisodeOfCareStatus.ACTIVE);

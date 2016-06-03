@@ -9,7 +9,7 @@ import java.util.HashMap;
 public class DrugCodeTransformer {
 
 
-    public static HashMap<Long, Object> transformDrugCodes(String folderPath, CSVFormat csvFormat) throws IOException {
+    public static HashMap<Long, Object> transform(String folderPath, CSVFormat csvFormat) throws IOException {
 
         HashMap<Long, Object> ret = new HashMap<Long, Object>();
 

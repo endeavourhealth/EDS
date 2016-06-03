@@ -1,8 +1,10 @@
 package org.endeavourhealth.transform.tpp.transforms;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.transform.fhir.ContactPointHelper;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.IdentifierHelper;
 import org.endeavourhealth.transform.tpp.schema.Address;
 import org.endeavourhealth.transform.tpp.schema.Site;
 import org.hl7.fhir.instance.model.*;
@@ -37,21 +39,21 @@ public class SiteTransformer {
 
         String tel = tppSite.getTelephone();
         if (!Strings.isNullOrEmpty(tel)) {
-            ContactPoint contactPoint = Fhir.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.WORK, tel);
             fhirLocation.addTelecom(contactPoint);
         }
 
         String fax = tppSite.getFax();
         if (!Strings.isNullOrEmpty(fax)) {
-            ContactPoint contactPoint = Fhir.createContactPoint(ContactPoint.ContactPointSystem.FAX,
+            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.FAX,
                     ContactPoint.ContactPointUse.WORK, fax);
             fhirLocation.addTelecom(contactPoint);
         }
 
         String email = tppSite.getEmail();
         if (!Strings.isNullOrEmpty(email)) {
-            ContactPoint contactPoint = Fhir.createContactPoint(ContactPoint.ContactPointSystem.EMAIL,
+            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.EMAIL,
                     ContactPoint.ContactPointUse.WORK, email);
             fhirLocation.addTelecom(contactPoint);
         }
@@ -74,27 +76,27 @@ public class SiteTransformer {
         String name = tppSite.getName();
         fhirOrganisation.setName(name);
 
-        Identifier fhirIdentifier = Fhir.createIdentifier(Identifier.IdentifierUse.OFFICIAL, id, FhirUri.IDENTIFIER_SYSTEM_ODS_CODE);
+        Identifier fhirIdentifier = IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, id, FhirUri.IDENTIFIER_SYSTEM_ODS_CODE);
         //TODO - some sites will have local identifiers and not ODS codes. Need to differentiate somehow.
         fhirOrganisation.addIdentifier(fhirIdentifier);
 
         String tel = tppSite.getTelephone();
         if (!Strings.isNullOrEmpty(tel)) {
-            ContactPoint contactPoint = Fhir.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.WORK, tel);
             fhirOrganisation.addTelecom(contactPoint);
         }
 
         String fax = tppSite.getFax();
         if (!Strings.isNullOrEmpty(fax)) {
-            ContactPoint contactPoint = Fhir.createContactPoint(ContactPoint.ContactPointSystem.FAX,
+            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.FAX,
                     ContactPoint.ContactPointUse.WORK, fax);
             fhirOrganisation.addTelecom(contactPoint);
         }
 
         String email = tppSite.getEmail();
         if (!Strings.isNullOrEmpty(email)) {
-            ContactPoint contactPoint = Fhir.createContactPoint(ContactPoint.ContactPointSystem.EMAIL,
+            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.EMAIL,
                     ContactPoint.ContactPointUse.WORK, email);
             fhirOrganisation.addTelecom(contactPoint);
         }

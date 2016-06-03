@@ -4,10 +4,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Organisation;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_UserInRole;
-import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.NameConverter;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.transform.fhir.*;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
@@ -16,14 +13,14 @@ import java.util.UUID;
 
 public class UserInRoleTransformer {
 
-    public static HashMap<UUID, Practitioner> transformUsersInRole(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static HashMap<UUID, Practitioner> transform(String folderPath, CSVFormat csvFormat) throws Exception {
 
         HashMap<UUID, Practitioner> fhirUsersInRoleMap = new HashMap<>();
 
         Admin_UserInRole userInRoleParser = new Admin_UserInRole(folderPath, csvFormat);
         try {
             while (userInRoleParser.nextRecord()) {
-                transformUserInRole(userInRoleParser, fhirUsersInRoleMap);
+                createPractitioner(userInRoleParser, fhirUsersInRoleMap);
             }
         } finally {
             userInRoleParser.close();
@@ -32,7 +29,7 @@ public class UserInRoleTransformer {
         return fhirUsersInRoleMap;
     }
 
-    private static void transformUserInRole(Admin_UserInRole userInRoleParser, HashMap<UUID, Practitioner> fhirUsersInRoleMap) throws Exception {
+    private static void createPractitioner(Admin_UserInRole userInRoleParser, HashMap<UUID, Practitioner> fhirUsersInRoleMap) throws Exception {
 
         Practitioner fhirPractitioner = new Practitioner();
         fhirPractitioner.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PRACTITIONER));
@@ -50,8 +47,8 @@ public class UserInRoleTransformer {
 
         Date startDate = userInRoleParser.getContractStartDate();
         Date endDate = userInRoleParser.getContractEndDate();
-        Period fhirPeriod = Fhir.createPeriod(startDate, endDate);
-        boolean active = Fhir.isActive(fhirPeriod);
+        Period fhirPeriod = PeriodHelper.createPeriod(startDate, endDate);
+        boolean active = PeriodHelper.isActive(fhirPeriod);
 
         fhirPractitioner.setActive(active);
 

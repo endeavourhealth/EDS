@@ -2,9 +2,8 @@ package org.endeavourhealth.transform.tpp.transforms;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
-import org.endeavourhealth.transform.fhir.Fhir;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.fhir.ExtensionHelper;
 import org.endeavourhealth.transform.tpp.schema.*;
 import org.endeavourhealth.transform.tpp.schema.Address;
 import org.hl7.fhir.instance.model.*;
@@ -29,8 +28,7 @@ public class DemographicTransformer {
         fhirPatient.setId(patientUid);
         fhirResources.add(fhirPatient);
 
-        String orgId = Fhir.findOrganisationId(fhirResources);
-        fhirPatient.setManagingOrganization(Fhir.createReference(ResourceType.Organization, orgId));
+        fhirPatient.setManagingOrganization(ReferenceHelper.createReference(Organization.class, fhirResources));
 
         transformIdentity(fhirPatient, tppId);
         transformName(fhirPatient, tppDemographics);
@@ -52,7 +50,7 @@ public class DemographicTransformer {
         //TODO - need to get proper object type for registrationType
         String registrationType = tppDemographics.getRegistrationType();
 
-        Extension ext = Fhir.createExtension(FhirExtensionUri.REGISTRATION_TYPE, new StringType(registrationType));
+        Extension ext = ExtensionHelper.createExtension(FhirExtensionUri.REGISTRATION_TYPE, new StringType(registrationType));
         fhirPatient.addExtension(ext);
     }
 
@@ -76,7 +74,7 @@ public class DemographicTransformer {
         fhirEpisode.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_EPISODE_OF_CARE));
         fhirResources.add(fhirEpisode);
 
-        Period fhirPeriod = Fhir.createPeriod(startDate, endDate);
+        Period fhirPeriod = PeriodHelper.createPeriod(startDate, endDate);
         fhirEpisode.setPeriod(fhirPeriod);
 
         if (endDate == null) {
@@ -86,10 +84,9 @@ public class DemographicTransformer {
         }
 
         String patientId = fhirPatient.getId();
-        fhirEpisode.setPatient(Fhir.createReference(ResourceType.Patient, patientId));
+        fhirEpisode.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientId));
 
-        String orgId = Fhir.findOrganisationId(fhirResources);
-        fhirEpisode.setManagingOrganization(Fhir.createReference(ResourceType.Organization, orgId));
+        fhirEpisode.setManagingOrganization(ReferenceHelper.createReference(Organization.class, fhirResources));
     }
 
     private static void transformUsualGp(Patient fhirPatient, Demographics tppDemographics, List<Resource> fhirResources) throws TransformException {
@@ -99,28 +96,28 @@ public class DemographicTransformer {
             return;
         }
 
-        fhirPatient.addCareProvider(Fhir.createReference(ResourceType.Practitioner, usualGpUserName));
+        fhirPatient.addCareProvider(ReferenceHelper.createReference(ResourceType.Practitioner, usualGpUserName));
     }
 
     private static void transformCommunications(Patient fhirPatient, Demographics tppDemographics) {
 
         String homeTel = tppDemographics.getHomeTelephone();
         if (!Strings.isNullOrEmpty(homeTel)) {
-            ContactPoint contactPoint = Fhir.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.HOME, homeTel);
             fhirPatient.addTelecom(contactPoint);
         }
 
         String workTel = tppDemographics.getWorkTelephone();
         if (!Strings.isNullOrEmpty(workTel)) {
-            ContactPoint contactPoint = Fhir.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.WORK, workTel);
             fhirPatient.addTelecom(contactPoint);
         }
 
         String mobTel = tppDemographics.getMobileTelephone();
         if (!Strings.isNullOrEmpty(mobTel)) {
-            ContactPoint contactPoint = Fhir.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.MOBILE, mobTel);
             fhirPatient.addTelecom(contactPoint);
         }
@@ -128,7 +125,7 @@ public class DemographicTransformer {
         String altTel = tppDemographics.getAlternateTelephone();
         if (!Strings.isNullOrEmpty(altTel)) {
             //treat alternative number as a second home number
-            ContactPoint contactPoint = Fhir.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.HOME, altTel);
             fhirPatient.addTelecom(contactPoint);
         }
@@ -136,7 +133,7 @@ public class DemographicTransformer {
         String email = tppDemographics.getEmailAddress();
         if (!Strings.isNullOrEmpty(email)) {
             //assume the email address is a home email, rather than work
-            ContactPoint contactPoint = Fhir.createContactPoint(ContactPoint.ContactPointSystem.EMAIL,
+            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.EMAIL,
                     ContactPoint.ContactPointUse.HOME, email);
             fhirPatient.addTelecom(contactPoint);
         }
@@ -168,7 +165,7 @@ public class DemographicTransformer {
                 || (tppCode.getScheme() == CodeScheme.CTV_3 && !tppCode.getCode().equals(ENGLISH_MAIN_CODE_CTV3))
                 || (tppCode.getScheme() == CodeScheme.SNOMED && !tppCode.getCode().equals(ENGLISH_MAIN_CODE_SNOMED))) {
 
-                CodeableConcept fhirConcept = Fhir.createCodeableConcept(FhirUri.CODE_SYSTEM_SNOMED_CT, ENGLISH_SECOND_CODE, ENGLISH_SECOND_TERM);
+                CodeableConcept fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_SNOMED_CT, ENGLISH_SECOND_CODE, ENGLISH_SECOND_TERM);
                 Patient.PatientCommunicationComponent fhirCommunication = fhirPatient.addCommunication();
                 fhirCommunication.setLanguage(fhirConcept);
             }
@@ -229,13 +226,13 @@ public class DemographicTransformer {
         String surname = tppDemographics.getSurname();
         String knownAs = tppDemographics.getKnownAs();
 
-        HumanName fhirName = Fhir.createHumanName(HumanName.NameUse.OFFICIAL, title, firstName, middleNames, surname);
+        HumanName fhirName = NameConverter.createHumanName(HumanName.NameUse.OFFICIAL, title, firstName, middleNames, surname);
         fhirPatient.addName(fhirName);
 
         if (knownAs != null
                 && !knownAs.equalsIgnoreCase(firstName)
                 && !knownAs.equalsIgnoreCase(title + " " + firstName + " " + surname)) {
-            fhirName = Fhir.createHumanName(HumanName.NameUse.NICKNAME, null, knownAs, null, surname);
+            fhirName = NameConverter.createHumanName(HumanName.NameUse.NICKNAME, null, knownAs, null, surname);
             fhirPatient.addName(fhirName);
         }
     }
@@ -245,7 +242,7 @@ public class DemographicTransformer {
         //NHS number OR psudeo number will be provided
         String nhsNumber = tppId.getNHSNumber();
         if (nhsNumber != null) {
-            Identifier fhirIdentifier = Fhir.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nhsNumber, FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER);
+            Identifier fhirIdentifier = IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nhsNumber, FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER);
             fhirPatient.addIdentifier(fhirIdentifier);
         } else {
             //the pseudo number is unique to TPP only, so no point adding to FHIR

@@ -9,20 +9,20 @@ import java.util.*;
 
 public class SessionUserTransformer {
 
-    public static Map<UUID, List<UUID>> transformSessionUsers(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static Map<UUID, List<UUID>> transform(String folderPath, CSVFormat csvFormat) throws Exception {
 
         //we need to extract the staff UUIDs in proper order, as the first staff member in a session is
         //regarded as the main actor in the session. As the CSV may be out of order, we use a temporary
         //storage object to persist the processingId, which is then used to sort the records before returning.
         Map<UUID, List<UUIDAndProcessingOrder>> sessionToUserMap = new HashMap<>();
 
-        Appointment_SessionUser sessionUserParser = new Appointment_SessionUser(folderPath, csvFormat);
+        Appointment_SessionUser parser = new Appointment_SessionUser(folderPath, csvFormat);
         try {
-            while (sessionUserParser.nextRecord()) {
-                transformSessionUser(sessionUserParser, sessionToUserMap);
+            while (parser.nextRecord()) {
+                createSessionUserMapping(parser, sessionToUserMap);
             }
         } finally {
-            sessionUserParser.close();
+            parser.close();
         }
 
         Map<UUID, List<UUID>> ret = new HashMap<>();
@@ -47,7 +47,7 @@ public class SessionUserTransformer {
         return ret;
     }
 
-    private static void transformSessionUser(Appointment_SessionUser sessionUserParser, Map<UUID, List<UUIDAndProcessingOrder>> sessionToUserMap) throws Exception {
+    private static void createSessionUserMapping(Appointment_SessionUser sessionUserParser, Map<UUID, List<UUIDAndProcessingOrder>> sessionToUserMap) throws Exception {
 
         //ignore deleted records
         if (sessionUserParser.getdDeleted()) {

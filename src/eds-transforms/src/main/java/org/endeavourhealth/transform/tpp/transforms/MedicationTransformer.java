@@ -2,11 +2,14 @@ package org.endeavourhealth.transform.tpp.transforms;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.tpp.schema.*;
 import org.endeavourhealth.transform.tpp.schema.Medication;
 import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Patient;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.time.Instant;
@@ -45,7 +48,7 @@ public class MedicationTransformer {
 
         MedicationEndReason endReason = medication.getEndReason();
         if (endReason != null) {
-            fhirMedicationOrder.setReasonEnded(Fhir.createCodeableConcept(endReason.toString()));
+            fhirMedicationOrder.setReasonEnded(CodeableConceptHelper.createCodeableConcept(endReason.toString()));
         }
 
         Medication.RepeatIssue repeatIssue = medication.getRepeatIssue();
@@ -53,17 +56,16 @@ public class MedicationTransformer {
 
         fhirMedicationOrder.setStatus(convertStatus(endDate, endReason));
 
-        String patientId = Fhir.findPatientId(fhirResources);
-        fhirMedicationOrder.setPatient(Fhir.createReference(ResourceType.Patient, patientId));
+        fhirMedicationOrder.setPatient(ReferenceHelper.createReference(Patient.class, fhirResources));
 
         String userName = tppEvent.getUserName();
         if (!Strings.isNullOrEmpty(userName)) {
-            fhirMedicationOrder.setPrescriber(Fhir.createReference(ResourceType.Practitioner, userName));
+            fhirMedicationOrder.setPrescriber(ReferenceHelper.createReference(ResourceType.Practitioner, userName));
         }
 
         if (fhirEncounter != null) {
             String encounterId = fhirEncounter.getId();
-            fhirMedicationOrder.setEncounter(Fhir.createReference(ResourceType.Encounter, encounterId));
+            fhirMedicationOrder.setEncounter(ReferenceHelper.createReference(ResourceType.Encounter, encounterId));
         }
 
         fhirMedicationOrder.setMedication(convertMedication(drug));
@@ -78,9 +80,9 @@ public class MedicationTransformer {
         //BigInteger packId = tppDrug.getPackID();
 
         if (scheme == DrugScheme.DMD) {
-            return Fhir.createCodeableConcept(FhirUri.CODE_SYSTEM_SNOMED_CT, fullName, productId);
+            return CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_SNOMED_CT, fullName, productId);
         } else if (scheme == DrugScheme.MULTILEX) {
-            return Fhir.createCodeableConcept(fullName);
+            return CodeableConceptHelper.createCodeableConcept(fullName);
         } else {
             throw new TransformException("Unsupported drug scheme " + scheme);
         }
