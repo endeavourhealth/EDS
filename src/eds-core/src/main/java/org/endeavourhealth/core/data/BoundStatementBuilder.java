@@ -16,7 +16,8 @@ abstract class BoundStatementBuilder {
         UUID,
         Integer,
         Timestamp,
-        Map
+        Map,
+        Boolean
     }
 
     protected static class FieldAndValue {
@@ -84,6 +85,8 @@ abstract class BoundStatementBuilder {
                 return statement.setTimestamp(value.getColumnName(), (Date)value.getValue());
             case Map:
                 return statement.setMap(value.getColumnName(), (Map)value.getValue());
+            case Boolean:
+                return statement.setBool(value.getColumnName(), (Boolean)value.getValue());
             default:
                 throw new UnsupportedOperationException("FieldType not supported: " + value.fieldType.toString());
         }

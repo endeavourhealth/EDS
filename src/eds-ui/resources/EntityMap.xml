@@ -1,0 +1,124 @@
+<entityMap xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<entity>
+		<logicalName>PATIENT</logicalName>
+		<displayName>Patient</displayName>
+		<resultSetIndex>1</resultSetIndex>
+		<cardinality>single</cardinality>
+		<populationFieldIndex>1</populationFieldIndex>
+		<field>
+			<logicalName>DOB</logicalName>
+			<displayName>Date Of Birth</displayName>
+			<index>2</index>
+			<availability>search output</availability>
+			<logicalDataType>date</logicalDataType>
+		</field>
+		<field>
+			<logicalName>SEX</logicalName>
+			<displayName>Sex</displayName>
+			<index>3</index>
+			<availability>search output</availability>
+			<logicalDataType>dataValues</logicalDataType>
+			<dataValues>
+				<logicalValue>MALE</logicalValue>
+				<physicalValue>M</physicalValue>
+				<displayName>Male</displayName>
+			</dataValues>
+			<dataValues>
+				<logicalValue>FEMALE</logicalValue>
+				<physicalValue>F</physicalValue>
+				<displayName>Female</displayName>
+			</dataValues>
+		</field>
+		<field>
+			<logicalName>SURNAME</logicalName>
+			<displayName>Surname</displayName>
+			<index>4</index>
+			<availability>output</availability>
+			<logicalDataType>string</logicalDataType>
+		</field>
+		<field>
+			<logicalName>REGISTRATION_DATE</logicalName>
+			<displayName>Registration Date</displayName>
+			<index>5</index>
+			<availability>search output</availability>
+			<logicalDataType>date</logicalDataType>
+		</field>
+	</entity>
+	<entity>
+		<logicalName>OBSERVATION</logicalName>
+		<displayName>Observation</displayName>
+		<resultSetIndex>2</resultSetIndex>
+		<cardinality>multiple</cardinality>
+		<populationFieldIndex>1</populationFieldIndex>
+		<field>
+			<logicalName>CODE</logicalName>
+			<displayName>Code</displayName>
+			<index>2</index>
+			<availability>search output</availability>
+			<logicalDataType>code</logicalDataType>
+		</field>
+		<field>
+			<logicalName>TERM</logicalName>
+			<displayName>Term</displayName>
+			<index>3</index>
+			<availability>output</availability>
+			<logicalDataType>string</logicalDataType>
+		</field>
+		<field>
+			<logicalName>TIMESTAMP</logicalName>
+			<displayName>Audit Datetime</displayName>
+			<index>4</index>
+			<availability>search output</availability>
+			<logicalDataType>datetime</logicalDataType>
+		</field>
+		<field>
+			<logicalName>EFFECTIVE_DATE</logicalName>
+			<displayName>Date</displayName>
+			<index>5</index>
+			<availability>search output</availability>
+			<logicalDataType>datetime</logicalDataType>
+		</field>
+		<field>
+			<logicalName>VALUE</logicalName>
+			<displayName>Value</displayName>
+			<index>6</index>
+			<availability>search output</availability>
+			<logicalDataType>float</logicalDataType>
+		</field>
+	</entity>
+	<entity>
+		<logicalName>MEDICATION_ISSUE</logicalName>
+		<displayName>Medication Issue</displayName>
+		<resultSetIndex>3</resultSetIndex>
+		<cardinality>multiple</cardinality>
+		<populationFieldIndex>1</populationFieldIndex>
+		<field>
+			<logicalName>CODE</logicalName>
+			<displayName>Code</displayName>
+			<index>2</index>
+			<availability>search output</availability>
+			<logicalDataType>code</logicalDataType>
+		</field>
+		<field>
+			<logicalName>TERM</logicalName>
+			<displayName>Term</displayName>
+			<index>3</index>
+			<availability>output</availability>
+			<logicalDataType>string</logicalDataType>
+		</field>
+		<field>
+			<logicalName>TIMESTAMP</logicalName>
+			<displayName>Audit Datetime</displayName>
+			<index>4</index>
+			<availability>search output</availability>
+			<logicalDataType>datetime</logicalDataType>
+		</field>
+		<field>
+			<logicalName>EFFECTIVEDATE</logicalName>
+			<displayName>Date</displayName>
+			<index>5</index>
+			<availability>search output</availability>
+			<logicalDataType>datetime</logicalDataType>
+		</field>
+	</entity>
+</entityMap>

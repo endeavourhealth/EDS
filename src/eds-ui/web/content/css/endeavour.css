@@ -1,0 +1,184 @@
+/* Endeavour specific CSS */
+.center-float {
+    left:50%;
+    top:50%;
+    -webkit-transform: translate(-50%, -50%);
+    -moz-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    position:absolute;
+}
+.bordered-box {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+    -webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
+    -o-transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+    transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+}
+
+.zero-pad {
+    padding-right: 0px;
+    padding-left: 0px;
+}
+
+.module {
+    padding-top: 60px;
+    padding-left: 60px;
+    padding-right: 0px;
+}
+
+.module-heading {
+    position: fixed;
+    padding: 8px 70px 8px 20px;
+    border-bottom: 1px solid #eee;
+    color: #fff;
+    background-color: #337ab7;
+    width: 100%;
+    font-size: 16px;
+    height: 45px;
+    line-height: 28px;
+}
+
+.module-body {
+    padding-top: 70px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.module-footer {
+    position: fixed;
+    bottom: 0px;
+    width: 100%;
+    padding-left: 20px;
+    padding-right: 80px;
+}
+
+.striped {
+    border-top: 1px solid #eee;
+    background-color: #ffffff;
+}
+
+.striped:nth-of-type(odd) {
+    background-color: #f8f8f8;
+}
+
+.scroll-box-50 {
+    height: 50px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.scroll-box-100 {
+    height: 100px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.scroll-box-150 {
+    height: 150px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.scroll-box-300 {
+    height: 300px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.scroll-box-450 {
+    height: 450px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.show-child-on-hover .child-to-show {
+    display: none;
+}
+
+.show-child-on-hover:hover .child-to-show {
+    display: inline;
+}
+
+.show-child-on-hover .child-to-hide {
+    display: inline;
+}
+
+.show-child-on-hover:hover .child-to-hide {
+    display: none;
+}
+
+.folder-item {
+    display:inline-block;
+    width: 100%;
+    height: 20px;
+}
+
+.selection {
+    background : #afd9ee !important;
+}
+
+.previous-selection {
+    background : #afd9ee !important;
+}
+
+.dragtarget-over {
+    border: 1px solid #dae2ea !important;
+    padding: 0px;
+    background: #f8faff !important;
+}
+
+.hover-box:hover {
+    background: #d3e9f6 !important;
+}
+
+.logo {
+    font-size: 18px;
+    color: gray;
+    margin-left:10px;
+    vertical-align: middle
+}
+
+.vcenter {
+    min-height: 100%; /* Fallback for vh unit */
+    min-height: 100vh;
+    /* You might also want to use
+                           'height' property instead.
+
+                           Note that for percentage values of
+                           'height' or 'min-height' properties,
+                           the 'height' of the parent element
+                           should be specified explicitly.
+
+                           In this case the parent of '.vertical-center'
+                           is the <body> element */
+
+    /* Make it a flex container */
+    display: -webkit-box;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+
+    /* Align the bootstrap's container vertically */
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -moz-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+
+    /* In legacy web browsers such as Firefox 9
+       we need to specify the width of the flex container */
+    width: 100%;
+
+    /* Also 'margin: 0 auto' doesn't have any effect on flex items in such web browsers
+       hence the bootstrap's container won't be aligned to the center anymore.
+
+       Therefore, we should use the following declarations to get it centered again */
+    -webkit-box-pack: center;
+    -moz-box-pack: center;
+    -ms-flex-pack: center;
+    -webkit-justify-content: center;
+    justify-content: center;
+}

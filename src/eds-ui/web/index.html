@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html ng-app="app" ng-strict-di>
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Endeavour : Data Service Manager</title>
+		<link rel="stylesheet" href="/bower_components/bootstrap-css/css/bootstrap.min.css">
+		<link rel="stylesheet" href="/bower_components/bootstrap-css/css/bootstrap-theme.min.css">
+		<link rel="stylesheet" href="/bower_components/toastr/toastr.css"/>
+		<link rel="stylesheet" href="/bower_components/angular-ui-tree/dist/angular-ui-tree.css">
+		<link rel="stylesheet" href="/bower_components/font-awesome/css/font-awesome.css">
+
+		<link rel="stylesheet" href="/content/css/sidebar.css">
+		<link rel="stylesheet" href="/content/css/bootstrap-extensions.css">
+		<link rel="stylesheet" href="/content/css/ui-tree-extensions.css">
+		<link rel="stylesheet" href="/content/css/endeavour.css">
+		<link rel="stylesheet" href="/content/css/query.flowchart.css">
+		<link rel="stylesheet" href="/content/css/font-awesome-extensions.css">
+	</head>
+	<body>
+		<div ui-view></div>
+
+		<!-- 3rd Party Scripts-->
+		<script src="/bower_components/jquery/dist/jquery.js"></script>
+		<script src="/bower_components/jquery-ui/jquery-ui.js"></script>
+		<script src="/bower_components/angular/angular.js"></script>
+		<script src="/bower_components/ng-idle/angular-idle.js"></script>
+		<script src="/bower_components/angular-ui-router/release/angular-ui-router.js"></script>
+		<script src="/bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+		<script src="/bower_components/toastr/toastr.js"></script>
+		<script src="/angular-ui-tree-withFix.js"></script>
+		<script src="/bower_components/angular-dragdrop/src/angular-dragdrop.js"></script>
+		<script src="/bower_components/angular-uuid-generator/angular-uuid-generator.js"></script>
+
+		<!-- Main application script -->
+		<script src="app/app.module.js"></script>
+		<script src="app/app.route.js"></script>
+
+		<!-- Core (i.e. config/constants/services) -->
+		<script src="app/core/core.module.js"></script>
+		<script src="app/core/core.config.js"></script>
+		<script src="app/core/baseHttp.service.js"></script>
+		<script src="app/core/security.service.js"></script>
+		<script src="app/core/admin.service.js"></script>
+		<script src="app/core/moduleState.service.js"></script>
+
+		<script src="app/core/dashboard.service.js"></script>
+		<script src="app/core/report.service.js"></script>
+		<script src="app/core/folder.service.js"></script>
+		<script src="app/core/library.service.js"></script>
+		<script src="app/core/organisation.service.js"></script>
+
+		<script src="app/core/coding.service.js"></script>
+
+		<!-- Termlex -->
+		<script src="app/termlex/termlexCoding.service.js"></script>
+
+		<!-- Models -->
+		<script src="app/models/models.module.js"></script>
+		<script src="app/models/ItemType.js"></script>
+		<script src="app/models/FolderType.js"></script>
+		<script src="app/models/ReportNode.js"></script>
+		<script src="app/models/ListReportGroup.js"></script>
+		<script src="app/models/UuidNameKVP.js"></script>
+
+		<!-- Blocks -->
+		<script src="app/blocks/blocks.module.js"></script>
+		<script src="app/blocks/logger.service.js"></script>
+
+		<!-- Dialogs -->
+		<script src="app/dialogs/dialogs.module.js"></script>
+		<script src="app/dialogs/baseDialog.controller.js"></script>
+		<script src="app/dialogs/codePicker/codePicker.controller.js"></script>
+		<script src="app/dialogs/testEditor/testEditor.controller.js"></script>
+		<script src="app/dialogs/expressionEditor/expressionEditor.controller.js"></script>
+		<script src="app/dialogs/inputBox/inputBox.controller.js"></script>
+		<script src="app/dialogs/messageBox/messageBox.controller.js"></script>
+		<script src="app/dialogs/queueReport/queueReport.controller.js"></script>
+		<script src="app/dialogs/userEditor/userEditor.controller.js"></script>
+		<script src="app/dialogs/organisationPicker/organisationPicker.controller.js"></script>
+		<script src="app/dialogs/queryPicker/queryPicker.controller.js"></script>
+
+		<!-- Common -->
+		<script src="app/common/libraryItemModuleBase.js"></script>
+		<script src="app/common/libraryItemFolderModuleBase.js"></script>
+
+		<!-- Layout -->
+		<script src="app/layout/layout.module.js"></script>
+		<script src="app/layout/sidebar.controller.js"></script>
+		<script src="app/layout/topnav.controller.js"></script>
+		<script src="app/layout/shell.controller.js"></script>
+
+		<!-- Login -->
+		<script src="app/login/login.module.js"></script>
+		<script src="app/login/login.route.js"></script>
+		<script src="app/login/login.controller.js"></script>
+
+		<!-- Modules -->
+
+		<!-- Dashboard -->
+		<script src="app/dashboard/dashboard.module.js"></script>
+		<script src="app/dashboard/dashboard.route.js"></script>
+		<script src="app/dashboard/dashboard.controller.js"></script>
+		<!-- Library -->
+		<script src="app/library/library.module.js"></script>
+		<script src="app/library/library.route.js"></script>
+		<script src="app/library/library.controller.js"></script>
+		<!-- Protocols -->
+		<script src="app/protocol/protocol.module.js"></script>
+		<script src="app/protocol/protocol.route.js"></script>
+		<script src="app/protocol/protocol.controller.js"></script>
+		<!-- Reports -->
+		<script src="app/reports/reports.module.js"></script>
+		<script src="app/reports/reports.route.js"></script>
+		<script src="app/reports/reportList.controller.js"></script>
+		<script src="app/reports/report.controller.js"></script>
+		<!-- List Outputs -->
+		<script src="app/listOutput/listOutput.module.js"></script>
+		<script src="app/listOutput/listOutput.route.js"></script>
+		<script src="app/listOutput/listOutputController.js"></script>
+		<!-- Code Sets -->
+		<script src="app/codeSet/codeSet.module.js"></script>
+		<script src="app/codeSet/codeSet.route.js"></script>
+		<script src="app/codeSet/codeSetController.js"></script>
+		<!-- Organisation Sets -->
+		<script src="app/organisationSet/organisationSet.module.js"></script>
+		<script src="app/organisationSet/organisationSet.route.js"></script>
+		<script src="app/organisationSet/organisationSetController.js"></script>
+		<!-- Admin -->
+		<script src="app/administration/admin.module.js"></script>
+		<script src="app/administration/admin.route.js"></script>
+		<script src="app/administration/admin.controller.js"></script>
+		<!-- Query -->
+		<script src="app/query/query.module.js"></script>
+		<script src="app/query/query.route.js"></script>
+		<script src="app/query/query.controller.js"></script>
+		<!-- Query Flowchart -->
+		<script src="app/query/flowchart/svgclass.js"></script>
+		<script src="app/query/flowchart/mousecapture.service.js"></script>
+		<script src="app/query/flowchart/dragging.service.js"></script>
+		<script src="app/query/flowchart/flowchart.viewmodel.js"></script>
+		<script src="app/query/flowchart/flowchart.directive.js"></script>
+
+	</body>
+</html>
+

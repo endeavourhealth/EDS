@@ -1,0 +1,54 @@
+<div class="module">
+	<div class="container-fluid">
+		<div class="module-heading">
+			Data Distribution Protocols
+			<div class="pull-right">
+				<button type="button" class="btn btn-sm btn-success" data-ng-click="protocolCtrl.save(false)">Save</button>
+				<button type="button" class="btn btn-sm btn-warning" data-ng-click="protocolCtrl.save(true)">Save & Close</button>
+				<button type="button" class="btn btn-sm btn-danger" data-ng-click="protocolCtrl.close()">Cancel</button>
+			</div>
+		</div>
+		<div class="module-body">
+			<form>
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label for="name">Protocol Name</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-edit fa-lg fa-fw"></i></span>
+							<input type="text" class="form-control" id="name" ng-model="protocolCtrl.libraryItem.name" placeholder="Please enter a data protocol name">
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-12">
+						<label for="description">Protocol Description</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-edit fa-lg fa-fw"></i></span>
+							<textarea class="form-control" id="description" ng-model="protocolCtrl.libraryItem.description" placeholder="Please enter a description for this data protocol"></textarea>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label>Protocol Enabled</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-question fa-lg fa-fw"></i></span>
+							<select class="form-control" ng-model="protocolCtrl.protocol.enabled">
+								<option ng-repeat="enabled in protocolCtrl.enabled" value="{{enabled}}">{{enabled}}</option>
+							</select>
+						</div>
+					</div>
+					<div class="form-group col-md-6">
+						<label>Patient Consent</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-question fa-lg fa-fw"></i></span>
+							<select class="form-control" ng-model="protocolCtrl.protocol.patientConsent">
+								<option ng-repeat="consent in protocolCtrl.consent" value="{{consent}}">{{consent}}</option>
+							</select>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>

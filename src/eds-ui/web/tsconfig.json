@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"module": "amd",
+		"target": "es5",
+		"noImplicitAny": true,
+		"suppressImplicitAnyIndexErrors": true,
+		"rootDir": ".",
+		"sourceMap": true
+	},
+	"exclude": [
+			"typings",
+			"bower_components"
+			]
+}

@@ -1,6 +1,7 @@
 package org.endeavourhealth.core.data;
 
 import com.datastax.driver.core.BoundStatement;
+import com.datastax.driver.core.exceptions.BootstrappingException;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 
@@ -38,6 +39,11 @@ public class InsertStatementBuilder extends BoundStatementBuilder {
 
     public InsertStatementBuilder addColumnMap(String columnName, Map<String, String> value) {
         columnValues.add(FieldType.Map, columnName, value);
+        return this;
+    }
+
+    public InsertStatementBuilder addColumnBoolean(String columnName, Boolean value) {
+        columnValues.add(FieldType.Boolean, columnName, value);
         return this;
     }
 

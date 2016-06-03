@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	<xs:element name="entityMap" type="entityMap"/>
+	<xs:complexType name="entityMap">
+		<xs:sequence>
+			<xs:element name="entity" type="entity" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="entity">
+		<xs:sequence>
+			<xs:element name="logicalName" type="xs:string"/>
+			<xs:element name="displayName" type="xs:string"/>
+			<xs:element name="resultSetIndex" type="xs:int"/>
+			<xs:element name="cardinality" type="cardinality"/>
+			<xs:element name="populationFieldIndex" type="xs:int"/>
+			<xs:element name="organisationOdsFieldIndex" type="xs:int" minOccurs="0"/>
+			<xs:element name="field" type="field" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="field">
+		<xs:sequence>
+			<xs:element name="logicalName" type="xs:string"/>
+			<xs:element name="displayName" type="xs:string"/>
+			<xs:element name="index" type="xs:int"/>
+			<xs:element name="availability" type="availabilities"/>
+			<xs:element name="logicalDataType" type="logicalDataType"/>			
+			<xs:element name="dataValues" type="dataValueType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="logicalDataType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="string"/>
+			<xs:enumeration value="integer"/>
+			<xs:enumeration value="float"/>
+			<xs:enumeration value="datetime"/>
+			<xs:enumeration value="date"/>
+			<xs:enumeration value="uuid"/>
+			<xs:enumeration value="code"/>
+			<xs:enumeration value="dataValues"/>
+			<xs:enumeration value="organisationODS"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="cardinality">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="single"/>
+			<xs:enumeration value="multiple"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="availabilities">
+		<xs:list>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="search"/>
+					<xs:enumeration value="output"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:list>
+	</xs:simpleType>
+	<xs:complexType name="dataValueType">
+		<xs:sequence>
+			<xs:element name="logicalValue" type="xs:string"/>
+			<xs:element name="physicalValue" type="xs:string"/>
+			<xs:element name="displayName" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>

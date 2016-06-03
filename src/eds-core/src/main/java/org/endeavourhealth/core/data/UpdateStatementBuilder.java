@@ -43,6 +43,12 @@ public class UpdateStatementBuilder extends BoundStatementBuilder {
         return this;
     }
 
+    public UpdateStatementBuilder addColumnBoolean(String columnName, Boolean value) {
+        columnValues.add(FieldType.Boolean, columnName, value);
+        addParameterBoolean(columnName, value);
+        return this;
+    }
+
     public UpdateStatementBuilder addColumnTimestamp(String columnName, Date value) {
         columnValues.add(FieldType.Timestamp, columnName, value);
         addParameterTimestamp(columnName, value);
@@ -67,6 +73,11 @@ public class UpdateStatementBuilder extends BoundStatementBuilder {
 
     public UpdateStatementBuilder addParameterInteger(String columnName, Integer value) {
         parameters.add(FieldType.Integer, columnName, value);
+        return this;
+    }
+
+    public UpdateStatementBuilder addParameterBoolean(String columnName, Boolean value) {
+        parameters.add(FieldType.Boolean, columnName, value);
         return this;
     }
 
