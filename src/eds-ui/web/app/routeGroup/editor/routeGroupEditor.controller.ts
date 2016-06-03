@@ -12,7 +12,7 @@ module app.routeGroup {
 	export class RouteGroupEditorController extends BaseDialogController {
 		public static open($modal : IModalService, routeGroup : RouteGroup) : IModalServiceInstance {
 			var options : IModalSettings = {
-				templateUrl:'app/dialogs/routeGroup/editor/routeGroupEditor.html',
+				templateUrl:'app/routeGroup/editor/routeGroupEditor.html',
 				controller:'RouteGroupEditorController',
 				controllerAs:'ctrl',
 				backdrop: 'static',
@@ -33,6 +33,10 @@ module app.routeGroup {
 								private routeGroup : RouteGroup) {
 			super($uibModalInstance);
 			this.resultData = jQuery.extend(true, {}, routeGroup);
+		}
+
+		addFilter(filter : string) {
+			this.resultData.regex += filter;
 		}
 	}
 

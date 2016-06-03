@@ -19,15 +19,15 @@
 		<div class="row">
 			<div class="form-group col-md-12">
 				<label class="control-label">Filter</label>
-				<input type="text" class="form-control" placeholder="Filter" ng-model="ctrl.resultData.filter">
+				<input type="text" class="form-control" placeholder="Filter" ng-model="ctrl.resultData.regex">
 			</div>
 		</div>
 		<div class="row">
 			<div class="form-group col-md-12">
 				<label class="control-label"></label>
-				<input type="button" class="btn" ng-click="ctrl.resultData.filter += '[A-Z]'">A-Z</input>
-				<input type="button" class="btn" ng-click="ctrl.resultData.filter += '[0-9]'">0-9</input>
-				<input type="button" class="btn" ng-click="ctrl.resultData.filter += '[A-Z,0-9]'">A-9</input>
+				<button type="button" class="btn btn-xs" ng-click="ctrl.addFilter('[A-Z]')">A-Z</button>
+				<button type="button" class="btn btn-xs" ng-click="ctrl.addFilter('[0-9]')">0-9</button>
+				<button type="button" class="btn btn-xs" ng-click="ctrl.addFilter('[A-Z,0-9]')">A-9</button>
 			</div>
 		</div>
 		<div class="row">

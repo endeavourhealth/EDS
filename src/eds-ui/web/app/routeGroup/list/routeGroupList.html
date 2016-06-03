@@ -12,9 +12,9 @@
 								<thead>
 									<tr>
 										<th class="col-md-5">Name</th>
-										<th class="col-md-3">Filter</th>
 										<th class="col-md-2">Key</th>
-										<th class="col-md-2"></th>
+										<th class="col-md-4">Filter</th>
+										<th class="col-md-1"></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -24,10 +24,10 @@
 												<span class="fa fa-info-circle fa-right-pad text-muted" uib-tooltip="{{item.description}}" ng-show="item.description"></span>
 										</td>
 										<td>
-											{{item.filter}}
+											{{item.routeKey}}
 										</td>
 										<td>
-											{{item.key}}
+											{{item.regex}}
 										</td>
 										<td>
 											<button type="button" class="btn btn-danger btn-xs child-to-show" ng-click="ctrl.delete(item)"><span class="fa fa-remove"></span></button>

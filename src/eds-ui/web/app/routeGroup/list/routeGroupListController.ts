@@ -32,7 +32,7 @@ module app.routeGroup {
 			var vm = this;
 			RouteGroupEditorController.open(vm.$modal, item)
 				.result.then(function(routeGroup : RouteGroup) {
-				// Copy edited item back into routeGroups list
+				jQuery.extend(true, item, routeGroup);
 				vm.routeGroupService.saveRouteGroups(vm.routeGroups)
 					.then(function() {
 						vm.log.success('Route group saved', routeGroup, 'Save routeGroup');

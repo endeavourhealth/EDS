@@ -6,6 +6,7 @@ angular.module('app', [
     'ngDragDrop',
     'angular-uuid-generator',
     'app.core',
+    'app.config',
     'app.blocks',
     'app.models',
     'app.layout',
@@ -20,6 +21,7 @@ angular.module('app', [
     'app.organisationSet',
     'app.admin',
     'app.query',
+    'app.routeGroup',
     'flowChart',
     'dragging',
     'mouseCapture'
