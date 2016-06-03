@@ -1,7 +1,6 @@
 package org.endeavourhealth.transform.tpp.transforms;
 
 import org.endeavourhealth.transform.common.TransformException;
-import org.endeavourhealth.transform.fhir.Fhir;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;

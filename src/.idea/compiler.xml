@@ -73,6 +73,13 @@
         <processorPath useClasspath="true" />
         <module name="eds-clinical" />
       </profile>
+      <profile default="false" name="Annotation profile for eds-ui" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="eds-ui" />
+      </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="eds-admin" target="1.8" />
@@ -85,6 +92,7 @@
       <module name="eds-queuereader" target="1.8" />
       <module name="eds-sftpreader" target="1.8" />
       <module name="eds-transforms" target="1.8" />
+      <module name="eds-ui" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

@@ -1,6 +1,9 @@
 package org.endeavourhealth.core.queueing;
 
+import java.util.UUID;
+
 public class RouteGroup {
+	private UUID uuid;
 	private String regex;
 	private String routeKey;
 	private String name;
@@ -45,5 +48,13 @@ public class RouteGroup {
 
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public UUID getUuid() {
+		return uuid;
+	}
+
+	public void setUuid(UUID uuid) {
+		this.uuid = uuid;
 	}
 }
