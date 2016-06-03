@@ -1,10 +1,15 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
+import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+
+import java.io.IOException;
 
 public class Coding_ClinicalCode extends AbstractCsvTransformer {
-    public Coding_ClinicalCode(CSVParser csvReader, String dateFormat, String timeFormat) {
-        super(csvReader, dateFormat, timeFormat);
+
+    public Coding_ClinicalCode(String folderPath, CSVFormat csvFormat) throws IOException {
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
     }
 
     public Long getCodeId() {

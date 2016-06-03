@@ -5,58 +5,64 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.CsvMetadata;
+import org.endeavourhealth.transform.emis.csv.transforms.admin.LocationTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.admin.OrganisationTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.admin.UserInRoleTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.appointment.SessionTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.appointment.SlotTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ConsultationTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.coding.ClinicalCodeTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.EventTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.PatientTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.admin.PatientTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.PrescriptionTransformer;
-import org.hl7.fhir.instance.model.Resource;
+import org.endeavourhealth.transform.emis.csv.transforms.coding.DrugCodeTransformer;
+import org.endeavourhealth.transform.emis.emisopen.transforms.admin.ScheduleTransformer;
+import org.hl7.fhir.instance.model.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class EmisCsvTransformer {
 
     public static String DATE_FORMAT = "dd/MM/yyyy";
     public static String TIME_FORMAT = "hh:mm:ss";
 
-    public static Map<String, List<Resource>> transform(String folderPath) {
+    public static Map<String, List<Resource>> transform(String folderPath) throws Exception {
+
+        //parse coding files into cache maps (coding domain)
+        Map<Long, Object> clinicalCodes = ClinicalCodeTransformer.transformClinicalCodes(folderPath, CSVFormat.DEFAULT);
+        Map<Long, Object> drugCodes = DrugCodeTransformer.transformDrugCodes(folderPath, CSVFormat.DEFAULT);
+
+        //parse the non-patient metadata
+        Map<UUID, Location> fhirLocations = LocationTransformer.transformLocations(folderPath, CSVFormat.DEFAULT);
+        Map<UUID, Organization> fhirOrganisations = OrganisationTransformer.transformOrganisations(folderPath, CSVFormat.DEFAULT);
+        Map<UUID, Practitioner> fhirPractitioners = UserInRoleTransformer.transformUsersInRole(folderPath, CSVFormat.DEFAULT);
+        Map<UUID, Schedule> fhirSchedules = SessionTransformer.transformSessions(folderPath, CSVFormat.DEFAULT);
+
+        //now start parsing the patient data
+        Map<String, List<Resource>> fhirResources = new HashMap<>();
+
+        PatientTransformer.transformPatients(folderPath, CSVFormat.DEFAULT, fhirResources);
+
+        SlotTransformer.transformSlots(folderPath, CSVFormat.DEFAULT, fhirResources);
+
+        ConsultationTransformer.transformConsultations(folderPath, CSVFormat.DEFAULT, fhirResources);
 
 
-        Map<String, List<Resource>> ret = new HashMap<>();
+        //TODO - need to copy Organisations and Locations into patient resource lists
 
-        
 
-        return ret;
+        return fhirResources;
     }
 
-
-    public static Map<String, List<Resource>> transform(String patientCsvFile, String prescriptionCsvFile,
-                                                        String eventCsvFile, String metadataCsvFile) throws Exception {
-
-        //assume CSV files are in default format
-        CSVParser patientCsv = CSVParser.parse(patientCsvFile, CSVFormat.DEFAULT);
-        CSVParser prescriptionCsv = CSVParser.parse(prescriptionCsvFile, CSVFormat.DEFAULT);
-        CSVParser eventCsv = CSVParser.parse(eventCsvFile, CSVFormat.DEFAULT);
-        CSVParser metadataCsv = CSVParser.parse(metadataCsvFile, CSVFormat.DEFAULT);
-
-        //extract the metadata, which we'll use to validate the clinical information
-        List<CSVRecord> metadataRows = metadataCsv.getRecords();
-        if (metadataRows.isEmpty()) {
-            throw new TransformException("No metadata row");
+    public static void addToMap(UUID patientGuid, Resource fhirResource, Map<String, List<Resource>> hmResources) {
+        List<Resource> l = hmResources.get(patientGuid.toString());
+        if (l == null) {
+            l = new ArrayList<Resource>();
+            hmResources.put(patientGuid.toString(), l);
         }
-        CSVRecord csvRecord = metadataRows.get(0);
-        int patientCount = Integer.parseInt(csvRecord.get(CsvMetadata.PATIENTCOUNT.getValue()));
-        int eventCount = Integer.parseInt(csvRecord.get(CsvMetadata.EVENTCOUNT.getValue()));
-        int prescriptionCount = Integer.parseInt(csvRecord.get(CsvMetadata.PRESCRIPTIONCOUNT.getValue()));
-
-        //parse the patient data
-        Map<String, List<Resource>> ret = new HashMap<>();
-
-        PatientTransformer.transform(patientCsv, ret, patientCount);
-        PrescriptionTransformer.transform(prescriptionCsv, ret, prescriptionCount);
-        EventTransformer.transform(eventCsv, ret, eventCount);
-
-        return ret;
+        l.add(fhirResource);
     }
+
+
 
 }

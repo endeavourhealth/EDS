@@ -1,16 +1,18 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
+import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.UUID;
 
 public class Admin_Patient extends AbstractCsvTransformer {
 
-
-    public Admin_Patient(CSVParser csvReader, String dateFormat, String timeFormat) {
-        super(csvReader, dateFormat, timeFormat);
+    public Admin_Patient(String folderPath, CSVFormat csvFormat) throws IOException {
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
     }
 
     public UUID getPatientGuid() {

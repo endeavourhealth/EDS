@@ -1,11 +1,14 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import com.google.common.base.Strings;
+import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.transform.common.TransformException;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -22,6 +25,15 @@ public abstract class AbstractCsvTransformer {
     private CSVRecord csvRecord = null;
     private DateFormat dateFormat = null;
     private DateFormat timeFormat = null;
+
+    public AbstractCsvTransformer(String folderPath,CSVFormat csvFormat, String dateFormat, String timeFormat) throws IOException {
+        String csvFileName = getClass().getName() + ".csv";
+        File file = new File(folderPath, csvFileName);
+        this.csvReader = CSVParser.parse(file, Charset.defaultCharset(), csvFormat);
+        this.csvIterator = csvReader.iterator();
+        this.dateFormat = new SimpleDateFormat(dateFormat);
+        this.timeFormat = new SimpleDateFormat(timeFormat);
+    }
 
     public AbstractCsvTransformer(CSVParser csvReader, String dateFormat, String timeFormat) {
         this.csvReader = csvReader;

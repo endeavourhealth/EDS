@@ -269,4 +269,5 @@ public final class Fhir {
         return (period.getEnd() == null
                 || period.getEnd().after(new Date()));
     }
+
 }

@@ -26,4 +26,6 @@ public class FhirExtensionUri
     public final static String MEDICATION_AUTHORISATION_CANCELLATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-authorisation-cancellation-extension";
     public final static String MEDICATION_QUANTITY_TEXT = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-quantity-text-extension";
 
+    public final static String LOCATION_ACTIVE_PERIOD = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-activeperiod-extension";
+    public final static String ORGANISATION_ACTIVE_PERIOD = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-activeperiod-extension";
 }
