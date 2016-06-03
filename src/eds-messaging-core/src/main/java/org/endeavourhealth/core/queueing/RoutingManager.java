@@ -1,7 +1,11 @@
 package org.endeavourhealth.core.queueing;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.cache.CacheManager;
 import org.endeavourhealth.core.cache.ICacheable;
+import org.endeavourhealth.core.data.config.ConfigKeys;
+import org.endeavourhealth.core.data.config.ConfigurationRepository;
+import org.endeavourhealth.core.data.config.models.ConfigurationResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,15 +23,15 @@ public class RoutingManager implements ICacheable {
 		return instance;
 	}
 
-	private Route[] routingMap;
+	private RouteGroup[] routingMap;
 
 	public String getRoutingKeyForIdentifier(String identifier) {
-		Route[] routingMap = getRoutingMap();
+		RouteGroup[] routingMap = getRoutingMap();
 
-		for (Route route : routingMap) {
-			if (Pattern.matches(route.regex, identifier)) {
-				LOG.debug("Routing key [" + route.routeKey + "] found for identifier [" + identifier + "]");
-				return route.routeKey;
+		for (RouteGroup routeGroup : routingMap) {
+			if (Pattern.matches(routeGroup.getRegex(), identifier)) {
+				LOG.debug("Routing key [" + routeGroup.getRouteKey()+ "] found for identifier [" + identifier + "]");
+				return routeGroup.getRouteKey();
 			}
 		}
 
@@ -39,16 +43,23 @@ public class RoutingManager implements ICacheable {
 		routingMap = null;
 	}
 
-	private Route[] getRoutingMap() {
+	private RouteGroup[] getRoutingMap() {
 		if (routingMap == null) {
-			// TODO : Move routing map to config/db
-			routingMap = new Route[]{
-					new Route("GPs_Eng_Wls", "[A-H,J-N,P,W,Y][0-9][0-9][0-9][0-9][0-9]"),
-					new Route("GPs_Sct", "S[0-9][0-9][0-9][0-9][0-9]"),
-					new Route("A-M", "[A-M].*"),
-					new Route("N-Z", "[N-Z].*"),
-					new Route("0-9", "[0-9].*"),
-			};
+			ConfigurationResource routingConfig = new ConfigurationRepository().getByKey(ConfigKeys.RouteGroupings);
+
+			try {
+				routingMap = new ObjectMapper().readValue(routingConfig.getConfigurationData(), RouteGroup[].class);
+				LOG.debug("Routing table loaded : " + routingConfig.getConfigurationData());
+			}
+			catch (Exception e) {
+				LOG.error("Error reading routing config, falling back to defaults");
+				routingMap = new RouteGroup[]{
+						new RouteGroup("Default A-M", "Default fallback group, initial character A-M", "A-M", "[A-M].*"),
+						new RouteGroup("Default A-Z", "Default fallback group, initial character N-Z", "N-Z", "[N-Z].*"),
+						new RouteGroup("Default 0-9", "Default fallback group, initial character 0-9", "0-9", "[0-9].*"),
+						// Any others will fall back to the "Unknown" routing key
+				};
+			}
 		}
 
 		return routingMap;
