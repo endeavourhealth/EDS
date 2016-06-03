@@ -224,135 +224,135 @@ WITH CLUSTERING ORDER BY (end_user_id ASC);
 INSERT INTO dependency_type
 	(id, description)
 VALUES 
-	0, 'IsChildOf');
+	(0, 'IsChildOf');
 	
 INSERT INTO dependency_type
 	(id, description)
 VALUES 
-	1, 'IsContainedWithin');
+	(1, 'IsContainedWithin');
 	
 INSERT INTO dependency_type
 	(id, description)
 VALUES 
-	2, 'Uses');
+	(2, 'Uses');
 	
 INSERT INTO item_type
 	(id, description)
 VALUES 
-	0, 'ReportFolder');
+	(0, 'ReportFolder');
 	
 INSERT INTO item_type
 	(id, description)
 VALUES 
-	1, 'Report');
+	(1, 'Report');
 	
 INSERT INTO item_type
 	(id, description)
 VALUES 
-	2, 'Query');
+	(2, 'Query');
 	
 INSERT INTO item_type
 	(id, description)
 VALUES 
-	3, 'Test');
+	(3, 'Test');
 	
 INSERT INTO item_type
 	(id, description)
 VALUES 
-	4, 'DataSource');
+	(4, 'DataSource');
 	
 INSERT INTO item_type
 	(id, description)
 VALUES 
-	5, 'CodeSet');
+	(5, 'CodeSet');
 	
 INSERT INTO item_type
 	(id, description)
 VALUES 
-	6, 'ListOutput');
+	(6, 'ListOutput');
 	
 INSERT INTO item_type
 	(id, description)
 VALUES 
-	7, 'LibraryFolder');
+	(7, 'LibraryFolder');
 	
 INSERT INTO item_type
 	(id, description)
 VALUES 
-	8, 'Protocol');
+	(8, 'Protocol');
 	
 INSERT INTO end_user
 	(id, title, forename, surname, email, is_super_user)
 VALUES 
-	B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, 'Mr', 'Regular', 'User', 'regular@email', true);
+	(B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, 'Mr', 'Regular', 'User', 'regular@email', true);
 
 INSERT INTO end_user_pwd
 	(id, end_user_id, pwd_hash, dt_expired, failed_attempts, is_one_time_use)
 VALUES 
-	A9B3F8BE-ADF8-4923-832C-BD0AB7E484DB, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, '1000:1d049ba2ce1cbc28d76fed47e9699b21885252496d58b58b:c4d1df46d3ba5867349bec73fafba63468803ba5fe0d8edd', null, 0, false);
+	(A9B3F8BE-ADF8-4923-832C-BD0AB7E484DB, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, '1000:1d049ba2ce1cbc28d76fed47e9699b21885252496d58b58b:c4d1df46d3ba5867349bec73fafba63468803ba5fe0d8edd', null, 0, false);
 	
 INSERT INTO organisation
 	(id, name, national_id)
 VALUES 
-	B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, 'Test Organisation', '12345');
+	(B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, 'Test Organisation', '12345');
 	
 INSERT INTO organisation_end_user_link
 	(id, organisation_id, end_user_id, is_admin, dt_expired)
 VALUES 
-	6A82F368-DEC5-42F1-8C10-20AF183FC3FB, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, true, null);
+	(6A82F368-DEC5-42F1-8C10-20AF183FC3FB, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, true, null);
 	
 INSERT INTO active_item
 	(id, organisation_id, item_id, audit_id, item_type_id, is_deleted)
 VALUES
-	922BAD5B-7F1A-4435-929C-729929E0F660, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, 96448FF1-903B-4B1C-B306-4C04C7B3E0BC, 0291238C-AA5D-4CF0-85CC-58C451DB2FAE, 7, false);	
+	(922BAD5B-7F1A-4435-929C-729929E0F660, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, 96448FF1-903B-4B1C-B306-4C04C7B3E0BC, 0291238C-AA5D-4CF0-85CC-58C451DB2FAE, 7, false);	
   
 INSERT INTO active_item
 	(id, organisation_id, item_id, audit_id, item_type_id, is_deleted)
 VALUES
-	acbf49b3-f9ce-485a-8df6-de8216e1d2b6, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, 76ce138a-1e61-4cf4-9340-faff5cb0c8c2, 5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, 7, false);	
+	(acbf49b3-f9ce-485a-8df6-de8216e1d2b6, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, 76ce138a-1e61-4cf4-9340-faff5cb0c8c2, 5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, 7, false);	
 
 INSERT INTO active_item
 	(id, organisation_id, item_id, audit_id, item_type_id, is_deleted)
 VALUES
-	6a071454-55d0-47e6-baaf-731e053f5207, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, 82c7e37a-2d8d-4132-aca3-b25f3b497191, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, 7, false);	
+	(6a071454-55d0-47e6-baaf-731e053f5207, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, 82c7e37a-2d8d-4132-aca3-b25f3b497191, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, 7, false);	
 
 INSERT INTO item
 	(id, audit_id, xml_content, title, description, is_deleted)
 VALUES
-	96448FF1-903B-4B1C-B306-4C04C7B3E0BC, 0291238C-AA5D-4CF0-85CC-58C451DB2FAE, '', 'Library', '', false);
+	(96448FF1-903B-4B1C-B306-4C04C7B3E0BC, 0291238C-AA5D-4CF0-85CC-58C451DB2FAE, '', 'Library', '', false);
 	
 INSERT INTO item
 	(id, audit_id, xml_content, title, description, is_deleted)
 VALUES
-	76ce138a-1e61-4cf4-9340-faff5cb0c8c2, 5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, '', 'Data Protocols', '', false);
+	(76ce138a-1e61-4cf4-9340-faff5cb0c8c2, 5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, '', 'Data Protocols', '', false);
 
 INSERT INTO item
 	(id, audit_id, xml_content, title, description, is_deleted)
 VALUES
-	82c7e37a-2d8d-4132-aca3-b25f3b497191, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, '', 'Population Queries', '', false);
+	(82c7e37a-2d8d-4132-aca3-b25f3b497191, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, '', 'Population Queries', '', false);
 
 INSERT INTO audit
 	(id, end_user_id, time_stamp, audit_version, organisation_id)
 VALUES
-	0291238C-AA5D-4CF0-85CC-58C451DB2FAE, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, '2016-04-04 21:37:43', 1, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6);
+	(0291238C-AA5D-4CF0-85CC-58C451DB2FAE, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, '2016-04-04 21:37:43', 1, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6);
 
 INSERT INTO audit
 	(id, end_user_id, time_stamp, audit_version, organisation_id)
 VALUES
-	5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, '2016-04-04 21:37:43', 1, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6);
+	(5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, '2016-04-04 21:37:43', 1, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6);
 
 INSERT INTO audit
 	(id, end_user_id, time_stamp, audit_version, organisation_id)
 VALUES
-	f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, '2016-04-04 21:37:43', 1, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6);
+	(f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, '2016-04-04 21:37:43', 1, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6);
 
 INSERT INTO item_dependency
 	(item_id, audit_id, dependent_item_id, dependency_type_id)
 VALUES
-	76ce138a-1e61-4cf4-9340-faff5cb0c8c2, 5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, 96448FF1-903B-4B1C-B306-4C04C7B3E0BC, 0);
+	(76ce138a-1e61-4cf4-9340-faff5cb0c8c2, 5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, 96448FF1-903B-4B1C-B306-4C04C7B3E0BC, 0);
 
 INSERT INTO item_dependency
 	(item_id, audit_id, dependent_item_id, dependency_type_id)
 VALUES
-	82c7e37a-2d8d-4132-aca3-b25f3b497191, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, 96448FF1-903B-4B1C-B306-4C04C7B3E0BC, 0);
+	(82c7e37a-2d8d-4132-aca3-b25f3b497191, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, 96448FF1-903B-4B1C-B306-4C04C7B3E0BC, 0);
 	
