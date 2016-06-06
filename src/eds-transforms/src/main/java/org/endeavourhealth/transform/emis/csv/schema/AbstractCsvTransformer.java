@@ -122,14 +122,14 @@ public abstract class AbstractCsvTransformer {
             return new Date(d.getTime() + t.getTime());
         }
     }
-    public UUID getUniqueIdentifier(int index) {
+    /*public UUID getUniqueIdentifier(int index) {
         String s = csvRecord.get(index);
         if (Strings.isNullOrEmpty(s)) {
             return null;
         }
 
         return UUID.fromString(s);
-    }
+    }*/
     public boolean getBoolean(int index) {
         String s = csvRecord.get(index);
         if (Strings.isNullOrEmpty(s)) {
