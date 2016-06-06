@@ -12,8 +12,8 @@ public class Agreements_SharingOrganisation extends AbstractCsvTransformer {
         super(csvReader, dateFormat, timeFormat);
     }
 
-    public UUID getOrganisationGuid() {
-        return super.getUniqueIdentifier(0);
+    public String getOrganisationGuid() {
+        return super.getString(0);
     }
     public boolean getIsActivated() {
         return super.getBoolean(1);

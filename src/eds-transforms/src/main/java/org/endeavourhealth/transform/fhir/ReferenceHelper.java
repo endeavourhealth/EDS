@@ -70,6 +70,9 @@ public class ReferenceHelper
     public static Reference createPatientReference(String id) throws TransformException {
         return createReference(ResourceType.Patient, id);
     }
+    public static Reference createLocationReference(String id) throws TransformException {
+        return createReference(ResourceType.Location, id);
+    }
 
 
 

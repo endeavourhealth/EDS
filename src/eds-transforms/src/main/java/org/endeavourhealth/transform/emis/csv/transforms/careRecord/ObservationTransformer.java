@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.csv.schema.Appointment_Slot;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Observation;
+import org.endeavourhealth.transform.emis.csv.transforms.coding.Metadata;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.Map;
 
 public class ObservationTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, Map<String, List<Resource>> fhirResources) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
 
         CareRecord_Observation parser = new CareRecord_Observation(folderPath, csvFormat);
         try {

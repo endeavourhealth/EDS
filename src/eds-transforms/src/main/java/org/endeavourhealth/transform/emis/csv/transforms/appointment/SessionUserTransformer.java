@@ -9,12 +9,12 @@ import java.util.*;
 
 public class SessionUserTransformer {
 
-    public static Map<UUID, List<UUID>> transform(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static Map<String, List<String>> transform(String folderPath, CSVFormat csvFormat) throws Exception {
 
         //we need to extract the staff UUIDs in proper order, as the first staff member in a session is
         //regarded as the main actor in the session. As the CSV may be out of order, we use a temporary
         //storage object to persist the processingId, which is then used to sort the records before returning.
-        Map<UUID, List<UUIDAndProcessingOrder>> sessionToUserMap = new HashMap<>();
+        Map<String, List<UUIDAndProcessingOrder>> sessionToUserMap = new HashMap<>();
 
         Appointment_SessionUser parser = new Appointment_SessionUser(folderPath, csvFormat);
         try {
@@ -25,17 +25,17 @@ public class SessionUserTransformer {
             parser.close();
         }
 
-        Map<UUID, List<UUID>> ret = new HashMap<>();
+        Map<String, List<String>> ret = new HashMap<>();
 
-        Iterator<UUID> it = sessionToUserMap.keySet().iterator();
+        Iterator<String> it = sessionToUserMap.keySet().iterator();
         while (it.hasNext()) {
-            UUID sessionGuid = it.next();
+            String sessionGuid = it.next();
             List<UUIDAndProcessingOrder> uuidAndProcessingOrders = sessionToUserMap.get(sessionGuid);
 
             //sort the uuid and processing order objects by processing order
             uuidAndProcessingOrders.sort(Comparator.naturalOrder());
 
-            List<UUID> staffGuids = new ArrayList<>();
+            List<String> staffGuids = new ArrayList<>();
             ret.put(sessionGuid, staffGuids);
 
             for (UUIDAndProcessingOrder uuidAndProcessingOrder: uuidAndProcessingOrders) {
@@ -47,15 +47,15 @@ public class SessionUserTransformer {
         return ret;
     }
 
-    private static void createSessionUserMapping(Appointment_SessionUser sessionUserParser, Map<UUID, List<UUIDAndProcessingOrder>> sessionToUserMap) throws Exception {
+    private static void createSessionUserMapping(Appointment_SessionUser sessionUserParser, Map<String, List<UUIDAndProcessingOrder>> sessionToUserMap) throws Exception {
 
         //ignore deleted records
         if (sessionUserParser.getdDeleted()) {
             return;
         }
 
-        UUID sessionGuid = sessionUserParser.getSessionGuid();
-        UUID userGuid = sessionUserParser.getUserInRoleGuid();
+        String sessionGuid = sessionUserParser.getSessionGuid();
+        String userGuid = sessionUserParser.getUserInRoleGuid();
         int processingId = sessionUserParser.getProcessingId();
 
         List<UUIDAndProcessingOrder> l = sessionToUserMap.get(sessionGuid);
@@ -71,15 +71,15 @@ public class SessionUserTransformer {
  * temporary storage object to maintian the processing ID along with a staff UUID
  */
 class UUIDAndProcessingOrder implements Comparable<UUIDAndProcessingOrder> {
-    private UUID uuid = null;
+    private String uuid = null;
     private int processingId = -1;
 
-    public UUIDAndProcessingOrder(UUID uuid, int processingId) {
+    public UUIDAndProcessingOrder(String uuid, int processingId) {
         this.uuid = uuid;
         this.processingId = processingId;
     }
 
-    public UUID getUuid() {
+    public String getUuid() {
         return uuid;
     }
 

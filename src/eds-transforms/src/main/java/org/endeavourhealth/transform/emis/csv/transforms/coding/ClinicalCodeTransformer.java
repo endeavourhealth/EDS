@@ -9,58 +9,40 @@ import java.util.HashMap;
 
 public abstract class ClinicalCodeTransformer {
 
-    public static HashMap<Long, Object> transform(String folderPath, CSVFormat csvFormat) throws IOException {
+    public static HashMap<Long, ClinicalCode> transform(String folderPath, CSVFormat csvFormat) throws IOException {
 
-        HashMap<Long, Object> ret = new HashMap<Long, Object>();
+        HashMap<Long, ClinicalCode> ret = new HashMap<>();
 
-        Coding_ClinicalCode codeParser = new Coding_ClinicalCode(folderPath, csvFormat);
+        Coding_ClinicalCode parser = new Coding_ClinicalCode(folderPath, csvFormat);
         try {
-            while (codeParser.nextRecord()) {
-
-                Long codeId = codeParser.getCodeId();
-
-                ret.put(codeId, null);
-                //TODO - finish parsing clinical codes
-
-                //
-                // String read
-
-/**
-
- public String getCodeTerm() {
- return super.getString(1);
- }
- public String getReadTermId() {
- return super.getString(2);
- }
- public String getNationalCodeCategory() {
- return super.getString(3);
- }
- public String getNationalCode() {
- return super.getString(4);
- }
- public String getNationalDescription() {
- return super.getString(5);
- }
- public Long getSnomedCTConceptId() {
- return super.getLong(6);
- }
- public Long getSnomedCTDescriptionId() {
- return super.getLong(7);
- }
- public String getEmisCodeCategoryDescription() {
- return super.getString(8);
-
- */
-
+            while (parser.nextRecord()) {
+                transform(parser, ret);
             }
         } finally {
-            codeParser.close();
+            parser.close();
         }
 
         return ret;
     }
 
+    private static void transform(Coding_ClinicalCode codeParser, HashMap<Long, ClinicalCode> map) throws IOException {
 
+        Long codeId = codeParser.getCodeId();
+
+        String emisTerm = codeParser.getTerm();
+        String emisCode = codeParser.getReadTermId();
+        String nationalCategory = codeParser.getNationalCodeCategory();
+        String nationalCode = codeParser.getNationalCode();
+        String nationalDescription = codeParser.getNationalDescription();
+        Long snomedConceptId = codeParser.getSnomedCTConceptId();
+        Long snomedDescriptionId = codeParser.getSnomedCTDescriptionId();
+        String emisCategory = codeParser.getEmisCodeCategoryDescription();
+
+        ClinicalCode c = new ClinicalCode(emisTerm, emisCode, emisCategory,
+                nationalCategory, nationalCode, nationalDescription,
+                snomedConceptId.longValue(), snomedDescriptionId.longValue());
+
+        map.put(codeId, c);
+    }
 
 }

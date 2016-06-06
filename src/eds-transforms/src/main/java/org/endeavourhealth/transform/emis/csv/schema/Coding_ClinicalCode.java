@@ -15,7 +15,7 @@ public class Coding_ClinicalCode extends AbstractCsvTransformer {
     public Long getCodeId() {
         return super.getLong(0);
     }
-    public String getCodeTerm() {
+    public String getTerm() {
         return super.getString(1);
     }
     public String getReadTermId() {

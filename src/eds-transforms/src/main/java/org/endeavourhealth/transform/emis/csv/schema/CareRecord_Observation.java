@@ -15,17 +15,17 @@ public class CareRecord_Observation extends AbstractCsvTransformer {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
     }
 
-    public UUID getObservationGuid() {
-        return super.getUniqueIdentifier(0);
+    public String getObservationGuid() {
+        return super.getString(0);
     }
-    public UUID getParentOvercastionGuid() {
-        return super.getUniqueIdentifier(1);
+    public String getParentOvercastionGuid() {
+        return super.getString(1);
     }
-    public UUID getPatientGuid() {
-        return super.getUniqueIdentifier(2);
+    public String getPatientGuid() {
+        return super.getString(2);
     }
-    public UUID getOrganisationGuid() {
-        return super.getUniqueIdentifier(3);
+    public String getOrganisationGuid() {
+        return super.getString(3);
     }
     public Date getEffectiveDate() throws TransformException {
         return super.getDate(4);
@@ -36,20 +36,20 @@ public class CareRecord_Observation extends AbstractCsvTransformer {
     public Date getEnteredDateTime() throws TransformException {
         return super.getDateTime(6, 7);
     }
-    public UUID getClinicianUserInRoleGuid() {
-        return super.getUniqueIdentifier(8);
+    public String getClinicianUserInRoleGuid() {
+        return super.getString(8);
     }
-    public UUID getEnteredByUserInRoleGuid() {
-        return super.getUniqueIdentifier(9);
+    public String getEnteredByUserInRoleGuid() {
+        return super.getString(9);
     }
     public Long getCodeId() {
         return super.getLong(10);
     }
-    public UUID getProblemUGuid() {
-        return super.getUniqueIdentifier(11);
+    public String getProblemUGuid() {
+        return super.getString(11);
     }
-    public UUID getConsultationGuid() {
-        return super.getUniqueIdentifier(12);
+    public String getConsultationGuid() {
+        return super.getString(12);
     }
     public Double getValue() {
         return super.getDouble(13);
@@ -75,8 +75,8 @@ public class CareRecord_Observation extends AbstractCsvTransformer {
     public Integer getProcessingId() {
         return super.getInt(20);
     }
-    public UUID getDocumentGuid() {
-        return super.getUniqueIdentifier(21);
+    public String getDocumentGuid() {
+        return super.getString(21);
     }
     public boolean getIsConfidential() {
         return super.getBoolean(22);

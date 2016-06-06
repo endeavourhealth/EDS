@@ -3,19 +3,19 @@ package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.csv.schema.Appointment_Session;
 import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.ExtensionHelper;
+import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.*;
 
 public class SessionTransformer {
 
-    public static Map<UUID, Schedule> transform(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static Map<String, Schedule> transform(String folderPath, CSVFormat csvFormat) throws Exception {
 
         //first, process the CSV mapping staff to sessions
-        Map<UUID, List<UUID>> sessionToStaffMap = SessionUserTransformer.transform(folderPath, csvFormat);
+        Map<String, List<String>> sessionToStaffMap = SessionUserTransformer.transform(folderPath, csvFormat);
 
-        Map<UUID, Schedule> fhirSessions = new HashMap<>();
+        Map<String, Schedule> fhirSessions = new HashMap<>();
 
         Appointment_Session sessionParser = new Appointment_Session(folderPath, csvFormat);
         try {
@@ -29,7 +29,7 @@ public class SessionTransformer {
         return fhirSessions;
     }
 
-    private static void createSchedule(Appointment_Session sessionParser, Map<UUID, Schedule> fhirSessions, Map<UUID, List<UUID>> sessionToStaffMap) throws Exception {
+    private static void createSchedule(Appointment_Session sessionParser, Map<String, Schedule> fhirSessions, Map<String, List<String>> sessionToStaffMap) throws Exception {
 
         //skip deleted sessions
         if (sessionParser.getDeleted()) {
@@ -39,15 +39,15 @@ public class SessionTransformer {
         Schedule fhirSession = new Schedule();
         fhirSession.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SCHEDULE));
 
-        UUID sessionGuid = sessionParser.getAppointmnetSessionGuid();
-        fhirSession.setId(sessionGuid.toString());
+        String sessionGuid = sessionParser.getAppointmnetSessionGuid();
+        fhirSession.setId(sessionGuid);
 
         //add to the map
         fhirSessions.put(sessionGuid, fhirSession);
 
-        UUID locationGuid = sessionParser.getLocationGuid();
-        Reference fhirReference = ReferenceHelper.createReference(ResourceType.Location, locationGuid.toString());
-        fhirSession.addExtension(ExtensionHelper.createExtension(FhirExtensionUri.LOCATION, fhirReference));
+        String locationGuid = sessionParser.getLocationGuid();
+        Reference fhirReference = ReferenceHelper.createReference(ResourceType.Location, locationGuid);
+        fhirSession.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.LOCATION, fhirReference));
 
         Date start = sessionParser.getStartDateTime();
         Date end = sessionParser.getEndDateTime();
@@ -60,13 +60,13 @@ public class SessionTransformer {
         String description = sessionParser.getDescription();
         fhirSession.setComment(description);
 
-        List<UUID> staffGuids = sessionToStaffMap.get(sessionGuid);
-        UUID firstStaffGuid = staffGuids.remove(0);
-        fhirSession.setActor(ReferenceHelper.createReference(ResourceType.Practitioner, firstStaffGuid.toString()));
+        List<String> staffGuids = sessionToStaffMap.get(sessionGuid);
+        String firstStaffGuid = staffGuids.remove(0);
+        fhirSession.setActor(ReferenceHelper.createReference(ResourceType.Practitioner, firstStaffGuid));
 
-        for (UUID staffGuid: staffGuids) {
-            Reference fhirStaffReference = ReferenceHelper.createReference(ResourceType.Practitioner, staffGuid.toString());
-            fhirSession.addExtension(ExtensionHelper.createExtension(FhirExtensionUri.ADDITIONAL_ACTOR, fhirStaffReference));
+        for (String staffGuid: staffGuids) {
+            Reference fhirStaffReference = ReferenceHelper.createReference(ResourceType.Practitioner, staffGuid);
+            fhirSession.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ADDITIONAL_ACTOR, fhirStaffReference));
         }
     }
 }

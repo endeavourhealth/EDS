@@ -5,6 +5,7 @@ import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Patient;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Consultation;
+import org.endeavourhealth.transform.emis.csv.transforms.coding.Metadata;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
@@ -17,19 +18,19 @@ import java.util.UUID;
 
 public class ConsultationTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, Map<String, List<Resource>> fhirResources) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
 
         CareRecord_Consultation parser = new CareRecord_Consultation(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createEncounter(parser, fhirResources);
+                createEncounter(parser, metadata, fhirResources);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createEncounter(CareRecord_Consultation consultationParser, Map<String, List<Resource>> fhirResources) throws Exception {
+    private static void createEncounter(CareRecord_Consultation consultationParser, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
 
         //ignore deleted consultations
         if (consultationParser.getDeleted()) {
@@ -44,25 +45,25 @@ public class ConsultationTransformer {
         Encounter fhirEncounter = new Encounter();
         fhirEncounter.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ENCOUNTER));
 
-        UUID consultationGuid = consultationParser.getConsultationGuid();
-        fhirEncounter.setId(consultationGuid.toString());
+        String consultationGuid = consultationParser.getConsultationGuid();
+        fhirEncounter.setId(consultationGuid);
 
-        UUID patientGuid = consultationParser.getPatientGuid();
-        EmisCsvTransformer.addToMap(patientGuid, fhirEncounter, fhirResources);
+        String patientGuid = consultationParser.getPatientGuid();
+        Metadata.addToMap(patientGuid, fhirEncounter, fhirResources);
 
         fhirEncounter.setStatus(Encounter.EncounterState.FINISHED);
 
-        fhirEncounter.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientGuid.toString()));
+        fhirEncounter.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientGuid));
 
-        UUID appointmentGuid = consultationParser.getAppointmentSlotGuid();
+        String appointmentGuid = consultationParser.getAppointmentSlotGuid();
         if (appointmentGuid != null) {
-            fhirEncounter.setAppointment(ReferenceHelper.createReference(ResourceType.Appointment, appointmentGuid.toString()));
+            fhirEncounter.setAppointment(metadata.createAppointmentReference(appointmentGuid, patientGuid, fhirResources));
         }
 
-        UUID clinicianUuid = consultationParser.getClinicianUserInRoleGuid();
+        String clinicianUuid = consultationParser.getClinicianUserInRoleGuid();
         if (clinicianUuid != null) {
             Encounter.EncounterParticipantComponent fhirParticipant = fhirEncounter.addParticipant();
-            fhirParticipant.setIndividual(ReferenceHelper.createReference(ResourceType.Practitioner, clinicianUuid.toString()));
+            fhirParticipant.setIndividual(metadata.createPractitionerReference(clinicianUuid, patientGuid, fhirResources));
         }
 
         Date date = consultationParser.getEffectiveDate();

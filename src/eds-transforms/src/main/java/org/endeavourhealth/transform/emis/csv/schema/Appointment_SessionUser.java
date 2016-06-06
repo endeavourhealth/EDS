@@ -13,11 +13,11 @@ public class Appointment_SessionUser extends AbstractCsvTransformer {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
     }
 
-    public UUID getSessionGuid() {
-        return super.getUniqueIdentifier(0);
+    public String getSessionGuid() {
+        return super.getString(0);
     }
-    public UUID getUserInRoleGuid() {
-        return super.getUniqueIdentifier(1);
+    public String getUserInRoleGuid() {
+        return super.getString(1);
     }
     public boolean getdDeleted() {
         return super.getBoolean(2);

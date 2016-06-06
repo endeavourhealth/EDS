@@ -11,17 +11,17 @@ public class CareRecord_ObservationReferral extends AbstractCsvTransformer {
         super(csvReader, dateFormat, timeFormat);
     }
 
-    public UUID getObservationGuid() {
-        return super.getUniqueIdentifier(0);
+    public String getObservationGuid() {
+        return super.getString(0);
     }
-    public UUID getPatientGuid() {
-        return super.getUniqueIdentifier(1);
+    public String getPatientGuid() {
+        return super.getString(1);
     }
-    public UUID getOrganisationGuid() {
-        return super.getUniqueIdentifier(2);
+    public String getOrganisationGuid() {
+        return super.getString(2);
     }
-    public UUID getReferalTargetOrganisationGuid() {
-        return super.getUniqueIdentifier(3);
+    public String getReferalTargetOrganisationGuid() {
+        return super.getString(3);
     }
     public String getReferralUrgency() {
         return super.getString(4);
@@ -41,8 +41,8 @@ public class CareRecord_ObservationReferral extends AbstractCsvTransformer {
     public Long getReferralSourceId() {
         return super.getLong(10);
     }
-    public UUID getReferralSourceOrganisationGuid() {
-        return super.getUniqueIdentifier(11);
+    public String getReferralSourceOrganisationGuid() {
+        return super.getString(11);
     }
     public String getReferralUBRN() {
         return super.getString(12);

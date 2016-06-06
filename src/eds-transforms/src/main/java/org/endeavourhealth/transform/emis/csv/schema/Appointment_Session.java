@@ -15,11 +15,11 @@ public class Appointment_Session extends AbstractCsvTransformer {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
     }
 
-    public UUID getOrganisationGuid() {
-        return super.getUniqueIdentifier(0);
+    public String getOrganisationGuid() {
+        return super.getString(0);
     }
-    public UUID getAppointmnetSessionGuid() {
-        return super.getUniqueIdentifier(1);
+    public String getAppointmnetSessionGuid() {
+        return super.getString(1);
     }
     public String getDescription() {
         return super.getString(2);
@@ -45,7 +45,7 @@ public class Appointment_Session extends AbstractCsvTransformer {
     public Integer getProcessingId() {
         return super.getInt(11);
     }
-    public UUID getLocationGuid() {
-        return super.getUniqueIdentifier(12);
+    public String getLocationGuid() {
+        return super.getString(12);
     }
 }

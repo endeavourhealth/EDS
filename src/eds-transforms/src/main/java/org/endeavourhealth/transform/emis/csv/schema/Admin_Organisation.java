@@ -15,8 +15,8 @@ public class Admin_Organisation extends AbstractCsvTransformer {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
     }
 
-    public UUID getOrganisationGuid() {
-        return super.getUniqueIdentifier(0);
+    public String getOrganisationGuid() {
+        return super.getString(0);
     }
     public Integer getCDB() {
         return super.getInt(1);
@@ -27,11 +27,11 @@ public class Admin_Organisation extends AbstractCsvTransformer {
     public String getODScode() {
         return super.getString(3);
     }
-    public UUID getParentOrganisationGuid() {
-        return super.getUniqueIdentifier(4);
+    public String getParentOrganisationGuid() {
+        return super.getString(4);
     }
-    public UUID getCCGOrganisationGuid() {
-        return super.getUniqueIdentifier(5);
+    public String getCCGOrganisationGuid() {
+        return super.getString(5);
     }
     public String getOrganisationType() {
         return super.getString(6);
@@ -42,8 +42,8 @@ public class Admin_Organisation extends AbstractCsvTransformer {
     public Date getCloseDate() throws TransformException {
         return super.getDate(8);
     }
-    public UUID getMainLocationGuid() {
-        return super.getUniqueIdentifier(9);
+    public String getMainLocationGuid() {
+        return super.getString(9);
     }
     public Integer getProcessingId() {
         return super.getInt(10);

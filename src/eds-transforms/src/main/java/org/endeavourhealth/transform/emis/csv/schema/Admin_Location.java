@@ -33,11 +33,11 @@ public class Admin_Location extends AbstractCsvTransformer {
     public String getPostcode() {
         return super.getString(5);
     }
-    public UUID getLocationGuid() {
-        return super.getUniqueIdentifier(6);
+    public String getLocationGuid() {
+        return super.getString(6);
     }
-    public UUID getParentLocationId() {
-        return super.getUniqueIdentifier(7);
+    public String getParentLocationId() {
+        return super.getString(7);
     }
     public String getLocationName() {
         return super.getString(8);

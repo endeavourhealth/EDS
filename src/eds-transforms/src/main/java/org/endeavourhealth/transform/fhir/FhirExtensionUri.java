@@ -28,4 +28,7 @@ public class FhirExtensionUri
 
     public final static String LOCATION_ACTIVE_PERIOD = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-activeperiod-extension";
     public final static String ORGANISATION_ACTIVE_PERIOD = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-activeperiod-extension";
+
+    public final static String PROBLEM_EXPECTED_DURATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-problem-expectedduration-extension";
+    public final static String PROBLEM_LAST_REVIEW_DATE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-problem-lastreviewed-extension";
 }

@@ -15,11 +15,11 @@ public class Admin_Patient extends AbstractCsvTransformer {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
     }
 
-    public UUID getPatientGuid() {
-        return super.getUniqueIdentifier(0);
+    public String getPatientGuid() {
+        return super.getString(0);
     }
-    public UUID getOrganisationGuid() {
-        return super.getUniqueIdentifier(1);
+    public String getOrganisationGuid() {
+        return super.getString(1);
     }
     public String getSex() {
         return super.getString(2);
@@ -96,20 +96,20 @@ public class Admin_Patient extends AbstractCsvTransformer {
     public String getCarerRelation() {
         return super.getString(26);
     }
-    public UUID getPersonGUID() {
-        return super.getUniqueIdentifier(27);
+    public String getPersonGUID() {
+        return super.getString(27);
     }
-    public UUID getUsualGpUserInRoleGuid() {
-        return super.getUniqueIdentifier(28);
+    public String getUsualGpUserInRoleGuid() {
+        return super.getString(28);
     }
-    public UUID getExternalUsualGPGuid() {
-        return super.getUniqueIdentifier(29);
+    public String getExternalUsualGPGuid() {
+        return super.getString(29);
     }
     public String getExternalUsualGP() {
         return super.getString(30);
     }
-    public UUID getExternalUsualGPOrganisation() {
-        return super.getUniqueIdentifier(31);
+    public String getExternalUsualGPOrganisation() {
+        return super.getString(31);
     }
     public boolean getSpineSensitive() {
         return super.getBoolean(32);

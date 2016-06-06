@@ -4,6 +4,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.Appointment_Slot;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Consultation;
+import org.endeavourhealth.transform.emis.csv.transforms.coding.Metadata;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
@@ -15,36 +16,36 @@ import java.util.UUID;
 
 public class SlotTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, Map<String, List<Resource>> fhirResources) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
 
         Appointment_Slot parser = new Appointment_Slot(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createSlotAndAppointment(parser, fhirResources);
+                createSlotAndAppointment(parser, metadata, fhirResources);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createSlotAndAppointment(Appointment_Slot slotParser, Map<String, List<Resource>> fhirResources) throws Exception {
+    private static void createSlotAndAppointment(Appointment_Slot slotParser, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
 
         //ignore deleted slots
         if (slotParser.getDeleted()) {
             return;
         }
 
-        UUID patientGuid = slotParser.getPatientGuid();
+        String patientGuid = slotParser.getPatientGuid();
 
         Slot fhirSlot = new Slot();
         fhirSlot.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SLOT));
-        EmisCsvTransformer.addToMap(patientGuid, fhirSlot, fhirResources);
+        Metadata.addToMap(patientGuid, fhirSlot, fhirResources);
 
-        UUID slotGuid = slotParser.getSlotGuid();
-        fhirSlot.setId(slotGuid.toString());
+        String slotGuid = slotParser.getSlotGuid();
+        fhirSlot.setId(slotGuid);
 
-        UUID sessionGuid = slotParser.getSessionGuid();
-        fhirSlot.setSchedule(ReferenceHelper.createReference(ResourceType.Schedule, sessionGuid.toString()));
+        String sessionGuid = slotParser.getSessionGuid();
+        fhirSlot.setSchedule(metadata.createScheduleReference(sessionGuid, patientGuid, fhirResources));
 
         fhirSlot.setFreeBusyType(Slot.SlotStatus.BUSY);
 
@@ -59,7 +60,7 @@ public class SlotTransformer {
 
         Appointment fhirAppointment = new Appointment();
         fhirAppointment.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_APPOINTMENT));
-        EmisCsvTransformer.addToMap(patientGuid, fhirAppointment, fhirResources);
+        Metadata.addToMap(patientGuid, fhirAppointment, fhirResources);
 
         //use the same slot GUID as the appointment GUID, since it's a different resource type, it should be fine
         fhirAppointment.setId(slotGuid.toString());

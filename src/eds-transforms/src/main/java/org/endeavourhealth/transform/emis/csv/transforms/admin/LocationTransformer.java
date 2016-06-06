@@ -4,7 +4,7 @@ import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Location;
 import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.ExtensionHelper;
+import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
@@ -13,13 +13,13 @@ import java.util.UUID;
 
 public class LocationTransformer {
 
-    public static HashMap<UUID, Location> transform(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static HashMap<String, Location> transform(String folderPath, CSVFormat csvFormat) throws Exception {
 
         //to create the FHIR location resources, parse the Admin_OrganisationLocation file first
         //to get a map of which organisations each location belongs to
-        HashMap<UUID, UUID> hmLocationToOrganisation = OrganisationLocationTransformer.transform(folderPath, csvFormat);
+        HashMap<String, String> hmLocationToOrganisation = OrganisationLocationTransformer.transform(folderPath, csvFormat);
 
-        HashMap<UUID, Location> fhirLocationMap = new HashMap<>();
+        HashMap<String, Location> fhirLocationMap = new HashMap<>();
 
         Admin_Location parser = new Admin_Location(folderPath, csvFormat);
         try {
@@ -33,13 +33,13 @@ public class LocationTransformer {
         return fhirLocationMap;
     }
 
-    private static void createLocation(Admin_Location locationParser, HashMap<UUID, Location> fhirLocations, HashMap<UUID, UUID> hmLocationToOrganisation) throws Exception {
+    private static void createLocation(Admin_Location locationParser, HashMap<String, Location> fhirLocations, HashMap<String, String> hmLocationToOrganisation) throws Exception {
 
         Location fhirLocation = new Location();
         fhirLocation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_LOCATION));
 
-        UUID locationGuid = locationParser.getLocationGuid();
-        fhirLocation.setId(locationGuid.toString());
+        String locationGuid = locationParser.getLocationGuid();
+        fhirLocation.setId(locationGuid);
 
         //add to map for later use
         fhirLocations.put(locationGuid, fhirLocation);
@@ -81,7 +81,7 @@ public class LocationTransformer {
         } else {
             fhirLocation.setStatus(Location.LocationStatus.INACTIVE);
         }
-        fhirLocation.addExtension(ExtensionHelper.createExtension(FhirExtensionUri.LOCATION_ACTIVE_PERIOD, fhirPeriod));
+        fhirLocation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.LOCATION_ACTIVE_PERIOD, fhirPeriod));
 
         String name = locationParser.getLocationName();
         fhirLocation.setName(name);
@@ -89,17 +89,15 @@ public class LocationTransformer {
         String type = locationParser.getLocationTypeDescription();
         fhirLocation.setType(CodeableConceptHelper.createCodeableConcept(type));
 
-        UUID parentLocationGuid = locationParser.getParentLocationId();
+        String parentLocationGuid = locationParser.getParentLocationId();
         if (parentLocationGuid != null) {
-            fhirLocation.setPartOf(ReferenceHelper.createReference(ResourceType.Location, parentLocationGuid.toString()));
+            fhirLocation.setPartOf(ReferenceHelper.createReference(ResourceType.Location, parentLocationGuid));
         }
 
-        UUID organisationGuid = hmLocationToOrganisation.get(locationGuid);
+        String organisationGuid = hmLocationToOrganisation.get(locationGuid);
         if (organisationGuid != null) {
-            fhirLocation.setPartOf(ReferenceHelper.createReference(ResourceType.Organization, organisationGuid.toString()));
+            fhirLocation.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, organisationGuid));
         }
-
-        //TODO - do we need somewhere to store location MainContactName in FHIR
 
     }
 }

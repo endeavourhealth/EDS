@@ -9,9 +9,8 @@ import org.endeavourhealth.transform.emis.csv.transforms.appointment.SlotTransfo
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ConsultationTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.DiaryTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.ClinicalCodeTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.coding.*;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.PatientTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.DrugCodeTransformer;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.*;
@@ -23,23 +22,15 @@ public abstract class EmisCsvTransformer {
 
     public static Map<String, List<Resource>> transform(String folderPath) throws Exception {
 
-        //parse coding files into cache maps (coding domain)
-        Map<Long, Object> clinicalCodes = ClinicalCodeTransformer.transform(folderPath, CSVFormat.DEFAULT);
-        Map<Long, Object> drugCodes = DrugCodeTransformer.transform(folderPath, CSVFormat.DEFAULT);
-
-        //parse the non-patient metadata
-        Map<UUID, Location> fhirLocations = LocationTransformer.transform(folderPath, CSVFormat.DEFAULT);
-        Map<UUID, Organization> fhirOrganisations = OrganisationTransformer.transform(folderPath, CSVFormat.DEFAULT);
-        Map<UUID, Practitioner> fhirPractitioners = UserInRoleTransformer.transform(folderPath, CSVFormat.DEFAULT);
-        Map<UUID, Schedule> fhirSchedules = SessionTransformer.transform(folderPath, CSVFormat.DEFAULT);
+        Metadata metadata = transformMetadata(folderPath);
 
         //now start parsing the patient data
         Map<String, List<Resource>> fhirResources = new HashMap<>();
 
-        PatientTransformer.transform(folderPath, CSVFormat.DEFAULT, fhirResources);
-        SlotTransformer.transform(folderPath, CSVFormat.DEFAULT, fhirResources);
-        ConsultationTransformer.transform(folderPath, CSVFormat.DEFAULT, fhirResources);
-        ObservationTransformer.transform(folderPath, CSVFormat.DEFAULT, fhirResources);
+        PatientTransformer.transform(folderPath, CSVFormat.DEFAULT, metadata, fhirResources);
+        SlotTransformer.transform(folderPath, CSVFormat.DEFAULT, metadata, fhirResources);
+        ConsultationTransformer.transform(folderPath, CSVFormat.DEFAULT, metadata, fhirResources);
+        ObservationTransformer.transform(folderPath, CSVFormat.DEFAULT, metadata, fhirResources);
         //DiaryTransformer
         //ObservationReferral
         //Problem
@@ -52,14 +43,21 @@ public abstract class EmisCsvTransformer {
         return fhirResources;
     }
 
-    public static void addToMap(UUID patientGuid, Resource fhirResource, Map<String, List<Resource>> hmResources) {
-        List<Resource> l = hmResources.get(patientGuid.toString());
-        if (l == null) {
-            l = new ArrayList<Resource>();
-            hmResources.put(patientGuid.toString(), l);
-        }
-        l.add(fhirResource);
+    private static Metadata transformMetadata(String folderPath) throws Exception {
+
+        //parse coding files into cache maps
+        Map<Long, ClinicalCode> clinicalCodes = ClinicalCodeTransformer.transform(folderPath, CSVFormat.DEFAULT);
+        Map<Long, DrugCode> drugCodes = DrugCodeTransformer.transform(folderPath, CSVFormat.DEFAULT);
+
+        //parse the organisational metadata
+        Map<String, Location> fhirLocations = LocationTransformer.transform(folderPath, CSVFormat.DEFAULT);
+        Map<String, Organization> fhirOrganisations = OrganisationTransformer.transform(folderPath, CSVFormat.DEFAULT);
+        Map<String, Practitioner> fhirPractitioners = UserInRoleTransformer.transform(folderPath, CSVFormat.DEFAULT);
+        Map<String, Schedule> fhirSchedules = SessionTransformer.transform(folderPath, CSVFormat.DEFAULT);
+
+        return new Metadata(clinicalCodes, drugCodes, fhirLocations, fhirOrganisations, fhirPractitioners, fhirSchedules);
     }
+
 
 
 

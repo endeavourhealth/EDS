@@ -15,8 +15,8 @@ public class Appointment_Slot extends AbstractCsvTransformer {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
     }
 
-    public UUID getSlotGuid() {
-        return super.getUniqueIdentifier(0);
+    public String getSlotGuid() {
+        return super.getString(0);
     }
     public Date getAppointmentStartDateTime() throws TransformException {
         return super.getDateTime(1, 2);
@@ -24,8 +24,8 @@ public class Appointment_Slot extends AbstractCsvTransformer {
     public Integer getPlannedDurationInMinutes() {
         return super.getInt(3);
     }
-    public UUID getPatientGuid() {
-        return super.getUniqueIdentifier(4);
+    public String getPatientGuid() {
+        return super.getString(4);
     }
     public Date getSendInDateTime() throws TransformException {
         return super.getDateTime(1, 5);
@@ -45,11 +45,11 @@ public class Appointment_Slot extends AbstractCsvTransformer {
     public Integer getActualDurationInMinutes() {
         return super.getInt(10);
     }
-    public UUID getOrganisationGuid() {
-        return super.getUniqueIdentifier(11);
+    public String getOrganisationGuid() {
+        return super.getString(11);
     }
-    public UUID getSessionGuid() {
-        return super.getUniqueIdentifier(12);
+    public String getSessionGuid() {
+        return super.getString(12);
     }
     public Long getDnaReasonCodeId() {
         return super.getLong(13);

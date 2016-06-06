@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.tpp.transforms;
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.ExtensionHelper;
+import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.tpp.schema.*;
 import org.endeavourhealth.transform.tpp.schema.Address;
 import org.hl7.fhir.instance.model.*;
@@ -50,7 +50,7 @@ public class DemographicTransformer {
         //TODO - need to get proper object type for registrationType
         String registrationType = tppDemographics.getRegistrationType();
 
-        Extension ext = ExtensionHelper.createExtension(FhirExtensionUri.REGISTRATION_TYPE, new StringType(registrationType));
+        Extension ext = ExtensionConverter.createExtension(FhirExtensionUri.REGISTRATION_TYPE, new StringType(registrationType));
         fhirPatient.addExtension(ext);
     }
 

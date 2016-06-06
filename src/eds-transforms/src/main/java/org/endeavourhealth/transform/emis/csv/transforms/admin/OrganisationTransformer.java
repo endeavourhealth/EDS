@@ -1,23 +1,20 @@
 package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
-import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Organisation;
-import org.endeavourhealth.transform.emis.csv.schema.Admin_Patient;
 import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.ExtensionHelper;
+import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.UUID;
 
 public class OrganisationTransformer {
 
-    public static HashMap<UUID, Organization> transform(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static HashMap<String, Organization> transform(String folderPath, CSVFormat csvFormat) throws Exception {
 
-        HashMap<UUID, Organization> fhirOrganisationMap = new HashMap<>();
+        HashMap<String, Organization> fhirOrganisationMap = new HashMap<>();
 
         Admin_Organisation parser = new Admin_Organisation(folderPath, csvFormat);
         try {
@@ -31,13 +28,13 @@ public class OrganisationTransformer {
         return fhirOrganisationMap;
     }
 
-    private static void createOrganisation(Admin_Organisation organisationParser, HashMap<UUID, Organization> fhirOrganisationMap) throws Exception {
+    private static void createOrganisation(Admin_Organisation organisationParser, HashMap<String, Organization> fhirOrganisationMap) throws Exception {
 
         Organization fhirOrganisation = new Organization();
         fhirOrganisation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ORGANIZATION));
 
-        UUID orgGuid = organisationParser.getOrganisationGuid();
-        fhirOrganisation.setId(orgGuid.toString());
+        String orgGuid = organisationParser.getOrganisationGuid();
+        fhirOrganisation.setId(orgGuid);
 
         //add to map for later use
         fhirOrganisationMap.put(orgGuid, fhirOrganisation);
@@ -54,24 +51,24 @@ public class OrganisationTransformer {
         Date closeDate = organisationParser.getCloseDate();
         Period fhirPeriod = PeriodHelper.createPeriod(openDate, closeDate);
         fhirOrganisation.setActive(PeriodHelper.isActive(fhirPeriod));
-        fhirOrganisation.addExtension(ExtensionHelper.createExtension(FhirExtensionUri.ORGANISATION_ACTIVE_PERIOD, fhirPeriod));
+        fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ORGANISATION_ACTIVE_PERIOD, fhirPeriod));
 
-        UUID parentOrganisationGuid = organisationParser.getParentOrganisationGuid();
+        String parentOrganisationGuid = organisationParser.getParentOrganisationGuid();
         if (parentOrganisationGuid != null) {
-            fhirOrganisation.setPartOf(ReferenceHelper.createReference(ResourceType.Organization, parentOrganisationGuid.toString()));
+            fhirOrganisation.setPartOf(ReferenceHelper.createReference(ResourceType.Organization, parentOrganisationGuid));
         }
 
-        UUID ccgOrganisationGuid = organisationParser.getCCGOrganisationGuid();
+        String ccgOrganisationGuid = organisationParser.getCCGOrganisationGuid();
         if (ccgOrganisationGuid != null) {
-            fhirOrganisation.setPartOf(ReferenceHelper.createReference(ResourceType.Organization, ccgOrganisationGuid.toString()));
+            fhirOrganisation.setPartOf(ReferenceHelper.createReference(ResourceType.Organization, ccgOrganisationGuid));
         }
 
         String type = organisationParser.getOrganisationType();
         fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(type));
         //TODO - how to map EMIS org types to FHIR organisation types?
 
-        UUID mainLocationGuid = organisationParser.getMainLocationGuid();
-        Reference fhirReference = ReferenceHelper.createReference(ResourceType.Location, mainLocationGuid.toString());
-        fhirOrganisation.addExtension(ExtensionHelper.createExtension(FhirExtensionUri.LOCATION, fhirReference));
+        String mainLocationGuid = organisationParser.getMainLocationGuid();
+        Reference fhirReference = ReferenceHelper.createReference(ResourceType.Location, mainLocationGuid);
+        fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.LOCATION, fhirReference));
     }
 }

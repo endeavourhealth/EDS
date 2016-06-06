@@ -9,34 +9,28 @@ import java.util.HashMap;
 public class DrugCodeTransformer {
 
 
-    public static HashMap<Long, Object> transform(String folderPath, CSVFormat csvFormat) throws IOException {
+    public static HashMap<Long, DrugCode> transform(String folderPath, CSVFormat csvFormat) throws IOException {
 
-        HashMap<Long, Object> ret = new HashMap<Long, Object>();
+        HashMap<Long, DrugCode> ret = new HashMap<>();
 
-        Coding_DrugCode drugParser = new Coding_DrugCode(folderPath, csvFormat);
+        Coding_DrugCode parser = new Coding_DrugCode(folderPath, csvFormat);
         try {
-            while (drugParser.nextRecord()) {
-
-                Long codeId = drugParser.getCodeId();
-
-                ret.put(codeId, null);
-                //TODO - finish parsing clinical codes
-
-/**
- *
-
- public String getTerm() {
- return super.getString(1);
- }
- public Long getDmdProductCodeId() {
- return super.getLong(2);
-
- */
+            while (parser.nextRecord()) {
+                transform(parser, ret);
             }
         } finally {
-            drugParser.close();
+            parser.close();
         }
 
         return ret;
+    }
+
+    private static void transform(Coding_DrugCode drugParser, HashMap<Long, DrugCode> map) {
+
+        Long codeId = drugParser.getCodeId();
+        String term = drugParser.getTerm();
+        Long dmdId = drugParser.getDmdProductCodeId();
+
+        map.put(codeId, new DrugCode(term, dmdId));
     }
 }

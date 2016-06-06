@@ -13,11 +13,11 @@ public class Admin_OrganisationLocation extends AbstractCsvTransformer {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
     }
 
-    public UUID getOrgansationGuid() {
-        return super.getUniqueIdentifier(0);
+    public String getOrgansationGuid() {
+        return super.getString(0);
     }
-    public UUID getLocationGuid() {
-        return super.getUniqueIdentifier(1);
+    public String getLocationGuid() {
+        return super.getString(1);
     }
     public boolean getIsMainLocation() {
         return super.getBoolean(2);

@@ -14,9 +14,9 @@ import java.util.*;
 
 public class OrganisationLocationTransformer {
 
-    public static HashMap<UUID, UUID> transform(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static HashMap<String, String> transform(String folderPath, CSVFormat csvFormat) throws Exception {
 
-        HashMap<UUID, UUID> hmLocationToOrganisation = new HashMap<>();
+        HashMap<String, String> hmLocationToOrganisation = new HashMap<>();
 
         Admin_OrganisationLocation parser = new Admin_OrganisationLocation(folderPath, csvFormat);
         try {
@@ -30,15 +30,15 @@ public class OrganisationLocationTransformer {
         return hmLocationToOrganisation;
     }
 
-    private static void createLocationOrgansationMapping(Admin_OrganisationLocation organisationLocationParser, HashMap<UUID, UUID> hmLocationToOrganisation) throws Exception {
+    private static void createLocationOrgansationMapping(Admin_OrganisationLocation organisationLocationParser, HashMap<String, String> hmLocationToOrganisation) throws Exception {
 
         //skip any deleted links
         if (organisationLocationParser.getDeleted()) {
             return;
         }
 
-        UUID orgGuid = organisationLocationParser.getOrgansationGuid();
-        UUID locationGuid = organisationLocationParser.getLocationGuid();
+        String orgGuid = organisationLocationParser.getOrgansationGuid();
+        String locationGuid = organisationLocationParser.getLocationGuid();
 
         if (hmLocationToOrganisation.get(locationGuid) != null) {
             throw new TransformException("Location " + locationGuid + " is in more than on organisation");

@@ -13,9 +13,9 @@ import java.util.UUID;
 
 public class UserInRoleTransformer {
 
-    public static HashMap<UUID, Practitioner> transform(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static HashMap<String, Practitioner> transform(String folderPath, CSVFormat csvFormat) throws Exception {
 
-        HashMap<UUID, Practitioner> fhirUsersInRoleMap = new HashMap<>();
+        HashMap<String, Practitioner> fhirUsersInRoleMap = new HashMap<>();
 
         Admin_UserInRole userInRoleParser = new Admin_UserInRole(folderPath, csvFormat);
         try {
@@ -29,12 +29,12 @@ public class UserInRoleTransformer {
         return fhirUsersInRoleMap;
     }
 
-    private static void createPractitioner(Admin_UserInRole userInRoleParser, HashMap<UUID, Practitioner> fhirUsersInRoleMap) throws Exception {
+    private static void createPractitioner(Admin_UserInRole userInRoleParser, HashMap<String, Practitioner> fhirUsersInRoleMap) throws Exception {
 
         Practitioner fhirPractitioner = new Practitioner();
         fhirPractitioner.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PRACTITIONER));
 
-        UUID userInRoleGuid = userInRoleParser.getUserInRoleGuid();
+        String userInRoleGuid = userInRoleParser.getUserInRoleGuid();
         fhirUsersInRoleMap.put(userInRoleGuid, fhirPractitioner);
 
         fhirPractitioner.setId(userInRoleGuid.toString());
@@ -56,8 +56,8 @@ public class UserInRoleTransformer {
 
         fhirRole.setPeriod(fhirPeriod);
 
-        UUID orgUuid = userInRoleParser.getOrganisationGuid();
-        fhirRole.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, orgUuid.toString()));
+        String orgUuid = userInRoleParser.getOrganisationGuid();
+        fhirRole.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, orgUuid));
 
         String roleName = userInRoleParser.getJobCategoryName();
         fhirRole.setRole(new CodeableConcept().setText(roleName));

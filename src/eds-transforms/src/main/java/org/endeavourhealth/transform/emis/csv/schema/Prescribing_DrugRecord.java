@@ -1,24 +1,27 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
+import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.UUID;
 
 public class Prescribing_DrugRecord extends AbstractCsvTransformer {
-    public Prescribing_DrugRecord(CSVParser csvReader, String dateFormat, String timeFormat) {
-        super(csvReader, dateFormat, timeFormat);
+    public Prescribing_DrugRecord(String folderPath, CSVFormat csvFormat) throws IOException {
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
     }
 
-    public UUID getDrugRecordGuid() {
-        return super.getUniqueIdentifier(0);
+    public String getDrugRecordGuid() {
+        return super.getString(0);
     }
-    public UUID getPatientGuid() {
-        return super.getUniqueIdentifier(1);
+    public String getPatientGuid() {
+        return super.getString(1);
     }
-    public UUID getOrganisationGuid() {
-        return super.getUniqueIdentifier(2);
+    public String getOrganisationGuid() {
+        return super.getString(2);
     }
     public Date getEffectiveDate() throws TransformException {
         return super.getDate(3);
@@ -29,11 +32,11 @@ public class Prescribing_DrugRecord extends AbstractCsvTransformer {
     public Date getEnteredDateTime() throws TransformException {
         return super.getDateTime(5, 6);
     }
-    public UUID getClinicianUserInRoleGuid() {
-        return super.getUniqueIdentifier(7);
+    public String getClinicianUserInRoleGuid() {
+        return super.getString(7);
     }
-    public UUID getEnteredByUserInRoleGuid() {
-        return super.getUniqueIdentifier(8);
+    public String getEnteredByUserInRoleGuid() {
+        return super.getString(8);
     }
     public Long getCodeId() {
         return super.getLong(9);
@@ -47,8 +50,8 @@ public class Prescribing_DrugRecord extends AbstractCsvTransformer {
     public String getQuantityUnit() {
         return super.getString(12);
     }
-    public UUID getProblemObservationGuid() {
-        return super.getUniqueIdentifier(13);
+    public String getProblemObservationGuid() {
+        return super.getString(13);
     }
     public String getPrescriptionType() {
         return super.getString(14);

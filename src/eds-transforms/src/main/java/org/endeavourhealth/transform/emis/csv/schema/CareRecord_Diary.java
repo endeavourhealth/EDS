@@ -11,14 +11,14 @@ public class CareRecord_Diary extends AbstractCsvTransformer {
         super(csvReader, dateFormat, timeFormat);
     }
 
-    public UUID getDiaryGuid() {
-        return super.getUniqueIdentifier(0);
+    public String getDiaryGuid() {
+        return super.getString(0);
     }
-    public UUID getPatientGuid() {
-        return super.getUniqueIdentifier(1);
+    public String getPatientGuid() {
+        return super.getString(1);
     }
-    public UUID getOrganisationGuid() {
-        return super.getUniqueIdentifier(2);
+    public String getOrganisationGuid() {
+        return super.getString(2);
     }
     public Date getEffectiveDate() throws TransformException {
         return super.getDate(3);
@@ -29,11 +29,11 @@ public class CareRecord_Diary extends AbstractCsvTransformer {
     public Date getEnteredDateTime() throws TransformException {
         return super.getDateTime(5, 6);
     }
-    public UUID getClinicianUserInRoleGuid() {
-        return super.getUniqueIdentifier(7);
+    public String getClinicianUserInRoleGuid() {
+        return super.getString(7);
     }
-    public UUID getEnteredByUserInRoleGuid() {
-        return super.getUniqueIdentifier(8);
+    public String getEnteredByUserInRoleGuid() {
+        return super.getString(8);
     }
     public Long getCodeId() {
         return super.getLong(9);
@@ -50,8 +50,8 @@ public class CareRecord_Diary extends AbstractCsvTransformer {
     public String getLocationTypeDescription() {
         return super.getString(13);
     }
-    public UUID getConsultationGuid() {
-        return super.getUniqueIdentifier(14);
+    public String getConsultationGuid() {
+        return super.getString(14);
     }
     public boolean getIsConfidential() {
         return super.getBoolean(15);

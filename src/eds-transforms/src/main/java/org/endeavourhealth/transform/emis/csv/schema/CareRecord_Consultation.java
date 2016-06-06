@@ -15,14 +15,14 @@ public class CareRecord_Consultation extends AbstractCsvTransformer {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
     }
 
-    public UUID getConsultationGuid() {
-        return super.getUniqueIdentifier(0);
+    public String getConsultationGuid() {
+        return super.getString(0);
     }
-    public UUID getPatientGuid() {
-        return super.getUniqueIdentifier(1);
+    public String getPatientGuid() {
+        return super.getString(1);
     }
-    public UUID getOrganisationGuid() {
-        return super.getUniqueIdentifier(2);
+    public String getOrganisationGuid() {
+        return super.getString(2);
     }
     public Date getEffectiveDate() throws TransformException {
         return super.getDate(3);
@@ -33,14 +33,14 @@ public class CareRecord_Consultation extends AbstractCsvTransformer {
     public Date getEnteredDateTime() throws TransformException {
         return super.getDateTime(5, 6);
     }
-    public UUID getClinicianUserInRoleGuid() {
-        return super.getUniqueIdentifier(7);
+    public String getClinicianUserInRoleGuid() {
+        return super.getString(7);
     }
-    public UUID getEnteredByUserInRoleGuid() {
-        return super.getUniqueIdentifier(8);
+    public String getEnteredByUserInRoleGuid() {
+        return super.getString(8);
     }
-    public UUID getAppointmentSlotGuid() {
-        return super.getUniqueIdentifier(9);
+    public String getAppointmentSlotGuid() {
+        return super.getString(9);
     }
     public String getConsultationSourceTerm() {
         return super.getString(10);

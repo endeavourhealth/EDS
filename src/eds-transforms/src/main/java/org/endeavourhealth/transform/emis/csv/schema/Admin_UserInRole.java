@@ -15,11 +15,11 @@ public class Admin_UserInRole extends AbstractCsvTransformer {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
     }
 
-    public UUID getUserInRoleGuid() {
-        return super.getUniqueIdentifier(0);
+    public String getUserInRoleGuid() {
+        return super.getString(0);
     }
-    public UUID getOrganisationGuid() {
-        return super.getUniqueIdentifier(1);
+    public String getOrganisationGuid() {
+        return super.getString(1);
     }
     public String getTitle() {
         return super.getString(2);

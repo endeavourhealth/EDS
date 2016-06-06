@@ -16,17 +16,17 @@ public class CareRecord_Problem extends AbstractCsvTransformer {
     }
 
 
-    public UUID getObservationGuid() {
-        return super.getUniqueIdentifier(0);
+    public String getObservationGuid() {
+        return super.getString(0);
     }
-    public UUID getParentProblemObservationGuid() {
-        return super.getUniqueIdentifier(1);
+    public String getParentProblemObservationGuid() {
+        return super.getString(1);
     }
-    public UUID getPatientGuid() {
-        return super.getUniqueIdentifier(2);
+    public String getPatientGuid() {
+        return super.getString(2);
     }
-    public UUID getOrganisationGuid() {
-        return super.getUniqueIdentifier(3);
+    public String getOrganisationGuid() {
+        return super.getString(3);
     }
     public Date getEndDate() throws TransformException {
         return super.getDate(4);
@@ -40,8 +40,8 @@ public class CareRecord_Problem extends AbstractCsvTransformer {
     public String getLastReviewDatePrecision() {
         return super.getString(7);
     }
-    public UUID getLastReviewUserInRoleGuid() {
-        return super.getUniqueIdentifier(8);
+    public String getLastReviewUserInRoleGuid() {
+        return super.getString(8);
     }
     public Integer getExpectedDuration() {
         return super.getInt(9);
