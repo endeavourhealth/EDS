@@ -9,6 +9,7 @@ import org.endeavourhealth.transform.emis.csv.transforms.appointment.SlotTransfo
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ConsultationTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.DiaryTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ProblemTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.coding.*;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.PatientTransformer;
 import org.hl7.fhir.instance.model.*;
@@ -28,6 +29,7 @@ public abstract class EmisCsvTransformer {
         Map<String, List<Resource>> fhirResources = new HashMap<>();
 
         PatientTransformer.transform(folderPath, CSVFormat.DEFAULT, metadata, fhirResources);
+        ProblemTransformer.transform(folderPath, CSVFormat.DEFAULT, metadata, fhirResources);
         SlotTransformer.transform(folderPath, CSVFormat.DEFAULT, metadata, fhirResources);
         ConsultationTransformer.transform(folderPath, CSVFormat.DEFAULT, metadata, fhirResources);
         ObservationTransformer.transform(folderPath, CSVFormat.DEFAULT, metadata, fhirResources);

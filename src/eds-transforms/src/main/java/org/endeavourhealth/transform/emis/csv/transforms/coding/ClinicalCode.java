@@ -1,5 +1,11 @@
 package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.terminology.Snomed;
+import org.endeavourhealth.transform.terminology.TerminologyService;
+import org.hl7.fhir.instance.model.CodeableConcept;
+
 /**
  * temporary storage object used during parsing the EMIS CSV extract
  */
@@ -13,12 +19,12 @@ public class ClinicalCode {
     private String nationalCode = null;
     private String nationalDescription = null;
 
-    private long snomedConceptId = -1;
-    private long snomedDescriptionId = -1;
+    private Long snomedConceptId = null;
+    private Long snomedDescriptionId = null;
 
     public ClinicalCode(String emisTerm, String emisCode, String emisCategory,
                         String nationalCodeCategory, String nationalCode, String nationalDescription,
-                        long snomedConceptId, long snomedDescriptionId) {
+                        Long snomedConceptId, Long snomedDescriptionId) {
 
         this.emisTerm = emisTerm;
         this.emisCode = emisCode;
@@ -54,11 +60,23 @@ public class ClinicalCode {
         return nationalDescription;
     }
 
-    public long getSnomedConceptId() {
+    public Long getSnomedConceptId() {
         return snomedConceptId;
     }
 
-    public long getSnomedDescriptionId() {
+    public Long getSnomedDescriptionId() {
         return snomedDescriptionId;
+    }
+
+    public CodeableConcept createCodeableConcept() {
+
+        if (emisCode == null) {
+            return CodeableConceptHelper.createCodeableConcept(emisTerm);
+        }
+
+        CodeableConcept ret = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, emisTerm, emisCode);
+        String snomedTerm = Snomed.getTerm(snomedConceptId.toString(), snomedDescriptionId.toString());
+        ret.addCoding(CodeableConceptHelper.createCoding(FhirUri.CODE_SYSTEM_SNOMED_CT, snomedTerm, snomedConceptId.toString()));
+        return ret;
     }
 }

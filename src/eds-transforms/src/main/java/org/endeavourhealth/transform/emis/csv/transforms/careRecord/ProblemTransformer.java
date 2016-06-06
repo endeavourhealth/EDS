@@ -1,12 +1,8 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.common.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
-import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Observation;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Problem;
 import org.endeavourhealth.transform.emis.csv.transforms.coding.Metadata;
-import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
@@ -16,23 +12,22 @@ import org.hl7.fhir.instance.model.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class ProblemTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, Map<String, List<Resource>> fhirResources) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
 
         CareRecord_Problem parser = new CareRecord_Problem(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createProblem(parser, fhirResources);
+                createProblem(parser, metadata, fhirResources);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createProblem(CareRecord_Problem problemParser, Map<String, List<Resource>> fhirResources) throws Exception {
+    private static void createProblem(CareRecord_Problem problemParser, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
 
         String patientGuid = problemParser.getPatientGuid();
 
@@ -47,7 +42,7 @@ public class ProblemTransformer {
 
         Date endDate = problemParser.getEndDate();
         String endDatePrecision = problemParser.getEffectiveDatePrecision(); //NOTE; documentation refers to this as EffectiveDate, but this should be EndDate
-        fhirProblem.setAbatement(createDateTimeType(endDate, endDatePrecision));
+        fhirProblem.setAbatement(Metadata.createDateType(endDate, endDatePrecision));
 
         //some of the information we need is stored on our original Observation, so we
         //need to
@@ -65,6 +60,9 @@ public class ProblemTransformer {
         //related
         //associated
 
+        //TODO - need to set the ....partOfProblemEpisode extension on the Observation resource we're linked to
+        //TODO - update the status field on the Observation resource we're linked to
+
         Integer expectedDuration = problemParser.getExpectedDuration();
         if (expectedDuration != null) {
             fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_EXPECTED_DURATION, new IntegerType(expectedDuration.intValue())));
@@ -72,7 +70,7 @@ public class ProblemTransformer {
 
         Date lastReviewDate = problemParser.getLastReviewDate();
         String lastReviewPrecision = problemParser.getLastReviewDatePrecision();
-        DateType lastReviewDateType = createDateTimeType(lastReviewDate, lastReviewPrecision);
+        DateType lastReviewDateType = Metadata.createDateType(lastReviewDate, lastReviewPrecision);
         if (lastReviewDateType != null) {
             fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_LAST_REVIEW_DATE, lastReviewDateType));
         }
@@ -104,27 +102,5 @@ public class ProblemTransformer {
  */
     }
 
-    private static DateType createDateTimeType(Date date, String precision) throws Exception {
-        if (date == null) {
-            return null;
-        }
 
-        VocDatePart vocPrecision = VocDatePart.fromValue(precision);
-        if (vocPrecision == null) {
-            throw new TransformException("Unsupported consultation precision [" + precision + "]");
-        }
-
-        switch (vocPrecision) {
-            case U:
-                return null;
-            case Y:
-                return new DateType(date, TemporalPrecisionEnum.YEAR);
-            case YM:
-                return new DateType(date, TemporalPrecisionEnum.MONTH);
-            case YMD:
-                return new DateType(date, TemporalPrecisionEnum.DAY);
-            default:
-                throw new TransformException("Unhandled date precision [" + vocPrecision + "]");
-        }
-    }
 }

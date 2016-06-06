@@ -6,8 +6,10 @@ import org.endeavourhealth.transform.emis.csv.transforms.admin.LocationTransform
 import org.endeavourhealth.transform.emis.csv.transforms.admin.OrganisationTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.UserInRoleTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.appointment.SessionTransformer;
+import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.valuesets.PractitionerRole;
@@ -38,11 +40,19 @@ public class Metadata {
         this.fhirSchedules = fhirSchedules;
     }
 
-    public ClinicalCode findClinicalCode(Long id) {
-        return clinicalCodes.get(id);
+    public ClinicalCode findClinicalCode(Long id) throws Exception {
+        ClinicalCode ret = clinicalCodes.get(id);
+        if (ret == null) {
+            throw new TransformException("Failed to find ClinicalCode for id " + id);
+        }
+        return ret;
     }
-    public DrugCode findDrugCode(Long id) {
-        return drugCodes.get(id);
+    public DrugCode findDrugCode(Long id) throws Exception {
+        DrugCode ret = drugCodes.get(id);
+        if (ret == null) {
+            throw new TransformException("Failed to find DrugCode for id " + id);
+        }
+        return ret;
     }
 
     private static <T extends Resource> T checkAndCopyResource(Reference reference, ResourceType resourceType,
@@ -190,6 +200,9 @@ public class Metadata {
     public Reference createAppointmentReference(String appointmentGuid, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
         return createAndValidateReference(appointmentGuid, ResourceType.Appointment, patientGuid, fhirResources);
     }
+    public Reference createEncounterReference(String encounterGuid, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
+        return createAndValidateReference(encounterGuid, ResourceType.Encounter, patientGuid, fhirResources);
+    }
 
     private Reference createAndValidateReference(String id, ResourceType resourceType, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
         List<Resource> patientFhirResources = fhirResources.get(patientGuid);
@@ -197,5 +210,83 @@ public class Metadata {
             throw new TransformException(resourceType + " " + id + " doesn't exist in Resources");
         }
         return ReferenceHelper.createReference(resourceType, id);
+    }
+
+    public static DateTimeType createDateTimeType(Date date, String precision) throws Exception {
+        if (date == null) {
+            return null;
+        }
+
+        VocDatePart vocPrecision = VocDatePart.fromValue(precision);
+        if (vocPrecision == null) {
+            throw new TransformException("Unsupported consultation precision [" + precision + "]");
+        }
+
+        switch (vocPrecision) {
+            case U:
+                return null;
+            case Y:
+                return new DateTimeType(date, TemporalPrecisionEnum.YEAR);
+            case YM:
+                return new DateTimeType(date, TemporalPrecisionEnum.MONTH);
+            case YMD:
+                return new DateTimeType(date, TemporalPrecisionEnum.DAY);
+            case YMDT:
+                return new DateTimeType(date, TemporalPrecisionEnum.MINUTE);
+            default:
+                throw new TransformException("Unhandled date precision [" + vocPrecision + "]");
+        }
+    }
+
+    public static DateType createDateType(Date date, String precision) throws Exception {
+        if (date == null) {
+            return null;
+        }
+
+        VocDatePart vocPrecision = VocDatePart.fromValue(precision);
+        if (vocPrecision == null) {
+            throw new TransformException("Unsupported consultation precision [" + precision + "]");
+        }
+
+        switch (vocPrecision) {
+            case U:
+                return null;
+            case Y:
+                return new DateType(date, TemporalPrecisionEnum.YEAR);
+            case YM:
+                return new DateType(date, TemporalPrecisionEnum.MONTH);
+            case YMD:
+                return new DateType(date, TemporalPrecisionEnum.DAY);
+            default:
+                throw new TransformException("Unhandled date precision [" + vocPrecision + "]");
+        }
+    }
+
+    public static Condition findProblem(String problemGuid, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
+        return findResource(problemGuid, FhirUri.PROFILE_URI_PROBLEM, patientGuid, fhirResources);
+    }
+
+    public static Observation findObservation(String observationGuid, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
+        return findResource(observationGuid, FhirUri.PROFILE_URI_OBSERVATION, patientGuid, fhirResources);
+    }
+
+    private static <T extends Resource> T findResource(String guid, String resourceProfile, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
+        List<Resource> patientFhirResources = fhirResources.get(patientGuid);
+        for (Resource resource: patientFhirResources) {
+
+            if (resource.getId().equals(guid)
+                    && resource.getMeta() != null) {
+
+                List<UriType> profiles = resource.getMeta().getProfile();
+                for (UriType uri: profiles) {
+
+                    if (uri.getValue().equals(resourceProfile)) {
+                        return (T)resource;
+                    }
+                }
+            }
+        }
+
+        throw new TransformException("Failed to find " + resourceProfile + " resource for " + guid);
     }
 }

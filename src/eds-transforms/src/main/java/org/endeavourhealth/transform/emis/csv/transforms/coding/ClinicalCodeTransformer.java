@@ -40,7 +40,7 @@ public abstract class ClinicalCodeTransformer {
 
         ClinicalCode c = new ClinicalCode(emisTerm, emisCode, emisCategory,
                 nationalCategory, nationalCode, nationalDescription,
-                snomedConceptId.longValue(), snomedDescriptionId.longValue());
+                snomedConceptId, snomedDescriptionId);
 
         map.put(codeId, c);
     }

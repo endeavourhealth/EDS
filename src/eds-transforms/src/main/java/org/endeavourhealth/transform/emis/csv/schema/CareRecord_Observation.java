@@ -18,7 +18,7 @@ public class CareRecord_Observation extends AbstractCsvTransformer {
     public String getObservationGuid() {
         return super.getString(0);
     }
-    public String getParentOvercastionGuid() {
+    public String getParentObservationGuid() {
         return super.getString(1);
     }
     public String getPatientGuid() {
