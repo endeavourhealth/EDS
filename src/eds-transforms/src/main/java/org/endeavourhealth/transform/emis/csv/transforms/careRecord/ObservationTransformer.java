@@ -1,9 +1,10 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Observation;
 import org.endeavourhealth.transform.emis.csv.transforms.coding.ClinicalCode;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.Metadata;
+import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
 import org.endeavourhealth.transform.fhir.*;
 import org.hl7.fhir.instance.model.*;
 
@@ -13,19 +14,49 @@ import java.util.Map;
 
 public class ObservationTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
+    //types derived from VocEventType in EMIS Open standard, minus the types known to be stored in other CSV files
+    enum ObservationType {
+        OBSERVATION("Observation"),
+        TEST_REQUESTS("Test Request"),
+        INVESTIGATION("Investigation"),
+        VALUE("Value"),
+        ATTACHMENT("Attachment"),
+        ALLERGY("Allergy"),
+        FAMILY_HISTORY("Family history"),
+        IMMUNISATION("Immunisation"),
+        REPORT("Report"),
+        ORDER_HEADER("Order Header");
+
+        private String value = null;
+
+        ObservationType(String value) {
+            this.value = value;
+        }
+
+        public static ObservationType fromValue(String v) {
+            for (ObservationType c: ObservationType.values()) {
+                if (c.value.equals(v)) {
+                    return c;
+                }
+            }
+            throw new IllegalArgumentException(v);
+        }
+    }
+
+
+    public static void transform(String folderPath, CSVFormat csvFormat, FhirObjectStore objectStore) throws Exception {
 
         CareRecord_Observation parser = new CareRecord_Observation(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createResource(parser, metadata, fhirResources);
+                createResource(parser, objectStore);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createResource(CareRecord_Observation observationParser, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
+    private static void createResource(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
 
         //since we're not processing deltas, just ignore deleted obs
         if (observationParser.getDeleted()) {
@@ -38,77 +69,103 @@ public class ObservationTransformer {
         }
 
         String type = observationParser.getObservationType();
-        //TODO - get full Enum of possible EMIS observation types
-        if (type.equals("Family History")) {
-            createFamilyMemberHistory(observationParser, metadata, fhirResources);
-        } else if (type.equals("Observation")) {
-            createObservation(observationParser, metadata, fhirResources);
-        } else if (type.equals("Condition")) {
-            createCondition(observationParser, metadata, fhirResources);
-        } else if (type.equals("Procedure")) {
-            createProcedure(observationParser, metadata, fhirResources);
+        ObservationType observationType = ObservationType.fromValue(type);
+        switch (observationType) {
+            case OBSERVATION:
+                createObservation(observationParser, objectStore);
+                break;
+            case TEST_REQUESTS:
+
+                break;
+            case INVESTIGATION:
+
+                break;
+            case VALUE:
+
+                break;
+            case ATTACHMENT:
+
+                break;
+            case ALLERGY:
+                createAllergy(observationParser, objectStore);
+                break;
+            case FAMILY_HISTORY:
+                createFamilyMemberHistory(observationParser, objectStore);
+                break;
+            case IMMUNISATION:
+
+                break;
+            case REPORT:
+
+                break;
+            case ORDER_HEADER:
+
+                break;
+            default:
+                throw new TransformException("Unhandled observationType " + observationType);
         }
 
-        /**
-         *
-         public UUID getObservationGuid() {
-         return super.getUniqueIdentifier(0);
-         }
-         public UUID getParentOvercastionGuid() {
-         return super.getUniqueIdentifier(1);
-         }
-         public UUID getPatientGuid() {
-         return super.getUniqueIdentifier(2);
-         }
-         public UUID getOrganisationGuid() {
-         return super.getUniqueIdentifier(3);
-         }
-         public Date getEffectiveDate() throws TransformException {
-         return super.getDate(4);
-         }
-         public String getEffectiveDatePrecision() {
-         return super.getString(5);
-         }
-         public Date getEnteredDateTime() throws TransformException {
-         return super.getDateTime(6, 7);
-         }
-         public UUID getClinicianUserInRoleGuid() {
-         return super.getUniqueIdentifier(8);
-         }
-         public UUID getEnteredByUserInRoleGuid() {
-         return super.getUniqueIdentifier(9);
-         }
-         public Long getCodeId() {
-         return super.getLong(10);
-         }
-         public UUID getProblemUGuid() {
-         return super.getUniqueIdentifier(11);
-         }
-         public UUID getConsultationGuid() {
-         return super.getUniqueIdentifier(12);
-         }
-         public Double getValue() {
-         return super.getDouble(13);
-         }
-         public Double getNumericRangeLow() {
-         return super.getDouble(14);
-         }
-         public Double getNumericRangeHigh() {
-         return super.getDouble(15);
-         }
-         public String getNumericUnit() {
-         return super.getString(16);
-         }
-         public String getAssociatedText() {
-         return super.getString(18);
-         }
-         public UUID getDocumentGuid() {
-         return super.getUniqueIdentifier(21);
-         }
-         */
+
+        //TODO - get full Enum of possible EMIS observation types
+        if (type.equals("Family History")) {
+
+        } else if (type.equals("Observation")) {
+
+        } else if (type.equals("Condition")) {
+            createCondition(observationParser, objectStore);
+        } else if (type.equals("Procedure")) {
+            createProcedure(observationParser, objectStore);
+        } else if (type.equals("Allergy")) {
+
+        } else {
+            throw new TransformException("Unexpected observation type " + type);
+        }
+
+        //TODO - transform test requests
+        //TODO - handle "Attachment" ?
     }
 
-    private static void createProcedure(CareRecord_Observation observationParser, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
+    private static void createAllergy(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+        AllergyIntolerance fhirAllergy = new AllergyIntolerance();
+        fhirAllergy.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ALLERGY_INTOLERANCE));
+
+        String observationGuid = observationParser.getObservationGuid();
+        fhirAllergy.setId(observationGuid);
+
+        String patientGuid = observationParser.getPatientGuid();
+        objectStore.addToMap(patientGuid, fhirAllergy);
+
+        fhirAllergy.setPatient(objectStore.createPatientReference(patientGuid));
+
+        String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
+        fhirAllergy.setRecorder(objectStore.createPractitionerReference(clinicianGuid, patientGuid));
+
+        Date enteredDate = observationParser.getEnteredDateTime();
+        fhirAllergy.setRecordedDate(enteredDate);
+
+        Long codeId = observationParser.getCodeId();
+        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
+        fhirAllergy.setSubstance(clinicalCode.createCodeableConcept());
+        //TODO - need to convert Snomed allergy code to FHIR substance
+
+        Date effectiveDate = observationParser.getEffectiveDate();
+        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
+        fhirAllergy.setOnsetElement(FhirObjectStore.createDateTimeType(effectiveDate, effectiveDatePrecision));
+
+        String associatedText = observationParser.getAssociatedText();
+        fhirAllergy.setNote(AnnotationHelper.createAnnotation(associatedText));
+
+        String consultationGuid = observationParser.getConsultationGuid();
+        if (consultationGuid != null) {
+            Reference reference = objectStore.createEncounterReference(consultationGuid, patientGuid);
+            fhirAllergy.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, reference));
+        }
+
+        String problemGuid = observationParser.getProblemUGuid();
+        objectStore.linkToProblem(fhirAllergy, problemGuid, patientGuid);
+    }
+
+    private static void createProcedure(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
         Procedure fhirProcedure = new Procedure();
         fhirProcedure.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROCEDURE));
 
@@ -116,9 +173,9 @@ public class ObservationTransformer {
         fhirProcedure.setId(observationGuid);
 
         String patientGuid = observationParser.getPatientGuid();
-        Metadata.addToMap(patientGuid, fhirProcedure, fhirResources);
+        objectStore.addToMap(patientGuid, fhirProcedure);
 
-        fhirProcedure.setSubject(ReferenceHelper.createPatientReference(patientGuid));
+        fhirProcedure.setSubject(objectStore.createPatientReference(patientGuid));
 
         fhirProcedure.setStatus(Procedure.ProcedureStatus.COMPLETED);
 
@@ -126,28 +183,28 @@ public class ObservationTransformer {
         fhirProcedure.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROCEDURED_RECORDED, new DateTimeType(enteredDate)));
 
         Long codeId = observationParser.getCodeId();
-        ClinicalCode clinicalCode = metadata.findClinicalCode(codeId);
+        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
         fhirProcedure.setCode(clinicalCode.createCodeableConcept());
 
         Date effectiveDate = observationParser.getEffectiveDate();
         String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
-        fhirProcedure.setPerformed(Metadata.createDateTimeType(effectiveDate, effectiveDatePrecision));
+        fhirProcedure.setPerformed(FhirObjectStore.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         String associatedText = observationParser.getAssociatedText();
         fhirProcedure.addNotes(AnnotationHelper.createAnnotation(associatedText));
 
         String consultationGuid = observationParser.getConsultationGuid();
         if (consultationGuid != null) {
-            fhirProcedure.setEncounter(metadata.createEncounterReference(consultationGuid, patientGuid, fhirResources));
+            fhirProcedure.setEncounter(objectStore.createEncounterReference(consultationGuid, patientGuid));
         }
 
         String problemGuid = observationParser.getProblemUGuid();
-        linkToProblem(fhirProcedure, problemGuid, patientGuid, fhirResources);
+        objectStore.linkToProblem(fhirProcedure, problemGuid, patientGuid);
 
     }
 
 
-    private static void createCondition(CareRecord_Observation observationParser, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
+    private static void createCondition(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
         Condition fhirCondition = new Condition();
         fhirCondition.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_CONDITION));
 
@@ -155,18 +212,18 @@ public class ObservationTransformer {
         fhirCondition.setId(observationGuid);
 
         String patientGuid = observationParser.getPatientGuid();
-        Metadata.addToMap(patientGuid, fhirCondition, fhirResources);
+        objectStore.addToMap(patientGuid, fhirCondition);
 
-        fhirCondition.setPatient(ReferenceHelper.createPatientReference(patientGuid));
+        fhirCondition.setPatient(objectStore.createPatientReference(patientGuid));
 
         String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
-        fhirCondition.setAsserter(metadata.createPractitionerReference(clinicianGuid, patientGuid, fhirResources));
+        fhirCondition.setAsserter(objectStore.createPractitionerReference(clinicianGuid, patientGuid));
 
         Date enteredDate = observationParser.getEnteredDateTime();
         fhirCondition.setDateRecorded(enteredDate);
 
         Long codeId = observationParser.getCodeId();
-        ClinicalCode clinicalCode = metadata.findClinicalCode(codeId);
+        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
         fhirCondition.setCode(clinicalCode.createCodeableConcept());
 
         fhirCondition.setClinicalStatus("active"); //if we have a Problem record for this condition, this status may be changed
@@ -175,21 +232,21 @@ public class ObservationTransformer {
 
         Date effectiveDate = observationParser.getEffectiveDate();
         String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
-        fhirCondition.setOnset(Metadata.createDateTimeType(effectiveDate, effectiveDatePrecision));
+        fhirCondition.setOnset(FhirObjectStore.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         String associatedText = observationParser.getAssociatedText();
         fhirCondition.setNotes(associatedText);
 
         String consultationGuid = observationParser.getConsultationGuid();
         if (consultationGuid != null) {
-            fhirCondition.setEncounter(metadata.createEncounterReference(consultationGuid, patientGuid, fhirResources));
+            fhirCondition.setEncounter(objectStore.createEncounterReference(consultationGuid, patientGuid));
         }
 
         String problemGuid = observationParser.getProblemUGuid();
-        linkToProblem(fhirCondition, problemGuid, patientGuid, fhirResources);
+        objectStore.linkToProblem(fhirCondition, problemGuid, patientGuid);
     }
 
-    private static void createObservation(CareRecord_Observation observationParser, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
+    private static void createObservation(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
         Observation fhirObservation = new Observation();
         fhirObservation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_OBSERVATION));
 
@@ -197,28 +254,28 @@ public class ObservationTransformer {
         fhirObservation.setId(observationGuid);
 
         String patientGuid = observationParser.getPatientGuid();
-        Metadata.addToMap(patientGuid, fhirObservation, fhirResources);
+        objectStore.addToMap(patientGuid, fhirObservation);
 
-        fhirObservation.setSubject(ReferenceHelper.createPatientReference(patientGuid));
+        fhirObservation.setSubject(objectStore.createPatientReference(patientGuid));
 
         fhirObservation.setStatus(Observation.ObservationStatus.UNKNOWN);
 
         Date effectiveDate = observationParser.getEffectiveDate();
         String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
-        fhirObservation.setEffective(Metadata.createDateTimeType(effectiveDate, effectiveDatePrecision));
+        fhirObservation.setEffective(FhirObjectStore.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         Date enteredDate = observationParser.getEnteredDateTime();
         fhirObservation.setIssued(enteredDate);
 
         Long codeId = observationParser.getCodeId();
-        ClinicalCode clinicalCode = metadata.findClinicalCode(codeId);
+        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
         fhirObservation.setCode(clinicalCode.createCodeableConcept());
 
         String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
-        fhirObservation.addPerformer(metadata.createPractitionerReference(clinicianGuid, patientGuid, fhirResources));
+        fhirObservation.addPerformer(objectStore.createPractitionerReference(clinicianGuid, patientGuid));
 
         String orgGuid = observationParser.getOrganisationGuid();
-        fhirObservation.addPerformer(metadata.createOrganisationReference(orgGuid, patientGuid, fhirResources));
+        fhirObservation.addPerformer(objectStore.createOrganisationReference(orgGuid, patientGuid));
 
         Double value = observationParser.getValue();
         String units = observationParser.getNumericUnit();
@@ -245,7 +302,7 @@ public class ObservationTransformer {
 
         String parentObservationGuid = observationParser.getParentObservationGuid();
         if (parentObservationGuid != null) {
-            Observation fhirParentObservation = Metadata.findObservation(parentObservationGuid, patientGuid, fhirResources);
+            Observation fhirParentObservation = objectStore.findObservation(parentObservationGuid, patientGuid);
             Observation.ObservationRelatedComponent fhirRelation = fhirParentObservation.addRelated();
             fhirRelation.setType(Observation.ObservationRelationshipType.HASMEMBER);
             fhirRelation.setTarget(ReferenceHelper.createReference(fhirObservation));
@@ -253,14 +310,14 @@ public class ObservationTransformer {
 
         String consultationGuid = observationParser.getConsultationGuid();
         if (consultationGuid != null) {
-            fhirObservation.setEncounter(metadata.createEncounterReference(consultationGuid, patientGuid, fhirResources));
+            fhirObservation.setEncounter(objectStore.createEncounterReference(consultationGuid, patientGuid));
         }
 
         String problemGuid = observationParser.getProblemUGuid();
-        linkToProblem(fhirObservation, problemGuid, patientGuid, fhirResources);
+        objectStore.linkToProblem(fhirObservation, problemGuid, patientGuid);
     }
 
-    private static void createFamilyMemberHistory(CareRecord_Observation observationParser, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
+    private static void createFamilyMemberHistory(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
 
         FamilyMemberHistory fhirFamilyHistory = new FamilyMemberHistory();
         fhirFamilyHistory.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_FAMILY_MEMBER_HISTORY));
@@ -269,13 +326,13 @@ public class ObservationTransformer {
         fhirFamilyHistory.setId(observationGuid);
 
         String patientGuid = observationParser.getPatientGuid();
-        Metadata.addToMap(patientGuid, fhirFamilyHistory, fhirResources);
+        objectStore.addToMap(patientGuid, fhirFamilyHistory);
 
-        fhirFamilyHistory.setPatient(ReferenceHelper.createPatientReference(patientGuid));
+        fhirFamilyHistory.setPatient(objectStore.createPatientReference(patientGuid));
 
         Date effectiveDate = observationParser.getEffectiveDate();
         String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
-        fhirFamilyHistory.setDateElement(Metadata.createDateTimeType(effectiveDate, effectiveDatePrecision));
+        fhirFamilyHistory.setDateElement(FhirObjectStore.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         fhirFamilyHistory.setStatus(FamilyMemberHistory.FamilyHistoryStatus.HEALTHUNKNOWN);
 
@@ -284,41 +341,25 @@ public class ObservationTransformer {
         FamilyMemberHistory.FamilyMemberHistoryConditionComponent fhirCondition = fhirFamilyHistory.addCondition();
 
         Long codeId = observationParser.getCodeId();
-        ClinicalCode clinicalCode = metadata.findClinicalCode(codeId);
+        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
         fhirCondition.setCode(clinicalCode.createCodeableConcept());
 
         String associatedText = observationParser.getAssociatedText();
         fhirCondition.setNote(AnnotationHelper.createAnnotation(associatedText));
 
         String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
-        Reference reference = metadata.createPractitionerReference(clinicianGuid, patientGuid, fhirResources);
+        Reference reference = objectStore.createPractitionerReference(clinicianGuid, patientGuid);
         fhirFamilyHistory.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.FAMILY_MEMBER_HISTORY_RECORDER, reference));
 
         String consultationGuid = observationParser.getConsultationGuid();
         if (consultationGuid != null) {
-            reference = metadata.createEncounterReference(consultationGuid, patientGuid, fhirResources);
+            reference = objectStore.createEncounterReference(consultationGuid, patientGuid);
             fhirFamilyHistory.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, reference));
         }
 
         String problemGuid = observationParser.getProblemUGuid();
-        linkToProblem(fhirFamilyHistory, problemGuid, patientGuid, fhirResources);
+        objectStore.linkToProblem(fhirFamilyHistory, problemGuid, patientGuid);
     }
 
-    private static void linkToProblem(Resource resource, String problemGuid, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
-        if (problemGuid == null) {
-            return;
-        }
 
-        Reference reference = ReferenceHelper.createReference(resource);
-        Condition fhirProblem = Metadata.findProblem(problemGuid, patientGuid, fhirResources);
-        fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, reference));
-    }
-
- /*   private static AllergyIntolerance createAllergyIntolerace(CareRecord_Observation observationParser) throws Exception {
-
-    }
-
-    private static Immunization createImmunuzation(CareRecord_Observation observationParser) throws Exception {
-
-    }*/
 }

@@ -1,39 +1,38 @@
 package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
-import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.TransformException;
-import org.endeavourhealth.transform.emis.csv.transforms.admin.LocationTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.admin.OrganisationTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.admin.UserInRoleTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.appointment.SessionTransformer;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
-import org.hl7.fhir.instance.model.valuesets.PractitionerRole;
 
-import java.sql.Ref;
 import java.util.*;
-import java.util.stream.Collectors;
 
-public class Metadata {
+public class FhirObjectStore {
 
+    //metadata, not relating to patients
     private Map<Long, ClinicalCode> clinicalCodes = null;
-    private Map<Long, DrugCode> drugCodes = null;
+    private Map<String, Medication> fhirMedication = null;
     private Map<String, Location> fhirLocations = null;
     private Map<String, Organization> fhirOrganisations = null;
     private Map<String, Practitioner> fhirPractitioners = null;
     private Map<String, Schedule> fhirSchedules = null;
 
-    public Metadata(Map<Long, ClinicalCode> clinicalCodes, Map<Long, DrugCode> drugCodes,
-                    Map<String, Location> fhirLocations, Map<String, Organization> fhirOrganisations,
-                    Map<String, Practitioner> fhirPractitioners, Map<String, Schedule> fhirSchedules) {
+    //patient Resources, keyed by patient ID
+    private Map<String, List<Resource>> fhirPatientResources = new HashMap<>();
+
+    public Map<String, List<Resource>> getFhirPatientResources() {
+        return fhirPatientResources;
+    }
+
+    public FhirObjectStore(Map<Long, ClinicalCode> clinicalCodes, Map<String, Medication> fhirMedication,
+                           Map<String, Location> fhirLocations, Map<String, Organization> fhirOrganisations,
+                           Map<String, Practitioner> fhirPractitioners, Map<String, Schedule> fhirSchedules) {
 
         this.clinicalCodes = clinicalCodes;
-        this.drugCodes = drugCodes;
-
+        this.fhirMedication = fhirMedication;
         this.fhirLocations = fhirLocations;
         this.fhirOrganisations = fhirOrganisations;
         this.fhirPractitioners = fhirPractitioners;
@@ -47,13 +46,7 @@ public class Metadata {
         }
         return ret;
     }
-    public DrugCode findDrugCode(Long id) throws Exception {
-        DrugCode ret = drugCodes.get(id);
-        if (ret == null) {
-            throw new TransformException("Failed to find DrugCode for id " + id);
-        }
-        return ret;
-    }
+
 
     private static <T extends Resource> T checkAndCopyResource(Reference reference, ResourceType resourceType,
                                                                      Map<String, T> resourceMap,
@@ -79,6 +72,14 @@ public class Metadata {
         return (T)resource;
     }
 
+    private void checkAndCopyMedication(Reference reference, List<Resource> fhirResources) throws Exception {
+
+        Medication medication = checkAndCopyResource(reference, ResourceType.Medication, fhirMedication, fhirResources);
+        if (medication != null) {
+
+            //medication doesn't refer to any other external Resources
+        }
+    }
     private void checkAndCopyLocation(Reference reference, List<Resource> fhirResources) throws Exception {
 
         Location location = checkAndCopyResource(reference, ResourceType.Location, fhirLocations, fhirResources);
@@ -139,32 +140,38 @@ public class Metadata {
         }
     }
 
-    public Reference createLocationReference(String locationGuid, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
+    public Reference createMedicationReference(Long medicationId, String patientGuid) throws Exception {
 
-        List<Resource> patientFhirResources = fhirResources.get(patientGuid);
+        Reference reference = ReferenceHelper.createReference(ResourceType.Medication, medicationId.toString());
+        checkAndCopyMedication(reference, fhirPatientResources.get(patientGuid));
+        return reference;
+    }
+
+    public Reference createLocationReference(String locationGuid, String patientGuid) throws Exception {
+
         Reference reference = ReferenceHelper.createReference(ResourceType.Location, locationGuid);
-        checkAndCopyLocation(reference, patientFhirResources);
+        checkAndCopyLocation(reference, fhirPatientResources.get(patientGuid));
         return reference;
     }
 
-    public Reference createOrganisationReference(String organizationGuid, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
-        List<Resource> patientFhirResources = fhirResources.get(patientGuid);
+    public Reference createOrganisationReference(String organizationGuid, String patientGuid) throws Exception {
+
         Reference reference = ReferenceHelper.createReference(ResourceType.Organization, organizationGuid);
-        checkAndCopyOrganisation(reference, patientFhirResources);
+        checkAndCopyOrganisation(reference, fhirPatientResources.get(patientGuid));
         return reference;
     }
 
-    public Reference createPractitionerReference(String practitionerGuid, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
-        List<Resource> patientFhirResources = fhirResources.get(patientGuid);
+    public Reference createPractitionerReference(String practitionerGuid, String patientGuid) throws Exception {
+
         Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, practitionerGuid);
-        checkAndCopyPractitioner(reference, patientFhirResources);
+        checkAndCopyPractitioner(reference, fhirPatientResources.get(patientGuid));
         return reference;
     }
 
-    public Reference createScheduleReference(String scheduleGuid, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
-        List<Resource> patientFhirResources = fhirResources.get(patientGuid);
+    public Reference createScheduleReference(String scheduleGuid, String patientGuid) throws Exception {
+
         Reference reference = ReferenceHelper.createReference(ResourceType.Schedule, scheduleGuid);
-        checkAndCopySchedule(reference, patientFhirResources);
+        checkAndCopySchedule(reference, fhirPatientResources.get(patientGuid));
         return reference;
     }
 
@@ -187,28 +194,55 @@ public class Metadata {
                 .isPresent();
     }
 
+    public void addNewPatient(Patient fhirPatient) throws Exception {
+        String patientId = fhirPatient.getId();
+        List<Resource> l = fhirPatientResources.get(patientId);
+        if (l != null) {
+            throw new TransformException("Patient Resource " + patientId + " is duplicated");
+        }
+        l = new ArrayList<>();
+        l.add(fhirPatient);
 
-    public static void addToMap(String patientGuid, Resource fhirResource, Map<String, List<Resource>> hmResources) throws Exception {
-        List<Resource> l = hmResources.get(patientGuid);
+        fhirPatientResources.put(patientId, l);
+    }
+    public void addToMap(String patientGuid, Resource fhirResource) throws Exception {
+        List<Resource> l = fhirPatientResources.get(patientGuid);
         if (l == null) {
             throw new TransformException("Patient GUID " + patientGuid + " found, but not corresponding resource");
         }
         l.add(fhirResource);
     }
 
-
-    public Reference createAppointmentReference(String appointmentGuid, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
-        return createAndValidateReference(appointmentGuid, ResourceType.Appointment, patientGuid, fhirResources);
+    public Reference createPatientReference(String patientGuid) throws Exception {
+        if (fhirPatientResources.get(patientGuid) == null) {
+            throw new TransformException("Patient resource " + patientGuid + " cannot be found");
+        }
+        return ReferenceHelper.createReference(ResourceType.Patient, patientGuid);
     }
-    public Reference createEncounterReference(String encounterGuid, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
-        return createAndValidateReference(encounterGuid, ResourceType.Encounter, patientGuid, fhirResources);
+
+    public Reference createAppointmentReference(String appointmentGuid, String patientGuid) throws Exception {
+        return createAndValidateReference(appointmentGuid, ResourceType.Appointment, patientGuid);
+    }
+    public Reference createEncounterReference(String encounterGuid, String patientGuid) throws Exception {
+        return createAndValidateReference(encounterGuid, ResourceType.Encounter, patientGuid);
+    }
+    public Reference createObservationReference(String observationGuid, String patientGuid) throws Exception {
+        return createAndValidateReference(observationGuid, ResourceType.Observation, patientGuid);
+    }
+    public Reference createMedicationStatementReference(String medicationStatementGuid, String patientGuid) throws Exception {
+        return createAndValidateReference(medicationStatementGuid, ResourceType.MedicationStatement, patientGuid);
     }
 
-    private Reference createAndValidateReference(String id, ResourceType resourceType, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
-        List<Resource> patientFhirResources = fhirResources.get(patientGuid);
+    private Reference createAndValidateReference(String id, ResourceType resourceType, String patientGuid) throws Exception {
+        List<Resource> patientFhirResources = fhirPatientResources.get(patientGuid);
+        if (patientFhirResources == null) {
+            throw new TransformException("No resources found for patient " + patientGuid);
+        }
+
         if (!listContains(patientFhirResources, id, resourceType)) {
             throw new TransformException(resourceType + " " + id + " doesn't exist in Resources");
         }
+
         return ReferenceHelper.createReference(resourceType, id);
     }
 
@@ -217,6 +251,7 @@ public class Metadata {
             return null;
         }
 
+        //the precision String matches the precisions used in the other EMIS extract
         VocDatePart vocPrecision = VocDatePart.fromValue(precision);
         if (vocPrecision == null) {
             throw new TransformException("Unsupported consultation precision [" + precision + "]");
@@ -262,16 +297,16 @@ public class Metadata {
         }
     }
 
-    public static Condition findProblem(String problemGuid, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
-        return findResource(problemGuid, FhirUri.PROFILE_URI_PROBLEM, patientGuid, fhirResources);
+    public Condition findProblem(String problemGuid, String patientGuid) throws Exception {
+        return findResource(problemGuid, FhirUri.PROFILE_URI_PROBLEM, patientGuid);
     }
 
-    public static Observation findObservation(String observationGuid, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
-        return findResource(observationGuid, FhirUri.PROFILE_URI_OBSERVATION, patientGuid, fhirResources);
+    public Observation findObservation(String observationGuid, String patientGuid) throws Exception {
+        return findResource(observationGuid, FhirUri.PROFILE_URI_OBSERVATION, patientGuid);
     }
 
-    private static <T extends Resource> T findResource(String guid, String resourceProfile, String patientGuid, Map<String, List<Resource>> fhirResources) throws Exception {
-        List<Resource> patientFhirResources = fhirResources.get(patientGuid);
+    private <T extends Resource> T findResource(String guid, String resourceProfile, String patientGuid) throws Exception {
+        List<Resource> patientFhirResources = fhirPatientResources.get(patientGuid);
         for (Resource resource: patientFhirResources) {
 
             if (resource.getId().equals(guid)
@@ -288,5 +323,15 @@ public class Metadata {
         }
 
         throw new TransformException("Failed to find " + resourceProfile + " resource for " + guid);
+    }
+
+    public void linkToProblem(Resource resource, String problemGuid, String patientGuid) throws Exception {
+        if (problemGuid == null) {
+            return;
+        }
+
+        Reference reference = ReferenceHelper.createReference(resource);
+        Condition fhirProblem = findProblem(problemGuid, patientGuid);
+        fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, reference));
     }
 }

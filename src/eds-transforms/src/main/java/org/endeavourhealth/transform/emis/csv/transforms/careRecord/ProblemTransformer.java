@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Problem;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.Metadata;
+import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
@@ -15,34 +15,35 @@ import java.util.Map;
 
 public class ProblemTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, FhirObjectStore objectStore) throws Exception {
 
         CareRecord_Problem parser = new CareRecord_Problem(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createProblem(parser, metadata, fhirResources);
+                createProblem(parser, objectStore);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createProblem(CareRecord_Problem problemParser, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
+    private static void createProblem(CareRecord_Problem problemParser, FhirObjectStore objectStore) throws Exception {
 
         String patientGuid = problemParser.getPatientGuid();
 
         Condition fhirProblem = new Condition();
         fhirProblem.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROBLEM));
-        Metadata.addToMap(patientGuid, fhirProblem, fhirResources);
 
-        fhirProblem.setPatient(ReferenceHelper.createPatientReference(patientGuid.toString()));
+        objectStore.addToMap(patientGuid, fhirProblem);
+
+        fhirProblem.setPatient(objectStore.createPatientReference(patientGuid.toString()));
 
         String comments = problemParser.getComment();
         fhirProblem.setNotes(comments);
 
         Date endDate = problemParser.getEndDate();
         String endDatePrecision = problemParser.getEffectiveDatePrecision(); //NOTE; documentation refers to this as EffectiveDate, but this should be EndDate
-        fhirProblem.setAbatement(Metadata.createDateType(endDate, endDatePrecision));
+        fhirProblem.setAbatement(FhirObjectStore.createDateType(endDate, endDatePrecision));
 
         //some of the information we need is stored on our original Observation, so we
         //need to
@@ -70,7 +71,7 @@ public class ProblemTransformer {
 
         Date lastReviewDate = problemParser.getLastReviewDate();
         String lastReviewPrecision = problemParser.getLastReviewDatePrecision();
-        DateType lastReviewDateType = Metadata.createDateType(lastReviewDate, lastReviewPrecision);
+        DateType lastReviewDateType = FhirObjectStore.createDateType(lastReviewDate, lastReviewPrecision);
         if (lastReviewDateType != null) {
             fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_LAST_REVIEW_DATE, lastReviewDateType));
         }

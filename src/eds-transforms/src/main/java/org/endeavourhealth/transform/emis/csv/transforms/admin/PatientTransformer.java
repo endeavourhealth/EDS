@@ -3,9 +3,8 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Patient;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.Metadata;
+import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
 import org.endeavourhealth.transform.emis.openhr.schema.VocSex;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.SexConverter;
 import org.endeavourhealth.transform.fhir.*;
@@ -16,19 +15,19 @@ import java.util.*;
 
 public class PatientTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, FhirObjectStore objectStore) throws Exception {
 
         Admin_Patient parser = new Admin_Patient(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createPatient(parser, metadata, fhirResources);
+                createPatient(parser, objectStore);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createPatient(Admin_Patient patientParser, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
+    private static void createPatient(Admin_Patient patientParser, FhirObjectStore objectStore) throws Exception {
 
         if (patientParser.getDeleted()) {
             //TODO - how to process Deleted EMIS records so they should be deleted from EDS?
@@ -48,13 +47,7 @@ public class PatientTransformer {
         //TODO - can I use Patient GUID or should I change to Person GUID???
 
         //add the Patient resource to the map, keying on patient GUID
-        List<Resource> l = fhirResources.get(patientGuid);
-        if (l != null) {
-            throw new TransformException("Patient GUID " + patientGuid + " found is duplicated");
-        }
-        l = new ArrayList<>();
-        fhirResources.put(patientGuid, l);
-        l.add(fhirPatient);
+        objectStore.addNewPatient(fhirPatient);
 
         String nhsNumber = patientParser.getNhsNumber();
         fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nhsNumber, FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER));
@@ -109,7 +102,7 @@ public class PatientTransformer {
         }
 
         String organisationGuid = patientParser.getOrganisationGuid();
-        fhirPatient.setManagingOrganization(metadata.createOrganisationReference(organisationGuid, patientGuid, fhirResources));
+        fhirPatient.setManagingOrganization(objectStore.createOrganisationReference(organisationGuid, patientGuid));
 
         String carerName = patientParser.getCarerName();
         String carerRelationship = patientParser.getCarerRelation();
@@ -137,17 +130,17 @@ public class PatientTransformer {
 
         String usualGpGuid = patientParser.getUsualGpUserInRoleGuid();
         if (usualGpGuid != null) {
-            fhirPatient.addCareProvider(metadata.createPractitionerReference(usualGpGuid, patientGuid, fhirResources));
+            fhirPatient.addCareProvider(objectStore.createPractitionerReference(usualGpGuid, patientGuid));
 
         } else {
             String externalGpGuid = patientParser.getExternalUsualGPGuid();
             if (externalGpGuid != null) {
-                fhirPatient.addCareProvider(metadata.createPractitionerReference(externalGpGuid, patientGuid, fhirResources));
+                fhirPatient.addCareProvider(objectStore.createPractitionerReference(externalGpGuid, patientGuid));
 
             } else {
                 String externalOrgGuid = patientParser.getExternalUsualGPOrganisation();
                 if (externalOrgGuid != null) {
-                    fhirPatient.addCareProvider(metadata.createOrganisationReference(externalOrgGuid, patientGuid, fhirResources));
+                    fhirPatient.addCareProvider(objectStore.createOrganisationReference(externalOrgGuid, patientGuid));
                 }
             }
         }
@@ -155,15 +148,15 @@ public class PatientTransformer {
         EpisodeOfCare fhirEpisode = new EpisodeOfCare();
         fhirEpisode.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_EPISODE_OF_CARE));
 
-        Metadata.addToMap(patientGuid, fhirEpisode, fhirResources);
+        objectStore.addToMap(patientGuid, fhirEpisode);
 
-        fhirEpisode.setPatient(ReferenceHelper.createPatientReference(patientGuid.toString()));
+        fhirEpisode.setPatient(objectStore.createPatientReference(patientGuid.toString()));
 
         String orgUuid = patientParser.getOrganisationGuid();
-        fhirEpisode.setManagingOrganization(metadata.createOrganisationReference(orgUuid, patientGuid, fhirResources));
+        fhirEpisode.setManagingOrganization(objectStore.createOrganisationReference(orgUuid, patientGuid));
 
         if (usualGpGuid != null) {
-            fhirEpisode.setCareManager(metadata.createPractitionerReference(usualGpGuid, patientGuid, fhirResources));
+            fhirEpisode.setCareManager(objectStore.createPractitionerReference(usualGpGuid, patientGuid));
         }
 
         Date regDate = patientParser.getDateOfRegistration();

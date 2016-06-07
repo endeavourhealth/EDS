@@ -29,7 +29,7 @@ public class Prescribing_IssueRecord extends AbstractCsvTransformer {
     public String getEffectiveDatePrecision() {
         return super.getString(4);
     }
-    public Date getEffectiveDateTime() throws TransformException {
+    public Date getEnteredDateTime() throws TransformException {
         return super.getDateTime(5, 6);
     }
     public String getClinicianUserInRoleGuid() {

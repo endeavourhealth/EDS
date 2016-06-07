@@ -7,11 +7,13 @@ import org.endeavourhealth.transform.emis.csv.transforms.admin.UserInRoleTransfo
 import org.endeavourhealth.transform.emis.csv.transforms.appointment.SessionTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.appointment.SlotTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ConsultationTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.DiaryTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationReferralTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ProblemTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.coding.*;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.PatientTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.prescribing.DrugRecordTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.prescribing.IssueRecordTransformer;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.*;
@@ -23,33 +25,26 @@ public abstract class EmisCsvTransformer {
 
     public static Map<String, List<Resource>> transform(String folderPath) throws Exception {
 
-        Metadata metadata = transformMetadata(folderPath);
+        FhirObjectStore fhirObjects = transformMetadata(folderPath);
 
-        //now start parsing the patient data
-        Map<String, List<Resource>> fhirResources = new HashMap<>();
+        PatientTransformer.transform(folderPath, CSVFormat.DEFAULT, fhirObjects);
+        ProblemTransformer.transform(folderPath, CSVFormat.DEFAULT, fhirObjects);
+        SlotTransformer.transform(folderPath, CSVFormat.DEFAULT, fhirObjects);
+        ConsultationTransformer.transform(folderPath, CSVFormat.DEFAULT, fhirObjects);
+        ObservationTransformer.transform(folderPath, CSVFormat.DEFAULT, fhirObjects);
+        ObservationReferralTransformer.transform(folderPath, CSVFormat.DEFAULT, fhirObjects);
+        //TODO - DiaryTransformer
+        DrugRecordTransformer.transform(folderPath, CSVFormat.DEFAULT, fhirObjects);
+        IssueRecordTransformer.transform(folderPath, CSVFormat.DEFAULT, fhirObjects);
 
-        PatientTransformer.transform(folderPath, CSVFormat.DEFAULT, metadata, fhirResources);
-        ProblemTransformer.transform(folderPath, CSVFormat.DEFAULT, metadata, fhirResources);
-        SlotTransformer.transform(folderPath, CSVFormat.DEFAULT, metadata, fhirResources);
-        ConsultationTransformer.transform(folderPath, CSVFormat.DEFAULT, metadata, fhirResources);
-        ObservationTransformer.transform(folderPath, CSVFormat.DEFAULT, metadata, fhirResources);
-        //DiaryTransformer
-        //ObservationReferral
-        //Problem
-        //DrugRecord
-        //IssueRecord
-
-        //TODO - need to copy Organisations and Locations into patient resource lists
-
-
-        return fhirResources;
+        return fhirObjects.getFhirPatientResources();
     }
 
-    private static Metadata transformMetadata(String folderPath) throws Exception {
+    private static FhirObjectStore transformMetadata(String folderPath) throws Exception {
 
         //parse coding files into cache maps
         Map<Long, ClinicalCode> clinicalCodes = ClinicalCodeTransformer.transform(folderPath, CSVFormat.DEFAULT);
-        Map<Long, DrugCode> drugCodes = DrugCodeTransformer.transform(folderPath, CSVFormat.DEFAULT);
+        Map<String, Medication> fhirMedication = DrugCodeTransformer.transform(folderPath, CSVFormat.DEFAULT);
 
         //parse the organisational metadata
         Map<String, Location> fhirLocations = LocationTransformer.transform(folderPath, CSVFormat.DEFAULT);
@@ -57,7 +52,7 @@ public abstract class EmisCsvTransformer {
         Map<String, Practitioner> fhirPractitioners = UserInRoleTransformer.transform(folderPath, CSVFormat.DEFAULT);
         Map<String, Schedule> fhirSchedules = SessionTransformer.transform(folderPath, CSVFormat.DEFAULT);
 
-        return new Metadata(clinicalCodes, drugCodes, fhirLocations, fhirOrganisations, fhirPractitioners, fhirSchedules);
+        return new FhirObjectStore(clinicalCodes, fhirMedication, fhirLocations, fhirOrganisations, fhirPractitioners, fhirSchedules);
     }
 
 

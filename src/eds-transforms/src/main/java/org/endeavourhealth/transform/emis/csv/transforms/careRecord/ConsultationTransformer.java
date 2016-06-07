@@ -2,10 +2,8 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
-import org.endeavourhealth.transform.emis.csv.schema.Admin_Patient;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Consultation;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.Metadata;
+import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
@@ -14,23 +12,22 @@ import org.hl7.fhir.instance.model.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class ConsultationTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, FhirObjectStore objectStore) throws Exception {
 
         CareRecord_Consultation parser = new CareRecord_Consultation(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createEncounter(parser, metadata, fhirResources);
+                createEncounter(parser, objectStore);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createEncounter(CareRecord_Consultation consultationParser, Metadata metadata, Map<String, List<Resource>> fhirResources) throws Exception {
+    private static void createEncounter(CareRecord_Consultation consultationParser, FhirObjectStore objectStore) throws Exception {
 
         //ignore deleted consultations
         if (consultationParser.getDeleted()) {
@@ -49,21 +46,21 @@ public class ConsultationTransformer {
         fhirEncounter.setId(consultationGuid);
 
         String patientGuid = consultationParser.getPatientGuid();
-        Metadata.addToMap(patientGuid, fhirEncounter, fhirResources);
+        objectStore.addToMap(patientGuid, fhirEncounter);
 
         fhirEncounter.setStatus(Encounter.EncounterState.FINISHED);
 
-        fhirEncounter.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientGuid));
+        fhirEncounter.setPatient(objectStore.createPatientReference(patientGuid));
 
         String appointmentGuid = consultationParser.getAppointmentSlotGuid();
         if (appointmentGuid != null) {
-            fhirEncounter.setAppointment(metadata.createAppointmentReference(appointmentGuid, patientGuid, fhirResources));
+            fhirEncounter.setAppointment(objectStore.createAppointmentReference(appointmentGuid, patientGuid));
         }
 
         String clinicianUuid = consultationParser.getClinicianUserInRoleGuid();
         if (clinicianUuid != null) {
             Encounter.EncounterParticipantComponent fhirParticipant = fhirEncounter.addParticipant();
-            fhirParticipant.setIndividual(metadata.createPractitionerReference(clinicianUuid, patientGuid, fhirResources));
+            fhirParticipant.setIndividual(objectStore.createPractitionerReference(clinicianUuid, patientGuid));
         }
 
         Date date = consultationParser.getEffectiveDate();

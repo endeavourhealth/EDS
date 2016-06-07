@@ -61,7 +61,7 @@ public class ReferenceHelper
         return createReference(resource.getResourceType(), resource.getId());
     }
 
-    public static Reference createPractitionerReference(String id) throws TransformException {
+    /*public static Reference createPractitionerReference(String id) throws TransformException {
         return createReference(ResourceType.Practitioner, id);
     }
     public static Reference createEncounterReference(String id) throws TransformException {
@@ -72,7 +72,7 @@ public class ReferenceHelper
     }
     public static Reference createLocationReference(String id) throws TransformException {
         return createReference(ResourceType.Location, id);
-    }
+    }*/
 
 
 

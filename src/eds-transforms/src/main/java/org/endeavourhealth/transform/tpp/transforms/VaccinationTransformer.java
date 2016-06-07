@@ -30,7 +30,7 @@ public class VaccinationTransformer {
         fhirResources.add(fhirImmunisation);
 
         fhirImmunisation.setPatient(ReferenceHelper.createReference(Patient.class, fhirResources));
-        fhirImmunisation.setPerformer(ReferenceHelper.createPractitionerReference(tppEvent.getUserName()));
+        fhirImmunisation.setPerformer(ReferenceHelper.createReference(ResourceType.Practitioner, tppEvent.getUserName()));
         fhirImmunisation.setEncounter(ReferenceHelper.createReference(fhirEncounter));
         fhirImmunisation.setStatus(MedicationAdministration.MedicationAdministrationStatus.COMPLETED.toCode());
         fhirImmunisation.setWasNotGiven(false);

@@ -11,6 +11,9 @@ public class IdentifierHelper {
     public static Identifier createOdsOrganisationIdentifier(String value) {
         return createIdentifier(Identifier.IdentifierUse.OFFICIAL, value, FhirUri.IDENTIFIER_SYSTEM_ODS_CODE);
     }
+    public static Identifier createUbrnIdentifier(String value) {
+        return createIdentifier(Identifier.IdentifierUse.OFFICIAL, value, FhirUri.IDENTIFIER_SYSTEM_UBRN);
+    }
 
     public static Identifier createIdentifier(Identifier.IdentifierUse use, String value, String system) {
 

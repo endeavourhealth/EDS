@@ -8,6 +8,7 @@ public class FhirUri
     public final static String IDENTIFIER_SYSTEM_GMC_NUMBER = "http://endeavourhealth.org/fhir/Identifier/gmc-number";
     public final static String IDENTIFIER_SYSTEM_DOCTOR_INDEX_NUMBER = "http://endeavourhealth.org/fhir/Identifier/doctor-index-number";
     public final static String IDENTIFIER_SYSTEM_GMP_PPD_CODE = "http://endeavourhealth.org/fhir/Identifier/gmp-ppd-code";
+    public final static String IDENTIFIER_SYSTEM_UBRN = "http://endeavourhealth.org/fhir/Identifier/ubrn";
 
     public final static String CODE_SYSTEM_READ2 = "http://endeavourhealth.org/fhir/read2";
     public final static String CODE_SYSTEM_SNOMED_CT = "http://snomed.info/sct";
