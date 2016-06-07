@@ -7,7 +7,7 @@ module app.dialogs {
 	import IModalService = angular.ui.bootstrap.IModalService;
 	import Report = app.models.Report;
 	import RequestParameters = app.models.RequestParameters;
-	import IOrganisationService = app.core.IOrganisationService;
+	import IOrganisationSetService = app.core.IOrganisationSetService;
 	import OrganisationSet = app.models.OrganisationSet;
 
 	'use strict';
@@ -34,13 +34,13 @@ module app.dialogs {
 		patientStatusDisplay : any;
 		baselineDate : Date;
 
-		static $inject = ['$uibModalInstance', 'LoggerService', 'AdminService', 'OrganisationService', '$uibModal',
+		static $inject = ['$uibModalInstance', 'LoggerService', 'AdminService', 'OrganisationSetService', '$uibModal',
 			'reportUuid', 'reportName'];
 
 		constructor(protected $uibModalInstance : IModalServiceInstance,
 								private logger:app.blocks.ILoggerService,
 								private adminService : IAdminService,
-								private organisationService : IOrganisationService,
+								private organisationSetService : IOrganisationSetService,
 								private $modal : IModalService,
 								private reportUuid : string,
 								private reportName : string) {

@@ -35,11 +35,11 @@ module app.core {
 		}
 
 		saveRouteGroups(routeGroups : RouteGroup[]) {
-			var configurationResource : ConfigurationResource = new ConfigurationResource;
-			configurationResource.configurationId = this.configurationId;
-			configurationResource.configurationName = this.configurationName;
-			configurationResource.configurationData = JSON.stringify(routeGroups);
-
+			var configurationResource : ConfigurationResource = {
+				configurationId : this.configurationId,
+				configurationName : this.configurationName,
+				configurationData : JSON.stringify(routeGroups)
+			};
 			var defer = this.promise.defer();
 			this.configService.saveConfig(configurationResource)
 				.then(function() {

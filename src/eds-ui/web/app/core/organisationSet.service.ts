@@ -5,7 +5,7 @@ module app.core {
 	import OrganisationSetMember = app.models.OrganisationSetMember;
 	'use strict';
 
-	export interface IOrganisationService {
+	export interface IOrganisationSetService {
 		getOrganisationSets():ng.IPromise<OrganisationSet[]>;
 		getOrganisationSetMembers(uuid : string):ng.IPromise<OrganisationSetMember[]>;
 		searchOrganisations(searchCriteria : string):ng.IPromise<OrganisationSetMember[]>;
@@ -13,7 +13,7 @@ module app.core {
 		deleteOrganisationSet(organisationSet : OrganisationSet):ng.IPromise<void>;
 	}
 
-	export class OrganisationService extends BaseHttpService implements IOrganisationService {
+	export class OrganisationSetService extends BaseHttpService implements IOrganisationSetService {
 
 		getOrganisationSets():ng.IPromise<OrganisationSet[]> {
 			return this.httpGet('api/lookup/getOrganisationSets');
@@ -50,5 +50,5 @@ module app.core {
 
 	angular
 		.module('app.core')
-		.service('OrganisationService', OrganisationService);
+		.service('OrganisationSetService', OrganisationSetService);
 }

@@ -5,7 +5,7 @@ module app.dialogs {
 	import IModalService = angular.ui.bootstrap.IModalService;
 	import IModalServiceInstance = angular.ui.bootstrap.IModalServiceInstance;
 	import IModalSettings = angular.ui.bootstrap.IModalSettings;
-	import IOrganisationService = app.core.IOrganisationService;
+	import IOrganisationSetService = app.core.IOrganisationSetService;
 	import OrganisationSetMember = app.models.OrganisationSetMember;
 	import OrganisationSet = app.models.OrganisationSet;
 	'use strict';
@@ -34,13 +34,13 @@ module app.dialogs {
 			return dialog;
 		}
 
-		static $inject = ['$uibModalInstance', '$uibModal', 'LoggerService', 'OrganisationService',
+		static $inject = ['$uibModalInstance', '$uibModal', 'LoggerService', 'OrganisationSetService',
 			'organisationList', 'organisationSet'];
 
 		constructor(protected $uibModalInstance : IModalServiceInstance,
 								private $modal : IModalService,
 								private log : ILoggerService,
-								private organisationService : IOrganisationService,
+								private organisationSetService : IOrganisationSetService,
 								organisationList : OrganisationSetMember[],
 								organisationSet : OrganisationSet) {
 			super($uibModalInstance);
@@ -62,7 +62,7 @@ module app.dialogs {
 
 		loadOrganisationSets() {
 			var vm = this;
-			vm.organisationService.getOrganisationSets()
+			vm.organisationSetService.getOrganisationSets()
 				.then(function(result) {
 					vm.organisationSetList = result;
 				});
@@ -80,7 +80,7 @@ module app.dialogs {
 					uuid : organisationSet.uuid,
 					name : organisationSet.name
 				};
-				vm.organisationService.getOrganisationSetMembers(organisationSet.uuid)
+				vm.organisationSetService.getOrganisationSetMembers(organisationSet.uuid)
 					.then(function (result) {
 						vm.resultData.organisations = result;
 					});
@@ -89,7 +89,7 @@ module app.dialogs {
 
 		search() {
 			var vm = this;
-			vm.organisationService.searchOrganisations(vm.searchCriteria)
+			vm.organisationSetService.searchOrganisations(vm.searchCriteria)
 				.then(function(result) {
 					vm.searchResults = result;
 				});
@@ -129,7 +129,7 @@ module app.dialogs {
 
 		save() {
 			var vm = this;
-			vm.organisationService.saveOrganisationSet(vm.resultData)
+			vm.organisationSetService.saveOrganisationSet(vm.resultData)
 				.then(function(result) {
 					vm.log.success('Organisation Set Saved', result, 'Saved');
 					if (vm.resultData.uuid === null) {

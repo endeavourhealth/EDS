@@ -31,6 +31,7 @@ module app.core {
 				{caption: 'Library', state: 'app.library', icon: 'fa fa-book'},
 				{caption: 'Reports', state: 'app.reportList', icon: 'fa fa-files-o'},
 				{caption: 'Organisations', state: 'app.organisationSet', icon: 'fa fa-hospital-o'},
+				{caption: 'Queueing', state: 'app.routeGroup', icon: 'fa fa-tasks'},
 				{caption: 'Administration', state: 'app.admin', icon: 'fa fa-users'},
 				{caption: 'Audit', state: 'app.audit', icon: 'fa fa-archive'}
 			];

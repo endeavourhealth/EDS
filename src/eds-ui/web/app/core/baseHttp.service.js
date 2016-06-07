@@ -31,6 +31,17 @@ var app;
                 });
                 return defer.promise;
             };
+            BaseHttpService.prototype.httpDelete = function (url, request) {
+                var defer = this.promise.defer();
+                this.http.delete(url, request)
+                    .then(function (response) {
+                    defer.resolve(response.data);
+                })
+                    .catch(function (exception) {
+                    defer.reject(exception);
+                });
+                return defer.promise;
+            };
             BaseHttpService.$inject = ['$http', '$q'];
             return BaseHttpService;
         })();

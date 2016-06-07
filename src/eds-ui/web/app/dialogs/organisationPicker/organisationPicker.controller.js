@@ -12,12 +12,12 @@ var app;
         'use strict';
         var OrganisationPickerController = (function (_super) {
             __extends(OrganisationPickerController, _super);
-            function OrganisationPickerController($uibModalInstance, $modal, log, organisationService, organisationList, organisationSet) {
+            function OrganisationPickerController($uibModalInstance, $modal, log, organisationSetService, organisationList, organisationSet) {
                 _super.call(this, $uibModalInstance);
                 this.$uibModalInstance = $uibModalInstance;
                 this.$modal = $modal;
                 this.log = log;
-                this.organisationService = organisationService;
+                this.organisationSetService = organisationSetService;
                 this.loadOrganisationSets();
                 if (organisationSet) {
                     this.editMode = true;
@@ -48,7 +48,7 @@ var app;
             };
             OrganisationPickerController.prototype.loadOrganisationSets = function () {
                 var vm = this;
-                vm.organisationService.getOrganisationSets()
+                vm.organisationSetService.getOrganisationSets()
                     .then(function (result) {
                     vm.organisationSetList = result;
                 });
@@ -66,7 +66,7 @@ var app;
                         uuid: organisationSet.uuid,
                         name: organisationSet.name
                     };
-                    vm.organisationService.getOrganisationSetMembers(organisationSet.uuid)
+                    vm.organisationSetService.getOrganisationSetMembers(organisationSet.uuid)
                         .then(function (result) {
                         vm.resultData.organisations = result;
                     });
@@ -74,7 +74,7 @@ var app;
             };
             OrganisationPickerController.prototype.search = function () {
                 var vm = this;
-                vm.organisationService.searchOrganisations(vm.searchCriteria)
+                vm.organisationSetService.searchOrganisations(vm.searchCriteria)
                     .then(function (result) {
                     vm.searchResults = result;
                 });
@@ -109,7 +109,7 @@ var app;
             };
             OrganisationPickerController.prototype.save = function () {
                 var vm = this;
-                vm.organisationService.saveOrganisationSet(vm.resultData)
+                vm.organisationSetService.saveOrganisationSet(vm.resultData)
                     .then(function (result) {
                     vm.log.success('Organisation Set Saved', result, 'Saved');
                     if (vm.resultData.uuid === null) {
@@ -118,7 +118,7 @@ var app;
                     }
                 });
             };
-            OrganisationPickerController.$inject = ['$uibModalInstance', '$uibModal', 'LoggerService', 'OrganisationService',
+            OrganisationPickerController.$inject = ['$uibModalInstance', '$uibModal', 'LoggerService', 'OrganisationSetService',
                 'organisationList', 'organisationSet'];
             return OrganisationPickerController;
         })(dialogs.BaseDialogController);

@@ -3,7 +3,7 @@
 
 module app.organisationSet {
 	import OrganisationPickerController = app.dialogs.OrganisationPickerController;
-	import IOrganisationService = app.core.IOrganisationService;
+	import IOrganisationSetService = app.core.IOrganisationSetService;
 	import OrganisationSet = app.models.OrganisationSet;
 	import OrganisationSetMember = app.models.OrganisationSetMember;
 	import MessageBoxController = app.dialogs.MessageBoxController;
@@ -13,17 +13,17 @@ module app.organisationSet {
 		organisationSets : OrganisationSet[];
 		selectedOrganisationSet : OrganisationSet;
 
-		static $inject = ['$uibModal', 'OrganisationService', 'LoggerService'];
+		static $inject = ['$uibModal', 'OrganisationSetService', 'LoggerService'];
 
 		constructor(private $modal : IModalService,
-								private organisationService : IOrganisationService,
+								private organisationSetService : IOrganisationSetService,
 								private log : ILoggerService) {
 			this.getRootFolders();
 		}
 
 		getRootFolders() {
 			var vm = this;
-			vm.organisationService.getOrganisationSets()
+			vm.organisationSetService.getOrganisationSets()
 				.then(function(result) {
 					vm.organisationSets = result;
 				})
@@ -39,7 +39,7 @@ module app.organisationSet {
 
 			// Load members if necessary
 			if (!item.organisations || item.organisations.length === 0) {
-				vm.organisationService.getOrganisationSetMembers(item.uuid)
+				vm.organisationSetService.getOrganisationSetMembers(item.uuid)
 					.then(function (result:OrganisationSetMember[]) {
 						vm.selectedOrganisationSet.organisations = result;
 					});
@@ -50,7 +50,7 @@ module app.organisationSet {
 			var vm = this;
 			OrganisationPickerController.open(vm.$modal, null, vm.selectedOrganisationSet)
 				.result.then(function(organisationSet : OrganisationSet) {
-				vm.organisationService.saveOrganisationSet(organisationSet)
+				vm.organisationSetService.saveOrganisationSet(organisationSet)
 					.then(function(result : OrganisationSet) {
 						vm.log.success('Organisation set saved', organisationSet, 'Save set');
 						vm.selectedOrganisationSet.organisations = organisationSet.organisations;
@@ -66,7 +66,7 @@ module app.organisationSet {
 			MessageBoxController.open(vm.$modal,
 																'Delete Organisation Set', 'Are you sure you want to delete the set?', 'Yes', 'No')
 				.result.then(function() {
-					vm.organisationService.deleteOrganisationSet(item)
+					vm.organisationSetService.deleteOrganisationSet(item)
 						.then(function() {
 							var i = vm.organisationSets.indexOf(item);
 							vm.organisationSets.splice(i, 1);

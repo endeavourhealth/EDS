@@ -8,15 +8,15 @@ var app;
         var MessageBoxController = app.dialogs.MessageBoxController;
         'use strict';
         var OrganisationSetController = (function () {
-            function OrganisationSetController($modal, organisationService, log) {
+            function OrganisationSetController($modal, organisationSetService, log) {
                 this.$modal = $modal;
-                this.organisationService = organisationService;
+                this.organisationSetService = organisationSetService;
                 this.log = log;
                 this.getRootFolders();
             }
             OrganisationSetController.prototype.getRootFolders = function () {
                 var vm = this;
-                vm.organisationService.getOrganisationSets()
+                vm.organisationSetService.getOrganisationSets()
                     .then(function (result) {
                     vm.organisationSets = result;
                 })
@@ -29,7 +29,7 @@ var app;
                 vm.selectedOrganisationSet = item;
                 // Load members if necessary
                 if (!item.organisations || item.organisations.length === 0) {
-                    vm.organisationService.getOrganisationSetMembers(item.uuid)
+                    vm.organisationSetService.getOrganisationSetMembers(item.uuid)
                         .then(function (result) {
                         vm.selectedOrganisationSet.organisations = result;
                     });
@@ -39,7 +39,7 @@ var app;
                 var vm = this;
                 OrganisationPickerController.open(vm.$modal, null, vm.selectedOrganisationSet)
                     .result.then(function (organisationSet) {
-                    vm.organisationService.saveOrganisationSet(organisationSet)
+                    vm.organisationSetService.saveOrganisationSet(organisationSet)
                         .then(function (result) {
                         vm.log.success('Organisation set saved', organisationSet, 'Save set');
                         vm.selectedOrganisationSet.organisations = organisationSet.organisations;
@@ -53,7 +53,7 @@ var app;
                 var vm = this;
                 MessageBoxController.open(vm.$modal, 'Delete Organisation Set', 'Are you sure you want to delete the set?', 'Yes', 'No')
                     .result.then(function () {
-                    vm.organisationService.deleteOrganisationSet(item)
+                    vm.organisationSetService.deleteOrganisationSet(item)
                         .then(function () {
                         var i = vm.organisationSets.indexOf(item);
                         vm.organisationSets.splice(i, 1);
@@ -64,7 +64,7 @@ var app;
                     });
                 });
             };
-            OrganisationSetController.$inject = ['$uibModal', 'OrganisationService', 'LoggerService'];
+            OrganisationSetController.$inject = ['$uibModal', 'OrganisationSetService', 'LoggerService'];
             return OrganisationSetController;
         })();
         organisationSet_1.OrganisationSetController = OrganisationSetController;

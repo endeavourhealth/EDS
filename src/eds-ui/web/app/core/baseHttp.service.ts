@@ -34,5 +34,18 @@ module app.core {
 
 			return defer.promise;
 		}
+
+		httpDelete(url : string, request? : any) : ng.IPromise<any> {
+			var defer = this.promise.defer();
+			this.http.delete(url, request)
+				.then(function (response) {
+					defer.resolve(response.data);
+				})
+				.catch(function (exception) {
+					defer.reject(exception);
+				});
+
+			return defer.promise;
+		}
 	}
 }

@@ -37,7 +37,7 @@ module app.routeGroup {
 					.then(function() {
 						vm.log.success('Route group saved', routeGroup, 'Save routeGroup');
 					})
-					.catch(function (error) {
+					.catch(function (error : any) {
 						vm.log.error('Failed to save route group', error, 'Save route group');
 					});
 			});
@@ -53,7 +53,7 @@ module app.routeGroup {
 						.then(function() {
 							vm.log.success('Route group deleted', item, 'Delete route group');
 						})
-						.catch(function(error) {
+						.catch(function(error : any) {
 							vm.log.error('Failed to delete route group', error, 'Delete route group');
 						});
 			});

@@ -12,12 +12,12 @@ var app;
         'use strict';
         var QueueReportController = (function (_super) {
             __extends(QueueReportController, _super);
-            function QueueReportController($uibModalInstance, logger, adminService, organisationService, $modal, reportUuid, reportName) {
+            function QueueReportController($uibModalInstance, logger, adminService, organisationSetService, $modal, reportUuid, reportName) {
                 _super.call(this, $uibModalInstance);
                 this.$uibModalInstance = $uibModalInstance;
                 this.logger = logger;
                 this.adminService = adminService;
-                this.organisationService = organisationService;
+                this.organisationSetService = organisationSetService;
                 this.$modal = $modal;
                 this.reportUuid = reportUuid;
                 this.reportName = reportName;
@@ -81,7 +81,7 @@ var app;
                 }
                 _super.prototype.ok.call(this);
             };
-            QueueReportController.$inject = ['$uibModalInstance', 'LoggerService', 'AdminService', 'OrganisationService', '$uibModal',
+            QueueReportController.$inject = ['$uibModalInstance', 'LoggerService', 'AdminService', 'OrganisationSetService', '$uibModal',
                 'reportUuid', 'reportName'];
             return QueueReportController;
         })(dialogs.BaseDialogController);
