@@ -8,8 +8,24 @@ import java.io.IOException;
 
 public class Coding_ClinicalCode extends AbstractCsvTransformer {
 
-    public Coding_ClinicalCode(String folderPath, CSVFormat csvFormat) throws IOException {
+    public Coding_ClinicalCode(String folderPath, CSVFormat csvFormat) throws Exception {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+    }
+
+    @Override
+    protected String[] getCsvHeaders() {
+        return new String[]{
+                "CodeId",
+                "Term",
+                "ReadTermId",
+                "NationalCodeCategory",
+                "NationalCode",
+                "NationalDescription",
+                "SnomedCTConceptId",
+                "SnomedCTDescriptionId",
+                "EmisCodeCategoryDescription",
+                "ProcessingId"
+        };
     }
 
     public Long getCodeId() {

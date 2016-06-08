@@ -10,8 +10,36 @@ import java.util.Date;
 import java.util.UUID;
 
 public class Prescribing_DrugRecord extends AbstractCsvTransformer {
-    public Prescribing_DrugRecord(String folderPath, CSVFormat csvFormat) throws IOException {
+    public Prescribing_DrugRecord(String folderPath, CSVFormat csvFormat) throws Exception {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+    }
+
+    @Override
+    protected String[] getCsvHeaders() {
+        return new String[]{
+                "DrugRecordGuid",
+                "PatientGuid",
+                "OrganisationGuid",
+                "EffectiveDate",
+                "EffectiveDatePrecision",
+                "EnteredDate",
+                "EnteredTime",
+                "ClinicianUserInRoleGuid",
+                "EnteredByUserInRoleGuid",
+                "CodeId",
+                "Dosage",
+                "Quantity",
+                "QuantityUnit",
+                "ProblemObservationGuid",
+                "PrescriptionType",
+                "IsActive",
+                "CancellationDate",
+                "NumberOfIssues",
+                "NumberOfIssuesAuthorised",
+                "Deleted",
+                "ProcessingId",
+                "IsConfidential"
+        };
     }
 
     public String getDrugRecordGuid() {

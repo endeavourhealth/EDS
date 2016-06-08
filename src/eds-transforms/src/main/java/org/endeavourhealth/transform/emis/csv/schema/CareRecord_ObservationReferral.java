@@ -11,8 +11,35 @@ import java.util.UUID;
 
 public class CareRecord_ObservationReferral extends AbstractCsvTransformer {
 
-    public CareRecord_ObservationReferral(String folderPath, CSVFormat csvFormat) throws IOException {
+    public CareRecord_ObservationReferral(String folderPath, CSVFormat csvFormat) throws Exception {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+    }
+
+
+    @Override
+    protected String[] getCsvHeaders() {
+        return new String[]{
+                "ObservationGuid",
+                "PatientGuid",
+                "OrganisationGuid",
+                "ReferralTargetOrganisationGuid",
+                "ReferralUrgency",
+                "ReferralMode",
+                "ReferralServiceType",
+                "ReferralReceivedDate",
+                "ReferralReceivedTime",
+                "ReferralEndDate",
+                "ReferralSourceId",
+                "ReferralSourceOrganisationGuid",
+                "ReferralUBRN",
+                "ReferralReasonCodeId",
+                "ReferringCareProfessionalStaffGroupCodeId",
+                "ReferralEpisodeRTTMeasurementTypeId",
+                "ReferralEpisodeClosureDate",
+                "ReferralEpisodeDischargeLetterIssuedDate",
+                "ReferralClosureReasonCodeId",
+                "ProcessingId"
+        };
     }
 
     public String getObservationGuid() {

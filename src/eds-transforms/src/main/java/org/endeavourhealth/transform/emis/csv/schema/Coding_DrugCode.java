@@ -8,8 +8,18 @@ import java.io.IOException;
 
 public class Coding_DrugCode extends AbstractCsvTransformer {
 
-    public Coding_DrugCode(String folderPath, CSVFormat csvFormat) throws IOException {
+    public Coding_DrugCode(String folderPath, CSVFormat csvFormat) throws Exception {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+    }
+
+    @Override
+    protected String[] getCsvHeaders() {
+        return new String[]{
+                "CodeId",
+                "Term",
+                "DmdProductCodeId",
+                "ProcessingId"
+        };
     }
 
     public Long getCodeId() {

@@ -10,26 +10,12 @@ import java.util.List;
 
 public class CodeableConceptHelper {
 
-    public static Coding createCoding(String system, String term, String code) {
-        return new Coding()
-                .setSystem(system)
-                .setDisplay(term)
-                .setCode(code);
-    }
-    public static Coding createCoding(SnomedCode snomedCode) {
-        return new Coding()
-                .setSystem(FhirUri.CODE_SYSTEM_SNOMED_CT)
-                .setDisplay(snomedCode.getTerm())
-                .setCode(snomedCode.getConceptCode());
-    }
-
-
     public static CodeableConcept createCodeableConcept(String system, String term, String code) {
-        return new CodeableConcept().addCoding(createCoding(system, term, code));
+        return new CodeableConcept().addCoding(CodingHelper.createCoding(system, term, code));
     }
 
     public static CodeableConcept createCodeableConcept(String text) {
-        return new CodeableConcept() .setText(text);
+        return new CodeableConcept().setText(text);
     }
 
     /**
@@ -48,16 +34,16 @@ public class CodeableConceptHelper {
             //no mapping required
         } else if (system.equals(FhirUri.CODE_SYSTEM_CTV3)) {
             SnomedCode mapping = TerminologyService.translateCtv3ToSnomed(coding.getCode());
-            codeableConcept.addCoding(createCoding(mapping));
+            codeableConcept.addCoding(CodingHelper.createCoding(mapping));
         } else if (system.equals(FhirUri.CODE_SYSTEM_READ2)) {
             SnomedCode mapping = TerminologyService.translateRead2ToSnomed(coding.getCode());
-            codeableConcept.addCoding(createCoding(mapping));
+            codeableConcept.addCoding(CodingHelper.createCoding(mapping));
         } else if (system.equals(FhirUri.CODE_SYSTEM_EMISPREPARATION)) {
             SnomedCode mapping = TerminologyService.translateEmisPreparationToSnomed(coding.getCode());
-            codeableConcept.addCoding(createCoding(mapping));
+            codeableConcept.addCoding(CodingHelper.createCoding(mapping));
         } else if (system.equals(FhirUri.CODE_SYSTEM_EMISSNOMED)) {
             SnomedCode mapping = TerminologyService.translateEmisSnomedToSnomed(coding.getCode());
-            codeableConcept.addCoding(createCoding(mapping));
+            codeableConcept.addCoding(CodingHelper.createCoding(mapping));
         } else {
             throw new TransformException("Unexpected coding system [" + system + "]");
         }

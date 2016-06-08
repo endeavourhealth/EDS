@@ -14,6 +14,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.UUID;
 
 public abstract class AbstractCsvTransformer {
@@ -26,25 +27,34 @@ public abstract class AbstractCsvTransformer {
     private DateFormat dateFormat = null;
     private DateFormat timeFormat = null;
 
-    public AbstractCsvTransformer(String folderPath,CSVFormat csvFormat, String dateFormat, String timeFormat) throws IOException {
-        String csvFileName = getClass().getName() + ".csv";
+    public AbstractCsvTransformer(String folderPath, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
+        String csvFileName = getClass().getSimpleName() + ".csv";
         File file = new File(folderPath, csvFileName);
-        this.csvReader = CSVParser.parse(file, Charset.defaultCharset(), csvFormat);
+        this.csvReader = CSVParser.parse(file, Charset.defaultCharset(), csvFormat.withHeader(""));
         this.csvIterator = csvReader.iterator();
         this.dateFormat = new SimpleDateFormat(dateFormat);
         this.timeFormat = new SimpleDateFormat(timeFormat);
+
+        //passing in withHeader("") makes the CSV parser read the first row into the header map,
+        //so validate it against what column headers are expected
+        Map<String, Integer> headerMap = csvReader.getHeaderMap();
+        String[] expectedHeaders = getCsvHeaders();
+        if (headerMap.size() != expectedHeaders.length) {
+            throw new TransformException("Mismatch in number of CSV columns in " + csvFileName + " expected " + expectedHeaders.length + " but found " + headerMap.size());
+        }
+
+        for (int i=0; i<expectedHeaders.length; i++) {
+            String expectedHeader = expectedHeaders[i];
+            Integer mapIndex = headerMap.get(expectedHeader);
+            if (mapIndex == null) {
+                throw new TransformException("Missing column " + expectedHeader + " in " + csvFileName);
+            } else if (mapIndex.intValue() != i) {
+                throw new TransformException("Out of order column " + expectedHeader + " in " + csvFileName + " expected at " + i + " but found at " + mapIndex);
+            }
+        }
     }
 
-    public AbstractCsvTransformer(CSVParser csvReader, String dateFormat, String timeFormat) {
-        this.csvReader = csvReader;
-        this.csvIterator = csvReader.iterator();
-        this.dateFormat = new SimpleDateFormat(dateFormat);
-        this.timeFormat = new SimpleDateFormat(timeFormat);
-    }
-
-    /*public CSVRecord currentRecord() {
-        return csvRecord;
-    }*/
+    protected abstract String[] getCsvHeaders();
 
     public boolean nextRecord() {
         if (csvIterator.hasNext()) {

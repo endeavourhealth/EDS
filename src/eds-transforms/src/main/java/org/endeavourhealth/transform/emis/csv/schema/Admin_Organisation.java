@@ -11,8 +11,25 @@ import java.util.UUID;
 
 public class Admin_Organisation extends AbstractCsvTransformer {
 
-    public Admin_Organisation(String folderPath, CSVFormat csvFormat) throws IOException {
+    public Admin_Organisation(String folderPath, CSVFormat csvFormat) throws Exception {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+    }
+
+    @Override
+    protected String[] getCsvHeaders() {
+        return new String[]{
+                "OrganisationGuid",
+                "CDB",
+                "OrganisationName",
+                "ODSCode",
+                "ParentOrganisationGuid",
+                "CCGOrganisationGuid",
+                "OrganisationType",
+                "OpenDate",
+                "CloseDate",
+                "MainLocationGuid",
+                "ProcessingId"
+        };
     }
 
     public String getOrganisationGuid() {

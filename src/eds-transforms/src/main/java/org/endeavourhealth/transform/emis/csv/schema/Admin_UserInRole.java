@@ -11,8 +11,24 @@ import java.util.UUID;
 
 public class Admin_UserInRole extends AbstractCsvTransformer {
 
-    public Admin_UserInRole(String folderPath, CSVFormat csvFormat) throws IOException {
+    public Admin_UserInRole(String folderPath, CSVFormat csvFormat) throws Exception {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+    }
+
+    @Override
+    protected String[] getCsvHeaders() {
+        return new String[]{
+                "UserInRoleGuid",
+                "OrganisationGuid",
+                "Title",
+                "GivenName",
+                "Surname",
+                "ContactStartDate",
+                "ContractEndDate",
+                "JobCategoryCode",
+                "JobCategoryName",
+                "ProcessingId"
+        };
     }
 
     public String getUserInRoleGuid() {

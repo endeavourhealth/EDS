@@ -11,8 +11,37 @@ import java.util.UUID;
 
 public class CareRecord_Observation extends AbstractCsvTransformer {
 
-    public CareRecord_Observation(String folderPath, CSVFormat csvFormat) throws IOException {
+    public CareRecord_Observation(String folderPath, CSVFormat csvFormat) throws Exception {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+    }
+
+    @Override
+    protected String[] getCsvHeaders() {
+        return new String[]{
+                "ObservationGuid",
+                "ParentObservationGuid",
+                "PatientGuid",
+                "OrganisationGuid",
+                "EffectiveDate",
+                "EffectiveDatePrecision",
+                "EnteredDate",
+                "EnteredTime",
+                "ClinicianUserInRoleGuid",
+                "EnteredByUserInRoleGuid",
+                "CodeId",
+                "ProblemGuid",
+                "ConsultationGuid",
+                "Value",
+                "NumericRangeLow",
+                "NumericRangeHigh",
+                "NumericUnit",
+                "ObservationType",
+                "AssociatedText",
+                "Deleted",
+                "ProcessingId",
+                "DocumentGuid",
+                "IsConfidential"
+        };
     }
 
     public String getObservationGuid() {

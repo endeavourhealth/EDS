@@ -11,8 +11,27 @@ import java.util.UUID;
 
 public class Appointment_Session extends AbstractCsvTransformer {
 
-    public Appointment_Session(String folderPath, CSVFormat csvFormat) throws IOException {
+    public Appointment_Session(String folderPath, CSVFormat csvFormat) throws Exception {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+    }
+
+    @Override
+    protected String[] getCsvHeaders() {
+        return new String[]{
+                "OrganisationGuid",
+                "AppointmentSessionGuid",
+                "Description",
+                "SessionTypeDescription",
+                "SessionCategoryDisplayName",
+                "StartDate",
+                "StartTime",
+                "EndDate",
+                "EndTime",
+                "Private",
+                "Deleted",
+                "ProcessingId",
+                "LocationGuid"
+        };
     }
 
     public String getOrganisationGuid() {

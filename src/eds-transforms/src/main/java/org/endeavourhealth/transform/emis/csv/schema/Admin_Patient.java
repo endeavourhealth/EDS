@@ -11,8 +11,52 @@ import java.util.UUID;
 
 public class Admin_Patient extends AbstractCsvTransformer {
 
-    public Admin_Patient(String folderPath, CSVFormat csvFormat) throws IOException {
+    public Admin_Patient(String folderPath, CSVFormat csvFormat) throws Exception {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+    }
+
+    @Override
+    protected String[] getCsvHeaders() {
+        return new String[] {
+                "PatientGuid",
+                "OrganisationGuid",
+                "Sex",
+                "DateOfBirth",
+                "DateOfDeath",
+                "Title",
+                "GivenName",
+                "MiddleNames",
+                "Surname",
+                "DateOfRegistration",
+                "NhsNumber",
+                "PatientNumber",
+                "PatientTypeDescription",
+                "DummyType",
+                "HouseNameFlatNumber",
+                "NumberAndStreet",
+                "Village",
+                "Town",
+                "County",
+                "Postcode",
+                "EmailAddress",
+                "HomePhone",
+                "MobilePhone",
+                "ResidentialInstituteCode",
+                "NHSNumberStatus",
+                "CarerName",
+                "CarerRelation",
+                "PersonGUID",
+                "UsualGpUserInRoleGuid",
+                "ExternalUsualGPGuid",
+                "ExternalUsualGP",
+                "ExternalUsualGPOrganisation",
+                "SpineSensitive",
+                "ProcessingId",
+                "DateofDeactivation",
+                "Deleted",
+                "IsConfidential"
+
+        };
     }
 
     public String getPatientGuid() {
@@ -126,4 +170,5 @@ public class Admin_Patient extends AbstractCsvTransformer {
     public boolean getIsConfidential() {
         return super.getBoolean(36);
     }
+
 }

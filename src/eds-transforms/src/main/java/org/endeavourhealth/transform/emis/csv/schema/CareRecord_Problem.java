@@ -11,10 +11,30 @@ import java.util.UUID;
 
 public class CareRecord_Problem extends AbstractCsvTransformer {
 
-    public CareRecord_Problem(String folderPath, CSVFormat csvFormat) throws IOException {
+    public CareRecord_Problem(String folderPath, CSVFormat csvFormat) throws Exception {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
     }
 
+    @Override
+    protected String[] getCsvHeaders() {
+        return new String[]{
+                "ObservationGuid",
+                "ParentProblemObservationGuid",
+                "PatientGuid",
+                "OrganisationGuid",
+                "EndDate",
+                "EffectiveDatePrecision",
+                "LastReviewDate",
+                "LastReviewDatePrecision",
+                "LastReviewUserInRoleGuid",
+                "ExpectedDuration",
+                "SignificanceDescription",
+                "ProblemStatusDescription",
+                "ParentProblemRelationship",
+                "Comment",
+                "ProcessingId"
+        };
+    }
 
     public String getObservationGuid() {
         return super.getString(0);

@@ -11,8 +11,32 @@ import java.util.UUID;
 
 public class Admin_Location extends AbstractCsvTransformer {
 
-    public Admin_Location(String folderPath, CSVFormat csvFormat) throws IOException {
+    public Admin_Location(String folderPath, CSVFormat csvFormat) throws Exception {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+    }
+
+    @Override
+    protected String[] getCsvHeaders() {
+        return new String[]{
+                "HouseNameFlatNumber",
+                "NumberAndStreet",
+                "Village",
+                "Town",
+                "County",
+                "Postcode",
+                "LocationGuid",
+                "ParentLocationId",
+                "LocationName",
+                "MainContactName",
+                "EmailAddress",
+                "PhoneNumber",
+                "FaxNumber",
+                "OpenDate",
+                "CloseDate",
+                "ProcessingId",
+                "Deleted",
+                "LocationTypeDescription"
+        };
     }
 
     public String getHouseNameFlatNumber() {

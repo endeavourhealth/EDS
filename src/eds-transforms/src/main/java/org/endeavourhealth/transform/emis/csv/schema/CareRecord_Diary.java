@@ -1,14 +1,44 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
+import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.UUID;
 
 public class CareRecord_Diary extends AbstractCsvTransformer {
-    public CareRecord_Diary(CSVParser csvReader, String dateFormat, String timeFormat) {
-        super(csvReader, dateFormat, timeFormat);
+
+    public CareRecord_Diary(String folderPath, CSVFormat csvFormat) throws Exception {
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+    }
+
+    @Override
+    protected String[] getCsvHeaders() {
+        return new String[]{
+                "DiaryGuid",
+                "PatientGuid",
+                "OrganisationGuid",
+                "EffectiveDate",
+                "EffectiveDatePrecision",
+                "EnteredDate",
+                "EnteredTime",
+                "ClinicianUserInRoleGuid",
+                "EnteredByUserInRoleGuid",
+                "CodeId",
+                "OriginalTerm",
+                "AssociatedText",
+                "DurationTerm",
+                "LocationTypeDescription",
+                "ConsultationGuid",
+                "IsConfidential",
+                "IsActive",
+                "IsComplete",
+                "Deleted",
+                "ProcessingId"
+        };
     }
 
     public String getDiaryGuid() {

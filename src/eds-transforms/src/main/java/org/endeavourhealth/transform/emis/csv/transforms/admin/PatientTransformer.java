@@ -2,7 +2,6 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Patient;
 import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
 import org.endeavourhealth.transform.emis.openhr.schema.VocSex;
@@ -14,6 +13,27 @@ import org.hl7.fhir.instance.model.*;
 import java.util.*;
 
 public class PatientTransformer {
+
+    enum RegistrationType{
+
+        E("Emergency"),
+        IN("Immediately Necessary"),
+        R("Regular/GMS"),
+        T("Temporary"),
+        P("Private"),
+        O("Other"),
+        D("Dummy/Synthetic");
+
+        private String value = null;
+
+        public String getValue() {
+            return value;
+        }
+
+        RegistrationType(String value) {
+            this.value = value;
+        }
+    }
 
     public static void transform(String folderPath, CSVFormat csvFormat, FhirObjectStore objectStore) throws Exception {
 
@@ -34,8 +54,8 @@ public class PatientTransformer {
             return;
         }
 
-        //ignore dummy patient records
-        if (patientParser.getDummyType()) {
+        if (patientParser.getIsConfidential()) {
+            //TODO - how to process Confidential EMIS records so they should be deleted from EDS?
             return;
         }
 
@@ -122,11 +142,14 @@ public class PatientTransformer {
             fhirPatient.addContact(fhirContact);
         }
 
-        String patientType = patientParser.getPatientTypedescription();
-        fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.REGISTRATION_TYPE, new StringType(patientType)));
+        RegistrationType registrationType = convertRegistrationType(patientParser.getPatientTypedescription(), patientParser.getDummyType());
+        Coding fhirCoding = CodingHelper.createCoding(FhirUri.VALUE_SET_REGISTRATION_TYPE, registrationType.getValue(), registrationType.toString());
+        fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.REGISTRATION_TYPE, fhirCoding));
 
-        //TODO - store admin_patient SpineSensitive in FHIR?
-        //TODO - store admin_patient IsConfidential in FHIR?
+        //ignore dummy patient records
+        if (patientParser.getDummyType()) {
+            return;
+        }
 
         String usualGpGuid = patientParser.getUsualGpUserInRoleGuid();
         if (usualGpGuid != null) {
@@ -170,6 +193,29 @@ public class PatientTransformer {
             fhirEpisode.setStatus(EpisodeOfCare.EpisodeOfCareStatus.ACTIVE);
         } else {
             fhirEpisode.setStatus(EpisodeOfCare.EpisodeOfCareStatus.FINISHED);
+        }
+    }
+
+    /**
+     * converts the patientDescription String from the CSV to the FHIR registration type
+     * possible registration types based on the VocPatientType enum from EMIS Open
+     */
+    private static RegistrationType convertRegistrationType(String csvRegType, boolean dummyRecord) {
+
+        if (dummyRecord || csvRegType.equalsIgnoreCase("Dummy")) {
+            return RegistrationType.D;
+        } else if (csvRegType.equalsIgnoreCase("Emg")) {
+            return RegistrationType.E;
+        } else if (csvRegType.equalsIgnoreCase("Immediately necessary")) {
+            return RegistrationType.IN;
+        } else if (csvRegType.equalsIgnoreCase("Private")) {
+            return RegistrationType.P;
+        } else if (csvRegType.equalsIgnoreCase("Regular")) {
+            return RegistrationType.R;
+        } else if (csvRegType.equalsIgnoreCase("Temporary")) {
+            return RegistrationType.T;
+        } else {
+            return RegistrationType.O;
         }
     }
 }

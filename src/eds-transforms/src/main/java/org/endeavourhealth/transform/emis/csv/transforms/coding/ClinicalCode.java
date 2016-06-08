@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.transform.fhir.CodingHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.terminology.Snomed;
 import org.endeavourhealth.transform.terminology.TerminologyService;
@@ -76,7 +77,7 @@ public class ClinicalCode {
 
         CodeableConcept ret = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, emisTerm, emisCode);
         String snomedTerm = Snomed.getTerm(snomedConceptId.toString(), snomedDescriptionId.toString());
-        ret.addCoding(CodeableConceptHelper.createCoding(FhirUri.CODE_SYSTEM_SNOMED_CT, snomedTerm, snomedConceptId.toString()));
+        ret.addCoding(CodingHelper.createCoding(FhirUri.CODE_SYSTEM_SNOMED_CT, snomedTerm, snomedConceptId.toString()));
         return ret;
     }
 }

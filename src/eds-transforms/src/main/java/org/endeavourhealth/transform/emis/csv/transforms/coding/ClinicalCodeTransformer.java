@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 public abstract class ClinicalCodeTransformer {
 
-    public static HashMap<Long, ClinicalCode> transform(String folderPath, CSVFormat csvFormat) throws IOException {
+    public static HashMap<Long, ClinicalCode> transform(String folderPath, CSVFormat csvFormat) throws Exception {
 
         HashMap<Long, ClinicalCode> ret = new HashMap<>();
 
@@ -25,7 +25,7 @@ public abstract class ClinicalCodeTransformer {
         return ret;
     }
 
-    private static void transform(Coding_ClinicalCode codeParser, HashMap<Long, ClinicalCode> map) throws IOException {
+    private static void transform(Coding_ClinicalCode codeParser, HashMap<Long, ClinicalCode> map) throws Exception {
 
         Long codeId = codeParser.getCodeId();
 

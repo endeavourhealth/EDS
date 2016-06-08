@@ -11,8 +11,30 @@ import java.util.UUID;
 
 public class Appointment_Slot extends AbstractCsvTransformer {
 
-    public Appointment_Slot(String folderPath, CSVFormat csvFormat) throws IOException {
+    public Appointment_Slot(String folderPath, CSVFormat csvFormat) throws Exception {
         super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+    }
+
+    @Override
+    protected String[] getCsvHeaders() {
+        return new String[]{
+                "SlotGuid",
+                "AppointmentDate",
+                "AppointmentStartTime",
+                "PlannedDurationInMinutes",
+                "PatientGuid",
+                "SendInTime",
+                "LeftTime",
+                "DidNotAttend",
+                "PatientWaitInMin",
+                "AppointmentDelayInMin",
+                "ActualDurationInMinutes",
+                "OrganisationGuid",
+                "SessionGuid",
+                "DnaReasonCodeId",
+                "Deleted",
+                "ProcessingId"
+        };
     }
 
     public String getSlotGuid() {

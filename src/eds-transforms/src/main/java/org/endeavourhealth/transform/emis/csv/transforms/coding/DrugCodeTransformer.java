@@ -13,7 +13,7 @@ import java.util.HashMap;
 public class DrugCodeTransformer {
 
 
-    public static HashMap<String, Medication> transform(String folderPath, CSVFormat csvFormat) throws IOException {
+    public static HashMap<String, Medication> transform(String folderPath, CSVFormat csvFormat) throws Exception {
 
         HashMap<String, Medication> ret = new HashMap<>();
 
