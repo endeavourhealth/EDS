@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="Mode">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:enumeration value="BULK"/>
+        <xs:enumeration value="TRANSACTIONAL"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	<xs:element name="Queue">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="PId" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="State">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="Mode"/>
+        <xs:element ref="BulkInitialised"/>
+        <xs:element ref="BulkStarted"/>
+        <xs:element ref="BulkCompleted"/>
+				<xs:element ref="LastSynchronisation"/>
+				<xs:element ref="Queue"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="PId" type="xs:int"/>
+  <xs:element name="LastSynchronisation">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="Date" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Date" type="xs:dateTime"/>
+  <xs:element name="BulkInitialised" type="xs:boolean"/>
+  <xs:element name="BulkStarted">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="Date" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="BulkCompleted">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="Date" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+	<xs:element name="Endeavour.EmisWebPollerService">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="State"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

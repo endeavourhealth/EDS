@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Endeavour.EmisWebPollerService xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="State.xsd">
+	<State>
+		<Mode>BULK</Mode>
+    <BulkInitialised>false</BulkInitialised>
+    <BulkStarted></BulkStarted>
+    <BulkCompleted></BulkCompleted>
+    <LastSynchronisation></LastSynchronisation>
+		<Queue>
+		</Queue>
+	</State>
+</Endeavour.EmisWebPollerService>

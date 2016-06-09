@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 rel. 4 U (http://www.xmlspy.com) by Carolyn  Meakin (Emis) -->
+<xs:schema targetNamespace="http://www.e-mis.com/emisopen/MedicalRecord" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.e-mis.com/emisopen/MedicalRecord" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:include schemaLocation="EomMedicalRecord35.xsd"/>
+	<xs:element name="OrganisationInformation">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="OrganisationList">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Organisation" type="LocationType" maxOccurs="unbounded"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="UserList">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="User" type="PersonType" minOccurs="0" maxOccurs="unbounded"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="ExternalOrganisationList" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Organisation" type="LocationType" minOccurs="0" maxOccurs="unbounded"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="ExternalPersonList" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Person" type="PersonType" minOccurs="0" maxOccurs="unbounded"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="LocationTypeList" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="LocationType" type="TypeOfLocationType" minOccurs="0" maxOccurs="unbounded"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

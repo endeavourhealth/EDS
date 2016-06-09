@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 rel. 4 U (http://www.xmlspy.com) by Carolyn  Meakin (Emis) -->
+<xs:schema targetNamespace="http://www.e-mis.com/emisopen/MedicalRecord" xmlns="http://www.e-mis.com/emisopen/MedicalRecord" xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:include schemaLocation="C:\PCSDev\Shared\XMLSchemas\EomMedicalRecord37.xsd"/>
+	<xs:element name="BookedPatients">
+		<xs:annotation>
+			<xs:documentation>Root for booked appointment list</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="BookedList" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Booked" minOccurs="0" maxOccurs="unbounded">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Patient" type="RegistrationType"/>
+										<xs:element name="Appointment">
+											<xs:complexType>
+												<xs:sequence>
+													<xs:element name="ID" type="IdentType"/>
+													<xs:element name="AppointmentSite" type="xs:string"/>
+													<xs:element name="Date" type="xs:string"/>
+													<xs:element name="Time" type="xs:string">
+														<xs:annotation>
+															<xs:documentation>date  time of appointment</xs:documentation>
+														</xs:annotation>
+													</xs:element>
+													<xs:element name="SessionHolder" type="IdentType">
+														<xs:annotation>
+															<xs:documentation>Refid points to ref id in Session Holder list</xs:documentation>
+														</xs:annotation>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element name="Alert" minOccurs="0">
+											<xs:annotation>
+												<xs:documentation>0 = no alert, 1 = alert</xs:documentation>
+											</xs:annotation>
+											<xs:simpleType>
+												<xs:restriction base="xs:integer">
+													<xs:enumeration value="0"/>
+													<xs:enumeration value="1"/>
+												</xs:restriction>
+											</xs:simpleType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="SessionHolderList">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="SessionHolder" minOccurs="0" maxOccurs="unbounded">
+								<xs:annotation>
+									<xs:documentation>Details of session holder referenced in the booked list</xs:documentation>
+								</xs:annotation>
+								<xs:complexType>
+									<xs:complexContent>
+										<xs:extension base="PersonType">
+											<xs:sequence>
+												<xs:element name="WaitingTime" type="xs:integer">
+													<xs:annotation>
+														<xs:documentation>Current estimate waiting time in seconds</xs:documentation>
+													</xs:annotation>
+												</xs:element>
+											</xs:sequence>
+										</xs:extension>
+									</xs:complexContent>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Time" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>Server date and time</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>
