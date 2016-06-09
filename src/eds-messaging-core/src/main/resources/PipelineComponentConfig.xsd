@@ -85,4 +85,10 @@
             <xs:extension base="ComponentConfig"/>
         </xs:complexContent>
     </xs:complexType>
+
+    <xs:complexType name="PGPDecryptConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
 </xs:schema>

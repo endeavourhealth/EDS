@@ -1,10 +1,7 @@
 
 package org.endeavourhealth.core.configuration;
 
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.annotation.XmlElementDecl;
 import javax.xml.bind.annotation.XmlRegistry;
-import javax.xml.namespace.QName;
 
 
 /**
@@ -24,7 +21,6 @@ import javax.xml.namespace.QName;
 @XmlRegistry
 public class ObjectFactory {
 
-    private final static QName _RabbitConfig_QNAME = new QName("", "RabbitConfig");
 
     /**
      * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.endeavourhealth.core.configuration
@@ -34,35 +30,43 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link RMQConfig }
+     * Create an instance of {@link PostToRestConfig }
      * 
      */
-    public RMQConfig createRMQConfig() {
-        return new RMQConfig();
+    public PostToRestConfig createPostToRestConfig() {
+        return new PostToRestConfig();
     }
 
     /**
-     * Create an instance of {@link ExchangeProperties }
+     * Create an instance of {@link RunDataDistributionProtocolsConfig }
      * 
      */
-    public ExchangeProperties createExchangeProperties() {
-        return new ExchangeProperties();
+    public RunDataDistributionProtocolsConfig createRunDataDistributionProtocolsConfig() {
+        return new RunDataDistributionProtocolsConfig();
     }
 
     /**
-     * Create an instance of {@link ComponentConfig }
+     * Create an instance of {@link ReturnResponseAcknowledgementConfig }
      * 
      */
-    public ComponentConfig createComponentConfig() {
-        return new ComponentConfig();
+    public ReturnResponseAcknowledgementConfig createReturnResponseAcknowledgementConfig() {
+        return new ReturnResponseAcknowledgementConfig();
     }
 
     /**
-     * Create an instance of {@link RMQExchange }
+     * Create an instance of {@link ValidateMessageTypeConfig }
      * 
      */
-    public RMQExchange createRMQExchange() {
-        return new RMQExchange();
+    public ValidateMessageTypeConfig createValidateMessageTypeConfig() {
+        return new ValidateMessageTypeConfig();
+    }
+
+    /**
+     * Create an instance of {@link LoadSenderConfigurationConfig }
+     * 
+     */
+    public LoadSenderConfigurationConfig createLoadSenderConfigurationConfig() {
+        return new LoadSenderConfigurationConfig();
     }
 
     /**
@@ -74,28 +78,107 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link PGPDecryptConfig }
+     * 
+     */
+    public PGPDecryptConfig createPGPDecryptConfig() {
+        return new PGPDecryptConfig();
+    }
+
+    /**
+     * Create an instance of {@link Pipeline }
+     * 
+     */
+    public Pipeline createPipeline() {
+        return new Pipeline();
+    }
+
+    /**
+     * Create an instance of {@link ExchangeProperties }
+     * 
+     */
+    public ExchangeProperties createExchangeProperties() {
+        return new ExchangeProperties();
+    }
+
+    /**
+     * Create an instance of {@link PostMessageToLogConfig }
+     * 
+     */
+    public PostMessageToLogConfig createPostMessageToLogConfig() {
+        return new PostMessageToLogConfig();
+    }
+
+    /**
+     * Create an instance of {@link MessageTransformConfig }
+     * 
+     */
+    public MessageTransformConfig createMessageTransformConfig() {
+        return new MessageTransformConfig();
+    }
+
+    /**
+     * Create an instance of {@link EnvelopMessageConfig }
+     * 
+     */
+    public EnvelopMessageConfig createEnvelopMessageConfig() {
+        return new EnvelopMessageConfig();
+    }
+
+    /**
+     * Create an instance of {@link ComponentConfig }
+     * 
+     */
+    public ComponentConfig createComponentConfig() {
+        return new ComponentConfig();
+    }
+
+    /**
+     * Create an instance of {@link PostMessageToExchangeConfig }
+     * 
+     */
+    public PostMessageToExchangeConfig createPostMessageToExchangeConfig() {
+        return new PostMessageToExchangeConfig();
+    }
+
+    /**
+     * Create an instance of {@link PostToSubscriberWebServiceConfig }
+     * 
+     */
+    public PostToSubscriberWebServiceConfig createPostToSubscriberWebServiceConfig() {
+        return new PostToSubscriberWebServiceConfig();
+    }
+
+    /**
+     * Create an instance of {@link PostToEventLogConfig }
+     * 
+     */
+    public PostToEventLogConfig createPostToEventLogConfig() {
+        return new PostToEventLogConfig();
+    }
+
+    /**
+     * Create an instance of {@link OpenEnvelopeConfig }
+     * 
+     */
+    public OpenEnvelopeConfig createOpenEnvelopeConfig() {
+        return new OpenEnvelopeConfig();
+    }
+
+    /**
+     * Create an instance of {@link ValidateSenderConfig }
+     * 
+     */
+    public ValidateSenderConfig createValidateSenderConfig() {
+        return new ValidateSenderConfig();
+    }
+
+    /**
      * Create an instance of {@link Credentials }
      * 
      */
     public Credentials createCredentials() {
         return new Credentials();
-    }
-
-    /**
-     * Create an instance of {@link RMQQueue }
-     * 
-     */
-    public RMQQueue createRMQQueue() {
-        return new RMQQueue();
-    }
-
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link RMQConfig }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "", name = "RabbitConfig")
-    public JAXBElement<RMQConfig> createRabbitConfig(RMQConfig value) {
-        return new JAXBElement<RMQConfig>(_RabbitConfig_QNAME, RMQConfig.class, null, value);
     }
 
 }

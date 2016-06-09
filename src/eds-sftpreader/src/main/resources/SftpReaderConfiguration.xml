@@ -2,15 +2,16 @@
 <SftpReaderConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                          xsi:noNamespaceSchemaLocation="../../../../eds-messaging-core/src/main/resources/SftpReaderConfiguration.xsd">
   <Credentials>
-    <Username>username</Username>
-    <Password>password</Password>
+    <Username>guest</Username>
+    <Password>guest</Password>
   </Credentials>
   <Host>localhost</Host>
   <Port>22</Port>
   <Path>/</Path>
   <Filename>Message.xml</Filename>
-  <Polltime>60</Polltime>
+  <Polltime>10</Polltime>
     <Pipeline>
+        <PGPDecrypt/>
         <EnvelopMessage>
             <ExchangeProperties>
                 <Property Key="Format">text/xml</Property>

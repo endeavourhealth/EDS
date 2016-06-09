@@ -34,6 +34,7 @@ import javax.xml.bind.annotation.XmlType;
  *           &lt;element name="RunDataDistributionProtocols" type="{}RunDataDistributionProtocolsConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostToSubscriberWebService" type="{}PostToSubscriberWebServiceConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostToRest" type="{}PostToRestConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="PGPDecrypt" type="{}PGPDecryptConfig" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;/choice>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -62,7 +63,8 @@ public class Pipeline {
         @XmlElement(name = "PostToEventLog", type = PostToEventLogConfig.class),
         @XmlElement(name = "RunDataDistributionProtocols", type = RunDataDistributionProtocolsConfig.class),
         @XmlElement(name = "PostToSubscriberWebService", type = PostToSubscriberWebServiceConfig.class),
-        @XmlElement(name = "PostToRest", type = PostToRestConfig.class)
+        @XmlElement(name = "PostToRest", type = PostToRestConfig.class),
+        @XmlElement(name = "PGPDecrypt", type = PGPDecryptConfig.class)
     })
     protected List<ComponentConfig> pipelineComponents;
 
@@ -97,6 +99,7 @@ public class Pipeline {
      * {@link RunDataDistributionProtocolsConfig }
      * {@link PostToSubscriberWebServiceConfig }
      * {@link PostToRestConfig }
+     * {@link PGPDecryptConfig }
      * 
      * 
      */

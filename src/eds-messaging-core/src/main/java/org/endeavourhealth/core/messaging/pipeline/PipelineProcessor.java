@@ -76,6 +76,8 @@ public class PipelineProcessor {
 				return new PostToSubscriberWebService((PostToSubscriberWebServiceConfig) processConfig);
 			case "PostToRestConfig":
 				return new PostToRest((PostToRestConfig) processConfig);
+			case "PGPDecryptConfig":
+				return new PGPDecrypt((PGPDecryptConfig) processConfig);
 			default:
 				throw new PipelineException("Unknown component : " + xmlTagName);
 		}
