@@ -1,7 +1,7 @@
 /// <reference path="../../../typings/tsd.d.ts" />
 /// <reference path="../../blocks/logger.service.ts" />
 
-module app.organisation {
+module app.service {
 	import IModalServiceInstance = angular.ui.bootstrap.IModalServiceInstance;
 	import IModalSettings = angular.ui.bootstrap.IModalSettings;
 	import IModalService = angular.ui.bootstrap.IModalService;
@@ -9,15 +9,15 @@ module app.organisation {
 
 	'use strict';
 
-	export class OrganisationEditorController extends BaseDialogController {
-		public static open($modal : IModalService, organisation : Organisation) : IModalServiceInstance {
+	export class ServiceEditorController extends BaseDialogController {
+		public static open($modal : IModalService, service : Service) : IModalServiceInstance {
 			var options : IModalSettings = {
-				templateUrl:'app/organisations/editor/organisationEditor.html',
-				controller:'OrganisationEditorController',
+				templateUrl:'app/services/editor/serviceEditor.html',
+				controller:'ServiceEditorController',
 				controllerAs:'ctrl',
 				backdrop: 'static',
 				resolve:{
-					organisation : () => organisation
+					service : () => service
 				}
 			};
 
@@ -25,14 +25,14 @@ module app.organisation {
 			return dialog;
 		}
 
-		static $inject = ['$uibModalInstance', 'LoggerService', 'AdminService', 'organisation'];
+		static $inject = ['$uibModalInstance', 'LoggerService', 'AdminService', 'service'];
 
 		constructor(protected $uibModalInstance : IModalServiceInstance,
 								private logger:app.blocks.ILoggerService,
 								private adminService : IAdminService,
-								private organisation : Organisation) {
+								private service : Service) {
 			super($uibModalInstance);
-			this.resultData = jQuery.extend(true, {}, organisation);
+			this.resultData = jQuery.extend(true, {}, service);
 		}
 
 		addFilter(filter : string) {
@@ -41,6 +41,6 @@ module app.organisation {
 	}
 
 	angular
-		.module('app.organisation')
-		.controller('OrganisationEditorController', OrganisationEditorController);
+		.module('app.service')
+		.controller('ServiceEditorController', ServiceEditorController);
 }

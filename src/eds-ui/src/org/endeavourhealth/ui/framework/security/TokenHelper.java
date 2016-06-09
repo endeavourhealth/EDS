@@ -6,8 +6,6 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.endeavourhealth.core.data.admin.models.EndUser;
 import org.endeavourhealth.core.data.admin.models.Organisation;
-import org.endeavourhealth.ui.database.administration.DbEndUser;
-import org.endeavourhealth.ui.database.administration.DbOrganisation;
 
 import javax.naming.AuthenticationException;
 import javax.ws.rs.core.NewCookie;

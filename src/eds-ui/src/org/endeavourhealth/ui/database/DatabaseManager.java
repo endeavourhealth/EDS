@@ -162,10 +162,6 @@ public final class DatabaseManager {
 
         db().retrieveEndUserPwdForUserNotExpired(UUID.randomUUID());
 
-        db().retrieveAllOrganisations();
-
-        db().retrieveOrganisationForNameNationalId("Name", "NationalId");
-
         db().retrieveEndUserEmailInviteForUserNotCompleted(UUID.randomUUID());
 
         db().retrieveEndUserEmailInviteForToken("Token");
@@ -241,12 +237,7 @@ public final class DatabaseManager {
         sourceOrganisation.setReferencedByData(true);
         entities.add(sourceOrganisation);
 
-        DbOrganisation organisation = new DbOrganisation();
-        organisation.assignPrimaryUUid();
-        organisation.setName("OrgName");
-        organisation.setNationalId("OrgId");
-        UUID orgUuid = organisation.getOrganisationUuid();
-        entities.add(organisation);
+        UUID orgUuid = UUID.randomUUID();
 
         DbEndUser user = new DbEndUser();
         user.assignPrimaryUUid();

@@ -1,13 +1,13 @@
 /// <reference path="../../../typings/tsd.d.ts" />
 
-module app.organisation {
+module app.service {
 	'use strict';
 
-	class OrganisationRoute {
+	class ServiceRoute {
 		static $inject = ['$stateProvider'];
 
 		constructor(stateProvider:angular.ui.IStateProvider) {
-			var routes = OrganisationRoute.getRoutes();
+			var routes = ServiceRoute.getRoutes();
 
 			routes.forEach(function (route) {
 				stateProvider.state(route.state, route.config);
@@ -17,11 +17,11 @@ module app.organisation {
 		static getRoutes() {
 			return [
 				{
-					state: 'app.organisation',
+					state: 'app.service',
 					config: {
-						url: '/organisation',
-						templateUrl: 'app/organisations/list/organisationList.html',
-						controller: 'OrganisationListController',
+						url: '/service',
+						templateUrl: 'app/services/list/serviceList.html',
+						controller: 'ServiceListController',
 						controllerAs: 'ctrl'
 					}
 				}
@@ -30,7 +30,7 @@ module app.organisation {
 	}
 
 	angular
-		.module('app.organisation')
-		.config(OrganisationRoute);
+		.module('app.service')
+		.config(ServiceRoute);
 
 }

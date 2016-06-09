@@ -28,6 +28,8 @@ angular.module('app', [
 		'app.reports',
 		'app.listOutput',
 		'app.codeSet',
+		'app.organisation',
+		'app.service',
 		'app.organisationSet',
 		'app.admin',
 		'app.query',

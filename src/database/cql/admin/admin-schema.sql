@@ -191,7 +191,40 @@ WHERE id IS NOT NULL
   AND is_one_time_use IS NOT NULL
 PRIMARY KEY((end_user_id), id)
 WITH CLUSTERING ORDER BY (end_user_id ASC);
-  
+
+create table service
+(
+	id UUID,
+	name TEXT,
+	primary key (id)
+);
+
+create table organisation_service_link
+(
+	id UUID,
+	organisation_id UUID,
+	service_id UUID,
+	primary key (id)
+);
+
+create materialized view organisation_service_link_by_organisation_id as
+select id, organisation_id, service_id
+from organisation_service_link
+where id is not null
+	and organisation_id is not null
+	and service_id is not null
+primary key ((organisation_id), id)
+with clustering order by (organisation_id asc);
+	
+create materialized view organisation_service_link_by_service_id as
+select id, organisation_id, service_id
+from organisation_service_link
+where id is not null
+	and organisation_id is not null
+	and service_id is not null
+primary key ((service_id), id)
+with clustering order by (service_id asc);
+
 CREATE TABLE organisation 
   ( 
     id UUID,

@@ -24,18 +24,18 @@ module app.organisation {
 					vm.organisations = result;
 				})
 				.catch(function (error) {
-					vm.log.error('Failed to load route groups', error, 'Load route groups');
+					vm.log.error('Failed to load organisations', error, 'Load organisations');
 				});
 		}
 
 		edit(item : Organisation) {
 			var vm = this;
 			OrganisationEditorController.open(vm.$modal, item)
-				.result.then(function(organisation : Organisation) {
-				jQuery.extend(true, item, routeGroup);
-				vm.organisationService.saveOrganisation(organisation)
+				.result.then(function(result : Organisation) {
+				jQuery.extend(true, item, result);
+				vm.organisationService.saveOrganisation(item)
 					.then(function() {
-						vm.log.success('Organisation saved', organisation, 'Save organisation');
+						vm.log.success('Organisation saved', item, 'Save organisation');
 					})
 					.catch(function (error : any) {
 						vm.log.error('Failed to save organisation', error, 'Save organisation');
@@ -61,6 +61,6 @@ module app.organisation {
 	}
 
 	angular
-		.module('app.routeGroup')
+		.module('app.organisation')
 		.controller('OrganisationListController', OrganisationListController);
 }

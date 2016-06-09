@@ -23,5 +23,10 @@ public class OrganisationRepository extends Repository {
         return accessor.getOrganisationEndUserLinkByEndUserId(userId);
     }
 
+    public Iterable<OrganisationServiceLink> getServices(UUID organisationId) {
+        OrganisationAccessor accessor = getMappingManager().createAccessor(OrganisationAccessor.class);
+        return accessor.getOrganisationServiceLinkByOrganisationId(organisationId);
+    }
+
 }
 

@@ -4,6 +4,6 @@ module app.organisation {
 	export class Organisation {
 		uuid:string;
 		name:string;
-		description:string;
+		nationalId:string;
 	}
 }

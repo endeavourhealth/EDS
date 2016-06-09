@@ -859,16 +859,6 @@ final class SqlServerDatabase implements DatabaseI {
     }
 
     @Override
-    public List<DbOrganisation> retrieveAllOrganisations() throws Exception {
-        String where = "WHERE 1=1";
-        return retrieveForWherePreparedStatement(DbOrganisation.class, where);
-
-        /*List<DbOrganisation> ret = new ArrayList<DbOrganisation>();
-        retrieveForWhere(new DbOrganisation().getAdapter(), "WHERE 1=1", ret);
-        return ret;*/
-    }
-
-    @Override
     public List<DbEndUserEmailInvite> retrieveEndUserEmailInviteForUserNotCompleted(UUID userUuid) throws Exception {
         String where = "WHERE EndUserUuid = ?"
                 + " AND DtCompleted IS NULL";
@@ -1012,18 +1002,6 @@ final class SqlServerDatabase implements DatabaseI {
                 + " AND a.AuditUuid = " + ALIAS + ".AuditUuid"
                 + " WHERE a.ItemUuid = " + convertToString(itemUuid);
         return (DbItem) retrieveSingleForWhere(new DbItem().getAdapter(), where);*/
-    }
-
-    @Override
-    public DbOrganisation retrieveOrganisationForNameNationalId(String name, String nationalId) throws Exception {
-
-        String where = "WHERE Name = ?"
-                + " AND NationalId = ?";
-        return retrieveOneForWherePreparedStatement(DbOrganisation.class, where, name, nationalId);
-
-        /*String where = "WHERE Name = " + convertToString(name)
-                + " AND NationalId = " + convertToString(nationalId);
-        return (DbOrganisation) retrieveSingleForWhere(new DbOrganisation().getAdapter(), where);*/
     }
 
     @Override

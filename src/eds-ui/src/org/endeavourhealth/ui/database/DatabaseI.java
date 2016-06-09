@@ -37,10 +37,6 @@ public interface DatabaseI {
 
     public DbEndUserPwd retrieveEndUserPwdForUserNotExpired(UUID endUserUuid) throws Exception;
 
-    public List<DbOrganisation> retrieveAllOrganisations() throws Exception;
-
-    public DbOrganisation retrieveOrganisationForNameNationalId(String name, String nationalId) throws Exception;
-
     public List<DbEndUserEmailInvite> retrieveEndUserEmailInviteForUserNotCompleted(UUID userUuid) throws Exception;
 
     public DbEndUserEmailInvite retrieveEndUserEmailInviteForToken(String token) throws Exception;
