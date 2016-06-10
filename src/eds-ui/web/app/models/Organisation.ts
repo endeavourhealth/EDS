@@ -1,8 +1,7 @@
 module app.models {
 	export class Organisation {
+		uuid : string;
 		name:string;
 		nationalId:string;
-		organisationUuid:string;
-		permissions:number;
 	}
 }

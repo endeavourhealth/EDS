@@ -1,4 +1,4 @@
-module app.service {
+module app.models {
 	'use strict';
 
 	export class Service {

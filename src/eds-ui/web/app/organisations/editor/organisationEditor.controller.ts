@@ -6,6 +6,9 @@ module app.organisation {
 	import IModalSettings = angular.ui.bootstrap.IModalSettings;
 	import IModalService = angular.ui.bootstrap.IModalService;
 	import BaseDialogController = app.dialogs.BaseDialogController;
+	import Organisation = app.models.Organisation;
+	import Service = app.models.Service;
+	import ServicePickerController = app.service.ServicePickerController;
 
 	'use strict';
 
@@ -25,18 +28,39 @@ module app.organisation {
 			return dialog;
 		}
 
-		static $inject = ['$uibModalInstance', 'LoggerService', 'AdminService', 'organisation'];
+		static $inject = ['$uibModalInstance', '$uibModal', 'LoggerService', 'AdminService', 'OrganisationService', 'organisation'];
+
+		services : Service[];
 
 		constructor(protected $uibModalInstance : IModalServiceInstance,
-								private logger:app.blocks.ILoggerService,
+								private $modal : IModalService,
+								private log:app.blocks.ILoggerService,
 								private adminService : IAdminService,
+								private organisationService : IOrganisationService,
 								private organisation : Organisation) {
 			super($uibModalInstance);
 			this.resultData = jQuery.extend(true, {}, organisation);
+			this.getOrganisationServices(organisation.uuid);
 		}
 
-		addFilter(filter : string) {
-			this.resultData.regex += filter;
+		private getOrganisationServices(uuid : string) {
+			var vm = this;
+			vm.organisationService.getOrganisationServices(uuid)
+				.then(function(result : Service[]) {
+					vm.services = result;
+				})
+				.catch(function (error : any) {
+					vm.log.error('Failed to load organisation services', error, 'Load organisation services');
+				});
+		}
+
+		private editServices() {
+			var vm = this;
+			ServicePickerController.open(vm.$modal, vm.services)
+				.result.then(function (result : Service[]) {
+					vm.services = result;
+				// TODO : SAVE LINKS TO DB
+			});
 		}
 	}
 

@@ -4,6 +4,7 @@
 module app.organisation {
 	import IOrganisationService = app.organisation.IOrganisationService;
 	import MessageBoxController = app.dialogs.MessageBoxController;
+	import Organisation = app.models.Organisation;
 	'use strict';
 
 	export class OrganisationListController {

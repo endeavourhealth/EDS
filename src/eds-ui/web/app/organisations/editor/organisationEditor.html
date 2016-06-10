@@ -18,8 +18,18 @@
 		</div>
 		<div class="row">
 			<div class="form-group col-md-12">
-				<label class="control-label">Services</label>
-				<input type="text" class="form-control" placeholder="Services" ng-model="ctrl.organisationServices">
+				<label class="control-label">Services</label> <button type="button" class="btn btn-xs btn-success" ng-click="ctrl.editServices()">Edit</button>
+				<div class="scroll-box-100">
+					<div class="table">
+						<table class="table table-striped table-condensed">
+							<tbody>
+								<tr ng-repeat="item in ctrl.services">
+									<td>{{ item.name }}</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
 			</div>
 		</div>
 	</form>

@@ -2,6 +2,7 @@
 
 module app.service {
 	import BaseHttpService = app.core.BaseHttpService;
+	import Service = app.models.Service;
 	'use strict';
 
 	export interface IServiceService {
@@ -9,6 +10,7 @@ module app.service {
 		get(uuid : string) : ng.IPromise<Service>;
 		save(organisation : Service):any;
 		delete(uuid : string) : any;
+		search(searchData : string) : ng.IPromise<Service[]>;
 	}
 
 	export class ServiceService extends BaseHttpService implements IServiceService {
@@ -38,6 +40,16 @@ module app.service {
 			};
 
 			return this.httpDelete('api/service', request);
+		}
+
+		search(searchData : string) : ng.IPromise<Service[]> {
+			var request = {
+				params: {
+					'searchData': searchData
+				}
+			}
+
+			return this.httpGet('api/service', request);
 		}
 	}
 

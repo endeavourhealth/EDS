@@ -1,8 +1,12 @@
 package org.endeavourhealth.ui.endpoints;
 
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
+import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
+import org.endeavourhealth.core.data.admin.models.OrganisationServiceLink;
+import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.ui.json.JsonOrganisation;
+import org.endeavourhealth.ui.json.JsonService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +21,29 @@ import java.util.*;
 public final class OrganisationEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
 	private final OrganisationRepository repository = new OrganisationRepository();
+	private final ServiceRepository serviceRepository = new ServiceRepository();
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/services")
+	public Response getOrganisationServices(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+		super.setLogbackMarkers(sc);
+		UUID organisationUuid = UUID.fromString(uuid);
+		Iterable<OrganisationServiceLink> organisationServices = repository.getServices(organisationUuid);
+
+		List<JsonService> ret = new ArrayList<>();
+		for (OrganisationServiceLink link : organisationServices) {
+			Service service = serviceRepository.getById(link.getServiceId());
+			ret.add(new JsonService(service));
+		}
+
+		clearLogbackMarkers();
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)

@@ -2,11 +2,14 @@
 
 module app.organisation {
 	import BaseHttpService = app.core.BaseHttpService;
+	import Organisation = app.models.Organisation;
+	import Service = app.models.Service;
 	'use strict';
 
 	export interface IOrganisationService {
 		getOrganisations(): ng.IPromise<Organisation[]>;
 		getOrganisation(uuid : string) : ng.IPromise<Organisation>;
+		getOrganisationServices(uuid : string) : ng.IPromise<Service[]>;
 		saveOrganisation(organisation : Organisation):any;
 		deleteOrganisation(uuid : string) : any;
 	}
@@ -24,6 +27,15 @@ module app.organisation {
 				}
 			};
 			return this.httpGet('api/organisation', request);
+		}
+
+		getOrganisationServices(uuid : string) :  ng.IPromise<Service[]> {
+			var request = {
+				params: {
+					'uuid': uuid
+				}
+			};
+			return this.httpGet('api/organisation/services', request);
 		}
 
 		saveOrganisation(organisation : Organisation) {

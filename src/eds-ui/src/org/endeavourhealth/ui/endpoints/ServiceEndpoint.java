@@ -24,15 +24,18 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/")
-	public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+	public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		if (uuid == null) {
+		if (uuid == null && searchData == null) {
 			LOG.trace("Get Service list");
 			return getList();
-		} else {
+		} else if (uuid != null) {
 			LOG.trace("Get Service single - " + uuid);
 			return get(uuid);
+		} else {
+			LOG.trace("Search services - " + searchData);
+			return search(searchData);
 		}
 	}
 
@@ -57,6 +60,22 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 		Service service = repository.getById(serviceUuid);
 
 		JsonService ret = new JsonService(service);
+
+		clearLogbackMarkers();
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
+
+	private Response search(String searchData) throws Exception {
+		Iterable<Service> services = repository.search(searchData);
+
+		List<JsonService> ret = new ArrayList<>();
+
+		for (Service service: services) {
+			ret.add(new JsonService(service));
+		}
 
 		clearLogbackMarkers();
 		return Response

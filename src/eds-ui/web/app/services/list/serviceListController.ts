@@ -4,6 +4,7 @@
 module app.service {
 	import IServiceService = app.service.IServiceService;
 	import MessageBoxController = app.dialogs.MessageBoxController;
+	import Service = app.models.Service;
 	'use strict';
 
 	export class ServiceListController {

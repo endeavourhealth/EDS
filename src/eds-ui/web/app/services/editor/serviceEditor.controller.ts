@@ -6,6 +6,7 @@ module app.service {
 	import IModalSettings = angular.ui.bootstrap.IModalSettings;
 	import IModalService = angular.ui.bootstrap.IModalService;
 	import BaseDialogController = app.dialogs.BaseDialogController;
+	import Service = app.models.Service;
 
 	'use strict';
 
@@ -33,10 +34,6 @@ module app.service {
 								private service : Service) {
 			super($uibModalInstance);
 			this.resultData = jQuery.extend(true, {}, service);
-		}
-
-		addFilter(filter : string) {
-			this.resultData.regex += filter;
 		}
 	}
 
