@@ -1,6 +1,8 @@
 package org.endeavourhealth.transform.fhir;
 
 import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.fhir.schema.ContactRelationship;
+import org.endeavourhealth.transform.fhir.schema.OrganisationType;
 import org.endeavourhealth.transform.terminology.SnomedCode;
 import org.endeavourhealth.transform.terminology.TerminologyService;
 import org.hl7.fhir.instance.model.CodeableConcept;
@@ -12,6 +14,14 @@ public class CodeableConceptHelper {
 
     public static CodeableConcept createCodeableConcept(String system, String term, String code) {
         return new CodeableConcept().addCoding(CodingHelper.createCoding(system, term, code));
+    }
+
+    public static CodeableConcept createCodeableConcept(OrganisationType organisationType) {
+        return new CodeableConcept().addCoding(CodingHelper.createCoding(organisationType));
+    }
+
+    public static CodeableConcept createCodeableConcept(ContactRelationship contactRelationship) {
+        return new CodeableConcept().addCoding(CodingHelper.createCoding(contactRelationship));
     }
 
     public static CodeableConcept createCodeableConcept(String text) {

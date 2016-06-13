@@ -4,6 +4,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Organisation;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
+import org.endeavourhealth.transform.fhir.schema.OrganisationType;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
@@ -63,12 +64,16 @@ public class OrganisationTransformer {
             fhirOrganisation.setPartOf(ReferenceHelper.createReference(ResourceType.Organization, ccgOrganisationGuid));
         }
 
-        String type = organisationParser.getOrganisationType();
-        fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(type));
-        //TODO - how to map EMIS org types to FHIR organisation types?
+        OrganisationType fhirOrgType = convertOrganisationType(organisationParser.getOrganisationType());
+        fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(fhirOrgType));
 
         String mainLocationGuid = organisationParser.getMainLocationGuid();
         Reference fhirReference = ReferenceHelper.createReference(ResourceType.Location, mainLocationGuid);
         fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.LOCATION, fhirReference));
+    }
+
+    private static OrganisationType convertOrganisationType(String csvOrganisationType) {
+        //TODO - verify EMIS CSV organisation types against FHIR organisationn types
+        return OrganisationType.fromValue(csvOrganisationType);
     }
 }

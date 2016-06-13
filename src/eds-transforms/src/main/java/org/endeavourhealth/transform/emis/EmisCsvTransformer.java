@@ -8,14 +8,13 @@ import org.endeavourhealth.transform.emis.csv.transforms.admin.OrganisationTrans
 import org.endeavourhealth.transform.emis.csv.transforms.admin.UserInRoleTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.appointment.SessionTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.appointment.SlotTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ConsultationTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationReferralTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ProblemTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.careRecord.*;
 import org.endeavourhealth.transform.emis.csv.transforms.coding.*;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.PatientTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.prescribing.DrugRecordTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.prescribing.IssueRecordTransformer;
+import org.endeavourhealth.transform.fhir.FhirPatientStore;
+import org.endeavourhealth.transform.terminology.Snomed;
 import org.hl7.fhir.instance.model.*;
 
 import javax.swing.*;
@@ -29,7 +28,7 @@ public abstract class EmisCsvTransformer {
     public static final String TIME_FORMAT = "hh:mm:ss";
     public static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
 
-    public static Map<String, List<Resource>> transform(String folderPath) throws Exception {
+    public static Map<String, FhirPatientStore> transform(String folderPath) throws Exception {
 
         FhirObjectStore fhirObjects = transformMetadata(folderPath);
 
@@ -39,13 +38,16 @@ public abstract class EmisCsvTransformer {
         ConsultationTransformer.transform(folderPath, CSV_FORMAT, fhirObjects);
         ObservationTransformer.transform(folderPath, CSV_FORMAT, fhirObjects);
         ObservationReferralTransformer.transform(folderPath, CSV_FORMAT, fhirObjects);
-        //TODO - DiaryTransformer
+        DiaryTransformer.transform(folderPath, CSV_FORMAT, fhirObjects);
         DrugRecordTransformer.transform(folderPath, CSV_FORMAT, fhirObjects);
         IssueRecordTransformer.transform(folderPath, CSV_FORMAT, fhirObjects);
 
-        return fhirObjects.getFhirPatientResources();
+        return fhirObjects.getFhirPatientStores();
     }
 
+    /**
+     * test harness
+     */
     public static void main(String[] args) {
 
         try {
@@ -54,8 +56,13 @@ public abstract class EmisCsvTransformer {
 
         }
 
+        for (int i=0; i<10; i++) {
+            String term = Snomed.getTerm(22298006, 37443015);
+            System.out.println("Term= " + term);
+        }
 
-        javax.swing.JFileChooser fc = new javax.swing.JFileChooser();
+
+      /*  javax.swing.JFileChooser fc = new javax.swing.JFileChooser();
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fc.showDialog(null, "Open");
 
@@ -69,7 +76,7 @@ public abstract class EmisCsvTransformer {
                 System.out.println("Medication = " + entry.getKey() + " at " + entry.getValue());
             }
 
-            /*
+            *//*
 
 
             CSVFormat fmt = CSVFormat.DEFAULT;
@@ -87,10 +94,10 @@ public abstract class EmisCsvTransformer {
             while (it.hasNext()) {
                 CSVRecord record = it.next();
                 System.out.println("record: " + record.get(0));
-            }*/
+            }*//*
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
 
     }
 

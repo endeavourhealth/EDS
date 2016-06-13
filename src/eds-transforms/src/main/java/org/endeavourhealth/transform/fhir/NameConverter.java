@@ -5,9 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Person;
 import org.hl7.fhir.instance.model.HumanName;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class NameConverter
 {
@@ -157,5 +155,46 @@ public class NameConverter
         return Arrays.asList(s.split(" "));
     }
 
+    /**
+     * in cases where we have a name as a single string, this takes a best-guess approach to
+     * tokenise that name to fit the minimum requirements of the FHIR resource
+     */
+    public static HumanName convert(String name) {
+        name = StringUtils.trimToNull(name);
+        if (Strings.isNullOrEmpty(name)) {
+            return null;
+        }
+
+        HumanName fhirName = new HumanName();
+        fhirName.setUse(HumanName.NameUse.USUAL);
+        fhirName.setText(name);
+
+        List<String> tokens = split(name);
+        fhirName.addFamily(tokens.remove(tokens.size()-1));
+
+        if (tokens.size() > 0) {
+            String first = tokens.remove(0);
+
+            if (isTitle(first) || isTitle(first + ".")) {
+                fhirName.addPrefix(first);
+            } else {
+                fhirName.addGiven(first);
+            }
+
+            for (String token: tokens) {
+                fhirName.addGiven(token);
+            }
+        }
+
+        return fhirName;
+    }
+    private static boolean isTitle(String s) {
+        return s.equalsIgnoreCase("mr.")
+                || s.equalsIgnoreCase("master.")
+                || s.equalsIgnoreCase("miss.")
+                || s.equalsIgnoreCase("mrs.")
+                || s.equalsIgnoreCase("dr.")
+                || s.equalsIgnoreCase("rev.");
+    }
 }
 

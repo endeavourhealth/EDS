@@ -1,14 +1,11 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Observation;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_ObservationReferral;
 import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.IdentifierHelper;
 import org.hl7.fhir.instance.model.*;
-
-import java.util.Date;
 
 public class ObservationReferralTransformer {
 
@@ -29,10 +26,19 @@ public class ObservationReferralTransformer {
         ReferralRequest fhirReferral = new ReferralRequest();
         fhirReferral.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_REFERRAL_REQUEST));
 
-        String patientGuid = observationParser.getPatientGuid();
-        objectStore.addToMap(patientGuid, fhirReferral);
+        String observationGuid = observationParser.getObservationGuid();
+        fhirReferral.setId(observationGuid); //use the observation GUID as the problem GUID, since they only need to be unique per resource type
 
+        String patientGuid = observationParser.getPatientGuid();
         fhirReferral.setPatient(objectStore.createPatientReference(patientGuid));
+
+        boolean store = !objectStore.isObservationToDelete(patientGuid, observationGuid);
+        objectStore.addResourceToSave(patientGuid, fhirReferral, store);
+
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (!store) {
+            return;
+        }
 
         String ubrn = observationParser.getReferralUBRN();
         fhirReferral.addIdentifier(IdentifierHelper.createUbrnIdentifier(ubrn));
@@ -53,7 +59,6 @@ public class ObservationReferralTransformer {
 
 
         //several of the Resource fields are simply carried over from the Observation the Referral is linked to
-        String observationGuid = observationParser.getObservationGuid();
         Observation fhirObservation = objectStore.findObservation(observationGuid, patientGuid);
 
         fhirReferral.setDateElement(fhirObservation.getEffectiveDateTimeType());

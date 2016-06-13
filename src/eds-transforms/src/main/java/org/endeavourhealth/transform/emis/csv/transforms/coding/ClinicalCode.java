@@ -76,7 +76,7 @@ public class ClinicalCode {
         }
 
         CodeableConcept ret = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, emisTerm, emisCode);
-        String snomedTerm = Snomed.getTerm(snomedConceptId.toString(), snomedDescriptionId.toString());
+        String snomedTerm = Snomed.getTerm(snomedConceptId.longValue(), snomedDescriptionId.longValue());
         ret.addCoding(CodingHelper.createCoding(FhirUri.CODE_SYSTEM_SNOMED_CT, snomedTerm, snomedConceptId.toString()));
         return ret;
     }

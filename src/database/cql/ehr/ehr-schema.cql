@@ -15,7 +15,7 @@ CREATE TABLE person_resource (  person_id uuid,  resource_type text,  service
   version text,
   last_updated timestamp,  resource_metadata text,  schema_version text,  resource_data text,  PRIMARY KEY ((person_id), resource_type, service_id, system_instance_id, resource_id));
 
-CREATE MATERIALIZED VIEW person_resource_metadata_by_date AS
+CREATE MATERIALIZED VIEW person_resource_metadata_by_date AS 
 SELECT person_id, resource_type, effective_date, service_id, system_instance_id, resource_id, resource_metadata
 FROM person_resource
 WHERE person_id IS NOT NULL
@@ -32,7 +32,7 @@ CREATE TABLE person_resource_event_store (  person_id uuid,  resource_type tex
   created timestamp,  mode text,
   resource_metadata text,  schema_version text,  resource_data text,  PRIMARY KEY ((person_id), resource_type, service_id, system_instance_id, resource_id, version));
 
-CREATE MATERIALIZED VIEW person_resource_event_store_by_date AS
+CREATE MATERIALIZED VIEW person_resource_event_store_by_date AS 
 SELECT person_id, created, resource_type, service_id, system_instance_id, resource_id, version, mode
 FROM person_resource_event_store
 WHERE person_id IS NOT NULL

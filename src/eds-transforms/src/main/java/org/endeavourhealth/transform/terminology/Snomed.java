@@ -4,6 +4,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.ehcache.Cache;
+import org.ehcache.CacheManager;
+import org.ehcache.config.builders.CacheConfigurationBuilder;
+import org.ehcache.config.builders.CacheManagerBuilder;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.OriginatorType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,12 +29,47 @@ public class Snomed {
     private static final Logger LOG = LoggerFactory.getLogger(Snomed.class);
     private static final String TERMLEX = "http://termlex.org/";
 
-    private static LinkedList<Client> webClients = new LinkedList<>();
-    private static HashMap<String, List<String>> cachedDescendants = new HashMap<>();
+    private static LinkedList<Client> webClients = new LinkedList<>(); //cache of web clients
+    private static Cache<String, String> cachedTermsForConceptAndDescription = null;
+    private static Cache<Long, List> cachedDescendantForConcept = null;
 
-    public static String getTerm(String conceptId, String descriptionId) {
-        //TODO - implement getting of Snomed term for concept and description
-        return null;
+    /**
+     * initialise terminology caches
+     */
+    static {
+
+        CacheManager cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build();
+        cacheManager.init();
+
+        cachedTermsForConceptAndDescription = cacheManager.createCache("TermsForConceptAndDescription",
+                CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, String.class, ResourcePoolsBuilder.heap(Integer.MAX_VALUE)));
+
+        cachedDescendantForConcept = cacheManager.createCache("DescendantsForConcept",
+                CacheConfigurationBuilder.newCacheConfigurationBuilder(Long.class, List.class, ResourcePoolsBuilder.heap(Integer.MAX_VALUE)));
+    }
+
+    public static String getTerm(long conceptId, long descriptionId) {
+
+        String cacheKey = conceptId + "/" + descriptionId;
+        String term = cachedTermsForConceptAndDescription.get(cacheKey);
+        if (term == null) {
+
+            JsonElement json = executeTermlexGet("concepts/" + conceptId + "?flavour=ID_DESCRIPTIONS_RELATIONSHIPS");
+            JsonObject jsonObj = json.getAsJsonObject();
+
+            JsonArray jsonArr = jsonObj.get("descriptions").getAsJsonArray();
+            for (JsonElement jsonElement : jsonArr) {
+                JsonObject jsonDescriptionObj = jsonElement.getAsJsonObject();
+                long jsonDescriptionId = jsonDescriptionObj.get("id").getAsLong();
+                if (jsonDescriptionId == descriptionId) {
+                    term = jsonDescriptionObj.get("term").getAsString();
+                    cachedTermsForConceptAndDescription.put(cacheKey, term);
+                    break;
+                }
+            }
+        }
+
+        return term;
     }
 
     /*ublic static HashSet<String> enumerateConcepts(CodeSet codeSet) {
@@ -68,39 +109,24 @@ public class Snomed {
     }*/
 
     /**
-     * returns descendant codes, using cache if possible
-     */
-    public static List<String> getDescendantsUsingCache(String conceptCode) {
-        List<String> ret = null;
-
-        synchronized (cachedDescendants) {
-            ret = cachedDescendants.get(conceptCode);
-        }
-
-        if (ret == null) {
-
-            ret = getDescendants(conceptCode);
-
-            synchronized (cachedDescendants) {
-                cachedDescendants.put(conceptCode, ret);
-            }
-        }
-
-        return ret;
-    }
-
-    /**
      * returns all descendant codes
      */
-    public static List<String> getDescendants(String conceptCode) {
-        JsonElement json = executeTermlexGet("hierarchy/" + conceptCode + "/descendants");
-        return getCodesFromJsonArray(json);
+    public static List<Long> getDescendants(Long conceptCode) {
+        List<Long> descendants = cachedDescendantForConcept.get(conceptCode);
+        if (descendants == null) {
+            JsonElement json = executeTermlexGet("hierarchy/" + conceptCode + "/descendants");
+            descendants = getCodesFromJsonArray(json);
+            cachedDescendantForConcept.put(conceptCode, descendants);
+        }
+
+        return descendants;
+
     }
 
     /**
      * returns the direct child concepts
      */
-    public static List<String> getChildren(String conceptCode) {
+    public static List<Long> getChildren(Long conceptCode) {
         JsonElement json = executeTermlexGet("hierarchy/" + conceptCode + "/children");
         return getCodesFromJsonArray(json);
     }
@@ -118,13 +144,13 @@ public class Snomed {
         return termObj.getAsString();
     }
 
-    private static List<String> getCodesFromJsonArray(JsonElement jsonElement) {
-        List<String> ret = new ArrayList<>();
+    private static List<Long> getCodesFromJsonArray(JsonElement jsonElement) {
+        List<Long> ret = new ArrayList<>();
 
         JsonArray array = jsonElement.getAsJsonArray();
         for (int i=0; i<array.size(); i++) {
             JsonElement child = array.get(i);
-            String childCode = child.getAsString();
+            Long childCode = child.getAsLong();
             ret.add(childCode);
         }
 

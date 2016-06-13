@@ -9,8 +9,6 @@ import org.endeavourhealth.transform.fhir.*;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 public class ObservationTransformer {
 
@@ -58,15 +56,6 @@ public class ObservationTransformer {
 
     private static void createResource(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
 
-        //since we're not processing deltas, just ignore deleted obs
-        if (observationParser.getDeleted()) {
-            return;
-        }
-
-        //do not store confidential data in EDS
-        if (observationParser.getIsConfidential()) {
-            return;
-        }
 
         String type = observationParser.getObservationType();
         ObservationType observationType = ObservationType.fromValue(type);
@@ -133,9 +122,15 @@ public class ObservationTransformer {
         fhirAllergy.setId(observationGuid);
 
         String patientGuid = observationParser.getPatientGuid();
-        objectStore.addToMap(patientGuid, fhirAllergy);
-
         fhirAllergy.setPatient(objectStore.createPatientReference(patientGuid));
+
+        boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
+        objectStore.addResourceToSave(patientGuid, fhirAllergy, store);
+
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (!store) {
+            return;
+        }
 
         String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
         fhirAllergy.setRecorder(objectStore.createPractitionerReference(clinicianGuid, patientGuid));
@@ -173,9 +168,15 @@ public class ObservationTransformer {
         fhirProcedure.setId(observationGuid);
 
         String patientGuid = observationParser.getPatientGuid();
-        objectStore.addToMap(patientGuid, fhirProcedure);
-
         fhirProcedure.setSubject(objectStore.createPatientReference(patientGuid));
+
+        boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
+        objectStore.addResourceToSave(patientGuid, fhirProcedure, store);
+
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (!store) {
+            return;
+        }
 
         fhirProcedure.setStatus(Procedure.ProcedureStatus.COMPLETED);
 
@@ -212,9 +213,15 @@ public class ObservationTransformer {
         fhirCondition.setId(observationGuid);
 
         String patientGuid = observationParser.getPatientGuid();
-        objectStore.addToMap(patientGuid, fhirCondition);
-
         fhirCondition.setPatient(objectStore.createPatientReference(patientGuid));
+
+        boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
+        objectStore.addResourceToSave(patientGuid, fhirCondition, store);
+
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (!store) {
+            return;
+        }
 
         String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
         fhirCondition.setAsserter(objectStore.createPractitionerReference(clinicianGuid, patientGuid));
@@ -254,9 +261,15 @@ public class ObservationTransformer {
         fhirObservation.setId(observationGuid);
 
         String patientGuid = observationParser.getPatientGuid();
-        objectStore.addToMap(patientGuid, fhirObservation);
-
         fhirObservation.setSubject(objectStore.createPatientReference(patientGuid));
+
+        boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
+        objectStore.addResourceToSave(patientGuid, fhirObservation, store);
+
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (!store) {
+            return;
+        }
 
         fhirObservation.setStatus(Observation.ObservationStatus.UNKNOWN);
 
@@ -326,9 +339,15 @@ public class ObservationTransformer {
         fhirFamilyHistory.setId(observationGuid);
 
         String patientGuid = observationParser.getPatientGuid();
-        objectStore.addToMap(patientGuid, fhirFamilyHistory);
-
         fhirFamilyHistory.setPatient(objectStore.createPatientReference(patientGuid));
+
+        boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
+        objectStore.addResourceToSave(patientGuid, fhirFamilyHistory, store);
+
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (!store) {
+            return;
+        }
 
         Date effectiveDate = observationParser.getEffectiveDate();
         String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();

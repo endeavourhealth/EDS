@@ -17,6 +17,8 @@ public class FhirUri
     public final static String CODE_SYSTEM_EMISPREPARATION = "http://www.endeavourhealth.org/fhir/emis-prepration";
 
     public final static String VALUE_SET_REGISTRATION_TYPE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-patient-registration-type";
+    public final static String VALUE_SET_ORGANISATION_TYPE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-organization-type";
+    public final static String VALUE_SET_CONTACT_RELATIOSHIP = "http://hl7.org/fhir/valueset-patient-contact-relationship.html";
 
     public final static String PROFILE_URI_ORGANIZATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-organization";
     public final static String PROFILE_URI_LOCATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-location";

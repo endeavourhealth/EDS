@@ -6,12 +6,9 @@ import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 public class ProblemTransformer {
 
@@ -29,14 +26,22 @@ public class ProblemTransformer {
 
     private static void createProblem(CareRecord_Problem problemParser, FhirObjectStore objectStore) throws Exception {
 
-        String patientGuid = problemParser.getPatientGuid();
-
         Condition fhirProblem = new Condition();
         fhirProblem.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROBLEM));
 
-        objectStore.addToMap(patientGuid, fhirProblem);
+        String observationGuid = problemParser.getObservationGuid();
+        fhirProblem.setId(observationGuid); //use the observation GUID as the problem GUID, since they only need to be unique per resource type
 
-        fhirProblem.setPatient(objectStore.createPatientReference(patientGuid.toString()));
+        String patientGuid = problemParser.getPatientGuid();
+        fhirProblem.setPatient(objectStore.createPatientReference(patientGuid));
+
+        boolean store = !objectStore.isObservationToDelete(patientGuid, observationGuid);
+        objectStore.addResourceToSave(patientGuid, fhirProblem, store);
+
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (!store) {
+            return;
+        }
 
         String comments = problemParser.getComment();
         fhirProblem.setNotes(comments);

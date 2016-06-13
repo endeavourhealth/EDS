@@ -8,32 +8,13 @@ import org.endeavourhealth.transform.emis.openhr.schema.VocSex;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.SexConverter;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
+import org.endeavourhealth.transform.fhir.schema.ContactRelationship;
+import org.endeavourhealth.transform.fhir.schema.RegistrationType;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.*;
 
 public class PatientTransformer {
-
-    enum RegistrationType{
-
-        E("Emergency"),
-        IN("Immediately Necessary"),
-        R("Regular/GMS"),
-        T("Temporary"),
-        P("Private"),
-        O("Other"),
-        D("Dummy/Synthetic");
-
-        private String value = null;
-
-        public String getValue() {
-            return value;
-        }
-
-        RegistrationType(String value) {
-            this.value = value;
-        }
-    }
 
     public static void transform(String folderPath, CSVFormat csvFormat, FhirObjectStore objectStore) throws Exception {
 
@@ -49,25 +30,31 @@ public class PatientTransformer {
 
     private static void createPatient(Admin_Patient patientParser, FhirObjectStore objectStore) throws Exception {
 
-        if (patientParser.getDeleted()) {
-            //TODO - how to process Deleted EMIS records so they should be deleted from EDS?
-            return;
-        }
-
-        if (patientParser.getIsConfidential()) {
-            //TODO - how to process Confidential EMIS records so they should be deleted from EDS?
-            return;
-        }
-
+        //create Patient Resource
         Patient fhirPatient = new Patient();
         fhirPatient.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PATIENT));
 
         String patientGuid = patientParser.getPatientGuid();
         fhirPatient.setId(patientGuid);
-        //TODO - can I use Patient GUID or should I change to Person GUID???
 
-        //add the Patient resource to the map, keying on patient GUID
-        objectStore.addNewPatient(fhirPatient);
+
+
+        //create Episode of Care Resource
+        EpisodeOfCare fhirEpisode = new EpisodeOfCare();
+        fhirEpisode.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_EPISODE_OF_CARE));
+
+        //since ID is only required to be unique per resource type, we can use the patientGuid as the episode ID
+        fhirEpisode.setId(patientGuid);
+        fhirEpisode.setPatient(objectStore.createPatientReference(patientGuid.toString()));
+
+        boolean store = !patientParser.getDeleted() && !patientParser.getIsConfidential();
+        objectStore.addResourceToSave(patientGuid, fhirPatient, store);
+        objectStore.addResourceToSave(patientGuid, fhirEpisode, store);
+
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (!store) {
+            return;
+        }
 
         String nhsNumber = patientParser.getNhsNumber();
         fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nhsNumber, FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER));
@@ -131,20 +118,18 @@ public class PatientTransformer {
             Patient.ContactComponent fhirContact = new Patient.ContactComponent();
 
             if (!Strings.isNullOrEmpty(carerRelationship)) {
-                fhirContact.addRelationship(CodeableConceptHelper.createCodeableConcept(carerRelationship));
+
+                ContactRelationship contactRelationship = convertContactRelationship(carerRelationship);
+                fhirContact.addRelationship(CodeableConceptHelper.createCodeableConcept(contactRelationship));
             }
 
-            //TODO - need to tokenise carerName to populate fields on FHIR resource?
-            HumanName fhirName = new HumanName();
-            fhirName.setText(carerName);
-            fhirContact.setName(fhirName);
+            fhirContact.setName(NameConverter.convert(carerName));
 
             fhirPatient.addContact(fhirContact);
         }
 
         RegistrationType registrationType = convertRegistrationType(patientParser.getPatientTypedescription(), patientParser.getDummyType());
-        Coding fhirCoding = CodingHelper.createCoding(FhirUri.VALUE_SET_REGISTRATION_TYPE, registrationType.getValue(), registrationType.toString());
-        fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.REGISTRATION_TYPE, fhirCoding));
+        fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.REGISTRATION_TYPE, CodingHelper.createCoding(registrationType)));
 
         //ignore dummy patient records
         if (patientParser.getDummyType()) {
@@ -167,13 +152,6 @@ public class PatientTransformer {
                 }
             }
         }
-
-        EpisodeOfCare fhirEpisode = new EpisodeOfCare();
-        fhirEpisode.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_EPISODE_OF_CARE));
-
-        objectStore.addToMap(patientGuid, fhirEpisode);
-
-        fhirEpisode.setPatient(objectStore.createPatientReference(patientGuid.toString()));
 
         String orgUuid = patientParser.getOrganisationGuid();
         fhirEpisode.setManagingOrganization(objectStore.createOrganisationReference(orgUuid, patientGuid));
@@ -217,5 +195,10 @@ public class PatientTransformer {
         } else {
             return RegistrationType.O;
         }
+    }
+
+    private static ContactRelationship convertContactRelationship(String csvRelationship) {
+        //TODO - verify conversion of CSV carer relationship types to FHIR contact types
+        return ContactRelationship.fromValue(csvRelationship);
     }
 }

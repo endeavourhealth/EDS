@@ -31,36 +31,35 @@ public class IssueRecordTransformer {
 
         //having parsed all the medicationOrders and linked them to the medicationStatements, now
         //hash and sort them to set the first and last dates on the medicationStatements
-        Map<String, List<Resource>> fhirResources = objectStore.getFhirPatientResources();
+        /*Map<String, List<Resource>> fhirResources = objectStore.getFhirPatientResourcesToSave();
         Iterator<String> it = fhirResources.keySet().iterator();
         while (it.hasNext()) {
             String key = it.next();
             List<Resource> patientResources = fhirResources.get(key);
             assignMinAndMaxDates(patientResources, hmFirstDates, hmLastDates);
-        }
+        }*/
+        //TODO - decide if possible to extract first and last issue dates based on receiving a delta
     }
 
     private static void createResource(Prescribing_IssueRecord issueParser, FhirObjectStore objectStore,
                                        Map<String, DateTimeType> hmFirstDates, Map<String, DateTimeType> hmLastDates) throws Exception {
 
-        if (issueParser.getIsConfidential()) {
-            return;
-        }
-
-        if (issueParser.getDeleted()) {
-            return;
-        }
-
         MedicationOrder fhirMedication = new MedicationOrder();
         fhirMedication.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_ORDER));
 
-        String patientGuid = issueParser.getPatientGuid();
-        objectStore.addToMap(patientGuid, fhirMedication);
-
-        fhirMedication.setPatient(objectStore.createPatientReference(patientGuid));
-
         String issueGuid = issueParser.getIssueRecordGuid();
         fhirMedication.setId(issueGuid);
+
+        String patientGuid = issueParser.getPatientGuid();
+        fhirMedication.setPatient(objectStore.createPatientReference(patientGuid));
+
+        boolean store = !issueParser.getDeleted() && !issueParser.getIsConfidential();
+        objectStore.addResourceToSave(patientGuid, fhirMedication, store);
+
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (!store) {
+            return;
+        }
 
         Date effectiveDate = issueParser.getEffectiveDate();
         String effectiveDatePrecision = issueParser.getEffectiveDatePrecision();
@@ -122,7 +121,7 @@ public class IssueRecordTransformer {
     /**
      * takes a list of Resources for a patient and calculates the first and last date of issue for MedicationStatements
      */
-    private static void assignMinAndMaxDates(List<Resource> resources,
+    /*private static void assignMinAndMaxDates(List<Resource> resources,
                                              Map<String, DateTimeType> hmFirstDates,
                                              Map<String, DateTimeType> hmLastDates) {
 
@@ -147,5 +146,5 @@ public class IssueRecordTransformer {
             }
         }
 
-    }
+    }*/
 }

@@ -6,12 +6,9 @@ import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Consultation;
 import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 public class ConsultationTransformer {
 
@@ -29,16 +26,6 @@ public class ConsultationTransformer {
 
     private static void createEncounter(CareRecord_Consultation consultationParser, FhirObjectStore objectStore) throws Exception {
 
-        //ignore deleted consultations
-        if (consultationParser.getDeleted()) {
-            return;
-        }
-
-        //confidential information shouldn't be stored in EDS and we're not handling deltas
-        if (consultationParser.isConfidential()) {
-            return;
-        }
-
         Encounter fhirEncounter = new Encounter();
         fhirEncounter.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ENCOUNTER));
 
@@ -46,11 +33,17 @@ public class ConsultationTransformer {
         fhirEncounter.setId(consultationGuid);
 
         String patientGuid = consultationParser.getPatientGuid();
-        objectStore.addToMap(patientGuid, fhirEncounter);
+        fhirEncounter.setPatient(objectStore.createPatientReference(patientGuid));
+
+        boolean store = !consultationParser.getDeleted() && !consultationParser.getIsConfidential();
+        objectStore.addResourceToSave(patientGuid, fhirEncounter, store);
+
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (!store) {
+            return;
+        }
 
         fhirEncounter.setStatus(Encounter.EncounterState.FINISHED);
-
-        fhirEncounter.setPatient(objectStore.createPatientReference(patientGuid));
 
         String appointmentGuid = consultationParser.getAppointmentSlotGuid();
         if (appointmentGuid != null) {
@@ -69,9 +62,6 @@ public class ConsultationTransformer {
         if (fhirPeriod != null) {
             fhirEncounter.setPeriod(fhirPeriod);
         }
-
-
-        //TODO - how to handle CareRecord_Consultation complete flag?
     }
 
     private static Period createPeriod(Date date, String precision) throws Exception {
@@ -90,12 +80,18 @@ public class ConsultationTransformer {
                 return null;
             case Y:
                 fhirPeriod.setStartElement(new DateTimeType(date, TemporalPrecisionEnum.YEAR));
+                break;
             case YM:
                 fhirPeriod.setStartElement(new DateTimeType(date, TemporalPrecisionEnum.MONTH));
+                break;
             case YMD:
                 fhirPeriod.setStartElement(new DateTimeType(date, TemporalPrecisionEnum.DAY));
+                break;
             case YMDT:
                 fhirPeriod.setStartElement(new DateTimeType(date, TemporalPrecisionEnum.SECOND));
+                break;
+            default:
+                throw new TransformException("Unexpected date precision " + vocPrecision);
         }
         return fhirPeriod;
     }

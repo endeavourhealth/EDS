@@ -1,6 +1,6 @@
 package org.endeavourhealth.messagingapi.configuration;
 
-import org.endeavourhealth.core.logging.CassandraDbAppender;
+import org.endeavourhealth.core.data.logging.LogbackCassandraAppender;
 import org.endeavourhealth.core.engineConfiguration.EngineConfigurationSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,7 @@ public final class Startup implements ServletContextListener {
         }
 
         //logging
-        CassandraDbAppender.tryRegisterDbAppender();
+        LogbackCassandraAppender.tryRegisterDbAppender();
         LOG.error("EDS API WebServer Startup Complete");
 
     }

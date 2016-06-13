@@ -32,11 +32,12 @@ public class OrganisationLocationTransformer {
 
     private static void createLocationOrgansationMapping(Admin_OrganisationLocation organisationLocationParser, HashMap<String, String> hmLocationToOrganisation) throws Exception {
 
+        //TODO - how to handle deleted Organisation-Location links?
         //skip any deleted links
-        if (organisationLocationParser.getDeleted()) {
+        /*if (organisationLocationParser.getDeleted()) {
             return;
         }
-
+*/
         String orgGuid = organisationLocationParser.getOrgansationGuid();
         String locationGuid = organisationLocationParser.getLocationGuid();
 

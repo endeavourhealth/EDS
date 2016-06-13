@@ -1,19 +1,15 @@
 package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
 import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Problem;
 import org.endeavourhealth.transform.emis.csv.schema.Prescribing_DrugRecord;
 import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.QuantityHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 public class DrugRecordTransformer {
 
@@ -31,16 +27,6 @@ public class DrugRecordTransformer {
 
     private static void createResource(Prescribing_DrugRecord drugRecordParser, FhirObjectStore objectStore) throws Exception {
 
-        //not processing deltas, so just skip any deleted data
-        if (drugRecordParser.getDeleted()) {
-            return;
-        }
-
-        //EDS shouldn't be storing confidential data
-        if (drugRecordParser.getIsConfidential()) {
-            return;
-        }
-
         MedicationStatement fhirMedication = new MedicationStatement();
         fhirMedication.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_AUTHORISATION));
 
@@ -48,9 +34,15 @@ public class DrugRecordTransformer {
         fhirMedication.setId(drugRecordGuid);
 
         String patientGuid = drugRecordParser.getPatientGuid();
-        objectStore.addToMap(patientGuid, fhirMedication);
-
         fhirMedication.setPatient(objectStore.createPatientReference(patientGuid));
+
+        boolean store = !drugRecordParser.getDeleted() && !drugRecordParser.getIsConfidential();
+        objectStore.addResourceToSave(patientGuid, fhirMedication, store);
+
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (!store) {
+            return;
+        }
 
         String clinicianGuid = drugRecordParser.getClinicianUserInRoleGuid();
         fhirMedication.setInformationSource(objectStore.createPractitionerReference(clinicianGuid, patientGuid));

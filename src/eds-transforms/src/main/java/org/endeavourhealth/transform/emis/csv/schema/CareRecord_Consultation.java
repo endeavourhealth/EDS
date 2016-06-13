@@ -79,7 +79,7 @@ public class CareRecord_Consultation extends AbstractCsvTransformer {
     public Integer getProcessingId() {
         return super.getInt(14);
     }
-    public boolean isConfidential() {
+    public boolean getIsConfidential() {
         return super.getBoolean(15);
     }
 

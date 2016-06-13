@@ -2,10 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.transform.fhir.*;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.*;
@@ -21,10 +18,10 @@ public class FhirObjectStore {
     private Map<String, Schedule> fhirSchedules = null;
 
     //patient Resources, keyed by patient ID
-    private Map<String, List<Resource>> fhirPatientResources = new HashMap<>();
+    private Map<String, FhirPatientStore> fhirPatientStores = new HashMap<>();
 
-    public Map<String, List<Resource>> getFhirPatientResources() {
-        return fhirPatientResources;
+    public Map<String, FhirPatientStore> getFhirPatientStores() {
+        return fhirPatientStores;
     }
 
     public FhirObjectStore(Map<Long, ClinicalCode> clinicalCodes, Map<String, Medication> fhirMedication,
@@ -48,9 +45,9 @@ public class FhirObjectStore {
     }
 
 
-    private static <T extends Resource> T checkAndCopyResource(Reference reference, ResourceType resourceType,
-                                                                     Map<String, T> resourceMap,
-                                                                     List<Resource> fhirResources) throws Exception {
+    private static <T extends Resource> T validateAndCopyResource(Reference reference, ResourceType resourceType,
+                                                                  Map<String, T> resourceMap,
+                                                                  FhirPatientStore patientStore) throws Exception {
         if (reference == null) {
             return null;
         }
@@ -58,83 +55,85 @@ public class FhirObjectStore {
         String id = ReferenceHelper.getReferenceId(reference, resourceType);
         Resource resource = resourceMap.get(id);
         if (resource == null) {
+            //TODO - do EMIS CSV deltas include all Admin resources or just changes ones?
             throw new TransformException("Resource references " + resourceType + " " + id + " but the resource cannot be found");
         }
 
-        if (listContains(fhirResources, resource)) {
+        if (listContains(patientStore.getResourcesToSave(), resource)) {
             //if the list already contains the resource, return null to stop further processing down the resource hierarchy
             return null;
         }
 
         //if the resource isn't in the patient list, copy it (deep copy) and add
         resource = resource.copy();
-        fhirResources.add(resource);
+        patientStore.addResourceToSave(resource);
+
         return (T)resource;
     }
 
-    private void checkAndCopyMedication(Reference reference, List<Resource> fhirResources) throws Exception {
+    private void validateAndCopyMedication(Reference reference, FhirPatientStore patientStore) throws Exception {
 
-        Medication medication = checkAndCopyResource(reference, ResourceType.Medication, fhirMedication, fhirResources);
+        Medication medication = validateAndCopyResource(reference, ResourceType.Medication, fhirMedication, patientStore);
         if (medication != null) {
 
             //medication doesn't refer to any other external Resources
         }
     }
-    private void checkAndCopyLocation(Reference reference, List<Resource> fhirResources) throws Exception {
+    private void validateAndCopyLocation(Reference reference, FhirPatientStore patientStore) throws Exception {
 
-        Location location = checkAndCopyResource(reference, ResourceType.Location, fhirLocations, fhirResources);
+        Location location = validateAndCopyResource(reference, ResourceType.Location, fhirLocations, patientStore);
         if (location != null) {
 
             //location can also refer to a managing organisation and a parent location, so make sure they're carried over too
-            checkAndCopyLocation(location.getPartOf(), fhirResources);
-            checkAndCopyOrganisation(location.getManagingOrganization(), fhirResources);
+            validateAndCopyLocation(location.getPartOf(), patientStore);
+            validateAndCopyOrganisation(location.getManagingOrganization(), patientStore);
         }
     }
-    private void checkAndCopyOrganisation(Reference reference, List<Resource> fhirResources) throws Exception {
+    private void validateAndCopyOrganisation(Reference reference, FhirPatientStore patientStore) throws Exception {
 
-        Organization organization = checkAndCopyResource(reference, ResourceType.Organization, fhirOrganisations, fhirResources);
+        Organization organization = validateAndCopyResource(reference, ResourceType.Organization, fhirOrganisations, patientStore);
         if (organization != null) {
 
             //location can also refer to a location and a parent organisation, so make sure they're carried over too
-            checkAndCopyOrganisation(organization.getPartOf(), fhirResources);
+            validateAndCopyOrganisation(organization.getPartOf(), patientStore);
 
             List<Extension> extensions = organization.getExtension();
             for (Extension extension: extensions) {
                 if (extension.getUrl().equals(FhirExtensionUri.MAIN_LOCATION)) {
-                    checkAndCopyLocation((Reference)extension.getValue(), fhirResources);
+                    validateAndCopyLocation((Reference)extension.getValue(), patientStore);
                 }
             }
         }
     }
-    private void checkAndCopyPractitioner(Reference reference, List<Resource> fhirResources) throws Exception {
+    private void validateAndCopyPractitioner(Reference reference, FhirPatientStore patientStore) throws Exception {
 
-        Practitioner practitioner = checkAndCopyResource(reference, ResourceType.Practitioner, fhirPractitioners, fhirResources);
+        Practitioner practitioner = validateAndCopyResource(reference, ResourceType.Practitioner, fhirPractitioners, patientStore);
         if (practitioner != null) {
 
             List<Practitioner.PractitionerPractitionerRoleComponent> roles = practitioner.getPractitionerRole();
             for (Practitioner.PractitionerPractitionerRoleComponent role: roles) {
-                checkAndCopyOrganisation(role.getManagingOrganization(), fhirResources);
+                validateAndCopyOrganisation(role.getManagingOrganization(), patientStore);
 
                 List<Reference> roleLocations = role.getLocation();
                 for (Reference locationReference: roleLocations) {
-                    checkAndCopyLocation(locationReference, fhirResources);
+                    validateAndCopyLocation(locationReference, patientStore);
                 }
             }
         }
     }
-    private void checkAndCopySchedule(Reference reference, List<Resource> fhirResources) throws Exception {
+    private void validateAndCopySchedule(Reference reference, FhirPatientStore patientStore) throws Exception {
 
-        Schedule schedule = checkAndCopyResource(reference, ResourceType.Schedule, fhirSchedules, fhirResources);
+        Schedule schedule = validateAndCopyResource(reference, ResourceType.Schedule, fhirSchedules, patientStore);
         if (schedule != null) {
 
-            checkAndCopyPractitioner(schedule.getActor(), fhirResources);
+            validateAndCopyPractitioner(schedule.getActor(), patientStore);
 
             List<Extension> extensions = schedule.getExtension();
             for (Extension extension: extensions) {
                 if (extension.getUrl().equals(FhirExtensionUri.ADDITIONAL_ACTOR)) {
-                    checkAndCopyPractitioner((Reference)extension.getValue(), fhirResources);
+                    validateAndCopyPractitioner((Reference)extension.getValue(), patientStore);
                 } else if (extension.getUrl().equals(FhirExtensionUri.LOCATION)) {
-                    checkAndCopyLocation((Reference)extension.getValue(), fhirResources);
+                    validateAndCopyLocation((Reference)extension.getValue(), patientStore);
                 }
             }
         }
@@ -143,35 +142,35 @@ public class FhirObjectStore {
     public Reference createMedicationReference(Long medicationId, String patientGuid) throws Exception {
 
         Reference reference = ReferenceHelper.createReference(ResourceType.Medication, medicationId.toString());
-        checkAndCopyMedication(reference, fhirPatientResources.get(patientGuid));
+        validateAndCopyMedication(reference, fhirPatientStores.get(patientGuid));
         return reference;
     }
 
     public Reference createLocationReference(String locationGuid, String patientGuid) throws Exception {
 
         Reference reference = ReferenceHelper.createReference(ResourceType.Location, locationGuid);
-        checkAndCopyLocation(reference, fhirPatientResources.get(patientGuid));
+        validateAndCopyLocation(reference, fhirPatientStores.get(patientGuid));
         return reference;
     }
 
     public Reference createOrganisationReference(String organizationGuid, String patientGuid) throws Exception {
 
         Reference reference = ReferenceHelper.createReference(ResourceType.Organization, organizationGuid);
-        checkAndCopyOrganisation(reference, fhirPatientResources.get(patientGuid));
+        validateAndCopyOrganisation(reference, fhirPatientStores.get(patientGuid));
         return reference;
     }
 
     public Reference createPractitionerReference(String practitionerGuid, String patientGuid) throws Exception {
 
         Reference reference = ReferenceHelper.createReference(ResourceType.Practitioner, practitionerGuid);
-        checkAndCopyPractitioner(reference, fhirPatientResources.get(patientGuid));
+        validateAndCopyPractitioner(reference, fhirPatientStores.get(patientGuid));
         return reference;
     }
 
     public Reference createScheduleReference(String scheduleGuid, String patientGuid) throws Exception {
 
         Reference reference = ReferenceHelper.createReference(ResourceType.Schedule, scheduleGuid);
-        checkAndCopySchedule(reference, fhirPatientResources.get(patientGuid));
+        validateAndCopySchedule(reference, fhirPatientStores.get(patientGuid));
         return reference;
     }
 
@@ -194,29 +193,21 @@ public class FhirObjectStore {
                 .isPresent();
     }
 
-    public void addNewPatient(Patient fhirPatient) throws Exception {
-        String patientId = fhirPatient.getId();
-        List<Resource> l = fhirPatientResources.get(patientId);
-        if (l != null) {
-            throw new TransformException("Patient Resource " + patientId + " is duplicated");
+    public void addResourceToSave(String patientGuid, Resource fhirResource, boolean save) throws Exception {
+        FhirPatientStore s = fhirPatientStores.get(patientGuid);
+        if (s == null) {
+            s = new FhirPatientStore(patientGuid);
+            fhirPatientStores.put(patientGuid, s);
         }
-        l = new ArrayList<>();
-        l.add(fhirPatient);
 
-        fhirPatientResources.put(patientId, l);
-    }
-    public void addToMap(String patientGuid, Resource fhirResource) throws Exception {
-        List<Resource> l = fhirPatientResources.get(patientGuid);
-        if (l == null) {
-            throw new TransformException("Patient GUID " + patientGuid + " found, but not corresponding resource");
+        if (save) {
+            s.addResourceToSave(fhirResource);
+        } else {
+            s.addResourceToDelete(fhirResource);
         }
-        l.add(fhirResource);
     }
 
     public Reference createPatientReference(String patientGuid) throws Exception {
-        if (fhirPatientResources.get(patientGuid) == null) {
-            throw new TransformException("Patient resource " + patientGuid + " cannot be found");
-        }
         return ReferenceHelper.createReference(ResourceType.Patient, patientGuid);
     }
 
@@ -234,14 +225,16 @@ public class FhirObjectStore {
     }
 
     private Reference createAndValidateReference(String id, ResourceType resourceType, String patientGuid) throws Exception {
-        List<Resource> patientFhirResources = fhirPatientResources.get(patientGuid);
+
+        //EMIS CSV format supplies deltas, so we may receive data that references data we haven't received in this extract, so can't do this
+        /*List<Resource> patientFhirResources = fhirPatientResourcesToSave.get(patientGuid);
         if (patientFhirResources == null) {
             throw new TransformException("No resources found for patient " + patientGuid);
         }
 
         if (!listContains(patientFhirResources, id, resourceType)) {
             throw new TransformException(resourceType + " " + id + " doesn't exist in Resources");
-        }
+        }*/
 
         return ReferenceHelper.createReference(resourceType, id);
     }
@@ -306,8 +299,8 @@ public class FhirObjectStore {
     }
 
     private <T extends Resource> T findResource(String guid, String resourceProfile, String patientGuid) throws Exception {
-        List<Resource> patientFhirResources = fhirPatientResources.get(patientGuid);
-        for (Resource resource: patientFhirResources) {
+        FhirPatientStore fhirPatientStore = fhirPatientStores.get(patientGuid);
+        for (Resource resource: fhirPatientStore.getResourcesToSave()) {
 
             if (resource.getId().equals(guid)
                     && resource.getMeta() != null) {
@@ -333,5 +326,15 @@ public class FhirObjectStore {
         Reference reference = ReferenceHelper.createReference(resource);
         Condition fhirProblem = findProblem(problemGuid, patientGuid);
         fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, reference));
+    }
+
+    public boolean isObservationToDelete(String patientGuid, String observationGuid) {
+        FhirPatientStore fhirPatientStore = fhirPatientStores.get(patientGuid);
+        if (fhirPatientStore == null) {
+            return false;
+        }
+
+        List<Resource> resourcesToDelete = fhirPatientStore.getResourcesToDelete();
+        return listContains(resourcesToDelete, observationGuid, ResourceType.Observation);
     }
 }
