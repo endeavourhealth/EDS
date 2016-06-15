@@ -50,6 +50,9 @@ module app.dashboard {
 				case ItemType.Protocol:
 					this.$state.go('app.protocolAction', {itemUuid: item.uuid, itemAction: action});
 					break;
+				case ItemType.System:
+					this.$state.go('app.systemAction', {itemUuid: item.uuid, itemAction: action});
+					break;
 			}
 		}
 	}
