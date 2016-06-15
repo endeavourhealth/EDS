@@ -69,32 +69,18 @@ public class EventTransformer
         switch (ObservationType.fromValue(eventType.getEventType().intValue()))
         {
             case TEXT:
-            case OBSERVATION:
+            case OBSERVATION: return ObservationTransformer.transform(eventType, patientUuid);
             case PROBLEM:
             case VALUE:
             case ATTACHMENT:
             case REFERRAL:
             case ALERT: return null;
-            case ALLERGY: return transformAllergy(eventType, patientUuid);
+            case ALLERGY: return AllergyTransformer.transform(eventType, patientUuid);
             case FAMILYHISTORY:
-            case IMMUNISATION:
+            case IMMUNISATION: return ImmunisationTransformer.transform(eventType, patientUuid);
             case PROBLEMRATING: return null;
         }
 
         return null;
-    }
-
-    private static AllergyIntolerance transformAllergy(EventType eventType, String patientUuid) throws TransformException
-    {
-        AllergyIntolerance allergy = new AllergyIntolerance();
-        allergy.setId(eventType.getGUID());
-        allergy.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ALLERGY_INTOLERANCE));
-
-        allergy.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientUuid));
-        allergy.setRecorder(ReferenceHelper.createReference(ResourceType.Practitioner, eventType.getOriginalAuthor().getUser().getGUID()));
-
-        allergy.setOnsetElement(DateConverter.convertPartialDateToDateTimeType(eventType.getAssignedDate(), eventType.getAssignedTime(), eventType.getDatePart()));
-
-        return allergy;
     }
 }

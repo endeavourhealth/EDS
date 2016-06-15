@@ -17,7 +17,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MedicationStatementTransformer
+public final class MedicationStatementTransformer
 {
     public static List<Resource> transform(MedicalRecordType medicalRecordType) throws TransformException
     {
