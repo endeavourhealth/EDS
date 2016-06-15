@@ -1,7 +1,10 @@
 package org.endeavourhealth.ui.endpoints;
 
+import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
+import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
+import org.endeavourhealth.ui.json.JsonOrganisation;
 import org.endeavourhealth.ui.json.JsonService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +22,51 @@ import java.util.UUID;
 public final class ServiceEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceEndpoint.class);
 	private final ServiceRepository repository = new ServiceRepository();
+	private final OrganisationRepository organisationRepository = new OrganisationRepository();
+
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/")
+	public Response post(@Context SecurityContext sc, JsonService service) throws Exception {
+		super.setLogbackMarkers(sc);
+
+		// Save the new
+		Service dbService = new Service();
+		dbService.setId(service.getUuid());
+		dbService.setName(service.getName());
+		dbService.setOrganisations(service.getOrganisations());
+		repository.save(dbService);
+
+		clearLogbackMarkers();
+
+		return Response
+				.ok()
+				.entity(service)
+				.build();
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/organisations")
+	public Response getServiceOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+		super.setLogbackMarkers(sc);
+		UUID serviceUuid = UUID.fromString(uuid);
+		Service service = repository.getById(serviceUuid);
+
+		List<JsonOrganisation> ret = new ArrayList<>();
+		for (UUID organisationId : service.getOrganisations().keySet()) {
+			Organisation organisation = organisationRepository.getById(organisationId);
+			ret.add(new JsonOrganisation(organisation, false));
+		}
+
+		clearLogbackMarkers();
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)

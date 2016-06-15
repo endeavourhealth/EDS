@@ -7,6 +7,8 @@ module app.service {
 	import IModalService = angular.ui.bootstrap.IModalService;
 	import BaseDialogController = app.dialogs.BaseDialogController;
 	import Service = app.models.Service;
+	import Organisation = app.models.Organisation;
+	import OrganisationPickerController = app.organisation.OrganisationPickerController;
 
 	'use strict';
 
@@ -26,14 +28,50 @@ module app.service {
 			return dialog;
 		}
 
-		static $inject = ['$uibModalInstance', 'LoggerService', 'AdminService', 'service'];
+		static $inject = ['$uibModalInstance', '$uibModal', 'LoggerService', 'AdminService', 'ServiceService', 'service'];
+
+		organisations : Organisation[];
 
 		constructor(protected $uibModalInstance : IModalServiceInstance,
-								private logger:app.blocks.ILoggerService,
+								private $modal : IModalService,
+								private log:app.blocks.ILoggerService,
 								private adminService : IAdminService,
-								private service : Service) {
+								private serviceService : IServiceService,
+								service : Service) {
 			super($uibModalInstance);
 			this.resultData = jQuery.extend(true, {}, service);
+			this.getServiceOrganisations(service.uuid);
+		}
+
+		private getServiceOrganisations(uuid : string) {
+			var vm = this;
+			vm.serviceService.getServiceOrganisations(uuid)
+				.then(function(result : Organisation[]) {
+					vm.organisations = result;
+				})
+				.catch(function (error : any) {
+					vm.log.error('Failed to load organisation services', error, 'Load organisation services');
+				});
+		}
+
+		private editOrganisations() {
+			var vm = this;
+			OrganisationPickerController.open(vm.$modal, vm.organisations)
+				.result.then(function (result : Organisation[]) {
+				vm.organisations = result;
+			});
+		}
+
+		public ok() {
+			// build new list of service orgs
+			this.resultData.organisations = {};
+
+			for (var idx in this.organisations) {
+				var organisation : Organisation = this.organisations[idx];
+				this.resultData.organisations[organisation.uuid] = organisation.name;
+			}
+
+			super.ok();
 		}
 	}
 

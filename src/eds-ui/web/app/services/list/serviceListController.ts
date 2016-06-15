@@ -33,9 +33,9 @@ module app.service {
 			var vm = this;
 			ServiceEditorController.open(vm.$modal, item)
 				.result.then(function(result : Service) {
-				jQuery.extend(true, item, result);
-				vm.serviceService.save(item)
+					vm.serviceService.save(result)
 					.then(function() {
+						jQuery.extend(true, item, result);
 						vm.log.success('Service saved', item, 'Save service');
 					})
 					.catch(function (error : any) {

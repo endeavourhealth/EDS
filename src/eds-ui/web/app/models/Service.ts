@@ -4,5 +4,6 @@ module app.models {
 	export class Service {
 		uuid:string;
 		name:string;
+		organisations:{ [key:string]:string; };
 	}
 }

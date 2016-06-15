@@ -3,6 +3,7 @@ package org.endeavourhealth.ui.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 
+import java.util.Map;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -11,6 +12,7 @@ public final class JsonOrganisation {
     private String name = null;
     private String nationalId = null;
     private Boolean isAdmin = null;
+    private Map<UUID, String> services = null;
     private Integer permissions = null; //to be removed once web client changed to use isAdmin
 
 
@@ -71,5 +73,13 @@ public final class JsonOrganisation {
 
     public void setPermissions(Integer permissions) {
         this.permissions = permissions;
+    }
+
+    public Map<UUID, String> getServices() {
+        return services;
+    }
+
+    public void setServices(Map<UUID, String> services) {
+        this.services = services;
     }
 }

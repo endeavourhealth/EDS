@@ -3,5 +3,6 @@ module app.models {
 		uuid : string;
 		name:string;
 		nationalId:string;
+		services : { [key:string]:string; };
 	}
 }

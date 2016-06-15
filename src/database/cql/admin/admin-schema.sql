@@ -196,43 +196,19 @@ create table service
 (
 	id UUID,
 	name TEXT,
+	organisations map<UUID, TEXT>,
 	primary key (id)
 );
-
-create table organisation_service_link
-(
-	id UUID,
-	organisation_id UUID,
-	service_id UUID,
-	primary key (id)
-);
-
-create materialized view organisation_service_link_by_organisation_id as
-select id, organisation_id, service_id
-from organisation_service_link
-where id is not null
-	and organisation_id is not null
-	and service_id is not null
-primary key ((organisation_id), id)
-with clustering order by (organisation_id asc);
-	
-create materialized view organisation_service_link_by_service_id as
-select id, organisation_id, service_id
-from organisation_service_link
-where id is not null
-	and organisation_id is not null
-	and service_id is not null
-primary key ((service_id), id)
-with clustering order by (service_id asc);
 
 CREATE TABLE organisation 
   ( 
     id UUID,
     name TEXT,
     national_id TEXT,
+	services map<UUID, TEXT>,
     PRIMARY KEY (id) 
   );
-  
+
 CREATE TABLE organisation_end_user_link
   ( 
     id UUID,

@@ -4,6 +4,8 @@ import com.datastax.driver.mapping.annotations.Column;
 import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Table;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Table(keyspace = "admin", name = "organisation")
@@ -15,6 +17,8 @@ public class Organisation {
     private String name;
     @Column(name = "national_id")
     private String nationalId;
+    @Column(name = "services")
+    private Map<UUID, String> services = new HashMap<>();
 
     public UUID getId() {
         return id;
@@ -41,5 +45,11 @@ public class Organisation {
     }
 
 
+    public Map<UUID, String> getServices() {
+        return services;
+    }
 
+    public void setServices(Map<UUID, String> services) {
+        this.services = services;
+    }
 }

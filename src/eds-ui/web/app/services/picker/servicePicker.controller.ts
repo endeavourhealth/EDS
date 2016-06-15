@@ -49,6 +49,18 @@ module app.service {
 
 				});
 		}
+
+		private addToSelection(match : Service) {
+			if ($.grep(this.resultData, function(s:Service) { return s.uuid === match.uuid; }).length === 0)
+				this.resultData.push(match);
+		}
+
+		private removeFromSelection(match : Service) {
+			var index = this.resultData.indexOf(match, 0);
+			if (index > -1)
+				this.resultData.splice(index, 1);
+		}
+
 	}
 
 	angular

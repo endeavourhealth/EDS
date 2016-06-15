@@ -1,14 +1,60 @@
 package org.endeavourhealth.core.data.admin;
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.mapping.Mapper;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.admin.accessors.ServiceAccessor;
-import org.endeavourhealth.core.data.admin.models.OrganisationServiceLink;
+import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
 
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 public class ServiceRepository extends Repository {
+
+	public void save(Service service) {
+		Mapper<Service> mapper = getMappingManager().mapper(Service.class);
+
+		if (service.getId() == null) {
+			// New service, just save
+			mapper.save(service);
+		} else {
+			// Existing service, update org links
+			Service oldService = mapper.get(service.getId());
+
+			Set<UUID> additions = new TreeSet<>(service.getOrganisations().keySet());
+			additions.removeAll(oldService.getOrganisations().keySet());
+
+			Set<UUID> deletions =  new TreeSet<>(oldService.getOrganisations().keySet());
+			deletions.removeAll(service.getOrganisations().keySet());
+
+			BatchStatement batchStatement = new BatchStatement();
+			OrganisationRepository organisationRepository = new OrganisationRepository();
+			Mapper<Organisation> orgMapper = getMappingManager().mapper(Organisation.class);
+
+			// Update the service
+			batchStatement.add(mapper.saveQuery(service));
+
+			// Process removed orgs
+			for (UUID orgUuid : deletions) {
+				Organisation organisation = organisationRepository.getById(orgUuid);
+				organisation.getServices().remove(service.getId());
+				batchStatement.add(orgMapper.saveQuery(organisation));
+			}
+
+			// Process added orgs
+			for (UUID orgUuid : additions) {
+				Organisation organisation = organisationRepository.getById(orgUuid);
+				organisation.getServices().put(service.getId(), service.getName());
+				batchStatement.add(orgMapper.saveQuery(organisation));
+			}
+
+			getSession().execute(batchStatement);
+		}
+	}
+
 	public Service getById(UUID id) {
 		Mapper<Service> mapper = getMappingManager().mapper(Service.class);
 		return mapper.get(id);
@@ -19,14 +65,10 @@ public class ServiceRepository extends Repository {
 		return accessor.getAll();
 	}
 
-	public Iterable<OrganisationServiceLink> getOrganisations(UUID serviceId) {
-		ServiceAccessor accessor = getMappingManager().createAccessor(ServiceAccessor.class);
-		return accessor.getOrganisationServiceLinkByServiceId(serviceId);
-	}
-
 	public Iterable<Service> search(String searchData) {
-		// Implement search by name
-		return getAll();
+		String rangeEnd = searchData + 'z';
+		ServiceAccessor accessor = getMappingManager().createAccessor(ServiceAccessor.class);
+		return accessor.search(searchData, rangeEnd);
 	}
 
 }
