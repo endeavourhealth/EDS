@@ -34,6 +34,9 @@ var app;
             LibraryService.prototype.getEntityMap = function () {
                 return this.httpGet('api/entity/getEntityMap');
             };
+            LibraryService.prototype.getSystems = function () {
+                return this.httpGet('api/library/getSystems');
+            };
             return LibraryService;
         })(core.BaseHttpService);
         core.LibraryService = LibraryService;

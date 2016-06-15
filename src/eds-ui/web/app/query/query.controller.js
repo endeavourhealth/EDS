@@ -404,7 +404,8 @@ var app;
                     query: query,
                     codeSet: null,
                     listReport: null,
-                    protocol: null
+                    protocol: null,
+                    system: null
                 };
                 //
                 // Create the view-model for the chart and attach to the scope.

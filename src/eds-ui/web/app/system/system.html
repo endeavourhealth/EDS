@@ -1,0 +1,122 @@
+<div class="module">
+	<div class="container-fluid">
+		<div class="module-heading">
+			Systems
+			<div class="pull-right">
+				<button type="button" class="btn btn-sm btn-success" data-ng-click="systemCtrl.save(false)">Save</button>
+				<button type="button" class="btn btn-sm btn-warning" data-ng-click="systemCtrl.save(true)">Save & Close</button>
+				<button type="button" class="btn btn-sm btn-danger" data-ng-click="systemCtrl.close()">Cancel</button>
+			</div>
+		</div>
+		<div class="module-body">
+			<form>
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label for="name">System Name</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-edit fa-lg fa-fw"></i></span>
+							<input type="text" class="form-control" id="name" ng-model="systemCtrl.libraryItem.name" placeholder="Please enter a system name">
+						</div>
+					</div>
+					<div class="form-group col-md-6">
+						<label for="description">System Description</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-edit fa-lg fa-fw"></i></span>
+							<textarea class="form-control" id="description" ng-model="systemCtrl.libraryItem.description" placeholder="Please enter a description for this system"></textarea>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-8">
+						<label>Technical Interfaces</label>
+						<button type="button" class="btn btn-xs btn-success" style="margin-left: 20px" data-ng-click="systemCtrl.addInterface()">
+							<span class="fa fa-plus"></span>
+						</button>
+						<div class="table scroll-box-350 form-control">
+							<table class="table table-striped table-condensed">
+								<thead>
+								<tr>
+									<th class="col-md-2">Name</th>
+									<th class="col-md-4">Message Type</th>
+									<th class="col-md-2">Message Format</th>
+									<th class="col-md-2"></th>
+								</tr>
+								</thead>
+								<tbody>
+								<tr class="hover-box show-child-on-hover"
+									ng-repeat="item in systemCtrl.libraryItem.system.technicalInterface"
+									ng-click="systemCtrl.selectedInterface = item;"
+									ng-class="{'selection': item == systemCtrl.selectedInterface}">
+									<td>{{item.name}}</td>
+									<td>{{item.messageType}}</td>
+									<td>{{item.messageFormat}}</td>
+									<td>
+										<div class="child-to-show">
+											<button type="button" class="btn btn-danger btn-xs pull-right" ng-click="systemCtrl.removeInterface(this)">
+												<span class="fa fa-remove"></span>
+											</button>
+										</div>
+									</td>
+								</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="form-group col-md-4" ng-show="systemCtrl.selectedInterface">
+						<div class="row">
+							<div class="form-group col-md-12">
+								<label>Interface Name</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-edit fa-lg fa-fw"></i></span>
+									<input type="text" class="form-control" id="interfaceName" ng-model="systemCtrl.selectedInterface.name" placeholder="Please enter an interface name">
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-12">
+								<label>Message Type</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-question fa-lg fa-fw"></i></span>
+									<select class="form-control" ng-model="systemCtrl.selectedInterface.messageType">
+										<option ng-repeat="type in systemCtrl.types" value="{{type}}">{{type}}</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-12">
+								<label>Message Format</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-code fa-lg fa-fw"></i></span>
+									<select class="form-control" ng-model="systemCtrl.selectedInterface.messageFormat">
+										<option ng-repeat="format in systemCtrl.formats" value="{{format}}">{{format}}</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-12">
+								<label>Message Format Version</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-sort-numeric-asc fa-lg fa-fw"></i></span>
+									<input type="text" class="form-control" id="messageFormatVersion" ng-model="systemCtrl.selectedInterface.messageFormatVersion" placeholder="Please enter a message format version">
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+

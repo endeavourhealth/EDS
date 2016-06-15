@@ -128,7 +128,8 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
                     && itemType != DefinitionItemType.CodeSet
                     && itemType != DefinitionItemType.Query
                     && itemType != DefinitionItemType.ListOutput
-                    && itemType != DefinitionItemType.Protocol) {
+                    && itemType != DefinitionItemType.Protocol
+                    && itemType != DefinitionItemType.System) {
                 throw new BadRequestException("Library folder UUID " + containingFolderUuid + " cannot contain a " + itemType);
             }
         } else if (containingFolderType == DefinitionItemType.ReportFolder) {
@@ -348,3 +349,4 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
         repository.save(toSave);
     }
 }
+

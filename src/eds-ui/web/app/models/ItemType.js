@@ -12,7 +12,8 @@ var app;
             ItemType[ItemType["CodeSet"] = 5] = "CodeSet";
             ItemType[ItemType["ListOutput"] = 6] = "ListOutput";
             ItemType[ItemType["LibraryFolder"] = 7] = "LibraryFolder";
-            ItemType[ItemType["Protocol"] = 8] = "Protocol"; // 8
+            ItemType[ItemType["Protocol"] = 8] = "Protocol";
+            ItemType[ItemType["System"] = 9] = "System"; // 9
         })(models.ItemType || (models.ItemType = {}));
         var ItemType = models.ItemType;
         function itemTypeIdToString() {
@@ -36,6 +37,8 @@ var app;
                         return 'Library folder';
                     case ItemType.Protocol:
                         return 'Data protocol';
+                    case ItemType.System:
+                        return 'System';
                 }
             };
         }
@@ -61,6 +64,8 @@ var app;
                         return 'fa-folder-open';
                     case ItemType.Protocol:
                         return 'fa-list-alt';
+                    case ItemType.System:
+                        return 'fa-laptop';
                 }
             };
         }

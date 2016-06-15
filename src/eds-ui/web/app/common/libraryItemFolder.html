@@ -19,6 +19,7 @@
 					<span uib-dropdown>
 						<button type="button" class="btn btn-xs btn-default child-to-show pull-right" uib-dropdown-toggle>...</button>
 						<ul uib-dropdown-menu>
+							<li ng-show="ctrl.folderType == 1"><a ng-click="ctrl.actionItem(node.uuid, 9, 'add')">Add system</a></li>
 							<li ng-show="ctrl.folderType == 1"><a ng-click="ctrl.actionItem(node.uuid, 8, 'add')">Add data protocol</a></li>
 							<li ng-show="ctrl.folderType == 1"><a ng-click="ctrl.actionItem(node.uuid, 2, 'add')">Add query</a></li>
 							<li ng-show="ctrl.folderType == 1"><a ng-click="ctrl.actionItem(node.uuid, 6, 'add')">Add list report</a></li>

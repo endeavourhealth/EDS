@@ -30,6 +30,7 @@
 				<xs:element name="codeSet" type="codeSet"/>
 				<xs:element name="listReport" type="listReport"/>
 				<xs:element name="protocol" type="protocol"/>
+				<xs:element name="system" type="system"/>
 			</xs:choice>
 		</xs:sequence>
 	</xs:complexType>
@@ -268,8 +269,41 @@
 	</xs:complexType>
 	<xs:complexType name="protocol">
 		<xs:sequence>
-			<xs:element name="enabled" type="xs:string" minOccurs="0"/>
-			<xs:element name="patientConsent" type="xs:string" minOccurs="0"/>
+			<xs:element name="enabled" type="xs:string"/>
+			<xs:element name="patientConsent" type="xs:string"/>
+			<xs:element name="dataSet" type="xs:string" minOccurs="0"/>
+			<xs:element name="serviceContract" type="serviceContract" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="service">
+		<xs:sequence>
+			<xs:element name="uuid" type="xs:string"/>
+			<xs:element name="name" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="system">
+		<xs:sequence>
+			<xs:element name="uuid" type="xs:string"/>
+			<xs:element name="name" type="xs:string"/>
+			<xs:element name="technicalInterface" type="technicalInterface" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="technicalInterface">
+		<xs:sequence>
+			<xs:element name="uuid" type="xs:string"/>
+			<xs:element name="name" type="xs:string"/>
+			<xs:element name="messageType" type="xs:string" minOccurs="0"/>
+			<xs:element name="messageFormat" type="xs:string" minOccurs="0"/>
+			<xs:element name="messageFormatVersion" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="serviceContract">
+		<xs:sequence>
+			<xs:element name="type" type="xs:string"/>
+			<xs:element name="service" type="service"/>
+			<xs:element name="system" type="system"/>
+			<xs:element name="technicalInterface" type="technicalInterface"/>
+			<xs:element name="active" type="xs:string"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="listReportGroup">
@@ -337,3 +371,4 @@
 		</xs:sequence>
 	</xs:complexType>
 </xs:schema>
+

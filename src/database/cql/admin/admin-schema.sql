@@ -290,6 +290,11 @@ INSERT INTO item_type
 VALUES 
 	(8, 'Protocol');
 	
+INSERT INTO item_type
+	(id, description)
+VALUES 
+	(9, 'System');
+	
 INSERT INTO end_user
 	(id, title, forename, surname, email, is_super_user)
 VALUES 
@@ -338,7 +343,7 @@ VALUES
 INSERT INTO item
 	(id, audit_id, xml_content, title, description, is_deleted)
 VALUES
-	(82c7e37a-2d8d-4132-aca3-b25f3b497191, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, '', 'Population Queries', '', false);
+	(82c7e37a-2d8d-4132-aca3-b25f3b497191, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, '', 'Systems', '', false);
 
 INSERT INTO audit
 	(id, end_user_id, time_stamp, audit_version, organisation_id)
@@ -365,3 +370,12 @@ INSERT INTO item_dependency
 VALUES
 	(82c7e37a-2d8d-4132-aca3-b25f3b497191, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, 96448FF1-903B-4B1C-B306-4C04C7B3E0BC, 0);
 	
+INSERT INTO service
+         (id, name)
+VALUES
+         (c7713d3b-7b66-4279-965f-ec110c2347f5, 'Test Service 1');
+
+INSERT INTO service
+         (id, name)
+VALUES
+         (4ba36a3d-5ad9-471e-8f5a-95c394396969, 'Test Service 2');

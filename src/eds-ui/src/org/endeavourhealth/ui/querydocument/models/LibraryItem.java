@@ -28,6 +28,7 @@ import javax.xml.bind.annotation.XmlType;
  *           &lt;element name="codeSet" type="{}codeSet"/>
  *           &lt;element name="listReport" type="{}listReport"/>
  *           &lt;element name="protocol" type="{}protocol"/>
+ *           &lt;element name="system" type="{}system"/>
  *         &lt;/choice>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -48,7 +49,8 @@ import javax.xml.bind.annotation.XmlType;
     "test",
     "codeSet",
     "listReport",
-    "protocol"
+    "protocol",
+    "system"
 })
 public class LibraryItem {
 
@@ -65,6 +67,7 @@ public class LibraryItem {
     protected CodeSet codeSet;
     protected ListReport listReport;
     protected Protocol protocol;
+    protected System system;
 
     /**
      * Gets the value of the uuid property.
@@ -296,6 +299,22 @@ public class LibraryItem {
      */
     public void setProtocol(Protocol value) {
         this.protocol = value;
+    }
+
+    public System getSystem() {
+        return system;
+    }
+
+    /**
+     * Sets the value of the system property.
+     *
+     * @param value
+     *     allowed object is
+     *     {@link System }
+     *
+     */
+    public void setSystem(System value) {
+        this.system = value;
     }
 
 }

@@ -9,7 +9,8 @@ public enum DefinitionItemType {
     CodeSet(5),
     ListOutput(6),
     LibraryFolder(7),
-    Protocol(8);
+    Protocol(8),
+    System(9);
 
     private final int value;
 

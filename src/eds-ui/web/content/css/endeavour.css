@@ -87,12 +87,17 @@
     overflow-x: hidden;
 }
 
-.scroll-box-450 {
-    height: 450px;
+.scroll-box-350 {
+    height: 350px;
     overflow-y: scroll;
     overflow-x: hidden;
 }
 
+.scroll-box-400 {
+    height: 400px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
 .show-child-on-hover .child-to-show {
     display: none;
 }
@@ -131,6 +136,7 @@
 
 .hover-box:hover {
     background: #d3e9f6 !important;
+    cursor: pointer;
 }
 
 .logo {

@@ -12,5 +12,6 @@ module app.models {
 		codeSet:CodeSet;
 		listReport:ListReport;
 		protocol:Protocol;
+		system:System;
 	}
 }

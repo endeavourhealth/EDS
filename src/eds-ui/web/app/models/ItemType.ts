@@ -10,7 +10,8 @@ module app.models {
 		CodeSet,		// 5
 		ListOutput,	// 6
 		LibraryFolder, // 7
-		Protocol // 8
+		Protocol, // 8
+		System // 9
 	}
 
 	export function itemTypeIdToString() {
@@ -34,6 +35,8 @@ module app.models {
 					return 'Library folder';
 				case ItemType.Protocol:
 					return 'Data protocol';
+				case ItemType.System:
+					return 'System';
 			}
 		};
 	}
@@ -59,6 +62,8 @@ module app.models {
 					return 'fa-folder-open';
 				case ItemType.Protocol:
 					return 'fa-list-alt';
+				case ItemType.System:
+					return 'fa-laptop';
 			}
 		};
 	}

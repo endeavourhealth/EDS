@@ -470,7 +470,8 @@ module app.query {
 					query: query,
 					codeSet : null,
 					listReport : null,
-					protocol : null
+					protocol : null,
+					system : null
 				};
 
 				//

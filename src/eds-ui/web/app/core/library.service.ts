@@ -3,6 +3,8 @@
 module app.core {
 	import LibraryItem = app.models.LibraryItem;
 	import EntityMap = app.models.EntityMap;
+	import FolderNode = app.models.FolderNode;
+	import System = app.models.System;
 	'use strict';
 
 	export interface ILibraryService {
@@ -10,6 +12,7 @@ module app.core {
 		saveLibraryItem(libraryItem : LibraryItem):ng.IPromise<LibraryItem>;
 		deleteLibraryItem(uuid : string):ng.IPromise<any>;
 		getEntityMap():ng.IPromise<EntityMap>;
+		getSystems():ng.IPromise<System[]>;
 	}
 
 	export class LibraryService extends BaseHttpService implements ILibraryService {
@@ -36,6 +39,10 @@ module app.core {
 
 		getEntityMap():ng.IPromise<EntityMap> {
 			return this.httpGet('api/entity/getEntityMap');
+		}
+
+		getSystems():ng.IPromise<System[]> {
+			return this.httpGet('api/library/getSystems');
 		}
 	}
 

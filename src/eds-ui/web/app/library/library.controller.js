@@ -33,6 +33,9 @@ var app;
             LibraryController.prototype.actionItem = function (uuid, type, action) {
                 this.saveState();
                 switch (type) {
+                    case ItemType.System:
+                        this.$state.go('app.systemAction', { itemUuid: uuid, itemAction: action });
+                        break;
                     case ItemType.Protocol:
                         this.$state.go('app.protocolAction', { itemUuid: uuid, itemAction: action });
                         break;

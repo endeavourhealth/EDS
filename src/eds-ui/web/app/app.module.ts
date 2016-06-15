@@ -25,6 +25,7 @@ angular.module('app', [
 		'app.dashboard',
 		'app.library',
 		'app.protocol',
+		'app.system',
 		'app.reports',
 		'app.listOutput',
 		'app.codeSet',
