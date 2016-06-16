@@ -2,12 +2,16 @@ package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.EventType;
+import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.Observation;
 import org.hl7.fhir.instance.model.ResourceType;
+import org.hl7.fhir.instance.model.SimpleQuantity;
+
+import java.math.BigDecimal;
 
 final class ObservationTransformer
 {
@@ -21,6 +25,16 @@ final class ObservationTransformer
         observation.addPerformer(ReferenceHelper.createReference(ResourceType.Practitioner, eventType.getOriginalAuthor().getUser().getGUID()));
 
         observation.setEffective(DateConverter.convertPartialDateToDateTimeType(eventType.getAssignedDate(), eventType.getAssignedTime(), eventType.getDatePart()));
+
+        observation.setCode(CodeConverter.convert(eventType.getCode(), eventType.getDescriptiveText()));
+
+        if (eventType.getNumericValue() != null)
+        {
+            SimpleQuantity simpleQuantity = new SimpleQuantity();
+            simpleQuantity.setValue(BigDecimal.valueOf(eventType.getNumericValue().getValue()));
+            simpleQuantity.setUnit(eventType.getNumericValue().getUnits());
+            observation.setValue(simpleQuantity);
+        }
 
         return observation;
     }

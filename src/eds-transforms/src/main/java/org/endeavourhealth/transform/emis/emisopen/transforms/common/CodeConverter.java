@@ -24,6 +24,10 @@ public class CodeConverter
                 .setDisplay(code.getTerm())
                 .setUserSelected(true);
 
+        if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_READ2))
+            if (coding.getCode() != null)
+                coding.setCode(coding.getCode().replace(".", ""));
+
         codeableConcept.addCoding(coding);
 
         if (StringUtils.isNotBlank(code.getMapCode()))

@@ -43,6 +43,5 @@ public abstract class TerminologyService {
         //TODO - terminology service needs completing
         return null;
     }
-
 }
 
