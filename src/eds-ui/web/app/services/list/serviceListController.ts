@@ -36,21 +36,28 @@ module app.service {
 
 		edit(item : Service) {
 			var vm = this;
-			ServiceEditorController.open(vm.$modal, item)
-				.result.then(function(result : Service) {
-					vm.serviceService.save(result)
-					.then(function(savedService : Service) {
-						if (item.uuid)
-							jQuery.extend(true, item, savedService);
-						else
-							vm.services.push(savedService);
+			ServiceEditorController
+				.open(vm.$modal, item)
+				.result
+				.then(function(result : Service) {
+					vm.save(result);
+				});
+		}
 
-						vm.log.success('Service saved', item, 'Save service');
-					})
-					.catch(function (error : any) {
-						vm.log.error('Failed to save service', error, 'Save service');
-					});
-			});
+		save(item : Service) {
+			var vm = this;
+			vm.serviceService.save(item)
+				.then(function(savedService : Service) {
+					if (item.uuid)
+						jQuery.extend(true, item, savedService);
+					else
+						vm.services.push(savedService);
+
+					vm.log.success('Service saved', item, 'Save service');
+				})
+				.catch(function (error : any) {
+					vm.log.error('Failed to save service', error, 'Save service');
+				});
 		}
 
 		delete(item : Service) {

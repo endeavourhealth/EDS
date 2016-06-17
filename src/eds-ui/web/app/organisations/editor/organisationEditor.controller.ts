@@ -40,7 +40,9 @@ module app.organisation {
 								private organisation : Organisation) {
 			super($uibModalInstance);
 			this.resultData = jQuery.extend(true, {}, organisation);
-			this.getOrganisationServices(organisation.uuid);
+
+			if (organisation.uuid)
+				this.getOrganisationServices(organisation.uuid);
 		}
 
 		private getOrganisationServices(uuid : string) {

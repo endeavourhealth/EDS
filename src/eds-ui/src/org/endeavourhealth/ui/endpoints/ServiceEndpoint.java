@@ -56,8 +56,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	public Response deleteService(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		Service dbService = new Service();
-		dbService.setId(UUID.fromString(uuid));
+		UUID serviceUuid = UUID.fromString(uuid);
+		Service dbService = repository.getById(serviceUuid);
 
 		repository.delete(dbService);
 

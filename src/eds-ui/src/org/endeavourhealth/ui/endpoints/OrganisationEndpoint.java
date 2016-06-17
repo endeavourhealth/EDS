@@ -33,14 +33,37 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 		Organisation dbOrganisation = new Organisation();
 		dbOrganisation.setId(organisation.getUuid());
 		dbOrganisation.setName(organisation.getName());
+		dbOrganisation.setNationalId(organisation.getNationalId());
 		dbOrganisation.setServices(organisation.getServices());
-		repository.save(dbOrganisation);
+		UUID organisationUuid = repository.save(dbOrganisation);
+
+		if (organisation.getUuid() == null)
+			organisation.setUuid(organisationUuid);
 
 		clearLogbackMarkers();
 
 		return Response
 				.ok()
 				.entity(organisation)
+				.build();
+	}
+
+
+	@DELETE
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/")
+	public Response deleteOrganisation(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+		super.setLogbackMarkers(sc);
+
+		UUID organisationUuid = UUID.fromString(uuid);
+		Organisation dbOrganisation = repository.getById(organisationUuid);
+
+		repository.delete(dbOrganisation);
+
+		clearLogbackMarkers();
+		return Response
+				.ok()
 				.build();
 	}
 

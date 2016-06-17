@@ -2,6 +2,12 @@
 	<div class="container-fluid">
 		<div class="module-heading">
 			Organisations
+			<div class="pull-right">
+				<button class="btn btn-sm btn-success"
+								ng-click="ctrl.add()"
+								title="Add">Add new
+				</button>
+			</div>
 		</div>
 		<div class="module-body">
 			<form>
@@ -26,7 +32,7 @@
 											{{item.nationalId}}
 										</td>
 										<td>
-											<button type="button" class="btn btn-danger btn-xs child-to-show" ng-click="ctrl.delete(item)"><span class="fa fa-remove"></span></button>
+											<button type="button" class="btn btn-danger btn-xs child-to-show pull-right" ng-click="ctrl.delete(item)"><span class="fa fa-remove"></span></button>
 										</td>
 									</tr>
 								</tbody>

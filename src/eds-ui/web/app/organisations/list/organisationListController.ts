@@ -29,19 +29,33 @@ module app.organisation {
 				});
 		}
 
+		add() {
+			var newOrganisation : Organisation = new Organisation();
+			this.edit(newOrganisation);
+		}
+
 		edit(item : Organisation) {
 			var vm = this;
 			OrganisationEditorController.open(vm.$modal, item)
 				.result.then(function(result : Organisation) {
-				jQuery.extend(true, item, result);
-				vm.organisationService.saveOrganisation(item)
-					.then(function() {
-						vm.log.success('Organisation saved', item, 'Save organisation');
-					})
-					.catch(function (error : any) {
-						vm.log.error('Failed to save organisation', error, 'Save organisation');
-					});
+				vm.save(result);
 			});
+		}
+
+		save(item : Organisation) {
+			var vm = this;
+			vm.organisationService.saveOrganisation(item)
+				.then(function(savedOrganisation : Organisation) {
+					if (item.uuid)
+						jQuery.extend(true, item, savedOrganisation);
+					else
+						vm.organisations.push(savedOrganisation);
+
+					vm.log.success('Organisation saved', item, 'Save organisation');
+				})
+				.catch(function (error : any) {
+					vm.log.error('Failed to save organisation', error, 'Save organisation');
+				});
 		}
 
 		delete(item : Organisation) {
@@ -52,6 +66,8 @@ module app.organisation {
 					// remove item from list
 					vm.organisationService.deleteOrganisation(item.uuid)
 						.then(function() {
+							var index = vm.organisations.indexOf(item);
+							vm.organisations.splice(index, 1);
 							vm.log.success('Organisation deleted', item, 'Delete Organisation');
 						})
 						.catch(function(error : any) {

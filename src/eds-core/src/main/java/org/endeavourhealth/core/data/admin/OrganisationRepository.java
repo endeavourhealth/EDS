@@ -11,51 +11,72 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 public class OrganisationRepository extends Repository {
-	public void save(Organisation organisation) {
+	public UUID save(Organisation organisation) {
 		Mapper<Organisation> mapper = getMappingManager().mapper(Organisation.class);
 
+		Set<UUID> additions;
+		Set<UUID> deletions;
+
 		if (organisation.getId() == null) {
-			// New organisation, just save
-			mapper.save(organisation);
+			// New organisation, just save with all services as additions
+			organisation.setId(UUID.randomUUID());
+			additions = new TreeSet<>(organisation.getServices().keySet());
+			deletions = new TreeSet<>();
 		} else {
 			// Existing organisation, update service links
 			Organisation oldOrganisation = mapper.get(organisation.getId());
 
-			Set<UUID> additions = new TreeSet<>(organisation.getServices().keySet());
+			additions = new TreeSet<>(organisation.getServices().keySet());
 			additions.removeAll(oldOrganisation.getServices().keySet());
 
-			Set<UUID> deletions =  new TreeSet<>(oldOrganisation.getServices().keySet());
+			deletions = new TreeSet<>(oldOrganisation.getServices().keySet());
 			deletions.removeAll(organisation.getServices().keySet());
-
-			BatchStatement batchStatement = new BatchStatement();
-			ServiceRepository serviceRepository = new ServiceRepository();
-			Mapper<Service> serviceMapper = getMappingManager().mapper(Service.class);
-
-			// Update the org
-			batchStatement.add(mapper.saveQuery(organisation));
-
-			// Process removed services
-			for (UUID serviceUuid : deletions) {
-				Service service = serviceRepository.getById(serviceUuid);
-				service.getOrganisations().remove(organisation.getId());
-				batchStatement.add(serviceMapper.saveQuery(service));
-			}
-
-			// Process added services
-			for (UUID serviceUuid : additions) {
-				Service service = serviceRepository.getById(serviceUuid);
-				service.getOrganisations().put(organisation.getId(), organisation.getName());
-				batchStatement.add(serviceMapper.saveQuery(service));
-			}
-
-			getSession().execute(batchStatement);
 		}
+		// Update the org
+		BatchStatement batchStatement = new BatchStatement();
+		batchStatement.add(mapper.saveQuery(organisation));
+
+		Mapper<Service> serviceMapper = getMappingManager().mapper(Service.class);
+		// Process removed services
+		for (UUID serviceUuid : deletions) {
+			Service service = serviceMapper.get(serviceUuid);
+			service.getOrganisations().remove(organisation.getId());
+			batchStatement.add(serviceMapper.saveQuery(service));
+		}
+
+		// Process added services
+		for (UUID serviceUuid : additions) {
+			Service service = serviceMapper.get(serviceUuid);
+			service.getOrganisations().put(organisation.getId(), organisation.getName());
+			batchStatement.add(serviceMapper.saveQuery(service));
+		}
+
+		getSession().execute(batchStatement);
+
+		return organisation.getId();
 	}
 
 
 	public Organisation getById(UUID id) {
 		Mapper<Organisation> mapper = getMappingManager().mapper(Organisation.class);
 		return mapper.get(id);
+	}
+
+	public void delete(Organisation organisation) {
+		Mapper<Organisation> organisationMapper = getMappingManager().mapper(Organisation.class);
+		Mapper<Service> serviceMapper = getMappingManager().mapper(Service.class);
+
+
+		BatchStatement batchStatement = new BatchStatement();
+		batchStatement.add(organisationMapper.deleteQuery(organisation));
+
+		for (UUID serviceUuid : organisation.getServices().keySet()) {
+			Service service = serviceMapper.get(serviceUuid);
+			service.getOrganisations().remove(organisation.getId());
+			batchStatement.add(serviceMapper.saveQuery(service));
+		}
+
+		getSession().execute(batchStatement);
 	}
 
 	public Iterable<Organisation> getAll() {

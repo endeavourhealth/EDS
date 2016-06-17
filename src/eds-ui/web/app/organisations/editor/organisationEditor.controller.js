@@ -23,7 +23,8 @@ var app;
                 this.organisationService = organisationService;
                 this.organisation = organisation;
                 this.resultData = jQuery.extend(true, {}, organisation);
-                this.getOrganisationServices(organisation.uuid);
+                if (organisation.uuid)
+                    this.getOrganisationServices(organisation.uuid);
             }
             OrganisationEditorController.open = function ($modal, organisation) {
                 var options = {

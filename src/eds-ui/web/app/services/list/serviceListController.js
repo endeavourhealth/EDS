@@ -30,19 +30,25 @@ var app;
             };
             ServiceListController.prototype.edit = function (item) {
                 var vm = this;
-                service.ServiceEditorController.open(vm.$modal, item)
-                    .result.then(function (result) {
-                    vm.serviceService.save(result)
-                        .then(function (savedService) {
-                        if (item.uuid)
-                            jQuery.extend(true, item, savedService);
-                        else
-                            vm.services.push(savedService);
-                        vm.log.success('Service saved', item, 'Save service');
-                    })
-                        .catch(function (error) {
-                        vm.log.error('Failed to save service', error, 'Save service');
-                    });
+                service.ServiceEditorController
+                    .open(vm.$modal, item)
+                    .result
+                    .then(function (result) {
+                    vm.save(result);
+                });
+            };
+            ServiceListController.prototype.save = function (item) {
+                var vm = this;
+                vm.serviceService.save(item)
+                    .then(function (savedService) {
+                    if (item.uuid)
+                        jQuery.extend(true, item, savedService);
+                    else
+                        vm.services.push(savedService);
+                    vm.log.success('Service saved', item, 'Save service');
+                })
+                    .catch(function (error) {
+                    vm.log.error('Failed to save service', error, 'Save service');
                 });
             };
             ServiceListController.prototype.delete = function (item) {
