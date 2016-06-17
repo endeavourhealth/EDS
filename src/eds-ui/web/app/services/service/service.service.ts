@@ -40,8 +40,7 @@ module app.service {
 					'uuid': uuid
 				}
 			};
-
-			return this.httpDelete('api/service', request);
+			return this.httpDelete('api/service/', request);
 		}
 
 		search(searchData : string) : ng.IPromise<Service[]> {

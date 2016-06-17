@@ -5,5 +5,7 @@ module app.models {
 		uuid:string;
 		name:string;
 		organisations:{ [key:string]:string; };
+
+		constructor() {}
 	}
 }

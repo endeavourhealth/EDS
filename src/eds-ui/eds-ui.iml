@@ -23,6 +23,17 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Maven: javax.ws.rs:javax.ws.rs-api:2.0.1" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-catalina:8.0.33" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-servlet-api:8.0.33" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-jsp-api:8.0.33" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-el-api:8.0.33" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-juli:8.0.33" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-annotations-api:8.0.33" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-api:8.0.33" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-jni:8.0.33" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-coyote:8.0.33" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-util:8.0.33" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-util-scan:8.0.33" level="project" />
     <orderEntry type="library" name="Maven: org.glassfish.jersey.core:jersey-server:2.22.1" level="project" />
     <orderEntry type="library" name="Maven: org.glassfish.jersey.media:jersey-media-jaxb:2.22.1" level="project" />
     <orderEntry type="library" name="Maven: javax.annotation:javax.annotation-api:1.2" level="project" />

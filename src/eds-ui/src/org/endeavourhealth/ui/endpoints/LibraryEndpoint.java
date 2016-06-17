@@ -22,8 +22,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.File;
-import java.io.StringBufferInputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;

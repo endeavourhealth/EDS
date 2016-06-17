@@ -35,7 +35,7 @@ var app;
                         'uuid': uuid
                     }
                 };
-                return this.httpDelete('api/service', request);
+                return this.httpDelete('api/service/', request);
             };
             ServiceService.prototype.search = function (searchData) {
                 var request = {

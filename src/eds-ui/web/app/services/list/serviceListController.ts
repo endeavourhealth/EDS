@@ -29,13 +29,22 @@ module app.service {
 				});
 		}
 
+		add() {
+			var newService : Service = new Service();
+			this.edit(newService);
+		}
+
 		edit(item : Service) {
 			var vm = this;
 			ServiceEditorController.open(vm.$modal, item)
 				.result.then(function(result : Service) {
 					vm.serviceService.save(result)
-					.then(function() {
-						jQuery.extend(true, item, result);
+					.then(function(savedService : Service) {
+						if (item.uuid)
+							jQuery.extend(true, item, savedService);
+						else
+							vm.services.push(savedService);
+
 						vm.log.success('Service saved', item, 'Save service');
 					})
 					.catch(function (error : any) {
@@ -52,6 +61,8 @@ module app.service {
 					// remove item from list
 					vm.serviceService.delete(item.uuid)
 						.then(function() {
+							var index = vm.services.indexOf(item);
+							vm.services.splice(index, 1);
 							vm.log.success('Service deleted', item, 'Delete Service');
 						})
 						.catch(function(error : any) {

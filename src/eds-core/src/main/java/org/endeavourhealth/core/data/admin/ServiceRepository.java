@@ -14,11 +14,12 @@ import java.util.UUID;
 
 public class ServiceRepository extends Repository {
 
-	public void save(Service service) {
+	public UUID save(Service service) {
 		Mapper<Service> mapper = getMappingManager().mapper(Service.class);
 
 		if (service.getId() == null) {
 			// New service, just save
+			service.setId(UUID.randomUUID());
 			mapper.save(service);
 		} else {
 			// Existing service, update org links
@@ -53,11 +54,18 @@ public class ServiceRepository extends Repository {
 
 			getSession().execute(batchStatement);
 		}
+
+		return service.getId();
 	}
 
 	public Service getById(UUID id) {
 		Mapper<Service> mapper = getMappingManager().mapper(Service.class);
 		return mapper.get(id);
+	}
+
+	public void delete(Service service) {
+		Mapper<Service> mapper = getMappingManager().mapper(Service.class);
+		mapper.delete(service);
 	}
 
 	public Iterable<Service> getAll() {

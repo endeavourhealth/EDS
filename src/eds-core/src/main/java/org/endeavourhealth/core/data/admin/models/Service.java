@@ -39,6 +39,9 @@ public class Service {
     }
 
     public void setOrganisations(Map<UUID, String> organisations) {
-        this.organisations = organisations;
+        if (organisations == null)
+            this.organisations = new HashMap<>();
+        else
+            this.organisations = organisations;
     }
 }

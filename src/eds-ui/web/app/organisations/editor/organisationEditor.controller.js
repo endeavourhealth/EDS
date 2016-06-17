@@ -56,6 +56,15 @@ var app;
                     // TODO : SAVE LINKS TO DB
                 });
             };
+            OrganisationEditorController.prototype.ok = function () {
+                // build new list of service orgs
+                this.resultData.services = {};
+                for (var idx in this.services) {
+                    var service = this.services[idx];
+                    this.resultData.services[service.uuid] = service.name;
+                }
+                _super.prototype.ok.call(this);
+            };
             OrganisationEditorController.$inject = ['$uibModalInstance', '$uibModal', 'LoggerService', 'AdminService', 'OrganisationService', 'organisation'];
             return OrganisationEditorController;
         })(BaseDialogController);

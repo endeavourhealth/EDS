@@ -40,7 +40,9 @@ module app.service {
 								service : Service) {
 			super($uibModalInstance);
 			this.resultData = jQuery.extend(true, {}, service);
-			this.getServiceOrganisations(service.uuid);
+
+			if (service.uuid)
+				this.getServiceOrganisations(service.uuid);
 		}
 
 		private getServiceOrganisations(uuid : string) {

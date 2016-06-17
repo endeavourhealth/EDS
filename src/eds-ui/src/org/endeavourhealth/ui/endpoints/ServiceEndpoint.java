@@ -31,18 +31,39 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	public Response post(@Context SecurityContext sc, JsonService service) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		// Save the new
 		Service dbService = new Service();
 		dbService.setId(service.getUuid());
 		dbService.setName(service.getName());
 		dbService.setOrganisations(service.getOrganisations());
-		repository.save(dbService);
+		UUID serviceId = repository.save(dbService);
+
+		if (service.getUuid() == null)
+			service.setUuid(serviceId);
 
 		clearLogbackMarkers();
 
 		return Response
 				.ok()
 				.entity(service)
+				.build();
+	}
+
+
+	@DELETE
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/")
+	public Response deleteService(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+		super.setLogbackMarkers(sc);
+
+		Service dbService = new Service();
+		dbService.setId(UUID.fromString(uuid));
+
+		repository.delete(dbService);
+
+		clearLogbackMarkers();
+		return Response
+				.ok()
 				.build();
 	}
 

@@ -5,6 +5,7 @@ var app;
     var service;
     (function (service) {
         var MessageBoxController = app.dialogs.MessageBoxController;
+        var Service = app.models.Service;
         'use strict';
         var ServiceListController = (function () {
             function ServiceListController($modal, serviceService, log) {
@@ -23,13 +24,20 @@ var app;
                     vm.log.error('Failed to load services', error, 'Load services');
                 });
             };
+            ServiceListController.prototype.add = function () {
+                var newService = new Service();
+                this.edit(newService);
+            };
             ServiceListController.prototype.edit = function (item) {
                 var vm = this;
                 service.ServiceEditorController.open(vm.$modal, item)
                     .result.then(function (result) {
                     vm.serviceService.save(result)
-                        .then(function () {
-                        jQuery.extend(true, item, result);
+                        .then(function (savedService) {
+                        if (item.uuid)
+                            jQuery.extend(true, item, savedService);
+                        else
+                            vm.services.push(savedService);
                         vm.log.success('Service saved', item, 'Save service');
                     })
                         .catch(function (error) {
@@ -44,6 +52,8 @@ var app;
                     // remove item from list
                     vm.serviceService.delete(item.uuid)
                         .then(function () {
+                        var index = vm.services.indexOf(item);
+                        vm.services.splice(index, 1);
                         vm.log.success('Service deleted', item, 'Delete Service');
                     })
                         .catch(function (error) {

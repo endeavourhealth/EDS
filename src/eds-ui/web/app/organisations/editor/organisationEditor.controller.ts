@@ -62,6 +62,19 @@ module app.organisation {
 				// TODO : SAVE LINKS TO DB
 			});
 		}
+
+
+		public ok() {
+			// build new list of service orgs
+			this.resultData.services = {};
+
+			for (var idx in this.services) {
+				var service : Service = this.services[idx];
+				this.resultData.services[service.uuid] = service.name;
+			}
+
+			super.ok();
+		}
 	}
 
 	angular

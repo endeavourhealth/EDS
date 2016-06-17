@@ -16,7 +16,11 @@
             <version>2.0.1</version>
         </dependency>
         <!-- End JAX-RS -->
-
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-catalina</artifactId>
+            <version>8.0.33</version>
+        </dependency>
         <!-- Jersey -->
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>

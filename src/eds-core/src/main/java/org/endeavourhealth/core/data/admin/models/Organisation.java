@@ -50,6 +50,9 @@ public class Organisation {
     }
 
     public void setServices(Map<UUID, String> services) {
-        this.services = services;
+        if (services == null)
+            this.services = new HashMap<>();
+        else
+            this.services = services;
     }
 }

@@ -22,7 +22,8 @@ var app;
                 this.adminService = adminService;
                 this.serviceService = serviceService;
                 this.resultData = jQuery.extend(true, {}, service);
-                this.getServiceOrganisations(service.uuid);
+                if (service.uuid)
+                    this.getServiceOrganisations(service.uuid);
             }
             ServiceEditorController.open = function ($modal, service) {
                 var options = {
