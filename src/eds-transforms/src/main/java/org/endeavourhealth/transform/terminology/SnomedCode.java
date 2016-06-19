@@ -1,5 +1,7 @@
 package org.endeavourhealth.transform.terminology;
 
+import org.endeavourhealth.transform.fhir.FhirUri;
+
 public class SnomedCode {
 
     private String conceptCode = null;
@@ -16,5 +18,9 @@ public class SnomedCode {
 
     public String getTerm() {
         return term;
+    }
+
+    public String getSystem() {
+        return FhirUri.CODE_SYSTEM_SNOMED_CT;
     }
 }

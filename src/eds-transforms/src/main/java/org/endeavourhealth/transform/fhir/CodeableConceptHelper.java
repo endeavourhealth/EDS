@@ -3,10 +3,12 @@ package org.endeavourhealth.transform.fhir;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.schema.ContactRelationship;
 import org.endeavourhealth.transform.fhir.schema.OrganisationType;
+import org.endeavourhealth.transform.fhir.schema.ProblemSignificance;
 import org.endeavourhealth.transform.terminology.SnomedCode;
 import org.endeavourhealth.transform.terminology.TerminologyService;
 import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.Coding;
+import org.hl7.fhir.instance.model.DiagnosticOrder;
 
 import java.util.List;
 
@@ -23,6 +25,16 @@ public class CodeableConceptHelper {
     public static CodeableConcept createCodeableConcept(ContactRelationship contactRelationship) {
         return new CodeableConcept().addCoding(CodingHelper.createCoding(contactRelationship));
     }
+
+    public static CodeableConcept createCodeableConcept(DiagnosticOrder.DiagnosticOrderPriority priority) {
+        return new CodeableConcept().addCoding(CodingHelper.createCoding(priority));
+    }
+
+    public static CodeableConcept createCodeableConcept(ProblemSignificance significance) {
+        return new CodeableConcept().addCoding(CodingHelper.createCoding(significance));
+    }
+
+
 
     public static CodeableConcept createCodeableConcept(String text) {
         return new CodeableConcept().setText(text);

@@ -1,10 +1,12 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
+import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Observation;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.ClinicalCode;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
+import org.endeavourhealth.transform.emis.csv.ClinicalCode;
+import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
 import org.endeavourhealth.transform.fhir.*;
 import org.hl7.fhir.instance.model.*;
 
@@ -56,24 +58,28 @@ public class ObservationTransformer {
 
     private static void createResource(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
 
-
         String type = observationParser.getObservationType();
         ObservationType observationType = ObservationType.fromValue(type);
         switch (observationType) {
             case OBSERVATION:
+
+                //TODO - work out if condition or observation or procedure
                 createObservation(observationParser, objectStore);
+                createCondition(observationParser, objectStore);
+                createProcedure(observationParser, objectStore);
+
                 break;
             case TEST_REQUESTS:
-
+                //TODO - test request obs
                 break;
             case INVESTIGATION:
-
+                createObservation(observationParser, objectStore);
                 break;
             case VALUE:
-
+                createObservation(observationParser, objectStore);
                 break;
             case ATTACHMENT:
-
+                //TODO - attachment obs
                 break;
             case ALLERGY:
                 createAllergy(observationParser, objectStore);
@@ -82,36 +88,112 @@ public class ObservationTransformer {
                 createFamilyMemberHistory(observationParser, objectStore);
                 break;
             case IMMUNISATION:
-
+                //TODO - imm obs
                 break;
             case REPORT:
-
+                createDiagnosticReport(observationParser, objectStore);
                 break;
             case ORDER_HEADER:
-
+                createDiagnosticOrder(observationParser, objectStore);
                 break;
             default:
                 throw new TransformException("Unhandled observationType " + observationType);
         }
+    }
 
+    private static void createDiagnosticReport(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+        DiagnosticReport fhirReport = new DiagnosticReport();
+        fhirReport.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_DIAGNOSTIC_REPORT));
 
-        //TODO - get full Enum of possible EMIS observation types
-        if (type.equals("Family History")) {
+        String observationGuid = observationParser.getObservationGuid();
+        fhirReport.setId(observationGuid);
 
-        } else if (type.equals("Observation")) {
+        String patientGuid = observationParser.getPatientGuid();
+        fhirReport.setSubject(objectStore.createPatientReference(patientGuid));
 
-        } else if (type.equals("Condition")) {
-            createCondition(observationParser, objectStore);
-        } else if (type.equals("Procedure")) {
-            createProcedure(observationParser, objectStore);
-        } else if (type.equals("Allergy")) {
+        boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
+        objectStore.addResourceToSave(patientGuid, fhirReport, store);
 
-        } else {
-            throw new TransformException("Unexpected observation type " + type);
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (!store) {
+            return;
         }
 
-        //TODO - transform test requests
-        //TODO - handle "Attachment" ?
+        fhirReport.setStatus(DiagnosticReport.DiagnosticReportStatus.FINAL);
+
+        Long codeId = observationParser.getCodeId();
+        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
+        fhirReport.setCode(clinicalCode.createCodeableConcept());
+
+        String consultationGuid = observationParser.getConsultationGuid();
+        if (!Strings.isNullOrEmpty(consultationGuid)) {
+            fhirReport.setEncounter(objectStore.createEncounterReference(consultationGuid, patientGuid));
+        }
+
+        /**
+         OrganisationGuid
+         EffectiveDate
+         EffectiveDatePrecision
+         EnteredDate
+         EnteredTime
+         ClinicianUserInRoleGuid
+         EnteredByUserInRoleGuid
+         ParentObservationGuid
+         ProblemGuid
+         AssociatedText
+         Value
+         NumericUnit
+         ObservationType
+         NumericRangeLow
+         NumericRangeHigh
+         DocumentGuid
+
+         */
+    }
+
+    private static void createDiagnosticOrder(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+        DiagnosticOrder fhirOrder = new DiagnosticOrder();
+        fhirOrder.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_DIAGNOSTIC_ORDER));
+
+        String observationGuid = observationParser.getObservationGuid();
+        fhirOrder.setId(observationGuid);
+
+        String patientGuid = observationParser.getPatientGuid();
+        fhirOrder.setSubject(objectStore.createPatientReference(patientGuid));
+
+        boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
+        objectStore.addResourceToSave(patientGuid, fhirOrder, store);
+
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (!store) {
+            return;
+        }
+
+        String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
+        fhirOrder.setOrderer(objectStore.createPractitionerReference(clinicianGuid, patientGuid));
+
+        String consultationGuid = observationParser.getConsultationGuid();
+        if (!Strings.isNullOrEmpty(consultationGuid)) {
+            fhirOrder.setEncounter(objectStore.createEncounterReference(consultationGuid, patientGuid));
+        }
+
+        Long codeId = observationParser.getCodeId();
+        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
+        DiagnosticOrder.DiagnosticOrderItemComponent diagnosticOrderItemComponent = fhirOrder.addItem();
+        diagnosticOrderItemComponent.setCode(clinicalCode.createCodeableConcept());
+
+        String associatedText = observationParser.getAssociatedText();
+        fhirOrder.addNote(AnnotationHelper.createAnnotation(associatedText));
+
+        DiagnosticOrder.DiagnosticOrderEventComponent diagnosticOrderEventComponent = fhirOrder.addEvent();
+        diagnosticOrderEventComponent.setStatus(DiagnosticOrder.DiagnosticOrderStatus.REQUESTED);
+
+        Date effectiveDate = observationParser.getEffectiveDate();
+        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
+        diagnosticOrderEventComponent.setDateTimeElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
+
+        String problemGuid = observationParser.getProblemUGuid();
+        objectStore.linkToProblem(fhirOrder, problemGuid, patientGuid);
     }
 
     private static void createAllergy(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
@@ -145,7 +227,7 @@ public class ObservationTransformer {
 
         Date effectiveDate = observationParser.getEffectiveDate();
         String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
-        fhirAllergy.setOnsetElement(FhirObjectStore.createDateTimeType(effectiveDate, effectiveDatePrecision));
+        fhirAllergy.setOnsetElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         String associatedText = observationParser.getAssociatedText();
         fhirAllergy.setNote(AnnotationHelper.createAnnotation(associatedText));
@@ -189,7 +271,7 @@ public class ObservationTransformer {
 
         Date effectiveDate = observationParser.getEffectiveDate();
         String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
-        fhirProcedure.setPerformed(FhirObjectStore.createDateTimeType(effectiveDate, effectiveDatePrecision));
+        fhirProcedure.setPerformed(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         String associatedText = observationParser.getAssociatedText();
         fhirProcedure.addNotes(AnnotationHelper.createAnnotation(associatedText));
@@ -239,7 +321,7 @@ public class ObservationTransformer {
 
         Date effectiveDate = observationParser.getEffectiveDate();
         String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
-        fhirCondition.setOnset(FhirObjectStore.createDateTimeType(effectiveDate, effectiveDatePrecision));
+        fhirCondition.setOnset(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         String associatedText = observationParser.getAssociatedText();
         fhirCondition.setNotes(associatedText);
@@ -275,7 +357,7 @@ public class ObservationTransformer {
 
         Date effectiveDate = observationParser.getEffectiveDate();
         String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
-        fhirObservation.setEffective(FhirObjectStore.createDateTimeType(effectiveDate, effectiveDatePrecision));
+        fhirObservation.setEffective(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         Date enteredDate = observationParser.getEnteredDateTime();
         fhirObservation.setIssued(enteredDate);
@@ -321,6 +403,8 @@ public class ObservationTransformer {
             fhirRelation.setTarget(ReferenceHelper.createReference(fhirObservation));
         }
 
+        //TODO - handle linking to parent observations that are stored in DiagnositcReport Resources
+
         String consultationGuid = observationParser.getConsultationGuid();
         if (consultationGuid != null) {
             fhirObservation.setEncounter(objectStore.createEncounterReference(consultationGuid, patientGuid));
@@ -351,7 +435,7 @@ public class ObservationTransformer {
 
         Date effectiveDate = observationParser.getEffectiveDate();
         String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
-        fhirFamilyHistory.setDateElement(FhirObjectStore.createDateTimeType(effectiveDate, effectiveDatePrecision));
+        fhirFamilyHistory.setDateElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         fhirFamilyHistory.setStatus(FamilyMemberHistory.FamilyHistoryStatus.HEALTHUNKNOWN);
 

@@ -1,8 +1,9 @@
 package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Prescribing_DrugRecord;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
+import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
@@ -49,7 +50,7 @@ public class DrugRecordTransformer {
 
         Date effectiveDate = drugRecordParser.getEffectiveDate();
         String effectiveDatePrecision = drugRecordParser.getEffectiveDatePrecision();
-        fhirMedication.setDateAssertedElement(FhirObjectStore.createDateTimeType(effectiveDate, effectiveDatePrecision));
+        fhirMedication.setDateAssertedElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         if (drugRecordParser.getIsActive()) {
             fhirMedication.setStatus(MedicationStatement.MedicationStatementStatus.ACTIVE);

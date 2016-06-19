@@ -2,15 +2,11 @@ package org.endeavourhealth.transform.fhir.schema;
 
 import org.endeavourhealth.transform.fhir.FhirUri;
 
-public enum RegistrationType {
+public enum ProblemSignificance {
 
-    EMERGENCY("E", "Emergency"),
-    IMMEDIATELY_NECESSARY("IN", "Immediately Necessary"),
-    REGULAR_GMS("R", "Regular/GMS"),
-    TEMPORARY("T", "Temporary"),
-    PRIVATE("P", "Private"),
-    OTHER("O", "Other"),
-    DUMMY("D", "Dummy/Synthetic");
+    SIGNIFICANT("386134007", "Significant"),
+    NOT_SIGNIFICANT("371928007", "Not significant"),
+    UNSPECIIED("394847000", "Unspecified significance");
 
     private String code = null;
     private String description = null;
@@ -24,10 +20,10 @@ public enum RegistrationType {
     }
 
     public String getSystem() {
-        return FhirUri.VALUE_SET_REGISTRATION_TYPE;
+        return FhirUri.VALUE_SET_PROBLEM_SIGNIFICANCE;
     }
 
-    RegistrationType(String code, String description) {
+    ProblemSignificance(String code, String description) {
         this.code = code;
         this.description = description;
     }

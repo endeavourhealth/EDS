@@ -1,14 +1,18 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
+import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Problem;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
+import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.fhir.schema.ProblemRelationshipType;
+import org.endeavourhealth.transform.fhir.schema.ProblemSignificance;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
+import java.util.List;
 
 public class ProblemTransformer {
 
@@ -48,26 +52,9 @@ public class ProblemTransformer {
 
         Date endDate = problemParser.getEndDate();
         String endDatePrecision = problemParser.getEffectiveDatePrecision(); //NOTE; documentation refers to this as EffectiveDate, but this should be EndDate
-        fhirProblem.setAbatement(FhirObjectStore.createDateType(endDate, endDatePrecision));
-
-        //some of the information we need is stored on our original Observation, so we
-        //need to
+        fhirProblem.setAbatement(EmisDateTimeHelper.createDateType(endDate, endDatePrecision));
 
         fhirProblem.setVerificationStatus(Condition.ConditionVerificationStatus.CONFIRMED);
-
-        //to set:
-        //Encounter
-        //Asserter
-        //DateRecorded
-        //Code
-        //Clinical Status
-        //onset
-        //signidicance
-        //related
-        //associated
-
-        //TODO - need to set the ....partOfProblemEpisode extension on the Observation resource we're linked to
-        //TODO - update the status field on the Observation resource we're linked to
 
         Integer expectedDuration = problemParser.getExpectedDuration();
         if (expectedDuration != null) {
@@ -76,36 +63,78 @@ public class ProblemTransformer {
 
         Date lastReviewDate = problemParser.getLastReviewDate();
         String lastReviewPrecision = problemParser.getLastReviewDatePrecision();
-        DateType lastReviewDateType = FhirObjectStore.createDateType(lastReviewDate, lastReviewPrecision);
+        DateType lastReviewDateType = EmisDateTimeHelper.createDateType(lastReviewDate, lastReviewPrecision);
         if (lastReviewDateType != null) {
             fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_LAST_REVIEW_DATE, lastReviewDateType));
         }
 
+        ProblemSignificance fhirSignificance = convertSignificance(problemParser.getSignificanceDescription());
+        CodeableConcept fhirConcept = CodeableConceptHelper.createCodeableConcept(fhirSignificance);
+        fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_SIGNIFICANCE, fhirConcept));
 
-/**
- * public UUID getObservationGuid() {
- return super.getUniqueIdentifier(0);
- }
- public UUID getParentProblemObservationGuid() {
- return super.getUniqueIdentifier(1);
- }
- public UUID getOrganisationGuid() {
- return super.getUniqueIdentifier(3);
- }
- public UUID getLastReviewUserInRoleGuid() {
- return super.getUniqueIdentifier(8);
- }
- public String getSignificanceDescription() {
- return super.getString(10);
- }
- public String getProblemStatusDescription() {
- return super.getString(11);
- }
- public String getParentProblemRelationship() {
- return super.getString(12);
- }
+        String parentProblemGuid = problemParser.getParentProblemObservationGuid();
+        String parentRelationship = problemParser.getParentProblemRelationship();
+        if (!Strings.isNullOrEmpty(parentProblemGuid)) {
+            ProblemRelationshipType fhirRelationshipType = convertRelationshipType(parentRelationship);
 
- */
+            //this extension is composed of two separate extensions
+            Extension typeExtension = ExtensionConverter.createExtension("type", new StringType(fhirRelationshipType.getCode()));
+            Extension referenceExtension = ExtensionConverter.createExtension("target", objectStore.createProblemReference(parentProblemGuid, patientGuid));
+            fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_RELATED, typeExtension, referenceExtension));
+        }
+
+        //TODO - need to set ClinicalStatus on Problem FHIR resource
+
+        //several of the Resource fields are simply carried over from the Observation the Problem is linked to
+        Observation fhirObservation = objectStore.findObservation(observationGuid, patientGuid);
+
+        DateTimeType fhirDateTime = fhirObservation.getEffectiveDateTimeType();
+        Date date = fhirDateTime.getValue();
+        TemporalPrecisionEnum precision = fhirDateTime.getPrecision();
+        //have to convert dateTimeType to just dateType
+        if (precision == TemporalPrecisionEnum.MILLI
+                || precision == TemporalPrecisionEnum.MINUTE
+                || precision == TemporalPrecisionEnum.SECOND) {
+            precision = TemporalPrecisionEnum.DAY;
+        }
+
+        Reference asserter = null;
+        List<Reference> performers = fhirObservation.getPerformer();
+        if (performers.size() > 0) {
+            asserter = performers.get(0);
+        }
+
+        fhirProblem.setDateRecordedElement(new DateType(date, precision));
+        fhirProblem.setEncounter(fhirObservation.getEncounter());
+        fhirProblem.setCode(fhirObservation.getCode());
+        fhirProblem.setAsserter(asserter);
+    }
+
+    private static ProblemRelationshipType convertRelationshipType(String relationshipType) throws Exception {
+
+        //TODO - validate possible problem relationship types from EMIS CSV
+        if (relationshipType.equalsIgnoreCase("grouped")) {
+            return ProblemRelationshipType.GROUPED;
+        } else if (relationshipType.equalsIgnoreCase("combined")) {
+            return ProblemRelationshipType.COMBINED;
+        } else if (relationshipType.equalsIgnoreCase("evolved from")) {
+            return ProblemRelationshipType.EVOLVED_FROM;
+        } else if (relationshipType.equalsIgnoreCase("replaced")) {
+            return ProblemRelationshipType.REPLACED;
+        } else {
+            throw new TransformException("Unhanded problem relationship type " + relationshipType);
+        }
+    }
+
+    private static ProblemSignificance convertSignificance(String significance) {
+        significance = significance.toLowerCase();
+        if (significance.indexOf("major") > -1) {
+            return ProblemSignificance.SIGNIFICANT;
+        } else if (significance.indexOf("minor") > -1) {
+            return ProblemSignificance.NOT_SIGNIFICANT;
+        } else {
+            return ProblemSignificance.UNSPECIIED;
+        }
     }
 
 

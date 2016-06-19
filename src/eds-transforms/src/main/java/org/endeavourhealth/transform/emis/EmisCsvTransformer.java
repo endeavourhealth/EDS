@@ -1,8 +1,8 @@
 package org.endeavourhealth.transform.emis;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
+import org.endeavourhealth.transform.emis.csv.ClinicalCode;
+import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.LocationTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.OrganisationTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.UserInRoleTransformer;
@@ -13,13 +13,11 @@ import org.endeavourhealth.transform.emis.csv.transforms.coding.*;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.PatientTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.prescribing.DrugRecordTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.prescribing.IssueRecordTransformer;
-import org.endeavourhealth.transform.fhir.FhirPatientStore;
+import org.endeavourhealth.transform.emis.csv.FhirPatientStore;
 import org.endeavourhealth.transform.terminology.Snomed;
 import org.hl7.fhir.instance.model.*;
 
 import javax.swing.*;
-import java.io.File;
-import java.nio.charset.Charset;
 import java.util.*;
 
 public abstract class EmisCsvTransformer {
@@ -41,6 +39,8 @@ public abstract class EmisCsvTransformer {
         DiaryTransformer.transform(folderPath, CSV_FORMAT, fhirObjects);
         DrugRecordTransformer.transform(folderPath, CSV_FORMAT, fhirObjects);
         IssueRecordTransformer.transform(folderPath, CSV_FORMAT, fhirObjects);
+
+        //TODO - add parsers for two new AUDIT_ tables
 
         return fhirObjects.getFhirPatientStores();
     }

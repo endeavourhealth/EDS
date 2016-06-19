@@ -2,42 +2,58 @@ package org.endeavourhealth.transform.fhir;
 
 import org.endeavourhealth.transform.fhir.schema.ContactRelationship;
 import org.endeavourhealth.transform.fhir.schema.OrganisationType;
+import org.endeavourhealth.transform.fhir.schema.ProblemSignificance;
 import org.endeavourhealth.transform.fhir.schema.RegistrationType;
 import org.endeavourhealth.transform.terminology.SnomedCode;
+import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.Coding;
+import org.hl7.fhir.instance.model.DiagnosticOrder;
+import org.hl7.fhir.instance.model.valuesets.RelationshipEnumFactory;
 
 
 public class CodingHelper {
 
     public static Coding createCoding(SnomedCode snomedCode) {
         return new Coding()
-                .setSystem(FhirUri.CODE_SYSTEM_SNOMED_CT)
+                .setSystem(snomedCode.getSystem())
                 .setDisplay(snomedCode.getTerm())
                 .setCode(snomedCode.getConceptCode());
     }
 
     public static Coding createCoding(RegistrationType registrationType) {
         return new Coding()
-                .setSystem(FhirUri.VALUE_SET_REGISTRATION_TYPE)
-                .setDisplay(registrationType.getValue())
-                .setCode(registrationType.toString());
+                .setSystem(registrationType.getSystem())
+                .setDisplay(registrationType.getDescription())
+                .setCode(registrationType.getCode());
     }
 
     public static Coding createCoding(OrganisationType organizationType) {
         return new Coding()
-                .setSystem(FhirUri.VALUE_SET_ORGANISATION_TYPE)
-                .setDisplay(organizationType.getValue())
-                .setCode(organizationType.toString());
+                .setSystem(organizationType.getSystem())
+                .setDisplay(organizationType.getDescription())
+                .setCode(organizationType.getCode());
     }
 
     public static Coding createCoding(ContactRelationship carerRelationship) {
         return new Coding()
-                .setSystem(FhirUri.VALUE_SET_CONTACT_RELATIOSHIP)
-                .setDisplay(carerRelationship.getValue())
-                .setCode(carerRelationship.toString());
+                .setSystem(carerRelationship.getSystem())
+                .setDisplay(carerRelationship.getDescription())
+                .setCode(carerRelationship.getCode());
     }
 
+    public static Coding createCoding(DiagnosticOrder.DiagnosticOrderPriority priority) {
+        return new Coding()
+                .setSystem(priority.getSystem())
+                .setDisplay(priority.getDisplay())
+                .setCode(priority.toCode());
+    }
 
+    public static Coding createCoding(ProblemSignificance significance) {
+        return new Coding()
+                .setSystem(significance.getSystem())
+                .setDisplay(significance.getDescription())
+                .setCode(significance.getCode());
+    }
 
 
     public static Coding createCoding(String system, String term, String code) {

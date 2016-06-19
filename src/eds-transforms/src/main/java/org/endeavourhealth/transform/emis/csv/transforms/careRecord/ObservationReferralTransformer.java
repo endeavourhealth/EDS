@@ -1,11 +1,16 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
+import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_ObservationReferral;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
+import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.IdentifierHelper;
 import org.hl7.fhir.instance.model.*;
+
+import java.util.List;
 
 public class ObservationReferralTransformer {
 
@@ -43,20 +48,19 @@ public class ObservationReferralTransformer {
         String ubrn = observationParser.getReferralUBRN();
         fhirReferral.addIdentifier(IdentifierHelper.createUbrnIdentifier(ubrn));
 
-        String sourceOrgGuid = observationParser.getReferralSourceOrganisationGuid();
-        fhirReferral.setRequester(objectStore.createOrganisationReference(sourceOrgGuid, patientGuid));
-        //TODO - referral source orgnisation is not provided in current EMIS extracts, so can't be populated in Mandatory resource field
-
         String recipientOrgGuid = observationParser.getReferalTargetOrganisationGuid();
         fhirReferral.addRecipient(objectStore.createOrganisationReference(recipientOrgGuid, patientGuid));
 
-       // fhirReferral.setPriority()
+        String urgency = observationParser.getReferralUrgency();
+        if (!Strings.isNullOrEmpty(urgency)) {
+            DiagnosticOrder.DiagnosticOrderPriority priority = convertUrgency(urgency);
+            fhirReferral.setPriority(CodeableConceptHelper.createCodeableConcept(priority));
+        }
 
-        //TODO - set referral urgency, mode and service type in Resource
-                //urgency
-        //mode
-        //service type
-
+        String serviceType = observationParser.getReferralServiceType();
+        if (!Strings.isNullOrEmpty(serviceType)) {
+            fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(serviceType));
+        }
 
         //several of the Resource fields are simply carried over from the Observation the Referral is linked to
         Observation fhirObservation = objectStore.findObservation(observationGuid, patientGuid);
@@ -65,45 +69,48 @@ public class ObservationReferralTransformer {
         fhirReferral.setEncounter(fhirObservation.getEncounter());
         fhirReferral.setReason(fhirObservation.getCode());
 
-/**
+        List<Reference> fhirPerformers = fhirObservation.getPerformer();
+        Reference fhirPerformer = fhirPerformers.get(0);
+        fhirReferral.setRequester(fhirPerformer);
 
- public String getReferralUrgency() {
- return super.getString(4);
- }
- public String getReferralMode() {
- return super.getString(5);
- }
- public String getReferralServiceType() {
- return super.getString(6);
- }
- public Date getReferralReceivedDateTime() throws TransformException {
- return super.getDateTime(7, 8);
- }
- public Date getReferralEndDate() throws TransformException {
- return super.getDate(9);
- }
- public Long getReferralSourceId() {
- return super.getLong(10);
- }
-  public Long getReferralReasonCodeId() {
- return super.getLong(13);
- }
- public Long getReferringCareProfessionalStaffGroupCodeId() {
- return super.getLong(14);
- }
- public Long getReferralEpisodeRTTMeasurmentTypeId() {
- return super.getLong(15);
- }
- public Date getReferralEpisodeClosureDate() throws TransformException {
- return super.getDate(16);
- }
- public Date getReferralEpisideDischargeLetterIssuedDate() throws TransformException {
- return super.getDate(17);
- }
- public Long getReferralClosureReasonCodeId() {
- return super.getLong(18);
- }
 
- */
+        //although the columns exist in the CSV, the spec. states that they'll always be empty
+        //ReferralReceivedDateTime
+        //ReferralEndDate
+        //ReferralSourceId
+        //ReferralSourceOrganisationGuid
+        //ReferralReasonCodeId
+        //ReferringCareProfessionalStaffGroupCodeId
+        //ReferralEpisodeRTTMeasurmentTypeId
+        //ReferralEpisodeClosureDate
+        //ReferralEpisideDischargeLetterIssuedDate
+        //ReferralClosureReasonCodeId
+
     }
+
+    private static DiagnosticOrder.DiagnosticOrderPriority convertUrgency(String urgency) throws Exception {
+
+        //EMIS urgencies based on EMIS Open format (VocReferralUrgency)
+        if (urgency.equalsIgnoreCase("Routine")) {
+            return DiagnosticOrder.DiagnosticOrderPriority.ROUTINE;
+
+        } else if (urgency.equalsIgnoreCase("Soon")) {
+            return DiagnosticOrder.DiagnosticOrderPriority.ASAP;
+
+        } else if (urgency.equalsIgnoreCase("Urgent")) {
+            return DiagnosticOrder.DiagnosticOrderPriority.URGENT;
+
+        } else if (urgency.equalsIgnoreCase("Dated")) {
+            //TODO - how to map EMIS Dated referral priority to FHIR
+            return null;
+
+        } else if (urgency.equalsIgnoreCase("2 week wait")) {
+            //TODO - how to map EMIS 2 Week Wait referral priority to FHIR
+            return null;
+
+        } else {
+            throw new TransformException("Unknown referral urgency " + urgency);
+        }
+    }
+
 }

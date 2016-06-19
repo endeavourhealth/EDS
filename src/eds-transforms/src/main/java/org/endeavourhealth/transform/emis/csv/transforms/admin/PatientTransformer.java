@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Patient;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
+import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
 import org.endeavourhealth.transform.emis.openhr.schema.VocSex;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.SexConverter;
 import org.endeavourhealth.transform.fhir.*;
@@ -181,24 +181,24 @@ public class PatientTransformer {
     private static RegistrationType convertRegistrationType(String csvRegType, boolean dummyRecord) {
 
         if (dummyRecord || csvRegType.equalsIgnoreCase("Dummy")) {
-            return RegistrationType.D;
+            return RegistrationType.DUMMY;
         } else if (csvRegType.equalsIgnoreCase("Emg")) {
-            return RegistrationType.E;
+            return RegistrationType.EMERGENCY;
         } else if (csvRegType.equalsIgnoreCase("Immediately necessary")) {
-            return RegistrationType.IN;
+            return RegistrationType.IMMEDIATELY_NECESSARY;
         } else if (csvRegType.equalsIgnoreCase("Private")) {
-            return RegistrationType.P;
+            return RegistrationType.PRIVATE;
         } else if (csvRegType.equalsIgnoreCase("Regular")) {
-            return RegistrationType.R;
+            return RegistrationType.REGULAR_GMS;
         } else if (csvRegType.equalsIgnoreCase("Temporary")) {
-            return RegistrationType.T;
+            return RegistrationType.TEMPORARY;
         } else {
-            return RegistrationType.O;
+            return RegistrationType.OTHER;
         }
     }
 
     private static ContactRelationship convertContactRelationship(String csvRelationship) {
         //TODO - verify conversion of CSV carer relationship types to FHIR contact types
-        return ContactRelationship.fromValue(csvRelationship);
+        return ContactRelationship.fromCode(csvRelationship);
     }
 }

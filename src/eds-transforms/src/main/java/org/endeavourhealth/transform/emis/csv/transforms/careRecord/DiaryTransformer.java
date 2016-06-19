@@ -2,14 +2,12 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Diary;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.ClinicalCode;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.FhirObjectStore;
+import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
 import org.endeavourhealth.transform.fhir.AnnotationHelper;
-import org.endeavourhealth.transform.fhir.CodingHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.CodeableConcept;
-import org.hl7.fhir.instance.model.Coding;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.ProcedureRequest;
 
@@ -59,7 +57,7 @@ public class DiaryTransformer {
         Date effectiveDate = diaryParser.getEffectiveDate();
         if (effectiveDate != null) {
             String effectiveDatePrecision = diaryParser.getEffectiveDatePrecision();
-            fhirRequest.setScheduled(FhirObjectStore.createDateTimeType(effectiveDate, effectiveDatePrecision));
+            fhirRequest.setScheduled(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
         } else {
             String freeTextDuration = diaryParser.getDurationTerm();
             if (!Strings.isNullOrEmpty(freeTextDuration)) {

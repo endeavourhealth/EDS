@@ -1,10 +1,9 @@
 package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.emis.csv.ClinicalCode;
 import org.endeavourhealth.transform.emis.csv.schema.Coding_ClinicalCode;
-import org.endeavourhealth.transform.emis.csv.schema.Coding_DrugCode;
 
-import java.io.IOException;
 import java.util.HashMap;
 
 public abstract class ClinicalCodeTransformer {

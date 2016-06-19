@@ -1,4 +1,4 @@
-package org.endeavourhealth.transform.fhir;
+package org.endeavourhealth.transform.emis.csv;
 
 import org.hl7.fhir.instance.model.Resource;
 
@@ -10,6 +10,7 @@ public class FhirPatientStore {
     private String patientId = null;
     private List<Resource> resourcesToSave = new ArrayList<>();
     private List<Resource> resourcesToDelete = new ArrayList<>();
+    //TODO - need to add organisation ID to this patient stpre, and HASH on it
 
     public FhirPatientStore(String patientId) {
         this.patientId = patientId;

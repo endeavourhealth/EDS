@@ -1,4 +1,4 @@
-package org.endeavourhealth.transform.emis.csv.transforms.coding;
+package org.endeavourhealth.transform.emis.csv;
 
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
@@ -110,6 +110,7 @@ public class FhirObjectStore {
         Practitioner practitioner = validateAndCopyResource(reference, ResourceType.Practitioner, fhirPractitioners, patientStore);
         if (practitioner != null) {
 
+            //practitioners can refer to organisations and locations, so make sure they're copied over too
             List<Practitioner.PractitionerPractitionerRoleComponent> roles = practitioner.getPractitionerRole();
             for (Practitioner.PractitionerPractitionerRoleComponent role: roles) {
                 validateAndCopyOrganisation(role.getManagingOrganization(), patientStore);
@@ -212,19 +213,23 @@ public class FhirObjectStore {
     }
 
     public Reference createAppointmentReference(String appointmentGuid, String patientGuid) throws Exception {
-        return createAndValidateReference(appointmentGuid, ResourceType.Appointment, patientGuid);
+        return createAndValidateReference(FhirUri.PROFILE_URI_APPOINTMENT, appointmentGuid, ResourceType.Appointment, patientGuid);
     }
     public Reference createEncounterReference(String encounterGuid, String patientGuid) throws Exception {
-        return createAndValidateReference(encounterGuid, ResourceType.Encounter, patientGuid);
+        return createAndValidateReference(FhirUri.PROFILE_URI_ENCOUNTER, encounterGuid, ResourceType.Encounter, patientGuid);
     }
     public Reference createObservationReference(String observationGuid, String patientGuid) throws Exception {
-        return createAndValidateReference(observationGuid, ResourceType.Observation, patientGuid);
+        return createAndValidateReference(FhirUri.PROFILE_URI_OBSERVATION, observationGuid, ResourceType.Observation, patientGuid);
     }
     public Reference createMedicationStatementReference(String medicationStatementGuid, String patientGuid) throws Exception {
-        return createAndValidateReference(medicationStatementGuid, ResourceType.MedicationStatement, patientGuid);
+        return createAndValidateReference(FhirUri.PROFILE_URI_MEDICATION_AUTHORISATION, medicationStatementGuid, ResourceType.MedicationStatement, patientGuid);
+    }
+    public Reference createProblemReference(String problemGuid, String patientGuid) throws Exception {
+        return createAndValidateReference(FhirUri.PROFILE_URI_PROBLEM, problemGuid, ResourceType.Condition, patientGuid);
     }
 
-    private Reference createAndValidateReference(String id, ResourceType resourceType, String patientGuid) throws Exception {
+
+    private Reference createAndValidateReference(String fhirProfile, String id, ResourceType resourceType, String patientGuid) throws Exception {
 
         //EMIS CSV format supplies deltas, so we may receive data that references data we haven't received in this extract, so can't do this
         /*List<Resource> patientFhirResources = fhirPatientResourcesToSave.get(patientGuid);
@@ -232,63 +237,13 @@ public class FhirObjectStore {
             throw new TransformException("No resources found for patient " + patientGuid);
         }
 
-        if (!listContains(patientFhirResources, id, resourceType)) {
+        if (!listContains(patientFhirResources, id, resourceType, fhirProfile)) {
             throw new TransformException(resourceType + " " + id + " doesn't exist in Resources");
         }*/
 
         return ReferenceHelper.createReference(resourceType, id);
     }
 
-    public static DateTimeType createDateTimeType(Date date, String precision) throws Exception {
-        if (date == null) {
-            return null;
-        }
-
-        //the precision String matches the precisions used in the other EMIS extract
-        VocDatePart vocPrecision = VocDatePart.fromValue(precision);
-        if (vocPrecision == null) {
-            throw new TransformException("Unsupported consultation precision [" + precision + "]");
-        }
-
-        switch (vocPrecision) {
-            case U:
-                return null;
-            case Y:
-                return new DateTimeType(date, TemporalPrecisionEnum.YEAR);
-            case YM:
-                return new DateTimeType(date, TemporalPrecisionEnum.MONTH);
-            case YMD:
-                return new DateTimeType(date, TemporalPrecisionEnum.DAY);
-            case YMDT:
-                return new DateTimeType(date, TemporalPrecisionEnum.MINUTE);
-            default:
-                throw new TransformException("Unhandled date precision [" + vocPrecision + "]");
-        }
-    }
-
-    public static DateType createDateType(Date date, String precision) throws Exception {
-        if (date == null) {
-            return null;
-        }
-
-        VocDatePart vocPrecision = VocDatePart.fromValue(precision);
-        if (vocPrecision == null) {
-            throw new TransformException("Unsupported consultation precision [" + precision + "]");
-        }
-
-        switch (vocPrecision) {
-            case U:
-                return null;
-            case Y:
-                return new DateType(date, TemporalPrecisionEnum.YEAR);
-            case YM:
-                return new DateType(date, TemporalPrecisionEnum.MONTH);
-            case YMD:
-                return new DateType(date, TemporalPrecisionEnum.DAY);
-            default:
-                throw new TransformException("Unhandled date precision [" + vocPrecision + "]");
-        }
-    }
 
     public Condition findProblem(String problemGuid, String patientGuid) throws Exception {
         return findResource(problemGuid, FhirUri.PROFILE_URI_PROBLEM, patientGuid);
@@ -315,6 +270,7 @@ public class FhirObjectStore {
             }
         }
 
+        //TODO - if Resource not found, must retrieve from the EDS data store
         throw new TransformException("Failed to find " + resourceProfile + " resource for " + guid);
     }
 

@@ -31,12 +31,16 @@ public class FhirExtensionUri
 
     public final static String PROBLEM_EXPECTED_DURATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-problem-expectedduration-extension";
     public final static String PROBLEM_LAST_REVIEW_DATE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-problem-lastreviewed-extension";
+    public final static String PROBLEM_SIGNIFICANCE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-problem-significance-extension";
 
     public final static String FAMILY_MEMBER_HISTORY_RECORDER = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-family-member-history-recorder-extension";
 
     public final static String ASSOCIATED_ENCOUNTER = "http://hl7.org/fhir/StructureDefinition/encounter-associatedEncounter";
 
     public final static String PROBLEM_ASSOCIATED_RESOURCE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-problem-associated-extension";
+    public final static String PROBLEM_RELATED = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-problem-related-extension";
 
     public final static String PROCEDURED_RECORDED = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-daterecorded-extension";
+
+
 }

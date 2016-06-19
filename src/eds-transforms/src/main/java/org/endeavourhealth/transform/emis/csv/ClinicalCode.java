@@ -1,4 +1,4 @@
-package org.endeavourhealth.transform.emis.csv.transforms.coding;
+package org.endeavourhealth.transform.emis.csv;
 
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.CodingHelper;

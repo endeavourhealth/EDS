@@ -74,6 +74,6 @@ public class OrganisationTransformer {
 
     private static OrganisationType convertOrganisationType(String csvOrganisationType) {
         //TODO - verify EMIS CSV organisation types against FHIR organisationn types
-        return OrganisationType.fromValue(csvOrganisationType);
+        return OrganisationType.fromDescription(csvOrganisationType);
     }
 }

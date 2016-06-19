@@ -10,4 +10,15 @@ public class ExtensionConverter {
                 .setUrl(uri)
                 .setValue(value);
     }
+
+    public static Extension createExtension(String uri, Extension... subExtensions) {
+        Extension e = new Extension()
+                .setUrl(uri);
+
+        for (Extension subExtension: subExtensions) {
+            e.addExtension(subExtension);
+        }
+
+        return e;
+    }
 }
