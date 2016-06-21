@@ -36,6 +36,118 @@
 		</div>
 	</div>
 
-</div>
+			<div class="row">
+				<div class="col-md-12">
+					<div class="panel panel-primary">
+						<div class="panel-heading">Rabbit Status <span class="fa fa-sm fa-refresh fa-refresh-animate" ng-hide="dashboard.rabbitNodes"></span></div>
+						<div class="panel-body">
+							<div class="row">
+								<div class="form-group col-md-12">
+									<label class="control-label">Node status</label>
+									<div class="input-group">
+										<span ng-repeat="item in dashboard.rabbitNodes">
+											<span class="label"
+														ng-class="dashboard.getPingLabelClass(item)">
+												{{ item.address }} <span ng-hide="item.ping == -1">({{item.ping}} ms)</span><span ng-show="item.ping == -1">(down)</span>
+											</span>&nbsp;
+										</span>
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-3">
+									<label class="control-label">Inbound queues</label>
+									<div class="progress" ng-repeat="item in dashboard.inboundQueues">
+										<div class="small">{{item.name}}</div>
+										<div class="progress-bar progress-bar-success"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_ready}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_ready+'%') }">
+											<span class="sr-only">80% </span>
+										</div>
+										<div class="progress-bar progress-bar-warning"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_unacknowledged}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
+											<span class="sr-only">80% </span>
+										</div>
+									</div>
+								</div>
+								<div class="form-group col-md-3">
+									<label class="control-label">Interim queues</label>
+									<div class="progress" ng-repeat="item in dashboard.interimQueues">
+										<div class="small">{{item.name}}</div>
+										<div class="progress-bar progress-bar-success"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_ready}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_ready+'%') }">
+											<span class="sr-only">80% </span>
+										</div>
+										<div class="progress-bar progress-bar-warning"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_unacknowledged}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
+											<span class="sr-only">80% </span>
+										</div>
+									</div>
+								</div>
+								<div class="form-group col-md-3">
+									<label class="control-label">Response queues</label>
+									<div class="progress" ng-repeat="item in dashboard.responseQueues">
+										<div class="small">{{item.name}}</div>
+										<div class="progress-bar progress-bar-success"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_ready}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_ready+'%') }">
+											<span class="sr-only">80% </span>
+										</div>
+										<div class="progress-bar progress-bar-warning"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_unacknowledged}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
+											<span class="sr-only">80% </span>
+										</div>
+									</div>
+								</div>
+								<div class="form-group col-md-3">
+									<label class="control-label">Subscriber queues</label>
+									<div class="progress" ng-repeat="item in dashboard.subscriberQueues">
+										<div class="small">{{item.name}}</div>
+										<div class="progress-bar progress-bar-success"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_ready}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_ready+'%') }">
+											<span class="sr-only">80% </span>
+										</div>
+										<div class="progress-bar progress-bar-warning"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_unacknowledged}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
+											<span class="sr-only">80% </span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 </div>

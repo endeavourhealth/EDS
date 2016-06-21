@@ -7,10 +7,20 @@ module app.dashboard {
 	import ItemType = app.models.ItemType;
 	import IDashboardService = app.core.IDashboardService;
 	import ILoggerService = app.blocks.ILoggerService;
+	import RabbitNode = app.models.RabbitNode;
+	import RabbitQueue = app.models.RabbitQueue;
+
 	'use strict';
 
 	class DashboardController {
 		recentDocumentsData:FolderItem[];
+		rabbitNodes:RabbitNode[];
+		quickestNode : RabbitNode;
+		pingCount : number;
+		inboundQueues : RabbitQueue[];
+		interimQueues : RabbitQueue[];
+		responseQueues : RabbitQueue[];
+		subscriberQueues : RabbitQueue[];
 
 		static $inject = ['DashboardService', 'LoggerService', '$state'];
 
@@ -22,6 +32,7 @@ module app.dashboard {
 
 		refresh() {
 			this.getRecentDocumentsData();
+			this.getRabbitNodes();
 		}
 
 		getRecentDocumentsData() {
@@ -30,6 +41,57 @@ module app.dashboard {
 			vm.dashboardService.getRecentDocumentsData()
 				.then(function (data:FolderItem[]) {
 					vm.recentDocumentsData = data;
+				});
+		}
+
+		getRabbitNodes() {
+			var vm:DashboardController = this;
+			vm.rabbitNodes = null;
+			vm.quickestNode = null;
+			vm.dashboardService.getRabbitNodes()
+				.then(function (data : RabbitNode[]) {
+					vm.rabbitNodes = data;
+					vm.getRabbitNodePings();
+				});
+		}
+
+		getRabbitNodePings() {
+			var vm = this;
+			vm.pingCount = 0;
+			for(var idx in vm.rabbitNodes) {
+				vm.dashboardService.pingRabbitNode(vm.rabbitNodes[idx])
+					.then(function (result : RabbitNode) {
+						var rabbitNode : RabbitNode[] = $.grep(vm.rabbitNodes, function(i) { return i.address === result.address;});
+						if (rabbitNode.length === 1) {
+							rabbitNode[0].ping = result.ping;
+							if (vm.quickestNode === null || (result.ping > -1 && result.ping < vm.quickestNode.ping))
+								vm.quickestNode = result;
+						}
+						vm.pingCount ++;
+						if (vm.pingCount === vm.rabbitNodes.length)
+							vm.getRabbitQueues();
+					})
+			}
+		}
+
+		getPingLabelClass(item : RabbitNode) {
+			if (item.ping < 0)
+				return 'label-danger';
+			if (item.ping < 50)
+				return 'label-success';
+			return 'label-warning';
+		}
+
+		getRabbitQueues() {
+			var vm = this;
+
+			vm.dashboardService.getRabbitQueues(vm.quickestNode)
+				.then(function(data : RabbitQueue[]){
+					// Split queues by type
+					vm.inboundQueues = $.grep(data, function(e) { return e.name.lastIndexOf('EdsInbound',0)===0;})
+					vm.interimQueues = $.grep(data, function(e) { return e.name.lastIndexOf('EdsInterim',0)===0;})
+					vm.responseQueues = $.grep(data, function(e) { return e.name.lastIndexOf('EdsResponse',0)===0;})
+					vm.subscriberQueues = $.grep(data, function(e) { return e.name.lastIndexOf('EdsSubscriber',0)===0;})
 				});
 		}
 
