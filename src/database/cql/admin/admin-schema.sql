@@ -231,151 +231,174 @@ PRIMARY KEY((end_user_id), id)
 WITH CLUSTERING ORDER BY (end_user_id ASC);
   
 INSERT INTO dependency_type
-	(id, description)
+(id, description)
 VALUES 
-	(0, 'IsChildOf');
+(0, 'IsChildOf');
 	
 INSERT INTO dependency_type
-	(id, description)
+(id, description)
 VALUES 
-	(1, 'IsContainedWithin');
+(1, 'IsContainedWithin');
 	
 INSERT INTO dependency_type
-	(id, description)
+(id, description)
 VALUES 
-	(2, 'Uses');
+(2, 'Uses');
 	
 INSERT INTO item_type
-	(id, description)
+(id, description)
 VALUES 
-	(0, 'ReportFolder');
+(0, 'ReportFolder');
 	
 INSERT INTO item_type
-	(id, description)
+(id, description)
 VALUES 
-	(1, 'Report');
+(2, 'Cohort');
 	
 INSERT INTO item_type
-	(id, description)
+(id, description)
 VALUES 
-	(2, 'Query');
+(3, 'Test');
 	
 INSERT INTO item_type
-	(id, description)
+(id, description)
 VALUES 
-	(3, 'Test');
+(4, 'DataSource');
 	
 INSERT INTO item_type
-	(id, description)
+(id, description)
 VALUES 
-	(4, 'DataSource');
+(5, 'CodeSet');
 	
 INSERT INTO item_type
-	(id, description)
+(id, description)
 VALUES 
-	(5, 'CodeSet');
+(6, 'DataSet');
 	
 INSERT INTO item_type
-	(id, description)
+(id, description)
 VALUES 
-	(6, 'ListOutput');
+(7, 'LibraryFolder');
 	
 INSERT INTO item_type
-	(id, description)
+(id, description)
 VALUES 
-	(7, 'LibraryFolder');
+(8, 'Protocol');
 	
 INSERT INTO item_type
-	(id, description)
+(id, description)
 VALUES 
-	(8, 'Protocol');
-	
-INSERT INTO item_type
-	(id, description)
-VALUES 
-	(9, 'System');
+(9, 'System');
 	
 INSERT INTO end_user
-	(id, title, forename, surname, email, is_super_user)
-VALUES 
-	(B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, 'Mr', 'Regular', 'User', 'regular@email', true);
+(id, title, forename, surname, email, is_super_user)
+VALUES
+(B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, 'Mr', 'Regular', 'User', 'regular@email', true);
 
 INSERT INTO end_user_pwd
-	(id, end_user_id, pwd_hash, dt_expired, failed_attempts, is_one_time_use)
+(id, end_user_id, pwd_hash, dt_expired, failed_attempts, is_one_time_use)
 VALUES 
-	(A9B3F8BE-ADF8-4923-832C-BD0AB7E484DB, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, '1000:1d049ba2ce1cbc28d76fed47e9699b21885252496d58b58b:c4d1df46d3ba5867349bec73fafba63468803ba5fe0d8edd', null, 0, false);
+(A9B3F8BE-ADF8-4923-832C-BD0AB7E484DB, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, '1000:1d049ba2ce1cbc28d76fed47e9699b21885252496d58b58b:c4d1df46d3ba5867349bec73fafba63468803ba5fe0d8edd', null, 0, false);
 	
 INSERT INTO organisation
-	(id, name, national_id)
+(id, name, national_id)
 VALUES 
-	(B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, 'Test Organisation', '12345');
+(B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, 'Test Organisation', '12345');
 	
 INSERT INTO organisation_end_user_link
-	(id, organisation_id, end_user_id, is_admin, dt_expired)
+(id, organisation_id, end_user_id, is_admin, dt_expired)
 VALUES 
-	(6A82F368-DEC5-42F1-8C10-20AF183FC3FB, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, true, null);
+(6A82F368-DEC5-42F1-8C10-20AF183FC3FB, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, true, null);
 	
-INSERT INTO active_item
-	(id, organisation_id, item_id, audit_id, item_type_id, is_deleted)
-VALUES
-	(922BAD5B-7F1A-4435-929C-729929E0F660, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, 96448FF1-903B-4B1C-B306-4C04C7B3E0BC, 0291238C-AA5D-4CF0-85CC-58C451DB2FAE, 7, false);	
-  
-INSERT INTO active_item
-	(id, organisation_id, item_id, audit_id, item_type_id, is_deleted)
-VALUES
-	(acbf49b3-f9ce-485a-8df6-de8216e1d2b6, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, 76ce138a-1e61-4cf4-9340-faff5cb0c8c2, 5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, 7, false);	
+INSERT INTO admin.item
+(id, audit_id, description, is_deleted, title, xml_content)
+VALUES(8aebd3b7-94de-4ab5-840b-5dbd3905a540, 69ab901e-30d9-4a8a-ab2f-af764946a7ea, '', false, 'Cohorts', '');
 
-INSERT INTO active_item
-	(id, organisation_id, item_id, audit_id, item_type_id, is_deleted)
-VALUES
-	(6a071454-55d0-47e6-baaf-731e053f5207, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6, 82c7e37a-2d8d-4132-aca3-b25f3b497191, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, 7, false);	
+INSERT INTO admin.item
+(id, audit_id, description, is_deleted, title, xml_content)
+VALUES(96448ff1-903b-4b1c-b306-4c04c7b3e0bc, 0291238c-aa5d-4cf0-85cc-58c451db2fae, '', false, 'Library', '');
 
-INSERT INTO item
-	(id, audit_id, xml_content, title, description, is_deleted)
-VALUES
-	(96448FF1-903B-4B1C-B306-4C04C7B3E0BC, 0291238C-AA5D-4CF0-85CC-58C451DB2FAE, '', 'Library', '', false);
-	
-INSERT INTO item
-	(id, audit_id, xml_content, title, description, is_deleted)
-VALUES
-	(76ce138a-1e61-4cf4-9340-faff5cb0c8c2, 5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, '', 'Data Protocols', '', false);
+INSERT INTO admin.item
+(id, audit_id, description, is_deleted, title, xml_content)
+VALUES(82c7e37a-2d8d-4132-aca3-b25f3b497191, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, '', false, 'Systems', '');
 
-INSERT INTO item
-	(id, audit_id, xml_content, title, description, is_deleted)
-VALUES
-	(82c7e37a-2d8d-4132-aca3-b25f3b497191, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, '', 'Systems', '', false);
+INSERT INTO admin.item
+(id, audit_id, description, is_deleted, title, xml_content)
+VALUES(221dd197-2649-49fa-923b-36276e2d92f0, eb6a6ee8-6eab-4fa6-8218-c6f83790ff48, '', false, 'Data Sets', '');
 
-INSERT INTO audit
-	(id, end_user_id, time_stamp, audit_version, organisation_id)
-VALUES
-	(0291238C-AA5D-4CF0-85CC-58C451DB2FAE, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, '2016-04-04 21:37:43', 1, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6);
+INSERT INTO admin.item
+(id, audit_id, description, is_deleted, title, xml_content)
+VALUES(8fcf222f-d648-4a76-b509-12f3ba7d8c1e, 32b609bd-03c8-44d6-9f31-9c2219a14c93, '', false, 'Code Sets', '');
 
-INSERT INTO audit
-	(id, end_user_id, time_stamp, audit_version, organisation_id)
-VALUES
-	(5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, '2016-04-04 21:37:43', 1, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6);
+INSERT INTO admin.item
+(id, audit_id, description, is_deleted, title, xml_content)
+VALUES(76ce138a-1e61-4cf4-9340-faff5cb0c8c2, 5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, '', false, 'Data Protocols', '');
 
-INSERT INTO audit
-	(id, end_user_id, time_stamp, audit_version, organisation_id)
-VALUES
-	(f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, '2016-04-04 21:37:43', 1, B6FF900D-8FCD-43D8-AF37-5DB3A87A6EF6);
+INSERT INTO admin.active_item
+(id, organisation_id, item_type_id, audit_id, is_deleted, item_id)
+VALUES(acbf49b3-f9ce-485a-8df6-de8216e1d2b6, b6ff900d-8fcd-43d8-af37-5db3a87a6ef6, 7, 5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, false, 76ce138a-1e61-4cf4-9340-faff5cb0c8c2);
 
-INSERT INTO item_dependency
-	(item_id, audit_id, dependent_item_id, dependency_type_id)
-VALUES
-	(76ce138a-1e61-4cf4-9340-faff5cb0c8c2, 5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, 96448FF1-903B-4B1C-B306-4C04C7B3E0BC, 0);
+INSERT INTO admin.active_item
+(id, organisation_id, item_type_id, audit_id, is_deleted, item_id)
+VALUES(7cc930b8-5c5b-4be4-8957-facbb0275f1b, b6ff900d-8fcd-43d8-af37-5db3a87a6ef6, 7, 69ab901e-30d9-4a8a-ab2f-af764946a7ea, false, 8aebd3b7-94de-4ab5-840b-5dbd3905a540);
 
-INSERT INTO item_dependency
-	(item_id, audit_id, dependent_item_id, dependency_type_id)
-VALUES
-	(82c7e37a-2d8d-4132-aca3-b25f3b497191, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, 96448FF1-903B-4B1C-B306-4C04C7B3E0BC, 0);
-	
-INSERT INTO service
-         (id, name)
-VALUES
-         (c7713d3b-7b66-4279-965f-ec110c2347f5, 'Test Service 1');
+INSERT INTO admin.active_item
+(id, organisation_id, item_type_id, audit_id, is_deleted, item_id)
+VALUES(99299154-e953-4f60-831d-291c276a2df5, b6ff900d-8fcd-43d8-af37-5db3a87a6ef6, 7, 32b609bd-03c8-44d6-9f31-9c2219a14c93, false, 8fcf222f-d648-4a76-b509-12f3ba7d8c1e);
 
-INSERT INTO service
-         (id, name)
-VALUES
-         (4ba36a3d-5ad9-471e-8f5a-95c394396969, 'Test Service 2');
+INSERT INTO admin.active_item
+(id, organisation_id, item_type_id, audit_id, is_deleted, item_id)
+VALUES(6a071454-55d0-47e6-baaf-731e053f5207, b6ff900d-8fcd-43d8-af37-5db3a87a6ef6, 7, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, false, 82c7e37a-2d8d-4132-aca3-b25f3b497191);
+
+INSERT INTO admin.active_item
+(id, organisation_id, item_type_id, audit_id, is_deleted, item_id)
+VALUES(ab26da5a-47dd-447f-8a94-0a6b201949e5, b6ff900d-8fcd-43d8-af37-5db3a87a6ef6, 7, eb6a6ee8-6eab-4fa6-8218-c6f83790ff48, false, 221dd197-2649-49fa-923b-36276e2d92f0);
+
+INSERT INTO admin.active_item
+(id, organisation_id, item_type_id, audit_id, is_deleted, item_id)
+VALUES(922bad5b-7f1a-4435-929c-729929e0f660, b6ff900d-8fcd-43d8-af37-5db3a87a6ef6, 7, 0291238c-aa5d-4cf0-85cc-58c451db2fae, false, 96448ff1-903b-4b1c-b306-4c04c7b3e0bc);
+
+INSERT INTO admin.audit
+(id, organisation_id, time_stamp, audit_version, end_user_id)
+VALUES(5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, b6ff900d-8fcd-43d8-af37-5db3a87a6ef6, '2016-04-04 21:37:43', 1, b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
+
+INSERT INTO admin.audit
+(id, organisation_id, time_stamp, audit_version, end_user_id)
+VALUES(69ab901e-30d9-4a8a-ab2f-af764946a7ea, b6ff900d-8fcd-43d8-af37-5db3a87a6ef6, '2016-06-21 10:57:23', 0, b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
+
+INSERT INTO admin.audit
+(id, organisation_id, time_stamp, audit_version, end_user_id)
+VALUES(32b609bd-03c8-44d6-9f31-9c2219a14c93, b6ff900d-8fcd-43d8-af37-5db3a87a6ef6, '2016-06-21 10:57:54', 0, b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
+
+INSERT INTO admin.audit
+(id, organisation_id, time_stamp, audit_version, end_user_id)
+VALUES(f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, b6ff900d-8fcd-43d8-af37-5db3a87a6ef6, '2016-04-04 21:37:43', 1, b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
+
+INSERT INTO admin.audit
+(id, organisation_id, time_stamp, audit_version, end_user_id)
+VALUES(eb6a6ee8-6eab-4fa6-8218-c6f83790ff48, b6ff900d-8fcd-43d8-af37-5db3a87a6ef6, '2016-06-21 10:57:08', 0, b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
+
+INSERT INTO admin.audit
+(id, organisation_id, time_stamp, audit_version, end_user_id)
+VALUES(0291238c-aa5d-4cf0-85cc-58c451db2fae, b6ff900d-8fcd-43d8-af37-5db3a87a6ef6, '2016-04-04 21:37:43', 1, b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
+
+INSERT INTO admin.item_dependency
+(item_id, audit_id, dependent_item_id, dependency_type_id)
+VALUES(8aebd3b7-94de-4ab5-840b-5dbd3905a540, 69ab901e-30d9-4a8a-ab2f-af764946a7ea, 96448ff1-903b-4b1c-b306-4c04c7b3e0bc, 0);
+
+INSERT INTO admin.item_dependency
+(item_id, audit_id, dependent_item_id, dependency_type_id)
+VALUES(82c7e37a-2d8d-4132-aca3-b25f3b497191, f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6, 96448ff1-903b-4b1c-b306-4c04c7b3e0bc, 0);
+
+INSERT INTO admin.item_dependency
+(item_id, audit_id, dependent_item_id, dependency_type_id)
+VALUES(221dd197-2649-49fa-923b-36276e2d92f0, eb6a6ee8-6eab-4fa6-8218-c6f83790ff48, 96448ff1-903b-4b1c-b306-4c04c7b3e0bc, 0);
+
+INSERT INTO admin.item_dependency
+(item_id, audit_id, dependent_item_id, dependency_type_id)
+VALUES(8fcf222f-d648-4a76-b509-12f3ba7d8c1e, 32b609bd-03c8-44d6-9f31-9c2219a14c93, 96448ff1-903b-4b1c-b306-4c04c7b3e0bc, 0);
+
+INSERT INTO admin.item_dependency
+(item_id, audit_id, dependent_item_id, dependency_type_id)
+VALUES(76ce138a-1e61-4cf4-9340-faff5cb0c8c2, 5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, 96448ff1-903b-4b1c-b306-4c04c7b3e0bc, 0);
+
