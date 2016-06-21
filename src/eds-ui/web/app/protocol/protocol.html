@@ -47,6 +47,26 @@
 					</div>
 				</div>
 				<div class="row">
+					<div class="form-group col-md-6">
+						<label>Cohort</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-check fa-lg fa-fw"></i></span>
+							<select class="form-control" ng-model="protocolCtrl.libraryItem.protocol.cohort">
+								<option ng-repeat="cohort in protocolCtrl.cohorts" value="{{cohort}}">{{cohort}}</option>
+							</select>
+						</div>
+					</div>
+					<div class="form-group col-md-6">
+						<label>Data Set</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-user fa-lg fa-fw"></i></span>
+							<select class="form-control" ng-model="protocolCtrl.libraryItem.protocol.dataSet">
+								<option ng-repeat="dataSet in protocolCtrl.dataSets" value="{{dataSet}}">{{dataSet}}</option>
+							</select>
+						</div>
+					</div>
+				</div>
+				<div class="row">
 					<div class="form-group col-md-8">
 						<label>Publishers & Subscribers</label>
 						<button type="button" class="btn btn-xs btn-success" style="margin-left: 20px" data-ng-click="protocolCtrl.addContract()">

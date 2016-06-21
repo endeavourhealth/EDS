@@ -251,6 +251,7 @@
 		<xs:sequence>
 			<xs:element name="enabled" type="xs:string"/>
 			<xs:element name="patientConsent" type="xs:string"/>
+			<xs:element name="cohort" type="xs:string" minOccurs="0"/>
 			<xs:element name="dataSet" type="xs:string" minOccurs="0"/>
 			<xs:element name="serviceContract" type="serviceContract" minOccurs="0" maxOccurs="unbounded"/>
 		</xs:sequence>

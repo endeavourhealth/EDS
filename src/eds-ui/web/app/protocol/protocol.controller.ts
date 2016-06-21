@@ -23,11 +23,15 @@ module app.protocol {
 		selectedContract : ServiceContract;
 		services : Service[];
 		systems : System[];
+		//cohorts : any[];
+		//dataSets : any[];
 		technicalInterfaces : TechnicalInterface[];
 
 		enabled = ["TRUE", "FALSE"];
 		consent = ["OPT-IN", "OPT-OUT"];
 		type = ["PUBLISHER", "SUBSCRIBER"];
+		cohorts = ["All patients", "East London patients"];
+		dataSets = ["Summary record", "Diabetes"];
 
 		static $inject = ['LibraryService', 'ServiceService', 'LoggerService',
 			'$uibModal', 'AdminService', '$window', '$stateParams'];
@@ -51,6 +55,7 @@ module app.protocol {
 			this.protocol = {
 				enabled: 'TRUE',
 				patientConsent: 'OPT-IN',
+				cohort: '0',
 				dataSet: '0',
 				serviceContract: []
 			} as Protocol;

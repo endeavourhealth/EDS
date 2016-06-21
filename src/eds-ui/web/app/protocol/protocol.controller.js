@@ -25,6 +25,8 @@ var app;
                 this.enabled = ["TRUE", "FALSE"];
                 this.consent = ["OPT-IN", "OPT-OUT"];
                 this.type = ["PUBLISHER", "SUBSCRIBER"];
+                this.cohorts = ["All patients", "East London patients"];
+                this.dataSets = ["Summary record", "Diabetes"];
                 this.loadServices();
                 this.loadSystems();
             }
@@ -32,6 +34,7 @@ var app;
                 this.protocol = {
                     enabled: 'TRUE',
                     patientConsent: 'OPT-IN',
+                    cohort: '0',
                     dataSet: '0',
                     serviceContract: []
                 };

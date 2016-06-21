@@ -4,6 +4,7 @@ module app.models {
 	export class Protocol {
 		enabled : string;
 		patientConsent : string;
+		cohort : string;
 		dataSet : string;
 		serviceContract : ServiceContract[];
 

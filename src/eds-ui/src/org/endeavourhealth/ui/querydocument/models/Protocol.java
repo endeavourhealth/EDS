@@ -13,6 +13,7 @@ import java.util.List;
 @XmlType(name = "protocol", propOrder = {
         "enabled",
         "patientConsent",
+        "cohort",
         "dataSet",
         "serviceContract"
 })
@@ -20,6 +21,7 @@ public class Protocol {
 
     protected String enabled;
     protected String patientConsent;
+    protected String cohort;
     protected String dataSet;
     protected List<ServiceContract> serviceContract;
 
@@ -35,6 +37,13 @@ public class Protocol {
     }
     public void setPatientConsent(String value) {
         this.patientConsent = value;
+    }
+
+    public String getCohort() {
+        return cohort;
+    }
+    public void setCohort(String value) {
+        this.cohort = value;
     }
 
     public String getDataSet() {
