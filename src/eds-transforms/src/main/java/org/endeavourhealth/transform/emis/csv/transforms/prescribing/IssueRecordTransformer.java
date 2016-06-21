@@ -37,8 +37,9 @@ public class IssueRecordTransformer {
         String patientGuid = issueParser.getPatientGuid();
         fhirMedication.setPatient(objectStore.createPatientReference(patientGuid));
 
+        String organisationGuid = issueParser.getOrganisationGuid();
         boolean store = !issueParser.getDeleted() && !issueParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, fhirMedication, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirMedication, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {

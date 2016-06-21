@@ -193,6 +193,11 @@ public class Snomed {
         }
     }
 
+    public static boolean isProcedureCode(Long snomedConceptId) {
+        //TODO - work out if Snomed concept is procedure
+        return false;
+    }
+
     /**
      * for quick testing
      */

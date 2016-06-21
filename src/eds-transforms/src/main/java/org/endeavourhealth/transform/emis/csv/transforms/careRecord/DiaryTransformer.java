@@ -38,8 +38,9 @@ public class DiaryTransformer {
         String patientGuid = diaryParser.getPatientGuid();
         fhirRequest.setSubject(objectStore.createPatientReference(patientGuid));
 
+        String organisationGuid = diaryParser.getOrganisationGuid();
         boolean store = !diaryParser.getDeleted() && !diaryParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, fhirRequest, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirRequest, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {

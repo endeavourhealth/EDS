@@ -20,10 +20,6 @@ public class FhirObjectStore {
     //patient Resources, keyed by patient ID
     private Map<String, FhirPatientStore> fhirPatientStores = new HashMap<>();
 
-    public Map<String, FhirPatientStore> getFhirPatientStores() {
-        return fhirPatientStores;
-    }
-
     public FhirObjectStore(Map<Long, ClinicalCode> clinicalCodes, Map<String, Medication> fhirMedication,
                            Map<String, Location> fhirLocations, Map<String, Organization> fhirOrganisations,
                            Map<String, Practitioner> fhirPractitioners, Map<String, Schedule> fhirSchedules) {
@@ -34,6 +30,10 @@ public class FhirObjectStore {
         this.fhirOrganisations = fhirOrganisations;
         this.fhirPractitioners = fhirPractitioners;
         this.fhirSchedules = fhirSchedules;
+    }
+
+    public List<FhirPatientStore> getFhirPatientStores() {
+        return new ArrayList<>(fhirPatientStores.values());
     }
 
     public ClinicalCode findClinicalCode(Long id) throws Exception {
@@ -194,11 +194,28 @@ public class FhirObjectStore {
                 .isPresent();
     }
 
-    public void addResourceToSave(String patientGuid, Resource fhirResource, boolean save) throws Exception {
-        FhirPatientStore s = fhirPatientStores.get(patientGuid);
+    private String findOdsCodeForOrganisationGuid(String organisationGuid) throws TransformException {
+        Organization organization = fhirOrganisations.get(organisationGuid);
+
+        List<Identifier> identifiers = organization.getIdentifier();
+        for (Identifier identifier: identifiers) {
+            if (identifier.getSystem().equals(FhirUri.IDENTIFIER_SYSTEM_ODS_CODE)) {
+                return identifier.getValue();
+            }
+        }
+
+        throw new TransformException("Failed to find Organisation for GUID " + organisationGuid);
+    }
+
+    public void addResourceToSave(String patientGuid, String organisationGuid, Resource fhirResource, boolean save) throws Exception {
+        FhirPatientStore s = fhirPatientStores.get(createMapKey(patientGuid, organisationGuid));
         if (s == null) {
-            s = new FhirPatientStore(patientGuid);
-            fhirPatientStores.put(patientGuid, s);
+
+            //find the organisation ODS code
+            String odsCode = findOdsCodeForOrganisationGuid(organisationGuid);
+
+            s = new FhirPatientStore(patientGuid, organisationGuid, odsCode);
+            fhirPatientStores.put(createMapKey(patientGuid, organisationGuid), s);
         }
 
         if (save) {
@@ -206,6 +223,10 @@ public class FhirObjectStore {
         } else {
             s.addResourceToDelete(fhirResource);
         }
+    }
+
+    private static String createMapKey(String patientGuid, String organisationGuid) {
+        return patientGuid + "|" + organisationGuid;
     }
 
     public Reference createPatientReference(String patientGuid) throws Exception {
@@ -251,6 +272,10 @@ public class FhirObjectStore {
 
     public Observation findObservation(String observationGuid, String patientGuid) throws Exception {
         return findResource(observationGuid, FhirUri.PROFILE_URI_OBSERVATION, patientGuid);
+    }
+
+    public DiagnosticReport findDiagnosticReport(String observationGuid, String patientGuid) throws Exception {
+        return findResource(observationGuid, FhirUri.PROFILE_URI_DIAGNOSTIC_REPORT, patientGuid);
     }
 
     private <T extends Resource> T findResource(String guid, String resourceProfile, String patientGuid) throws Exception {

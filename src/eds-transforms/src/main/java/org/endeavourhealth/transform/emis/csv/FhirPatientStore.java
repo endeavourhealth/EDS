@@ -7,13 +7,16 @@ import java.util.List;
 
 public class FhirPatientStore {
 
-    private String patientId = null;
+    private String patientGuid = null;
+    private String organisationGuid = null;
+    private String organisationOds = null;
     private List<Resource> resourcesToSave = new ArrayList<>();
     private List<Resource> resourcesToDelete = new ArrayList<>();
-    //TODO - need to add organisation ID to this patient stpre, and HASH on it
 
-    public FhirPatientStore(String patientId) {
-        this.patientId = patientId;
+    public FhirPatientStore(String patientGuid, String organisationGuid, String organisationOds) {
+        this.patientGuid = patientGuid;
+        this.organisationGuid = organisationGuid;
+        this.organisationOds = organisationOds;
     }
 
     public void addResourceToSave(Resource r) {
@@ -23,9 +26,22 @@ public class FhirPatientStore {
         resourcesToDelete.add(r);
     }
 
+    public String getPatientGuid() {
+        return patientGuid;
+    }
+
+    public String getOrganisationGuid() {
+        return organisationGuid;
+    }
+
+    public String getOrganisationOds() {
+        return organisationOds;
+    }
+
     public List<Resource> getResourcesToSave() {
         return resourcesToSave;
     }
+
     public List<Resource> getResourcesToDelete() {
         return resourcesToDelete;
     }

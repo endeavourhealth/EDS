@@ -8,6 +8,9 @@ import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Observation;
 import org.endeavourhealth.transform.emis.csv.ClinicalCode;
 import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
 import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.fhir.schema.ImmunizationStatus;
+import org.endeavourhealth.transform.terminology.Snomed;
+import org.endeavourhealth.transform.terminology.TerminologyService;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
@@ -15,6 +18,7 @@ import java.util.Date;
 public class ObservationTransformer {
 
     //types derived from VocEventType in EMIS Open standard, minus the types known to be stored in other CSV files
+    //TODO - verify ObservationType options in EMIS CSV
     enum ObservationType {
         OBSERVATION("Observation"),
         TEST_REQUESTS("Test Request"),
@@ -62,15 +66,15 @@ public class ObservationTransformer {
         ObservationType observationType = ObservationType.fromValue(type);
         switch (observationType) {
             case OBSERVATION:
-
-                //TODO - work out if condition or observation or procedure
-                createObservation(observationParser, objectStore);
-                createCondition(observationParser, objectStore);
-                createProcedure(observationParser, objectStore);
-
+                //following same pattern as OpenHR transform, where EMIS obs go to FHIR conditions or procedures
+                if (isProcedure(observationParser, objectStore)) {
+                    createProcedure(observationParser, objectStore);
+                } else {
+                    createCondition(observationParser, objectStore);
+                }
                 break;
             case TEST_REQUESTS:
-                //TODO - test request obs
+                createDiagnosticOrder(observationParser, objectStore);
                 break;
             case INVESTIGATION:
                 createObservation(observationParser, objectStore);
@@ -79,7 +83,8 @@ public class ObservationTransformer {
                 createObservation(observationParser, objectStore);
                 break;
             case ATTACHMENT:
-                //TODO - attachment obs
+                //openHR transform turns these into Observations, so following same pattern
+                createObservation(observationParser, objectStore);
                 break;
             case ALLERGY:
                 createAllergy(observationParser, objectStore);
@@ -88,7 +93,7 @@ public class ObservationTransformer {
                 createFamilyMemberHistory(observationParser, objectStore);
                 break;
             case IMMUNISATION:
-                //TODO - imm obs
+                createImmunization(observationParser, objectStore);
                 break;
             case REPORT:
                 createDiagnosticReport(observationParser, objectStore);
@@ -101,6 +106,11 @@ public class ObservationTransformer {
         }
     }
 
+    private static boolean isProcedure(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+        ClinicalCode clinicalCode = objectStore.findClinicalCode(observationParser.getCodeId());
+        return Snomed.isProcedureCode(clinicalCode.getSnomedConceptId());
+    }
+
     private static void createDiagnosticReport(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
         DiagnosticReport fhirReport = new DiagnosticReport();
         fhirReport.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_DIAGNOSTIC_REPORT));
@@ -111,8 +121,9 @@ public class ObservationTransformer {
         String patientGuid = observationParser.getPatientGuid();
         fhirReport.setSubject(objectStore.createPatientReference(patientGuid));
 
+        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, fhirReport, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirReport, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {
@@ -161,8 +172,9 @@ public class ObservationTransformer {
         String patientGuid = observationParser.getPatientGuid();
         fhirOrder.setSubject(objectStore.createPatientReference(patientGuid));
 
+        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, fhirOrder, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirOrder, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {
@@ -206,8 +218,9 @@ public class ObservationTransformer {
         String patientGuid = observationParser.getPatientGuid();
         fhirAllergy.setPatient(objectStore.createPatientReference(patientGuid));
 
+        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, fhirAllergy, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirAllergy, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {
@@ -252,8 +265,9 @@ public class ObservationTransformer {
         String patientGuid = observationParser.getPatientGuid();
         fhirProcedure.setSubject(objectStore.createPatientReference(patientGuid));
 
+        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, fhirProcedure, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirProcedure, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {
@@ -297,8 +311,9 @@ public class ObservationTransformer {
         String patientGuid = observationParser.getPatientGuid();
         fhirCondition.setPatient(objectStore.createPatientReference(patientGuid));
 
+        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, fhirCondition, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirCondition, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {
@@ -345,8 +360,9 @@ public class ObservationTransformer {
         String patientGuid = observationParser.getPatientGuid();
         fhirObservation.setSubject(objectStore.createPatientReference(patientGuid));
 
+        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, fhirObservation, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirObservation, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {
@@ -397,13 +413,21 @@ public class ObservationTransformer {
 
         String parentObservationGuid = observationParser.getParentObservationGuid();
         if (parentObservationGuid != null) {
+            //the parent observation may have been converted to one of several different FHIR resource types
             Observation fhirParentObservation = objectStore.findObservation(parentObservationGuid, patientGuid);
-            Observation.ObservationRelatedComponent fhirRelation = fhirParentObservation.addRelated();
-            fhirRelation.setType(Observation.ObservationRelationshipType.HASMEMBER);
-            fhirRelation.setTarget(ReferenceHelper.createReference(fhirObservation));
+            if (fhirParentObservation != null) {
+                Observation.ObservationRelatedComponent fhirRelation = fhirParentObservation.addRelated();
+                fhirRelation.setType(Observation.ObservationRelationshipType.HASMEMBER);
+                fhirRelation.setTarget(ReferenceHelper.createReference(fhirObservation));
+            } else {
+                DiagnosticReport fhirDiagnosticReport = objectStore.findDiagnosticReport(parentObservationGuid, patientGuid);
+                if (fhirDiagnosticReport != null) {
+                    fhirDiagnosticReport.addResult(ReferenceHelper.createReference(fhirObservation));
+                } else {
+                    throw new TransformException("Failed to find parent observation for GUID " + parentObservationGuid);
+                }
+            }
         }
-
-        //TODO - handle linking to parent observations that are stored in DiagnositcReport Resources
 
         String consultationGuid = observationParser.getConsultationGuid();
         if (consultationGuid != null) {
@@ -425,8 +449,9 @@ public class ObservationTransformer {
         String patientGuid = observationParser.getPatientGuid();
         fhirFamilyHistory.setPatient(objectStore.createPatientReference(patientGuid));
 
+        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, fhirFamilyHistory, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirFamilyHistory, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {
@@ -464,5 +489,53 @@ public class ObservationTransformer {
         objectStore.linkToProblem(fhirFamilyHistory, problemGuid, patientGuid);
     }
 
+    private static void createImmunization(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+
+        Immunization fhirImmunisation = new Immunization();
+        fhirImmunisation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_IMMUNIZATION));
+
+        String observationGuid = observationParser.getObservationGuid();
+        fhirImmunisation.setId(observationGuid);
+
+        String patientGuid = observationParser.getPatientGuid();
+        fhirImmunisation.setPatient(objectStore.createPatientReference(patientGuid));
+
+        String organisationGuid = observationParser.getOrganisationGuid();
+        boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirImmunisation, store);
+
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (!store) {
+            return;
+        }
+
+        fhirImmunisation.setStatus(ImmunizationStatus.COMPLETED.getCode());
+        fhirImmunisation.setWasNotGiven(false);
+        fhirImmunisation.setReported(false);
+
+        Date effectiveDate = observationParser.getEffectiveDate();
+        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
+        fhirImmunisation.setDateElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
+
+        Long codeId = observationParser.getCodeId();
+        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
+        fhirImmunisation.setVaccineCode(clinicalCode.createCodeableConcept());
+
+        String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
+        Reference reference = objectStore.createPractitionerReference(clinicianGuid, patientGuid);
+        fhirImmunisation.setPerformer(reference);
+
+        String consultationGuid = observationParser.getConsultationGuid();
+        if (consultationGuid != null) {
+            reference = objectStore.createEncounterReference(consultationGuid, patientGuid);
+            fhirImmunisation.setEncounter(reference);
+        }
+
+        String associatedText = observationParser.getAssociatedText();
+        fhirImmunisation.addNote(AnnotationHelper.createAnnotation(associatedText));
+
+        String problemGuid = observationParser.getProblemUGuid();
+        objectStore.linkToProblem(fhirImmunisation, problemGuid, patientGuid);
+    }
 
 }

@@ -44,7 +44,6 @@ public class OrganisationTransformer {
         Identifier fhirIdentifier = IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, FhirUri.IDENTIFIER_SYSTEM_ODS_CODE, odsCode);
         fhirOrganisation.addIdentifier(fhirIdentifier);
 
-
         String name = organisationParser.getOrganisatioName();
         fhirOrganisation.setName(name);
 

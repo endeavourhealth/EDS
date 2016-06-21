@@ -39,8 +39,9 @@ public class ProblemTransformer {
         String patientGuid = problemParser.getPatientGuid();
         fhirProblem.setPatient(objectStore.createPatientReference(patientGuid));
 
+        String organisationGuid = problemParser.getOrganisationGuid();
         boolean store = !objectStore.isObservationToDelete(patientGuid, observationGuid);
-        objectStore.addResourceToSave(patientGuid, fhirProblem, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirProblem, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {

@@ -35,8 +35,9 @@ public class ConsultationTransformer {
         String patientGuid = consultationParser.getPatientGuid();
         fhirEncounter.setPatient(objectStore.createPatientReference(patientGuid));
 
+        String organisationGuid = consultationParser.getOrganisationGuid();
         boolean store = !consultationParser.getDeleted() && !consultationParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, fhirEncounter, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirEncounter, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {

@@ -37,8 +37,9 @@ public class DrugRecordTransformer {
         String patientGuid = drugRecordParser.getPatientGuid();
         fhirMedication.setPatient(objectStore.createPatientReference(patientGuid));
 
+        String organisationGuid = drugRecordParser.getOrganisationGuid();
         boolean store = !drugRecordParser.getDeleted() && !drugRecordParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, fhirMedication, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirMedication, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {

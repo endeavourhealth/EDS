@@ -21,6 +21,7 @@ public class FhirUri
     public final static String VALUE_SET_CONTACT_RELATIONSHIP = "http://hl7.org/fhir/valueset-patient-contact-relationship.html";
     public final static String VALUE_SET_PROBLEM_SIGNIFICANCE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-problem-significance";
     public final static String VALUE_SET_PROBLEM_RELATIONSHIP_TYPE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-problem-relationshiptype";
+    public final static String VALUE_SET_IMMUNIZATION_STATUS = "http://hl7.org/fhir/ValueSet/medication-admin-status";
 
     public final static String PROFILE_URI_ORGANIZATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-organization";
     public final static String PROFILE_URI_LOCATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-location";

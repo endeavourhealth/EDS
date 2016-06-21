@@ -47,9 +47,10 @@ public class PatientTransformer {
         fhirEpisode.setId(patientGuid);
         fhirEpisode.setPatient(objectStore.createPatientReference(patientGuid.toString()));
 
+        String organisationGuid = patientParser.getOrganisationGuid();
         boolean store = !patientParser.getDeleted() && !patientParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, fhirPatient, store);
-        objectStore.addResourceToSave(patientGuid, fhirEpisode, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirPatient, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirEpisode, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {
@@ -108,7 +109,6 @@ public class PatientTransformer {
             fhirPatient.addTelecom(fhirContact);
         }
 
-        String organisationGuid = patientParser.getOrganisationGuid();
         fhirPatient.setManagingOrganization(objectStore.createOrganisationReference(organisationGuid, patientGuid));
 
         String carerName = patientParser.getCarerName();

@@ -26,7 +26,7 @@ public abstract class EmisCsvTransformer {
     public static final String TIME_FORMAT = "hh:mm:ss";
     public static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
 
-    public static Map<String, FhirPatientStore> transform(String folderPath) throws Exception {
+    public static List<FhirPatientStore> transform(String folderPath) throws Exception {
 
         FhirObjectStore fhirObjects = transformMetadata(folderPath);
 
@@ -39,8 +39,6 @@ public abstract class EmisCsvTransformer {
         DiaryTransformer.transform(folderPath, CSV_FORMAT, fhirObjects);
         DrugRecordTransformer.transform(folderPath, CSV_FORMAT, fhirObjects);
         IssueRecordTransformer.transform(folderPath, CSV_FORMAT, fhirObjects);
-
-        //TODO - add parsers for two new AUDIT_ tables
 
         return fhirObjects.getFhirPatientStores();
     }

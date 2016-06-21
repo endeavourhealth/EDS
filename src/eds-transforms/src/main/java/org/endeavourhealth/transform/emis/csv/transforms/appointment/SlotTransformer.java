@@ -39,9 +39,10 @@ public class SlotTransformer {
         //use the same slot GUID as the appointment GUID, since it's a different resource type, it should be fine
         fhirAppointment.setId(slotGuid);
 
+        String organisationGuid = slotParser.getOrganisationGuid();
         boolean store = !slotParser.getDeleted();
-        objectStore.addResourceToSave(patientGuid, fhirSlot, store);
-        objectStore.addResourceToSave(patientGuid, fhirAppointment, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirSlot, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirAppointment, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {

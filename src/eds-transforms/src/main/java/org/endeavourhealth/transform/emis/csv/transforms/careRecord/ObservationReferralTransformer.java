@@ -37,8 +37,9 @@ public class ObservationReferralTransformer {
         String patientGuid = observationParser.getPatientGuid();
         fhirReferral.setPatient(objectStore.createPatientReference(patientGuid));
 
+        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !objectStore.isObservationToDelete(patientGuid, observationGuid);
-        objectStore.addResourceToSave(patientGuid, fhirReferral, store);
+        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirReferral, store);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {
