@@ -75,9 +75,11 @@ module app.dashboard {
 		}
 
 		getPingLabelClass(item : RabbitNode) {
-			if (item.ping < 0)
+			if (item.ping === -1)
 				return 'label-danger';
-			if (item.ping < 50)
+			if (item.ping === 0)
+				return 'label-default';
+			if (item.ping <= 250)
 				return 'label-success';
 			return 'label-warning';
 		}

@@ -48,7 +48,10 @@
 										<span ng-repeat="item in dashboard.rabbitNodes">
 											<span class="label"
 														ng-class="dashboard.getPingLabelClass(item)">
-												{{ item.address }} <span ng-hide="item.ping == -1">({{item.ping}} ms)</span><span ng-show="item.ping == -1">(down)</span>
+												{{ item.address }}
+													<span ng-show="item.ping == -1">(down)</span>
+													<span ng-show="item.ping == 0">(...)</span>
+													<span ng-show="item.ping > 0">({{item.ping}} ms)</span>
 											</span>&nbsp;
 										</span>
 									</div>

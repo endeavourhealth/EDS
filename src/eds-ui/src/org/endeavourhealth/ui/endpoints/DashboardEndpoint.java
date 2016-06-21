@@ -70,11 +70,11 @@ public final class DashboardEndpoint extends AbstractEndpoint {
     @Path("/rabbitNodes")
     public Response getRabbitNodes(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
-
+        // TODO : Extract to config
         List<JsonRabbitNode> ret = new ArrayList<>();
-        ret.add(new JsonRabbitNode("127.0.0.1", 0));
-        ret.add(new JsonRabbitNode("127.0.0.2", 0));
-        ret.add(new JsonRabbitNode("127.0.0.3", 0));
+        ret.add(new JsonRabbitNode("localhost:15672", 0));
+        ret.add(new JsonRabbitNode("localhost:15673", 0));
+        ret.add(new JsonRabbitNode("localhost:15674", 0));
 
         clearLogbackMarkers();
 
@@ -88,14 +88,30 @@ public final class DashboardEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/rabbitNode/ping")
-    public Response getRabbitNodes(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
+    public Response pingRabbitNode(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
         super.setLogbackMarkers(sc);
 
-        Integer ping = rnd.nextInt(200);
+        HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("guest", "guest");
+        Client client = ClientBuilder.newClient();
+        client.register(feature);
 
-        Thread.sleep(ping);
+        WebTarget resource = client.target("http://"+address+"/api/cluster-name");
+        Invocation.Builder request = resource.request();
+
+        int ping = -1;
+        try {
+            long startTime = System.currentTimeMillis();
+            Response response = request.get();
+            long endTime = System.currentTimeMillis();
+
+            if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL)
+                ping = Math.toIntExact(endTime - startTime);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
         JsonRabbitNode ret = new JsonRabbitNode(address, ping);
-
         clearLogbackMarkers();
 
         return Response
