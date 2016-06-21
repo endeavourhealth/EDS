@@ -1,6 +1,6 @@
 <div class="module">
     <div class="container-fluid">
-        <div class="module-heading">Query editor
+        <div class="module-heading">Cohort editor
             <div class="pull-right">
                 <button class="btn btn-sm btn-default"
                         ng-click="zoomIn()"
@@ -21,7 +21,7 @@
                 <button class="btn btn-sm btn-default"
                         ng-click="addNewRule('2')"
                         title="Add another query as a rule to this query">
-                    <i class="fa fa-plus"></i> Add Query as Rule
+                    <i class="fa fa-plus"></i> Add Cohort as Rule
                 </button>
 
                 <button class="btn btn-sm btn-info"
@@ -79,7 +79,7 @@
                 <aside class="query-aside">
                     <div class="queryDiv">
                         <div class="queryHeader">
-                            Query Properties
+                            Cohort Properties
                 <span style="float: right; cursor: pointer" class="fa fa-info-circle" ng-click = "ShowDataModel()"
                       title="View Query Document Data Model"></span>
                         </div>
@@ -88,9 +88,9 @@
                             <div class="row">
                                 <form class="form">
                                     <fieldset>
-                                        <label class="control-label" style="padding: 0px 10px 0px 15px;">Query Name:</label>
+                                        <label class="control-label" style="padding: 0px 10px 0px 15px;">Cohort Name:</label>
                                         <input class="form-control" type="text" name="input" ng-model="queryName" style="margin: 0px 0px 15px 10px;width:275px" ng-change="queryNameChange()">
-                                        <label class="control-label" style="padding: 0px 10px 0px 15px;">Query Description:</label>
+                                        <label class="control-label" style="padding: 0px 10px 0px 15px;">Cohort Description:</label>
                                         <textarea class="form-control" ng-model="queryDescription" style="height: 90px; margin: 0px 0px 15px 10px;width:275px" ng-change="queryDescriptionChange()">
                                         </textarea>
                                     </fieldset>

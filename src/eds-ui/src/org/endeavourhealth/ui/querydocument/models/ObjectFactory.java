@@ -60,14 +60,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link Report }
-     * 
-     */
-    public Report createReport() {
-        return new Report();
-    }
-
-    /**
      * Create an instance of {@link LibraryItem }
      * 
      */
@@ -276,14 +268,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ReportItem }
-     * 
-     */
-    public ReportItem createReportItem() {
-        return new ReportItem();
-    }
-
-    /**
      * Create an instance of {@link Query.StartingRules }
      * 
      */
@@ -306,15 +290,6 @@ public class ObjectFactory {
     @XmlElementDecl(namespace = "", name = "queryDocument")
     public JAXBElement<QueryDocument> createQueryDocument(QueryDocument value) {
         return new JAXBElement<QueryDocument>(_QueryDocument_QNAME, QueryDocument.class, null, value);
-    }
-
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link Report }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "", name = "report")
-    public JAXBElement<Report> createReport(Report value) {
-        return new JAXBElement<Report>(_Report_QNAME, Report.class, null, value);
     }
 
     /**

@@ -29,6 +29,8 @@ public class Item {
         Item ret = new Item();
         ret.setAuditId(audit.getId());
         ret.setTitle(title);
+        ret.setId(UUID.randomUUID());
+        ret.setIsDeleted(false);
         return ret;
     }
 

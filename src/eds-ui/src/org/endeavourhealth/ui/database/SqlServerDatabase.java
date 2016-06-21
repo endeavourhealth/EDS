@@ -10,7 +10,6 @@ import org.endeavourhealth.ui.database.definition.DbActiveItem;
 import org.endeavourhealth.ui.database.definition.DbAudit;
 import org.endeavourhealth.ui.database.definition.DbItem;
 import org.endeavourhealth.ui.database.definition.DbItemDependency;
-import org.endeavourhealth.ui.database.execution.*;
 import org.endeavourhealth.ui.database.lookups.DbSourceOrganisation;
 import org.endeavourhealth.ui.database.lookups.DbSourceOrganisationSet;
 import org.slf4j.Logger;
@@ -1242,175 +1241,6 @@ final class SqlServerDatabase implements DatabaseI {
 
 
 
-
-    @Override
-    public List<DbRequest> retrievePendingRequestsForItems(UUID organisationUuid, List<UUID> itemUuids) throws Exception {
-        if (itemUuids.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        String where = "WHERE JobReportUuid IS NULL"
-                + " AND OrganisationUuid = ?"
-                + " AND ReportUuid IN (" + getParameterisedString(itemUuids) + ")";
-        return retrieveForWherePreparedStatement(DbRequest.class, where, organisationUuid, itemUuids);
-    }
-
-    @Override
-    public List<DbRequest> retrievePendingRequests() throws Exception {
-        String where = "WHERE JobReportUuid IS NULL";
-        return retrieveForWherePreparedStatement(DbRequest.class, where);
-    }
-
-    @Override
-    public List<DbRequest> retrieveRequestsForItem(UUID organisationUuid, UUID itemUuid, int count) throws Exception {
-        String where = "WHERE OrganisationUuid = ?"
-                + " AND ReportUuid = ?"
-                + " ORDER BY TimeStamp DESC";
-        return retrieveForWherePreparedStatement(DbRequest.class, count, where, organisationUuid, itemUuid);
-    }
-
-    @Override
-    public List<DbJob> retrieveRecentJobs(int count) throws Exception {
-        String where = "ORDER BY StartDateTime DESC";
-        return retrieveForWherePreparedStatement(DbJob.class, count, where);
-
-        /*List<DbJob> ret = new ArrayList<>();
-        String where = "ORDER BY StartDateTime DESC";
-        retrieveForWhere(new DbJob().getAdapter(), count, where, ret);
-        return ret;*/
-    }
-
-    @Override
-    public List<DbJob> retrieveJobsForStatus(ExecutionStatus status) throws Exception {
-        String where = "WHERE StatusId = ?";
-        return retrieveForWherePreparedStatement(DbJob.class, where, status);
-
-        /*List<DbJob> ret = new ArrayList<>();
-        String where = "WHERE StatusId = " + convertToString(status);
-        retrieveForWhere(new DbJob().getAdapter(), where, ret);
-        return ret;*/
-    }
-
-    @Override
-    public List<DbJob> retrieveJobsForUuids(List<UUID> uuids) throws Exception {
-        if (uuids.isEmpty()) {
-            return new ArrayList<DbJob>();
-        }
-        String where = "WHERE JobUuid IN (" + getParameterisedString(uuids) + ")";
-        return retrieveForWherePreparedStatement(DbJob.class, where, uuids);
-
-        /*List<DbJob> ret = new ArrayList<>();
-        if (uuids.isEmpty()) {
-            return ret;
-        }
-
-        String where = "WHERE JobUuid IN (" + convertToString(uuids) + ")";
-        retrieveForWhere(new DbJob().getAdapter(), where, ret);
-        return ret;*/
-    }
-
-    @Override
-    public List<DbJob> retrieveJobsForJobReportUuids(List<UUID> uuids) throws Exception {
-        if (uuids.isEmpty()) {
-            return new ArrayList<DbJob>();
-        }
-
-        String where = "INNER JOIN ON Execution.JobReport r "
-                + " ON r.JobReportUuid IN (" + getParameterisedString(uuids) + ")"
-                + " AND r.JobUuid = " + ALIAS + ".JobUuid";
-        return retrieveForWherePreparedStatement(DbJob.class, where, uuids);
-    }
-
-
-    @Override
-    public List<DbJobReport> retrieveJobReports(UUID organisationUuid, int count) throws Exception {
-        String where = "INNER JOIN Execution.Job a"
-                + " ON a.JobUuid = " + ALIAS + ".JobUuid"
-                + " WHERE " + ALIAS + ".OrganisationUuid = ?"
-                + " ORDER BY a.StartDateTime DESC";
-        return retrieveForWherePreparedStatement(DbJobReport.class, count, where, organisationUuid);
-
-        /*List<DbJobReport> ret = new ArrayList<>();
-        String where = "INNER JOIN Execution.Job a"
-                + " ON a.JobUuid = " + ALIAS + ".JobUuid"
-                + " ORDER BY a.StartDateTime DESC";
-        retrieveForWhere(new DbJobReport().getAdapter(), count, where, ret);
-        return ret;*/
-    }
-
-    @Override
-    public List<DbJobReport> retrieveJobReportsForJob(UUID jobUuid) throws Exception {
-        String where = "WHERE JobUuid = ?";
-        return retrieveForWherePreparedStatement(DbJobReport.class, where, jobUuid);
-
-        /*List<DbJobReport> ret = new ArrayList<>();
-        String where = "WHERE JobUuid = " + convertToString(jobUuid);
-        retrieveForWhere(new DbJobReport().getAdapter(), where, ret);
-        return ret;*/
-    }
-
-    @Override
-    public List<DbJobReport> retrieveLatestJobReportsForItemUuids(UUID organisationUuid, List<UUID> itemUuids) throws Exception {
-        if (itemUuids.isEmpty()) {
-            return new ArrayList<DbJobReport>();
-        }
-
-        String where = "INNER JOIN Execution.Job j"
-                + " ON j.JobUuid = " + ALIAS + ".JobUuid"
-                + " WHERE OrganisationUuid = ?"
-                + " AND ReportUuid IN (" + getParameterisedString(itemUuids) + ")"
-                + " AND NOT EXISTS (SELECT 1 FROM Execution.JobReport laterJobReport, Execution.Job laterJob"
-                + " WHERE laterJobReport.JobReportUuid = " + ALIAS + ".JobReportUuid"
-                + " AND laterJob.JobUuid = laterJobReport.JobUuid"
-                + " AND laterJob.StartDateTime > j.StartDateTime)";
-        return retrieveForWherePreparedStatement(DbJobReport.class, where, organisationUuid, itemUuids);
-
-        /*List<DbJobReport> ret = new ArrayList<>();
-        if (itemUuids.isEmpty()) {
-            return ret;
-        }
-
-        String where = "INNER JOIN Execution.Job j"
-                + " ON j.JobUuid = " + ALIAS + ".JobUuid"
-                + " WHERE OrganisationUuid = " + convertToString(organisationUuid)
-                + " AND ReportUuid IN (" + convertToString(itemUuids) + ")"
-                + " AND NOT EXISTS (SELECT 1 FROM Execution.JobReport laterJobReport, Execution.Job laterJob"
-                + " WHERE laterJobReport.JobReportUuid = " + ALIAS + ".JobReportUuid"
-                + " AND laterJob.JobUuid = laterJobReport.JobUuid"
-                + " AND laterJob.StartDateTime > j.StartDateTime)";
-        retrieveForWhere(new DbJobReport().getAdapter(), where, ret);
-        return ret;*/
-    }
-
-    @Override
-    public DbJobReport retrieveJobReportForJobAndReportAndParameters(UUID jobUuid, UUID reportUuid, String parameters) throws Exception {
-        String where = "WHERE JobUuid = ?"
-                + " AND ReportUuid = ?"
-                + " AND Parameters = ?";
-        return retrieveOneForWherePreparedStatement(DbJobReport.class, where, jobUuid, reportUuid, parameters);
-    }
-
-    @Override
-    public List<DbJobReport> retrieveJobReportsForUuids(List<UUID> uuids) throws Exception {
-        if (uuids.isEmpty()) {
-            return new ArrayList<DbJobReport>();
-        }
-
-        String where = "WHERE JobReportUuid IN (" + getParameterisedString(uuids) + ")";
-        return retrieveForWherePreparedStatement(DbJobReport.class, where, uuids);
-    }
-
-    @Override
-    public List<DbJobReportItem> retrieveJobReportItemsForJobReport(UUID jobReportUuid) throws Exception {
-        String where = "WHERE JobReportUuid = ?";
-        return retrieveForWherePreparedStatement(DbJobReportItem.class, where, jobReportUuid);
-
-        /*List<DbJobReportItem> ret = new ArrayList<>();
-        String where = "WHERE JobReportUuid = " + convertToString(jobReportUuid);
-        retrieveForWhere(new DbJobReportItem().getAdapter(), where, ret);
-        return ret;*/
-    }
-
     @Override
     public List<DbAudit> retrieveAuditsForUuids(List<UUID> uuids) throws Exception {
         if (uuids.isEmpty()) {
@@ -1441,45 +1271,6 @@ final class SqlServerDatabase implements DatabaseI {
                 + "(SELECT MAX(AuditVersion)"
                 + " FROM Definition.Audit)";
         return (DbAudit)retrieveSingleForWhere(new DbAudit().getAdapter(), sql);*/
-    }
-
-    @Override
-    public List<DbJobContent> retrieveJobContentsForJob(UUID jobUuid) throws Exception {
-        String where = "WHERE JobUuid = ?";
-        return retrieveForWherePreparedStatement(DbJobContent.class, where, jobUuid);
-
-        /*List<DbJobContent> ret = new ArrayList<>();
-        String where = "WHERE JobUuid = " + convertToString(jobUuid);
-        retrieveForWhere(new DbJobContent().getAdapter(), where, ret);
-        return ret;*/
-    }
-
-    @Override
-    public DbJobReportOrganisation retrieveJobReportOrganisationForJobReportAndOdsCode(UUID jobReportUuid, String odsCode) throws Exception {
-        String where = "WHERE JobReportUuid = ?"
-                + " AND OrganisationOdsCode = ?";
-        return retrieveOneForWherePreparedStatement(DbJobReportOrganisation.class, where, jobReportUuid, odsCode);
-    }
-
-    @Override
-    public DbJobReportItemOrganisation retrieveJobReportItemOrganisationForJobReportItemAndOdsCode(UUID jobReportItemUUid, String odsCode) throws Exception {
-        String where = "WHERE JobReportItemUuid = ?"
-                + " AND OrganisationOdsCode = ?";
-        return retrieveOneForWherePreparedStatement(DbJobReportItemOrganisation.class, where, jobReportItemUUid, odsCode);
-
-    }
-
-    @Override
-    public List<DbJobProcessorResult> retrieveJobProcessorResultsForJob(UUID jobUuid) throws Exception {
-        String where = "WHERE JobUuid = ?";
-        return retrieveForWherePreparedStatement(DbJobProcessorResult.class, where, jobUuid);
-
-    }
-
-    @Override
-    public void deleteAllJobProcessorResults() throws Exception {
-        String sql = "DELETE FROM Execution.JobProcessorResult";
-        executeQueryNoResult(sql);
     }
 
     @Override
@@ -1518,12 +1309,6 @@ final class SqlServerDatabase implements DatabaseI {
         }
         String where = "WHERE OdsCode IN (" + getParameterisedString(odsCodes) + ")";
         return retrieveForWherePreparedStatement(DbSourceOrganisation.class, where, odsCodes);
-    }
-
-    @Override
-    public DbProcessorStatus retrieveCurrentProcessorStatus() throws Exception {
-        String where = "WHERE 1=1";
-        return retrieveOneForWherePreparedStatement(DbProcessorStatus.class, where);
     }
 
     @Override

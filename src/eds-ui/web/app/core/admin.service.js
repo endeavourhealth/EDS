@@ -21,8 +21,7 @@ var app;
             AdminService.prototype.getMenuOptions = function () {
                 return [
                     { caption: 'Dashboard', state: 'app.dashboard', icon: 'fa fa-tachometer' },
-                    { caption: 'Library', state: 'app.library', icon: 'fa fa-book' },
-                    { caption: 'Reports', state: 'app.reportList', icon: 'fa fa-files-o' },
+                    { caption: 'Protocols', state: 'app.library', icon: 'fa fa-book' },
                     { caption: 'Organisations', state: 'app.organisation', icon: 'fa fa-hospital-o' },
                     { caption: 'Services', state: 'app.service', icon: 'fa fa-building-o' },
                     { caption: 'Queueing', state: 'app.routeGroup', icon: 'fa fa-tasks' },

@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.database.administration;
 
 import org.endeavourhealth.ui.database.*;
-import org.endeavourhealth.ui.database.execution.DbRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,13 +41,6 @@ public final class DbEndUser extends DbAbstractTable {
         return DatabaseManager.db().retrieveSuperUsers();
     }
 
-    public static List<DbEndUser> retrieveForRequests(List<DbRequest> requests) throws Exception {
-        List<UUID> uuids = new ArrayList<>();
-        for (DbRequest request: requests) {
-            uuids.add(request.getEndUserUuid());
-        }
-        return retrieveForUuids(uuids);
-    }
     public static List<DbEndUser> retrieveForUuids(List<UUID> uuids) throws Exception {
         return DatabaseManager.db().retrieveEndUsersForUuids(uuids);
     }

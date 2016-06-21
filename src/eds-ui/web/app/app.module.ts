@@ -26,7 +26,6 @@ angular.module('app', [
 		'app.library',
 		'app.protocol',
 		'app.system',
-		'app.reports',
 		'app.listOutput',
 		'app.codeSet',
 		'app.organisation',

@@ -36,6 +36,8 @@ public class ActiveItem {
         ret.setItemId(itemUuid);
         ret.setAuditId(auditUuid);
         ret.setItemTypeId(itemType.getValue());
+        ret.setId(UUID.randomUUID());
+        ret.setIsDeleted(false);
 
         return ret;
     }

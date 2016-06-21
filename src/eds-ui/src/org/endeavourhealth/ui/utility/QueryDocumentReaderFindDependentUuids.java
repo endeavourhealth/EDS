@@ -36,14 +36,6 @@ public final class QueryDocumentReaderFindDependentUuids extends AbstractQueryDo
     }
 
     @Override
-    protected void processReportItem(ReportItem reportItem) {
-        addUuid(reportItem.getListReportLibraryItemUuid());
-        addUuid(reportItem.getQueryLibraryItemUuid());
-
-        super.processReportItem(reportItem);
-    }
-
-    @Override
     protected void processRule(Rule rule) {
         addUuid(rule.getQueryLibraryItemUUID());
         addUuid(rule.getTestLibraryItemUUID());

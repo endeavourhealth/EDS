@@ -42,7 +42,7 @@ public final class DashboardEndpoint extends AbstractEndpoint {
         for (Audit auditItem: audit) {
             Iterable<ActiveItem> activeItems = repository.getActiveItemByAuditId(auditItem.getId());
             for (ActiveItem activeItem: activeItems) {
-                if (activeItem.getIsDeleted()==false) {
+                if (activeItem.getIsDeleted()!=null && activeItem.getIsDeleted()==false) {
                     Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
 
                     JsonFolderContent content = new JsonFolderContent(activeItem, item, auditItem);

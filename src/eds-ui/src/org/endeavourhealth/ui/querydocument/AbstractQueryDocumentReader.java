@@ -51,12 +51,6 @@ public abstract class AbstractQueryDocumentReader {
                 }
             }
     
-            List<Report> reports = doc.getReport();
-            if (reports != null && !reports.isEmpty()) {
-                for (Report report: reports) {
-                    processReport(report);
-                }
-            }
 
         } finally {
             stack.pop();
@@ -548,34 +542,5 @@ public abstract class AbstractQueryDocumentReader {
         //no child complex types to recurse to
     }
 
-    protected void processReport(Report report) {
-        try {
-            stack.push(report);
 
-            List<ReportItem> reportItems = report.getReportItem();
-            if (CollectionUtils.isNotEmpty(reportItems)) {
-                for (ReportItem reportItem: reportItems) {
-                    processReportItem(reportItem);
-                }
-            }
-
-        } finally {
-            stack.pop();
-        }
-    }
-
-    protected void processReportItem(ReportItem reportItem) {
-        try {
-            stack.push(reportItem);
-
-            if (CollectionUtils.isNotEmpty(reportItem.getReportItem())) {
-                for (ReportItem child: reportItem.getReportItem()) {
-                    processReportItem(child);
-                }
-            }
-
-        } finally {
-            stack.pop();
-        }
-    }
 }

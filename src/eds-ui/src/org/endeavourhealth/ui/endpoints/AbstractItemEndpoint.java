@@ -104,15 +104,14 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
 
     private static void validateItemTypeMatchesContainingFolder(boolean insert, DefinitionItemType itemType, UUID containingFolderUuid) throws Exception {
 
-        //if saving a new library item or report, it must have a containing folder item
+        //if saving a new library item, it must have a containing folder item
         if (insert
                 && containingFolderUuid == null
-                && itemType != DefinitionItemType.ReportFolder
                 && itemType != DefinitionItemType.LibraryFolder) {
-            throw new BadRequestException("LibraryItems and Reports must have a containing folder UUID");
+            throw new BadRequestException("LibraryItems must have a containing folder UUID");
         }
 
-        //if saving a folder or we're AMENDING a library item or report, then there's notning more to validate
+        //if saving a folder or we're AMENDING a library item, then there's notning more to validate
         if (containingFolderUuid == null) {
             return;
         }
@@ -130,12 +129,6 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
                     && itemType != DefinitionItemType.ListOutput
                     && itemType != DefinitionItemType.Protocol
                     && itemType != DefinitionItemType.System) {
-                throw new BadRequestException("Library folder UUID " + containingFolderUuid + " cannot contain a " + itemType);
-            }
-        } else if (containingFolderType == DefinitionItemType.ReportFolder) {
-            //report folders can only contain other report folders and reports
-            if (itemType != DefinitionItemType.ReportFolder
-                    && itemType != DefinitionItemType.Report) {
                 throw new BadRequestException("Library folder UUID " + containingFolderUuid + " cannot contain a " + itemType);
             }
         } else {
@@ -164,8 +157,7 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
                 description = "";
             }
             if (containingFolderUuid == null
-                    && itemType != DefinitionItemType.LibraryFolder
-                    && itemType != DefinitionItemType.ReportFolder) {
+                    && itemType != DefinitionItemType.LibraryFolder ) {
                 throw new BadRequestException("Must specify a containing folder for new items");
             }
 
@@ -229,7 +221,7 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
     }
 
     /**
-     * when a libraryItem or report is saved, process the query document to find all UUIDs that it requires to be run
+     * when a libraryItem is saved, process the query document to find all UUIDs that it requires to be run
      */
     private static void createUsingDependencies(QueryDocument queryDocument, ActiveItem activeItem, List<Object> toSave) throws Exception {
 
@@ -252,15 +244,14 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
     }
 
     /**
-     * when a libraryItem, report or folder is saved, link it to the containing folder
+     * when a libraryItem, or folder is saved, link it to the containing folder
      */
     private static ItemDependency createFolderDependency(boolean insert, DefinitionItemType itemType, Item item, UUID previousAuditUuid, UUID containingFolderUuid, List<Object> toSave) throws Exception {
         LibraryRepository repository = new LibraryRepository();
 
         //work out the dependency type, based on what item type we're saving
         DependencyType dependencyType = null;
-        if (itemType == DefinitionItemType.LibraryFolder
-                || itemType == DefinitionItemType.ReportFolder) {
+        if (itemType == DefinitionItemType.LibraryFolder) {
             //if we're saving a folder, we're working with "child of" dependencies
             dependencyType = DependencyType.IsChildOf;
         } else {

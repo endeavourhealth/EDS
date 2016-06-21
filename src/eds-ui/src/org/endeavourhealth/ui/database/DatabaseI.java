@@ -9,7 +9,6 @@ import org.endeavourhealth.ui.database.definition.DbActiveItem;
 import org.endeavourhealth.ui.database.definition.DbAudit;
 import org.endeavourhealth.ui.database.definition.DbItem;
 import org.endeavourhealth.ui.database.definition.DbItemDependency;
-import org.endeavourhealth.ui.database.execution.*;
 import org.endeavourhealth.ui.database.lookups.DbSourceOrganisation;
 import org.endeavourhealth.ui.database.lookups.DbSourceOrganisationSet;
 
@@ -75,45 +74,9 @@ public interface DatabaseI {
 
     public List<DbItemDependency> retrieveItemDependenciesForDependentItemType(UUID dependentItemUuid, DependencyType dependencyType) throws Exception;
 
-    public List<DbRequest> retrievePendingRequestsForItems(UUID organisationUuid, List<UUID> itemUuids) throws Exception;
-
-    public List<DbRequest> retrievePendingRequests() throws Exception;
-
-    public List<DbRequest> retrieveRequestsForItem(UUID organisationUuid, UUID itemUuid, int count) throws Exception;
-
-    public List<DbJob> retrieveRecentJobs(int count) throws Exception;
-
-    public List<DbJob> retrieveJobsForStatus(ExecutionStatus status) throws Exception;
-
-    public List<DbJob> retrieveJobsForUuids(List<UUID> uuids) throws Exception;
-
-    public List<DbJob> retrieveJobsForJobReportUuids(List<UUID> uuids) throws Exception;
-
-    public List<DbJobReport> retrieveJobReports(UUID organisationUuid, int count) throws Exception;
-
-    public List<DbJobReport> retrieveJobReportsForJob(UUID jobUuid) throws Exception;
-
-    public List<DbJobReport> retrieveLatestJobReportsForItemUuids(UUID organisationUuid, List<UUID> itemUuids) throws Exception;
-
-    public DbJobReport retrieveJobReportForJobAndReportAndParameters(UUID jobUuid, UUID reportUuid, String parameters) throws Exception;
-
-    public List<DbJobReport> retrieveJobReportsForUuids(List<UUID> uuids) throws Exception;
-
-    public List<DbJobReportItem> retrieveJobReportItemsForJobReport(UUID jobReportUuid) throws Exception;
-
     public List<DbAudit> retrieveAuditsForUuids(List<UUID> uuids) throws Exception;
 
     public DbAudit retrieveLatestAudit() throws Exception;
-
-    public List<DbJobContent> retrieveJobContentsForJob(UUID jobUuid) throws Exception;
-
-    public DbJobReportOrganisation retrieveJobReportOrganisationForJobReportAndOdsCode(UUID jobReportUuid, String odsCode) throws Exception;
-
-    public DbJobReportItemOrganisation retrieveJobReportItemOrganisationForJobReportItemAndOdsCode(UUID jobReportItemUUid, String odsCode) throws Exception;
-
-    public List<DbJobProcessorResult> retrieveJobProcessorResultsForJob(UUID jobUuid) throws Exception;
-
-    public void deleteAllJobProcessorResults() throws Exception;
 
     public List<DbSourceOrganisationSet> retrieveAllOrganisationSets(UUID organisationUuid) throws Exception;
 
@@ -124,8 +87,6 @@ public interface DatabaseI {
     public List<DbSourceOrganisation> retrieveSourceOrganisationsForSearch(String searchTerm) throws Exception;
 
     public List<DbSourceOrganisation> retrieveSourceOrganisationsForOdsCodes(List<String> odsCodes) throws Exception;
-
-    public DbProcessorStatus retrieveCurrentProcessorStatus() throws Exception;
 
     public void deleteCurrentProcessorStatus() throws Exception;
 

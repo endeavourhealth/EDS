@@ -2,12 +2,10 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	<xs:element name="queryDocument" type="queryDocument"/>
 	<xs:element name="libraryItem" type="libraryItem"/>
-	<xs:element name="report" type="report"/>
 	<xs:complexType name="queryDocument">
 		<xs:sequence>
 			<xs:element name="folder" type="folder" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="libraryItem" type="libraryItem" minOccurs="0" maxOccurs="unbounded"/>
-			<xs:element name="report" type="report" minOccurs="0" maxOccurs="unbounded"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="folder">
@@ -75,24 +73,6 @@
 			<xs:enumeration value="gotoRules"/>
 		</xs:restriction>
 	</xs:simpleType>
-	<xs:complexType name="report">
-		<xs:sequence>
-			<xs:element name="uuid" type="xs:string"/>
-			<xs:element name="name" type="xs:string"/>
-			<xs:element name="description" type="xs:string" minOccurs="0"/>
-			<xs:element name="folderUuid" type="xs:string"/>
-			<xs:element name="reportItem" type="reportItem" maxOccurs="unbounded"/>
-		</xs:sequence>
-	</xs:complexType>
-	<xs:complexType name="reportItem">
-		<xs:sequence>
-			<xs:choice>
-				<xs:element name="queryLibraryItemUuid" type="xs:string"/>
-				<xs:element name="listReportLibraryItemUuid" type="xs:string"/>
-			</xs:choice>
-			<xs:element name="reportItem" type="reportItem" minOccurs="0" maxOccurs="unbounded"/>
-		</xs:sequence>
-	</xs:complexType>
 	<xs:complexType name="fieldTest">
 		<xs:sequence>
 			<xs:element name="field" type="xs:string"/>

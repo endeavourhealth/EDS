@@ -15,7 +15,6 @@ import org.endeavourhealth.ui.database.definition.DbActiveItem;
 import org.endeavourhealth.ui.database.definition.DbAudit;
 import org.endeavourhealth.ui.database.definition.DbItem;
 import org.endeavourhealth.ui.database.definition.DbItemDependency;
-import org.endeavourhealth.ui.database.execution.*;
 import org.endeavourhealth.ui.database.lookups.DbSourceOrganisation;
 import org.endeavourhealth.ui.database.lookups.DbSourceOrganisationSet;
 import org.slf4j.Logger;
@@ -205,29 +204,9 @@ public final class DatabaseManager {
 
         db().retrieveItemDependenciesForDependentItemType(UUID.randomUUID(), DependencyType.Uses);
 
-        db().retrievePendingRequestsForItems(UUID.randomUUID(), uuidList);
-
-        db().retrievePendingRequests();
-
-        db().retrieveRecentJobs(5);
-
-        db().retrieveJobsForStatus(ExecutionStatus.Executing);
-
-        db().retrieveJobsForUuids(uuidList);
-
-        db().retrieveJobReports(UUID.randomUUID(), 5);
-
-        db().retrieveJobReportsForJob(UUID.randomUUID());
-
-        db().retrieveLatestJobReportsForItemUuids(UUID.randomUUID(), uuidList);
-
-        db().retrieveJobReportItemsForJobReport(UUID.randomUUID());
-
         db().retrieveAuditsForUuids(uuidList);
 
         db().retrieveLatestAudit();
-
-        db().retrieveJobContentsForJob(UUID.randomUUID());
 
         List<DbAbstractTable> entities = new ArrayList<>();
 
@@ -313,73 +292,6 @@ public final class DatabaseManager {
         itemDependency.setDependentItemUuid(itemUuid);
         itemDependency.setItemUuid(itemUuid);
         entities.add(itemDependency);
-
-        DbJob job = new DbJob();
-        job.assignPrimaryUUid();
-        job.setBaselineAuditUuid(auditUuid);
-        job.setStartDateTime(Instant.now());
-        job.setStatusId(ExecutionStatus.Executing);
-        job.setEndDateTime(null);
-        job.setPatientsInDatabase(null);
-        UUID jobUuid = job.getJobUuid();
-        entities.add(job);
-
-        DbJobContent jobContent = new DbJobContent();
-        jobContent.assignPrimaryUUid();
-        jobContent.setAuditUuid(auditUuid);
-        jobContent.setItemUuid(itemUuid);
-        jobContent.setJobUuid(jobUuid);
-        entities.add(jobContent);
-
-        DbJobReport jobReport = new DbJobReport();
-        jobReport.assignPrimaryUUid();
-        jobReport.setAuditUuid(auditUuid);
-        jobReport.setJobUuid(jobUuid);
-        jobReport.setEndUserUuid(userUuid);
-        jobReport.setOrganisationUuid(orgUuid);
-        jobReport.setParameters("Parameters");
-        jobReport.setReportUuid(itemUuid);
-        jobReport.setStatusId(ExecutionStatus.Executing);
-        UUID jobReportUuid = jobReport.getJobReportUuid();
-        entities.add(jobReport);
-
-        DbJobReportItem jobReportItem = new DbJobReportItem();
-        jobReportItem.assignPrimaryUUid();
-        jobReportItem.setAuditUuid(auditUuid);
-        jobReportItem.setParentJobReportItemUuid(null);
-        jobReportItem.setItemUuid(itemUuid);
-        jobReportItem.setJobReportUuid(jobReportUuid);
-        jobReportItem.setResultCount(null);
-        UUID jobReportItemUuid = jobReportItem.getJobReportItemUuid();
-        entities.add(jobReportItem);
-
-        DbRequest request = new DbRequest();
-        request.assignPrimaryUUid();
-        request.setReportUuid(itemUuid);
-        request.setEndUserUuid(userUuid);
-        request.setJobReportUuid(null);
-        request.setOrganisationUuid(orgUuid);
-        request.setParameters("Parameters");
-        request.setTimeStamp(Instant.now());
-        entities.add(request);
-
-        DbJobProcessorResult result = new DbJobProcessorResult();
-        result.setJobUuid(jobUuid);
-        result.setProcessorUuid(UUID.randomUUID());
-        result.setResultXml("resultXml");
-        entities.add(result);
-
-        DbJobReportOrganisation orgResult = new DbJobReportOrganisation();
-        orgResult.setJobReportUuid(jobReportUuid);
-        orgResult.setOrganisationOdsCode("orgOdsCode");
-        orgResult.setPopulationCount(new Integer(100));
-        entities.add(orgResult);
-
-        DbJobReportItemOrganisation itemOrgResult = new DbJobReportItemOrganisation();
-        itemOrgResult.setJobReportItemUuid(jobReportItemUuid);
-        itemOrgResult.setOrganisationOdsCode("orgOdsCode");
-        itemOrgResult.setResultCount(new Integer(99));
-        entities.add(itemOrgResult);
 
         //now insert the new entities
         for (DbAbstractTable entity: entities) {

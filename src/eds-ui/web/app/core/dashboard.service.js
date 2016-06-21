@@ -14,14 +14,6 @@ var app;
             function DashboardService() {
                 _super.apply(this, arguments);
             }
-            DashboardService.prototype.getEngineHistory = function () {
-                var request = {
-                    params: {
-                        'count': 5
-                    }
-                };
-                return this.httpGet('api/dashboard/getEngineHistory', request);
-            };
             DashboardService.prototype.getRecentDocumentsData = function () {
                 var request = {
                     params: {
@@ -29,23 +21,6 @@ var app;
                     }
                 };
                 return this.httpGet('api/dashboard/getRecentDocuments', request);
-            };
-            DashboardService.prototype.getEngineState = function () {
-                return this.httpGet('api/dashboard/getProcessorStatus');
-            };
-            DashboardService.prototype.getReportActivityData = function () {
-                var request = {
-                    params: {
-                        'count': 5
-                    }
-                };
-                return this.httpGet('api/dashboard/getReportActivity', request);
-            };
-            DashboardService.prototype.startEngine = function () {
-                return this.httpPost('api/dashboard/startProcessor');
-            };
-            DashboardService.prototype.stopEngine = function () {
-                return this.httpPost('api/dashboard/stopProcessor');
             };
             return DashboardService;
         })(core.BaseHttpService);

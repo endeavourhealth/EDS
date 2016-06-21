@@ -159,8 +159,6 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
         DefinitionItemType itemType = null;
         if (folderType == JsonFolder.FOLDER_TYPE_LIBRARY) {
             itemType = DefinitionItemType.LibraryFolder;
-        } else if (folderType == JsonFolder.FOLDER_TYPE_REPORTS) {
-            itemType = DefinitionItemType.ReportFolder;
         } else {
             throw new BadRequestException("Invalid folder type " + folderType);
         }
@@ -257,8 +255,6 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
         String title = null;
         if (itemType == DefinitionItemType.LibraryFolder) {
             title = "Library";
-        } else if (itemType == DefinitionItemType.ReportFolder) {
-            title = "Reports";
         } else {
             throw new RuntimeException("Trying to create folder for type " + itemType);
         }
@@ -342,9 +338,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
             ret.addContent(c);
 
             //and set any extra data we need
-            if (itemType == DefinitionItemType.Report) {
-
-            } else if (itemType == DefinitionItemType.Query) {
+            if (itemType == DefinitionItemType.Query) {
 
             } else if (itemType == DefinitionItemType.Test) {
 
