@@ -61,7 +61,7 @@
 								<div class="form-group col-md-3">
 									<label class="control-label">Inbound queues</label>
 									<div class="progress" ng-repeat="item in dashboard.inboundQueues">
-										<div class="small">{{item.name}}</div>
+										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
 										<div class="progress-bar progress-bar-success"
 												 role="progressbar"
 												 aria-valuemin="0"
@@ -83,7 +83,7 @@
 								<div class="form-group col-md-3">
 									<label class="control-label">Interim queues</label>
 									<div class="progress" ng-repeat="item in dashboard.interimQueues">
-										<div class="small">{{item.name}}</div>
+										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
 										<div class="progress-bar progress-bar-success"
 												 role="progressbar"
 												 aria-valuemin="0"
@@ -105,7 +105,7 @@
 								<div class="form-group col-md-3">
 									<label class="control-label">Response queues</label>
 									<div class="progress" ng-repeat="item in dashboard.responseQueues">
-										<div class="small">{{item.name}}</div>
+										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
 										<div class="progress-bar progress-bar-success"
 												 role="progressbar"
 												 aria-valuemin="0"
@@ -127,7 +127,7 @@
 								<div class="form-group col-md-3">
 									<label class="control-label">Subscriber queues</label>
 									<div class="progress" ng-repeat="item in dashboard.subscriberQueues">
-										<div class="small">{{item.name}}</div>
+										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
 										<div class="progress-bar progress-bar-success"
 												 role="progressbar"
 												 aria-valuemin="0"
