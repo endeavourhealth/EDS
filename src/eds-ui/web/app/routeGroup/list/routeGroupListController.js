@@ -7,11 +7,13 @@ var app;
         var MessageBoxController = app.dialogs.MessageBoxController;
         'use strict';
         var RouteGroupListController = (function () {
-            function RouteGroupListController($modal, routeGroupService, log) {
+            function RouteGroupListController($modal, routeGroupService, rabbitService, log) {
                 this.$modal = $modal;
                 this.routeGroupService = routeGroupService;
+                this.rabbitService = rabbitService;
                 this.log = log;
                 this.getRouteGroups();
+                this.getRabbitBindings();
             }
             RouteGroupListController.prototype.getRouteGroups = function () {
                 var vm = this;
@@ -22,6 +24,30 @@ var app;
                     .catch(function (error) {
                     vm.log.error('Failed to load route groups', error, 'Load route groups');
                 });
+            };
+            RouteGroupListController.prototype.getRabbitBindings = function () {
+                var vm = this;
+                // TODO : Determine fastest node and use for address
+                vm.rabbitService.getRabbitBindings('DUMMYADDRESS')
+                    .then(function (result) {
+                    vm.inboundBindings = $.grep(result, function (e) { return e.source === 'EdsInbound'; });
+                    vm.interimBindings = $.grep(result, function (e) { return e.source === 'EdsInterim'; });
+                    vm.responseBindings = $.grep(result, function (e) { return e.source === 'EdsResponse'; });
+                    vm.subscriberBindings = $.grep(result, function (e) { return e.source === 'EdsSubscriber'; });
+                })
+                    .catch(function (error) {
+                    vm.log.error('Failed to load rabbit bindings', error, 'Load rabbit bindings');
+                });
+            };
+            RouteGroupListController.prototype.getRouteGroupClass = function (routeGroup, bindings) {
+                if ($.grep(bindings, function (e) { return e.routing_key === routeGroup.routeKey; }).length === 0)
+                    return 'text-danger';
+                return 'text-success';
+            };
+            RouteGroupListController.prototype.bindingExists = function (item) {
+                if ($.grep(this.routeGroups, function (e) { return e.routeKey === item.routing_key; }).length === 0)
+                    return false;
+                return true;
             };
             RouteGroupListController.prototype.edit = function (item) {
                 var vm = this;
@@ -51,7 +77,11 @@ var app;
                     });
                 });
             };
-            RouteGroupListController.$inject = ['$uibModal', 'RouteGroupService', 'LoggerService'];
+            RouteGroupListController.prototype.sync = function () {
+                // Determine keys/queues to add/delete
+                // Call server to perform sync
+            };
+            RouteGroupListController.$inject = ['$uibModal', 'RouteGroupService', 'RabbitService', 'LoggerService'];
             return RouteGroupListController;
         })();
         routeGroup_1.RouteGroupListController = RouteGroupListController;

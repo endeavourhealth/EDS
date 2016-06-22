@@ -4,17 +4,25 @@
 module app.routeGroup {
 	import IRouteGroupService = app.core.IRouteGroupService;
 	import MessageBoxController = app.dialogs.MessageBoxController;
+	import IRabbitService = app.core.IRabbitService;
+	import RabbitBinding = app.models.RabbitBinding;
 	'use strict';
 
 	export class RouteGroupListController {
 		routeGroups : RouteGroup[];
+		inboundBindings : RabbitBinding[];
+		interimBindings : RabbitBinding[];
+		responseBindings : RabbitBinding[];
+		subscriberBindings : RabbitBinding[];
 
-		static $inject = ['$uibModal', 'RouteGroupService', 'LoggerService'];
+		static $inject = ['$uibModal', 'RouteGroupService', 'RabbitService', 'LoggerService'];
 
 		constructor(private $modal : IModalService,
 								private routeGroupService : IRouteGroupService,
+								private rabbitService : IRabbitService,
 								private log : ILoggerService) {
 			this.getRouteGroups();
+			this.getRabbitBindings();
 		}
 
 		getRouteGroups() {
@@ -26,6 +34,33 @@ module app.routeGroup {
 				.catch(function (error) {
 					vm.log.error('Failed to load route groups', error, 'Load route groups');
 				});
+		}
+
+		getRabbitBindings() {
+			var vm = this;
+			// TODO : Determine fastest node and use for address
+			vm.rabbitService.getRabbitBindings('DUMMYADDRESS')
+				.then(function(result : RabbitBinding[]) {
+					vm.inboundBindings = $.grep(result, function(e:RabbitBinding) {return e.source === 'EdsInbound'; });
+					vm.interimBindings = $.grep(result, function(e:RabbitBinding) {return e.source === 'EdsInterim'; });
+					vm.responseBindings = $.grep(result, function(e:RabbitBinding) {return e.source === 'EdsResponse'; });
+					vm.subscriberBindings = $.grep(result, function(e:RabbitBinding) {return e.source === 'EdsSubscriber'; });
+				})
+				.catch(function (error) {
+					vm.log.error('Failed to load rabbit bindings', error, 'Load rabbit bindings');
+				});
+		}
+
+		getRouteGroupClass(routeGroup : RouteGroup, bindings : RabbitBinding[]) {
+			if ($.grep(bindings, function(e:RabbitBinding) { return e.routing_key === routeGroup.routeKey; }).length === 0)
+				return 'text-danger';
+			return 'text-success';
+		}
+
+		bindingExists(item: RabbitBinding) {
+			if ($.grep(this.routeGroups, function(e:RouteGroup) { return e.routeKey === item.routing_key; }).length === 0)
+				return false;
+			return true;
 		}
 
 		edit(item : RouteGroup) {
@@ -57,6 +92,12 @@ module app.routeGroup {
 							vm.log.error('Failed to delete route group', error, 'Delete route group');
 						});
 			});
+		}
+
+		sync() {
+			// Determine keys/queues to add/delete
+
+			// Call server to perform sync
 		}
 	}
 

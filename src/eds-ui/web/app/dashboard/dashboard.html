@@ -57,9 +57,26 @@
 									</div>
 								</div>
 							</div>
+
+
 							<div class="row">
 								<div class="form-group col-md-3">
-									<label class="control-label">Inbound queues</label>
+									<label class="control-label">Inbound Exchange</label>
+
+									<div class="progress">
+										<div class="small">{{dashboard.inboundExchange.name}} ({{dashboard.inboundExchange.message_stats.publish_details.rate}} / {{dashboard.inboundExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="progress-bar"
+												 ng-class="dashboard.getExchangeRateClass(dashboard.inboundExchange)"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuemax="{{dashboard.inboundExchange.message_stats.publish_details.rate + dashboard.inboundExchange.message_stats.deliver_get_details.rate}}"
+												 aria-valuenow="{{dashboard.inboundExchange.message_stats.publish_details.rate}}"
+												 ng-style="{ width : (dashboard.inboundExchange.message_stats.publish_details.rate+'%') }">
+										</div>
+									</div>
+
+									<label class="control-label">Inbound Queues</label>
+
 									<div class="progress" ng-repeat="item in dashboard.inboundQueues">
 										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
 										<div class="progress-bar progress-bar-success"
@@ -79,7 +96,22 @@
 									</div>
 								</div>
 								<div class="form-group col-md-3">
-									<label class="control-label">Interim queues</label>
+									<label class="control-label">Interim Exchange</label>
+
+									<div class="progress">
+										<div class="small">{{dashboard.interimExchange.name}} ({{dashboard.interimExchange.message_stats.publish_details.rate}} / {{dashboard.interimExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="progress-bar"
+												 ng-class="dashboard.getExchangeRateClass(dashboard.interimExchange)"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuemax="{{dashboard.interimExchange.message_stats.publish_details.rate + dashboard.interimExchange.message_stats.deliver_get_details.rate}}"
+												 aria-valuenow="{{dashboard.interimExchange.message_stats.publish_details.rate}}"
+												 ng-style="{ width : (dashboard.interimExchange.message_stats.publish_details.rate+'%') }">
+										</div>
+									</div>
+
+									<label class="control-label">Interim Queues</label>
+
 									<div class="progress" ng-repeat="item in dashboard.interimQueues">
 										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
 										<div class="progress-bar progress-bar-success"
@@ -99,7 +131,22 @@
 									</div>
 								</div>
 								<div class="form-group col-md-3">
-									<label class="control-label">Response queues</label>
+									<label class="control-label">Response Exchange</label>
+
+									<div class="progress">
+										<div class="small">{{dashboard.responseExchange.name}} ({{dashboard.responseExchange.message_stats.publish_details.rate}} / {{dashboard.responseExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="progress-bar"
+												 ng-class="dashboard.getExchangeRateClass(dashboard.responseExchange)"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuemax="{{dashboard.responseExchange.message_stats.publish_details.rate + dashboard.responseExchange.message_stats.deliver_get_details.rate}}"
+												 aria-valuenow="{{dashboard.responseExchange.message_stats.publish_details.rate}}"
+												 ng-style="{ width : (dashboard.responseExchange.message_stats.publish_details.rate+'%') }">
+										</div>
+									</div>
+
+									<label class="control-label">Response Queues</label>
+
 									<div class="progress" ng-repeat="item in dashboard.responseQueues">
 										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
 										<div class="progress-bar progress-bar-success"
@@ -119,7 +166,22 @@
 									</div>
 								</div>
 								<div class="form-group col-md-3">
-									<label class="control-label">Subscriber queues</label>
+									<label class="control-label">Subscriber Exchange</label>
+
+									<div class="progress">
+										<div class="small">{{dashboard.subscriberExchange.name}} ({{dashboard.subscriberExchange.message_stats.publish_details.rate}} / {{dashboard.subscriberExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="progress-bar"
+												 ng-class="dashboard.getExchangeRateClass(dashboard.subscriberExchange)"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuemax="{{dashboard.subscriberExchange.message_stats.publish_details.rate + dashboard.subscriberExchange.message_stats.deliver_get_details.rate}}"
+												 aria-valuenow="{{dashboard.subscriberExchange.message_stats.publish_details.rate}}"
+												 ng-style="{ width : (dashboard.subscriberExchange.message_stats.publish_details.rate+'%') }">
+										</div>
+									</div>
+
+									<label class="control-label">Subscriber Queues</label>
+
 									<div class="progress" ng-repeat="item in dashboard.subscriberQueues">
 										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
 										<div class="progress-bar progress-bar-success"

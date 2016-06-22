@@ -149,4 +149,61 @@ public final class DashboardEndpoint extends AbstractEndpoint {
             .build();
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/rabbitNode/exchanges")
+    public Response getRabbitExchanges(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("guest", "guest");
+        Client client = ClientBuilder.newClient();
+        client.register(feature);
+
+        address = "localhost:15672";
+        WebTarget resource = client.target("http://"+address+"/api/exchanges");
+        Invocation.Builder request = resource.request();
+
+        Response response = request.get();
+        String ret = null;
+        if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
+            ret = response.readEntity(String.class);
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+            .ok()
+            .entity(ret)
+            .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/rabbitNode/bindings")
+    public Response getRabbitBindings(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("guest", "guest");
+        Client client = ClientBuilder.newClient();
+        client.register(feature);
+
+        address = "localhost:15672";
+        WebTarget resource = client.target("http://"+address+"/api/bindings");
+        Invocation.Builder request = resource.request();
+
+        Response response = request.get();
+        String ret = null;
+        if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
+            ret = response.readEntity(String.class);
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+            .ok()
+            .entity(ret)
+            .build();
+    }
 }

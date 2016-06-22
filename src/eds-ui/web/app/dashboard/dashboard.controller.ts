@@ -9,6 +9,8 @@ module app.dashboard {
 	import ILoggerService = app.blocks.ILoggerService;
 	import RabbitNode = app.models.RabbitNode;
 	import RabbitQueue = app.models.RabbitQueue;
+	import RabbitExchange = app.models.RabbitExchange;
+	import IRabbitService = app.core.IRabbitService;
 
 	'use strict';
 
@@ -17,15 +19,20 @@ module app.dashboard {
 		rabbitNodes:RabbitNode[];
 		quickestNode : RabbitNode;
 		pingCount : number;
+		inboundExchange : RabbitExchange;
+		interimExchange : RabbitExchange;
+		responseExchange : RabbitExchange;
+		subscriberExchange : RabbitExchange;
 		inboundQueues : RabbitQueue[];
 		interimQueues : RabbitQueue[];
 		responseQueues : RabbitQueue[];
 		subscriberQueues : RabbitQueue[];
 
-		static $inject = ['DashboardService', 'LoggerService', '$state'];
+		static $inject = ['DashboardService', 'LoggerService', 'RabbitService', '$state'];
 
 		constructor(private dashboardService:IDashboardService,
 								private logger:ILoggerService,
+								private rabbitService : IRabbitService,
 								private $state : IStateService) {
 			this.refresh();
 		}
@@ -48,7 +55,7 @@ module app.dashboard {
 			var vm:DashboardController = this;
 			vm.rabbitNodes = null;
 			vm.quickestNode = null;
-			vm.dashboardService.getRabbitNodes()
+			vm.rabbitService.getRabbitNodes()
 				.then(function (data : RabbitNode[]) {
 					vm.rabbitNodes = data;
 					vm.getRabbitNodePings();
@@ -59,7 +66,7 @@ module app.dashboard {
 			var vm = this;
 			vm.pingCount = 0;
 			for(var idx in vm.rabbitNodes) {
-				vm.dashboardService.pingRabbitNode(vm.rabbitNodes[idx])
+				vm.rabbitService.pingRabbitNode(vm.rabbitNodes[idx].address)
 					.then(function (result : RabbitNode) {
 						var rabbitNode : RabbitNode[] = $.grep(vm.rabbitNodes, function(i) { return i.address === result.address;});
 						if (rabbitNode.length === 1) {
@@ -68,8 +75,10 @@ module app.dashboard {
 								vm.quickestNode = result;
 						}
 						vm.pingCount ++;
-						if (vm.pingCount === vm.rabbitNodes.length)
+						if (vm.pingCount === vm.rabbitNodes.length) {
+							vm.getRabbitExchanges();
 							vm.getRabbitQueues();
+						}
 					})
 			}
 		}
@@ -84,10 +93,34 @@ module app.dashboard {
 			return 'label-warning';
 		}
 
+		getRabbitExchanges() {
+			var vm = this;
+
+			vm.rabbitService.getRabbitExchanges(vm.quickestNode.address)
+				.then(function(data : RabbitExchange[]){
+					// Split queues by type
+					vm.inboundExchange = $.grep(data, function(e) { return e.name.lastIndexOf('EdsInbound',0)===0;})[0];
+					vm.interimExchange = $.grep(data, function(e) { return e.name.lastIndexOf('EdsInterim',0)===0;})[0];
+					vm.responseExchange = $.grep(data, function(e) { return e.name.lastIndexOf('EdsResponse',0)===0;})[0];
+					vm.subscriberExchange = $.grep(data, function(e) { return e.name.lastIndexOf('EdsSubscriber',0)===0;})[0];
+				});
+		}
+
+		getExchangeRateClass(item : RabbitExchange) {
+			if (!item)
+				return 'label-default';
+
+			// All OK if we're delivering faster than receiving
+			if (item.message_stats.publish_details.rate < item.message_stats.deliver_get_details.rate)
+				return 'label-success';
+
+			return 'label-warning';
+		}
+
 		getRabbitQueues() {
 			var vm = this;
 
-			vm.dashboardService.getRabbitQueues(vm.quickestNode)
+			vm.rabbitService.getRabbitQueues(vm.quickestNode.address)
 				.then(function(data : RabbitQueue[]){
 					// Split queues by type
 					vm.inboundQueues = $.grep(data, function(e) { return e.name.lastIndexOf('EdsInbound',0)===0;})

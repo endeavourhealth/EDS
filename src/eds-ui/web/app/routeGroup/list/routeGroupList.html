@@ -2,9 +2,48 @@
 	<div class="container-fluid">
 		<div class="module-heading">
 			Route Groups
+			<button class="btn btn-success btn-sm pull-right" ng-click="ctrl.sync()">Sync</button>
 		</div>
 		<div class="module-body">
 			<form>
+				<div class="row">
+					<div class="form-group col-md-3">
+						<label>Inbound</label>
+						<div ng-repeat="item in ctrl.routeGroups">
+							<label class="small" ng-class="ctrl.getRouteGroupClass(item, ctrl.inboundBindings)">{{item.name}}</label>
+						</div>
+						<div ng-repeat="item in ctrl.inboundBindings">
+							<label class="small text-warning" ng-hide="ctrl.bindingExists(item)">{{item.routing_key}}</label>
+						</div>
+					</div>
+					<div class="form-group col-md-3">
+						<label>Interim</label>
+						<div ng-repeat="item in ctrl.routeGroups">
+							<label class="small" ng-class="ctrl.getRouteGroupClass(item, ctrl.interimBindings)">{{item.name}}</label>
+						</div>
+						<div ng-repeat="item in ctrl.interimBindings">
+							<label class="small text-warning" ng-hide="ctrl.bindingExists(item)">{{item.routing_key}}</label>
+						</div>
+					</div>
+					<div class="form-group col-md-3">
+						<label>Response</label>
+						<div ng-repeat="item in ctrl.routeGroups">
+							<label class="small" ng-class="ctrl.getRouteGroupClass(item, ctrl.responseBindings)">{{item.name}}</label>
+						</div>
+						<div ng-repeat="item in ctrl.responseBindings">
+							<label class="small text-warning" ng-hide="ctrl.bindingExists(item)">{{item.routing_key}}</label>
+						</div>
+					</div>
+					<div class="form-group col-md-3">
+						<label>Subscriber</label>
+						<div ng-repeat="item in ctrl.routeGroups">
+							<label class="small" ng-class="ctrl.getRouteGroupClass(item, ctrl.subscriberBindings)">{{item.name}}</label>
+						</div>
+						<div ng-repeat="item in ctrl.subscriberBindings">
+							<label class="small text-warning" ng-hide="ctrl.bindingExists(item)">{{item.routing_key}}</label>
+						</div>
+					</div>
+				</div>
 				<div class="row">
 					<div class="form-group col-md-12">
 						<div class="table">
