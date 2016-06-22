@@ -1,0 +1,14 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" build-on-make="true" name="eds-patient-ui:war exploded">
+    <output-path>$PROJECT_DIR$/out/artifacts/eds_patient_ui_war_exploded</output-path>
+    <root id="root">
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="eds-patient-ui" />
+          <element id="module-output" name="eds-core" />
+        </element>
+      </element>
+      <element id="javaee-facet-resources" facet="eds-patient-ui/web/Web" />
+    </root>
+  </artifact>
+</component>

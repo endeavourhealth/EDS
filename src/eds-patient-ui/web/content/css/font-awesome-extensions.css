@@ -1,0 +1,42 @@
+.fa {
+    position: relative;
+    display: inline-block;
+    font: normal normal normal 14px/1 FontAwesome;
+    font-size: inherit;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1;
+}
+
+.fa-sm {
+    font-size: 0.75em;
+}
+
+.fa-xs {
+    font-size: 0.5em;
+}
+
+.fa-right-pad {
+    margin-right: 5px;
+}
+
+.fa-blank:before {
+    content: "\2122";
+    color: transparent !important;
+}
+
+.fa-refresh-animate {
+    -animation: spin .7s infinite linear;
+    -webkit-animation: spin2 .7s infinite linear;
+}
+
+@-webkit-keyframes spin2 {
+    from { -webkit-transform: rotate(0deg);}
+    to { -webkit-transform: rotate(360deg);}
+}
+
+@keyframes spin {
+    from { transform: scale(1) rotate(0deg);}
+    to { transform: scale(1) rotate(360deg);}
+}

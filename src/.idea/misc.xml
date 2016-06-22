@@ -15,6 +15,7 @@
         <option value="$PROJECT_DIR$/eds-clinical/pom.xml" />
         <option value="$PROJECT_DIR$/eds-admin/pom.xml" />
         <option value="$PROJECT_DIR$/eds-ui/pom.xml" />
+        <option value="$PROJECT_DIR$/eds-patient-ui/pom.xml" />
       </list>
     </option>
   </component>
