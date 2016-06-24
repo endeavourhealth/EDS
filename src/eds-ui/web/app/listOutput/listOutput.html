@@ -24,15 +24,15 @@
 				</div>
 				<div class="row">
 					<div class="form-group col-md-8">
-						<label>List groups</label>
-						<button type="button" class="btn btn-xs btn-success" data-ng-click="listOutputCtrl.addListGroup()">
+						<label>Data types</label>
+						&nbsp;&nbsp;<button type="button" class="btn btn-xs btn-success" data-ng-click="listOutputCtrl.addListGroup()">
 							<span class="fa fa-plus"></span>
 						</button>
 						<div class="table scroll-box-450 form-control">
 							<table class="table table-striped table-condensed">
 								<thead>
 									<tr>
-										<th class="col-md-4">Heading</th>
+										<th class="col-md-4">Record heading</th>
 										<th class="col-md-2">Type</th>
 										<th class="col-md-4">Details</th>
 										<th class="col-md-2"></th>
@@ -61,7 +61,7 @@
 					<div class="form-group col-md-4" ng-show="listOutputCtrl.selectedListReportGroup">
 						<div class="row" ng-show="listOutputCtrl.selectedListReportGroup.fieldBased">
 							<div class="form-group col-md-12">
-								<label for="fieldBased-dataSource">Data source</label>
+								<label for="fieldBased-dataSource">Data source (Record heading)</label>
 								<div class="input-group">
 									<input type="text"
 												 class="form-control"
@@ -81,14 +81,14 @@
 						</div>
 						<div class="row" ng-show="listOutputCtrl.selectedListReportGroup.fieldBased.dataSource">
 							<div class="form-group col-md-12">
-								<label for="fieldBased-dataSource">Field output</label>
-								<button type="button" class="btn btn-xs btn-success" data-ng-click="listOutputCtrl.addFieldOutput()">
+								<label for="fieldBased-dataSource">Data Attributes</label>
+								&nbsp;&nbsp;<button type="button" class="btn btn-xs btn-success" data-ng-click="listOutputCtrl.addFieldOutput()">
 									<span class="fa fa-plus"></span>
 								</button>
 								<div class="table scroll-box-300 form-control">
 									<table class="table table-striped">
 										<thead>
-											<th class="col-md-5">Field</th>
+											<th class="col-md-5">Attribute</th>
 											<th class="col-md-4">Heading</th>
 											<th class="col-md-3"></th>
 										</thead>
