@@ -42,8 +42,8 @@ public class ReturnResponseAcknowledgement implements PipelineComponent {
 			else
 				parser = new JsonParser();
 
-			String bundleXml = parser.composeString(messageHeader);
-			exchange.setBody(bundleXml);
+			String message = parser.composeString(messageHeader);
+			exchange.setBody(message);
 		} catch (Exception e) {
 			throw new PipelineException("Unable to serialize message header");
 		}

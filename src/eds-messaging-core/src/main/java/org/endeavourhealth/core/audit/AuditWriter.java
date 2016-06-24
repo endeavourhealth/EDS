@@ -1,13 +1,7 @@
 package org.endeavourhealth.core.audit;
 
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Session;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.endeavourhealth.core.data.CassandraConnector;
-import org.endeavourhealth.core.data.PreparedStatementCache;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.models.ExchangeEvent;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
