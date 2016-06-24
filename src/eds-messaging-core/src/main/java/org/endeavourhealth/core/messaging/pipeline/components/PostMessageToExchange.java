@@ -2,6 +2,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.rabbitmq.client.*;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
+import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
@@ -13,8 +14,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 public class PostMessageToExchange implements PipelineComponent {
@@ -28,6 +29,11 @@ public class PostMessageToExchange implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws IOException, PipelineException, TimeoutException {
+
+		// Generate message identifier and store message in db
+		UUID messageUuid = UUID.randomUUID();
+		new QueuedMessageRepository().save(messageUuid, exchange.getBody());
+
 		Channel channel = null;
 		try {
 			Connection connection = ConnectionManager.getConnection(
@@ -50,7 +56,7 @@ public class PostMessageToExchange implements PipelineComponent {
 
 			channel.confirmSelect();
 
-			// Publish message for each routing key
+			// Publish message id to exchange for each routing key
 			String[] routingKeys = ((String)exchange.getProperty(PropertyKeys.RoutingKey)).split(",", -1);
 
 			for (String routingKey : routingKeys) {
@@ -58,7 +64,7 @@ public class PostMessageToExchange implements PipelineComponent {
 						config.getExchange(),
 						RoutingManager.getInstance().getRoutingKeyForIdentifier(routingKey),
 						properties,
-						exchange.getBody().getBytes());
+						messageUuid.toString().getBytes());
 			}
 
 			if (!channel.waitForConfirms())

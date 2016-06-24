@@ -230,6 +230,14 @@ WHERE id IS NOT NULL
 PRIMARY KEY((end_user_id), id)
 WITH CLUSTERING ORDER BY (end_user_id ASC);
   
+CREATE TABLE queuedMessage
+(
+	id UUID,
+	messageBody TEXT,
+	PRIMARY KEY (id)
+);
+
+
 INSERT INTO dependency_type
 (id, description)
 VALUES 
