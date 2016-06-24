@@ -314,8 +314,97 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
                 .build();
     }
 
-}
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/getQueries")
+    public Response getQueries(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
 
+        DefinitionItemType itemType = DefinitionItemType.Query;
+
+        UUID orgUuid = getOrganisationUuidFromToken(sc);
+
+        Iterable<ActiveItem> activeItems = null;
+        List<Item> items = new ArrayList();
+        Iterable<ItemDependency> itemDependency = null;
+
+        LibraryRepository repository = new LibraryRepository();
+
+        activeItems = repository.getActiveItemByOrgAndTypeId(orgUuid, itemType.getValue(), false);
+
+        for (ActiveItem activeItem: activeItems) {
+            Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
+            if (item.getIsDeleted()==false)
+                items.add(item);
+        }
+
+        List<JsonQuery> ret = new ArrayList<>();
+
+        for (int i = 0; i < items.size(); i++) {
+            Item item = items.get(i);
+            UUID itemUuid = item.getId();
+
+            JsonQuery query = new JsonQuery();
+            query.setName(item.getTitle());
+            query.setUuid(item.getId().toString());
+            ret.add(query);
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/getListReports")
+    public Response getListReports(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        DefinitionItemType itemType = DefinitionItemType.ListOutput;
+
+        UUID orgUuid = getOrganisationUuidFromToken(sc);
+
+        Iterable<ActiveItem> activeItems = null;
+        List<Item> items = new ArrayList();
+        Iterable<ItemDependency> itemDependency = null;
+
+        LibraryRepository repository = new LibraryRepository();
+
+        activeItems = repository.getActiveItemByOrgAndTypeId(orgUuid, itemType.getValue(), false);
+
+        for (ActiveItem activeItem: activeItems) {
+            Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
+            if (item.getIsDeleted()==false)
+                items.add(item);
+        }
+
+        List<JsonListReport> ret = new ArrayList<>();
+
+        for (int i = 0; i < items.size(); i++) {
+            Item item = items.get(i);
+            UUID itemUuid = item.getId();
+
+            JsonListReport listReport = new JsonListReport();
+            listReport.setName(item.getTitle());
+            listReport.setUuid(item.getId().toString());
+            ret.add(listReport);
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+}
 
 
 

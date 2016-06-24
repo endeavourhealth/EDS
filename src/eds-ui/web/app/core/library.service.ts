@@ -5,6 +5,8 @@ module app.core {
 	import EntityMap = app.models.EntityMap;
 	import FolderNode = app.models.FolderNode;
 	import System = app.models.System;
+	import Cohort = app.models.Cohort;
+	import Dataset = app.models.Dataset;
 	'use strict';
 
 	export interface ILibraryService {
@@ -13,6 +15,8 @@ module app.core {
 		deleteLibraryItem(uuid : string):ng.IPromise<any>;
 		getEntityMap():ng.IPromise<EntityMap>;
 		getSystems():ng.IPromise<System[]>;
+		getCohorts():ng.IPromise<Cohort[]>;
+		getDatasets():ng.IPromise<Dataset[]>;
 	}
 
 	export class LibraryService extends BaseHttpService implements ILibraryService {
@@ -43,6 +47,14 @@ module app.core {
 
 		getSystems():ng.IPromise<System[]> {
 			return this.httpGet('api/library/getSystems');
+		}
+
+		getCohorts():ng.IPromise<Cohort[]> {
+			return this.httpGet('api/library/getQueries');
+		}
+
+		getDatasets():ng.IPromise<Dataset[]> {
+			return this.httpGet('api/library/getListReports');
 		}
 	}
 

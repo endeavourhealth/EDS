@@ -52,7 +52,7 @@
 						<div class="input-group">
 							<span class="input-group-addon"><i class="fa fa-check fa-lg fa-fw"></i></span>
 							<select class="form-control" ng-model="protocolCtrl.libraryItem.protocol.cohort">
-								<option ng-repeat="cohort in protocolCtrl.cohorts" value="{{cohort}}">{{cohort}}</option>
+								<option ng-repeat="item in protocolCtrl.cohorts" value="{{item.uuid}}">{{item.name}}</option>
 							</select>
 						</div>
 					</div>
@@ -61,7 +61,7 @@
 						<div class="input-group">
 							<span class="input-group-addon"><i class="fa fa-user fa-lg fa-fw"></i></span>
 							<select class="form-control" ng-model="protocolCtrl.libraryItem.protocol.dataSet">
-								<option ng-repeat="dataSet in protocolCtrl.dataSets" value="{{dataSet}}">{{dataSet}}</option>
+								<option ng-repeat="item in protocolCtrl.dataSets" value="{{item.uuid}}">{{item.name}}</option>
 							</select>
 						</div>
 					</div>

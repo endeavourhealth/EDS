@@ -14,6 +14,8 @@ module app.protocol {
 	import Service = app.models.Service;
 	import Protocol = app.models.Protocol;
 	import System = app.models.System;
+	import Cohort = app.models.Cohort;
+	import Dataset = app.models.Dataset;
 	import TechnicalInterface = app.models.TechnicalInterface;
 
 	'use strict';
@@ -23,15 +25,13 @@ module app.protocol {
 		selectedContract : ServiceContract;
 		services : Service[];
 		systems : System[];
-		//cohorts : any[];
-		//dataSets : any[];
+		cohorts : Cohort[];
+		dataSets : Dataset[];
 		technicalInterfaces : TechnicalInterface[];
 
 		enabled = ["TRUE", "FALSE"];
 		consent = ["OPT-IN", "OPT-OUT"];
 		type = ["PUBLISHER", "SUBSCRIBER"];
-		cohorts = ["All patients", "East London patients"];
-		dataSets = ["Summary record", "Diabetes"];
 
 		static $inject = ['LibraryService', 'ServiceService', 'LoggerService',
 			'$uibModal', 'AdminService', '$window', '$stateParams'];
@@ -49,6 +49,8 @@ module app.protocol {
 
 			this.loadServices();
 			this.loadSystems();
+			this.loadCohorts();
+			this.loadDatasets();
 		}
 
 		create(folderUuid : string) {
@@ -112,6 +114,28 @@ module app.protocol {
 				})
 				.catch(function (error) {
 					vm.logger.error('Failed to load services', error, 'Load services');
+				});
+		}
+
+		loadCohorts() {
+			var vm = this;
+			vm.libraryService.getCohorts()
+				.then(function(result) {
+					vm.cohorts = result;
+				})
+				.catch(function (error) {
+					vm.logger.error('Failed to load cohorts', error, 'Load cohorts');
+				});
+		}
+
+		loadDatasets() {
+			var vm = this;
+			vm.libraryService.getDatasets()
+				.then(function(result) {
+					vm.dataSets = result;
+				})
+				.catch(function (error) {
+					vm.logger.error('Failed to load dataSets', error, 'Load dataSets');
 				});
 		}
 
