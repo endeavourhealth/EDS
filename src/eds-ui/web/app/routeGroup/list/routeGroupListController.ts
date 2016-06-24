@@ -95,10 +95,19 @@ module app.routeGroup {
 		}
 
 		sync() {
-			// Determine keys/queues to add/delete
-
-			// Call server to perform sync
-		}
+			var vm = this;
+			MessageBoxController.open(vm.$modal,
+				'Synchronise RabbitMQ', 'Are you sure you want to synchronise RabbitMQ with the defined route groups?', 'Yes', 'No')
+				.result.then(function() {
+					//  TODO : Determine fastest node and use for address
+					vm.rabbitService.synchronize("DUMMYADDRESS")
+					.then(function() {
+						vm.log.success('RabbitMQ synchronized');
+					})
+					.catch(function(error : any) {
+						vm.log.error('Failed to synchronize', error, 'Synchronize RabbitMQ');
+					});
+			});		}
 	}
 
 	angular

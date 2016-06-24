@@ -4,6 +4,8 @@ out/
 target/
 *.map
 *.js
+bower_components/
+typings/
 uiDesigner.xml
 workspace.xml
 vcs.xml

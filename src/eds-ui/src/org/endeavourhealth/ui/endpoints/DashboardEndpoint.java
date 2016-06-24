@@ -206,4 +206,44 @@ public final class DashboardEndpoint extends AbstractEndpoint {
             .entity(ret)
             .build();
     }
+
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/rabbitNode/synchronize")
+    public Response synchronizeRabbit(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        // Load current bindings
+
+        // Load config
+
+        // Declare (config) queues
+
+        // Bind (config) to DLQ
+
+        // Remove all bindings from main exchange (DLQ now routes to queues based on new config)
+
+        // Bind (config) to main exchange (main exchange now routes to queues based on new config)
+
+        // Remove bindings from DLQ
+
+        // Wait for any unbound queues to drain
+
+        // Remove (now empty) unbound queues
+
+        // (Shutdown readers of unbound queues????)
+
+        // (Startup readers of queues without readers????)
+
+        String ret = "OK";
+
+        clearLogbackMarkers();
+
+        return Response
+            .ok()
+            .entity(ret)
+            .build();
+    }
 }
