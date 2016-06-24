@@ -28,7 +28,7 @@ module app.core {
 		getMenuOptions():app.models.MenuOption[] {
 			return [
 				{caption: 'Dashboard', state: 'app.dashboard', icon: 'fa fa-tachometer'},
-				{caption: 'Protocols', state: 'app.library', icon: 'fa fa-book'},
+				{caption: 'Protocols', state: 'app.library', icon: 'fa fa-share-alt'},
 				{caption: 'Organisations', state: 'app.organisation', icon: 'fa fa-hospital-o'},
 				{caption: 'Services', state: 'app.service', icon: 'fa fa-building-o'},
 				{caption: 'Queueing', state: 'app.routeGroup', icon: 'fa fa-tasks'},

@@ -22,7 +22,7 @@ module app.models {
 				case ItemType.Report:
 					return 'Report';
 				case ItemType.Query:
-					return 'Query';
+					return 'Cohort';
 				case ItemType.Test:
 					return 'Test';
 				case ItemType.DataSource:
@@ -30,7 +30,7 @@ module app.models {
 				case ItemType.CodeSet:
 					return 'Code set';
 				case ItemType.ListOutput:
-					return 'List report';
+					return 'Data set';
 				case ItemType.LibraryFolder:
 					return 'Library folder';
 				case ItemType.Protocol:
@@ -49,7 +49,7 @@ module app.models {
 				case ItemType.Report:
 					return 'fa-file';
 				case ItemType.Query:
-					return 'fa-question-circle';
+					return 'fa-user';
 				case ItemType.Test:
 					return 'fa-random';
 				case ItemType.DataSource:
@@ -61,7 +61,7 @@ module app.models {
 				case ItemType.LibraryFolder:
 					return 'fa-folder-open';
 				case ItemType.Protocol:
-					return 'fa-list-alt';
+					return 'fa-share-alt';
 				case ItemType.System:
 					return 'fa-laptop';
 			}
