@@ -13,12 +13,8 @@ import java.util.Map;
 @Priority(Priorities.AUTHENTICATION)
 public final class AuthenticationFilter implements ContainerRequestFilter {
 
-    private boolean requiresAdmin = false;
-    private boolean requiresSuperUser = false;
 
-    public AuthenticationFilter(boolean requiresAdmin, boolean requiresSuperUser) {
-        this.requiresAdmin = requiresAdmin;
-        this.requiresSuperUser = requiresSuperUser;
+    public AuthenticationFilter() {
     }
 
     @Override
@@ -32,9 +28,9 @@ public final class AuthenticationFilter implements ContainerRequestFilter {
 
             Cookie cookie = cookies.get(SecurityConfig.AUTH_COOKIE_NAME);
             String tokenString = cookie.getValue();
-            String nhsNumber = TokenHelper.validateToken(tokenString);
+            UserWrapper userWrapper = TokenHelper.validateToken(tokenString);
 
-            containerRequestContext.setSecurityContext(new UserSecurityContext(nhsNumber));
+            containerRequestContext.setSecurityContext(new UserSecurityContext(userWrapper));
         } catch (Exception e) {
             containerRequestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED).build());
         }

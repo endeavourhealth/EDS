@@ -25,10 +25,10 @@ var app;
                 this.enabled = ["TRUE", "FALSE"];
                 this.consent = ["OPT-IN", "OPT-OUT"];
                 this.type = ["PUBLISHER", "SUBSCRIBER"];
-                this.cohorts = ["All patients", "East London patients"];
-                this.dataSets = ["Summary record", "Diabetes"];
                 this.loadServices();
                 this.loadSystems();
+                this.loadCohorts();
+                this.loadDatasets();
             }
             ProtocolController.prototype.create = function (folderUuid) {
                 this.protocol = {
@@ -82,6 +82,26 @@ var app;
                 })
                     .catch(function (error) {
                     vm.logger.error('Failed to load services', error, 'Load services');
+                });
+            };
+            ProtocolController.prototype.loadCohorts = function () {
+                var vm = this;
+                vm.libraryService.getCohorts()
+                    .then(function (result) {
+                    vm.cohorts = result;
+                })
+                    .catch(function (error) {
+                    vm.logger.error('Failed to load cohorts', error, 'Load cohorts');
+                });
+            };
+            ProtocolController.prototype.loadDatasets = function () {
+                var vm = this;
+                vm.libraryService.getDatasets()
+                    .then(function (result) {
+                    vm.dataSets = result;
+                })
+                    .catch(function (error) {
+                    vm.logger.error('Failed to load dataSets', error, 'Load dataSets');
                 });
             };
             ProtocolController.prototype.loadSystems = function () {

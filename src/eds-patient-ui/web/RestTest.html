@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<meta charset="UTF-8"> 
+
+	<title>EDS Patient Web App REST Test</title>
+
+	<style>
+		body {background-color:lightgrey; }
+		input {width: 300px;}
+	</style>
+
+<script>
+
+
+	function post(url, params)
+	{
+		//testing git
+
+		var para = appendHeadingToResults(url);
+
+		if (typeof(params)!='undefined')
+		{
+			var jsonStr = JSON.stringify(params);
+			appendResult(para, "request", jsonStr);
+		}
+	
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.DisableHeaderCheck = true;
+
+		xmlhttp.onreadystatechange = function()
+		{
+			if (xmlhttp.readyState == 4) //request complete
+			{
+				var status = xmlhttp.status;
+				var statusText = xmlhttp.statusText;
+				appendResult(para, "response status", status + " " + statusText);
+
+				var response = xmlhttp.responseText;
+				appendResult(para, "response", response);
+
+				scrollToEnd();
+			}
+		};
+
+		xmlhttp.open("POST", url, true);
+
+		xmlhttp.setRequestHeader('Accept', 'application/json');
+		xmlhttp.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+		if(typeof(params)!='undefined')
+		{
+			xmlhttp.setRequestHeader('Content-Length', params.length);
+		}
+
+		//if (params == null)
+		if(typeof(params)=='undefined')
+		{
+			xmlhttp.send();
+		}
+		else
+		{
+			var jsonStr = JSON.stringify(params);
+			xmlhttp.send(jsonStr);
+		}
+
+
+	}
+
+	function get(url, params)
+	{
+		var para = appendHeadingToResults(url);
+
+		if (typeof(params)!='undefined')
+		{
+			appendResult(para, "params", params);
+
+			url += '?' + params;
+		}
+
+		var xmlhttp = new XMLHttpRequest();
+
+		xmlhttp.onreadystatechange = function() {
+		
+			if (xmlhttp.readyState == 4) //request complete
+			{
+				var status = xmlhttp.status;
+				var statusText = xmlhttp.statusText;
+				appendResult(para, "response status", status + " " + statusText);
+			
+				var response = xmlhttp.responseText;
+				appendResult(para, "response", response);
+	   		}
+		};
+
+		xmlhttp.open("GET", url, true);
+		xmlhttp.setRequestHeader('Accept', 'application/json');
+
+		xmlhttp.send();
+
+		scrollToEnd();
+	}
+
+	function appendHeadingToResults(title)
+	{
+		var d = new Date();
+		var titleWithTime = "" + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds() + " -> " + title;
+
+		var para = document.createElement("p");
+		var heading = document.createElement("strong");
+		var textNode = document.createTextNode(titleWithTime);
+		var resultsElement = document.getElementById("results");
+
+		heading.appendChild(textNode);
+		para.appendChild(heading);
+		resultsElement.appendChild(para);
+
+		return para;
+	}
+
+	function appendResult(para, name, value)
+	{
+		var brElement = document.createElement("br");
+		para.appendChild(brElement);
+
+		var nameTextNode = document.createTextNode(name + ": ");
+		para.appendChild(nameTextNode);
+
+		var codeElement = document.createElement("code");
+		para.appendChild(codeElement);
+
+		var valueArr = value.split("{");
+		if (valueArr.length == 1) {
+			var valueTextNode = document.createTextNode(value);
+			codeElement.appendChild(valueTextNode);
+		} else {
+			for (i = 1; i < valueArr.length; i++) {
+				if (i>1) {
+					brElement = document.createElement("br");
+					codeElement.appendChild(brElement);
+				}
+
+				var valueTextNode = document.createTextNode("{" + valueArr[i]);
+				codeElement.appendChild(valueTextNode);
+			}
+		}
+	}
+	/*function appendResult(para, name, value)
+	{
+		var brElement = document.createElement("br");
+		var codeElement = document.createElement("code");
+		var nameTextNode = document.createTextNode(name + ": ");
+		var valueTextNode = document.createTextNode(value);
+
+		codeElement.appendChild(valueTextNode);
+
+		para.appendChild(brElement);
+		para.appendChild(nameTextNode);
+		para.appendChild(codeElement);
+	}*/
+
+	function scrollToEnd()
+	{
+		window.scrollTo(0,document.body.scrollHeight);
+	}
+
+
+
+
+</script>
+
+</head>
+
+<body>
+
+<h3>/patient/api/security/login</h3>
+
+	Username: <input type="text" id="username" value="admin@email">
+	<br/>
+	Password: <input type="text" id="password" value="test">
+	<br/>
+	<button type="button" onclick="performLogin()">Submit</button>
+
+	<script>
+		function performLogin() {
+
+			var usernameStr = document.getElementById('username').value;
+			var passwordStr = document.getElementById('password').value;
+
+			var params = {username:usernameStr, password:passwordStr};
+			var jsonStr = JSON.stringify(params);
+
+			post('/patient/api/security/login/', params);
+
+		}
+	</script>
+
+<hr/>
+<h3>/patient/api/security/logoff</h3>
+
+	<button type="button" onclick="logoff()">Submit</button>
+
+	<script>
+		function logoff() {
+			post('/patient/api/security/logoff/');
+
+		}
+	</script>
+
+
+<hr/>
+<h3>/patient/api/patientRecord/forServiceId</h3>
+
+Service ID: <input type="text" id="forServiceIdUuid" value="a469f69d-0e82-451f-988a-211e3125f5cd">
+<br/>
+<button type="button" onclick="forServiceId()">Submit</button>
+
+<script>
+	function forServiceId() {
+		var s = document.getElementById('forServiceIdUuid').value;
+		get('/patient/api/patientRecord/forServiceId', 'serviceId=' + s);
+	}
+</script>
+
+<hr/>
+<h3>Results</h3>
+<div id="results"></div>
+
+</body>
+</html> 

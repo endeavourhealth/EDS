@@ -5,11 +5,13 @@ import org.endeavourhealth.core.data.admin.UserRepository;
 import org.endeavourhealth.core.data.admin.models.EndUser;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.patientui.framework.security.UserPrincipal;
+import org.endeavourhealth.patientui.framework.security.UserWrapper;
 import org.slf4j.MDC;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
+import java.util.List;
 import java.util.UUID;
 
 public abstract class AbstractEndpoint {
@@ -37,7 +39,21 @@ public abstract class AbstractEndpoint {
         if (up == null) {
             return null;
         }
-        return up.getNhsNumber();
+        UserWrapper userWrapper = up.getUserWrapper();
+        return userWrapper.getNhsNumber();
     }
+
+    protected UUID getPersonIdFromSession(SecurityContext sc) throws Exception {
+        UserPrincipal up = (UserPrincipal)sc.getUserPrincipal();
+        if (up == null) {
+            return null;
+        }
+        UserWrapper userWrapper = up.getUserWrapper();
+        return userWrapper.getPersonId();
+    }
+
+/*    protected String convertToJsonArray(List<String> list) {
+        return "[" + list.t  "]";
+    }*/
 
 }

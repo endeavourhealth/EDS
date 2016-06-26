@@ -24,7 +24,7 @@ var app;
                     case ItemType.Report:
                         return 'Report';
                     case ItemType.Query:
-                        return 'Query';
+                        return 'Cohort';
                     case ItemType.Test:
                         return 'Test';
                     case ItemType.DataSource:
@@ -32,7 +32,7 @@ var app;
                     case ItemType.CodeSet:
                         return 'Code set';
                     case ItemType.ListOutput:
-                        return 'List report';
+                        return 'Data set';
                     case ItemType.LibraryFolder:
                         return 'Library folder';
                     case ItemType.Protocol:
@@ -51,7 +51,7 @@ var app;
                     case ItemType.Report:
                         return 'fa-file';
                     case ItemType.Query:
-                        return 'fa-question-circle';
+                        return 'fa-user';
                     case ItemType.Test:
                         return 'fa-random';
                     case ItemType.DataSource:
@@ -63,7 +63,7 @@ var app;
                     case ItemType.LibraryFolder:
                         return 'fa-folder-open';
                     case ItemType.Protocol:
-                        return 'fa-list-alt';
+                        return 'fa-share-alt';
                     case ItemType.System:
                         return 'fa-laptop';
                 }

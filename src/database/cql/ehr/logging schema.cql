@@ -1,5 +1,14 @@
-create keyspace logging with replication = {'class':'SimpleStrategy', 'replication_factor':1};
 
+//drop tables
+DROP TABLE IF EXISTS logging.logging_event;
+DROP TABLE IF EXISTS logging.logging_event_property;
+DROP TABLE IF EXISTS logging.logging_event_exception;
+
+//drop and recreate the keyspace
+DROP KEYSPACE IF EXISTS logging;
+CREATE KEYSPACE logging with replication = {'class':'SimpleStrategy', 'replication_factor':1};
+
+//create tables
 USE logging;
 
 CREATE TABLE logging_event 
@@ -19,7 +28,7 @@ CREATE TABLE logging_event
     caller_method     VARCHAR,
     caller_line       INT,
     event_id          UUID,
-    PRIMARY KEY (event_id) 
+    PRIMARY KEY (timestmp, event_id) 
   );
 
 CREATE TABLE logging_event_property 

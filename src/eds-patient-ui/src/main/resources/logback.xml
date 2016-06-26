@@ -4,26 +4,26 @@
   <!-- appender for console -->
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%date %level [%thread] %logger{10}:%line %X{UserUuid} - %msg%n</pattern>
+      <pattern>%date %level [%thread] %logger{10}:%line %X{nhsNumber} - %msg%n</pattern>
     </encoder>
   </appender>
 
 
 <!-- appender for log file-->
-  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+<!--  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
     <file>EnterpriseWebServer.log</file>
     <encoder>
-      <pattern>%date %level [%thread] %logger{10}:%line %X{UserUuid} - %msg%n</pattern>
+      <pattern>%date %level [%thread] %logger{10}:%line %X{nhsNumber} - %msg%n</pattern>
     </encoder>
-  </appender>
+  </appender>-->
 
 
-  <logger name="org.endeavourhealth.ui" level="TRACE"/>
+  <logger name="org.endeavourhealth.patientui" level="TRACE"/>
   <logger name="com.mchange" level="INFO"/>  <!--not interested in logback debug logging -->
 
   <root level="debug">
     <appender-ref ref="STDOUT" />
-    <appender-ref ref="FILE" />
+    <!--<appender-ref ref="FILE" />-->
     <!--DB appender is added programmatically-->
 </root>
 </configuration>

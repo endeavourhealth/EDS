@@ -3,10 +3,10 @@ package org.endeavourhealth.patientui.framework.security;
 import java.security.Principal;
 
 public class UserPrincipal implements Principal {
-    private String nhsNumber = null;
+    private UserWrapper userWrapper = null;
 
-    public UserPrincipal(String nhsNumber) {
-        this.nhsNumber = nhsNumber;
+    public UserPrincipal(UserWrapper userWrapper) {
+        this.userWrapper = userWrapper;
     }
 
     @Override
@@ -14,7 +14,7 @@ public class UserPrincipal implements Principal {
         return null;
     }
 
-    public String getNhsNumber() {
-        return nhsNumber;
+    public UserWrapper getUserWrapper() {
+        return userWrapper;
     }
 }

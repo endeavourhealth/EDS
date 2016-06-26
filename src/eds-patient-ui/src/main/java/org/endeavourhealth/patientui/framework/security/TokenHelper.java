@@ -17,16 +17,22 @@ public class TokenHelper {
     private static final String TOKEN_TYPE_JWT = "JWT";
     private static final String TOKEN_ISSUED_AT = "iat";
     private static final String TOKEN_NHS_NUMBER = "nhs";
+    private static final String TOKEN_PERSON_ID = "pid";
 
-    public static NewCookie createTokenAsCookie(String nhsNumber) {
-        String token = createToken(nhsNumber);
+    public static NewCookie createTokenAsCookie(String nhsNumber, UUID personId) {
+        String token = createToken(nhsNumber, personId);
         return createCookie(token);
     }
 
-    private static String createToken(String nhsNumber) {
+    private static String createToken(String nhsNumber, UUID personId) {
         Map<String, Object> bodyParameterMap = new HashMap<>();
         bodyParameterMap.put(TOKEN_ISSUED_AT, Long.toString(Instant.now().getEpochSecond()));
         bodyParameterMap.put(TOKEN_NHS_NUMBER, nhsNumber);
+        if (personId != null)
+        {
+            bodyParameterMap.put(TOKEN_PERSON_ID, personId.toString());
+        }
+
 
         JwtBuilder builder = Jwts.builder()
                 .setHeaderParam(TOKEN_TYPE, TOKEN_TYPE_JWT)
@@ -53,7 +59,7 @@ public class TokenHelper {
                 false);
     }
 
-    public static String validateToken(String token) throws Exception {
+    public static UserWrapper validateToken(String token) throws Exception {
         Claims claims = Jwts
                 .parser()
                 .setSigningKey(SecurityConfig.TOKEN_SIGNING_SECRET)
@@ -68,7 +74,9 @@ public class TokenHelper {
             throw new AuthenticationException("Token expired");
         }
 
-        return (String)claims.get(TOKEN_NHS_NUMBER);
+        String nhsNumber = (String)claims.get(TOKEN_NHS_NUMBER);
+        UUID personId = UUID.fromString((String)claims.get(TOKEN_PERSON_ID));
+        return new UserWrapper(nhsNumber, personId);
     }
 
 }

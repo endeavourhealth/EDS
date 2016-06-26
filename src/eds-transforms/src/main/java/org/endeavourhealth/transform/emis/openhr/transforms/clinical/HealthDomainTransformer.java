@@ -36,7 +36,11 @@ public class HealthDomainTransformer
             OpenHRHelper.ensureDboNotDelete(event);
 
             ClinicalResourceTransformer transformer = getTransformerForEvent(healthDomain, event);
-            result.add(transformer.transform(event, healthDomain, eventEncounterMap));
+
+            if (transformer != null) {
+                result.add(transformer.transform(event, healthDomain, eventEncounterMap));
+            }
+
         }
 
         return result;

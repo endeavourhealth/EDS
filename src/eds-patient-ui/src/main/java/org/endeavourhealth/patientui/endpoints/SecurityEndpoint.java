@@ -1,13 +1,5 @@
 package org.endeavourhealth.patientui.endpoints;
 
-import org.endeavourhealth.core.data.admin.OrganisationRepository;
-import org.endeavourhealth.core.data.admin.UserRepository;
-import org.endeavourhealth.core.data.admin.models.EndUser;
-import org.endeavourhealth.core.data.admin.models.EndUserPwd;
-import org.endeavourhealth.core.data.admin.models.Organisation;
-import org.endeavourhealth.core.data.admin.models.OrganisationEndUserLink;
-import org.endeavourhealth.patientui.framework.security.PasswordHash;
-import org.endeavourhealth.patientui.framework.security.SecurityConfig;
 import org.endeavourhealth.patientui.framework.security.TokenHelper;
 import org.endeavourhealth.patientui.framework.security.Unsecured;
 import org.endeavourhealth.patientui.json.JsonLoginParameters;
@@ -53,6 +45,7 @@ public final class SecurityEndpoint extends AbstractEndpoint {
         String middleNames = "Middlename";
         String surname = "Surname";
         Date dob = new Date();
+        UUID personId = UUID.fromString("19a4b78c-eb28-4b82-8f55-741a35179bb0");
 
         JsonUser ret = new JsonUser();
         ret.setNhsNumber(nhsNumber);
@@ -62,7 +55,7 @@ public final class SecurityEndpoint extends AbstractEndpoint {
         ret.setSurname(surname);
         ret.setDob(dob);
 
-        NewCookie cookie = TokenHelper.createTokenAsCookie(nhsNumber);
+        NewCookie cookie = TokenHelper.createTokenAsCookie(nhsNumber, personId);
 
         clearLogbackMarkers();
 
@@ -84,7 +77,7 @@ public final class SecurityEndpoint extends AbstractEndpoint {
         LOG.trace("Logoff");
 
         //replace the cookie on the client with an empty one
-        NewCookie cookie = TokenHelper.createTokenAsCookie(null);
+        NewCookie cookie = TokenHelper.createTokenAsCookie(null, null);
 
         clearLogbackMarkers();
 

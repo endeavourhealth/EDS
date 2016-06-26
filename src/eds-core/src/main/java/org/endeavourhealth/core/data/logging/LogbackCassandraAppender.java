@@ -197,7 +197,7 @@ public final class LogbackCassandraAppender extends UnsynchronizedAppenderBase<I
         return mergedMap;
     }
 
-    public static void registerDbAppender() {
+    private static void registerDbAppender() {
         ch.qos.logback.classic.Logger rootLogger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 
         LogbackCassandraAppender dbAppender = new LogbackCassandraAppender();

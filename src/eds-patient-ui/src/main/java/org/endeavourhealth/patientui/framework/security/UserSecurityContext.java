@@ -2,13 +2,14 @@ package org.endeavourhealth.patientui.framework.security;
 
 import javax.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.UUID;
 
 public class UserSecurityContext implements SecurityContext {
 
     private UserPrincipal userPrincipal = null;
 
-    public UserSecurityContext(String nhsNumber) {
-        userPrincipal = new UserPrincipal(nhsNumber);
+    public UserSecurityContext(UserWrapper userWrapper) {
+        userPrincipal = new UserPrincipal(userWrapper);
     }
 
     @Override

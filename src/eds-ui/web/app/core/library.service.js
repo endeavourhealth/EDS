@@ -37,6 +37,12 @@ var app;
             LibraryService.prototype.getSystems = function () {
                 return this.httpGet('api/library/getSystems');
             };
+            LibraryService.prototype.getCohorts = function () {
+                return this.httpGet('api/library/getQueries');
+            };
+            LibraryService.prototype.getDatasets = function () {
+                return this.httpGet('api/library/getListReports');
+            };
             return LibraryService;
         })(core.BaseHttpService);
         core.LibraryService = LibraryService;

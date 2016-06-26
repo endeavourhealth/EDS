@@ -142,6 +142,13 @@
             <version>3.0.0</version>
         </dependency>
 
+        <!-- base FHIR resources (to be replaced with Endeavour extensions -->
+        <dependency>
+            <groupId>me.fhir</groupId>
+            <artifactId>fhir-dstu2</artifactId>
+            <version>1.0.0.6881</version>
+        </dependency>
+
         <!-- dependent on EDS-core -->
         <dependency>
             <groupId>org.endeavourhealth</groupId>
