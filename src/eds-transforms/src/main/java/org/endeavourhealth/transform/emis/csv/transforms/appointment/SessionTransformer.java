@@ -40,7 +40,9 @@ public class SessionTransformer {
         fhirSession.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SCHEDULE));
 
         String sessionGuid = sessionParser.getAppointmnetSessionGuid();
-        fhirSession.setId(sessionGuid);
+
+        //ID is set on the resource when it's copied for use in the object store
+        //fhirSession.setId(sessionGuid);
 
         //add to the map
         fhirSessions.put(sessionGuid, fhirSession);

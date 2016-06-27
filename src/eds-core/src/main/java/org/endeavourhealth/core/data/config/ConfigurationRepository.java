@@ -4,7 +4,7 @@ import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.mapping.Mapper;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.config.models.ConfigurationResource;
-import org.endeavourhealth.core.data.ehr.models.EventStoreMode;
+import org.endeavourhealth.core.data.EventStoreMode;
 
 import java.util.UUID;
 

@@ -4,7 +4,7 @@ import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Diary;
-import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.fhir.AnnotationHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.CodeableConcept;
@@ -15,7 +15,7 @@ import java.util.Date;
 
 public class DiaryTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, FhirObjectStore objectStore) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
 
         CareRecord_Diary parser = new CareRecord_Diary(folderPath, csvFormat);
         try {
@@ -27,18 +27,19 @@ public class DiaryTransformer {
         }
     }
 
-    private static void createProcedureRequest(CareRecord_Diary diaryParser, FhirObjectStore objectStore) throws Exception {
+    private static void createProcedureRequest(CareRecord_Diary diaryParser, EmisCsvHelper objectStore) throws Exception {
 
         ProcedureRequest fhirRequest = new ProcedureRequest();
         fhirRequest.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROCEDURE_REQUEST));
 
         String diaryGuid = diaryParser.getDiaryGuid();
-        fhirRequest.setId(diaryGuid);
-
         String patientGuid = diaryParser.getPatientGuid();
+        String organisationGuid = diaryParser.getOrganisationGuid();
+
+        EmisCsvHelper.setUniqueId(fhirRequest, patientGuid, diaryGuid);
+
         fhirRequest.setSubject(objectStore.createPatientReference(patientGuid));
 
-        String organisationGuid = diaryParser.getOrganisationGuid();
         boolean store = !diaryParser.getDeleted() && !diaryParser.getIsConfidential();
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirRequest, store);
 

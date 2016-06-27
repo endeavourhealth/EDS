@@ -2,7 +2,6 @@
 /// <reference path="../models/MenuOption.ts" />
 /// <reference path="../models/Role.ts" />
 /// <reference path="../models/User.ts" />
-/// <reference path="../models/UserInRole.ts" />
 
 module app.core {
 	import IPromise = angular.IPromise;
@@ -11,7 +10,6 @@ module app.core {
 
 	export interface ISecurityService {
 		getCurrentUser() : app.models.User;
-		switchUserInRole(userInRoleUuid:string) : IPromise<app.models.UserInRole>;
 		isAuthenticated() : boolean;
 		login(username:string, password:string) : IPromise<app.models.User>;
 		logout() : void;
@@ -36,10 +34,11 @@ module app.core {
 				'username': username,
 				'password': password
 			};
-			vm.http.post('/api/security/login', request)
+			vm.http.post('/patient/api/security/login', request)
 				.then(function (response) {
-					var loginResponse = <app.models.LoginResponse>response.data;
-					vm.currentUser = loginResponse.user;
+					vm.currentUser = <app.models.User>response.data;
+						/*var loginResponse = <app.models.LoginResponse>response.data;
+                        vm.currentUser = loginResponse.user;*/
 					defer.resolve(vm.currentUser);
 				})
 				.catch(function (exception) {
@@ -49,13 +48,10 @@ module app.core {
 			return defer.promise;
 		}
 
-		switchUserInRole(userInRoleUuid:string) : IPromise<app.models.UserInRole> {
-			var request = '"' + userInRoleUuid + '"';
-			return this.httpPost('/api/security/switchUserInRole', request);
-		}
-
 		logout() {
 			this.currentUser = null;
+			var vm = this;
+	//		vm.http.post('/patient/api/security/logout');
 		}
 	}
 

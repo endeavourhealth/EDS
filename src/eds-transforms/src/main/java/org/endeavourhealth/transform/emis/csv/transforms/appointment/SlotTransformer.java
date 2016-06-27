@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.csv.schema.Appointment_Slot;
-import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
@@ -11,7 +11,7 @@ import java.util.Date;
 
 public class SlotTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, FhirObjectStore objectStore) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
 
         Appointment_Slot parser = new Appointment_Slot(folderPath, csvFormat);
         try {
@@ -23,23 +23,23 @@ public class SlotTransformer {
         }
     }
 
-    private static void createSlotAndAppointment(Appointment_Slot slotParser, FhirObjectStore objectStore) throws Exception {
+    private static void createSlotAndAppointment(Appointment_Slot slotParser, EmisCsvHelper objectStore) throws Exception {
 
         String patientGuid = slotParser.getPatientGuid();
+        String organisationGuid = slotParser.getOrganisationGuid();
 
         Slot fhirSlot = new Slot();
         fhirSlot.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SLOT));
 
         String slotGuid = slotParser.getSlotGuid();
-        fhirSlot.setId(slotGuid);
+        EmisCsvHelper.setUniqueId(fhirSlot, patientGuid, slotGuid);
 
         Appointment fhirAppointment = new Appointment();
         fhirAppointment.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_APPOINTMENT));
 
         //use the same slot GUID as the appointment GUID, since it's a different resource type, it should be fine
-        fhirAppointment.setId(slotGuid);
+        EmisCsvHelper.setUniqueId(fhirAppointment, patientGuid, slotGuid);
 
-        String organisationGuid = slotParser.getOrganisationGuid();
         boolean store = !slotParser.getDeleted();
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirSlot, store);
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirAppointment, store);

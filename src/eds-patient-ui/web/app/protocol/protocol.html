@@ -1,0 +1,179 @@
+<div class="module">
+	<div class="container-fluid">
+		<div class="module-heading">
+			Data Distribution Protocols
+			<div class="pull-right">
+				<button type="button" class="btn btn-sm btn-success" data-ng-click="protocolCtrl.save(false)">Save</button>
+				<button type="button" class="btn btn-sm btn-warning" data-ng-click="protocolCtrl.save(true)">Save & Close</button>
+				<button type="button" class="btn btn-sm btn-danger" data-ng-click="protocolCtrl.close()">Cancel</button>
+			</div>
+		</div>
+		<div class="module-body">
+			<form>
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label for="name">Protocol Name</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-edit fa-lg fa-fw"></i></span>
+							<input type="text" class="form-control" id="name" ng-model="protocolCtrl.libraryItem.name" placeholder="Please enter a data protocol name">
+						</div>
+					</div>
+					<div class="form-group col-md-6">
+						<label for="description">Protocol Description</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-edit fa-lg fa-fw"></i></span>
+							<textarea class="form-control" id="description" ng-model="protocolCtrl.libraryItem.description" placeholder="Please enter a description for this data protocol"></textarea>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label>Protocol Enabled</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-check fa-lg fa-fw"></i></span>
+							<select class="form-control" ng-model="protocolCtrl.libraryItem.protocol.enabled">
+								<option ng-repeat="enabled in protocolCtrl.enabled" value="{{enabled}}">{{enabled}}</option>
+							</select>
+						</div>
+					</div>
+					<div class="form-group col-md-6">
+						<label>Patient Consent</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-user fa-lg fa-fw"></i></span>
+							<select class="form-control" ng-model="protocolCtrl.libraryItem.protocol.patientConsent">
+								<option ng-repeat="consent in protocolCtrl.consent" value="{{consent}}">{{consent}}</option>
+							</select>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label>Cohort</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-check fa-lg fa-fw"></i></span>
+							<select class="form-control" ng-model="protocolCtrl.libraryItem.protocol.cohort">
+								<option ng-repeat="item in protocolCtrl.cohorts" value="{{item.uuid}}">{{item.name}}</option>
+							</select>
+						</div>
+					</div>
+					<div class="form-group col-md-6">
+						<label>Data Set</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-user fa-lg fa-fw"></i></span>
+							<select class="form-control" ng-model="protocolCtrl.libraryItem.protocol.dataSet">
+								<option ng-repeat="item in protocolCtrl.dataSets" value="{{item.uuid}}">{{item.name}}</option>
+							</select>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-8">
+						<label>Publishers & Subscribers</label>
+						<button type="button" class="btn btn-xs btn-success" style="margin-left: 20px" data-ng-click="protocolCtrl.addContract()">
+							<span class="fa fa-plus"></span>
+						</button>
+						<div class="table scroll-box-350 form-control">
+							<table class="table table-striped table-condensed">
+								<thead>
+								<tr>
+									<th class="col-md-2">Type</th>
+									<th class="col-md-4">Service</th>
+									<th class="col-md-2">System</th>
+									<th class="col-md-2">Active</th>
+									<th class="col-md-2"></th>
+								</tr>
+								</thead>
+								<tbody>
+								<tr class="hover-box show-child-on-hover"
+									ng-repeat="item in protocolCtrl.libraryItem.protocol.serviceContract"
+									ng-click="protocolCtrl.selectedContract = item;"
+									ng-class="{'selection': item == protocolCtrl.selectedContract}">
+									<td>{{item.type}}</td>
+									<td>{{item.service.name}}</td>
+									<td>{{item.system.name}}</td>
+									<td>{{item.active}}</td>
+									<td>
+										<div class="child-to-show">
+											<button type="button" class="btn btn-danger btn-xs pull-right" ng-click="protocolCtrl.removeContract(this)">
+												<span class="fa fa-remove"></span>
+											</button>
+										</div>
+									</td>
+								</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="form-group col-md-4" ng-show="protocolCtrl.selectedContract">
+						<div class="row">
+							<div class="form-group col-md-12">
+								<label>Type</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-question fa-lg fa-fw"></i></span>
+									<select class="form-control" ng-model="protocolCtrl.selectedContract.type">
+										<option ng-repeat="type in protocolCtrl.type" value="{{type}}">{{type}}</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-12">
+								<label>Service</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
+									<select id="service" class="form-control" ng-model="protocolCtrl.selectedContract.service.uuid" ng-change="protocolCtrl.setService()">
+										<option ng-repeat="item in protocolCtrl.services" value="{{item.uuid}}">{{item.name}}</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-12">
+								<label>System</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-laptop fa-lg fa-fw"></i></span>
+									<select id="system" class="form-control" ng-model="protocolCtrl.selectedContract.system.uuid" ng-change="protocolCtrl.setSystem()">
+										<option ng-repeat="item in protocolCtrl.systems" value="{{item.uuid}}">{{item.name}}</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-12">
+								<label>Technical Interface</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-cog fa-lg fa-fw"></i></span>
+									<select id="technicalInterface" class="form-control" ng-model="protocolCtrl.selectedContract.technicalInterface.uuid" ng-change="protocolCtrl.setTechnicalInterface()">
+										<option ng-repeat="item in protocolCtrl.technicalInterfaces" value="{{item.uuid}}">{{item.name}}</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-12">
+								<label>Active</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-check fa-lg fa-fw"></i></span>
+									<select class="form-control" ng-model="protocolCtrl.selectedContract.active">
+										<option ng-repeat="enabled in protocolCtrl.enabled" value="{{enabled}}">{{enabled}}</option>
+									</select>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+

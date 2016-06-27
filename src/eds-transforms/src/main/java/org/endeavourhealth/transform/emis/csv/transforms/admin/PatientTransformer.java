@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Patient;
-import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.openhr.schema.VocSex;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.SexConverter;
 import org.endeavourhealth.transform.fhir.*;
@@ -16,7 +16,7 @@ import java.util.*;
 
 public class PatientTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, FhirObjectStore objectStore) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
 
         Admin_Patient parser = new Admin_Patient(folderPath, csvFormat);
         try {
@@ -28,26 +28,26 @@ public class PatientTransformer {
         }
     }
 
-    private static void createPatient(Admin_Patient patientParser, FhirObjectStore objectStore) throws Exception {
+    private static void createPatient(Admin_Patient patientParser, EmisCsvHelper objectStore) throws Exception {
 
         //create Patient Resource
         Patient fhirPatient = new Patient();
         fhirPatient.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PATIENT));
 
         String patientGuid = patientParser.getPatientGuid();
-        fhirPatient.setId(patientGuid);
+        String organisationGuid = patientParser.getOrganisationGuid();
 
-
+        EmisCsvHelper.setUniqueId(fhirPatient, patientGuid, null);
+        //fhirPatient.setId(patientGuid);
 
         //create Episode of Care Resource
         EpisodeOfCare fhirEpisode = new EpisodeOfCare();
         fhirEpisode.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_EPISODE_OF_CARE));
 
-        //since ID is only required to be unique per resource type, we can use the patientGuid as the episode ID
-        fhirEpisode.setId(patientGuid);
+        EmisCsvHelper.setUniqueId(fhirEpisode, patientGuid, null);
+
         fhirEpisode.setPatient(objectStore.createPatientReference(patientGuid.toString()));
 
-        String organisationGuid = patientParser.getOrganisationGuid();
         boolean store = !patientParser.getDeleted() && !patientParser.getIsConfidential();
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirPatient, store);
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirEpisode, store);

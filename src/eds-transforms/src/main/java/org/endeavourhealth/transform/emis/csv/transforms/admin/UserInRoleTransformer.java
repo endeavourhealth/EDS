@@ -37,7 +37,8 @@ public class UserInRoleTransformer {
         String userInRoleGuid = userInRoleParser.getUserInRoleGuid();
         fhirUsersInRoleMap.put(userInRoleGuid, fhirPractitioner);
 
-        fhirPractitioner.setId(userInRoleGuid.toString());
+        //ID is set on the resource when it's copied for use in the object store
+        //fhirPractitioner.setId(userInRoleGuid);
 
         String title = userInRoleParser.getTitle();
         String givenName = userInRoleParser.getGivenName();

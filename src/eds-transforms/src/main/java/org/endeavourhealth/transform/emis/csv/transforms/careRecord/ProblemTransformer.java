@@ -5,7 +5,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Problem;
-import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.ProblemRelationshipType;
 import org.endeavourhealth.transform.fhir.schema.ProblemSignificance;
@@ -16,7 +16,7 @@ import java.util.List;
 
 public class ProblemTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, FhirObjectStore objectStore) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
 
         CareRecord_Problem parser = new CareRecord_Problem(folderPath, csvFormat);
         try {
@@ -28,18 +28,19 @@ public class ProblemTransformer {
         }
     }
 
-    private static void createProblem(CareRecord_Problem problemParser, FhirObjectStore objectStore) throws Exception {
+    private static void createProblem(CareRecord_Problem problemParser, EmisCsvHelper objectStore) throws Exception {
 
         Condition fhirProblem = new Condition();
         fhirProblem.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROBLEM));
 
         String observationGuid = problemParser.getObservationGuid();
-        fhirProblem.setId(observationGuid); //use the observation GUID as the problem GUID, since they only need to be unique per resource type
-
         String patientGuid = problemParser.getPatientGuid();
+        String organisationGuid = problemParser.getOrganisationGuid();
+
+        EmisCsvHelper.setUniqueId(fhirProblem, patientGuid, observationGuid);
+
         fhirProblem.setPatient(objectStore.createPatientReference(patientGuid));
 
-        String organisationGuid = problemParser.getOrganisationGuid();
         boolean store = !objectStore.isObservationToDelete(patientGuid, observationGuid);
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirProblem, store);
 

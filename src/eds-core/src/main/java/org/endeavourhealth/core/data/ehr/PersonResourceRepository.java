@@ -2,58 +2,74 @@ package org.endeavourhealth.core.data.ehr;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.mapping.Mapper;
+import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.PersonResourceAccessor;
-import org.endeavourhealth.core.data.ehr.models.EventStoreMode;
+import org.endeavourhealth.core.data.EventStoreMode;
 import org.endeavourhealth.core.data.ehr.models.PersonResource;
 import org.endeavourhealth.core.data.ehr.models.PersonResourceEventStore;
 
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 public class PersonResourceRepository extends Repository {
-    public void insert(PersonResource personResource){
-        if (personResource == null)
-            throw new IllegalArgumentException("personResource is null");
 
-        save(personResource, EventStoreMode.insert);
+    public void insert(PersonResource personResource){
+        if (personResource == null) {
+            throw new IllegalArgumentException("personResource is null");
+        }
+        insert(Lists.newArrayList(personResource));
     }
 
     public void update(PersonResource personResource){
-        if (personResource == null)
+        if (personResource == null) {
             throw new IllegalArgumentException("personResource is null");
+        }
 
-        save(personResource, EventStoreMode.update);
+        delete(Lists.newArrayList(personResource));
     }
 
-    private void save(PersonResource personResource, EventStoreMode mode){
+    public void insert(List<PersonResource> personResources){
+        save(personResources, EventStoreMode.insert);
+    }
+
+    public void delete(List<PersonResource> personResources){
+        save(personResources, EventStoreMode.delete);
+    }
+
+    private void save(List<PersonResource> personResources, EventStoreMode storeMode){
         Mapper<PersonResource> mapperPersonResource = getMappingManager().mapper(PersonResource.class);
         Mapper<PersonResourceEventStore> mapperEventStore = getMappingManager().mapper(PersonResourceEventStore.class);
 
-        PersonResourceEventStore eventStore = createEventStoreObject(personResource, mode);
+        BatchStatement batch = new BatchStatement();
 
-        BatchStatement batch = new BatchStatement()
-                .add(mapperPersonResource.saveQuery(personResource))
-                .add(mapperEventStore.saveQuery(eventStore));
+        for (PersonResource personResource: personResources) {
+            PersonResourceEventStore eventStore = createEventStoreObject(personResource, storeMode);
+
+            switch (storeMode) {
+                case insert:
+                    batch.add(mapperPersonResource.saveQuery(personResource));
+                    break;
+                case update:
+                    batch.add(mapperPersonResource.saveQuery(personResource)); //updates use saveQuery(..) as well as inserts
+                    break;
+                case delete:
+                    batch.add(mapperPersonResource.deleteQuery(personResource));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid store mode " + storeMode);
+            }
+
+            //insert the audit entity
+            batch.add(mapperEventStore.saveQuery(eventStore));
+
+        }
 
         getSession().execute(batch);
     }
 
-    public void delete(PersonResource personResource){
-        if (personResource == null)
-            throw new IllegalArgumentException("personResource is null");
-
-        Mapper<PersonResource> mapperPersonResource = getMappingManager().mapper(PersonResource.class);
-        Mapper<PersonResourceEventStore> mapperEventStore = getMappingManager().mapper(PersonResourceEventStore.class);
-
-        PersonResourceEventStore eventStore = createEventStoreObject(personResource, EventStoreMode.delete);
-
-        BatchStatement batch = new BatchStatement()
-                .add(mapperPersonResource.deleteQuery(personResource))
-                .add(mapperEventStore.saveQuery(eventStore));
-
-        getSession().execute(batch);
-    }
 
     public PersonResource getByKey(UUID personId, String resourceType, UUID serviceId, UUID systemInstanceId, String resourceId) {
 

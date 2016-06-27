@@ -4,7 +4,7 @@ import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_ObservationReferral;
-import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.IdentifierHelper;
@@ -14,7 +14,7 @@ import java.util.List;
 
 public class ObservationReferralTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, FhirObjectStore objectStore) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
 
         CareRecord_ObservationReferral parser = new CareRecord_ObservationReferral(folderPath, csvFormat);
         try {
@@ -26,18 +26,19 @@ public class ObservationReferralTransformer {
         }
     }
 
-    private static void createResource(CareRecord_ObservationReferral observationParser, FhirObjectStore objectStore) throws Exception {
+    private static void createResource(CareRecord_ObservationReferral observationParser, EmisCsvHelper objectStore) throws Exception {
 
         ReferralRequest fhirReferral = new ReferralRequest();
         fhirReferral.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_REFERRAL_REQUEST));
 
         String observationGuid = observationParser.getObservationGuid();
-        fhirReferral.setId(observationGuid); //use the observation GUID as the problem GUID, since they only need to be unique per resource type
-
         String patientGuid = observationParser.getPatientGuid();
+        String organisationGuid = observationParser.getOrganisationGuid();
+
+        EmisCsvHelper.setUniqueId(fhirReferral, patientGuid, observationGuid);
+
         fhirReferral.setPatient(objectStore.createPatientReference(patientGuid));
 
-        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !objectStore.isObservationToDelete(patientGuid, observationGuid);
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirReferral, store);
 

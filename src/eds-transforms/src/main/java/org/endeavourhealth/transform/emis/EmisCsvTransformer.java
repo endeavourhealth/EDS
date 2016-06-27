@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.emis;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.csv.ClinicalCode;
-import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.LocationTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.OrganisationTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.UserInRoleTransformer;
@@ -13,7 +13,7 @@ import org.endeavourhealth.transform.emis.csv.transforms.coding.*;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.PatientTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.prescribing.DrugRecordTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.prescribing.IssueRecordTransformer;
-import org.endeavourhealth.transform.emis.csv.FhirPatientStore;
+import org.endeavourhealth.transform.fhir.FhirPatientStore;
 import org.endeavourhealth.transform.terminology.Snomed;
 import org.hl7.fhir.instance.model.*;
 
@@ -28,7 +28,7 @@ public abstract class EmisCsvTransformer {
 
     public static List<FhirPatientStore> transform(String folderPath) throws Exception {
 
-        FhirObjectStore fhirObjects = transformMetadata(folderPath);
+        EmisCsvHelper fhirObjects = transformMetadata(folderPath);
 
         PatientTransformer.transform(folderPath, CSV_FORMAT, fhirObjects);
         ProblemTransformer.transform(folderPath, CSV_FORMAT, fhirObjects);
@@ -99,7 +99,7 @@ public abstract class EmisCsvTransformer {
 
     }
 
-    private static FhirObjectStore transformMetadata(String folderPath) throws Exception {
+    private static EmisCsvHelper transformMetadata(String folderPath) throws Exception {
 
         //parse coding files into cache maps
         Map<Long, ClinicalCode> clinicalCodes = ClinicalCodeTransformer.transform(folderPath, CSV_FORMAT);
@@ -111,7 +111,7 @@ public abstract class EmisCsvTransformer {
         Map<String, Practitioner> fhirPractitioners = UserInRoleTransformer.transform(folderPath, CSV_FORMAT);
         Map<String, Schedule> fhirSchedules = SessionTransformer.transform(folderPath, CSV_FORMAT);
 
-        return new FhirObjectStore(clinicalCodes, fhirMedication, fhirLocations, fhirOrganisations, fhirPractitioners, fhirSchedules);
+        return new EmisCsvHelper(clinicalCodes, fhirMedication, fhirLocations, fhirOrganisations, fhirPractitioners, fhirSchedules);
     }
 
 

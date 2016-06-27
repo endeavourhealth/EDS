@@ -15,18 +15,17 @@ angular.module('app', [
 		'angular-uuid-generator',
 
 		'app.core',
-		//'app.config',
+		'app.config',
 		'app.blocks',
 		'app.models',
-		//'app.layout',
+		'app.layout',
 		'app.login',
-
-		/*'app.dialogs',
+		'app.medicalRecord',
+		'app.dialogs',
 		'app.dashboard',
 		'app.library',
 		'app.protocol',
 		'app.system',
-		'app.reports',
 		'app.listOutput',
 		'app.codeSet',
 		'app.organisation',
@@ -34,7 +33,7 @@ angular.module('app', [
 		'app.organisationSet',
 		'app.admin',
 		'app.query',
-		'app.routeGroup',*/
+		'app.routeGroup',
 		'flowChart',
 		'dragging',
 		'mouseCapture'

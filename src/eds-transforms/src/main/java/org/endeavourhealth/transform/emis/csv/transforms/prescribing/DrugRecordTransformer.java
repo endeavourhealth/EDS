@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Prescribing_DrugRecord;
-import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
@@ -14,7 +14,7 @@ import java.util.Date;
 
 public class DrugRecordTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, FhirObjectStore objectStore) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
 
         Prescribing_DrugRecord parser = new Prescribing_DrugRecord(folderPath, csvFormat);
         try {
@@ -26,18 +26,19 @@ public class DrugRecordTransformer {
         }
     }
 
-    private static void createResource(Prescribing_DrugRecord drugRecordParser, FhirObjectStore objectStore) throws Exception {
+    private static void createResource(Prescribing_DrugRecord drugRecordParser, EmisCsvHelper objectStore) throws Exception {
 
         MedicationStatement fhirMedication = new MedicationStatement();
         fhirMedication.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_AUTHORISATION));
 
         String drugRecordGuid = drugRecordParser.getDrugRecordGuid();
-        fhirMedication.setId(drugRecordGuid);
-
         String patientGuid = drugRecordParser.getPatientGuid();
+        String organisationGuid = drugRecordParser.getOrganisationGuid();
+
+        EmisCsvHelper.setUniqueId(fhirMedication, patientGuid, drugRecordGuid);
+
         fhirMedication.setPatient(objectStore.createPatientReference(patientGuid));
 
-        String organisationGuid = drugRecordParser.getOrganisationGuid();
         boolean store = !drugRecordParser.getDeleted() && !drugRecordParser.getIsConfidential();
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirMedication, store);
 

@@ -38,7 +38,8 @@ public class DrugCodeTransformer {
         String term = drugParser.getTerm();
         Long dmdId = drugParser.getDmdProductCodeId();
 
-        fhirMedication.setId(codeId);
+        //ID is set on the resource when it's copied for use in the object store
+        //fhirMedication.setId(codeId);
 
         if (dmdId == null) {
             fhirMedication.setCode(CodeableConceptHelper.createCodeableConcept(term));

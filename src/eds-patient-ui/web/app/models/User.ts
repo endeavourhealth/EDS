@@ -1,18 +1,14 @@
-/// <reference path="UserInRole.ts" />
-
 module app.models {
 	'use strict';
 
 	export class User {
-		uuid:string;
+
+		nhsNumber:string;
 		title:string;
 		forename:string;
+		middleNames:string;
 		surname:string;
-		username:string;	// email
-		isSuperUser:boolean;
-		permissions:number;
+		dob:Date;
 
-		userInRoles:UserInRole[];
-		currentUserInRoleUuid:string;
 	}
 }

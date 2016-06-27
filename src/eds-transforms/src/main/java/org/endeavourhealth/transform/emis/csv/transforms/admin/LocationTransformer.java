@@ -39,7 +39,9 @@ public class LocationTransformer {
         fhirLocation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_LOCATION));
 
         String locationGuid = locationParser.getLocationGuid();
-        fhirLocation.setId(locationGuid);
+
+        //ID is set on the resource when it's copied for use in the object store
+        //fhirLocation.setId(locationGuid);
 
         //add to map for later use
         fhirLocations.put(locationGuid, fhirLocation);

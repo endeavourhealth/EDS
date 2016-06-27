@@ -27,15 +27,27 @@ module app.login {
 			var vm = this;
 			vm.securityService.login(vm.username, vm.password)
 				.then(function (response) {
-					vm.logger.success('User logged in', vm.username, 'Logged In');
+
+					var user = vm.securityService.getCurrentUser();
+
+					vm.logger.success('Logged in as ' + user.forename + ' ' + user.surname, vm.username, 'Logged In');
 					vm.Idle.watch();
 					if (scope.$close) {
 						scope.$close();
 					} else {
 						vm.$state.transitionTo('app.dashboard');
 					}
+
+					/*vm.logger.success('User logged in', vm.username, 'Logged In');
+					vm.Idle.watch();
+					if (scope.$close) {
+						scope.$close();
+					} else {
+						vm.$state.transitionTo('app.dashboard');
+					}*/
 				})
-				.catch(function (data) {
+				.catch(function (data
+				) {
 					vm.logger.error(data.statusText, data, 'Login error!');
 				});
 		}

@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Prescribing_IssueRecord;
-import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
@@ -14,7 +14,7 @@ import java.util.*;
 
 public class IssueRecordTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, FhirObjectStore objectStore) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
 
         Prescribing_IssueRecord parser = new Prescribing_IssueRecord(folderPath, csvFormat);
         try {
@@ -26,18 +26,19 @@ public class IssueRecordTransformer {
         }
     }
 
-    private static void createResource(Prescribing_IssueRecord issueParser, FhirObjectStore objectStore) throws Exception {
+    private static void createResource(Prescribing_IssueRecord issueParser, EmisCsvHelper objectStore) throws Exception {
 
         MedicationOrder fhirMedication = new MedicationOrder();
         fhirMedication.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_ORDER));
 
         String issueGuid = issueParser.getIssueRecordGuid();
-        fhirMedication.setId(issueGuid);
-
         String patientGuid = issueParser.getPatientGuid();
+        String organisationGuid = issueParser.getOrganisationGuid();
+
+        EmisCsvHelper.setUniqueId(fhirMedication, patientGuid, issueGuid);
+
         fhirMedication.setPatient(objectStore.createPatientReference(patientGuid));
 
-        String organisationGuid = issueParser.getOrganisationGuid();
         boolean store = !issueParser.getDeleted() && !issueParser.getIsConfidential();
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirMedication, store);
 

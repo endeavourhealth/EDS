@@ -35,7 +35,9 @@ public class OrganisationTransformer {
         fhirOrganisation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ORGANIZATION));
 
         String orgGuid = organisationParser.getOrganisationGuid();
-        fhirOrganisation.setId(orgGuid);
+
+        //ID is set on the resource when it's copied for use in the object store
+        //fhirOrganisation.setId(orgGuid);
 
         //add to map for later use
         fhirOrganisationMap.put(orgGuid, fhirOrganisation);

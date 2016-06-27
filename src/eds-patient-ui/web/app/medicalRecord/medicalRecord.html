@@ -1,0 +1,220 @@
+<div class="module">
+	<div class="module-heading">
+		Medical Records
+	</div>
+	<div class="module-body">
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-md-12">
+
+					<div class="alert alert-info">
+						<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+						The below table shows all the organisations that have stored medical data about you
+					</div>
+					<!--<p>The below table shows all the organisations that have stored medical data about you</p>-->
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-12">
+					<div class="panel panel-primary">
+						<div class="panel-heading">Recent Items <span class="fa fa-sm fa-refresh fa-refresh-animate" ng-hide="dashboard.recentDocumentsData"></span></div>
+						<div class="panel-body">
+							<div class="table">
+								<table class="table table-striped table-condensed">
+									<thead>
+										<tr>
+											<th>Name</th>
+											<th>Modified</th>
+											<th>Type</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr ng-repeat="item in dashboard.recentDocumentsData">
+											<td>
+												<a style="cursor:pointer" ng-click="dashboard.actionItem(item,'edit')">{{item.name}}</a>
+												<span class="fa fa-info-circle fa-right-pad text-muted" uib-tooltip="{{item.description}}" ng-show="item.description"></span>
+											</td>
+											<td>{{item.lastModified | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+											<td><span class="fa fa-right-pad {{item.type | itemTypeIdToIcon}} text-muted"></span>{{item.type | itemTypeIdToString }}</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-12">
+					<div class="panel panel-primary">
+						<div class="panel-heading">Rabbit Status <span class="fa fa-sm fa-refresh fa-refresh-animate" ng-hide="dashboard.rabbitNodes"></span></div>
+						<div class="panel-body">
+							<div class="row">
+								<div class="form-group col-md-12">
+									<label class="control-label">Node status</label>
+									<div class="input-group">
+										<span ng-repeat="item in dashboard.rabbitNodes">
+											<span class="label"
+														ng-class="dashboard.getPingLabelClass(item)">
+												{{ item.address }}
+													<span ng-show="item.ping == -1">(down)</span>
+													<span ng-show="item.ping == 0">(...)</span>
+													<span ng-show="item.ping > 0">({{item.ping}} ms)</span>
+											</span>&nbsp;
+										</span>
+									</div>
+								</div>
+							</div>
+
+
+							<div class="row">
+								<div class="form-group col-md-3">
+									<label class="control-label">Inbound Exchange</label>
+
+									<div class="progress">
+										<div class="small">{{dashboard.inboundExchange.name}} ({{dashboard.inboundExchange.message_stats.publish_details.rate}} / {{dashboard.inboundExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="progress-bar"
+												 ng-class="dashboard.getExchangeRateClass(dashboard.inboundExchange)"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuemax="{{dashboard.inboundExchange.message_stats.publish_details.rate + dashboard.inboundExchange.message_stats.deliver_get_details.rate}}"
+												 aria-valuenow="{{dashboard.inboundExchange.message_stats.publish_details.rate}}"
+												 ng-style="{ width : (dashboard.inboundExchange.message_stats.publish_details.rate+'%') }">
+										</div>
+									</div>
+
+									<label class="control-label">Inbound Queues</label>
+
+									<div class="progress" ng-repeat="item in dashboard.inboundQueues">
+										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
+										<div class="progress-bar progress-bar-success"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_ready}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_ready+'%') }">
+										</div>
+										<div class="progress-bar progress-bar-warning"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_unacknowledged}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
+										</div>
+									</div>
+								</div>
+								<div class="form-group col-md-3">
+									<label class="control-label">Interim Exchange</label>
+
+									<div class="progress">
+										<div class="small">{{dashboard.interimExchange.name}} ({{dashboard.interimExchange.message_stats.publish_details.rate}} / {{dashboard.interimExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="progress-bar"
+												 ng-class="dashboard.getExchangeRateClass(dashboard.interimExchange)"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuemax="{{dashboard.interimExchange.message_stats.publish_details.rate + dashboard.interimExchange.message_stats.deliver_get_details.rate}}"
+												 aria-valuenow="{{dashboard.interimExchange.message_stats.publish_details.rate}}"
+												 ng-style="{ width : (dashboard.interimExchange.message_stats.publish_details.rate+'%') }">
+										</div>
+									</div>
+
+									<label class="control-label">Interim Queues</label>
+
+									<div class="progress" ng-repeat="item in dashboard.interimQueues">
+										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
+										<div class="progress-bar progress-bar-success"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_ready}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_ready+'%') }">
+										</div>
+										<div class="progress-bar progress-bar-warning"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_unacknowledged}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
+										</div>
+									</div>
+								</div>
+								<div class="form-group col-md-3">
+									<label class="control-label">Response Exchange</label>
+
+									<div class="progress">
+										<div class="small">{{dashboard.responseExchange.name}} ({{dashboard.responseExchange.message_stats.publish_details.rate}} / {{dashboard.responseExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="progress-bar"
+												 ng-class="dashboard.getExchangeRateClass(dashboard.responseExchange)"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuemax="{{dashboard.responseExchange.message_stats.publish_details.rate + dashboard.responseExchange.message_stats.deliver_get_details.rate}}"
+												 aria-valuenow="{{dashboard.responseExchange.message_stats.publish_details.rate}}"
+												 ng-style="{ width : (dashboard.responseExchange.message_stats.publish_details.rate+'%') }">
+										</div>
+									</div>
+
+									<label class="control-label">Response Queues</label>
+
+									<div class="progress" ng-repeat="item in dashboard.responseQueues">
+										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
+										<div class="progress-bar progress-bar-success"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_ready}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_ready+'%') }">
+										</div>
+										<div class="progress-bar progress-bar-warning"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_unacknowledged}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
+										</div>
+									</div>
+								</div>
+								<div class="form-group col-md-3">
+									<label class="control-label">Subscriber Exchange</label>
+
+									<div class="progress">
+										<div class="small">{{dashboard.subscriberExchange.name}} ({{dashboard.subscriberExchange.message_stats.publish_details.rate}} / {{dashboard.subscriberExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="progress-bar"
+												 ng-class="dashboard.getExchangeRateClass(dashboard.subscriberExchange)"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuemax="{{dashboard.subscriberExchange.message_stats.publish_details.rate + dashboard.subscriberExchange.message_stats.deliver_get_details.rate}}"
+												 aria-valuenow="{{dashboard.subscriberExchange.message_stats.publish_details.rate}}"
+												 ng-style="{ width : (dashboard.subscriberExchange.message_stats.publish_details.rate+'%') }">
+										</div>
+									</div>
+
+									<label class="control-label">Subscriber Queues</label>
+
+									<div class="progress" ng-repeat="item in dashboard.subscriberQueues">
+										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
+										<div class="progress-bar progress-bar-success"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_ready}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_ready+'%') }">
+										</div>
+										<div class="progress-bar progress-bar-warning"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_unacknowledged}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

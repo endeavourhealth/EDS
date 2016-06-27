@@ -28,6 +28,9 @@ public class ReferenceHelper
         return new Reference().setReference("#" + id);
     }
 
+    public static String getReferenceId(Reference reference) {
+        return getReferenceId(reference, null);
+    }
     public static String getReferenceId(Reference reference, ResourceType resourceType)
     {
         if (reference == null)
@@ -41,8 +44,11 @@ public class ReferenceHelper
         if (parts.length != 2)
             throw new IllegalArgumentException("Invalid reference string.");
 
-        if (!parts[0].equals(resourceType.toString()))
-            return null;
+        if (resourceType != null) {
+            if (!parts[0].equals(resourceType.toString())) {
+                return null;
+            }
+        }
 
         return parts[1];
     }

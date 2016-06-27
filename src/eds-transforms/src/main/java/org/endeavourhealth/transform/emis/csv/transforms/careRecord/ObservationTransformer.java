@@ -6,11 +6,10 @@ import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Observation;
 import org.endeavourhealth.transform.emis.csv.ClinicalCode;
-import org.endeavourhealth.transform.emis.csv.FhirObjectStore;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.ImmunizationStatus;
 import org.endeavourhealth.transform.terminology.Snomed;
-import org.endeavourhealth.transform.terminology.TerminologyService;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
@@ -48,7 +47,7 @@ public class ObservationTransformer {
     }
 
 
-    public static void transform(String folderPath, CSVFormat csvFormat, FhirObjectStore objectStore) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
 
         CareRecord_Observation parser = new CareRecord_Observation(folderPath, csvFormat);
         try {
@@ -60,7 +59,7 @@ public class ObservationTransformer {
         }
     }
 
-    private static void createResource(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+    private static void createResource(CareRecord_Observation observationParser, EmisCsvHelper objectStore) throws Exception {
 
         String type = observationParser.getObservationType();
         ObservationType observationType = ObservationType.fromValue(type);
@@ -106,22 +105,23 @@ public class ObservationTransformer {
         }
     }
 
-    private static boolean isProcedure(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+    private static boolean isProcedure(CareRecord_Observation observationParser, EmisCsvHelper objectStore) throws Exception {
         ClinicalCode clinicalCode = objectStore.findClinicalCode(observationParser.getCodeId());
         return Snomed.isProcedureCode(clinicalCode.getSnomedConceptId());
     }
 
-    private static void createDiagnosticReport(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+    private static void createDiagnosticReport(CareRecord_Observation observationParser, EmisCsvHelper objectStore) throws Exception {
         DiagnosticReport fhirReport = new DiagnosticReport();
         fhirReport.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_DIAGNOSTIC_REPORT));
 
         String observationGuid = observationParser.getObservationGuid();
-        fhirReport.setId(observationGuid);
-
         String patientGuid = observationParser.getPatientGuid();
+        String organisationGuid = observationParser.getOrganisationGuid();
+
+        EmisCsvHelper.setUniqueId(fhirReport, patientGuid, observationGuid);
+
         fhirReport.setSubject(objectStore.createPatientReference(patientGuid));
 
-        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirReport, store);
 
@@ -162,17 +162,18 @@ public class ObservationTransformer {
          */
     }
 
-    private static void createDiagnosticOrder(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+    private static void createDiagnosticOrder(CareRecord_Observation observationParser, EmisCsvHelper objectStore) throws Exception {
         DiagnosticOrder fhirOrder = new DiagnosticOrder();
         fhirOrder.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_DIAGNOSTIC_ORDER));
 
         String observationGuid = observationParser.getObservationGuid();
-        fhirOrder.setId(observationGuid);
-
         String patientGuid = observationParser.getPatientGuid();
+        String organisationGuid = observationParser.getOrganisationGuid();
+
+        EmisCsvHelper.setUniqueId(fhirOrder, patientGuid, observationGuid);
+
         fhirOrder.setSubject(objectStore.createPatientReference(patientGuid));
 
-        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirOrder, store);
 
@@ -208,17 +209,18 @@ public class ObservationTransformer {
         objectStore.linkToProblem(fhirOrder, problemGuid, patientGuid);
     }
 
-    private static void createAllergy(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+    private static void createAllergy(CareRecord_Observation observationParser, EmisCsvHelper objectStore) throws Exception {
         AllergyIntolerance fhirAllergy = new AllergyIntolerance();
         fhirAllergy.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ALLERGY_INTOLERANCE));
 
         String observationGuid = observationParser.getObservationGuid();
-        fhirAllergy.setId(observationGuid);
-
         String patientGuid = observationParser.getPatientGuid();
+        String organisationGuid = observationParser.getOrganisationGuid();
+
+        EmisCsvHelper.setUniqueId(fhirAllergy, patientGuid, observationGuid);
+
         fhirAllergy.setPatient(objectStore.createPatientReference(patientGuid));
 
-        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirAllergy, store);
 
@@ -255,17 +257,18 @@ public class ObservationTransformer {
         objectStore.linkToProblem(fhirAllergy, problemGuid, patientGuid);
     }
 
-    private static void createProcedure(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+    private static void createProcedure(CareRecord_Observation observationParser, EmisCsvHelper objectStore) throws Exception {
         Procedure fhirProcedure = new Procedure();
         fhirProcedure.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROCEDURE));
 
         String observationGuid = observationParser.getObservationGuid();
-        fhirProcedure.setId(observationGuid);
-
         String patientGuid = observationParser.getPatientGuid();
+        String organisationGuid = observationParser.getOrganisationGuid();
+
+        EmisCsvHelper.setUniqueId(fhirProcedure, patientGuid, observationGuid);
+
         fhirProcedure.setSubject(objectStore.createPatientReference(patientGuid));
 
-        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirProcedure, store);
 
@@ -301,17 +304,18 @@ public class ObservationTransformer {
     }
 
 
-    private static void createCondition(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+    private static void createCondition(CareRecord_Observation observationParser, EmisCsvHelper objectStore) throws Exception {
         Condition fhirCondition = new Condition();
         fhirCondition.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_CONDITION));
 
         String observationGuid = observationParser.getObservationGuid();
-        fhirCondition.setId(observationGuid);
-
         String patientGuid = observationParser.getPatientGuid();
+        String organisationGuid = observationParser.getOrganisationGuid();
+
+        EmisCsvHelper.setUniqueId(fhirCondition, patientGuid, observationGuid);
+
         fhirCondition.setPatient(objectStore.createPatientReference(patientGuid));
 
-        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirCondition, store);
 
@@ -350,17 +354,18 @@ public class ObservationTransformer {
         objectStore.linkToProblem(fhirCondition, problemGuid, patientGuid);
     }
 
-    private static void createObservation(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+    private static void createObservation(CareRecord_Observation observationParser, EmisCsvHelper objectStore) throws Exception {
         Observation fhirObservation = new Observation();
         fhirObservation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_OBSERVATION));
 
         String observationGuid = observationParser.getObservationGuid();
-        fhirObservation.setId(observationGuid);
-
         String patientGuid = observationParser.getPatientGuid();
+        String organisationGuid = observationParser.getOrganisationGuid();
+
+        EmisCsvHelper.setUniqueId(fhirObservation, patientGuid, observationGuid);
+
         fhirObservation.setSubject(objectStore.createPatientReference(patientGuid));
 
-        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirObservation, store);
 
@@ -438,18 +443,19 @@ public class ObservationTransformer {
         objectStore.linkToProblem(fhirObservation, problemGuid, patientGuid);
     }
 
-    private static void createFamilyMemberHistory(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+    private static void createFamilyMemberHistory(CareRecord_Observation observationParser, EmisCsvHelper objectStore) throws Exception {
 
         FamilyMemberHistory fhirFamilyHistory = new FamilyMemberHistory();
         fhirFamilyHistory.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_FAMILY_MEMBER_HISTORY));
 
         String observationGuid = observationParser.getObservationGuid();
-        fhirFamilyHistory.setId(observationGuid);
-
         String patientGuid = observationParser.getPatientGuid();
+        String organisationGuid = observationParser.getOrganisationGuid();
+
+        EmisCsvHelper.setUniqueId(fhirFamilyHistory, patientGuid, observationGuid);
+
         fhirFamilyHistory.setPatient(objectStore.createPatientReference(patientGuid));
 
-        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirFamilyHistory, store);
 
@@ -489,18 +495,19 @@ public class ObservationTransformer {
         objectStore.linkToProblem(fhirFamilyHistory, problemGuid, patientGuid);
     }
 
-    private static void createImmunization(CareRecord_Observation observationParser, FhirObjectStore objectStore) throws Exception {
+    private static void createImmunization(CareRecord_Observation observationParser, EmisCsvHelper objectStore) throws Exception {
 
         Immunization fhirImmunisation = new Immunization();
         fhirImmunisation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_IMMUNIZATION));
 
         String observationGuid = observationParser.getObservationGuid();
-        fhirImmunisation.setId(observationGuid);
-
         String patientGuid = observationParser.getPatientGuid();
+        String organisationGuid = observationParser.getOrganisationGuid();
+
+        EmisCsvHelper.setUniqueId(fhirImmunisation, patientGuid, observationGuid);
+
         fhirImmunisation.setPatient(objectStore.createPatientReference(patientGuid));
 
-        String organisationGuid = observationParser.getOrganisationGuid();
         boolean store = !observationParser.getDeleted() && !observationParser.getIsConfidential();
         objectStore.addResourceToSave(patientGuid, organisationGuid, fhirImmunisation, store);
 
