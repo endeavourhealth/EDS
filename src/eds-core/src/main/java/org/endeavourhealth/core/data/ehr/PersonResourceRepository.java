@@ -5,11 +5,9 @@ import com.datastax.driver.mapping.Mapper;
 import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.PersonResourceAccessor;
-import org.endeavourhealth.core.data.EventStoreMode;
 import org.endeavourhealth.core.data.ehr.models.PersonResource;
 import org.endeavourhealth.core.data.ehr.models.PersonResourceEventStore;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;

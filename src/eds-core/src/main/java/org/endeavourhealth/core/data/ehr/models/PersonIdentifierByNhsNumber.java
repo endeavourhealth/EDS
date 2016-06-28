@@ -8,7 +8,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @Table(keyspace = "ehr", name = "person_identifier_by_nhs_number")
-public class PersonIdentifierByNhsNumberX {
+public class PersonIdentifierByNhsNumber {
 
     @ClusteringColumn(1)
     @Column(name = "organisation_id")

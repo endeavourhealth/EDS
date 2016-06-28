@@ -1,9 +1,11 @@
 package org.endeavourhealth.core.data.ehr;
 
+import com.datastax.driver.mapping.Mapper;
 import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.PersonConsentOrganisationAccessor;
 import org.endeavourhealth.core.data.ehr.models.PersonConsentOrganisation;
+import org.endeavourhealth.core.data.ehr.models.PersonConsentProtocol;
 
 import java.util.Iterator;
 import java.util.List;
@@ -16,7 +18,8 @@ public class PersonConsentOrganisationRepository extends Repository {
             throw new IllegalArgumentException("personConsent is null");
         }
 
-        super.insert(personConsent);
+        Mapper<PersonConsentOrganisation> mapper = getMappingManager().mapper(PersonConsentOrganisation.class);
+        mapper.save(personConsent);
     }
 
     public PersonConsentOrganisation getMostRecent(UUID personId, UUID protocolUuid, UUID organisationUuid) {

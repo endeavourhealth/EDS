@@ -1,4 +1,4 @@
-package org.endeavourhealth.core.data;
+package org.endeavourhealth.core.data.ehr;
 
 public enum EventStoreMode {
     insert,

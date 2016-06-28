@@ -4,7 +4,7 @@ import com.datastax.driver.mapping.annotations.ClusteringColumn;
 import com.datastax.driver.mapping.annotations.Column;
 import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Table;
-import org.endeavourhealth.core.data.EventStoreMode;
+import org.endeavourhealth.core.data.ehr.EventStoreMode;
 
 import java.util.Date;
 import java.util.UUID;
