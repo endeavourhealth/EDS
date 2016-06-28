@@ -7,6 +7,7 @@
     <groupId>org.endeavourhealth</groupId>
     <artifactId>eds-ui</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>war</packaging>
     <dependencies>
 
         <!-- JAX-RS -->
@@ -182,6 +183,50 @@
                     <source>1.8</source>
                     <target>1.8</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>1.0</version>
+                <configuration>
+                    <installDirectory>src/main/frontend</installDirectory>
+                    <workingDirectory>src/main/frontend</workingDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>install node and npm</id>
+                        <goals><goal>install-node-and-npm</goal></goals>
+                        <configuration>
+                            <nodeVersion>v4.4.7</nodeVersion>
+                            <npmVersion>2.15.9</npmVersion>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm install</id>
+                        <goals><goal>npm</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>bower install</id>
+                        <goals><goal>bower</goal></goals>
+                        <configuration>
+                            <arguments>install --config.directory=../webapp/bower_components</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>typings install</id>
+                        <goals><goal>npm</goal></goals>
+                        <configuration>
+                            <arguments>run typings -- install</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>tsc</id>
+                        <goals><goal>npm</goal></goals>
+                        <configuration>
+                            <arguments>run tsc -- --outDir ../webapp</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

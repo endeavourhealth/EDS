@@ -4,6 +4,10 @@ out/
 target/
 *.map
 *.js
+!angular-ui-tree-withFix.js
+!**/flowchart/*.js
+node/
+node_modules/
 bower_components/
 typings/
 uiDesigner.xml
