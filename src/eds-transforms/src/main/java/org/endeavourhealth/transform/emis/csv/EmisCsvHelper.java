@@ -263,7 +263,8 @@ public class EmisCsvHelper {
             //find the organisation ODS code
             String odsCode = findOdsCodeForOrganisationGuid(organisationGuid);
 
-            s = new FhirPatientStore(patientGuid, organisationGuid, odsCode);
+            s = new FhirPatientStore();
+            s.setOrganisationOds(odsCode);
             fhirPatientStores.put(createMapKey(patientGuid, organisationGuid), s);
         }
 
