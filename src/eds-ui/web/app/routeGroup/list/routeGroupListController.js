@@ -40,9 +40,11 @@ var app;
                 });
             };
             RouteGroupListController.prototype.getRouteGroupClass = function (routeGroup, bindings) {
+                if (!bindings)
+                    return 'fa fa-blank text-default';
                 if ($.grep(bindings, function (e) { return e.routing_key === routeGroup.routeKey; }).length === 0)
-                    return 'text-danger';
-                return 'text-success';
+                    return 'fa fa-plus-circle text-danger';
+                return 'fa fa-check-circle text-success';
             };
             RouteGroupListController.prototype.bindingExists = function (item) {
                 if ($.grep(this.routeGroups, function (e) { return e.routeKey === item.routing_key; }).length === 0)
@@ -83,13 +85,17 @@ var app;
                     .result.then(function () {
                     //  TODO : Determine fastest node and use for address
                     vm.rabbitService.synchronize("DUMMYADDRESS")
-                        .then(function () {
+                        .then(function (result) {
                         vm.log.success('RabbitMQ synchronized');
+                        vm.getRabbitBindings();
                     })
                         .catch(function (error) {
                         vm.log.error('Failed to synchronize', error, 'Synchronize RabbitMQ');
+                        vm.getRabbitBindings();
                     });
                 });
+            };
+            RouteGroupListController.prototype.splitBindings = function () {
             };
             RouteGroupListController.$inject = ['$uibModal', 'RouteGroupService', 'RabbitService', 'LoggerService'];
             return RouteGroupListController;

@@ -43,53 +43,17 @@ public final class ConfigEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/saveConfig")
-    public Response saveConfig(@Context SecurityContext sc, JsonSourceOrganisationSet orgSet) throws Exception {
+    public Response saveConfig(@Context SecurityContext sc, ConfigurationResource configurationResource) throws Exception {
         super.setLogbackMarkers(sc);
 
-        UUID orgUuid = getOrganisationUuidFromToken(sc);
-        UUID uuid = orgSet.getUuid();
-        String name = orgSet.getName();
-        List<JsonSourceOrganisation> orgs = orgSet.getOrganisations();
+        LOG.trace("saveConfig {} Name {}", configurationResource.getConfigurationId(), configurationResource.getConfigurationData());
 
-        LOG.trace("saveOrganisationSet UUID {} Name {}", uuid, name);
-
-        DbSourceOrganisationSet set = null;
-
-        if (uuid == null) {
-            //creating a new set
-            set = new DbSourceOrganisationSet();
-            set.setOrganisationUuid(orgUuid);
-        } else {
-            //updating an existing
-            set = DbSourceOrganisationSet.retrieveSetForUuid(uuid);
-            if (!set.getOrganisationUuid().equals(orgUuid)) {
-                throw new BadRequestException("Trying to amend an organisation set for another organisation");
-            }
-        }
-
-        if (name != null) {
-            set.setName(name);
-        }
-        if (orgs != null) {
-            StringJoiner joiner = new StringJoiner(",");
-            for (JsonSourceOrganisation org: orgs) {
-                joiner.add(org.getOdsCode());
-            }
-            String odsCodeStr = joiner.toString();
-            set.setOdsCodes(odsCodeStr);
-        }
-
-        set.writeToDb();
-
-        //return the UUID to the client, so it known what was assigned
-        uuid = set.getSourceOrganisationSetUuid();
-        JsonSourceOrganisationSet ret = new JsonSourceOrganisationSet();
-        ret.setUuid(uuid);
+        new ConfigurationRepository().update(configurationResource);
 
         clearLogbackMarkers();
         return Response
                 .ok()
-                .entity(ret)
+                .entity(configurationResource)
                 .build();
     }
 }

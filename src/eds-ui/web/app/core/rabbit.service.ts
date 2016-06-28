@@ -64,7 +64,7 @@ module app.core {
 					'address': address
 				}
 			};
-			return this.httpGet('api/dashboard/rabbitNode/synchronize', request);
+			return this.httpPost('api/dashboard/rabbitNode/synchronize', request);
 		}
 	}
 

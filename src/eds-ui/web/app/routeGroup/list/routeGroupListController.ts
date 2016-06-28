@@ -52,9 +52,11 @@ module app.routeGroup {
 		}
 
 		getRouteGroupClass(routeGroup : RouteGroup, bindings : RabbitBinding[]) {
+			if (!bindings)
+				return 'fa fa-blank text-default';
 			if ($.grep(bindings, function(e:RabbitBinding) { return e.routing_key === routeGroup.routeKey; }).length === 0)
-				return 'text-danger';
-			return 'text-success';
+				return 'fa fa-plus-circle text-danger';
+			return 'fa fa-check-circle text-success';
 		}
 
 		bindingExists(item: RabbitBinding) {
@@ -101,13 +103,20 @@ module app.routeGroup {
 				.result.then(function() {
 					//  TODO : Determine fastest node and use for address
 					vm.rabbitService.synchronize("DUMMYADDRESS")
-					.then(function() {
+					.then(function(result : RabbitBinding[]) {
 						vm.log.success('RabbitMQ synchronized');
+						vm.getRabbitBindings();
 					})
 					.catch(function(error : any) {
 						vm.log.error('Failed to synchronize', error, 'Synchronize RabbitMQ');
+						vm.getRabbitBindings();
 					});
-			});		}
+			});
+		}
+
+		splitBindings() {
+
+		}
 	}
 
 	angular

@@ -1,249 +1,372 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.Audit;
 import org.endeavourhealth.core.data.admin.models.Item;
-import org.endeavourhealth.ui.json.JsonFolderContent;
-import org.endeavourhealth.ui.json.JsonRabbitNode;
+import org.endeavourhealth.core.data.config.ConfigurationRepository;
+import org.endeavourhealth.core.data.config.models.ConfigurationResource;
+import org.endeavourhealth.ui.json.*;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.client.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import java.io.IOException;
 import java.util.*;
 
 @Path("/dashboard")
 public final class DashboardEndpoint extends AbstractEndpoint {
-    private static final Logger LOG = LoggerFactory.getLogger(DashboardEndpoint.class);
-    private static final Random rnd = new Random();
+	private static final Logger LOG = LoggerFactory.getLogger(DashboardEndpoint.class);
+	private static final Random rnd = new Random();
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/getRecentDocuments")
-    public Response getRecentDocuments(@Context SecurityContext sc, @QueryParam("count") int count) throws Exception {
-        super.setLogbackMarkers(sc);
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/getRecentDocuments")
+	public Response getRecentDocuments(@Context SecurityContext sc, @QueryParam("count") int count) throws Exception {
+		super.setLogbackMarkers(sc);
 
-        UUID userUuid = getEndUserUuidFromToken(sc);
-        UUID orgUuid = getOrganisationUuidFromToken(sc);
+		UUID userUuid = getEndUserUuidFromToken(sc);
+		UUID orgUuid = getOrganisationUuidFromToken(sc);
 
-        LOG.trace("getRecentDocuments {}", count);
+		LOG.trace("getRecentDocuments {}", count);
 
-        List<JsonFolderContent> ret = new ArrayList<>();
+		List<JsonFolderContent> ret = new ArrayList<>();
 
-        LibraryRepository repository = new LibraryRepository();
+		LibraryRepository repository = new LibraryRepository();
 
-        Iterable<Audit> audit = repository.getAuditByOrgAndDateDesc(orgUuid);
-        for (Audit auditItem: audit) {
-            Iterable<ActiveItem> activeItems = repository.getActiveItemByAuditId(auditItem.getId());
-            for (ActiveItem activeItem: activeItems) {
-                if (activeItem.getIsDeleted()!=null && activeItem.getIsDeleted()==false) {
-                    Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
+		Iterable<Audit> audit = repository.getAuditByOrgAndDateDesc(orgUuid);
+		for (Audit auditItem: audit) {
+			Iterable<ActiveItem> activeItems = repository.getActiveItemByAuditId(auditItem.getId());
+			for (ActiveItem activeItem: activeItems) {
+				if (activeItem.getIsDeleted()!=null && activeItem.getIsDeleted()==false) {
+					Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
 
-                    JsonFolderContent content = new JsonFolderContent(activeItem, item, auditItem);
-                    ret.add(content);
-                }
-            }
-        }
+					JsonFolderContent content = new JsonFolderContent(activeItem, item, auditItem);
+					ret.add(content);
+				}
+			}
+		}
 
-        clearLogbackMarkers();
+		clearLogbackMarkers();
 
-        return Response
-                .ok()
-                .entity(ret)
-                .build();
-    }
-
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/rabbitNodes")
-    public Response getRabbitNodes(@Context SecurityContext sc) throws Exception {
-        super.setLogbackMarkers(sc);
-        // TODO : Extract to config
-        List<JsonRabbitNode> ret = new ArrayList<>();
-        ret.add(new JsonRabbitNode("localhost:15672", 0));
-        ret.add(new JsonRabbitNode("localhost:15673", 0));
-        ret.add(new JsonRabbitNode("localhost:15674", 0));
-
-        clearLogbackMarkers();
-
-        return Response
-            .ok()
-            .entity(ret)
-            .build();
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/rabbitNode/ping")
-    public Response pingRabbitNode(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
-        super.setLogbackMarkers(sc);
-
-        HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("guest", "guest");
-        Client client = ClientBuilder.newClient();
-        client.register(feature);
-
-        WebTarget resource = client.target("http://"+address+"/api/cluster-name");
-        Invocation.Builder request = resource.request();
-
-        int ping = -1;
-        try {
-            long startTime = System.currentTimeMillis();
-            Response response = request.get();
-            long endTime = System.currentTimeMillis();
-
-            if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL)
-                ping = Math.toIntExact(endTime - startTime);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        JsonRabbitNode ret = new JsonRabbitNode(address, ping);
-        clearLogbackMarkers();
-
-        return Response
-            .ok()
-            .entity(ret)
-            .build();
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/rabbitNode/queues")
-    public Response getRabbitQueues(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
-        super.setLogbackMarkers(sc);
-
-        HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("guest", "guest");
-        Client client = ClientBuilder.newClient();
-        client.register(feature);
-
-        address = "localhost:15672";
-        WebTarget resource = client.target("http://"+address+"/api/queues");
-        Invocation.Builder request = resource.request();
-
-        Response response = request.get();
-        String ret = null;
-        if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-            ret = response.readEntity(String.class);
-        }
-
-        clearLogbackMarkers();
-
-        return Response
-            .ok()
-            .entity(ret)
-            .build();
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/rabbitNode/exchanges")
-    public Response getRabbitExchanges(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
-        super.setLogbackMarkers(sc);
-
-        HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("guest", "guest");
-        Client client = ClientBuilder.newClient();
-        client.register(feature);
-
-        address = "localhost:15672";
-        WebTarget resource = client.target("http://"+address+"/api/exchanges");
-        Invocation.Builder request = resource.request();
-
-        Response response = request.get();
-        String ret = null;
-        if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-            ret = response.readEntity(String.class);
-        }
-
-        clearLogbackMarkers();
-
-        return Response
-            .ok()
-            .entity(ret)
-            .build();
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/rabbitNode/bindings")
-    public Response getRabbitBindings(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
-        super.setLogbackMarkers(sc);
-
-        HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("guest", "guest");
-        Client client = ClientBuilder.newClient();
-        client.register(feature);
-
-        address = "localhost:15672";
-        WebTarget resource = client.target("http://"+address+"/api/bindings");
-        Invocation.Builder request = resource.request();
-
-        Response response = request.get();
-        String ret = null;
-        if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-            ret = response.readEntity(String.class);
-        }
-
-        clearLogbackMarkers();
-
-        return Response
-            .ok()
-            .entity(ret)
-            .build();
-    }
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
 
 
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/rabbitNode/synchronize")
-    public Response synchronizeRabbit(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
-        super.setLogbackMarkers(sc);
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/rabbitNodes")
+	public Response getRabbitNodes(@Context SecurityContext sc) throws Exception {
+		super.setLogbackMarkers(sc);
+		// TODO : Extract to config
+		List<JsonRabbitNode> ret = new ArrayList<>();
+		ret.add(new JsonRabbitNode("localhost:15672", 0));
+		ret.add(new JsonRabbitNode("localhost:15673", 0));
+		ret.add(new JsonRabbitNode("localhost:15674", 0));
 
-        // Load current bindings
+		clearLogbackMarkers();
 
-        // Load config
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
 
-        // Declare (config) queues
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/rabbitNode/ping")
+	public Response pingRabbitNode(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
+		super.setLogbackMarkers(sc);
 
-        // Bind (config) to DLQ
+		HttpAuthenticationFeature rabbitAuth = HttpAuthenticationFeature.basic("guest", "guest");
+		Client client = ClientBuilder.newClient();
+		client.register(rabbitAuth);
 
-        // Remove all bindings from main exchange (DLQ now routes to queues based on new config)
+		WebTarget resource = client.target("http://"+address+"/api/cluster-name");
+		Invocation.Builder request = resource.request();
 
-        // Bind (config) to main exchange (main exchange now routes to queues based on new config)
+		int ping = -1;
+		try {
+			long startTime = System.currentTimeMillis();
+			Response response = request.get();
+			long endTime = System.currentTimeMillis();
 
-        // Remove bindings from DLQ
+			if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL)
+				ping = Math.toIntExact(endTime - startTime);
+			response.close();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
 
-        // Wait for any unbound queues to drain
+		client.close();
 
-        // Remove (now empty) unbound queues
+		JsonRabbitNode ret = new JsonRabbitNode(address, ping);
+		clearLogbackMarkers();
 
-        // (Shutdown readers of unbound queues????)
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
 
-        // (Startup readers of queues without readers????)
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/rabbitNode/queues")
+	public Response getRabbitQueues(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
+		super.setLogbackMarkers(sc);
 
-        String ret = "OK";
+		HttpAuthenticationFeature rabbitAuth = HttpAuthenticationFeature.basic("guest", "guest");
+		Client client = ClientBuilder.newClient();
+		client.register(rabbitAuth);
 
-        clearLogbackMarkers();
+		address = "localhost:15672";
+		WebTarget resource = client.target("http://"+address+"/api/queues");
+		Invocation.Builder request = resource.request();
 
-        return Response
-            .ok()
-            .entity(ret)
-            .build();
-    }
+		Response response = request.get();
+		String ret = null;
+		if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
+			ret = response.readEntity(String.class);
+		}
+
+		response.close();
+		client.close();
+
+		clearLogbackMarkers();
+
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/rabbitNode/exchanges")
+	public Response getRabbitExchanges(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
+		super.setLogbackMarkers(sc);
+
+		HttpAuthenticationFeature rabbitAuth = HttpAuthenticationFeature.basic("guest", "guest");
+		Client client = ClientBuilder.newClient();
+		client.register(rabbitAuth);
+
+		address = "localhost:15672";
+		WebTarget resource = client.target("http://"+address+"/api/exchanges");
+		Invocation.Builder request = resource.request();
+
+		Response response = request.get();
+		String ret = null;
+		if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
+			ret = response.readEntity(String.class);
+		}
+
+		response.close();
+		client.close();
+
+		clearLogbackMarkers();
+
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/rabbitNode/bindings")
+	public Response getRabbitBindings(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
+		super.setLogbackMarkers(sc);
+
+		String ret = getRabbitBindingsJson(address);
+
+		clearLogbackMarkers();
+
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
+
+
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/rabbitNode/synchronize")
+	public Response synchronizeRabbit(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
+		String[] pipelines = {"EdsInbound", "EdsInterim", "EdsResponse", "EdsSubscriber"};
+
+		super.setLogbackMarkers(sc);
+
+		address = "localhost:15672";
+
+		// Load current bindings
+		List<JsonRabbitBinding> currentBindings = getCurrentRabbitBindings(address);
+
+		// Load config
+		List<JsonRouteGroup> configuredBindings = getConfiguredBindings();
+
+		for (String pipeline : pipelines) {
+			// Declare (config) queues
+			declareAllQueues(address, pipeline, configuredBindings);
+
+			// Bind (config) queues to DLE
+			bindQueuesToExchange(address, pipeline + "-DLE", pipeline, configuredBindings);
+
+			// Remove all bindings from main exchange (DLE now routes to queues based on new config)
+			removeBindingsFromMainExchange(address, pipeline, currentBindings);
+
+			// Bind (config) to main exchange (main exchange now routes to queues based on new config)
+			bindQueuesToExchange(address, pipeline, pipeline, configuredBindings);
+
+			// Remove (config) bindings from DLE
+			removeBindingsFromDLEExchange(address, pipeline + "-DLE", pipeline, configuredBindings);
+
+			// Wait for any unbound queues to drain
+
+			// Remove (now empty) unbound queues
+
+			// (Shutdown readers of unbound queues????)
+
+			// (Startup readers of queues without readers????)
+		}
+
+		String ret = getRabbitBindingsJson(address);
+
+		clearLogbackMarkers();
+
+		return Response
+				.ok(ret)
+				.build();
+	}
+
+	private String getRabbitBindingsJson(String address) {
+		String json = null;
+
+		HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("guest", "guest");
+		Client client = ClientBuilder.newClient();
+		client.register(feature);
+
+		address = "localhost:15672";
+		WebTarget resource = client.target("http://"+address+"/api/bindings");
+		Invocation.Builder request = resource.request();
+
+		Response response = request.get();
+		if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
+			json = response.readEntity(String.class);
+		}
+
+		response.close();
+		client.close();
+
+		return json;
+	}
+
+	private List<JsonRabbitBinding> getCurrentRabbitBindings(String address) throws IOException {
+		List<JsonRabbitBinding> bindings = new ArrayList<>();
+		String json = getRabbitBindingsJson(address);
+		if (json != null) {
+			bindings = new ObjectMapper().readValue(json, new TypeReference<List<JsonRabbitBinding>>(){});
+		}
+		return bindings;
+	}
+
+	private List<JsonRouteGroup> getConfiguredBindings() throws IOException {
+		List<JsonRouteGroup> bindings = new ArrayList<>();
+		ConfigurationResource configurationResource = new ConfigurationRepository().getByKey(UUID.fromString("b9b14e26-5a52-4f36-ad89-f01e465c1361"));
+		if (configurationResource != null) {
+			bindings = new ObjectMapper().readValue(configurationResource.getConfigurationData(), new TypeReference<List<JsonRouteGroup>>(){});
+		}
+
+		return bindings;
+	}
+
+	private void declareAllQueues(String address, String queuePrefix, List<JsonRouteGroup> routeGroups) throws Exception {
+		HttpAuthenticationFeature rabbitAuth = HttpAuthenticationFeature.basic("guest", "guest");
+		Client client = ClientBuilder.newClient();
+		client.register(rabbitAuth);
+
+		for (JsonRouteGroup routeGroup : routeGroups) {
+			WebTarget resource = client.target("http://" + address + "/api/queues/%2f/"+queuePrefix + "-" + routeGroup.getRouteKey());
+			Invocation.Builder request = resource.request();
+
+			JsonRabbitQueueOptions optionsJson = new JsonRabbitQueueOptions();
+			optionsJson.setAuto_delete(false);
+			optionsJson.setDurable(true);
+
+			Response response = request.put(Entity.json(optionsJson));
+			if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+				throw new Exception("Unable do declare the queue");
+			}
+			response.close();
+		}
+		client.close();
+	}
+
+	private void bindQueuesToExchange(String address, String exchange, String queuePrefix, List<JsonRouteGroup> routeGroups) throws Exception {
+		HttpAuthenticationFeature rabbitAuth = HttpAuthenticationFeature.basic("guest", "guest");
+		Client client = ClientBuilder.newClient();
+		client.register(rabbitAuth);
+
+		for (JsonRouteGroup routeGroup : routeGroups) {
+			WebTarget resource = client.target("http://" + address + "/api/bindings/%2f/e/"+exchange+"/q/"+queuePrefix + "-" + routeGroup.getRouteKey());
+			Invocation.Builder request = resource.request();
+
+			JsonRabbitBindingOptions optionsJson = new JsonRabbitBindingOptions();
+			optionsJson.setRouting_key(routeGroup.getRouteKey());
+
+			Response response = request.post(Entity.json(optionsJson));
+			if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+				throw new Exception("Unable do declare the queue");
+			}
+			response.close();
+		}
+		client.close();
+	}
+
+	private void removeBindingsFromMainExchange(String address, String exchange, List<JsonRabbitBinding> currentBindings) throws Exception {
+		for (JsonRabbitBinding rabbitBinding : currentBindings) {
+			if (exchange.equals(rabbitBinding.getSource())) {
+				removeBindingFromExchange(address, exchange, rabbitBinding.getDestination(), rabbitBinding.getRouting_key());
+			}
+		}
+	}
+
+	private void removeBindingsFromDLEExchange(String address, String exchange, String queuePrefix, List<JsonRouteGroup> routeGroups) throws Exception {
+		for (JsonRouteGroup routeGroup : routeGroups) {
+			removeBindingFromExchange(address, exchange, queuePrefix+"-"+routeGroup.getRouteKey(), routeGroup.getRouteKey());
+		}
+	}
+
+	private void removeBindingFromExchange(String address, String exchange, String queue, String routingKey) throws Exception {
+		HttpAuthenticationFeature rabbitAuth = HttpAuthenticationFeature.basic("guest", "guest");
+		Client client = ClientBuilder.newClient();
+		client.register(rabbitAuth);
+
+		WebTarget resource = client.target("http://" + address + "/api/bindings/%2f/e/" + exchange + "/q/" + queue + "/"+routingKey);
+		Invocation.Builder request = resource.request();
+
+		Response response = request.delete();
+		if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+			throw new Exception("Unable do declare the queue");
+		}
+		response.close();
+	}
 }

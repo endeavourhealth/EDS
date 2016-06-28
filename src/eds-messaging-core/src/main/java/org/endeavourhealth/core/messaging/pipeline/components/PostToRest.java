@@ -36,12 +36,11 @@ public class PostToRest implements PipelineComponent {
 		Client client = ClientBuilder.newClient( new ClientConfig().register( LoggingFilter.class ) );
 		WebTarget webTarget = client.target(responseAddress);
 
-		Invocation.Builder invocationBuilder =  webTarget.request(MediaType.APPLICATION_XML);
+		String format = (String)exchange.getProperty(PropertyKeys.Format);
+		Invocation.Builder invocationBuilder =  webTarget.request(format);
 
 		for(String key : exchange.getHeaders().keySet())
 			invocationBuilder.header(key, exchange.getHeader(key));
-
-		String format = (String)exchange.getProperty(PropertyKeys.Format);
 
 		Entity entity = Entity.entity(exchange.getBody(), format);
 

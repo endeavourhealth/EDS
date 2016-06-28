@@ -107,7 +107,7 @@ module app.dashboard {
 		}
 
 		getExchangeRateClass(item : RabbitExchange) {
-			if (!item)
+			if (!item || !item.message_stats)
 				return 'label-default';
 
 			// All OK if we're delivering faster than receiving

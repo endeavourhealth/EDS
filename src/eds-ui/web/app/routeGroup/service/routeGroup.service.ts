@@ -25,7 +25,7 @@ module app.core {
 			var defer = this.promise.defer();
 			this.configService.getConfig(this.configurationId)
 				.then(function(configResource : ConfigurationResource) {
-					defer.resolve(JSON.parse(configResource.configurationData));
+					defer.resolve(angular.fromJson(configResource.configurationData));
 				})
 				.catch(function(exception) {
 					defer.reject(exception);
@@ -38,7 +38,7 @@ module app.core {
 			var configurationResource : ConfigurationResource = {
 				configurationId : this.configurationId,
 				configurationName : this.configurationName,
-				configurationData : JSON.stringify(routeGroups)
+				configurationData : angular.toJson(routeGroups)
 			};
 			var defer = this.promise.defer();
 			this.configService.saveConfig(configurationResource)
