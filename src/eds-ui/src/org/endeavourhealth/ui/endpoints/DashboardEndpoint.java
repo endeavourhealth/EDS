@@ -239,6 +239,8 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 			// Remove (config) bindings from DLE
 			removeBindingsFromDLEExchange(address, pipeline + "-DLE", pipeline, configuredBindings);
 
+			// Determine queues to remove (unbound)
+
 			// Wait for any unbound queues to drain
 
 			// Remove (now empty) unbound queues

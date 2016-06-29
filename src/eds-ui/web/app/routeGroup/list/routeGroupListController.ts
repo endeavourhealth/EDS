@@ -41,10 +41,7 @@ module app.routeGroup {
 			// TODO : Determine fastest node and use for address
 			vm.rabbitService.getRabbitBindings('DUMMYADDRESS')
 				.then(function(result : RabbitBinding[]) {
-					vm.inboundBindings = $.grep(result, function(e:RabbitBinding) {return e.source === 'EdsInbound'; });
-					vm.interimBindings = $.grep(result, function(e:RabbitBinding) {return e.source === 'EdsInterim'; });
-					vm.responseBindings = $.grep(result, function(e:RabbitBinding) {return e.source === 'EdsResponse'; });
-					vm.subscriberBindings = $.grep(result, function(e:RabbitBinding) {return e.source === 'EdsSubscriber'; });
+					vm.separateBindings(result);
 				})
 				.catch(function (error) {
 					vm.log.error('Failed to load rabbit bindings', error, 'Load rabbit bindings');
@@ -105,7 +102,7 @@ module app.routeGroup {
 					vm.rabbitService.synchronize("DUMMYADDRESS")
 					.then(function(result : RabbitBinding[]) {
 						vm.log.success('RabbitMQ synchronized');
-						vm.getRabbitBindings();
+						vm.separateBindings(result);
 					})
 					.catch(function(error : any) {
 						vm.log.error('Failed to synchronize', error, 'Synchronize RabbitMQ');
@@ -114,8 +111,12 @@ module app.routeGroup {
 			});
 		}
 
-		splitBindings() {
-
+		separateBindings(bindings : RabbitBinding[]) {
+			var vm = this;
+			vm.inboundBindings = $.grep(bindings, function(e:RabbitBinding) {return e.source === 'EdsInbound'; });
+			vm.interimBindings = $.grep(bindings, function(e:RabbitBinding) {return e.source === 'EdsInterim'; });
+			vm.responseBindings = $.grep(bindings, function(e:RabbitBinding) {return e.source === 'EdsResponse'; });
+			vm.subscriberBindings = $.grep(bindings, function(e:RabbitBinding) {return e.source === 'EdsSubscriber'; });
 		}
 	}
 

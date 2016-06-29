@@ -30,10 +30,7 @@ var app;
                 // TODO : Determine fastest node and use for address
                 vm.rabbitService.getRabbitBindings('DUMMYADDRESS')
                     .then(function (result) {
-                    vm.inboundBindings = $.grep(result, function (e) { return e.source === 'EdsInbound'; });
-                    vm.interimBindings = $.grep(result, function (e) { return e.source === 'EdsInterim'; });
-                    vm.responseBindings = $.grep(result, function (e) { return e.source === 'EdsResponse'; });
-                    vm.subscriberBindings = $.grep(result, function (e) { return e.source === 'EdsSubscriber'; });
+                    vm.separateBindings(result);
                 })
                     .catch(function (error) {
                     vm.log.error('Failed to load rabbit bindings', error, 'Load rabbit bindings');
@@ -87,7 +84,7 @@ var app;
                     vm.rabbitService.synchronize("DUMMYADDRESS")
                         .then(function (result) {
                         vm.log.success('RabbitMQ synchronized');
-                        vm.getRabbitBindings();
+                        vm.separateBindings(result);
                     })
                         .catch(function (error) {
                         vm.log.error('Failed to synchronize', error, 'Synchronize RabbitMQ');
@@ -95,7 +92,12 @@ var app;
                     });
                 });
             };
-            RouteGroupListController.prototype.splitBindings = function () {
+            RouteGroupListController.prototype.separateBindings = function (bindings) {
+                var vm = this;
+                vm.inboundBindings = $.grep(bindings, function (e) { return e.source === 'EdsInbound'; });
+                vm.interimBindings = $.grep(bindings, function (e) { return e.source === 'EdsInterim'; });
+                vm.responseBindings = $.grep(bindings, function (e) { return e.source === 'EdsResponse'; });
+                vm.subscriberBindings = $.grep(bindings, function (e) { return e.source === 'EdsSubscriber'; });
             };
             RouteGroupListController.$inject = ['$uibModal', 'RouteGroupService', 'RabbitService', 'LoggerService'];
             return RouteGroupListController;
