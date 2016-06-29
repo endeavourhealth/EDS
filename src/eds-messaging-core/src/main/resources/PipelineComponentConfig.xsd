@@ -28,7 +28,19 @@
 
     <xs:complexType name="PostMessageToLogConfig">
         <xs:complexContent>
-            <xs:extension base="ComponentConfig"/>
+            <xs:extension base="ComponentConfig">
+                <xs:sequence>
+                    <xs:element name="EventType" minOccurs="1" maxOccurs="1">
+                        <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                                <xs:enumeration value="Receive"/>
+                                <xs:enumeration value="Validate"/>
+                                <xs:enumeration value="Send"/>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
         </xs:complexContent>
     </xs:complexType>
 

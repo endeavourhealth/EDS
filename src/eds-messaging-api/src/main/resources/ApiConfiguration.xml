@@ -22,7 +22,9 @@
             <ValidateSender/>
             <LoadSenderConfiguration/>
             <ValidateMessageType/>
-            <PostMessageToLog/>
+            <PostMessageToLog>
+                <EventType>Receive</EventType>
+            </PostMessageToLog>
             <PostMessageToExchange>
                 <Credentials>
                     <Username>guest</Username>

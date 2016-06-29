@@ -7,6 +7,9 @@
     <Nodes>localhost:5672</Nodes>
     <Queue>EdsSubscriber-DLQ</Queue>
     <Pipeline>
+        <PostMessageToLog>
+            <EventType>Send</EventType>
+        </PostMessageToLog>
         <PostToSubscriberWebService/>
     </Pipeline>
 </QueueReaderConfiguration>

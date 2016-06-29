@@ -20,13 +20,24 @@ public class PostMessageToLog implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
+		AuditEvent auditEvent = getAuditEvent();
 
 		try {
-			AuditWriter.writeAuditEvent(exchange, AuditEvent.RECEIVE);
+			AuditWriter.writeAuditEvent(exchange, auditEvent);
 			LOG.debug("Message written to outbound log");
 		} catch (Exception e) {
 			LOG.error("Error writing exchange to audit", e);
 			// throw new PipelineException(e.getMessage());
 		}
+	}
+
+	private AuditEvent getAuditEvent() {
+		if ("Receive".equals(config.getEventType()))
+			return AuditEvent.RECEIVE;
+		if ("Validate".equals(config.getEventType()))
+			return AuditEvent.VALIDATE;
+		if ("Send".equals(config.getEventType()))
+			return AuditEvent.SEND;
+		throw new IllegalArgumentException("Unknown audit event type");
 	}
 }

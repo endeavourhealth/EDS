@@ -14,7 +14,9 @@
                 <Property Key="TransformTo">OpenHR</Property>
             </ExchangeProperties>
         </MessageTransform>
-        <PostMessageToLog/>
+        <PostMessageToLog>
+            <EventType>Validate</EventType>
+        </PostMessageToLog>
         <PostMessageToExchange>
             <Credentials>
                 <Username>guest</Username>
