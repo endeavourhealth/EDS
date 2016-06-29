@@ -8,7 +8,7 @@
     <Queue>EdsInbound-DLQ</Queue>
     <Pipeline>
         <MessageTransform/>
-        <PostToEventLog/>
+        <PostToEventStore/>
         <PostMessageToExchange>
             <Credentials>
                 <Username>guest</Username>

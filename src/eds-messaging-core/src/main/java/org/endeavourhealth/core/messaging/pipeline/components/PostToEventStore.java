@@ -1,17 +1,17 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import org.endeavourhealth.core.configuration.PostToEventLogConfig;
+import org.endeavourhealth.core.configuration.PostToEventStoreConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PostToEventLog implements PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(PostToEventLog.class);
+public class PostToEventStore implements PipelineComponent {
+	private static final Logger LOG = LoggerFactory.getLogger(PostToEventStore.class);
 
-	private PostToEventLogConfig config;
+	private PostToEventStoreConfig config;
 
-	public PostToEventLog(PostToEventLogConfig config) {
+	public PostToEventStore(PostToEventStoreConfig config) {
 		this.config = config;
 	}
 

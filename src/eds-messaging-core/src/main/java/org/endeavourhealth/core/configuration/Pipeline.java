@@ -30,7 +30,7 @@ import javax.xml.bind.annotation.XmlType;
  *           &lt;element name="PostMessageToExchange" type="{}PostMessageToExchangeConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="ReturnResponseAcknowledgement" type="{}ReturnResponseAcknowledgementConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="MessageTransform" type="{}MessageTransformConfig" maxOccurs="unbounded" minOccurs="0"/>
- *           &lt;element name="PostToEventLog" type="{}PostToEventLogConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="PostToEventStore" type="{}PostToEventStoreConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="RunDataDistributionProtocols" type="{}RunDataDistributionProtocolsConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostToSubscriberWebService" type="{}PostToSubscriberWebServiceConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostToRest" type="{}PostToRestConfig" maxOccurs="unbounded" minOccurs="0"/>
@@ -60,7 +60,7 @@ public class Pipeline {
         @XmlElement(name = "PostMessageToExchange", type = PostMessageToExchangeConfig.class),
         @XmlElement(name = "ReturnResponseAcknowledgement", type = ReturnResponseAcknowledgementConfig.class),
         @XmlElement(name = "MessageTransform", type = MessageTransformConfig.class),
-        @XmlElement(name = "PostToEventLog", type = PostToEventLogConfig.class),
+        @XmlElement(name = "PostToEventStore", type = PostToEventStoreConfig.class),
         @XmlElement(name = "RunDataDistributionProtocols", type = RunDataDistributionProtocolsConfig.class),
         @XmlElement(name = "PostToSubscriberWebService", type = PostToSubscriberWebServiceConfig.class),
         @XmlElement(name = "PostToRest", type = PostToRestConfig.class),
@@ -95,7 +95,7 @@ public class Pipeline {
      * {@link PostMessageToExchangeConfig }
      * {@link ReturnResponseAcknowledgementConfig }
      * {@link MessageTransformConfig }
-     * {@link PostToEventLogConfig }
+     * {@link PostToEventStoreConfig }
      * {@link RunDataDistributionProtocolsConfig }
      * {@link PostToSubscriberWebServiceConfig }
      * {@link PostToRestConfig }

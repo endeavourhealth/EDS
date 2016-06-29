@@ -36,6 +36,7 @@ import javax.xml.bind.annotation.XmlType;
     RunDataDistributionProtocolsConfig.class,
     ReturnResponseAcknowledgementConfig.class,
     ValidateMessageTypeConfig.class,
+    PostToEventStoreConfig.class,
     LoadSenderConfigurationConfig.class,
     PGPDecryptConfig.class,
     PostMessageToLogConfig.class,
@@ -43,7 +44,6 @@ import javax.xml.bind.annotation.XmlType;
     EnvelopMessageConfig.class,
     PostMessageToExchangeConfig.class,
     PostToSubscriberWebServiceConfig.class,
-    PostToEventLogConfig.class,
     OpenEnvelopeConfig.class,
     ValidateSenderConfig.class
 })

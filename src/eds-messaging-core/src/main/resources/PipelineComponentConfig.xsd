@@ -56,7 +56,7 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:complexType name="PostToEventLogConfig">
+    <xs:complexType name="PostToEventStoreConfig">
         <xs:complexContent>
             <xs:extension base="ComponentConfig"/>
         </xs:complexContent>

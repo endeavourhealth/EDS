@@ -68,8 +68,8 @@ public class PipelineProcessor {
 				return new ReturnResponseAcknowledgement((ReturnResponseAcknowledgementConfig) processConfig);
 			case "MessageTransformConfig":
 				return new MessageTransform((MessageTransformConfig) processConfig);
-			case "PostToEventLogConfig":
-				return new PostToEventLog((PostToEventLogConfig) processConfig);
+			case "PostToEventStoreConfig":
+				return new PostToEventStore((PostToEventStoreConfig) processConfig);
 			case "RunDataDistributionProtocolsConfig":
 				return new RunDataDistributionProtocols((RunDataDistributionProtocolsConfig) processConfig);
 			case "PostToSubscriberWebServiceConfig":

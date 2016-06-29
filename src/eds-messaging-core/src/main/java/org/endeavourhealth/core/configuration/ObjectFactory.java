@@ -62,6 +62,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link PostToEventStoreConfig }
+     * 
+     */
+    public PostToEventStoreConfig createPostToEventStoreConfig() {
+        return new PostToEventStoreConfig();
+    }
+
+    /**
      * Create an instance of {@link LoadSenderConfigurationConfig }
      * 
      */
@@ -147,14 +155,6 @@ public class ObjectFactory {
      */
     public PostToSubscriberWebServiceConfig createPostToSubscriberWebServiceConfig() {
         return new PostToSubscriberWebServiceConfig();
-    }
-
-    /**
-     * Create an instance of {@link PostToEventLogConfig }
-     * 
-     */
-    public PostToEventLogConfig createPostToEventLogConfig() {
-        return new PostToEventLogConfig();
     }
 
     /**
