@@ -52,5 +52,4 @@ values
 	"name": "Default 0-9",
 	"description": "Default fallback group, initial character 0-9"
 }]'
- )
- 
+);

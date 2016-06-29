@@ -1,3 +1,4 @@
+DROP KEYSPACE IF EXISTS audit;
 create keyspace audit with replication = {'class':'SimpleStrategy', 'replication_factor':1};
 
 USE audit;

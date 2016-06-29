@@ -1,3 +1,4 @@
+DROP KEYSPACE IF EXISTS configuration;
 create keyspace configuration with replication = {'class':'SimpleStrategy', 'replication_factor':'1'};
 USE configuration;
 
