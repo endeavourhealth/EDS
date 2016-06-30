@@ -30,6 +30,10 @@ module app.dashboard {
 		responseQueues : RabbitQueue[];
 		subscriberQueues : RabbitQueue[];
 
+		pingWarn : number = 250;
+		queueWarn : number = 400;
+		queueDanger : number = 500;
+
 		static $inject = ['DashboardService', 'LoggerService', 'RabbitService', '$state'];
 
 		constructor(private dashboardService:IDashboardService,
@@ -90,7 +94,7 @@ module app.dashboard {
 				return 'label-danger';
 			if (item.ping === 0)
 				return 'label-default';
-			if (item.ping <= 250)
+			if (item.ping <= this.pingWarn)
 				return 'label-success';
 			return 'label-warning';
 		}
@@ -114,10 +118,30 @@ module app.dashboard {
 				return 'label-default';
 
 			// All OK if we're delivering faster than receiving
-			if (item.message_stats.publish_details.rate < item.message_stats.deliver_get_details.rate)
+			if (item.message_stats.publish_out_details.rate <= item.message_stats.publish_in_details.rate)
 				return 'label-success';
 
 			return 'label-warning';
+		}
+
+		getQueueLengthClass(queue : RabbitQueue) {
+			if (queue.messages_ready > this.queueDanger)
+				return 'label-danger';
+			if (queue.messages_ready > this.queueWarn)
+				return 'label-warning';
+			return 'label-success';
+		}
+
+		getPublishRateAsWidthStylePercent(exchange : RabbitExchange){
+			if (!exchange || !exchange.message_stats)
+				return {width : '50%'};
+
+			var total = exchange.message_stats.publish_in_details.rate + exchange.message_stats.publish_out_details.rate;
+			if (total === 0)
+				return {width : '50%'};
+
+			var pcnt = (exchange.message_stats.publish_in_details.rate * 100) / total;
+			return {width : pcnt + '%'};
 		}
 
 		getRabbitQueues() {

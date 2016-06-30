@@ -211,7 +211,7 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/rabbitNode/synchronize")
 	public Response synchronizeRabbit(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
-		String[] pipelines = {"EdsInbound", "EdsInterim", "EdsResponse", "EdsSubscriber"};
+		String[] pipelines = {"EdsInbound", "EdsProtocol", "EdsTransform", "EdsResponse", "EdsSubscriber"};
 
 		super.setLogbackMarkers(sc);
 

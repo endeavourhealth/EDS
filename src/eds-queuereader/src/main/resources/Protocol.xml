@@ -5,7 +5,7 @@
         <Password>guest</Password>
     </Credentials>
     <Nodes>localhost:5672</Nodes>
-    <Queue>EdsInterim-DLQ</Queue>
+    <Queue>EdsProtocol-DLQ</Queue>
     <Pipeline>
         <RunDataDistributionProtocols/>
         <PostMessageToExchange>
@@ -14,7 +14,7 @@
                 <Password>guest</Password>
             </Credentials>
             <Nodes>localhost:5672</Nodes>
-            <Exchange>EdsProtocol</Exchange>
+            <Exchange>EdsTransform</Exchange>
             <RoutingProperty>Sender</RoutingProperty>
             <MulticastHeader>TransformTo</MulticastHeader>
         </PostMessageToExchange>

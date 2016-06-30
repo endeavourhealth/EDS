@@ -6,8 +6,8 @@ module app.models {
     }
 
     export class RabbitMessageStats {
-        publish_details : RabbitRate;
-        deliver_get_details : RabbitRate;
+        publish_in_details : RabbitRate;
+        publish_out_details : RabbitRate;
     }
 
     export class RabbitExchange {

@@ -14,7 +14,7 @@
         <PGPDecrypt/>
         <EnvelopMessage>
             <ExchangeHeaders>
-                <Header Key="Format">text/json</Header>
+                <Header Key="Content-Type">text/json</Header>
                 <Header Key="Sender">ODS00000</Header>
                 <Header Key="SourceSystem">EDS_FTP_Poller</Header>
                 <Header Key="ResponseUri">http://EDS_POLLER_BusinessAck.co.uk</Header>

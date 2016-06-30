@@ -5,7 +5,7 @@
 	</div>
 	<div class="module-body">
 		<div class="container-fluid">
-	<div class="row">
+			<div class="row">
 		<div class="col-md-12">
 			<div class="panel panel-primary">
 				<div class="panel-heading">Recent Items <span class="fa fa-sm fa-refresh fa-refresh-animate" ng-hide="dashboard.recentDocumentsData"></span></div>
@@ -58,20 +58,19 @@
 								</div>
 							</div>
 
-
 							<div class="row">
 								<div class="form-group col-md-2">
 									<label class="control-label">Inbound Exchange</label>
 
 									<div class="progress">
-										<div class="small">{{dashboard.inboundExchange.name}} ({{dashboard.inboundExchange.message_stats.publish_details.rate}} / {{dashboard.inboundExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="small">{{dashboard.inboundExchange.name}} ({{dashboard.inboundExchange.message_stats.publish_in_details.rate}} / {{dashboard.inboundExchange.message_stats.publish_out_details.rate}})</div>
 										<div class="progress-bar"
 												 ng-class="dashboard.getExchangeRateClass(dashboard.inboundExchange)"
 												 role="progressbar"
 												 aria-valuemin="0"
-												 aria-valuemax="{{dashboard.inboundExchange.message_stats.publish_details.rate + dashboard.inboundExchange.message_stats.deliver_get_details.rate}}"
-												 aria-valuenow="{{dashboard.inboundExchange.message_stats.publish_details.rate}}"
-												 ng-style="{ width : (dashboard.inboundExchange.message_stats.publish_details.rate+'%') }">
+												 aria-valuemax="{{dashboard.inboundExchange.message_stats.publish_in_details.rate + dashboard.inboundExchange.message_stats.publish_out_details.rate}}"
+												 aria-valuenow="{{dashboard.inboundExchange.message_stats.publish_in_details.rate}}"
+												 ng-style="dashboard.getPublishRateAsWidthStylePercent(dashboard.inboundExchange)">
 										</div>
 									</div>
 
@@ -99,14 +98,14 @@
 									<label class="control-label">Protocol Exchange</label>
 
 									<div class="progress">
-										<div class="small">{{dashboard.protocolExchange.name}} ({{dashboard.protocolExchange.message_stats.publish_details.rate}} / {{dashboard.protocolExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="small">{{dashboard.protocolExchange.name}} ({{dashboard.protocolExchange.message_stats.publish_in_details.rate}} / {{dashboard.protocolExchange.message_stats.publish_out_details.rate}})</div>
 										<div class="progress-bar"
 												 ng-class="dashboard.getExchangeRateClass(dashboard.protocolExchange)"
 												 role="progressbar"
 												 aria-valuemin="0"
-												 aria-valuemax="{{dashboard.protocolExchange.message_stats.publish_details.rate + dashboard.protocolExchange.message_stats.deliver_get_details.rate}}"
-												 aria-valuenow="{{dashboard.protocolExchange.message_stats.publish_details.rate}}"
-												 ng-style="{ width : (dashboard.protocolExchange.message_stats.publish_details.rate+'%') }">
+												 aria-valuemax="{{dashboard.protocolExchange.message_stats.publish_in_details.rate + dashboard.protocolExchange.message_stats.publish_out_details.rate}}"
+												 aria-valuenow="{{dashboard.protocolExchange.message_stats.publish_in_details.rate}}"
+												 ng-style="dashboard.getPublishRateAsWidthStylePercent(dashboard.protocolExchange)">
 										</div>
 									</div>
 
@@ -134,14 +133,14 @@
 									<label class="control-label">Transform Exchange</label>
 
 									<div class="progress">
-										<div class="small">{{dashboard.transformExchange.name}} ({{dashboard.transformExchange.message_stats.publish_details.rate}} / {{dashboard.transformExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="small">{{dashboard.transformExchange.name}} ({{dashboard.transformExchange.message_stats.publish_in_details.rate}} / {{dashboard.transformExchange.message_stats.publish_out_details.rate}})</div>
 										<div class="progress-bar"
 												 ng-class="dashboard.getExchangeRateClass(dashboard.transformExchange)"
 												 role="progressbar"
 												 aria-valuemin="0"
-												 aria-valuemax="{{dashboard.transformExchange.message_stats.publish_details.rate + dashboard.transformExchange.message_stats.deliver_get_details.rate}}"
-												 aria-valuenow="{{dashboard.transformExchange.message_stats.publish_details.rate}}"
-												 ng-style="{ width : (dashboard.transformExchange.message_stats.publish_details.rate+'%') }">
+												 aria-valuemax="{{dashboard.transformExchange.message_stats.publish_in_details.rate + dashboard.transformExchange.message_stats.publish_out_details.rate}}"
+												 aria-valuenow="{{dashboard.transformExchange.message_stats.publish_in_details.rate}}"
+												 ng-style="dashboard.getPublishRateAsWidthStylePercent(dashboard.transformExchange)">
 										</div>
 									</div>
 
@@ -169,14 +168,14 @@
 									<label class="control-label">Response Exchange</label>
 
 									<div class="progress">
-										<div class="small">{{dashboard.responseExchange.name}} ({{dashboard.responseExchange.message_stats.publish_details.rate}} / {{dashboard.responseExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="small">{{dashboard.responseExchange.name}} ({{dashboard.responseExchange.message_stats.publish_in_details.rate}} / {{dashboard.responseExchange.message_stats.publish_out_details.rate}})</div>
 										<div class="progress-bar"
 												 ng-class="dashboard.getExchangeRateClass(dashboard.responseExchange)"
 												 role="progressbar"
 												 aria-valuemin="0"
-												 aria-valuemax="{{dashboard.responseExchange.message_stats.publish_details.rate + dashboard.responseExchange.message_stats.deliver_get_details.rate}}"
-												 aria-valuenow="{{dashboard.responseExchange.message_stats.publish_details.rate}}"
-												 ng-style="{ width : (dashboard.responseExchange.message_stats.publish_details.rate+'%') }">
+												 aria-valuemax="{{dashboard.responseExchange.message_stats.publish_in_details.rate + dashboard.responseExchange.message_stats.publish_out_details.rate}}"
+												 aria-valuenow="{{dashboard.responseExchange.message_stats.publish_in_details.rate}}"
+												 ng-style="dashboard.getPublishRateAsWidthStylePercent(dashboard.transformExchange)">
 										</div>
 									</div>
 
@@ -204,14 +203,14 @@
 									<label class="control-label">Subscriber Exchange</label>
 
 									<div class="progress">
-										<div class="small">{{dashboard.subscriberExchange.name}} ({{dashboard.subscriberExchange.message_stats.publish_details.rate}} / {{dashboard.subscriberExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="small">{{dashboard.subscriberExchange.name}} ({{dashboard.subscriberExchange.message_stats.publish_in_details.rate}} / {{dashboard.subscriberExchange.message_stats.publish_out_details.rate}})</div>
 										<div class="progress-bar"
 												 ng-class="dashboard.getExchangeRateClass(dashboard.subscriberExchange)"
 												 role="progressbar"
 												 aria-valuemin="0"
-												 aria-valuemax="{{dashboard.subscriberExchange.message_stats.publish_details.rate + dashboard.subscriberExchange.message_stats.deliver_get_details.rate}}"
-												 aria-valuenow="{{dashboard.subscriberExchange.message_stats.publish_details.rate}}"
-												 ng-style="{ width : (dashboard.subscriberExchange.message_stats.publish_details.rate+'%') }">
+												 aria-valuemax="{{dashboard.subscriberExchange.message_stats.publish_in_details.rate + dashboard.subscriberExchange.message_stats.publish_out_details.rate}}"
+												 aria-valuenow="{{dashboard.subscriberExchange.message_stats.publish_in_details.rate}}"
+												 ng-style="dashboard.getPublishRateAsWidthStylePercent(dashboard.subscriberExchange)">
 										</div>
 									</div>
 

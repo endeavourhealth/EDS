@@ -41,7 +41,7 @@ public class PostToRest implements PipelineComponent {
 		// Is there a restricted header list?
 		String[] headersToSend;
 		if (config.getSendHeaders() == null || config.getSendHeaders().isEmpty())
-			headersToSend = (String[]) exchange.getHeaders().keySet().toArray();
+			headersToSend = exchange.getHeaders().keySet().toArray(new String[0]);
 		else
 			headersToSend = config.getSendHeaders().split(",", -1);
 
@@ -60,7 +60,7 @@ public class PostToRest implements PipelineComponent {
 		if (response.getStatus() == HttpStatus.SC_OK)
 			LOG.debug("Message posted to REST endpoint");
 		else {
-			LOG.error("Error posting response to sender");
+			LOG.error("Error posting to REST endpoint");
 			throw new PipelineException(exchange.getBody());
 		}
 	}

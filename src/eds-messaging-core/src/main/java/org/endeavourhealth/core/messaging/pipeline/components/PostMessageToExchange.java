@@ -58,7 +58,7 @@ public class PostMessageToExchange implements PipelineComponent {
 
 			// Handle multicast
 			String multicastHeader = config.getMulticastHeader();
-			if (multicastHeader == null && multicastHeader.isEmpty()) {
+			if (multicastHeader == null || multicastHeader.isEmpty()) {
 				channel.basicPublish(
 						config.getExchange(),
 						routingKey,
