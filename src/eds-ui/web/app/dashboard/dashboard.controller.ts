@@ -18,7 +18,6 @@ module app.dashboard {
 		recentDocumentsData:FolderItem[];
 		rabbitNodes:RabbitNode[];
 		quickestNode : RabbitNode;
-		pingCount : number;
 		inboundExchange : RabbitExchange;
 		protocolExchange : RabbitExchange;
 		transformExchange : RabbitExchange;
@@ -31,8 +30,8 @@ module app.dashboard {
 		subscriberQueues : RabbitQueue[];
 
 		pingWarn : number = 250;
-		queueWarn : number = 400;
-		queueDanger : number = 500;
+		exchangeRateMax : number = 100;
+		queueRateMax : number = 100;
 
 		static $inject = ['DashboardService', 'LoggerService', 'RabbitService', '$state'];
 
@@ -60,7 +59,6 @@ module app.dashboard {
 		getRabbitNodes() {
 			var vm:DashboardController = this;
 			vm.rabbitNodes = null;
-			vm.quickestNode = null;
 			vm.rabbitService.getRabbitNodes()
 				.then(function (data : RabbitNode[]) {
 					vm.rabbitNodes = data;
@@ -70,20 +68,20 @@ module app.dashboard {
 
 		getRabbitNodePings() {
 			var vm = this;
-			vm.pingCount = 0;
+			vm.quickestNode = null;
 			for(var idx in vm.rabbitNodes) {
 				vm.rabbitService.pingRabbitNode(vm.rabbitNodes[idx].address)
 					.then(function (result : RabbitNode) {
+
+						if (vm.quickestNode === null) {
+							vm.quickestNode = result;
+							vm.getRabbitExchanges();
+							vm.getRabbitQueues();
+						}
+
 						var rabbitNode : RabbitNode[] = $.grep(vm.rabbitNodes, function(i) { return i.address === result.address;});
 						if (rabbitNode.length === 1) {
 							rabbitNode[0].ping = result.ping;
-							if (vm.quickestNode === null || (result.ping > -1 && result.ping < vm.quickestNode.ping))
-								vm.quickestNode = result;
-						}
-						vm.pingCount ++;
-						if (vm.pingCount === vm.rabbitNodes.length) {
-							vm.getRabbitExchanges();
-							vm.getRabbitQueues();
 						}
 					})
 			}
@@ -113,34 +111,19 @@ module app.dashboard {
 				});
 		}
 
-		getExchangeRateClass(item : RabbitExchange) {
-			if (!item || !item.message_stats)
-				return 'label-default';
-
-			// All OK if we're delivering faster than receiving
-			if (item.message_stats.publish_out_details.rate <= item.message_stats.publish_in_details.rate)
-				return 'label-success';
-
-			return 'label-warning';
-		}
-
-		getQueueLengthClass(queue : RabbitQueue) {
-			if (queue.messages_ready > this.queueDanger)
-				return 'label-danger';
-			if (queue.messages_ready > this.queueWarn)
-				return 'label-warning';
-			return 'label-success';
-		}
-
-		getPublishRateAsWidthStylePercent(exchange : RabbitExchange){
+		getExchangeRateAsWidthStylePercent(exchange : RabbitExchange){
 			if (!exchange || !exchange.message_stats)
-				return {width : '50%'};
+				return {width : '0%'};
 
-			var total = exchange.message_stats.publish_in_details.rate + exchange.message_stats.publish_out_details.rate;
-			if (total === 0)
-				return {width : '50%'};
+			var pcnt = (exchange.message_stats.publish_in_details.rate * 100) / this.exchangeRateMax;
+			return {width : pcnt + '%'};
+		}
 
-			var pcnt = (exchange.message_stats.publish_in_details.rate * 100) / total;
+		getQueueRateAsWidthStylePercent(queue : RabbitQueue){
+			if (!queue || !queue.message_stats)
+				return {width : '0%'};
+
+			var pcnt = (queue.message_stats.publish_details.rate * 100) / this.queueRateMax;
 			return {width : pcnt + '%'};
 		}
 
@@ -156,6 +139,13 @@ module app.dashboard {
 					vm.responseQueues = $.grep(data, function(e) { return e.name.lastIndexOf('EdsResponse',0)===0;})
 					vm.subscriberQueues = $.grep(data, function(e) { return e.name.lastIndexOf('EdsSubscriber',0)===0;})
 				});
+		}
+
+		getName(name : String) {
+			var hyphen = name.indexOf('-');
+			if (hyphen === -1)
+				return name;
+			return name.substr(hyphen+1);
 		}
 
 		actionItem(item : FolderItem, action : string) {

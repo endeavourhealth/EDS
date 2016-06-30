@@ -3,8 +3,7 @@ module app.models {
 
     export class RabbitQueue {
         name: string;
-        messages: number;
         messages_ready: number;
-        messages_unacknowledged: number;
+        message_stats : RabbitMessageStats;
     }
 }

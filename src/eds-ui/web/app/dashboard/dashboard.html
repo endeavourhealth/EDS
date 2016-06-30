@@ -6,8 +6,8 @@
 	<div class="module-body">
 		<div class="container-fluid">
 			<div class="row">
-		<div class="col-md-12">
-			<div class="panel panel-primary">
+				<div class="col-md-12">
+					<div class="panel panel-primary">
 				<div class="panel-heading">Recent Items <span class="fa fa-sm fa-refresh fa-refresh-animate" ng-hide="dashboard.recentDocumentsData"></span></div>
 				<div class="panel-body">
 					<div class="table">
@@ -33,8 +33,8 @@
 					</div>
 				</div>
 			</div>
-		</div>
-	</div>
+				</div>
+			</div>
 
 			<div class="row">
 				<div class="col-md-12">
@@ -42,7 +42,8 @@
 						<div class="panel-heading">Rabbit Status <span class="fa fa-sm fa-refresh fa-refresh-animate" ng-hide="dashboard.rabbitNodes"></span></div>
 						<div class="panel-body">
 							<div class="row">
-								<div class="form-group col-md-12">
+								<div class="form-group col-md-1"/>
+								<div class="form-group col-md-11">
 									<label class="control-label">Node status</label>
 									<div class="input-group">
 										<span ng-repeat="item in dashboard.rabbitNodes">
@@ -59,179 +60,64 @@
 							</div>
 
 							<div class="row">
+								<div class="form-group col-md-1"/>
 								<div class="form-group col-md-2">
 									<label class="control-label">Inbound Exchange</label>
-
-									<div class="progress">
-										<div class="small">{{dashboard.inboundExchange.name}} ({{dashboard.inboundExchange.message_stats.publish_in_details.rate}} / {{dashboard.inboundExchange.message_stats.publish_out_details.rate}})</div>
-										<div class="progress-bar"
-												 ng-class="dashboard.getExchangeRateClass(dashboard.inboundExchange)"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuemax="{{dashboard.inboundExchange.message_stats.publish_in_details.rate + dashboard.inboundExchange.message_stats.publish_out_details.rate}}"
-												 aria-valuenow="{{dashboard.inboundExchange.message_stats.publish_in_details.rate}}"
-												 ng-style="dashboard.getPublishRateAsWidthStylePercent(dashboard.inboundExchange)">
-										</div>
+									<div ng-repeat="exchange in [dashboard.inboundExchange]">
+										<div ng-include src="'exchangeTemplate'"></div>
 									</div>
 
 									<label class="control-label">Inbound Queues</label>
-
-									<div class="progress" ng-repeat="item in dashboard.inboundQueues">
-										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
-										<div class="progress-bar progress-bar-success"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuenow="{{item.messages_ready}}"
-												 aria-valuemax="100"
-												 ng-style="{ width : (item.messages_ready+'%') }">
-										</div>
-										<div class="progress-bar progress-bar-warning"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuenow="{{item.messages_unacknowledged}}"
-												 aria-valuemax="100"
-												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
-										</div>
+									<div ng-repeat="item in dashboard.inboundQueues">
+										<div ng-include src="'queueTemplate'"></div>
 									</div>
 								</div>
+
 								<div class="form-group col-md-2">
 									<label class="control-label">Response Exchange</label>
-
-									<div class="progress">
-										<div class="small">{{dashboard.responseExchange.name}} ({{dashboard.responseExchange.message_stats.publish_in_details.rate}} / {{dashboard.responseExchange.message_stats.publish_out_details.rate}})</div>
-										<div class="progress-bar"
-												 ng-class="dashboard.getExchangeRateClass(dashboard.responseExchange)"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuemax="{{dashboard.responseExchange.message_stats.publish_in_details.rate + dashboard.responseExchange.message_stats.publish_out_details.rate}}"
-												 aria-valuenow="{{dashboard.responseExchange.message_stats.publish_in_details.rate}}"
-												 ng-style="dashboard.getPublishRateAsWidthStylePercent(dashboard.transformExchange)">
-										</div>
+									<div ng-repeat="exchange in [dashboard.responseExchange]">
+										<div ng-include src="'exchangeTemplate'"></div>
 									</div>
 
 									<label class="control-label">Response Queues</label>
-
-									<div class="progress" ng-repeat="item in dashboard.responseQueues">
-										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
-										<div class="progress-bar progress-bar-success"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuenow="{{item.messages_ready}}"
-												 aria-valuemax="100"
-												 ng-style="{ width : (item.messages_ready+'%') }">
-										</div>
-										<div class="progress-bar progress-bar-warning"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuenow="{{item.messages_unacknowledged}}"
-												 aria-valuemax="100"
-												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
-										</div>
+									<div ng-repeat="item in dashboard.responseQueues">
+										<div ng-include src="'queueTemplate'"></div>
 									</div>
 								</div>
+
 								<div class="form-group col-md-2">
 									<label class="control-label">Protocol Exchange</label>
-
-									<div class="progress">
-										<div class="small">{{dashboard.protocolExchange.name}} ({{dashboard.protocolExchange.message_stats.publish_in_details.rate}} / {{dashboard.protocolExchange.message_stats.publish_out_details.rate}})</div>
-										<div class="progress-bar"
-												 ng-class="dashboard.getExchangeRateClass(dashboard.protocolExchange)"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuemax="{{dashboard.protocolExchange.message_stats.publish_in_details.rate + dashboard.protocolExchange.message_stats.publish_out_details.rate}}"
-												 aria-valuenow="{{dashboard.protocolExchange.message_stats.publish_in_details.rate}}"
-												 ng-style="dashboard.getPublishRateAsWidthStylePercent(dashboard.protocolExchange)">
-										</div>
+									<div ng-repeat="exchange in [dashboard.protocolExchange]">
+										<div ng-include src="'exchangeTemplate'"></div>
 									</div>
 
 									<label class="control-label">Protocol Queues</label>
-
-									<div class="progress" ng-repeat="item in dashboard.protocolQueues">
-										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
-										<div class="progress-bar progress-bar-success"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuenow="{{item.messages_ready}}"
-												 aria-valuemax="100"
-												 ng-style="{ width : (item.messages_ready+'%') }">
-										</div>
-										<div class="progress-bar progress-bar-warning"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuenow="{{item.messages_unacknowledged}}"
-												 aria-valuemax="100"
-												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
-										</div>
+									<div ng-repeat="item in dashboard.protocolQueues">
+										<div ng-include src="'queueTemplate'"></div>
 									</div>
 								</div>
+
 								<div class="form-group col-md-2">
 									<label class="control-label">Transform Exchange</label>
-
-									<div class="progress">
-										<div class="small">{{dashboard.transformExchange.name}} ({{dashboard.transformExchange.message_stats.publish_in_details.rate}} / {{dashboard.transformExchange.message_stats.publish_out_details.rate}})</div>
-										<div class="progress-bar"
-												 ng-class="dashboard.getExchangeRateClass(dashboard.transformExchange)"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuemax="{{dashboard.transformExchange.message_stats.publish_in_details.rate + dashboard.transformExchange.message_stats.publish_out_details.rate}}"
-												 aria-valuenow="{{dashboard.transformExchange.message_stats.publish_in_details.rate}}"
-												 ng-style="dashboard.getPublishRateAsWidthStylePercent(dashboard.transformExchange)">
-										</div>
+									<div ng-repeat="exchange in [dashboard.transformExchange]">
+										<div ng-include src="'exchangeTemplate'"></div>
 									</div>
 
 									<label class="control-label">Transform Queues</label>
-
-									<div class="progress" ng-repeat="item in dashboard.transformQueues">
-										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
-										<div class="progress-bar progress-bar-success"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuenow="{{item.messages_ready}}"
-												 aria-valuemax="100"
-												 ng-style="{ width : (item.messages_ready+'%') }">
-										</div>
-										<div class="progress-bar progress-bar-warning"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuenow="{{item.messages_unacknowledged}}"
-												 aria-valuemax="100"
-												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
-										</div>
+									<div ng-repeat="item in dashboard.transformQueues">
+										<div ng-include src="'queueTemplate'"></div>
 									</div>
 								</div>
+
 								<div class="form-group col-md-2">
 									<label class="control-label">Subscriber Exchange</label>
-
-									<div class="progress">
-										<div class="small">{{dashboard.subscriberExchange.name}} ({{dashboard.subscriberExchange.message_stats.publish_in_details.rate}} / {{dashboard.subscriberExchange.message_stats.publish_out_details.rate}})</div>
-										<div class="progress-bar"
-												 ng-class="dashboard.getExchangeRateClass(dashboard.subscriberExchange)"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuemax="{{dashboard.subscriberExchange.message_stats.publish_in_details.rate + dashboard.subscriberExchange.message_stats.publish_out_details.rate}}"
-												 aria-valuenow="{{dashboard.subscriberExchange.message_stats.publish_in_details.rate}}"
-												 ng-style="dashboard.getPublishRateAsWidthStylePercent(dashboard.subscriberExchange)">
-										</div>
+									<div ng-repeat="exchange in [dashboard.subscriberExchange]">
+										<div ng-include src="'exchangeTemplate'"></div>
 									</div>
 
 									<label class="control-label">Subscriber Queues</label>
-
-									<div class="progress" ng-repeat="item in dashboard.subscriberQueues">
-										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
-										<div class="progress-bar progress-bar-success"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuenow="{{item.messages_ready}}"
-												 aria-valuemax="100"
-												 ng-style="{ width : (item.messages_ready+'%') }">
-										</div>
-										<div class="progress-bar progress-bar-warning"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuenow="{{item.messages_unacknowledged}}"
-												 aria-valuemax="100"
-												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
-										</div>
+									<div ng-repeat="item in dashboard.subscriberQueues">
+										<div ng-include src="'queueTemplate'"></div>
 									</div>
 								</div>
 							</div>
@@ -242,3 +128,29 @@
 		</div>
 	</div>
 </div>
+
+<script type="text/ng-template" id="exchangeTemplate">
+	<div class="progress">
+		<div class="small">{{exchange.name}} ({{exchange.message_stats.publish_in_details.rate}}/s)</div>
+		<div class="progress-bar"
+				 role="progressbar"
+				 aria-valuemin="0"
+				 aria-valuemax="{{dashboard.exchangeRateMax}}"
+				 aria-valuenow="{{exchange.message_stats.publish_in_details.rate}}"
+				 ng-style="dashboard.getExchangeRateAsWidthStylePercent(exchange)">
+		</div>
+	</div>
+</script>
+
+<script type="text/ng-template" id="queueTemplate">
+	<div class="progress">
+		<div class="small">{{dashboard.getName(item.name)}} ({{item.messages_ready}} @ {{item.message_stats.publish_details.rate}}/s)</div>
+		<div class="progress-bar progress-bar-success"
+				 role="progressbar"
+				 aria-valuemin="0"
+				 aria-valuenow="{{item.publish_details.rate}}"
+				 aria-valuemax="{{dashboard.queueRateMax}}"
+				 ng-style="dashboard.getQueueRateAsWidthStylePercent(item)">
+		</div>
+	</div>
+</script>
