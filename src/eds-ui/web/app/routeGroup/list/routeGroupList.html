@@ -7,12 +7,22 @@
 		<div class="module-body">
 			<form>
 				<div class="row">
+					<div class="form-group col-md-1"/>
 					<div class="form-group col-md-2">
 						<label>Inbound</label>
 						<div ng-repeat="item in ctrl.routeGroups">
 							<label class="small"><i ng-class="ctrl.getRouteGroupClass(item, ctrl.inboundBindings)"></i> {{item.name}}</label>
 						</div>
 						<div ng-repeat="item in ctrl.inboundBindings">
+							<label class="small" ng-hide="ctrl.bindingExists(item)"><i class="fa fa-minus-circle text-danger"></i> {{item.routing_key}}</label>
+						</div>
+					</div>
+					<div class="form-group col-md-2">
+						<label>Response</label>
+						<div ng-repeat="item in ctrl.routeGroups">
+							<label class="small"><i ng-class="ctrl.getRouteGroupClass(item, ctrl.responseBindings)"></i> {{item.name}}</label>
+						</div>
+						<div ng-repeat="item in ctrl.responseBindings">
 							<label class="small" ng-hide="ctrl.bindingExists(item)"><i class="fa fa-minus-circle text-danger"></i> {{item.routing_key}}</label>
 						</div>
 					</div>
@@ -31,15 +41,6 @@
 							<label class="small"><i ng-class="ctrl.getRouteGroupClass(item, ctrl.transformBindings)"></i> {{item.name}}</label>
 						</div>
 						<div ng-repeat="item in ctrl.transformBindings">
-							<label class="small" ng-hide="ctrl.bindingExists(item)"><i class="fa fa-minus-circle text-danger"></i> {{item.routing_key}}</label>
-						</div>
-					</div>
-					<div class="form-group col-md-2">
-						<label>Response</label>
-						<div ng-repeat="item in ctrl.routeGroups">
-							<label class="small"><i ng-class="ctrl.getRouteGroupClass(item, ctrl.responseBindings)"></i> {{item.name}}</label>
-						</div>
-						<div ng-repeat="item in ctrl.responseBindings">
 							<label class="small" ng-hide="ctrl.bindingExists(item)"><i class="fa fa-minus-circle text-danger"></i> {{item.routing_key}}</label>
 						</div>
 					</div>
