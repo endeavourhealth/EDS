@@ -38,6 +38,22 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link ExchangeHeader }
+     * 
+     */
+    public ExchangeHeader createExchangeHeader() {
+        return new ExchangeHeader();
+    }
+
+    /**
+     * Create an instance of {@link ExchangeHeaders }
+     * 
+     */
+    public ExchangeHeaders createExchangeHeaders() {
+        return new ExchangeHeaders();
+    }
+
+    /**
      * Create an instance of {@link RunDataDistributionProtocolsConfig }
      * 
      */
@@ -78,35 +94,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ExchangeProperty }
-     * 
-     */
-    public ExchangeProperty createExchangeProperty() {
-        return new ExchangeProperty();
-    }
-
-    /**
      * Create an instance of {@link PGPDecryptConfig }
      * 
      */
     public PGPDecryptConfig createPGPDecryptConfig() {
         return new PGPDecryptConfig();
-    }
-
-    /**
-     * Create an instance of {@link Pipeline }
-     * 
-     */
-    public Pipeline createPipeline() {
-        return new Pipeline();
-    }
-
-    /**
-     * Create an instance of {@link ExchangeProperties }
-     * 
-     */
-    public ExchangeProperties createExchangeProperties() {
-        return new ExchangeProperties();
     }
 
     /**
@@ -179,6 +171,14 @@ public class ObjectFactory {
      */
     public Credentials createCredentials() {
         return new Credentials();
+    }
+
+    /**
+     * Create an instance of {@link LoadDataDistributionProtocolsConfig }
+     * 
+     */
+    public LoadDataDistributionProtocolsConfig createLoadDataDistributionProtocolsConfig() {
+        return new LoadDataDistributionProtocolsConfig();
     }
 
 }

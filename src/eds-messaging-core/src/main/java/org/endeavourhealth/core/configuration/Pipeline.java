@@ -31,6 +31,7 @@ import javax.xml.bind.annotation.XmlType;
  *           &lt;element name="ReturnResponseAcknowledgement" type="{}ReturnResponseAcknowledgementConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="MessageTransform" type="{}MessageTransformConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostToEventStore" type="{}PostToEventStoreConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="LoadDataDistributionProtocols" type="{}LoadDataDistributionProtocolsConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="RunDataDistributionProtocols" type="{}RunDataDistributionProtocolsConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostToSubscriberWebService" type="{}PostToSubscriberWebServiceConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostToRest" type="{}PostToRestConfig" maxOccurs="unbounded" minOccurs="0"/>
@@ -61,6 +62,7 @@ public class Pipeline {
         @XmlElement(name = "ReturnResponseAcknowledgement", type = ReturnResponseAcknowledgementConfig.class),
         @XmlElement(name = "MessageTransform", type = MessageTransformConfig.class),
         @XmlElement(name = "PostToEventStore", type = PostToEventStoreConfig.class),
+        @XmlElement(name = "LoadDataDistributionProtocols", type = LoadDataDistributionProtocolsConfig.class),
         @XmlElement(name = "RunDataDistributionProtocols", type = RunDataDistributionProtocolsConfig.class),
         @XmlElement(name = "PostToSubscriberWebService", type = PostToSubscriberWebServiceConfig.class),
         @XmlElement(name = "PostToRest", type = PostToRestConfig.class),
@@ -96,6 +98,7 @@ public class Pipeline {
      * {@link ReturnResponseAcknowledgementConfig }
      * {@link MessageTransformConfig }
      * {@link PostToEventStoreConfig }
+     * {@link LoadDataDistributionProtocolsConfig }
      * {@link RunDataDistributionProtocolsConfig }
      * {@link PostToSubscriberWebServiceConfig }
      * {@link PostToRestConfig }

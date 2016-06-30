@@ -7,7 +7,7 @@ import com.rabbitmq.client.Envelope;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.data.admin.models.QueuedMessage;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
+import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 
@@ -32,7 +32,7 @@ public class RabbitConsumer extends DefaultConsumer {
 		QueuedMessage queuedMessage = new QueuedMessageRepository().getById(messageUuid);
 
 		Exchange exchange = new Exchange(queuedMessage.getMessageBody());
-		exchange.setProperty(PropertyKeys.RoutingKey, envelope.getRoutingKey());
+		exchange.setHeader(HeaderKeys.RoutingKey, envelope.getRoutingKey());
 
 		// Process the message
 		if (pipeline.execute(exchange)) {

@@ -2,7 +2,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import org.endeavourhealth.core.configuration.EnvelopMessageConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
+import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.hl7.fhir.instance.formats.IParser;
@@ -35,7 +35,7 @@ public class EnvelopMessage implements PipelineComponent {
 		Bundle bundle = buildBundle(messageHeader, binary);
 
 		try {
-			String format = (String)exchange.getProperty(PropertyKeys.Format);
+			String format = exchange.getHeader(HeaderKeys.Format);
 
 			IParser parser = null;
 			if (format != null && "text/xml".equals(format))
@@ -56,15 +56,15 @@ public class EnvelopMessage implements PipelineComponent {
 	private MessageHeader buildMessageHeader(Exchange exchange) {
 		MessageHeader.MessageSourceComponent source = new MessageHeader.MessageSourceComponent();
 
-		source.setName((String)exchange.getProperty(PropertyKeys.Sender));
-		source.setEndpoint((String)exchange.getProperty(PropertyKeys.ResponseUri));
-		source.setSoftware((String)exchange.getProperty(PropertyKeys.SourceSystem));
+		source.setName(exchange.getHeader(HeaderKeys.Sender));
+		source.setEndpoint(exchange.getHeader(HeaderKeys.ResponseUri));
+		source.setSoftware(exchange.getHeader(HeaderKeys.SourceSystem));
 
 		MessageHeader messageHeader = new MessageHeader();
 		messageHeader.setId(UUID.randomUUID().toString());
 		messageHeader.setSource(source);
 
-		String addresses = (String)exchange.getProperty(PropertyKeys.DestinationAddress);
+		String addresses = exchange.getHeader(HeaderKeys.DestinationAddress);
 		List<String> addressList = Arrays.asList(addresses.split("\\s*,\\s*"));
 
 		if (addresses != null) {

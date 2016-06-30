@@ -13,18 +13,18 @@
     <Pipeline>
         <PGPDecrypt/>
         <EnvelopMessage>
-            <ExchangeProperties>
-                <Property Key="Format">text/xml</Property>
-                <Property Key="Sender">ODS00000</Property>
-                <Property Key="SourceSystem">EDS_FTP_Poller</Property>
-                <Property Key="ResponseUri">http://EDS_POLLER_BusinessAck.co.uk</Property>
-                <Property Key="DestinationAddress">192.168.0.1, 192.168.0.2, 192.168.0.3</Property>
-            </ExchangeProperties>
+            <ExchangeHeaders>
+                <Header Key="Format">text/json</Header>
+                <Header Key="Sender">ODS00000</Header>
+                <Header Key="SourceSystem">EDS_FTP_Poller</Header>
+                <Header Key="ResponseUri">http://EDS_POLLER_BusinessAck.co.uk</Header>
+                <Header Key="DestinationAddress">192.168.0.1, 192.168.0.2, 192.168.0.3</Header>
+            </ExchangeHeaders>
         </EnvelopMessage>
         <PostToRest>
-            <ExchangeProperties>
-                <Property Key="DestinationAddress">http://localhost:8080/api/PostMessageAsync</Property>
-            </ExchangeProperties>
+            <ExchangeHeaders>
+                <Header Key="DestinationAddress">http://localhost:8080/api/PostMessageAsync</Header>
+            </ExchangeHeaders>
         </PostToRest>
     </Pipeline>
 </SftpReaderConfiguration>

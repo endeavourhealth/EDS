@@ -70,6 +70,8 @@ public class PipelineProcessor {
 				return new MessageTransform((MessageTransformConfig) processConfig);
 			case "PostToEventStoreConfig":
 				return new PostToEventStore((PostToEventStoreConfig) processConfig);
+			case "LoadDataDistributionProtocolsConfig":
+				return new LoadDataDistributionProtocols((LoadDataDistributionProtocolsConfig) processConfig);
 			case "RunDataDistributionProtocolsConfig":
 				return new RunDataDistributionProtocols((RunDataDistributionProtocolsConfig) processConfig);
 			case "PostToSubscriberWebServiceConfig":
@@ -86,9 +88,9 @@ public class PipelineProcessor {
 	private void PopulateExchangeParameters(Exchange exchange, Object processConfig) {
 		if (ComponentConfig.class.isAssignableFrom(processConfig.getClass())) {
 			ComponentConfig config = ((ComponentConfig) processConfig);
-			if (config.getExchangeProperties() != null && config.getExchangeProperties().getProperty() != null) {
-				for (ExchangeProperty exchangeProperty : config.getExchangeProperties().getProperty()) {
-					exchange.setProperty(exchangeProperty.getKey(), exchangeProperty.getValue());
+			if (config.getExchangeHeaders() != null && config.getExchangeHeaders().getHeader() != null) {
+				for (ExchangeHeader exchangeProperty : config.getExchangeHeaders().getHeader()) {
+					exchange.setHeader(exchangeProperty.getKey(), exchangeProperty.getValue());
 				}
 			}
 		}

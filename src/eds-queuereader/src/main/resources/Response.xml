@@ -7,6 +7,8 @@
     <Nodes>localhost:5672</Nodes>
     <Queue>EdsResponse-DLQ</Queue>
     <Pipeline>
-        <PostToRest/>
+        <PostToRest>
+            <SendHeaders>Content-Type, MessageId</SendHeaders>
+        </PostToRest>
     </Pipeline>
 </QueueReaderConfiguration>

@@ -2,7 +2,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import org.endeavourhealth.core.configuration.ReturnResponseAcknowledgementConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
+import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.hl7.fhir.instance.formats.IParser;
@@ -13,9 +13,7 @@ import org.hl7.fhir.instance.model.MessageHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 public class ReturnResponseAcknowledgement implements PipelineComponent {
@@ -34,7 +32,7 @@ public class ReturnResponseAcknowledgement implements PipelineComponent {
 		MessageHeader messageHeader = buildMessageHeader(exchange);
 
 		try {
-			String format = (String)exchange.getProperty(PropertyKeys.Format);
+			String format = exchange.getHeader(HeaderKeys.Format);
 
 			IParser parser = null;
 			if (format != null && "text/xml".equals(format))
@@ -55,12 +53,12 @@ public class ReturnResponseAcknowledgement implements PipelineComponent {
 		coding.setDisplay("Business acknowledgement");
 
 		MessageHeader.MessageHeaderResponseComponent response = new MessageHeader.MessageHeaderResponseComponent();
-		response.setIdentifier((String)exchange.getProperty(PropertyKeys.MessageId));
+		response.setIdentifier(exchange.getHeader(HeaderKeys.MessageId));
 
 		MessageHeader.MessageSourceComponent source = new MessageHeader.MessageSourceComponent();
-		source.setName((String)exchange.getProperty(PropertyKeys.Sender));
-		source.setEndpoint((String)exchange.getProperty(PropertyKeys.ResponseUri));
-		source.setSoftware((String)exchange.getProperty(PropertyKeys.SourceSystem));
+		source.setName(exchange.getHeader(HeaderKeys.Sender));
+		source.setEndpoint(exchange.getHeader(HeaderKeys.ResponseUri));
+		source.setSoftware(exchange.getHeader(HeaderKeys.SourceSystem));
 
 		MessageHeader messageHeader = new MessageHeader();
 		messageHeader.setId(UUID.randomUUID().toString());

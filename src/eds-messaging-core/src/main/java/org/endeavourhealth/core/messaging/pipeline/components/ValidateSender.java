@@ -1,9 +1,8 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import org.endeavourhealth.core.configuration.ValidateSenderConfig;
-import org.endeavourhealth.core.messaging.EDSMethod;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
+import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.slf4j.Logger;
@@ -19,8 +18,8 @@ public class ValidateSender implements PipelineComponent {
 	}
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
-		String sender = (String)exchange.getProperty(PropertyKeys.Sender);
-		EDSMethod method = (EDSMethod) exchange.getProperty(PropertyKeys.Method);
+		String sender = exchange.getHeader(HeaderKeys.Sender);
+		String method = exchange.getHeader(HeaderKeys.Method);
 
 		// Load data distribution protocols
 

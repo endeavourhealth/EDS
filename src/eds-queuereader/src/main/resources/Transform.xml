@@ -5,14 +5,13 @@
         <Password>guest</Password>
     </Credentials>
     <Nodes>localhost:5672</Nodes>
-    <Queue>EdsInterim-DLQ</Queue>
+    <Queue>EdsTransform-DLQ</Queue>
     <Pipeline>
-        <RunDataDistributionProtocols/>
         <MessageTransform>
-            <ExchangeProperties>
-                <Property Key="TransformFrom">OpenHR</Property>
-                <Property Key="TransformTo">OpenHR</Property>
-            </ExchangeProperties>
+            <ExchangeHeaders>
+                <Header Key="TransformFrom">OpenHR</Header>
+                <Header Key="TransformTo">OpenHR</Header>
+            </ExchangeHeaders>
         </MessageTransform>
         <PostMessageToLog>
             <EventType>Validate</EventType>
@@ -24,6 +23,7 @@
             </Credentials>
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsSubscriber</Exchange>
+            <RoutingHeader>Subscriber</RoutingHeader>
         </PostMessageToExchange>
     </Pipeline>
 </QueueReaderConfiguration>

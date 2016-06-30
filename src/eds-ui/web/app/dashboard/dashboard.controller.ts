@@ -20,11 +20,13 @@ module app.dashboard {
 		quickestNode : RabbitNode;
 		pingCount : number;
 		inboundExchange : RabbitExchange;
-		interimExchange : RabbitExchange;
+		protocolExchange : RabbitExchange;
+		transformExchange : RabbitExchange;
 		responseExchange : RabbitExchange;
 		subscriberExchange : RabbitExchange;
 		inboundQueues : RabbitQueue[];
-		interimQueues : RabbitQueue[];
+		protocolQueues : RabbitQueue[];
+		transformQueues : RabbitQueue[];
 		responseQueues : RabbitQueue[];
 		subscriberQueues : RabbitQueue[];
 
@@ -100,7 +102,8 @@ module app.dashboard {
 				.then(function(data : RabbitExchange[]){
 					// Split queues by type
 					vm.inboundExchange = $.grep(data, function(e) { return e.name.lastIndexOf('EdsInbound',0)===0;})[0];
-					vm.interimExchange = $.grep(data, function(e) { return e.name.lastIndexOf('EdsInterim',0)===0;})[0];
+					vm.protocolExchange = $.grep(data, function(e) { return e.name.lastIndexOf('EdsProtocol',0)===0;})[0];
+					vm.transformExchange = $.grep(data, function(e) { return e.name.lastIndexOf('EdsTransform',0)===0;})[0];
 					vm.responseExchange = $.grep(data, function(e) { return e.name.lastIndexOf('EdsResponse',0)===0;})[0];
 					vm.subscriberExchange = $.grep(data, function(e) { return e.name.lastIndexOf('EdsSubscriber',0)===0;})[0];
 				});
@@ -124,7 +127,8 @@ module app.dashboard {
 				.then(function(data : RabbitQueue[]){
 					// Split queues by type
 					vm.inboundQueues = $.grep(data, function(e) { return e.name.lastIndexOf('EdsInbound',0)===0;})
-					vm.interimQueues = $.grep(data, function(e) { return e.name.lastIndexOf('EdsInterim',0)===0;})
+					vm.protocolQueues = $.grep(data, function(e) { return e.name.lastIndexOf('EdsProtocol',0)===0;})
+					vm.transformQueues = $.grep(data, function(e) { return e.name.lastIndexOf('EdsTransform',0)===0;})
 					vm.responseQueues = $.grep(data, function(e) { return e.name.lastIndexOf('EdsResponse',0)===0;})
 					vm.subscriberQueues = $.grep(data, function(e) { return e.name.lastIndexOf('EdsSubscriber',0)===0;})
 				});

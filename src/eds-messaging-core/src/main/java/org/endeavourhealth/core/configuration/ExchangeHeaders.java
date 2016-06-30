@@ -10,16 +10,16 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for ExchangeProperties complex type.
+ * <p>Java class for ExchangeHeaders complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="ExchangeProperties">
+ * &lt;complexType name="ExchangeHeaders">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="Property" type="{}ExchangeProperty" maxOccurs="unbounded"/>
+ *         &lt;element name="Header" type="{}ExchangeHeader" maxOccurs="unbounded"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -29,41 +29,41 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "ExchangeProperties", propOrder = {
-    "property"
+@XmlType(name = "ExchangeHeaders", propOrder = {
+    "header"
 })
-public class ExchangeProperties {
+public class ExchangeHeaders {
 
-    @XmlElement(name = "Property", required = true)
-    protected List<ExchangeProperty> property;
+    @XmlElement(name = "Header", required = true)
+    protected List<ExchangeHeader> header;
 
     /**
-     * Gets the value of the property property.
+     * Gets the value of the header property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the property property.
+     * This is why there is not a <CODE>set</CODE> method for the header property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getProperty().add(newItem);
+     *    getHeader().add(newItem);
      * </pre>
      * 
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
-     * {@link ExchangeProperty }
+     * {@link ExchangeHeader }
      * 
      * 
      */
-    public List<ExchangeProperty> getProperty() {
-        if (property == null) {
-            property = new ArrayList<ExchangeProperty>();
+    public List<ExchangeHeader> getHeader() {
+        if (header == null) {
+            header = new ArrayList<ExchangeHeader>();
         }
-        return this.property;
+        return this.header;
     }
 
 }

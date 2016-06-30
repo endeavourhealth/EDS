@@ -4,7 +4,6 @@ import com.rabbitmq.client.*;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.queueing.ConnectionManager;
@@ -29,6 +28,7 @@ public class PostMessageToExchange implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws IOException, PipelineException, TimeoutException {
+		String routingKey = getRoutingKey(exchange);
 
 		// Generate message identifier and store message in db
 		UUID messageUuid = UUID.randomUUID();
@@ -56,15 +56,26 @@ public class PostMessageToExchange implements PipelineComponent {
 
 			channel.confirmSelect();
 
-			// Publish message id to exchange for each routing key
-			String[] routingKeys = ((String)exchange.getProperty(PropertyKeys.RoutingKey)).split(",", -1);
-
-			for (String routingKey : routingKeys) {
+			// Handle multicast
+			String multicastHeader = config.getMulticastHeader();
+			if (multicastHeader == null && multicastHeader.isEmpty()) {
 				channel.basicPublish(
 						config.getExchange(),
-						RoutingManager.getInstance().getRoutingKeyForIdentifier(routingKey),
+						routingKey,
 						properties,
 						messageUuid.toString().getBytes());
+			} else {
+				String[] multicastValues = exchange.getHeader(multicastHeader).split(",", -1);
+
+				for (String multicastValue : multicastValues) {
+					// Replace header list with individual value
+					properties.getHeaders().put(multicastHeader, multicastValue);
+					channel.basicPublish(
+							config.getExchange(),
+							routingKey,
+							properties,
+							messageUuid.toString().getBytes());
+				}
 			}
 
 			if (!channel.waitForConfirms())
@@ -82,5 +93,14 @@ public class PostMessageToExchange implements PipelineComponent {
 			if (channel != null)
 				channel.close();
 		}
+	}
+
+	private String getRoutingKey(Exchange exchange) {
+		String routingIdentifier = "Unknown";
+
+	if (config.getRoutingHeader() != null && !config.getRoutingHeader().isEmpty())
+			routingIdentifier = exchange.getHeader(config.getRoutingHeader());
+
+		return RoutingManager.getInstance().getRoutingKeyForIdentifier(routingIdentifier);
 	}
 }

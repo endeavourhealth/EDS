@@ -11,7 +11,8 @@ module app.routeGroup {
 	export class RouteGroupListController {
 		routeGroups : RouteGroup[];
 		inboundBindings : RabbitBinding[];
-		interimBindings : RabbitBinding[];
+		protocolBindings : RabbitBinding[];
+		transformBindings : RabbitBinding[];
 		responseBindings : RabbitBinding[];
 		subscriberBindings : RabbitBinding[];
 
@@ -114,7 +115,8 @@ module app.routeGroup {
 		separateBindings(bindings : RabbitBinding[]) {
 			var vm = this;
 			vm.inboundBindings = $.grep(bindings, function(e:RabbitBinding) {return e.source === 'EdsInbound'; });
-			vm.interimBindings = $.grep(bindings, function(e:RabbitBinding) {return e.source === 'EdsInterim'; });
+			vm.protocolBindings = $.grep(bindings, function(e:RabbitBinding) {return e.source === 'EdsProtocol'; });
+			vm.transformBindings = $.grep(bindings, function(e:RabbitBinding) {return e.source === 'EdsTransform'; });
 			vm.responseBindings = $.grep(bindings, function(e:RabbitBinding) {return e.source === 'EdsResponse'; });
 			vm.subscriberBindings = $.grep(bindings, function(e:RabbitBinding) {return e.source === 'EdsSubscriber'; });
 		}

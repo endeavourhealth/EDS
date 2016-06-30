@@ -20,6 +20,11 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="Credentials" type="{}Credentials"/>
  *         &lt;element name="Nodes" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="Exchange" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;choice>
+ *           &lt;element name="RoutingHeader" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *           &lt;element name="RoutingProperty" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;/choice>
+ *         &lt;element name="MulticastHeader" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/extension>
  *   &lt;/complexContent>
@@ -32,7 +37,10 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(name = "PostMessageToExchangeConfig", propOrder = {
     "credentials",
     "nodes",
-    "exchange"
+    "exchange",
+    "routingHeader",
+    "routingProperty",
+    "multicastHeader"
 })
 public class PostMessageToExchangeConfig
     extends ComponentConfig
@@ -44,6 +52,12 @@ public class PostMessageToExchangeConfig
     protected String nodes;
     @XmlElement(name = "Exchange", required = true)
     protected String exchange;
+    @XmlElement(name = "RoutingHeader")
+    protected String routingHeader;
+    @XmlElement(name = "RoutingProperty")
+    protected String routingProperty;
+    @XmlElement(name = "MulticastHeader")
+    protected String multicastHeader;
 
     /**
      * Gets the value of the credentials property.
@@ -115,6 +129,78 @@ public class PostMessageToExchangeConfig
      */
     public void setExchange(String value) {
         this.exchange = value;
+    }
+
+    /**
+     * Gets the value of the routingHeader property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getRoutingHeader() {
+        return routingHeader;
+    }
+
+    /**
+     * Sets the value of the routingHeader property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setRoutingHeader(String value) {
+        this.routingHeader = value;
+    }
+
+    /**
+     * Gets the value of the routingProperty property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getRoutingProperty() {
+        return routingProperty;
+    }
+
+    /**
+     * Sets the value of the routingProperty property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setRoutingProperty(String value) {
+        this.routingProperty = value;
+    }
+
+    /**
+     * Gets the value of the multicastHeader property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getMulticastHeader() {
+        return multicastHeader;
+    }
+
+    /**
+     * Sets the value of the multicastHeader property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setMulticastHeader(String value) {
+        this.multicastHeader = value;
     }
 
 }

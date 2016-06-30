@@ -2,7 +2,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import org.endeavourhealth.core.configuration.OpenEnvelopeConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
+import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.hl7.fhir.instance.formats.IParser;
@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 public class OpenEnvelope implements PipelineComponent {
@@ -33,7 +32,7 @@ public class OpenEnvelope implements PipelineComponent {
 		// Extract envelope properties to exchange properties
 		String body = exchange.getBody();
 
-		String format = (String)exchange.getProperty(PropertyKeys.Format);
+		String format = exchange.getHeader(HeaderKeys.Format);
 		IParser parser;
 		if (format != null && "text/xml".equals(format))
 			parser = new XmlParser();
@@ -72,10 +71,10 @@ public class OpenEnvelope implements PipelineComponent {
 	}
 
 	private void processHeader(Exchange exchange, MessageHeader messageHeader) {
-		exchange.setProperty(PropertyKeys.MessageId, messageHeader.getId());
-		exchange.setProperty(PropertyKeys.Sender, messageHeader.getSource().getName());
-		exchange.setProperty(PropertyKeys.ResponseUri, messageHeader.getSource().getEndpoint());
-		exchange.setProperty(PropertyKeys.SourceSystem, messageHeader.getSource().getSoftware());
+		exchange.setHeader(HeaderKeys.MessageId, messageHeader.getId());
+		exchange.setHeader(HeaderKeys.Sender, messageHeader.getSource().getName());
+		exchange.setHeader(HeaderKeys.ResponseUri, messageHeader.getSource().getEndpoint());
+		exchange.setHeader(HeaderKeys.SourceSystem, messageHeader.getSource().getSoftware());
 
 		processDestinations(exchange, messageHeader);
 	}
@@ -87,24 +86,16 @@ public class OpenEnvelope implements PipelineComponent {
 	}
 
 	private void processDestinations(Exchange exchange, MessageHeader messageHeader) {
-		List<String> destinationNameList = new ArrayList<>();
 		List<String> destinationUriList = new ArrayList<>();
 
 		if (messageHeader.hasDestination()) {
 			List<MessageHeader.MessageDestinationComponent> messageDestinationComponents = messageHeader.getDestination();
 
 			for (MessageHeader.MessageDestinationComponent messageDestinationComponent : messageDestinationComponents) {
-				destinationNameList.add(messageDestinationComponent.getName());
 				destinationUriList.add(messageDestinationComponent.getEndpoint());
 			}
-
-			// Routing key based on destination
-			exchange.setProperty(PropertyKeys.RoutingKey, String.join(",",destinationNameList));
-		} else {
-			// If no destination then use source
-			exchange.setProperty(PropertyKeys.RoutingKey, messageHeader.getSource().getName());
 		}
 
-		exchange.setProperty(PropertyKeys.DestinationAddress, destinationUriList);
+		exchange.setHeader(HeaderKeys.DestinationAddress, String.join(",", destinationUriList));
 	}
 }

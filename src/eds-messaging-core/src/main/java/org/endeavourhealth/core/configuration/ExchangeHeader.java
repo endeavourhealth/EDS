@@ -9,12 +9,12 @@ import javax.xml.bind.annotation.XmlValue;
 
 
 /**
- * <p>Java class for ExchangeProperty complex type.
+ * <p>Java class for ExchangeHeader complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="ExchangeProperty">
+ * &lt;complexType name="ExchangeHeader">
  *   &lt;simpleContent>
  *     &lt;extension base="&lt;http://www.w3.org/2001/XMLSchema>string">
  *       &lt;attribute name="Key" type="{http://www.w3.org/2001/XMLSchema}string" />
@@ -26,10 +26,10 @@ import javax.xml.bind.annotation.XmlValue;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "ExchangeProperty", propOrder = {
+@XmlType(name = "ExchangeHeader", propOrder = {
     "value"
 })
-public class ExchangeProperty {
+public class ExchangeHeader {
 
     @XmlValue
     protected String value;

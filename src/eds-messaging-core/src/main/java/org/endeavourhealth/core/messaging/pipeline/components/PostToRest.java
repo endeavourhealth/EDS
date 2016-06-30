@@ -3,7 +3,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import org.apache.http.HttpStatus;
 import org.endeavourhealth.core.configuration.PostToRestConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.PropertyKeys;
+import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.glassfish.jersey.filter.LoggingFilter;
@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.*;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.glassfish.jersey.client.ClientConfig;
@@ -27,7 +26,7 @@ public class PostToRest implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
-		String responseAddress = (String)exchange.getProperty(PropertyKeys.DestinationAddress);
+		String responseAddress = exchange.getHeader(HeaderKeys.DestinationAddress);
 		if (responseAddress == null || responseAddress.isEmpty()) {
 			LOG.info("Response address not provided");
 			return;
@@ -36,11 +35,21 @@ public class PostToRest implements PipelineComponent {
 		Client client = ClientBuilder.newClient( new ClientConfig().register( LoggingFilter.class ) );
 		WebTarget webTarget = client.target(responseAddress);
 
-		String format = (String)exchange.getProperty(PropertyKeys.Format);
+		String format = exchange.getHeader(HeaderKeys.Format);
 		Invocation.Builder invocationBuilder =  webTarget.request(format);
 
-		for(String key : exchange.getHeaders().keySet())
-			invocationBuilder.header(key, exchange.getHeader(key));
+		// Is there a restricted header list?
+		String[] headersToSend;
+		if (config.getSendHeaders() == null || config.getSendHeaders().isEmpty())
+			headersToSend = (String[]) exchange.getHeaders().keySet().toArray();
+		else
+			headersToSend = config.getSendHeaders().split(",", -1);
+
+		for (String key : headersToSend) {
+			String headerValue = exchange.getHeader(key);
+			if (headerValue != null)
+				invocationBuilder.header(key, headerValue);
+		}
 
 		Entity entity = Entity.entity(exchange.getBody(), format);
 

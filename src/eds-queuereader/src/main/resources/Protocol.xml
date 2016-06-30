@@ -5,20 +5,9 @@
         <Password>guest</Password>
     </Credentials>
     <Nodes>localhost:5672</Nodes>
-    <Queue>EdsInbound-DLQ</Queue>
+    <Queue>EdsInterim-DLQ</Queue>
     <Pipeline>
-        <MessageTransform/>
-        <PostToEventStore/>
-        <PostMessageToExchange>
-            <Credentials>
-                <Username>guest</Username>
-                <Password>guest</Password>
-            </Credentials>
-            <Nodes>localhost:5672</Nodes>
-            <Exchange>EdsResponse</Exchange>
-            <RoutingProperty>Sender</RoutingProperty>
-        </PostMessageToExchange>
-        <LoadDataDistributionProtocols/>
+        <RunDataDistributionProtocols/>
         <PostMessageToExchange>
             <Credentials>
                 <Username>guest</Username>
@@ -27,7 +16,7 @@
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsProtocol</Exchange>
             <RoutingProperty>Sender</RoutingProperty>
-            <MulticastHeader>ProtocolId</MulticastHeader>
+            <MulticastHeader>TransformTo</MulticastHeader>
         </PostMessageToExchange>
     </Pipeline>
 </QueueReaderConfiguration>

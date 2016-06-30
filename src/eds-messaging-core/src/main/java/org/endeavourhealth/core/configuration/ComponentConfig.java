@@ -18,7 +18,7 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="ExchangeProperties" type="{}ExchangeProperties" minOccurs="0"/>
+ *         &lt;element name="ExchangeHeaders" type="{}ExchangeHeaders" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -29,7 +29,7 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "ComponentConfig", propOrder = {
-    "exchangeProperties"
+    "exchangeHeaders"
 })
 @XmlSeeAlso({
     PostToRestConfig.class,
@@ -45,35 +45,36 @@ import javax.xml.bind.annotation.XmlType;
     PostMessageToExchangeConfig.class,
     PostToSubscriberWebServiceConfig.class,
     OpenEnvelopeConfig.class,
-    ValidateSenderConfig.class
+    ValidateSenderConfig.class,
+    LoadDataDistributionProtocolsConfig.class
 })
 public class ComponentConfig {
 
-    @XmlElement(name = "ExchangeProperties")
-    protected ExchangeProperties exchangeProperties;
+    @XmlElement(name = "ExchangeHeaders")
+    protected ExchangeHeaders exchangeHeaders;
 
     /**
-     * Gets the value of the exchangeProperties property.
+     * Gets the value of the exchangeHeaders property.
      * 
      * @return
      *     possible object is
-     *     {@link ExchangeProperties }
+     *     {@link ExchangeHeaders }
      *     
      */
-    public ExchangeProperties getExchangeProperties() {
-        return exchangeProperties;
+    public ExchangeHeaders getExchangeHeaders() {
+        return exchangeHeaders;
     }
 
     /**
-     * Sets the value of the exchangeProperties property.
+     * Sets the value of the exchangeHeaders property.
      * 
      * @param value
      *     allowed object is
-     *     {@link ExchangeProperties }
+     *     {@link ExchangeHeaders }
      *     
      */
-    public void setExchangeProperties(ExchangeProperties value) {
-        this.exchangeProperties = value;
+    public void setExchangeHeaders(ExchangeHeaders value) {
+        this.exchangeHeaders = value;
     }
 
 }

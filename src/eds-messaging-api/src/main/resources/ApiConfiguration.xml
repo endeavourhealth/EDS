@@ -32,6 +32,7 @@
                 </Credentials>
                 <Nodes>localhost:5672</Nodes>
                 <Exchange>EdsInbound</Exchange>
+                <RoutingProperty>Sender</RoutingProperty>
             </PostMessageToExchange>
             <ReturnResponseAcknowledgement/>
         </Pipeline>

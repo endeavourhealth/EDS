@@ -7,7 +7,7 @@
 		<div class="module-body">
 			<form>
 				<div class="row">
-					<div class="form-group col-md-3">
+					<div class="form-group col-md-2">
 						<label>Inbound</label>
 						<div ng-repeat="item in ctrl.routeGroups">
 							<label class="small"><i ng-class="ctrl.getRouteGroupClass(item, ctrl.inboundBindings)"></i> {{item.name}}</label>
@@ -16,16 +16,25 @@
 							<label class="small" ng-hide="ctrl.bindingExists(item)"><i class="fa fa-minus-circle text-danger"></i> {{item.routing_key}}</label>
 						</div>
 					</div>
-					<div class="form-group col-md-3">
-						<label>Interim</label>
+					<div class="form-group col-md-2">
+						<label>Protocol</label>
 						<div ng-repeat="item in ctrl.routeGroups">
-							<label class="small"><i ng-class="ctrl.getRouteGroupClass(item, ctrl.interimBindings)"></i> {{item.name}}</label>
+							<label class="small"><i ng-class="ctrl.getRouteGroupClass(item, ctrl.protocolBindings)"></i> {{item.name}}</label>
 						</div>
-						<div ng-repeat="item in ctrl.interimBindings">
+						<div ng-repeat="item in ctrl.protocolBindings">
 							<label class="small" ng-hide="ctrl.bindingExists(item)"><i class="fa fa-minus-circle text-danger"></i> {{item.routing_key}}</label>
 						</div>
 					</div>
-					<div class="form-group col-md-3">
+					<div class="form-group col-md-2">
+						<label>Transform</label>
+						<div ng-repeat="item in ctrl.routeGroups">
+							<label class="small"><i ng-class="ctrl.getRouteGroupClass(item, ctrl.transformBindings)"></i> {{item.name}}</label>
+						</div>
+						<div ng-repeat="item in ctrl.transformBindings">
+							<label class="small" ng-hide="ctrl.bindingExists(item)"><i class="fa fa-minus-circle text-danger"></i> {{item.routing_key}}</label>
+						</div>
+					</div>
+					<div class="form-group col-md-2">
 						<label>Response</label>
 						<div ng-repeat="item in ctrl.routeGroups">
 							<label class="small"><i ng-class="ctrl.getRouteGroupClass(item, ctrl.responseBindings)"></i> {{item.name}}</label>
@@ -34,7 +43,7 @@
 							<label class="small" ng-hide="ctrl.bindingExists(item)"><i class="fa fa-minus-circle text-danger"></i> {{item.routing_key}}</label>
 						</div>
 					</div>
-					<div class="form-group col-md-3">
+					<div class="form-group col-md-2">
 						<label>Subscriber</label>
 						<div ng-repeat="item in ctrl.routeGroups">
 							<label class="small"><i ng-class="ctrl.getRouteGroupClass(item, ctrl.subscriberBindings)"></i> {{item.name}}</label>

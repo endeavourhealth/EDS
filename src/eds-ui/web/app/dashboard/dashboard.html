@@ -60,7 +60,7 @@
 
 
 							<div class="row">
-								<div class="form-group col-md-3">
+								<div class="form-group col-md-2">
 									<label class="control-label">Inbound Exchange</label>
 
 									<div class="progress">
@@ -95,24 +95,24 @@
 										</div>
 									</div>
 								</div>
-								<div class="form-group col-md-3">
-									<label class="control-label">Interim Exchange</label>
+								<div class="form-group col-md-2">
+									<label class="control-label">Protocol Exchange</label>
 
 									<div class="progress">
-										<div class="small">{{dashboard.interimExchange.name}} ({{dashboard.interimExchange.message_stats.publish_details.rate}} / {{dashboard.interimExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="small">{{dashboard.protocolExchange.name}} ({{dashboard.protocolExchange.message_stats.publish_details.rate}} / {{dashboard.protocolExchange.message_stats.deliver_get_details.rate}})</div>
 										<div class="progress-bar"
-												 ng-class="dashboard.getExchangeRateClass(dashboard.interimExchange)"
+												 ng-class="dashboard.getExchangeRateClass(dashboard.protocolExchange)"
 												 role="progressbar"
 												 aria-valuemin="0"
-												 aria-valuemax="{{dashboard.interimExchange.message_stats.publish_details.rate + dashboard.interimExchange.message_stats.deliver_get_details.rate}}"
-												 aria-valuenow="{{dashboard.interimExchange.message_stats.publish_details.rate}}"
-												 ng-style="{ width : (dashboard.interimExchange.message_stats.publish_details.rate+'%') }">
+												 aria-valuemax="{{dashboard.protocolExchange.message_stats.publish_details.rate + dashboard.protocolExchange.message_stats.deliver_get_details.rate}}"
+												 aria-valuenow="{{dashboard.protocolExchange.message_stats.publish_details.rate}}"
+												 ng-style="{ width : (dashboard.protocolExchange.message_stats.publish_details.rate+'%') }">
 										</div>
 									</div>
 
-									<label class="control-label">Interim Queues</label>
+									<label class="control-label">Protocol Queues</label>
 
-									<div class="progress" ng-repeat="item in dashboard.interimQueues">
+									<div class="progress" ng-repeat="item in dashboard.protocolQueues">
 										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
 										<div class="progress-bar progress-bar-success"
 												 role="progressbar"
@@ -130,7 +130,42 @@
 										</div>
 									</div>
 								</div>
-								<div class="form-group col-md-3">
+								<div class="form-group col-md-2">
+									<label class="control-label">Transform Exchange</label>
+
+									<div class="progress">
+										<div class="small">{{dashboard.transformExchange.name}} ({{dashboard.transformExchange.message_stats.publish_details.rate}} / {{dashboard.transformExchange.message_stats.deliver_get_details.rate}})</div>
+										<div class="progress-bar"
+												 ng-class="dashboard.getExchangeRateClass(dashboard.transformExchange)"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuemax="{{dashboard.transformExchange.message_stats.publish_details.rate + dashboard.transformExchange.message_stats.deliver_get_details.rate}}"
+												 aria-valuenow="{{dashboard.transformExchange.message_stats.publish_details.rate}}"
+												 ng-style="{ width : (dashboard.transformExchange.message_stats.publish_details.rate+'%') }">
+										</div>
+									</div>
+
+									<label class="control-label">Transform Queues</label>
+
+									<div class="progress" ng-repeat="item in dashboard.transformQueues">
+										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
+										<div class="progress-bar progress-bar-success"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_ready}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_ready+'%') }">
+										</div>
+										<div class="progress-bar progress-bar-warning"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_unacknowledged}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
+										</div>
+									</div>
+								</div>
+								<div class="form-group col-md-2">
 									<label class="control-label">Response Exchange</label>
 
 									<div class="progress">
@@ -165,7 +200,7 @@
 										</div>
 									</div>
 								</div>
-								<div class="form-group col-md-3">
+								<div class="form-group col-md-2">
 									<label class="control-label">Subscriber Exchange</label>
 
 									<div class="progress">

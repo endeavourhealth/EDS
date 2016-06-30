@@ -95,7 +95,8 @@ var app;
             RouteGroupListController.prototype.separateBindings = function (bindings) {
                 var vm = this;
                 vm.inboundBindings = $.grep(bindings, function (e) { return e.source === 'EdsInbound'; });
-                vm.interimBindings = $.grep(bindings, function (e) { return e.source === 'EdsInterim'; });
+                vm.protocolBindings = $.grep(bindings, function (e) { return e.source === 'EdsProtocol'; });
+                vm.transformBindings = $.grep(bindings, function (e) { return e.source === 'EdsTransform'; });
                 vm.responseBindings = $.grep(bindings, function (e) { return e.source === 'EdsResponse'; });
                 vm.subscriberBindings = $.grep(bindings, function (e) { return e.source === 'EdsSubscriber'; });
             };

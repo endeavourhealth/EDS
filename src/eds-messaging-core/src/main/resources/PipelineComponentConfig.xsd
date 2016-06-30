@@ -51,6 +51,11 @@
                     <xs:element name="Credentials" type="Credentials" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="Nodes" type="xs:string" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="Exchange" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                    <xs:choice minOccurs="1" maxOccurs="1">
+                        <xs:element name="RoutingHeader" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                        <xs:element name="RoutingProperty" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                    </xs:choice>
+                    <xs:element name="MulticastHeader" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -69,6 +74,12 @@
     </xs:complexType>
 
     <xs:complexType name="PostToEventStoreConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="LoadDataDistributionProtocolsConfig">
         <xs:complexContent>
             <xs:extension base="ComponentConfig"/>
         </xs:complexContent>
@@ -94,7 +105,11 @@
 
     <xs:complexType name="PostToRestConfig">
         <xs:complexContent>
-            <xs:extension base="ComponentConfig"/>
+            <xs:extension base="ComponentConfig">
+                <xs:sequence>
+                    <xs:element name="SendHeaders" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                </xs:sequence>
+            </xs:extension>
         </xs:complexContent>
     </xs:complexType>
 
