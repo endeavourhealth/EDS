@@ -5,7 +5,7 @@
         <Password>guest</Password>
     </Credentials>
     <Nodes>localhost:5672</Nodes>
-    <Queue>EdsResponse-DLQ</Queue>
+    <Queue>EdsResponse-N-Z</Queue>
     <Pipeline>
         <PostToRest>
             <SendHeaders>Content-Type, MessageId</SendHeaders>

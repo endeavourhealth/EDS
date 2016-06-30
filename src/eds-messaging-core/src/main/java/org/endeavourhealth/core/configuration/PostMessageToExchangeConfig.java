@@ -20,10 +20,7 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="Credentials" type="{}Credentials"/>
  *         &lt;element name="Nodes" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="Exchange" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;choice>
- *           &lt;element name="RoutingHeader" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *           &lt;element name="RoutingProperty" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;/choice>
+ *         &lt;element name="RoutingHeader" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="MulticastHeader" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/extension>
@@ -39,7 +36,6 @@ import javax.xml.bind.annotation.XmlType;
     "nodes",
     "exchange",
     "routingHeader",
-    "routingProperty",
     "multicastHeader"
 })
 public class PostMessageToExchangeConfig
@@ -52,10 +48,8 @@ public class PostMessageToExchangeConfig
     protected String nodes;
     @XmlElement(name = "Exchange", required = true)
     protected String exchange;
-    @XmlElement(name = "RoutingHeader")
+    @XmlElement(name = "RoutingHeader", required = true)
     protected String routingHeader;
-    @XmlElement(name = "RoutingProperty")
-    protected String routingProperty;
     @XmlElement(name = "MulticastHeader")
     protected String multicastHeader;
 
@@ -153,30 +147,6 @@ public class PostMessageToExchangeConfig
      */
     public void setRoutingHeader(String value) {
         this.routingHeader = value;
-    }
-
-    /**
-     * Gets the value of the routingProperty property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getRoutingProperty() {
-        return routingProperty;
-    }
-
-    /**
-     * Sets the value of the routingProperty property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setRoutingProperty(String value) {
-        this.routingProperty = value;
     }
 
     /**

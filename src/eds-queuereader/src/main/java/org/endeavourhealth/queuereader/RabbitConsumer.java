@@ -12,6 +12,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.UUID;
 
 public class RabbitConsumer extends DefaultConsumer {
@@ -32,7 +33,12 @@ public class RabbitConsumer extends DefaultConsumer {
 		QueuedMessage queuedMessage = new QueuedMessageRepository().getById(messageUuid);
 
 		Exchange exchange = new Exchange(queuedMessage.getMessageBody());
-		exchange.setHeader(HeaderKeys.RoutingKey, envelope.getRoutingKey());
+		Map<String, Object> headers = properties.getHeaders();
+		if (headers != null) {
+			for (String headerKey : headers.keySet()) {
+				exchange.setHeader(headerKey, headers.get(headerKey).toString());
+			}
+		}
 
 		// Process the message
 		if (pipeline.execute(exchange)) {

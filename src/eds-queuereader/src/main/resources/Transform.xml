@@ -5,7 +5,7 @@
         <Password>guest</Password>
     </Credentials>
     <Nodes>localhost:5672</Nodes>
-    <Queue>EdsTransform-DLQ</Queue>
+    <Queue>EdsTransform-N-Z</Queue>
     <Pipeline>
         <MessageTransform>
             <ExchangeHeaders>
@@ -23,7 +23,7 @@
             </Credentials>
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsSubscriber</Exchange>
-            <RoutingHeader>Subscriber</RoutingHeader>
+            <RoutingHeader>SubscriberList</RoutingHeader>
         </PostMessageToExchange>
     </Pipeline>
 </QueueReaderConfiguration>

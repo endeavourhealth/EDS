@@ -20,7 +20,7 @@ public class RunDataDistributionProtocols implements PipelineComponent {
 	public void process(Exchange exchange) {
 		// Get subscriber list for DDPs
 
-		exchange.setHeader(HeaderKeys.RoutingKey, "A,B,C");
+		exchange.setHeader(HeaderKeys.TransformTo, "A,B,C");
 
 		LOG.debug("Data distribution protocols executed");
 	}

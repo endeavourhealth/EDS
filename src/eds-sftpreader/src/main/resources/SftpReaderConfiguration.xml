@@ -8,13 +8,13 @@
   <Host>localhost</Host>
   <Port>22</Port>
   <Path>/</Path>
-  <Filename>Message.xml</Filename>
-  <Polltime>10</Polltime>
+  <Filename>*.openHR</Filename>
+  <Polltime>1</Polltime>
     <Pipeline>
         <PGPDecrypt/>
         <EnvelopMessage>
             <ExchangeHeaders>
-                <Header Key="Content-Type">text/json</Header>
+                <Header Key="content-type">text/json</Header>
                 <Header Key="Sender">ODS00000</Header>
                 <Header Key="SourceSystem">EDS_FTP_Poller</Header>
                 <Header Key="ResponseUri">http://EDS_POLLER_BusinessAck.co.uk</Header>
@@ -25,6 +25,7 @@
             <ExchangeHeaders>
                 <Header Key="DestinationAddress">http://localhost:8080/api/PostMessageAsync</Header>
             </ExchangeHeaders>
+            <SendHeaders>Content-Type</SendHeaders>
         </PostToRest>
     </Pipeline>
 </SftpReaderConfiguration>

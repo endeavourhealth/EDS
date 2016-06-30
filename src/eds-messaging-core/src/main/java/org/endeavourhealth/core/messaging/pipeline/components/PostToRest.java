@@ -36,6 +36,10 @@ public class PostToRest implements PipelineComponent {
 		WebTarget webTarget = client.target(responseAddress);
 
 		String format = exchange.getHeader(HeaderKeys.Format);
+
+		if (format == null)
+			format = "text/json";
+
 		Invocation.Builder invocationBuilder =  webTarget.request(format);
 
 		// Is there a restricted header list?

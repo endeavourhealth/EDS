@@ -5,7 +5,7 @@
         <Password>guest</Password>
     </Credentials>
     <Nodes>localhost:5672</Nodes>
-    <Queue>EdsInbound-DLQ</Queue>
+    <Queue>EdsInbound-N-Z</Queue>
     <Pipeline>
         <MessageTransform/>
         <PostToEventStore/>
@@ -16,7 +16,7 @@
             </Credentials>
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsResponse</Exchange>
-            <RoutingProperty>Sender</RoutingProperty>
+            <RoutingHeader>Sender</RoutingHeader>
         </PostMessageToExchange>
         <LoadDataDistributionProtocols/>
         <PostMessageToExchange>
@@ -26,7 +26,7 @@
             </Credentials>
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsProtocol</Exchange>
-            <RoutingProperty>Sender</RoutingProperty>
+            <RoutingHeader>Sender</RoutingHeader>
             <MulticastHeader>ProtocolId</MulticastHeader>
         </PostMessageToExchange>
     </Pipeline>

@@ -51,10 +51,7 @@
                     <xs:element name="Credentials" type="Credentials" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="Nodes" type="xs:string" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="Exchange" type="xs:string" minOccurs="1" maxOccurs="1"/>
-                    <xs:choice minOccurs="1" maxOccurs="1">
-                        <xs:element name="RoutingHeader" type="xs:string" minOccurs="1" maxOccurs="1"/>
-                        <xs:element name="RoutingProperty" type="xs:string" minOccurs="1" maxOccurs="1"/>
-                    </xs:choice>
+                    <xs:element name="RoutingHeader" type="xs:string" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="MulticastHeader" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 </xs:sequence>
             </xs:extension>

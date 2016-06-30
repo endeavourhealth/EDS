@@ -69,7 +69,8 @@ public class PostMessageToExchange implements PipelineComponent {
 
 				for (String multicastValue : multicastValues) {
 					// Replace header list with individual value
-					properties.getHeaders().put(multicastHeader, multicastValue);
+					headers.put(multicastHeader, multicastValue);
+					properties = properties.builder().headers(headers).build();
 					channel.basicPublish(
 							config.getExchange(),
 							routingKey,

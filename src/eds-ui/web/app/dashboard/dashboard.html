@@ -95,6 +95,41 @@
 									</div>
 								</div>
 								<div class="form-group col-md-2">
+									<label class="control-label">Response Exchange</label>
+
+									<div class="progress">
+										<div class="small">{{dashboard.responseExchange.name}} ({{dashboard.responseExchange.message_stats.publish_in_details.rate}} / {{dashboard.responseExchange.message_stats.publish_out_details.rate}})</div>
+										<div class="progress-bar"
+												 ng-class="dashboard.getExchangeRateClass(dashboard.responseExchange)"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuemax="{{dashboard.responseExchange.message_stats.publish_in_details.rate + dashboard.responseExchange.message_stats.publish_out_details.rate}}"
+												 aria-valuenow="{{dashboard.responseExchange.message_stats.publish_in_details.rate}}"
+												 ng-style="dashboard.getPublishRateAsWidthStylePercent(dashboard.transformExchange)">
+										</div>
+									</div>
+
+									<label class="control-label">Response Queues</label>
+
+									<div class="progress" ng-repeat="item in dashboard.responseQueues">
+										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
+										<div class="progress-bar progress-bar-success"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_ready}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_ready+'%') }">
+										</div>
+										<div class="progress-bar progress-bar-warning"
+												 role="progressbar"
+												 aria-valuemin="0"
+												 aria-valuenow="{{item.messages_unacknowledged}}"
+												 aria-valuemax="100"
+												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
+										</div>
+									</div>
+								</div>
+								<div class="form-group col-md-2">
 									<label class="control-label">Protocol Exchange</label>
 
 									<div class="progress">
@@ -147,41 +182,6 @@
 									<label class="control-label">Transform Queues</label>
 
 									<div class="progress" ng-repeat="item in dashboard.transformQueues">
-										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
-										<div class="progress-bar progress-bar-success"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuenow="{{item.messages_ready}}"
-												 aria-valuemax="100"
-												 ng-style="{ width : (item.messages_ready+'%') }">
-										</div>
-										<div class="progress-bar progress-bar-warning"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuenow="{{item.messages_unacknowledged}}"
-												 aria-valuemax="100"
-												 ng-style="{ width : (item.messages_unacknowledged+'%') }">
-										</div>
-									</div>
-								</div>
-								<div class="form-group col-md-2">
-									<label class="control-label">Response Exchange</label>
-
-									<div class="progress">
-										<div class="small">{{dashboard.responseExchange.name}} ({{dashboard.responseExchange.message_stats.publish_in_details.rate}} / {{dashboard.responseExchange.message_stats.publish_out_details.rate}})</div>
-										<div class="progress-bar"
-												 ng-class="dashboard.getExchangeRateClass(dashboard.responseExchange)"
-												 role="progressbar"
-												 aria-valuemin="0"
-												 aria-valuemax="{{dashboard.responseExchange.message_stats.publish_in_details.rate + dashboard.responseExchange.message_stats.publish_out_details.rate}}"
-												 aria-valuenow="{{dashboard.responseExchange.message_stats.publish_in_details.rate}}"
-												 ng-style="dashboard.getPublishRateAsWidthStylePercent(dashboard.transformExchange)">
-										</div>
-									</div>
-
-									<label class="control-label">Response Queues</label>
-
-									<div class="progress" ng-repeat="item in dashboard.responseQueues">
 										<div class="small">{{item.name}} ({{item.messages_ready}} / {{item.messages_unacknowledged}})</div>
 										<div class="progress-bar progress-bar-success"
 												 role="progressbar"
