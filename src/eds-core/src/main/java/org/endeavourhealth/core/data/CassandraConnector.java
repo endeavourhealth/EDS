@@ -3,7 +3,6 @@ package org.endeavourhealth.core.data;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.MappingManager;
-import org.endeavourhealth.core.data.ehr.EnumRegistry;
 import org.endeavourhealth.core.engineConfiguration.Cassandra;
 import org.endeavourhealth.core.engineConfiguration.EngineConfigurationSerializer;
 
@@ -46,7 +45,7 @@ public class CassandraConnector {
     }
 
     private void registerCustomCodecs() {
-        EnumRegistry.register();
+        org.endeavourhealth.core.data.ehr.EnumRegistry.register();
     }
 
     public static CassandraConnector getInstance() {

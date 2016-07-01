@@ -2,7 +2,6 @@ package org.endeavourhealth.core.data.ehr;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.mapping.Mapper;
-import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.PersonResourceAccessor;
 import org.endeavourhealth.core.data.ehr.models.PersonResource;
@@ -15,59 +14,56 @@ import java.util.UUID;
 public class PersonResourceRepository extends Repository {
 
     public void insert(PersonResource personResource){
-        if (personResource == null) {
-            throw new IllegalArgumentException("personResource is null");
-        }
-        insert(Lists.newArrayList(personResource));
-    }
+        if (personResource == null) throw new IllegalArgumentException("personResource is null");
 
-    public void update(PersonResource personResource){
-        if (personResource == null) {
-            throw new IllegalArgumentException("personResource is null");
-        }
-
-        delete(Lists.newArrayList(personResource));
+        save(personResource, EventStoreMode.insert);
     }
 
     public void insert(List<PersonResource> personResources){
-        save(personResources, EventStoreMode.insert);
+        for (PersonResource personResource: personResources) insert(personResource);
+    }
+
+    public void update(PersonResource personResource){
+        if (personResource == null) throw new IllegalArgumentException("personResource is null");
+
+        save(personResource, EventStoreMode.update);
+    }
+
+    public void delete(PersonResource personResource){
+        if (personResource == null) throw new IllegalArgumentException("personResource is null");
+
+        save(personResource, EventStoreMode.delete);
     }
 
     public void delete(List<PersonResource> personResources){
-        save(personResources, EventStoreMode.delete);
+        for (PersonResource personResource: personResources) delete(personResource);
     }
 
-    private void save(List<PersonResource> personResources, EventStoreMode storeMode){
+    private void save(PersonResource personResource, EventStoreMode storeMode){
         Mapper<PersonResource> mapperPersonResource = getMappingManager().mapper(PersonResource.class);
         Mapper<PersonResourceEventStore> mapperEventStore = getMappingManager().mapper(PersonResourceEventStore.class);
 
         BatchStatement batch = new BatchStatement();
 
-        for (PersonResource personResource: personResources) {
-            PersonResourceEventStore eventStore = createEventStoreObject(personResource, storeMode);
+        PersonResourceEventStore eventStore = createEventStoreObject(personResource, storeMode);
 
-            switch (storeMode) {
-                case insert:
-                    batch.add(mapperPersonResource.saveQuery(personResource));
-                    break;
-                case update:
-                    batch.add(mapperPersonResource.saveQuery(personResource)); //updates use saveQuery(..) as well as inserts
-                    break;
-                case delete:
-                    batch.add(mapperPersonResource.deleteQuery(personResource));
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid store mode " + storeMode);
-            }
-
-            //insert the audit entity
-            batch.add(mapperEventStore.saveQuery(eventStore));
-
+        switch (storeMode) {
+            case insert:
+            case update:
+                batch.add(mapperPersonResource.saveQuery(personResource)); //updates use saveQuery(..) as well as inserts
+                break;
+            case delete:
+                batch.add(mapperPersonResource.deleteQuery(personResource));
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid store mode " + storeMode);
         }
+
+        //insert the audit entity
+        batch.add(mapperEventStore.saveQuery(eventStore));
 
         getSession().execute(batch);
     }
-
 
     public PersonResource getByKey(UUID personId, String resourceType, UUID serviceId, UUID systemInstanceId, String resourceId) {
 
