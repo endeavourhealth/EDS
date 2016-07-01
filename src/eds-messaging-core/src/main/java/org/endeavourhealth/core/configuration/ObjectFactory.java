@@ -102,6 +102,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link Pipeline }
+     * 
+     */
+    public Pipeline createPipeline() {
+        return new Pipeline();
+    }
+
+    /**
      * Create an instance of {@link PostMessageToLogConfig }
      * 
      */
@@ -115,6 +123,14 @@ public class ObjectFactory {
      */
     public MessageTransformConfig createMessageTransformConfig() {
         return new MessageTransformConfig();
+    }
+
+    /**
+     * Create an instance of {@link DetermineRelevantProtocolIdsConfig }
+     * 
+     */
+    public DetermineRelevantProtocolIdsConfig createDetermineRelevantProtocolIdsConfig() {
+        return new DetermineRelevantProtocolIdsConfig();
     }
 
     /**
@@ -171,14 +187,6 @@ public class ObjectFactory {
      */
     public Credentials createCredentials() {
         return new Credentials();
-    }
-
-    /**
-     * Create an instance of {@link LoadDataDistributionProtocolsConfig }
-     * 
-     */
-    public LoadDataDistributionProtocolsConfig createLoadDataDistributionProtocolsConfig() {
-        return new LoadDataDistributionProtocolsConfig();
     }
 
 }

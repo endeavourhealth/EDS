@@ -18,7 +18,7 @@
             <Exchange>EdsResponse</Exchange>
             <RoutingHeader>Sender</RoutingHeader>
         </PostMessageToExchange>
-        <LoadDataDistributionProtocols/>
+        <DetermineRelevantProtocolIds/>
         <PostMessageToExchange>
             <Credentials>
                 <Username>guest</Username>

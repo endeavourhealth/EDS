@@ -18,8 +18,13 @@ public class RunDataDistributionProtocols implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		// Get subscriber list for DDPs
+		String protocolId = exchange.getHeader(HeaderKeys.ProtocolId);
 
+		// Load protocol from db
+
+		// Run DDP
+
+		// Get distinct output formats
 		exchange.setHeader(HeaderKeys.TransformTo, "A,B,C");
 
 		LOG.debug("Data distribution protocols executed");

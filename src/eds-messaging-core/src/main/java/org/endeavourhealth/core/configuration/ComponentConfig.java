@@ -41,12 +41,12 @@ import javax.xml.bind.annotation.XmlType;
     PGPDecryptConfig.class,
     PostMessageToLogConfig.class,
     MessageTransformConfig.class,
+    DetermineRelevantProtocolIdsConfig.class,
     EnvelopMessageConfig.class,
     PostMessageToExchangeConfig.class,
     PostToSubscriberWebServiceConfig.class,
     OpenEnvelopeConfig.class,
-    ValidateSenderConfig.class,
-    LoadDataDistributionProtocolsConfig.class
+    ValidateSenderConfig.class
 })
 public class ComponentConfig {
 

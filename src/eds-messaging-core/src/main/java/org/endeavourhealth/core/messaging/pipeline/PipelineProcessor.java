@@ -70,8 +70,8 @@ public class PipelineProcessor {
 				return new MessageTransform((MessageTransformConfig) processConfig);
 			case "PostToEventStoreConfig":
 				return new PostToEventStore((PostToEventStoreConfig) processConfig);
-			case "LoadDataDistributionProtocolsConfig":
-				return new LoadDataDistributionProtocols((LoadDataDistributionProtocolsConfig) processConfig);
+			case "DetermineRelevantProtocolIdsConfig":
+				return new DetermineRelevantProtocolIds((DetermineRelevantProtocolIdsConfig) processConfig);
 			case "RunDataDistributionProtocolsConfig":
 				return new RunDataDistributionProtocols((RunDataDistributionProtocolsConfig) processConfig);
 			case "PostToSubscriberWebServiceConfig":

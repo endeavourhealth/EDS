@@ -7,12 +7,12 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for LoadDataDistributionProtocolsConfig complex type.
+ * <p>Java class for DetermineRelevantProtocolIdsConfig complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="LoadDataDistributionProtocolsConfig">
+ * &lt;complexType name="DetermineRelevantProtocolIdsConfig">
  *   &lt;complexContent>
  *     &lt;extension base="{}ComponentConfig">
  *     &lt;/extension>
@@ -23,8 +23,8 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "LoadDataDistributionProtocolsConfig")
-public class LoadDataDistributionProtocolsConfig
+@XmlType(name = "DetermineRelevantProtocolIdsConfig")
+public class DetermineRelevantProtocolIdsConfig
     extends ComponentConfig
 {
 
