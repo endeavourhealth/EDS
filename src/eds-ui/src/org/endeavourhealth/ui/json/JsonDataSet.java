@@ -3,11 +3,11 @@ package org.endeavourhealth.ui.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public final class JsonListReport {
+public final class JsonDataSet {
     private String uuid = null;
     private String name = null;
 
-    public JsonListReport() {
+    public JsonDataSet() {
     }
 
     /**

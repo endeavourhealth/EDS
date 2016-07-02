@@ -6,9 +6,9 @@ module app.models {
 		Report,			// 1
 		Query,			// 2
 		Test,				// 3
-		DataSource,	// 4
+		Resource,	// 4
 		CodeSet,		// 5
-		ListOutput,	// 6
+		DataSet,	// 6
 		LibraryFolder, // 7
 		Protocol, // 8
 		System // 9
@@ -25,11 +25,11 @@ module app.models {
 					return 'Cohort';
 				case ItemType.Test:
 					return 'Test';
-				case ItemType.DataSource:
-					return 'Datasource';
+				case ItemType.Resource:
+					return 'Resource';
 				case ItemType.CodeSet:
 					return 'Code set';
-				case ItemType.ListOutput:
+				case ItemType.DataSet:
 					return 'Data set';
 				case ItemType.LibraryFolder:
 					return 'Library folder';
@@ -52,11 +52,11 @@ module app.models {
 					return 'fa-user';
 				case ItemType.Test:
 					return 'fa-random';
-				case ItemType.DataSource:
+				case ItemType.Resource:
 					return 'fa-database';
 				case ItemType.CodeSet:
 					return 'fa-tags';
-				case ItemType.ListOutput:
+				case ItemType.DataSet:
 					return 'fa-list-alt';
 				case ItemType.LibraryFolder:
 					return 'fa-folder-open';

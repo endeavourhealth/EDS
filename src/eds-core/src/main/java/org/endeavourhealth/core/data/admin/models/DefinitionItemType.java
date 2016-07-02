@@ -5,9 +5,9 @@ public enum DefinitionItemType {
     Report(1),
     Query(2),
     Test(3),
-    DataSource(4),
+    Resource(4),
     CodeSet(5),
-    ListOutput(6),
+    DataSet(6),
     LibraryFolder(7),
     Protocol(8),
     System(9);

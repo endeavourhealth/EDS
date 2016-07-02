@@ -627,9 +627,9 @@ Email address: <input type="text" id="sendPasswordForgottenEmailEmail">
 	<br/>
 	Query1: <input type="text" id="saveReportQuery2Uuid">
 	<br/>
-	ListOutput1: <input type="text" id="saveReportListOutput1Uuid">
+	dataSet1: <input type="text" id="saveReportdataSet1Uuid">
 	<br/>
-	ListOutput2: <input type="text" id="saveReportListOutput2Uuid">
+	dataSet2: <input type="text" id="saveReportdataSet2Uuid">
 	<br/>
 	Folder UUID: <input type="text" id="saveReportFolderUuid">
 	<br/>
@@ -673,16 +673,16 @@ Email address: <input type="text" id="sendPasswordForgottenEmailEmail">
 				reportItems[reportItems.length] = {'queryLibraryItemUuid': s};
 			}
 
-			s = document.getElementById('saveReportListOutput1Uuid').value;
+			s = document.getElementById('saveReportdataSet1Uuid').value;
 			if (s.length > 0)
 			{
-				reportItems[reportItems.length] = {'listReportLibraryItemUuid': s};
+				reportItems[reportItems.length] = {'dataSetLibraryItemUuid': s};
 			}
 
-			s = document.getElementById('saveReportListOutput2Uuid').value;
+			s = document.getElementById('saveReportdataSet2Uuid').value;
 			if (s.length > 0)
 			{
-				reportItems[reportItems.length] = {'listReportLibraryItemUuid': s};
+				reportItems[reportItems.length] = {'dataSetLibraryItemUuid': s};
 			}
 
 			s = document.getElementById('saveReportFolderUuid').value;

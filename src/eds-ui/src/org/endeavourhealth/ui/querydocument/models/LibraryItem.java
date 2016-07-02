@@ -23,10 +23,10 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="folderUuid" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;choice>
  *           &lt;element name="query" type="{}query"/>
- *           &lt;element name="dataSource" type="{}dataSource"/>
+ *           &lt;element name="resource" type="{}resource"/>
  *           &lt;element name="test" type="{}test"/>
  *           &lt;element name="codeSet" type="{}codeSet"/>
- *           &lt;element name="listReport" type="{}listReport"/>
+ *           &lt;element name="dataSet" type="{}dataSet"/>
  *           &lt;element name="protocol" type="{}protocol"/>
  *           &lt;element name="system" type="{}system"/>
  *         &lt;/choice>
@@ -45,10 +45,10 @@ import javax.xml.bind.annotation.XmlType;
     "description",
     "folderUuid",
     "query",
-    "dataSource",
+    "resource",
     "test",
     "codeSet",
-    "listReport",
+    "dataSet",
     "protocol",
     "system"
 })
@@ -62,10 +62,10 @@ public class LibraryItem {
     @XmlElement(required = true)
     protected String folderUuid;
     protected Query query;
-    protected DataSource dataSource;
+    protected Resource resource;
     protected Test test;
     protected CodeSet codeSet;
-    protected ListReport listReport;
+    protected DataSet dataSet;
     protected Protocol protocol;
     protected System system;
 
@@ -190,27 +190,27 @@ public class LibraryItem {
     }
 
     /**
-     * Gets the value of the dataSource property.
+     * Gets the value of the resource property.
      * 
      * @return
      *     possible object is
-     *     {@link DataSource }
+     *     {@link Resource }
      *     
      */
-    public DataSource getDataSource() {
-        return dataSource;
+    public Resource getResource() {
+        return resource;
     }
 
     /**
-     * Sets the value of the dataSource property.
+     * Sets the value of the resource property.
      * 
      * @param value
      *     allowed object is
-     *     {@link DataSource }
+     *     {@link Resource }
      *     
      */
-    public void setDataSource(DataSource value) {
-        this.dataSource = value;
+    public void setResource(Resource value) {
+        this.resource = value;
     }
 
     /**
@@ -262,27 +262,27 @@ public class LibraryItem {
     }
 
     /**
-     * Gets the value of the listReport property.
+     * Gets the value of the dataSet property.
      * 
      * @return
      *     possible object is
-     *     {@link ListReport }
+     *     {@link DataSet }
      *     
      */
-    public ListReport getListReport() {
-        return listReport;
+    public DataSet getDataSet() {
+        return dataSet;
     }
 
     /**
-     * Sets the value of the listReport property.
+     * Sets the value of the dataSet property.
      * 
      * @param value
      *     allowed object is
-     *     {@link ListReport }
+     *     {@link DataSet }
      *     
      */
-    public void setListReport(ListReport value) {
-        this.listReport = value;
+    public void setDataSet(DataSet value) {
+        this.dataSet = value;
     }
 
     public Protocol getProtocol() {

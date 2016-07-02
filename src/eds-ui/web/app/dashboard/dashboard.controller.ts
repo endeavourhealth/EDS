@@ -153,8 +153,8 @@ module app.dashboard {
 				case ItemType.Query:
 					this.$state.go('app.queryAction', {itemUuid: item.uuid, itemAction: action});
 					break;
-				case ItemType.ListOutput:
-					this.$state.go('app.listOutputAction', {itemUuid: item.uuid, itemAction: action});
+				case ItemType.DataSet:
+					this.$state.go('app.dataSetAction', {itemUuid: item.uuid, itemAction: action});
 					break;
 				case ItemType.CodeSet:
 					this.$state.go('app.codeSetAction', {itemUuid: item.uuid, itemAction: action});

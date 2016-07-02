@@ -20,7 +20,7 @@ import java.util.List;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="parameterName" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;element name="dataSourceUuid" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="resourceUuid" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="fieldName" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -33,7 +33,7 @@ import java.util.List;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "calculationParameter", propOrder = {
     "parameterName",
-    "dataSourceUuid",
+    "resourceUuid",
     "fieldName"
 })
 public class CalculationParameter {
@@ -41,7 +41,7 @@ public class CalculationParameter {
     @XmlElement(required = true)
     protected String parameterName;
     @XmlElement(required = true)
-    protected String dataSourceUuid;
+    protected String resourceUuid;
     @XmlElement(required = true)
     protected List<String> fieldName;
 
@@ -70,27 +70,27 @@ public class CalculationParameter {
     }
 
     /**
-     * Gets the value of the dataSourceUuid property.
+     * Gets the value of the resourceUuid property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getDataSourceUuid() {
-        return dataSourceUuid;
+    public String getResourceUuid() {
+        return resourceUuid;
     }
 
     /**
-     * Sets the value of the dataSourceUuid property.
+     * Sets the value of the resourceUuid property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setDataSourceUuid(String value) {
-        this.dataSourceUuid = value;
+    public void setResourceUuid(String value) {
+        this.resourceUuid = value;
     }
 
     /**

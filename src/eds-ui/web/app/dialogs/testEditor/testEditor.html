@@ -11,14 +11,14 @@
 <div class="modal-body">
 
 	<uib-tabset active="active">
-		<uib-tab index="0" heading="Data Source Filters & Restrictions">
+		<uib-tab index="0" heading="Resource Filters & Restrictions">
 			<br/>
 			<form role="form">
 				<div class='row'>
 					<div class="col-xs-6">
 						<div class="form-group">
-							<label>Data Source (Record Heading)</label>
-							<select class="form-control" ng-model="testEditor.ruleDatasource" ng-change="testEditor.dataSourceChange(testEditor.ruleDatasource)" ng-disabled="testEditor.editMode">
+							<label>FHIR Resource</label>
+							<select class="form-control" ng-model="testEditor.ruleDatasource" ng-change="testEditor.resourceChange(testEditor.ruleDatasource)" ng-disabled="testEditor.editMode">
 								<option ng-repeat="datasource in testEditor.datasources" value="{{datasource}}">{{datasource}}</option>
 							</select>
 						</div>

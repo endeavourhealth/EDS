@@ -70,8 +70,8 @@ public abstract class AbstractQueryDocumentReader {
                 processQuery(libraryItem.getQuery());
             }
 
-            if (libraryItem.getDataSource() != null) {
-                processDataSource(libraryItem.getDataSource());
+            if (libraryItem.getResource() != null) {
+                processResource(libraryItem.getResource());
             }
 
             if (libraryItem.getTest() != null) {
@@ -82,8 +82,8 @@ public abstract class AbstractQueryDocumentReader {
                 processCodeSet(libraryItem.getCodeSet());
             }
 
-            if (libraryItem.getListReport() != null) {
-                processListReport(libraryItem.getListReport());
+            if (libraryItem.getDataSet() != null) {
+                processDataSet(libraryItem.getDataSet());
             }
 
         } finally {
@@ -131,14 +131,14 @@ public abstract class AbstractQueryDocumentReader {
         }
     }
 
-    protected void processListReport(ListReport listReport) {
+    protected void processDataSet(DataSet dataSet) {
         try {
-            stack.push(listReport);
+            stack.push(dataSet);
 
-            List<ListReportGroup> groups = listReport.getGroup();
-            if (groups != null && !groups.isEmpty()) {
-                for (ListReportGroup group: groups) {
-                    processListReportGroup(group);
+            List<Composition> compositions = dataSet.getComposition();
+            if (compositions != null && ! compositions.isEmpty()) {
+                for (Composition composition: compositions) {
+                    processComposition(composition);
                 }
             }
 
@@ -147,48 +147,14 @@ public abstract class AbstractQueryDocumentReader {
         }
     }
 
-    protected void processListReportGroup(ListReportGroup listReportGroup) {
+    protected void processComposition(Composition composition) {
         try {
-            stack.push(listReportGroup);
+            stack.push(composition);
 
-            if (listReportGroup.getSummary() != null) {
-                processListReportSummaryType(listReportGroup.getSummary());
-            }
-
-            if (listReportGroup.getFieldBased() != null) {
-                processListReportFieldBasedType(listReportGroup.getFieldBased());
-            }
-
-        } finally {
-            stack.pop();
-        }
-    }
-
-    protected void processListReportSummaryType(ListReportSummaryType listGroupSummaryType) {
-        try {
-            stack.push(listGroupSummaryType);
-
-            if (listGroupSummaryType.getSummaryType() != null) {
-                processSummaryType(listGroupSummaryType.getSummaryType());
-            }
-
-        } finally {
-            stack.pop();
-        }
-    }
-
-    protected void processSummaryType(SummaryType summaryType) {
-        //no child complex types to recurse to
-    }
-
-    protected void processListReportFieldBasedType(ListReportFieldBasedType listGroupField) {
-        try {
-            stack.push(listGroupField);
-
-            List<FieldOutput> fieldOutputs = listGroupField.getFieldOutput();
-            if (fieldOutputs != null && !fieldOutputs.isEmpty()) {
-                for (FieldOutput fieldOutput: fieldOutputs) {
-                    processFieldOutput(fieldOutput);
+            List<Section> sections = composition.getSection();
+            if (sections != null && ! sections.isEmpty()) {
+                for (Section section: sections) {
+                    processSection(section);
                 }
             }
 
@@ -197,12 +163,21 @@ public abstract class AbstractQueryDocumentReader {
         }
     }
 
+    protected void processSection(Section section) {
+        try {
+            stack.push(section);
 
+            List<Resource> resources = section.getResource();
+            if (resources != null && ! resources.isEmpty()) {
+                for (Resource resource: resources) {
+                    processResource(resource);
+                }
+            }
 
-    protected void processFieldOutput(FieldOutput fieldOutput) {
-        //no child complex types to recurse to
+        } finally {
+            stack.pop();
+        }
     }
-
 
     protected void processQuery(Query query) {
         try {
@@ -262,8 +237,8 @@ public abstract class AbstractQueryDocumentReader {
         try {
             stack.push(test);
 
-            if (test.getDataSource() != null) {
-                processDataSource(test.getDataSource());
+            if (test.getResource() != null) {
+                processResource(test.getResource());
             }
 
             List<FieldTest> fieldTests = test.getFieldTest();
@@ -303,23 +278,23 @@ public abstract class AbstractQueryDocumentReader {
         }
     }
 
-    protected void processDataSource(DataSource dataSource) {
+    protected void processResource(Resource resource) {
         try {
-            stack.push(dataSource);
+            stack.push(resource);
 
-            if (dataSource.getCalculation() != null) {
-                processCalculationType(dataSource.getCalculation());
+            if (resource.getCalculation() != null) {
+                processCalculationType(resource.getCalculation());
             }
 
-            List<FieldTest> filters = dataSource.getFilter();
+            List<FieldTest> filters = resource.getFilter();
             if (filters != null && !filters.isEmpty()) {
                 for (FieldTest filter: filters) {
                     processFieldTest(filter);
                 }
             }
 
-            if (dataSource.getRestriction() != null) {
-                processRestriction(dataSource.getRestriction());
+            if (resource.getRestriction() != null) {
+                processRestriction(resource.getRestriction());
             }
 
         } finally {

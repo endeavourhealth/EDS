@@ -124,11 +124,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ListReport }
+     * Create an instance of {@link DataSet }
      * 
      */
-    public ListReport createListReport() {
-        return new ListReport();
+    public DataSet createDataSet() {
+        return new DataSet();
     }
 
     /**
@@ -137,14 +137,6 @@ public class ObjectFactory {
      */
     public VariableType createVariableType() {
         return new VariableType();
-    }
-
-    /**
-     * Create an instance of {@link ListReportFieldBasedType }
-     * 
-     */
-    public ListReportFieldBasedType createListReportFieldBasedType() {
-        return new ListReportFieldBasedType();
     }
 
     /**
@@ -204,14 +196,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link ListReportGroup }
-     * 
-     */
-    public ListReportGroup createListReportGroup() {
-        return new ListReportGroup();
-    }
-
-    /**
      * Create an instance of {@link ValueFrom }
      * 
      */
@@ -244,27 +228,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link FieldOutput }
+     * Create an instance of {@link Resource }
      * 
      */
-    public FieldOutput createFieldOutput() {
-        return new FieldOutput();
-    }
-
-    /**
-     * Create an instance of {@link DataSource }
-     * 
-     */
-    public DataSource createDataSource() {
-        return new DataSource();
-    }
-
-    /**
-     * Create an instance of {@link ListReportSummaryType }
-     * 
-     */
-    public ListReportSummaryType createListReportSummaryType() {
-        return new ListReportSummaryType();
+    public Resource createResource() {
+        return new Resource();
     }
 
     /**

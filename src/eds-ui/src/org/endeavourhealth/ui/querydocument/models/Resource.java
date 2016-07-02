@@ -9,18 +9,18 @@ import java.util.List;
 
 
 /**
- * <p>Java class for dataSource complex type.
+ * <p>Java class for resource complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="dataSource">
+ * &lt;complexType name="resource">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;choice>
- *           &lt;element name="entity" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *           &lt;element name="dataSourceUuid" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded"/>
+ *           &lt;element name="heading" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *           &lt;element name="resourceUuid" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded"/>
  *           &lt;element name="calculation" type="{}calculationType"/>
  *         &lt;/choice>
  *         &lt;element name="filter" type="{}fieldTest" maxOccurs="unbounded" minOccurs="0"/>
@@ -34,58 +34,58 @@ import java.util.List;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "dataSource", propOrder = {
-    "entity",
-    "dataSourceUuid",
+@XmlType(name = "resource", propOrder = {
+    "heading",
+    "resourceUuid",
     "calculation",
     "filter",
     "restriction"
 })
-public class DataSource {
+public class Resource {
 
-    protected String entity;
-    protected List<String> dataSourceUuid;
+    protected String heading;
+    protected List<String> resourceUuid;
     protected CalculationType calculation;
     protected List<FieldTest> filter;
     protected Restriction restriction;
 
     /**
-     * Gets the value of the entity property.
+     * Gets the value of the heading property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getEntity() {
-        return entity;
+    public String getHeading() {
+        return heading;
     }
 
     /**
-     * Sets the value of the entity property.
+     * Sets the value of the heading property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setEntity(String value) {
-        this.entity = value;
+    public void setHeading(String value) {
+        this.heading = value;
     }
 
     /**
-     * Gets the value of the dataSourceUuid property.
+     * Gets the value of the resourceUuid property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the dataSourceUuid property.
+     * This is why there is not a <CODE>set</CODE> method for the resourceUuid property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getDataSourceUuid().add(newItem);
+     *    getResourceUuid().add(newItem);
      * </pre>
      * 
      * 
@@ -95,11 +95,11 @@ public class DataSource {
      * 
      * 
      */
-    public List<String> getDataSourceUuid() {
-        if (dataSourceUuid == null) {
-            dataSourceUuid = new ArrayList<String>();
+    public List<String> getResourceUuid() {
+        if (resourceUuid == null) {
+            resourceUuid = new ArrayList<String>();
         }
-        return this.dataSourceUuid;
+        return this.resourceUuid;
     }
 
     /**

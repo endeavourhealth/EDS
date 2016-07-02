@@ -1,8 +1,9 @@
 module app.models {
 	'use strict';
 
-	export class Dataset {
+	export class DataSet {
 		uuid:string;
 		name:string;
+		composition : Composition[];
 	}
 }

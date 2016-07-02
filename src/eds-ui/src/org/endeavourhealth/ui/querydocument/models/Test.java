@@ -19,8 +19,8 @@ import java.util.List;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;choice>
- *           &lt;element name="dataSource" type="{}dataSource"/>
- *           &lt;element name="dataSourceUuid" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *           &lt;element name="resource" type="{}resource"/>
+ *           &lt;element name="resourceUuid" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;/choice>
  *         &lt;choice>
  *           &lt;element name="isAny">
@@ -43,64 +43,64 @@ import java.util.List;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "test", propOrder = {
-    "dataSource",
-    "dataSourceUuid",
+    "resource",
+    "resourceUuid",
     "isAny",
     "fieldTest"
 })
 public class Test {
 
-    protected DataSource dataSource;
-    protected String dataSourceUuid;
+    protected Resource resource;
+    protected String resourceUuid;
     protected Test.IsAny isAny;
     protected List<FieldTest> fieldTest;
 
     /**
-     * Gets the value of the dataSource property.
+     * Gets the value of the resource property.
      *
      * @return
      *     possible object is
-     *     {@link DataSource }
+     *     {@link Resource }
      *
      */
-    public DataSource getDataSource() {
-        return dataSource;
+    public Resource getResource() {
+        return resource;
     }
 
     /**
-     * Sets the value of the dataSource property.
+     * Sets the value of the resource property.
      *
      * @param value
      *     allowed object is
-     *     {@link DataSource }
+     *     {@link Resource }
      *
      */
-    public void setDataSource(DataSource value) {
-        this.dataSource = value;
+    public void setResource(Resource value) {
+        this.resource = value;
     }
 
     /**
-     * Gets the value of the dataSourceUuid property.
+     * Gets the value of the resourceUuid property.
      *
      * @return
      *     possible object is
      *     {@link String }
      *
      */
-    public String getDataSourceUuid() {
-        return dataSourceUuid;
+    public String getResourceUuid() {
+        return resourceUuid;
     }
 
     /**
-     * Sets the value of the dataSourceUuid property.
+     * Sets the value of the resourceUuid property.
      *
      * @param value
      *     allowed object is
      *     {@link String }
      *
      */
-    public void setDataSourceUuid(String value) {
-        this.dataSourceUuid = value;
+    public void setResourceUuid(String value) {
+        this.resourceUuid = value;
     }
 
     /**

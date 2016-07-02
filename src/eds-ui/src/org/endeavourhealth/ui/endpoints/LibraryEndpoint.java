@@ -77,10 +77,10 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
         UUID folderUuid = parseUuidFromStr(libraryItem.getFolderUuid());
 
         Query query = libraryItem.getQuery();
-        DataSource dataSource = libraryItem.getDataSource();
+        Resource resource = libraryItem.getResource();
         Test test = libraryItem.getTest();
         CodeSet codeSet = libraryItem.getCodeSet();
-        ListReport listOutput = libraryItem.getListReport();
+        DataSet dataSet = libraryItem.getDataSet();
         Protocol protocol = libraryItem.getProtocol();
         System system = libraryItem.getSystem();
 
@@ -93,14 +93,14 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
         DefinitionItemType type = null;
         if (query != null) {
             type = DefinitionItemType.Query;
-        } else if (dataSource != null) {
-            type = DefinitionItemType.DataSource;
+        } else if (resource != null) {
+            type = DefinitionItemType.Resource;
         } else if (test != null) {
             type = DefinitionItemType.Test;
         } else if (codeSet != null) {
             type = DefinitionItemType.CodeSet;
-        } else if (listOutput != null) {
-            type = DefinitionItemType.ListOutput;
+        } else if (dataSet != null) {
+            type = DefinitionItemType.DataSet;
         } else if (protocol != null) {
             type = DefinitionItemType.Protocol;
         } else if (system != null) {
@@ -317,7 +317,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/getQueries")
+    @Path("/getQueries") // queries define cohorts
     public Response getQueries(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
 
@@ -362,11 +362,11 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/getListReports")
-    public Response getListReports(@Context SecurityContext sc) throws Exception {
+    @Path("/getDataSets")
+    public Response getDataSets(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
 
-        DefinitionItemType itemType = DefinitionItemType.ListOutput;
+        DefinitionItemType itemType = DefinitionItemType.DataSet;
 
         UUID orgUuid = getOrganisationUuidFromToken(sc);
 
@@ -384,16 +384,16 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
                 items.add(item);
         }
 
-        List<JsonListReport> ret = new ArrayList<>();
+        List<JsonDataSet> ret = new ArrayList<>();
 
         for (int i = 0; i < items.size(); i++) {
             Item item = items.get(i);
             UUID itemUuid = item.getId();
 
-            JsonListReport listReport = new JsonListReport();
-            listReport.setName(item.getTitle());
-            listReport.setUuid(item.getId().toString());
-            ret.add(listReport);
+            JsonDataSet dataSet = new JsonDataSet();
+            dataSet.setName(item.getTitle());
+            dataSet.setUuid(item.getId().toString());
+            ret.add(dataSet);
         }
 
         clearLogbackMarkers();

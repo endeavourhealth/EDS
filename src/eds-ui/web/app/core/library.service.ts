@@ -6,7 +6,7 @@ module app.core {
 	import FolderNode = app.models.FolderNode;
 	import System = app.models.System;
 	import Cohort = app.models.Cohort;
-	import Dataset = app.models.Dataset;
+	import Dataset = app.models.DataSet;
 	'use strict';
 
 	export interface ILibraryService {
@@ -54,7 +54,7 @@ module app.core {
 		}
 
 		getDatasets():ng.IPromise<Dataset[]> {
-			return this.httpGet('api/library/getListReports');
+			return this.httpGet('api/library/getDataSets');
 		}
 	}
 

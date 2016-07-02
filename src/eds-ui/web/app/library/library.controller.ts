@@ -60,8 +60,8 @@ module app.library {
 				case ItemType.Query:
 					this.$state.go('app.queryAction', {itemUuid: uuid, itemAction: action});
 					break;
-				case ItemType.ListOutput:
-					this.$state.go('app.listOutputAction', {itemUuid: uuid, itemAction: action});
+				case ItemType.DataSet:
+					this.$state.go('app.dataSetAction', {itemUuid: uuid, itemAction: action});
 					break;
 				case ItemType.CodeSet:
 					this.$state.go('app.codeSetAction', {itemUuid: uuid, itemAction: action});

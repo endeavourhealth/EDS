@@ -9,7 +9,7 @@ module app.dialogs {
 	import ICodingService = app.core.ICodingService;
 	import Code = app.models.Code;
 	import Test = app.models.Test;
-	import DataSource = app.models.DataSource;
+	import Resource = app.models.Resource;
 	import FieldTest = app.models.FieldTest;
 	import CodeSet = app.models.CodeSet;
 	import CodeSetValue = app.models.CodeSetValue;
@@ -28,7 +28,7 @@ module app.dialogs {
 
 	export class TestEditorController extends BaseDialogController {
 		title : string;
-		dataSourceOnly : boolean = false;
+		resourceOnly : boolean = false;
 		viewFieldTest : boolean = false;
 		codeEditor : boolean = false;
 		dateEditor : boolean = false;
@@ -104,13 +104,107 @@ module app.dialogs {
 		fieldTestCodeSelection : CodeSetValue[] = [];
 		termCache : any;
 
-		datasources = ['','PATIENT','OBSERVATION','MEDICATION_ISSUE'];
+		datasources = ['',
+			'AllergyIntolerance',
+			'Appointment',
+			'AppointmentResponse',
+			'AuditEvent',
+			'Basic',
+			'Binary',
+			'BodySite',
+			'Bundle',
+			'CarePlan',
+			'Claim',
+			'ClaimResponse',
+			'ClinicalImpression',
+			'Communication',
+			'CommunicationRequest',
+			'Composition',
+			'ConceptMap',
+			'Condition',
+			'Conformance',
+			'Contract',
+			'DetectedIssue',
+			'Coverage',
+			'DataElement',
+			'Device',
+			'DeviceComponent',
+			'DeviceMetric',
+			'DeviceUseRequest',
+			'DeviceUseStatement',
+			'DiagnosticOrder',
+			'DiagnosticReport',
+			'DocumentManifest',
+			'DocumentReference',
+			'EligibilityRequest',
+			'EligibilityResponse',
+			'Encounter',
+			'EnrollmentRequest',
+			'EnrollmentResponse',
+			'EpisodeOfCare',
+			'ExplanationOfBenefit',
+			'FamilyMemberHistory',
+			'Flag',
+			'Goal',
+			'Group',
+			'HealthcareService',
+			'ImagingObjectSelection',
+			'ImagingStudy',
+			'Immunization',
+			'ImmunizationRecommendation',
+			'ImplementationGuide',
+			'List',
+			'Location',
+			'Media',
+			'Medication',
+			'MedicationAdministration',
+			'MedicationDispense',
+			'MedicationOrder',
+			'MedicationStatement',
+			'MessageHeader',
+			'NamingSystem',
+			'NutritionOrder',
+			'Observation',
+			'OperationDefinition',
+			'OperationOutcome',
+			'Order',
+			'OrderResponse',
+			'Organization',
+			'Parameters',
+			'Patient',
+			'PaymentNotice',
+			'PaymentReconciliation',
+			'Person',
+			'Practitioner',
+			'Procedure',
+			'ProcessRequest',
+			'ProcessResponse',
+			'ProcedureRequest',
+			'Provenance',
+			'Questionnaire',
+			'QuestionnaireResponse',
+			'ReferralRequest',
+			'RelatedPerson',
+			'RiskAssessment',
+			'Schedule',
+			'SearchParameter',
+			'Slot',
+			'Specimen',
+			'StructureDefinition',
+			'Subscription',
+			'Substance',
+			'SupplyRequest',
+			'SupplyDelivery',
+			'TestScript',
+			'ValueSet',
+			'VisionPrescription'];
+
 		sortorders = ['','ASCENDING','DESCENDING'];
 		fields = ['','EFFECTIVE_DATE','TIMESTAMP','VALUE'];
 		genders = ['','MALE','FEMALE','UNKNOWN'];
 		periods = ['','WEEK','MONTH','YEAR'];
 
-		public static open($modal : IModalService, test : Test, dataSourceOnly : boolean) : IModalServiceInstance {
+		public static open($modal : IModalService, test : Test, resourceOnly : boolean) : IModalServiceInstance {
 			var options : IModalSettings = {
 				templateUrl:'app/dialogs/testEditor/testEditor.html',
 				controller:'TestEditorController',
@@ -119,7 +213,7 @@ module app.dialogs {
 				backdrop: 'static',
 				resolve:{
 					test : () => test,
-					dataSourceOnly : () => dataSourceOnly
+					resourceOnly : () => resourceOnly
 				}
 			};
 
@@ -127,14 +221,14 @@ module app.dialogs {
 			return dialog;
 		}
 
-		static $inject = ['$uibModalInstance', 'LoggerService', '$uibModal', 'test', 'CodingService', 'dataSourceOnly'];
+		static $inject = ['$uibModalInstance', 'LoggerService', '$uibModal', 'test', 'CodingService', 'resourceOnly'];
 
 		constructor(protected $uibModalInstance : IModalServiceInstance,
 					private logger : app.blocks.ILoggerService,
 					private $modal : IModalService,
 					private test: Test,
 					private codingService : ICodingService,
-					dataSourceOnly : boolean) {
+					resourceOnly : boolean) {
 
 			super($uibModalInstance);
 
@@ -142,11 +236,11 @@ module app.dialogs {
 
 			this.termCache = {};
 			this.resultData = test;
-			this.dataSourceOnly = dataSourceOnly;
+			this.resourceOnly = resourceOnly;
 
-			var ds : DataSource = {
-				entity: "",
-				dataSourceUuid: null,
+			var ds : Resource = {
+				heading: "",
+				resourceUuid: null,
 				calculation: null,
 				filter: [],
 				restriction: null
@@ -155,24 +249,24 @@ module app.dialogs {
 			var isAny : IsAny = {}
 
 			var newTest : Test = {
-				dataSource: ds,
-				dataSourceUuid: null,
+				resource: ds,
+				resourceUuid: null,
 				isAny: isAny,
 				fieldTest: []
 			};
 
-			if (!this.resultData||!this.resultData.dataSource)
+			if (!this.resultData||!this.resultData.resource)
 				this.resultData = newTest;
 			else
 				this.initialiseEditMode(this.resultData);
 
-			if (!this.dataSourceOnly) {
+			if (!this.resourceOnly) {
 				vm.viewFieldTest = true;
 				vm.title = "Test Editor";
 				vm.disableRestrictionCount = true;
 			}
 			else {
-				vm.title = "Data Source Editor";
+				vm.title = "Resource Editor";
 				vm.viewFieldTest = false;
 				vm.disableRestrictionCount = false;
 			}
@@ -181,23 +275,24 @@ module app.dialogs {
 		initialiseEditMode(resultData : Test) {
 			var vm = this;
 
-			vm.ruleDatasource = resultData.dataSource.entity;
-			this.dataSourceChange(resultData.dataSource.entity);
+			vm.ruleDatasource = resultData.resource.heading;
+
+			this.resourceChange(resultData.resource.heading);
 
 			vm.editMode = true;
 
-			if (resultData.dataSource.filter === null) {
-				resultData.dataSource.filter = [];
+			if (resultData.resource.filter === null) {
+				resultData.resource.filter = [];
 			}
 
-			if (!vm.dataSourceOnly) {
+			if (!vm.resourceOnly) {
 				if (resultData.fieldTest === null) {
 					resultData.fieldTest = [];
 				}
 			}
 
-			for (var i = 0; i < resultData.dataSource.filter.length; ++i) {
-				var filter = resultData.dataSource.filter[i];
+			for (var i = 0; i < resultData.resource.filter.length; ++i) {
+				var filter = resultData.resource.filter[i];
 				var field = filter.field;
 
 				this.showFilter(field);
@@ -270,7 +365,7 @@ module app.dialogs {
 				}
 			}
 
-			if (!vm.dataSourceOnly) {
+			if (!vm.resourceOnly) {
 				for (var i = 0; i < resultData.fieldTest.length; ++i) {
 					var fieldTest = resultData.fieldTest[i];
 					var field = fieldTest.field;
@@ -347,10 +442,10 @@ module app.dialogs {
 
 			}
 
-			if (resultData.dataSource.restriction) {
+			if (resultData.resource.restriction) {
 				vm.showRestriction = true;
-				vm.restrictionFieldName = resultData.dataSource.restriction.fieldName;
-				vm.restrictionOrderDirection = resultData.dataSource.restriction.orderDirection;
+				vm.restrictionFieldName = resultData.resource.restriction.fieldName;
+				vm.restrictionOrderDirection = resultData.resource.restriction.orderDirection;
 			}
 
 		}
@@ -366,11 +461,11 @@ module app.dialogs {
 				.result.then(function(resultData : CodeSetValue[]){
 
 				if (vm.codeSelection.length>0) {
-					for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-						var filter = vm.resultData.dataSource.filter[i];
+					for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+						var filter = vm.resultData.resource.filter[i];
 
 						if (filter.field=="CODE")
-							vm.resultData.dataSource.filter.splice(i, 1);
+							vm.resultData.resource.filter.splice(i, 1);
 					}
 				}
 
@@ -399,50 +494,50 @@ module app.dialogs {
 
 				fieldTest.codeSet = codeSet;
 
-				vm.resultData.dataSource.filter.push(fieldTest);
+				vm.resultData.resource.filter.push(fieldTest);
 			});
 		}
 
 		removeFilter(filter: any) {
 			var vm = this;
 
-			for (var i = vm.resultData.dataSource.filter.length-1; i >= 0; --i) {
-				var f = vm.resultData.dataSource.filter[i];
+			for (var i = vm.resultData.resource.filter.length-1; i >= 0; --i) {
+				var f = vm.resultData.resource.filter[i];
 
 				switch(filter) {
 					case "code":
 						if (f.field=="CODE") {
 							vm.codeEditor = false;
-							vm.resultData.dataSource.filter.splice(i, 1);
+							vm.resultData.resource.filter.splice(i, 1);
 						}
 						break;
 					case "dob":
 						if (f.field=="DOB") {
 							vm.dobEditor = false;
-							vm.resultData.dataSource.filter.splice(i, 1);
+							vm.resultData.resource.filter.splice(i, 1);
 						}
 						break;
 					case "sex":
 						if (f.field=="SEX") {
 							vm.sexEditor = false;
-							vm.resultData.dataSource.filter.splice(i, 1);
+							vm.resultData.resource.filter.splice(i, 1);
 						}
 						break;
 					case "date":
 						if (f.field=="EFFECTIVE_DATE"||f.field=="REGISTRATION_DATE") {
 							vm.dateEditor = false;
-							vm.resultData.dataSource.filter.splice(i, 1);
+							vm.resultData.resource.filter.splice(i, 1);
 						}
 						break;
 					case "value":
 						if (f.field=="VALUE"||f.field=="AGE") {
 							vm.valueEditor = false;
-							vm.resultData.dataSource.filter.splice(i, 1);
+							vm.resultData.resource.filter.splice(i, 1);
 						}
 						break;
 					case "restriction":
 						vm.showRestriction = false;
-						vm.resultData.dataSource.restriction = null;
+						vm.resultData.resource.restriction = null;
 						break;
 
 				}
@@ -538,10 +633,10 @@ module app.dialogs {
 			});
 		}
 
-		dataSourceChange(value : any) {
+		resourceChange(value : any) {
 			var vm = this;
 
-			this.resultData.dataSource.entity = value;
+			this.resultData.resource.heading = value;
 
 			vm.codeEditor = false;
 			vm.dateEditor = false;
@@ -566,16 +661,17 @@ module app.dialogs {
 			vm.viewFieldTest = true;
 
 			switch(value) {
-				case "OBSERVATION":
+				case "Observation":
+				case "Condition":
 					vm.codeFilter = true;
 					vm.dateFilter = true;
 					vm.valueFilter = true;
 					break;
-				case "MEDICATION_ISSUE":
+				case "MedicationOrder":
 					vm.codeFilter = true;
 					vm.dateFilter = true;
 					break;
-				case "PATIENT":
+				case "Patient":
 					vm.dobFilter = true;
 					vm.sexFilter = true;
 					vm.ageFilter = true;
@@ -676,8 +772,8 @@ module app.dialogs {
 
 			var foundEntry : boolean = false;
 
-			for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-				var filter = vm.resultData.dataSource.filter[i];
+			for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+				var filter = vm.resultData.resource.filter[i];
 
 				if (filter.field==dateField && filter.valueFrom && value!="" && value!=null) {
 					foundEntry = true;
@@ -685,11 +781,11 @@ module app.dialogs {
 					break;
 				}
 				else if (filter.field==dateField && filter.valueFrom && (value=="" || value==null))
-					vm.resultData.dataSource.filter.splice(i, 1);
+					vm.resultData.resource.filter.splice(i, 1);
 			}
 
 			if (!foundEntry && value!="" && value!=null)
-				vm.resultData.dataSource.filter.push(fieldTest);
+				vm.resultData.resource.filter.push(fieldTest);
 		}
 
 		filterRelativeDateFromChange(value : any, period : any, dateField : any) {
@@ -720,8 +816,8 @@ module app.dialogs {
 
 			var foundEntry : boolean = false;
 
-			for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-				var filter = vm.resultData.dataSource.filter[i];
+			for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+				var filter = vm.resultData.resource.filter[i];
 
 				if (filter.field==dateField && filter.valueFrom && value!="" && value!=null) {
 					foundEntry = true;
@@ -729,11 +825,11 @@ module app.dialogs {
 					break;
 				}
 				else if (filter.field==dateField && filter.valueFrom && (value=="" || value==null))
-					vm.resultData.dataSource.filter.splice(i, 1);
+					vm.resultData.resource.filter.splice(i, 1);
 			}
 
 			if (!foundEntry && value!="" && value!=null)
-				vm.resultData.dataSource.filter.push(fieldTest);
+				vm.resultData.resource.filter.push(fieldTest);
 		}
 
 		filterDateToChange(value : any, dateField : any) {
@@ -769,8 +865,8 @@ module app.dialogs {
 
 			var foundEntry : boolean = false;
 
-			for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-				var filter = vm.resultData.dataSource.filter[i];
+			for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+				var filter = vm.resultData.resource.filter[i];
 
 				if (filter.field==dateField && filter.valueTo && value!="" && value!=null) {
 					foundEntry = true;
@@ -778,11 +874,11 @@ module app.dialogs {
 					break;
 				}
 				else if (filter.field==dateField && filter.valueTo && (value=="" || value==null))
-					vm.resultData.dataSource.filter.splice(i, 1);
+					vm.resultData.resource.filter.splice(i, 1);
 			}
 
 			if (!foundEntry && value!="" && value!=null)
-				vm.resultData.dataSource.filter.push(fieldTest);
+				vm.resultData.resource.filter.push(fieldTest);
 		}
 
 		filterRelativeDateToChange(value : any, period : any, dateField : any) {
@@ -813,8 +909,8 @@ module app.dialogs {
 
 			var foundEntry : boolean = false;
 
-			for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-				var filter = vm.resultData.dataSource.filter[i];
+			for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+				var filter = vm.resultData.resource.filter[i];
 
 				if (filter.field==dateField && filter.valueTo && value!="" && value!=null) {
 					foundEntry = true;
@@ -822,11 +918,11 @@ module app.dialogs {
 					break;
 				}
 				else if (filter.field==dateField && filter.valueTo && (value=="" || value==null))
-					vm.resultData.dataSource.filter.splice(i, 1);
+					vm.resultData.resource.filter.splice(i, 1);
 			}
 
 			if (!foundEntry && value!="" && value!=null)
-				vm.resultData.dataSource.filter.push(fieldTest);
+				vm.resultData.resource.filter.push(fieldTest);
 		}
 
 		zeroFill( number : any, width : any ) {
@@ -864,8 +960,8 @@ module app.dialogs {
 
 			var foundEntry : boolean = false;
 
-			for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-				var filter = vm.resultData.dataSource.filter[i];
+			for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+				var filter = vm.resultData.resource.filter[i];
 
 				if (filter.field==valueField && filter.valueSet && value!="") {
 					foundEntry = true;
@@ -873,11 +969,11 @@ module app.dialogs {
 					break;
 				}
 				else if (filter.field==valueField && filter.valueSet && value=="")
-					vm.resultData.dataSource.filter.splice(i, 1);
+					vm.resultData.resource.filter.splice(i, 1);
 			}
 
 			if (!foundEntry && value!="")
-				vm.resultData.dataSource.filter.push(fieldTest);
+				vm.resultData.resource.filter.push(fieldTest);
 		}
 
 		filterValueFromChange(value : any) {
@@ -908,8 +1004,8 @@ module app.dialogs {
 
 			var foundEntry : boolean = false;
 
-			for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-				var filter = vm.resultData.dataSource.filter[i];
+			for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+				var filter = vm.resultData.resource.filter[i];
 
 				if (filter.field==vm.valueField && filter.valueFrom && value!="") {
 					foundEntry = true;
@@ -917,11 +1013,11 @@ module app.dialogs {
 					break;
 				}
 				else if (filter.field==vm.valueField && filter.valueFrom && value=="")
-					vm.resultData.dataSource.filter.splice(i, 1);
+					vm.resultData.resource.filter.splice(i, 1);
 			}
 
 			if (!foundEntry && value!="")
-				vm.resultData.dataSource.filter.push(fieldTest);
+				vm.resultData.resource.filter.push(fieldTest);
 		}
 
 		filterValueToChange(value : any) {
@@ -952,8 +1048,8 @@ module app.dialogs {
 
 			var foundEntry : boolean = false;
 
-			for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-				var filter = vm.resultData.dataSource.filter[i];
+			for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+				var filter = vm.resultData.resource.filter[i];
 
 				if (filter.field==vm.valueField && filter.valueTo && value!="") {
 					foundEntry = true;
@@ -961,11 +1057,11 @@ module app.dialogs {
 					break;
 				}
 				else if (filter.field==vm.valueField && filter.valueTo && value=="")
-					vm.resultData.dataSource.filter.splice(i, 1);
+					vm.resultData.resource.filter.splice(i, 1);
 			}
 
 			if (!foundEntry && value!="")
-				vm.resultData.dataSource.filter.push(fieldTest);
+				vm.resultData.resource.filter.push(fieldTest);
 
 		}
 
@@ -1290,7 +1386,7 @@ module app.dialogs {
 			var vm = this;
 
 			if (!value || vm.restrictionFieldName=="" || vm.restrictionOrderDirection=="") {
-				vm.resultData.dataSource.restriction = null;
+				vm.resultData.resource.restriction = null;
 				return;
 			}
 
@@ -1300,7 +1396,7 @@ module app.dialogs {
 				count: Number(vm.restrictionCount)
 			};
 
-			vm.resultData.dataSource.restriction = restriction;
+			vm.resultData.resource.restriction = restriction;
 		}
 
 		toggleRestriction() {
@@ -1312,7 +1408,7 @@ module app.dialogs {
 		save() {
 			var vm = this;
 
-			if (!vm.dataSourceOnly) {
+			if (!vm.resourceOnly) {
 				for (var i = 0; i < vm.resultData.fieldTest.length; ++i) {
 					var ft = vm.resultData.fieldTest[i];
 					if (ft.field=="CODE") {

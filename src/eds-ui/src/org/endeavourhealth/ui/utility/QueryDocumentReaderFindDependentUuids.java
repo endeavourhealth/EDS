@@ -44,25 +44,25 @@ public final class QueryDocumentReaderFindDependentUuids extends AbstractQueryDo
     }
 
     @Override
-    protected void processDataSource(DataSource dataSource) {
-        List<String> ids = dataSource.getDataSourceUuid();
+    protected void processResource(Resource resource) {
+        List<String> ids = resource.getResourceUuid();
         for (String id: ids) {
             addUuid(id);
         }
 
-        super.processDataSource(dataSource);
+        super.processResource(resource);
     }
 
     @Override
     protected void processCalculationParameter(CalculationParameter calculationParameter) {
-        addUuid(calculationParameter.getDataSourceUuid());
+        addUuid(calculationParameter.getResourceUuid());
 
         super.processCalculationParameter(calculationParameter);
     }
 
     @Override
     protected void processTest(Test test) {
-        addUuid(test.getDataSourceUuid());
+        addUuid(test.getResourceUuid());
 
         super.processTest(test);
     }

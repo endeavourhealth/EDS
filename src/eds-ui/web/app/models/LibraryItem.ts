@@ -7,10 +7,10 @@ module app.models {
 		description:string;
 		folderUuid:string;
 		query:Query;
-		// dataSource:DataSource;
+		// resource:Resource;
 		// test:Test;
 		codeSet:CodeSet;
-		listReport:ListReport;
+		dataSet:DataSet;
 		protocol:Protocol;
 		system:System;
 	}

@@ -3,7 +3,7 @@ module app.models {
 
 	export class CalculationParameter {
 		parameterName:string;
-		dataSourceUuid:string;
+		resourceUuid:string;
 		fieldName:string[];
 	}
 }

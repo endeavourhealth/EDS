@@ -15,7 +15,7 @@ module app.protocol {
 	import Protocol = app.models.Protocol;
 	import System = app.models.System;
 	import Cohort = app.models.Cohort;
-	import Dataset = app.models.Dataset;
+	import Dataset = app.models.DataSet;
 	import TechnicalInterface = app.models.TechnicalInterface;
 
 	'use strict';

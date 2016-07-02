@@ -23,10 +23,10 @@
 			<xs:element name="folderUuid" type="xs:string"/>
 			<xs:choice>
 				<xs:element name="query" type="query"/>
-				<xs:element name="dataSource" type="dataSource"/>
+				<xs:element name="resource" type="resource"/>
 				<xs:element name="test" type="test"/>
 				<xs:element name="codeSet" type="codeSet"/>
-				<xs:element name="listReport" type="listReport"/>
+				<xs:element name="dataSet" type="dataSet"/>
 				<xs:element name="protocol" type="protocol"/>
 				<xs:element name="system" type="system"/>
 			</xs:choice>
@@ -195,8 +195,8 @@
 	<xs:complexType name="test">
 		<xs:sequence>
 			<xs:choice>
-				<xs:element name="dataSource" type="dataSource"/>
-				<xs:element name="dataSourceUuid" type="xs:string"/>
+				<xs:element name="resource" type="resource"/>
+				<xs:element name="resourceUuid" type="xs:string"/>
 			</xs:choice>
 			<xs:choice>
 				<xs:element name="isAny">
@@ -206,11 +206,11 @@
 			</xs:choice>
 		</xs:sequence>
 	</xs:complexType>
-	<xs:complexType name="dataSource">
+	<xs:complexType name="resource">
 		<xs:sequence>
 			<xs:choice>
-				<xs:element name="entity" type="xs:string"/>
-				<xs:element name="dataSourceUuid" type="xs:string" maxOccurs="unbounded"/>
+				<xs:element name="heading" type="xs:string"/>
+				<xs:element name="resourceUuid" type="xs:string" maxOccurs="unbounded"/>
 				<xs:element name="calculation" type="calculationType"/>
 			</xs:choice>
 			<xs:element name="filter" type="fieldTest" minOccurs="0" maxOccurs="unbounded"/>
@@ -232,7 +232,7 @@
 	<xs:complexType name="calculationParameter">
 		<xs:sequence>
 			<xs:element name="parameterName" type="xs:string"/>
-			<xs:element name="dataSourceUuid" type="xs:string"/>
+			<xs:element name="resourceUuid" type="xs:string"/>
 			<xs:element name="fieldName" type="xs:string" maxOccurs="unbounded"/>
 		</xs:sequence>
 	</xs:complexType>
@@ -242,9 +242,9 @@
 			<xs:element name="y" type="xs:int"/>
 		</xs:sequence>
 	</xs:complexType>
-	<xs:complexType name="listReport">
+	<xs:complexType name="dataSet">
 		<xs:sequence>
-			<xs:element name="group" type="listReportGroup" maxOccurs="unbounded"/>
+			<xs:element name="composition" type="composition" maxOccurs="unbounded"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="protocol">
@@ -287,22 +287,16 @@
 			<xs:element name="active" type="xs:string"/>
 		</xs:sequence>
 	</xs:complexType>
-	<xs:complexType name="listReportGroup">
+	<xs:complexType name="composition">
 		<xs:sequence>
 			<xs:element name="heading" type="xs:string" minOccurs="0"/>
-			<xs:choice>
-				<xs:element name="summary" type="listReportSummaryType"/>
-				<xs:element name="fieldBased" type="listReportFieldBasedType"/>
-			</xs:choice>
+			<xs:element name="section" type="section" maxOccurs="unbounded"/>
 		</xs:sequence>
 	</xs:complexType>
-	<xs:complexType name="listReportSummaryType">
+	<xs:complexType name="section">
 		<xs:sequence>
-			<xs:element name="summaryType" type="summaryType"/>
-			<xs:choice>
-				<xs:element name="dataSourceUuid" type="xs:string"/>
-				<xs:element name="testUuid" type="xs:string"/>
-			</xs:choice>
+			<xs:element name="heading" type="xs:string" minOccurs="0"/>
+			<xs:element name="resource" type="resource" maxOccurs="unbounded"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:simpleType name="summaryType">
@@ -311,18 +305,6 @@
 			<xs:enumeration value="count"/>
 		</xs:restriction>
 	</xs:simpleType>
-	<xs:complexType name="listReportFieldBasedType">
-		<xs:sequence>
-			<xs:element name="dataSource" type="dataSource"/>
-			<xs:element name="fieldOutput" type="fieldOutput" maxOccurs="unbounded"/>
-		</xs:sequence>
-	</xs:complexType>
-	<xs:complexType name="fieldOutput">
-		<xs:sequence>
-			<xs:element name="field" type="xs:string"/>
-			<xs:element name="heading" type="xs:string" minOccurs="0"/>
-		</xs:sequence>
-	</xs:complexType>
 	<xs:complexType name="expressionType">
 		<xs:sequence>
 			<xs:element name="expressionText" type="xs:string"/>

@@ -342,11 +342,11 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
 
             } else if (itemType == DefinitionItemType.Test) {
 
-            } else if (itemType == DefinitionItemType.DataSource) {
+            } else if (itemType == DefinitionItemType.Resource) {
 
             } else if (itemType == DefinitionItemType.CodeSet) {
 
-            } else if (itemType == DefinitionItemType.ListOutput) {
+            } else if (itemType == DefinitionItemType.DataSet) {
 
             } else if (itemType == DefinitionItemType.Protocol) {
 

@@ -271,7 +271,7 @@ VALUES
 INSERT INTO item_type
 (id, description)
 VALUES 
-(4, 'DataSource');
+(4, 'Resource');
 	
 INSERT INTO item_type
 (id, description)
