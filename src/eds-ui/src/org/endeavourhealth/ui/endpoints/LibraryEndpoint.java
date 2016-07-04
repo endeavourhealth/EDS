@@ -404,6 +404,55 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
                 .build();
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/getProtocols")
+    public Response getProtocols(@Context SecurityContext sc, @QueryParam("serviceId") String serviceId) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        DefinitionItemType itemType = DefinitionItemType.Protocol;
+
+        UUID orgUuid = getOrganisationUuidFromToken(sc);
+
+        Iterable<ActiveItem> activeItems = null;
+        List<Item> items = new ArrayList();
+        Iterable<ItemDependency> itemDependency = null;
+
+        LibraryRepository repository = new LibraryRepository();
+
+        activeItems = repository.getActiveItemByOrgAndTypeId(orgUuid, itemType.getValue(), false);
+
+        for (ActiveItem activeItem: activeItems) {
+            Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
+            if (item.getIsDeleted()==false)
+                items.add(item);
+        }
+
+        List<LibraryItem> ret = new ArrayList<>();
+
+        for (int i = 0; i < items.size(); i++) {
+            Item item = items.get(i);
+            String xml = item.getXmlContent();
+            LibraryItem libraryItem = QueryDocumentSerializer.readLibraryItemFromXml(xml);
+            Protocol protocol = libraryItem.getProtocol();
+            List<ServiceContract> serviceContracts = protocol.getServiceContract();
+            for (int s = 0; s < serviceContracts.size(); s++) {
+                ServiceContract service = serviceContracts.get(s);
+                if (service.getService().getUuid().equals(serviceId)) {
+                    ret.add(QueryDocumentSerializer.readLibraryItemFromXml(xml));
+                }
+            }
+       }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
 }
 
 

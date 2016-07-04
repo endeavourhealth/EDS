@@ -17,6 +17,7 @@ module app.core {
 		getSystems():ng.IPromise<System[]>;
 		getCohorts():ng.IPromise<Cohort[]>;
 		getDatasets():ng.IPromise<Dataset[]>;
+		getProtocols(serviceId : string):ng.IPromise<LibraryItem[]>;
 	}
 
 	export class LibraryService extends BaseHttpService implements ILibraryService {
@@ -55,6 +56,16 @@ module app.core {
 
 		getDatasets():ng.IPromise<Dataset[]> {
 			return this.httpGet('api/library/getDataSets');
+		}
+
+		getProtocols(serviceId : string):ng.IPromise<LibraryItem[]> {
+			var request = {
+				params: {
+					'serviceId': serviceId
+				}
+			};
+
+			return this.httpGet('api/library/getProtocols', request);
 		}
 	}
 

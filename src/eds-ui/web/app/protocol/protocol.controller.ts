@@ -27,6 +27,7 @@ module app.protocol {
 		systems : System[];
 		cohorts : Cohort[];
 		dataSets : Dataset[];
+		protocols : LibraryItem[];
 		technicalInterfaces : TechnicalInterface[];
 
 		enabled = ["TRUE", "FALSE"];
@@ -137,6 +138,14 @@ module app.protocol {
 				.catch(function (error) {
 					vm.logger.error('Failed to load dataSets', error, 'Load dataSets');
 				});
+
+			/*vm.libraryService.getProtocols("edf5ac83-1491-4631-97ff-5c7a283c73b1")
+				.then(function(result) {
+					vm.protocols = result;
+				})
+				.catch(function (error) {
+					vm.logger.error('Failed to load protocols', error, 'Load protocols');
+				});*/
 		}
 
 		loadSystems() {
