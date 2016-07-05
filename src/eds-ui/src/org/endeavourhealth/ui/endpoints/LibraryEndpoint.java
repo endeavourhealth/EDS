@@ -408,20 +408,16 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/getProtocols")
-    public Response getProtocols(@Context SecurityContext sc, @QueryParam("serviceId") String serviceId) throws Exception {
-        super.setLogbackMarkers(sc);
+    public Response getProtocols(@QueryParam("serviceId") String serviceId) throws Exception {
 
         DefinitionItemType itemType = DefinitionItemType.Protocol;
 
-        UUID orgUuid = getOrganisationUuidFromToken(sc);
-
         Iterable<ActiveItem> activeItems = null;
         List<Item> items = new ArrayList();
-        Iterable<ItemDependency> itemDependency = null;
-
+        
         LibraryRepository repository = new LibraryRepository();
 
-        activeItems = repository.getActiveItemByOrgAndTypeId(orgUuid, itemType.getValue(), false);
+        activeItems = repository.getActiveItemByTypeId(itemType.getValue(), false);
 
         for (ActiveItem activeItem: activeItems) {
             Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());

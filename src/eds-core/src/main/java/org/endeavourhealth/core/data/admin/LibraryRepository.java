@@ -62,6 +62,11 @@ public class LibraryRepository extends Repository {
         return accessor.getActiveItemByOrgAndTypeId(organisationId, itemTypeId, isDeleted);
     }
 
+    public Iterable<ActiveItem> getActiveItemByTypeId(Integer itemTypeId, Boolean isDeleted) {
+        LibraryAccessor accessor = getMappingManager().createAccessor(LibraryAccessor.class);
+        return accessor.getActiveItemByTypeId(itemTypeId, isDeleted);
+    }
+
     public Iterable<ActiveItem> getActiveItemByOrg(UUID organisationId) {
         LibraryAccessor accessor = getMappingManager().createAccessor(LibraryAccessor.class);
         return accessor.getActiveItemByOrg(organisationId);

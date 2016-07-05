@@ -21,6 +21,9 @@ public interface LibraryAccessor {
     @Query("SELECT * FROM admin.active_item_by_org_and_type WHERE organisation_id = :organisation_id and item_type_id = :item_type_id and is_deleted = :is_deleted")
     Result<ActiveItem> getActiveItemByOrgAndTypeId(@Param("organisation_id") UUID organisationId, @Param("item_type_id") Integer itemTypeId, @Param("is_deleted") Boolean isDeleted);
 
+    @Query("SELECT * FROM admin.active_item_by_type WHERE item_type_id = :item_type_id and is_deleted = :is_deleted")
+    Result<ActiveItem> getActiveItemByTypeId(@Param("item_type_id") Integer itemTypeId, @Param("is_deleted") Boolean isDeleted);
+
     @Query("SELECT * FROM admin.active_item_by_org WHERE organisation_id = :organisation_id and is_deleted = false limit 5")
     Result<ActiveItem> getActiveItemByOrg(@Param("organisation_id") UUID organisationId);
 

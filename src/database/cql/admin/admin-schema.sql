@@ -79,6 +79,18 @@ WHERE id IS NOT NULL
 PRIMARY KEY((organisation_id), item_type_id, is_deleted, id)
 WITH CLUSTERING ORDER BY (organisation_id ASC);
 
+CREATE MATERIALIZED VIEW active_item_by_type AS
+SELECT id, item_id, audit_id, item_type_id, is_deleted, organisation_id
+FROM  active_item
+WHERE id IS NOT NULL
+  AND item_id IS NOT NULL
+  AND audit_id IS NOT NULL
+  AND item_type_id IS NOT NULL
+  AND is_deleted IS NOT NULL
+  AND organisation_id IS NOT NULL
+PRIMARY KEY((item_type_id), is_deleted, id, organisation_id)
+WITH CLUSTERING ORDER BY (item_type_id ASC);
+
 CREATE MATERIALIZED VIEW active_item_by_org AS
 SELECT id, organisation_id, item_id, audit_id, item_type_id, is_deleted
 FROM  active_item
