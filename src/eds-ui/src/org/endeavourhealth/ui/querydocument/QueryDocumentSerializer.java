@@ -2,9 +2,9 @@ package org.endeavourhealth.ui.querydocument;
 
 import org.endeavourhealth.ui.XmlSerializer;
 import org.endeavourhealth.ui.database.definition.DbItem;
-import org.endeavourhealth.ui.querydocument.models.LibraryItem;
-import org.endeavourhealth.ui.querydocument.models.ObjectFactory;
-import org.endeavourhealth.ui.querydocument.models.QueryDocument;
+import org.endeavourhealth.core.data.admin.models.LibraryItem;
+import org.endeavourhealth.core.data.admin.models.ObjectFactory;
+import org.endeavourhealth.core.data.admin.models.QueryDocument;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBElement;

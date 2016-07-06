@@ -35,7 +35,7 @@ public class EnvelopMessage implements PipelineComponent {
 		Bundle bundle = buildBundle(messageHeader, binary);
 
 		try {
-			String format = exchange.getHeader(HeaderKeys.Format);
+			String format = exchange.getHeader(HeaderKeys.ContentType);
 
 			IParser parser = null;
 			if (format != null && "text/xml".equals(format))

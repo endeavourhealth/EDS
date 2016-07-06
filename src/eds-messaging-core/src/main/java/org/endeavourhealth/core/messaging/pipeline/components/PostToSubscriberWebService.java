@@ -24,7 +24,7 @@ public class PostToSubscriberWebService implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		String subscriberList = exchange.getHeader(HeaderKeys.SubscriberList);
+		String subscriberList = exchange.getHeader(HeaderKeys.Subscribers);
 		if (subscriberList == null || subscriberList.isEmpty()) {
 			LOG.info("No subscriber addresses provided");
 			return;
@@ -44,7 +44,7 @@ public class PostToSubscriberWebService implements PipelineComponent {
 		Client client = ClientBuilder.newClient( new ClientConfig().register( LoggingFilter.class ) );
 		WebTarget webTarget = client.target(subscriberEndpoint);
 
-		String format = exchange.getHeader(HeaderKeys.Format);
+		String format = exchange.getHeader(HeaderKeys.ContentType);
 		Invocation.Builder invocationBuilder =  webTarget.request(format);
 
 		for(String key : exchange.getHeaders().keySet())

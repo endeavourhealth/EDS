@@ -1,7 +1,7 @@
 package org.endeavourhealth.ui.terminology;
 
-import org.endeavourhealth.ui.querydocument.models.CodeSet;
-import org.endeavourhealth.ui.querydocument.models.CodingSystem;
+import org.endeavourhealth.core.data.admin.models.CodeSet;
+import org.endeavourhealth.core.data.admin.models.CodingSystem;
 
 import java.util.HashSet;
 

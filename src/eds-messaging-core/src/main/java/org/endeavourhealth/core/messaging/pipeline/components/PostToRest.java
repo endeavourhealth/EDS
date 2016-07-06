@@ -35,12 +35,12 @@ public class PostToRest implements PipelineComponent {
 		Client client = ClientBuilder.newClient( new ClientConfig().register( LoggingFilter.class ) );
 		WebTarget webTarget = client.target(responseAddress);
 
-		String format = exchange.getHeader(HeaderKeys.Format);
+		String contentType = exchange.getHeader(HeaderKeys.ContentType);
 
-		if (format == null)
-			format = "text/json";
+		if (contentType == null)
+			contentType = "text/json";
 
-		Invocation.Builder invocationBuilder =  webTarget.request(format);
+		Invocation.Builder invocationBuilder =  webTarget.request(contentType);
 
 		// Is there a restricted header list?
 		String[] headersToSend;
@@ -55,7 +55,7 @@ public class PostToRest implements PipelineComponent {
 				invocationBuilder.header(key, headerValue);
 		}
 
-		Entity entity = Entity.entity(exchange.getBody(), format);
+		Entity entity = Entity.entity(exchange.getBody(), contentType);
 
 		Response response = invocationBuilder.post(entity);
 

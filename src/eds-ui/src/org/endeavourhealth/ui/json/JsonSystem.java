@@ -1,8 +1,8 @@
 package org.endeavourhealth.ui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.endeavourhealth.ui.querydocument.models.System;
-import org.endeavourhealth.ui.querydocument.models.TechnicalInterface;
+import org.endeavourhealth.core.data.admin.models.System;
+import org.endeavourhealth.core.data.admin.models.TechnicalInterface;
 
 import java.util.List;
 

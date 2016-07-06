@@ -32,7 +32,7 @@ public class ReturnResponseAcknowledgement implements PipelineComponent {
 		MessageHeader messageHeader = buildMessageHeader(exchange);
 
 		try {
-			String format = exchange.getHeader(HeaderKeys.Format);
+			String format = exchange.getHeader(HeaderKeys.ContentType);
 
 			IParser parser = null;
 			if (format != null && "text/xml".equals(format))

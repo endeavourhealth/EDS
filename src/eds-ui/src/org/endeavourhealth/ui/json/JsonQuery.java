@@ -1,10 +1,6 @@
 package org.endeavourhealth.ui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.endeavourhealth.ui.querydocument.models.System;
-import org.endeavourhealth.ui.querydocument.models.TechnicalInterface;
-
-import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class JsonQuery {

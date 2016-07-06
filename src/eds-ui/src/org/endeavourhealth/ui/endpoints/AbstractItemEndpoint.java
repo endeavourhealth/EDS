@@ -12,7 +12,7 @@ import org.endeavourhealth.ui.utility.QueryDocumentReaderFindDependentUuids;
 import org.endeavourhealth.core.data.admin.models.DefinitionItemType;
 import org.endeavourhealth.ui.DependencyType;
 import org.endeavourhealth.ui.querydocument.QueryDocumentSerializer;
-import org.endeavourhealth.ui.querydocument.models.QueryDocument;
+import org.endeavourhealth.core.data.admin.models.QueryDocument;
 
 import javax.ws.rs.BadRequestException;
 import java.util.*;

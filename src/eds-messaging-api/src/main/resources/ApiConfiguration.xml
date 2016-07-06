@@ -19,6 +19,7 @@
     <PostMessageAsync>
         <Pipeline>
             <OpenEnvelope/>
+            <DetermineRelevantProtocolIds/>
             <ValidateSender/>
             <LoadSenderConfiguration/>
             <ValidateMessageType/>

@@ -32,7 +32,7 @@ public class OpenEnvelope implements PipelineComponent {
 		// Extract envelope properties to exchange properties
 		String body = exchange.getBody();
 
-		String format = exchange.getHeader(HeaderKeys.Format);
+		String format = exchange.getHeader(HeaderKeys.ContentType);
 		IParser parser;
 		if (format != null && "text/xml".equals(format))
 			parser = new XmlParser();

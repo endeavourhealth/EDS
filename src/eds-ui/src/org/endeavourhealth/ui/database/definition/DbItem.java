@@ -1,10 +1,10 @@
 package org.endeavourhealth.ui.database.definition;
 
 import org.endeavourhealth.core.data.admin.models.DefinitionItemType;
+import org.endeavourhealth.core.data.admin.models.LibraryItem;
 import org.endeavourhealth.ui.DependencyType;
 import org.endeavourhealth.ui.database.*;
 import org.endeavourhealth.ui.querydocument.QueryDocumentSerializer;
-import org.endeavourhealth.ui.querydocument.models.*;
 
 import java.util.ArrayList;
 import java.util.List;

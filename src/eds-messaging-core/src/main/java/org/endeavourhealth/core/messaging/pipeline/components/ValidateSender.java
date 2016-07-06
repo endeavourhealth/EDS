@@ -18,13 +18,13 @@ public class ValidateSender implements PipelineComponent {
 	}
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
-		String sender = exchange.getHeader(HeaderKeys.Sender);
-		String method = exchange.getHeader(HeaderKeys.Method);
+		String protocols = exchange.getHeader(HeaderKeys.ProtocolIds);
 
-		// Load data distribution protocols
-
-		// Check sender is allowed to make the call to the method
-
-		LOG.debug("Sender validated");
+		if (protocols == null || protocols.isEmpty()) {
+			LOG.debug("Sender invalid");
+			throw new PipelineException("No valid protocols found for source/publisher");
+		} else {
+			LOG.debug("Sender valid");
+		}
 	}
 }

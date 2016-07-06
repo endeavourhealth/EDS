@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.querydocument;
 
-import org.apache.commons.collections4.CollectionUtils;
-import org.endeavourhealth.ui.querydocument.models.*;
+import org.endeavourhealth.core.data.admin.models.*;
 
 import java.util.List;
 import java.util.Stack;

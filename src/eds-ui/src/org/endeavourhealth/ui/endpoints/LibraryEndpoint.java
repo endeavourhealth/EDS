@@ -2,11 +2,11 @@ package org.endeavourhealth.ui.endpoints;
 
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.models.*;
+import org.endeavourhealth.core.data.admin.models.System;
+import org.endeavourhealth.ui.framework.security.Unsecured;
 import org.endeavourhealth.ui.json.*;
 import org.endeavourhealth.ui.DependencyType;
 import org.endeavourhealth.ui.querydocument.QueryDocumentSerializer;
-import org.endeavourhealth.ui.querydocument.models.*;
-import org.endeavourhealth.ui.querydocument.models.System;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -408,6 +408,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/getProtocols")
+    @Unsecured
     public Response getProtocols(@QueryParam("serviceId") String serviceId) throws Exception {
 
         DefinitionItemType itemType = DefinitionItemType.Protocol;
