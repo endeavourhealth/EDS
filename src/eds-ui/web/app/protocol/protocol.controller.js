@@ -103,6 +103,13 @@ var app;
                     .catch(function (error) {
                     vm.logger.error('Failed to load dataSets', error, 'Load dataSets');
                 });
+                /*vm.libraryService.getProtocols("edf5ac83-1491-4631-97ff-5c7a283c73b1")
+                    .then(function(result) {
+                        vm.protocols = result;
+                    })
+                    .catch(function (error) {
+                        vm.logger.error('Failed to load protocols', error, 'Load protocols');
+                    });*/
             };
             ProtocolController.prototype.loadSystems = function () {
                 var vm = this;

@@ -9,7 +9,7 @@ import java.util.List;
 
 public class PersonIdentifierByNhsNumberRepository extends Repository {
 
-    public List<PersonIdentifierByNhsNumber> getMostRecent(String nhsNumber) {
+    public List<PersonIdentifierByNhsNumber> getForNhsNumber(String nhsNumber) {
 
         PersonIdentifierByNhsNumberAccessor accessor = getMappingManager().createAccessor(PersonIdentifierByNhsNumberAccessor.class);
         return Lists.newArrayList(accessor.getForNhsNumber(nhsNumber));

@@ -78,6 +78,7 @@ CREATE TABLE person_consent_organisation (
 
 CREATE TABLE person_identifier (
 	organisation_id UUID,
+	service_id UUID,
 	local_id text,
 	nhs_number text,
 	forenames text,
@@ -87,17 +88,18 @@ CREATE TABLE person_identifier (
 	sex text,
 	person_id UUID,
 	timestamp TIMESTAMP,
-	PRIMARY KEY (organisation_id, local_id, timestamp));
-	WITH CLUSTERING ORDER BY (organisation_id ASC, local_id ASC, timestamp DESC);
+	PRIMARY KEY (organisation_id, service_id, local_id, timestamp));
+	WITH CLUSTERING ORDER BY (organisation_id ASC, service_id ASC, local_id ASC, timestamp DESC);
 	
 CREATE MATERIALIZED VIEW person_identifier_by_nhs_number AS  
-	SELECT organisation_id, local_id, nhs_number, person_id, timestamp 
+	SELECT organisation_id, service_id, local_id, nhs_number, person_id, timestamp 
 	FROM person_identifier  
 	WHERE nhs_number IS NOT NULL  
 	AND organisation_id IS NOT NULL 
 	AND timestamp IS NOT NULL 
 	AND person_id IS NOT NULL 
 	AND local_id IS NOT NULL 
-	PRIMARY KEY(nhs_number, organisation_id, local_id, timestamp); 
+	AND service_id IS NOT NULL
+	PRIMARY KEY(nhs_number, organisation_id, service_id, local_id, timestamp); 
 
 	

@@ -403,7 +403,7 @@ var app;
                     folderUuid: $stateParams.itemUuid,
                     query: query,
                     codeSet: null,
-                    listReport: null,
+                    dataSet: null,
                     protocol: null,
                     system: null
                 };

@@ -13,14 +13,14 @@ var app;
         'use strict';
         var TestEditorController = (function (_super) {
             __extends(TestEditorController, _super);
-            function TestEditorController($uibModalInstance, logger, $modal, test, codingService, dataSourceOnly) {
+            function TestEditorController($uibModalInstance, logger, $modal, test, codingService, resourceOnly) {
                 _super.call(this, $uibModalInstance);
                 this.$uibModalInstance = $uibModalInstance;
                 this.logger = logger;
                 this.$modal = $modal;
                 this.test = test;
                 this.codingService = codingService;
-                this.dataSourceOnly = false;
+                this.resourceOnly = false;
                 this.viewFieldTest = false;
                 this.codeEditor = false;
                 this.dateEditor = false;
@@ -47,7 +47,100 @@ var app;
                 this.editMode = false;
                 this.codeSelection = [];
                 this.fieldTestCodeSelection = [];
-                this.datasources = ['', 'PATIENT', 'OBSERVATION', 'MEDICATION_ISSUE'];
+                this.datasources = ['',
+                    'AllergyIntolerance',
+                    'Appointment',
+                    'AppointmentResponse',
+                    'AuditEvent',
+                    'Basic',
+                    'Binary',
+                    'BodySite',
+                    'Bundle',
+                    'CarePlan',
+                    'Claim',
+                    'ClaimResponse',
+                    'ClinicalImpression',
+                    'Communication',
+                    'CommunicationRequest',
+                    'Composition',
+                    'ConceptMap',
+                    'Condition',
+                    'Conformance',
+                    'Contract',
+                    'DetectedIssue',
+                    'Coverage',
+                    'DataElement',
+                    'Device',
+                    'DeviceComponent',
+                    'DeviceMetric',
+                    'DeviceUseRequest',
+                    'DeviceUseStatement',
+                    'DiagnosticOrder',
+                    'DiagnosticReport',
+                    'DocumentManifest',
+                    'DocumentReference',
+                    'EligibilityRequest',
+                    'EligibilityResponse',
+                    'Encounter',
+                    'EnrollmentRequest',
+                    'EnrollmentResponse',
+                    'EpisodeOfCare',
+                    'ExplanationOfBenefit',
+                    'FamilyMemberHistory',
+                    'Flag',
+                    'Goal',
+                    'Group',
+                    'HealthcareService',
+                    'ImagingObjectSelection',
+                    'ImagingStudy',
+                    'Immunization',
+                    'ImmunizationRecommendation',
+                    'ImplementationGuide',
+                    'List',
+                    'Location',
+                    'Media',
+                    'Medication',
+                    'MedicationAdministration',
+                    'MedicationDispense',
+                    'MedicationOrder',
+                    'MedicationStatement',
+                    'MessageHeader',
+                    'NamingSystem',
+                    'NutritionOrder',
+                    'Observation',
+                    'OperationDefinition',
+                    'OperationOutcome',
+                    'Order',
+                    'OrderResponse',
+                    'Organization',
+                    'Parameters',
+                    'Patient',
+                    'PaymentNotice',
+                    'PaymentReconciliation',
+                    'Person',
+                    'Practitioner',
+                    'Procedure',
+                    'ProcessRequest',
+                    'ProcessResponse',
+                    'ProcedureRequest',
+                    'Provenance',
+                    'Questionnaire',
+                    'QuestionnaireResponse',
+                    'ReferralRequest',
+                    'RelatedPerson',
+                    'RiskAssessment',
+                    'Schedule',
+                    'SearchParameter',
+                    'Slot',
+                    'Specimen',
+                    'StructureDefinition',
+                    'Subscription',
+                    'Substance',
+                    'SupplyRequest',
+                    'SupplyDelivery',
+                    'TestScript',
+                    'ValueSet',
+                    'VisionPrescription'];
                 this.sortorders = ['', 'ASCENDING', 'DESCENDING'];
                 this.fields = ['', 'EFFECTIVE_DATE', 'TIMESTAMP', 'VALUE'];
                 this.genders = ['', 'MALE', 'FEMALE', 'UNKNOWN'];
@@ -55,37 +148,37 @@ var app;
                 var vm = this;
                 this.termCache = {};
                 this.resultData = test;
-                this.dataSourceOnly = dataSourceOnly;
+                this.resourceOnly = resourceOnly;
                 var ds = {
-                    entity: "",
-                    dataSourceUuid: null,
+                    heading: "",
+                    resourceUuid: null,
                     calculation: null,
                     filter: [],
                     restriction: null
                 };
                 var isAny = {};
                 var newTest = {
-                    dataSource: ds,
-                    dataSourceUuid: null,
+                    resource: ds,
+                    resourceUuid: null,
                     isAny: isAny,
                     fieldTest: []
                 };
-                if (!this.resultData || !this.resultData.dataSource)
+                if (!this.resultData || !this.resultData.resource)
                     this.resultData = newTest;
                 else
                     this.initialiseEditMode(this.resultData);
-                if (!this.dataSourceOnly) {
+                if (!this.resourceOnly) {
                     vm.viewFieldTest = true;
                     vm.title = "Test Editor";
                     vm.disableRestrictionCount = true;
                 }
                 else {
-                    vm.title = "Data Source Editor";
+                    vm.title = "Resource Editor";
                     vm.viewFieldTest = false;
                     vm.disableRestrictionCount = false;
                 }
             }
-            TestEditorController.open = function ($modal, test, dataSourceOnly) {
+            TestEditorController.open = function ($modal, test, resourceOnly) {
                 var options = {
                     templateUrl: 'app/dialogs/testEditor/testEditor.html',
                     controller: 'TestEditorController',
@@ -94,7 +187,7 @@ var app;
                     backdrop: 'static',
                     resolve: {
                         test: function () { return test; },
-                        dataSourceOnly: function () { return dataSourceOnly; }
+                        resourceOnly: function () { return resourceOnly; }
                     }
                 };
                 var dialog = $modal.open(options);
@@ -102,19 +195,19 @@ var app;
             };
             TestEditorController.prototype.initialiseEditMode = function (resultData) {
                 var vm = this;
-                vm.ruleDatasource = resultData.dataSource.entity;
-                this.dataSourceChange(resultData.dataSource.entity);
+                vm.ruleDatasource = resultData.resource.heading;
+                this.resourceChange(resultData.resource.heading);
                 vm.editMode = true;
-                if (resultData.dataSource.filter === null) {
-                    resultData.dataSource.filter = [];
+                if (resultData.resource.filter === null) {
+                    resultData.resource.filter = [];
                 }
-                if (!vm.dataSourceOnly) {
+                if (!vm.resourceOnly) {
                     if (resultData.fieldTest === null) {
                         resultData.fieldTest = [];
                     }
                 }
-                for (var i = 0; i < resultData.dataSource.filter.length; ++i) {
-                    var filter = resultData.dataSource.filter[i];
+                for (var i = 0; i < resultData.resource.filter.length; ++i) {
+                    var filter = resultData.resource.filter[i];
                     var field = filter.field;
                     this.showFilter(field);
                     switch (field) {
@@ -184,7 +277,7 @@ var app;
                         default:
                     }
                 }
-                if (!vm.dataSourceOnly) {
+                if (!vm.resourceOnly) {
                     for (var i = 0; i < resultData.fieldTest.length; ++i) {
                         var fieldTest = resultData.fieldTest[i];
                         var field = fieldTest.field;
@@ -257,10 +350,10 @@ var app;
                         }
                     }
                 }
-                if (resultData.dataSource.restriction) {
+                if (resultData.resource.restriction) {
                     vm.showRestriction = true;
-                    vm.restrictionFieldName = resultData.dataSource.restriction.fieldName;
-                    vm.restrictionOrderDirection = resultData.dataSource.restriction.orderDirection;
+                    vm.restrictionFieldName = resultData.resource.restriction.fieldName;
+                    vm.restrictionOrderDirection = resultData.resource.restriction.orderDirection;
                 }
             };
             TestEditorController.prototype.formatDate = function (inputDate) {
@@ -271,10 +364,10 @@ var app;
                 CodePickerController.open(this.$modal, vm.codeSelection)
                     .result.then(function (resultData) {
                     if (vm.codeSelection.length > 0) {
-                        for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-                            var filter = vm.resultData.dataSource.filter[i];
+                        for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+                            var filter = vm.resultData.resource.filter[i];
                             if (filter.field == "CODE")
-                                vm.resultData.dataSource.filter.splice(i, 1);
+                                vm.resultData.resource.filter.splice(i, 1);
                         }
                     }
                     vm.codeSelection = resultData;
@@ -297,47 +390,47 @@ var app;
                         negate: false
                     };
                     fieldTest.codeSet = codeSet;
-                    vm.resultData.dataSource.filter.push(fieldTest);
+                    vm.resultData.resource.filter.push(fieldTest);
                 });
             };
             TestEditorController.prototype.removeFilter = function (filter) {
                 var vm = this;
-                for (var i = vm.resultData.dataSource.filter.length - 1; i >= 0; --i) {
-                    var f = vm.resultData.dataSource.filter[i];
+                for (var i = vm.resultData.resource.filter.length - 1; i >= 0; --i) {
+                    var f = vm.resultData.resource.filter[i];
                     switch (filter) {
                         case "code":
                             if (f.field == "CODE") {
                                 vm.codeEditor = false;
-                                vm.resultData.dataSource.filter.splice(i, 1);
+                                vm.resultData.resource.filter.splice(i, 1);
                             }
                             break;
                         case "dob":
                             if (f.field == "DOB") {
                                 vm.dobEditor = false;
-                                vm.resultData.dataSource.filter.splice(i, 1);
+                                vm.resultData.resource.filter.splice(i, 1);
                             }
                             break;
                         case "sex":
                             if (f.field == "SEX") {
                                 vm.sexEditor = false;
-                                vm.resultData.dataSource.filter.splice(i, 1);
+                                vm.resultData.resource.filter.splice(i, 1);
                             }
                             break;
                         case "date":
                             if (f.field == "EFFECTIVE_DATE" || f.field == "REGISTRATION_DATE") {
                                 vm.dateEditor = false;
-                                vm.resultData.dataSource.filter.splice(i, 1);
+                                vm.resultData.resource.filter.splice(i, 1);
                             }
                             break;
                         case "value":
                             if (f.field == "VALUE" || f.field == "AGE") {
                                 vm.valueEditor = false;
-                                vm.resultData.dataSource.filter.splice(i, 1);
+                                vm.resultData.resource.filter.splice(i, 1);
                             }
                             break;
                         case "restriction":
                             vm.showRestriction = false;
-                            vm.resultData.dataSource.restriction = null;
+                            vm.resultData.resource.restriction = null;
                             break;
                     }
                 }
@@ -411,9 +504,9 @@ var app;
                     vm.resultData.fieldTest.push(fieldTest);
                 });
             };
-            TestEditorController.prototype.dataSourceChange = function (value) {
+            TestEditorController.prototype.resourceChange = function (value) {
                 var vm = this;
-                this.resultData.dataSource.entity = value;
+                this.resultData.resource.heading = value;
                 vm.codeEditor = false;
                 vm.dateEditor = false;
                 vm.dobEditor = false;
@@ -436,16 +529,17 @@ var app;
                 vm.regFilter = false;
                 vm.viewFieldTest = true;
                 switch (value) {
-                    case "OBSERVATION":
+                    case "Observation":
+                    case "Condition":
                         vm.codeFilter = true;
                         vm.dateFilter = true;
                         vm.valueFilter = true;
                         break;
-                    case "MEDICATION_ISSUE":
+                    case "MedicationOrder":
                         vm.codeFilter = true;
                         vm.dateFilter = true;
                         break;
-                    case "PATIENT":
+                    case "Patient":
                         vm.dobFilter = true;
                         vm.sexFilter = true;
                         vm.ageFilter = true;
@@ -535,18 +629,18 @@ var app;
                     negate: false
                 };
                 var foundEntry = false;
-                for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-                    var filter = vm.resultData.dataSource.filter[i];
+                for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+                    var filter = vm.resultData.resource.filter[i];
                     if (filter.field == dateField && filter.valueFrom && value != "" && value != null) {
                         foundEntry = true;
                         filter.valueFrom = valueFrom;
                         break;
                     }
                     else if (filter.field == dateField && filter.valueFrom && (value == "" || value == null))
-                        vm.resultData.dataSource.filter.splice(i, 1);
+                        vm.resultData.resource.filter.splice(i, 1);
                 }
                 if (!foundEntry && value != "" && value != null)
-                    vm.resultData.dataSource.filter.push(fieldTest);
+                    vm.resultData.resource.filter.push(fieldTest);
             };
             TestEditorController.prototype.filterRelativeDateFromChange = function (value, period, dateField) {
                 var vm = this;
@@ -571,18 +665,18 @@ var app;
                     negate: false
                 };
                 var foundEntry = false;
-                for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-                    var filter = vm.resultData.dataSource.filter[i];
+                for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+                    var filter = vm.resultData.resource.filter[i];
                     if (filter.field == dateField && filter.valueFrom && value != "" && value != null) {
                         foundEntry = true;
                         filter.valueFrom = valueFrom;
                         break;
                     }
                     else if (filter.field == dateField && filter.valueFrom && (value == "" || value == null))
-                        vm.resultData.dataSource.filter.splice(i, 1);
+                        vm.resultData.resource.filter.splice(i, 1);
                 }
                 if (!foundEntry && value != "" && value != null)
-                    vm.resultData.dataSource.filter.push(fieldTest);
+                    vm.resultData.resource.filter.push(fieldTest);
             };
             TestEditorController.prototype.filterDateToChange = function (value, dateField) {
                 var vm = this;
@@ -610,18 +704,18 @@ var app;
                     negate: false
                 };
                 var foundEntry = false;
-                for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-                    var filter = vm.resultData.dataSource.filter[i];
+                for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+                    var filter = vm.resultData.resource.filter[i];
                     if (filter.field == dateField && filter.valueTo && value != "" && value != null) {
                         foundEntry = true;
                         filter.valueTo = valueTo;
                         break;
                     }
                     else if (filter.field == dateField && filter.valueTo && (value == "" || value == null))
-                        vm.resultData.dataSource.filter.splice(i, 1);
+                        vm.resultData.resource.filter.splice(i, 1);
                 }
                 if (!foundEntry && value != "" && value != null)
-                    vm.resultData.dataSource.filter.push(fieldTest);
+                    vm.resultData.resource.filter.push(fieldTest);
             };
             TestEditorController.prototype.filterRelativeDateToChange = function (value, period, dateField) {
                 var vm = this;
@@ -646,18 +740,18 @@ var app;
                     negate: false
                 };
                 var foundEntry = false;
-                for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-                    var filter = vm.resultData.dataSource.filter[i];
+                for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+                    var filter = vm.resultData.resource.filter[i];
                     if (filter.field == dateField && filter.valueTo && value != "" && value != null) {
                         foundEntry = true;
                         filter.valueTo = valueTo;
                         break;
                     }
                     else if (filter.field == dateField && filter.valueTo && (value == "" || value == null))
-                        vm.resultData.dataSource.filter.splice(i, 1);
+                        vm.resultData.resource.filter.splice(i, 1);
                 }
                 if (!foundEntry && value != "" && value != null)
-                    vm.resultData.dataSource.filter.push(fieldTest);
+                    vm.resultData.resource.filter.push(fieldTest);
             };
             TestEditorController.prototype.zeroFill = function (number, width) {
                 width -= number.toString().length;
@@ -686,18 +780,18 @@ var app;
                     negate: false
                 };
                 var foundEntry = false;
-                for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-                    var filter = vm.resultData.dataSource.filter[i];
+                for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+                    var filter = vm.resultData.resource.filter[i];
                     if (filter.field == valueField && filter.valueSet && value != "") {
                         foundEntry = true;
                         filter.valueSet = valueSet;
                         break;
                     }
                     else if (filter.field == valueField && filter.valueSet && value == "")
-                        vm.resultData.dataSource.filter.splice(i, 1);
+                        vm.resultData.resource.filter.splice(i, 1);
                 }
                 if (!foundEntry && value != "")
-                    vm.resultData.dataSource.filter.push(fieldTest);
+                    vm.resultData.resource.filter.push(fieldTest);
             };
             TestEditorController.prototype.filterValueFromChange = function (value) {
                 var vm = this;
@@ -722,18 +816,18 @@ var app;
                     negate: false
                 };
                 var foundEntry = false;
-                for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-                    var filter = vm.resultData.dataSource.filter[i];
+                for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+                    var filter = vm.resultData.resource.filter[i];
                     if (filter.field == vm.valueField && filter.valueFrom && value != "") {
                         foundEntry = true;
                         filter.valueFrom = valueFrom;
                         break;
                     }
                     else if (filter.field == vm.valueField && filter.valueFrom && value == "")
-                        vm.resultData.dataSource.filter.splice(i, 1);
+                        vm.resultData.resource.filter.splice(i, 1);
                 }
                 if (!foundEntry && value != "")
-                    vm.resultData.dataSource.filter.push(fieldTest);
+                    vm.resultData.resource.filter.push(fieldTest);
             };
             TestEditorController.prototype.filterValueToChange = function (value) {
                 var vm = this;
@@ -758,18 +852,18 @@ var app;
                     negate: false
                 };
                 var foundEntry = false;
-                for (var i = 0; i < vm.resultData.dataSource.filter.length; ++i) {
-                    var filter = vm.resultData.dataSource.filter[i];
+                for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+                    var filter = vm.resultData.resource.filter[i];
                     if (filter.field == vm.valueField && filter.valueTo && value != "") {
                         foundEntry = true;
                         filter.valueTo = valueTo;
                         break;
                     }
                     else if (filter.field == vm.valueField && filter.valueTo && value == "")
-                        vm.resultData.dataSource.filter.splice(i, 1);
+                        vm.resultData.resource.filter.splice(i, 1);
                 }
                 if (!foundEntry && value != "")
-                    vm.resultData.dataSource.filter.push(fieldTest);
+                    vm.resultData.resource.filter.push(fieldTest);
             };
             TestEditorController.prototype.fieldTestDateFromChange = function (value, dateField) {
                 var vm = this;
@@ -1029,7 +1123,7 @@ var app;
             TestEditorController.prototype.restrictionChange = function (value) {
                 var vm = this;
                 if (!value || vm.restrictionFieldName == "" || vm.restrictionOrderDirection == "") {
-                    vm.resultData.dataSource.restriction = null;
+                    vm.resultData.resource.restriction = null;
                     return;
                 }
                 var restriction = {
@@ -1037,7 +1131,7 @@ var app;
                     orderDirection: vm.restrictionOrderDirection,
                     count: Number(vm.restrictionCount)
                 };
-                vm.resultData.dataSource.restriction = restriction;
+                vm.resultData.resource.restriction = restriction;
             };
             TestEditorController.prototype.toggleRestriction = function () {
                 var vm = this;
@@ -1046,7 +1140,7 @@ var app;
             ;
             TestEditorController.prototype.save = function () {
                 var vm = this;
-                if (!vm.dataSourceOnly) {
+                if (!vm.resourceOnly) {
                     for (var i = 0; i < vm.resultData.fieldTest.length; ++i) {
                         var ft = vm.resultData.fieldTest[i];
                         if (ft.field == "CODE") {
@@ -1081,7 +1175,7 @@ var app;
                 });
                 return vm.termCache[code];
             };
-            TestEditorController.$inject = ['$uibModalInstance', 'LoggerService', '$uibModal', 'test', 'CodingService', 'dataSourceOnly'];
+            TestEditorController.$inject = ['$uibModalInstance', 'LoggerService', '$uibModal', 'test', 'CodingService', 'resourceOnly'];
             return TestEditorController;
         })(dialogs.BaseDialogController);
         dialogs.TestEditorController = TestEditorController;

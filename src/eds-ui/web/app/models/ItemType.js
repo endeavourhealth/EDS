@@ -8,9 +8,9 @@ var app;
             ItemType[ItemType["Report"] = 1] = "Report";
             ItemType[ItemType["Query"] = 2] = "Query";
             ItemType[ItemType["Test"] = 3] = "Test";
-            ItemType[ItemType["DataSource"] = 4] = "DataSource";
+            ItemType[ItemType["Resource"] = 4] = "Resource";
             ItemType[ItemType["CodeSet"] = 5] = "CodeSet";
-            ItemType[ItemType["ListOutput"] = 6] = "ListOutput";
+            ItemType[ItemType["DataSet"] = 6] = "DataSet";
             ItemType[ItemType["LibraryFolder"] = 7] = "LibraryFolder";
             ItemType[ItemType["Protocol"] = 8] = "Protocol";
             ItemType[ItemType["System"] = 9] = "System"; // 9
@@ -27,11 +27,11 @@ var app;
                         return 'Cohort';
                     case ItemType.Test:
                         return 'Test';
-                    case ItemType.DataSource:
-                        return 'Datasource';
+                    case ItemType.Resource:
+                        return 'Resource';
                     case ItemType.CodeSet:
                         return 'Code set';
-                    case ItemType.ListOutput:
+                    case ItemType.DataSet:
                         return 'Data set';
                     case ItemType.LibraryFolder:
                         return 'Library folder';
@@ -54,11 +54,11 @@ var app;
                         return 'fa-user';
                     case ItemType.Test:
                         return 'fa-random';
-                    case ItemType.DataSource:
+                    case ItemType.Resource:
                         return 'fa-database';
                     case ItemType.CodeSet:
                         return 'fa-tags';
-                    case ItemType.ListOutput:
+                    case ItemType.DataSet:
                         return 'fa-list-alt';
                     case ItemType.LibraryFolder:
                         return 'fa-folder-open';

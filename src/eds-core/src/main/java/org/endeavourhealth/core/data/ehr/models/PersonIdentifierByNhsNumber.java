@@ -14,6 +14,9 @@ public class PersonIdentifierByNhsNumber {
     @Column(name = "organisation_id")
     private UUID organisationId = null;
     @ClusteringColumn(2)
+    @Column(name = "service_id")
+    private UUID serviceId = null;
+    @ClusteringColumn(3)
     @Column(name = "local_id")
     private String localId = null;
     @ClusteringColumn(0)
@@ -21,7 +24,7 @@ public class PersonIdentifierByNhsNumber {
     private String nhsNumber = null;
     @Column(name = "person_id")
     private UUID personId = null;
-    @ClusteringColumn(3)
+    @ClusteringColumn(4)
     @Column(name = "timestamp")
     private Date timestamp = null;
 
@@ -31,6 +34,14 @@ public class PersonIdentifierByNhsNumber {
 
     public void setOrganisationId(UUID organisationId) {
         this.organisationId = organisationId;
+    }
+
+    public UUID getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(UUID serviceId) {
+        this.serviceId = serviceId;
     }
 
     public String getLocalId() {

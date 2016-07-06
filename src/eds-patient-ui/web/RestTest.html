@@ -207,9 +207,18 @@
 		}
 	</script>
 
+<hr/>
+<h3>/patient/api/medicalRecord/getServices</h3>
+<button type="button" onclick="getServices()">Submit</button>
+
+<script>
+	function getServices() {
+		get('/patient/api/medicalRecord/getServices');
+	}
+</script>
 
 <hr/>
-<h3>/patient/api/patientRecord/forServiceId</h3>
+<h3>/patient/api/medicalRecord/forServiceId</h3>
 
 Service ID: <input type="text" id="forServiceIdUuid" value="a469f69d-0e82-451f-988a-211e3125f5cd">
 <br/>
@@ -218,7 +227,7 @@ Service ID: <input type="text" id="forServiceIdUuid" value="a469f69d-0e82-451f-9
 <script>
 	function forServiceId() {
 		var s = document.getElementById('forServiceIdUuid').value;
-		get('/patient/api/patientRecord/forServiceId', 'serviceId=' + s);
+		get('/patient/api/medicalRecord/forServiceId', 'serviceId=' + s);
 	}
 </script>
 

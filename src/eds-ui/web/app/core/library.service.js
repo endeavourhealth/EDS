@@ -41,7 +41,15 @@ var app;
                 return this.httpGet('api/library/getQueries');
             };
             LibraryService.prototype.getDatasets = function () {
-                return this.httpGet('api/library/getListReports');
+                return this.httpGet('api/library/getDataSets');
+            };
+            LibraryService.prototype.getProtocols = function (serviceId) {
+                var request = {
+                    params: {
+                        'serviceId': serviceId
+                    }
+                };
+                return this.httpGet('api/library/getProtocols', request);
             };
             return LibraryService;
         })(core.BaseHttpService);

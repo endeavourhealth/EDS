@@ -15,4 +15,5 @@ public interface ServiceAccessor {
 
 	@Query("SELECT * FROM admin.service WHERE name >= :searchData AND name < :rangeEnd allow filtering")
 	Result<Service> search(@Param("searchData") String searchData, @Param("rangeEnd") String rangeEnd);
+
 }

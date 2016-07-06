@@ -64,6 +64,7 @@ public class ServiceRepository extends Repository {
 		return mapper.get(id);
 	}
 
+
 	public void delete(Service service) {
 		Mapper<Service> serviceMapper = getMappingManager().mapper(Service.class);
 		Mapper<Organisation> orgMapper = getMappingManager().mapper(Organisation.class);
