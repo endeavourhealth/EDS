@@ -30,6 +30,30 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link SftpReaderConfiguration }
+     * 
+     */
+    public SftpReaderConfiguration createSftpReaderConfiguration() {
+        return new SftpReaderConfiguration();
+    }
+
+    /**
+     * Create an instance of {@link SftpReaderConfiguration.Credentials }
+     * 
+     */
+    public SftpReaderConfiguration.Credentials createSftpReaderConfigurationCredentials() {
+        return new SftpReaderConfiguration.Credentials();
+    }
+
+    /**
+     * Create an instance of {@link Pipeline }
+     * 
+     */
+    public Pipeline createPipeline() {
+        return new Pipeline();
+    }
+
+    /**
      * Create an instance of {@link PostToRestConfig }
      * 
      */
@@ -99,14 +123,6 @@ public class ObjectFactory {
      */
     public PGPDecryptConfig createPGPDecryptConfig() {
         return new PGPDecryptConfig();
-    }
-
-    /**
-     * Create an instance of {@link Pipeline }
-     * 
-     */
-    public Pipeline createPipeline() {
-        return new Pipeline();
     }
 
     /**
@@ -182,11 +198,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link Credentials }
+     * Create an instance of {@link org.endeavourhealth.core.configuration.Credentials }
      * 
      */
-    public Credentials createCredentials() {
-        return new Credentials();
+    public org.endeavourhealth.core.configuration.Credentials createCredentials() {
+        return new org.endeavourhealth.core.configuration.Credentials();
     }
 
 }

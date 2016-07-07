@@ -2,10 +2,11 @@
 <SftpReaderConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                          xsi:noNamespaceSchemaLocation="../../../../eds-messaging-core/src/main/resources/SftpReaderConfiguration.xsd">
   <Credentials>
-    <Username>guest</Username>
-    <Password>guest</Password>
+    <Username>test-endeavour</Username>
+    <ClientPrivateKeyFilePath>test-ssh-keypair.pri</ClientPrivateKeyFilePath>
+    <ServerPublicKeyThumbprint>81:66:78:3f:fe:40:ff:ef:c1:75:c0:bb:c8:55:03:b8</ServerPublicKeyThumbprint>
   </Credentials>
-  <Host>localhost</Host>
+  <Host>192.168.0.8</Host>
   <Port>22</Port>
   <Path>/</Path>
   <Filename>*.openHR</Filename>

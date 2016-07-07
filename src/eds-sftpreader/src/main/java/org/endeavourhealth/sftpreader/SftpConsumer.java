@@ -60,7 +60,7 @@ public class SftpConsumer extends TimerTask {
 					configuration.getCredentials().getUsername(),
 					configuration.getHost(),
 					configuration.getPort());
-			session.setPassword(configuration.getCredentials().getPassword());
+
 			Properties properties = new Properties();
 			properties.put("StrictHostKeyChecking", "no");
 			session.setConfig(properties);
