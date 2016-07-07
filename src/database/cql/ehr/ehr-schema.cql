@@ -90,8 +90,8 @@ CREATE TABLE person_identifier (
 	sex text,
 	person_id UUID,
 	timestamp TIMESTAMP,
-	PRIMARY KEY (organisation_id, service_id, local_id, timestamp));
-	WITH CLUSTERING ORDER BY (organisation_id ASC, service_id ASC, local_id ASC, timestamp DESC);
+	PRIMARY KEY (organisation_id, service_id, local_id, timestamp))
+	WITH CLUSTERING ORDER BY (service_id ASC, local_id ASC, timestamp DESC);
 	
 CREATE MATERIALIZED VIEW person_identifier_by_nhs_number AS  
 	SELECT organisation_id, service_id, local_id, nhs_number, person_id, timestamp 

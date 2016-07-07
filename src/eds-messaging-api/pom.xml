@@ -5,14 +5,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.endeavourhealth</groupId>
-    <artifactId>messaging-api</artifactId>
+    <artifactId>eds-messaging-api</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>war</packaging>
     <dependencies>
 
         <!-- dependent on EDS-core and EDS-messaging-core modules-->
         <dependency>
             <groupId>org.endeavourhealth</groupId>
-            <artifactId>messaging-core</artifactId>
+            <artifactId>eds-messaging-core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
 

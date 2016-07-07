@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="EntryPointsManager">
-    <entry_points version="2.0" />
+  <component name="FrameworkDetectionExcludesConfiguration">
+    <file type="web" url="file://$PROJECT_DIR$/eds-messaging-api" />
+    <file type="web" url="file://$PROJECT_DIR$/eds-patient-ui" />
+    <file type="web" url="file://$PROJECT_DIR$/eds-ui" />
   </component>
   <component name="MavenProjectsManager">
     <option name="originalFiles">
       <list>
-        <option value="$PROJECT_DIR$/eds-core/pom.xml" />
-        <option value="$PROJECT_DIR$/eds-transforms/pom.xml" />
-        <option value="$PROJECT_DIR$/eds-queuereader/pom.xml" />
         <option value="$PROJECT_DIR$/eds-messaging-core/pom.xml" />
         <option value="$PROJECT_DIR$/eds-messaging-api/pom.xml" />
+        <option value="$PROJECT_DIR$/eds-core/pom.xml" />
+        <option value="$PROJECT_DIR$/eds-admin/pom.xml" />
+        <option value="$PROJECT_DIR$/eds-queuereader/pom.xml" />
+        <option value="$PROJECT_DIR$/eds-ui/pom.xml" />
+        <option value="$PROJECT_DIR$/eds-transforms/pom.xml" />
         <option value="$PROJECT_DIR$/eds-sftpreader/pom.xml" />
         <option value="$PROJECT_DIR$/eds-clinical/pom.xml" />
-        <option value="$PROJECT_DIR$/eds-admin/pom.xml" />
-        <option value="$PROJECT_DIR$/eds-ui/pom.xml" />
         <option value="$PROJECT_DIR$/eds-patient-ui/pom.xml" />
       </list>
     </option>
@@ -32,5 +34,4 @@
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" default="true" assert-keyword="true" jdk-15="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
-  <component name="WebServicesPlugin" addRequiredLibraries="true" />
 </project>
