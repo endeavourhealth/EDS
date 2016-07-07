@@ -25,7 +25,8 @@ import javax.xml.bind.annotation.XmlType;
  *                 &lt;sequence>
  *                   &lt;element name="Username" type="{}nonEmptyString"/>
  *                   &lt;element name="ClientPrivateKeyFilePath" type="{}nonEmptyString"/>
- *                   &lt;element name="ServerPublicKeyThumbprint" type="{}nonEmptyString"/>
+ *                   &lt;element name="ClientPrivateKeyPassword" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *                   &lt;element name="HostPublicKeyFilePath" type="{}nonEmptyString"/>
  *                 &lt;/sequence>
  *               &lt;/restriction>
  *             &lt;/complexContent>
@@ -246,7 +247,8 @@ public class SftpReaderConfiguration {
      *       &lt;sequence>
      *         &lt;element name="Username" type="{}nonEmptyString"/>
      *         &lt;element name="ClientPrivateKeyFilePath" type="{}nonEmptyString"/>
-     *         &lt;element name="ServerPublicKeyThumbprint" type="{}nonEmptyString"/>
+     *         &lt;element name="ClientPrivateKeyPassword" type="{http://www.w3.org/2001/XMLSchema}string"/>
+     *         &lt;element name="HostPublicKeyFilePath" type="{}nonEmptyString"/>
      *       &lt;/sequence>
      *     &lt;/restriction>
      *   &lt;/complexContent>
@@ -259,7 +261,8 @@ public class SftpReaderConfiguration {
     @XmlType(name = "", propOrder = {
         "username",
         "clientPrivateKeyFilePath",
-        "serverPublicKeyThumbprint"
+        "clientPrivateKeyPassword",
+        "hostPublicKeyFilePath"
     })
     public static class Credentials {
 
@@ -267,8 +270,10 @@ public class SftpReaderConfiguration {
         protected String username;
         @XmlElement(name = "ClientPrivateKeyFilePath", required = true)
         protected String clientPrivateKeyFilePath;
-        @XmlElement(name = "ServerPublicKeyThumbprint", required = true)
-        protected String serverPublicKeyThumbprint;
+        @XmlElement(name = "ClientPrivateKeyPassword", required = true)
+        protected String clientPrivateKeyPassword;
+        @XmlElement(name = "HostPublicKeyFilePath", required = true)
+        protected String hostPublicKeyFilePath;
 
         /**
          * Gets the value of the username property.
@@ -319,27 +324,51 @@ public class SftpReaderConfiguration {
         }
 
         /**
-         * Gets the value of the serverPublicKeyThumbprint property.
+         * Gets the value of the clientPrivateKeyPassword property.
          * 
          * @return
          *     possible object is
          *     {@link String }
          *     
          */
-        public String getServerPublicKeyThumbprint() {
-            return serverPublicKeyThumbprint;
+        public String getClientPrivateKeyPassword() {
+            return clientPrivateKeyPassword;
         }
 
         /**
-         * Sets the value of the serverPublicKeyThumbprint property.
+         * Sets the value of the clientPrivateKeyPassword property.
          * 
          * @param value
          *     allowed object is
          *     {@link String }
          *     
          */
-        public void setServerPublicKeyThumbprint(String value) {
-            this.serverPublicKeyThumbprint = value;
+        public void setClientPrivateKeyPassword(String value) {
+            this.clientPrivateKeyPassword = value;
+        }
+
+        /**
+         * Gets the value of the hostPublicKeyFilePath property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link String }
+         *     
+         */
+        public String getHostPublicKeyFilePath() {
+            return hostPublicKeyFilePath;
+        }
+
+        /**
+         * Sets the value of the hostPublicKeyFilePath property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link String }
+         *     
+         */
+        public void setHostPublicKeyFilePath(String value) {
+            this.hostPublicKeyFilePath = value;
         }
 
     }

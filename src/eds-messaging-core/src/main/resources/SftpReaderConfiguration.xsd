@@ -11,7 +11,8 @@
                         <xs:sequence>
                             <xs:element name="Username" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
                             <xs:element name="ClientPrivateKeyFilePath" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
-                            <xs:element name="ServerPublicKeyThumbprint" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+                            <xs:element name="ClientPrivateKeyPassword" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                            <xs:element name="HostPublicKeyFilePath" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
