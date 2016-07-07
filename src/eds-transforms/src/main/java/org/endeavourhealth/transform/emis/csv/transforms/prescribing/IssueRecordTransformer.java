@@ -56,7 +56,7 @@ public class IssueRecordTransformer {
         fhirMedication.setPrescriber(objectStore.createPractitionerReference(prescriberGuid, patientGuid));
 
         Long codeId = issueParser.getCodeId();
-        fhirMedication.setMedication(objectStore.createMedicationReference(codeId, patientGuid));
+        fhirMedication.setMedication(objectStore.findMedication(codeId));
 
         String dose = issueParser.getDosage();
         MedicationOrder.MedicationOrderDosageInstructionComponent fhirDose = fhirMedication.addDosageInstruction();

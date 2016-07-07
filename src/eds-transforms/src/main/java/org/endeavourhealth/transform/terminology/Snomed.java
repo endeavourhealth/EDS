@@ -4,11 +4,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.ehcache.Cache;
-import org.ehcache.CacheManager;
-import org.ehcache.config.builders.CacheConfigurationBuilder;
-import org.ehcache.config.builders.CacheManagerBuilder;
-import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.apache.jcs.JCS;
+import org.apache.jcs.access.exception.CacheException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,30 +29,27 @@ public class Snomed {
     private static final String TERMLEX = "http://termlex.org/";
 
     private static LinkedList<Client> webClients = new LinkedList<>(); //cache of web clients
-    private static Cache<String, String> cachedTermsForConceptAndDescription = null;
-    private static Cache<Long, List> cachedDescendantForConcept = null;
+    private static JCS cachedTermsForConceptAndDescription = null;
+    private static JCS cachedDescendantForConcept = null;
 
     /**
      * initialise terminology caches
      */
     static {
 
-        CacheManager cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build();
-        cacheManager.init();
-
-        cachedTermsForConceptAndDescription = cacheManager.createCache("TermsForConceptAndDescription",
-                CacheConfigurationBuilder.newCacheConfigurationBuilder(String.class, String.class, ResourcePoolsBuilder.heap(Integer.MAX_VALUE)));
-
-        cachedDescendantForConcept = cacheManager.createCache("DescendantsForConcept",
-                CacheConfigurationBuilder.newCacheConfigurationBuilder(Long.class, List.class, ResourcePoolsBuilder.heap(Integer.MAX_VALUE)));
+        try {
+            cachedTermsForConceptAndDescription = JCS.getInstance("SnomedTermsForConceptAndDescription");
+            cachedDescendantForConcept = JCS.getInstance("SnomedDescendantsForConcept");
+        } catch (CacheException ex) {
+            throw new RuntimeException("Error initialising caches", ex);
+        }
     }
 
-    public static String getTerm(long conceptId, long descriptionId) {
+    public static String getTerm(long conceptId, long descriptionId) throws Exception {
 
         String cacheKey = conceptId + "/" + descriptionId;
-        String term = cachedTermsForConceptAndDescription.get(cacheKey);
+        String term = (String)cachedTermsForConceptAndDescription.get(cacheKey);
         if (term == null) {
-
             JsonElement json = executeTermlexGet("concepts/" + conceptId + "?flavour=ID_DESCRIPTIONS_RELATIONSHIPS");
             JsonObject jsonObj = json.getAsJsonObject();
 
@@ -69,6 +63,11 @@ public class Snomed {
                     break;
                 }
             }
+        }
+
+        //if still null, then something is wrong
+        if (term == null) {
+            throw new RuntimeException("Failed to find Snomed term for concept " + conceptId + " and description " + descriptionId);
         }
 
         return term;
@@ -113,12 +112,12 @@ public class Snomed {
     /**
      * returns all descendant codes
      */
-    public static List<Long> getDescendants(Long conceptCode) {
-        List<Long> descendants = cachedDescendantForConcept.get(conceptCode);
+    public static List<Long> getDescendants(long conceptCode) throws Exception {
+        List<Long> descendants = (List<Long>)cachedDescendantForConcept.get(new Long(conceptCode));
         if (descendants == null) {
             JsonElement json = executeTermlexGet("hierarchy/" + conceptCode + "/descendants");
             descendants = getCodesFromJsonArray(json);
-            cachedDescendantForConcept.put(conceptCode, descendants);
+            cachedDescendantForConcept.put(new Long(conceptCode), descendants);
         }
 
         return descendants;
@@ -173,14 +172,19 @@ public class Snomed {
 
     private static JsonElement executeTermlexGet(String path) {
 
+        String fullPath = TERMLEX + path;
         Client client = borrowClient();
-        WebTarget target = client.target(TERMLEX + path);
-        //target.path(path);
+        WebTarget target = client.target(fullPath);
 
         Invocation.Builder request = target.request();
         request.accept(MediaType.APPLICATION_JSON);
 
-        Response response = request.get();
+        Response response = null;
+        try {
+            response = request.get();
+        } catch (Exception e) {
+            throw new RuntimeException("Error performing termlex query to " + fullPath, e);
+        }
 
         if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
             String s = response.readEntity(String.class);
@@ -189,7 +193,7 @@ public class Snomed {
             JsonParser parser = new JsonParser();
             return parser.parse(s);
         } else {
-            throw new RuntimeException("Error performing termlex query to " + path + " - status code " + response.getStatus());
+            throw new RuntimeException("Error performing termlex query to " + fullPath + " - status code " + response.getStatus());
         }
     }
 

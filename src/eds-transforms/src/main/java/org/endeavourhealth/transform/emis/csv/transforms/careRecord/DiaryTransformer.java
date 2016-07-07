@@ -48,11 +48,12 @@ public class DiaryTransformer {
             return;
         }
 
-        CodeableConcept fhirConcept = objectStore.findClinicalCode(diaryParser.getCodeId()).createCodeableConcept();
-        fhirRequest.setCode(fhirConcept);
+        Long codeId = diaryParser.getCodeId();
+        fhirRequest.setCode(objectStore.findClinicalCode(codeId));
 
         String originalTerm = diaryParser.getOriginalTerm();
         if (!Strings.isNullOrEmpty(originalTerm)) {
+            CodeableConcept fhirConcept = fhirRequest.getCode();
             fhirConcept.setText(originalTerm);
         }
 

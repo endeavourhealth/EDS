@@ -30,13 +30,13 @@ public abstract class AbstractCsvTransformer {
     public AbstractCsvTransformer(String folderPath, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
         String csvFileName = getClass().getSimpleName() + ".csv";
         File file = new File(folderPath, csvFileName);
-        this.csvReader = CSVParser.parse(file, Charset.defaultCharset(), csvFormat.withHeader(""));
+
+        //calling withHeader() on the format, forces it to read in the first row as the headers, which we can then validate against
+        this.csvReader = CSVParser.parse(file, Charset.defaultCharset(), csvFormat.withHeader());
         this.csvIterator = csvReader.iterator();
         this.dateFormat = new SimpleDateFormat(dateFormat);
         this.timeFormat = new SimpleDateFormat(timeFormat);
 
-        //passing in withHeader("") makes the CSV parser read the first row into the header map,
-        //so validate it against what column headers are expected
         Map<String, Integer> headerMap = csvReader.getHeaderMap();
         String[] expectedHeaders = getCsvHeaders();
         if (headerMap.size() != expectedHeaders.length) {

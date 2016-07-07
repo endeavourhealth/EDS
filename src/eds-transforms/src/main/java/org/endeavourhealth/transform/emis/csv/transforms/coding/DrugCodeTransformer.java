@@ -3,7 +3,9 @@ package org.endeavourhealth.transform.emis.csv.transforms.coding;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.emis.csv.schema.Coding_DrugCode;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.transform.fhir.CodingHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.Medication;
 import org.hl7.fhir.instance.model.Meta;
 
@@ -13,9 +15,9 @@ import java.util.HashMap;
 public class DrugCodeTransformer {
 
 
-    public static HashMap<String, Medication> transform(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static HashMap<Long, CodeableConcept> transform(String folderPath, CSVFormat csvFormat) throws Exception {
 
-        HashMap<String, Medication> ret = new HashMap<>();
+        HashMap<Long, CodeableConcept> ret = new HashMap<>();
 
         Coding_DrugCode parser = new Coding_DrugCode(folderPath, csvFormat);
         try {
@@ -29,24 +31,19 @@ public class DrugCodeTransformer {
         return ret;
     }
 
-    private static void transform(Coding_DrugCode drugParser, HashMap<String, Medication> map) {
+    private static void transform(Coding_DrugCode drugParser, HashMap<Long, CodeableConcept> map) {
 
-        Medication fhirMedication = new Medication();
-        fhirMedication.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION));
-
-        String codeId = drugParser.getCodeId().toString();
+        Long codeId = drugParser.getCodeId();
         String term = drugParser.getTerm();
         Long dmdId = drugParser.getDmdProductCodeId();
 
-        //ID is set on the resource when it's copied for use in the object store
-        //fhirMedication.setId(codeId);
-
+        CodeableConcept fhirConcept = null;
         if (dmdId == null) {
-            fhirMedication.setCode(CodeableConceptHelper.createCodeableConcept(term));
+            fhirConcept = CodeableConceptHelper.createCodeableConcept(term);
         } else {
-            fhirMedication.setCode(CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_SNOMED_CT, term, dmdId.toString()));
+            fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_SNOMED_CT, term, dmdId.toString());
         }
 
-        map.put(codeId, fhirMedication);
+        map.put(codeId, fhirConcept);
     }
 }

@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.TransformException;
 import org.hl7.fhir.instance.model.*;
 
+import java.sql.Ref;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,6 +52,17 @@ public class ReferenceHelper
         }
 
         return parts[1];
+    }
+
+    public static ReferenceComponents getReferenceComponents(Reference reference) {
+        if (reference == null)
+            return null;
+
+        String[] parts = reference.getReference().split("\\/");
+        String resourceTypeStr = parts[0];
+        String id = parts[1];
+        ResourceType resourceType = ResourceType.valueOf(resourceTypeStr);
+        return new ReferenceComponents(resourceType, id);
     }
 
     public static Boolean referenceEquals(Reference reference, ResourceType resourceType, String id)

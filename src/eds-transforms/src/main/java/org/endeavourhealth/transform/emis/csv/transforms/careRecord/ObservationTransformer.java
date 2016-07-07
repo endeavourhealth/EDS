@@ -3,10 +3,9 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Observation;
-import org.endeavourhealth.transform.emis.csv.ClinicalCode;
-import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.ImmunizationStatus;
 import org.endeavourhealth.transform.terminology.Snomed;
@@ -106,8 +105,15 @@ public class ObservationTransformer {
     }
 
     private static boolean isProcedure(CareRecord_Observation observationParser, EmisCsvHelper objectStore) throws Exception {
-        ClinicalCode clinicalCode = objectStore.findClinicalCode(observationParser.getCodeId());
-        return Snomed.isProcedureCode(clinicalCode.getSnomedConceptId());
+        CodeableConcept fhirConcept = objectStore.findClinicalCode(observationParser.getCodeId());
+        for (Coding coding: fhirConcept.getCoding()) {
+            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_SNOMED_CT)) {
+                String code = coding.getCode();
+                return Snomed.isProcedureCode(Long.parseLong(code));
+            }
+        }
+
+        throw new TransformException("Failed to determine if CodeableConcept is procedure or not");
     }
 
     private static void createDiagnosticReport(CareRecord_Observation observationParser, EmisCsvHelper objectStore) throws Exception {
@@ -133,8 +139,7 @@ public class ObservationTransformer {
         fhirReport.setStatus(DiagnosticReport.DiagnosticReportStatus.FINAL);
 
         Long codeId = observationParser.getCodeId();
-        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
-        fhirReport.setCode(clinicalCode.createCodeableConcept());
+        fhirReport.setCode(objectStore.findClinicalCode(codeId));
 
         String consultationGuid = observationParser.getConsultationGuid();
         if (!Strings.isNullOrEmpty(consultationGuid)) {
@@ -191,9 +196,8 @@ public class ObservationTransformer {
         }
 
         Long codeId = observationParser.getCodeId();
-        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
         DiagnosticOrder.DiagnosticOrderItemComponent diagnosticOrderItemComponent = fhirOrder.addItem();
-        diagnosticOrderItemComponent.setCode(clinicalCode.createCodeableConcept());
+        diagnosticOrderItemComponent.setCode(objectStore.findClinicalCode(codeId));
 
         String associatedText = observationParser.getAssociatedText();
         fhirOrder.addNote(AnnotationHelper.createAnnotation(associatedText));
@@ -236,8 +240,7 @@ public class ObservationTransformer {
         fhirAllergy.setRecordedDate(enteredDate);
 
         Long codeId = observationParser.getCodeId();
-        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
-        fhirAllergy.setSubstance(clinicalCode.createCodeableConcept());
+        fhirAllergy.setSubstance(objectStore.findClinicalCode(codeId));
         //TODO - need to convert Snomed allergy code to FHIR substance
 
         Date effectiveDate = observationParser.getEffectiveDate();
@@ -283,8 +286,7 @@ public class ObservationTransformer {
         fhirProcedure.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROCEDURED_RECORDED, new DateTimeType(enteredDate)));
 
         Long codeId = observationParser.getCodeId();
-        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
-        fhirProcedure.setCode(clinicalCode.createCodeableConcept());
+        fhirProcedure.setCode(objectStore.findClinicalCode(codeId));
 
         Date effectiveDate = observationParser.getEffectiveDate();
         String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
@@ -331,8 +333,7 @@ public class ObservationTransformer {
         fhirCondition.setDateRecorded(enteredDate);
 
         Long codeId = observationParser.getCodeId();
-        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
-        fhirCondition.setCode(clinicalCode.createCodeableConcept());
+        fhirCondition.setCode(objectStore.findClinicalCode(codeId));
 
         fhirCondition.setClinicalStatus("active"); //if we have a Problem record for this condition, this status may be changed
 
@@ -384,8 +385,7 @@ public class ObservationTransformer {
         fhirObservation.setIssued(enteredDate);
 
         Long codeId = observationParser.getCodeId();
-        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
-        fhirObservation.setCode(clinicalCode.createCodeableConcept());
+        fhirObservation.setCode(objectStore.findClinicalCode(codeId));
 
         String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
         fhirObservation.addPerformer(objectStore.createPractitionerReference(clinicianGuid, patientGuid));
@@ -475,8 +475,7 @@ public class ObservationTransformer {
         FamilyMemberHistory.FamilyMemberHistoryConditionComponent fhirCondition = fhirFamilyHistory.addCondition();
 
         Long codeId = observationParser.getCodeId();
-        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
-        fhirCondition.setCode(clinicalCode.createCodeableConcept());
+        fhirCondition.setCode(objectStore.findClinicalCode(codeId));
 
         String associatedText = observationParser.getAssociatedText();
         fhirCondition.setNote(AnnotationHelper.createAnnotation(associatedText));
@@ -525,8 +524,7 @@ public class ObservationTransformer {
         fhirImmunisation.setDateElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         Long codeId = observationParser.getCodeId();
-        ClinicalCode clinicalCode = objectStore.findClinicalCode(codeId);
-        fhirImmunisation.setVaccineCode(clinicalCode.createCodeableConcept());
+        fhirImmunisation.setVaccineCode(objectStore.findClinicalCode(codeId));
 
         String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
         Reference reference = objectStore.createPractitionerReference(clinicianGuid, patientGuid);

@@ -61,7 +61,7 @@ public class DrugRecordTransformer {
         }
 
         Long codeId = drugRecordParser.getCodeId();
-        fhirMedication.setMedication(objectStore.createMedicationReference(codeId, patientGuid));
+        fhirMedication.setMedication(objectStore.findMedication(codeId));
 
         String dose = drugRecordParser.getDosage();
         MedicationStatement.MedicationStatementDosageComponent fhirDose = fhirMedication.addDosage();

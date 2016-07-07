@@ -9,8 +9,8 @@ import java.util.*;
 public class EmisCsvHelper {
 
     //metadata, not relating to patients
-    private Map<Long, ClinicalCode> clinicalCodes = null;
-    private Map<String, Medication> fhirMedication = null;
+    private Map<Long, CodeableConcept> clinicalCodes = null;
+    private Map<Long, CodeableConcept> fhirMedication = null;
     private Map<String, Location> fhirLocations = null;
     private Map<String, Organization> fhirOrganisations = null;
     private Map<String, Practitioner> fhirPractitioners = null;
@@ -19,7 +19,7 @@ public class EmisCsvHelper {
     //patient Resources, keyed by patient ID
     private Map<String, FhirPatientStore> fhirPatientStores = new HashMap<>();
 
-    public EmisCsvHelper(Map<Long, ClinicalCode> clinicalCodes, Map<String, Medication> fhirMedication,
+    public EmisCsvHelper(Map<Long, CodeableConcept> clinicalCodes, Map<Long, CodeableConcept> fhirMedication,
                          Map<String, Location> fhirLocations, Map<String, Organization> fhirOrganisations,
                          Map<String, Practitioner> fhirPractitioners, Map<String, Schedule> fhirSchedules) {
 
@@ -51,12 +51,20 @@ public class EmisCsvHelper {
         return new ArrayList<>(fhirPatientStores.values());
     }
 
-    public ClinicalCode findClinicalCode(Long id) throws Exception {
-        ClinicalCode ret = clinicalCodes.get(id);
+    public CodeableConcept findClinicalCode(Long id) throws Exception {
+        CodeableConcept ret = clinicalCodes.get(id);
         if (ret == null) {
-            throw new TransformException("Failed to find ClinicalCode for id " + id);
+            throw new TransformException("Failed to find code CodeableConcept for id " + id);
         }
-        return ret;
+        return ret.copy();
+    }
+
+    public CodeableConcept findMedication(Long id) throws Exception {
+        CodeableConcept ret = fhirMedication.get(id);
+        if (ret == null) {
+            throw new TransformException("Failed to find medication CodeableConcept for id " + id);
+        }
+        return ret.copy();
     }
 
 
@@ -94,14 +102,7 @@ public class EmisCsvHelper {
         }
     }
 
-    private void validateAndCopyMedication(String resourceId, String patientGuid) throws Exception {
 
-        Medication medication = validateAndCopyResource(resourceId, patientGuid, fhirMedication, fhirPatientStores.get(patientGuid));
-
-        if (medication != null) {
-            //medication doesn't refer to any other external Resources
-        }
-    }
     private void validateAndCopyLocation(String resourceId, String patientGuid) throws Exception {
 
         Location location = validateAndCopyResource(resourceId, patientGuid, fhirLocations, fhirPatientStores.get(patientGuid));
@@ -204,10 +205,10 @@ public class EmisCsvHelper {
         }
     }
 
-    public Reference createMedicationReference(Long medicationId, String patientGuid) throws Exception {
+/*    public Reference createMedicationReference(Long medicationId, String patientGuid) throws Exception {
         validateAndCopyMedication(medicationId.toString(), patientGuid);
         return ReferenceHelper.createReference(ResourceType.Medication, createUniqueId(patientGuid, medicationId.toString()));
-    }
+    }*/
 
     public Reference createLocationReference(String locationGuid, String patientGuid) throws Exception {
         validateAndCopyLocation(locationGuid, patientGuid);

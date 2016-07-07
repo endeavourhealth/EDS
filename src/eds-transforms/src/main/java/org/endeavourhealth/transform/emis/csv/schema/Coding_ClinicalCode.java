@@ -18,11 +18,11 @@ public class Coding_ClinicalCode extends AbstractCsvTransformer {
                 "CodeId",
                 "Term",
                 "ReadTermId",
-                "NationalCodeCategory",
-                "NationalCode",
-                "NationalDescription",
                 "SnomedCTConceptId",
                 "SnomedCTDescriptionId",
+                "NationalCode",
+                "NationalCodeCategory",
+                "NationalDescription",
                 "EmisCodeCategoryDescription",
                 "ProcessingId"
         };
@@ -37,20 +37,20 @@ public class Coding_ClinicalCode extends AbstractCsvTransformer {
     public String getReadTermId() {
         return super.getString(2);
     }
-    public String getNationalCodeCategory() {
-        return super.getString(3);
-    }
-    public String getNationalCode() {
-        return super.getString(4);
-    }
-    public String getNationalDescription() {
-        return super.getString(5);
-    }
     public Long getSnomedCTConceptId() {
-        return super.getLong(6);
+        return super.getLong(3);
     }
     public Long getSnomedCTDescriptionId() {
-        return super.getLong(7);
+        return super.getLong(4);
+    }
+    public String getNationalCode() {
+        return super.getString(5);
+    }
+    public String getNationalCodeCategory() {
+        return super.getString(6);
+    }
+    public String getNationalDescription() {
+        return super.getString(7);
     }
     public String getEmisCodeCategoryDescription() {
         return super.getString(8);

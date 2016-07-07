@@ -17,6 +17,8 @@ DROP TABLE IF EXISTS person_consent_organisation;
 DROP MATERIALIZED VIEW IF EXISTS person_identifier;
 DROP TABLE IF EXISTS person_identifier_by_nhs_number;
 
+DROP TABLE IS EXISTS resource_id_map;
+
 CREATE TABLE person_resource (  person_id uuid,  resource_type text,  service_id uuid,  system_instance_id uuid,  resource_id text,
   effective_date timestamp,
   version text,
@@ -102,4 +104,12 @@ CREATE MATERIALIZED VIEW person_identifier_by_nhs_number AS
 	AND service_id IS NOT NULL
 	PRIMARY KEY(nhs_number, organisation_id, service_id, local_id, timestamp); 
 
+CREATE TABLE resource_id_map (
+	service_id UUID, 
+	system_instance_id UUID, 
+	resource_type text, 
+	source_id text, 
+	eds_id UUID, 
+	PRIMARY KEY ((service_id), system_instance_id, resource_type, source_id));
 	
+		
