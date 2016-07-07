@@ -32,7 +32,7 @@ mvn clean package
 
 ```bash
 cp src/eds-ui/target/eds-ui-1.0-SNAPSHOT.WAR /opt/eds/tomcat/webapps/ROOT.war
-cp src/eds-message-api/target/messaging-api-1.0-SNAPSHOT.WAR /opt/eds/tomcat/webapps/messaging.war
+cp src/eds-message-api/target/eds-messaging-api-1.0-SNAPSHOT.WAR /opt/eds/tomcat/webapps/messaging.war
 ```
 
      
