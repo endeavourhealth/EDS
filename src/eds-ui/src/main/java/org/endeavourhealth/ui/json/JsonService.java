@@ -9,6 +9,7 @@ import java.util.UUID;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class JsonService {
     private UUID uuid = null;
+    private String localIdentifier = null;
     private String name = null;
     private Map<UUID, String> organisations = null;
 
@@ -17,6 +18,7 @@ public final class JsonService {
 
     public JsonService(Service service) {
         this.uuid = service.getId();
+        this.localIdentifier = service.getLocalIdentifier();
         this.name = service.getName();
         this.organisations = service.getOrganisations();
     }
@@ -46,5 +48,13 @@ public final class JsonService {
 
     public void setOrganisations(Map<UUID, String> organisations) {
         this.organisations = organisations;
+    }
+
+    public String getLocalIdentifier() {
+        return localIdentifier;
+    }
+
+    public void setLocalIdentifier(String localIdentifier) {
+        this.localIdentifier = localIdentifier;
     }
 }

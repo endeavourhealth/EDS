@@ -18,6 +18,7 @@
 								<thead>
 									<tr>
 										<th class="col-md-5">Name</th>
+										<th class="col-md-6">Local Identifier</th>
 										<th class="col-md-1"></th>
 									</tr>
 								</thead>
@@ -27,6 +28,7 @@
 												<a ng-click="ctrl.edit(item)">{{item.name}}</a>
 												<span class="fa fa-info-circle fa-right-pad text-muted" uib-tooltip="{{item.description}}" ng-show="item.description"></span>
 										</td>
+										<td>{{item.localIdentifier}}</td>
 										<td>
 											<button type="button" class="btn btn-danger btn-xs child-to-show pull-right" ng-click="ctrl.delete(item)"><span class="fa fa-remove"></span></button>
 										</td>

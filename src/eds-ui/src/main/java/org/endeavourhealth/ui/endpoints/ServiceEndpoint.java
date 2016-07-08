@@ -34,6 +34,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 		Service dbService = new Service();
 		dbService.setId(service.getUuid());
 		dbService.setName(service.getName());
+		dbService.setLocalIdentifier(service.getLocalIdentifier());
 		dbService.setOrganisations(service.getOrganisations());
 		UUID serviceId = repository.save(dbService);
 

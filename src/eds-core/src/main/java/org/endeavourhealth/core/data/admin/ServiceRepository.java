@@ -92,5 +92,9 @@ public class ServiceRepository extends Repository {
 		return accessor.search(searchData, rangeEnd);
 	}
 
+	public Iterable<Service> getByLocalIdentifier(String localIdentifier) {
+		ServiceAccessor accessor = getMappingManager().createAccessor(ServiceAccessor.class);
+		return accessor.getByLocalIdentifier(localIdentifier);
+	}
 }
 

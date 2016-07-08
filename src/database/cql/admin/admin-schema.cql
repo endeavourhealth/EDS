@@ -208,16 +208,25 @@ create table service
 (
 	id UUID,
 	name TEXT,
+	local_identifier TEXT,
 	organisations map<UUID, TEXT>,
 	primary key (id)
 );
+
+CREATE MATERIALIZED VIEW service_by_local_identifier AS
+SELECT local_identifier, id
+FROM service
+WHERE local_identifier IS NOT NULL
+AND id IS NOT NULL
+PRIMARY KEY ((local_identifier), id)
+WITH CLUSTERING ORDER BY (local_identifier ASC);
 
 CREATE TABLE organisation 
   ( 
     id UUID,
     name TEXT,
     national_id TEXT,
-	services map<UUID, TEXT>,
+		services map<UUID, TEXT>,
     PRIMARY KEY (id) 
   );
 

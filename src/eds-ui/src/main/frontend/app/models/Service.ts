@@ -3,6 +3,7 @@ module app.models {
 
 	export class Service {
 		uuid:string;
+		localIdentifier : string;
 		name:string;
 		organisations:{ [key:string]:string; };
 

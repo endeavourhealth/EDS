@@ -40,20 +40,20 @@ module app.service {
 				.open(vm.$modal, item)
 				.result
 				.then(function(result : Service) {
-					vm.save(result);
+					vm.save(item, result);
 				});
 		}
 
-		save(item : Service) {
+		save(original : Service, edited : Service) {
 			var vm = this;
-			vm.serviceService.save(item)
-				.then(function(savedService : Service) {
-					if (item.uuid)
-						jQuery.extend(true, item, savedService);
+			vm.serviceService.save(edited)
+				.then(function(saved : Service) {
+					if (original.uuid)
+						jQuery.extend(true, original, saved);
 					else
-						vm.services.push(savedService);
+						vm.services.push(saved);
 
-					vm.log.success('Service saved', item, 'Save service');
+					vm.log.success('Service saved', original, 'Save service');
 				})
 				.catch(function (error : any) {
 					vm.log.error('Failed to save service', error, 'Save service');

@@ -16,4 +16,6 @@ public interface ServiceAccessor {
 	@Query("SELECT * FROM admin.service WHERE name >= :searchData AND name < :rangeEnd allow filtering")
 	Result<Service> search(@Param("searchData") String searchData, @Param("rangeEnd") String rangeEnd);
 
+	@Query("SELECT * FROM admin.service_by_local_identifier WHERE local_identifier = :localIdentifier")
+	Result<Service> getByLocalIdentifier(@Param("localIdentifier") String localIdentifier);
 }

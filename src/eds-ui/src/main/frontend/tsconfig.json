@@ -5,7 +5,8 @@
 		"noImplicitAny": true,
 		"suppressImplicitAnyIndexErrors": true,
 		"rootDir": ".",
-	        "sourceMap": true
+		"sourceMap": true,
+		"outDir":"../webapp"
 	},
 	"exclude": [
 		"node_modules",

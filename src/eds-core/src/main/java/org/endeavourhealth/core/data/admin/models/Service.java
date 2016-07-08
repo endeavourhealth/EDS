@@ -13,6 +13,8 @@ public class Service {
     @PartitionKey
     @Column(name = "id")
     private UUID id;
+    @Column(name = "local_identifier")
+    private String localIdentifier;
     @Column(name = "name")
     private String name;
     @Column(name = "organisations")
@@ -43,5 +45,13 @@ public class Service {
             this.organisations = new HashMap<>();
         else
             this.organisations = organisations;
+    }
+
+    public String getLocalIdentifier() {
+        return localIdentifier;
+    }
+
+    public void setLocalIdentifier(String localIdentifier) {
+        this.localIdentifier = localIdentifier;
     }
 }

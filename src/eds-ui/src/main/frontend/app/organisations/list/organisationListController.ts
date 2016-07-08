@@ -38,20 +38,20 @@ module app.organisation {
 			var vm = this;
 			OrganisationEditorController.open(vm.$modal, item)
 				.result.then(function(result : Organisation) {
-				vm.save(result);
+				vm.save(item, result);
 			});
 		}
 
-		save(item : Organisation) {
+		save(original : Organisation, edited : Organisation) {
 			var vm = this;
-			vm.organisationService.saveOrganisation(item)
-				.then(function(savedOrganisation : Organisation) {
-					if (item.uuid)
-						jQuery.extend(true, item, savedOrganisation);
+			vm.organisationService.saveOrganisation(edited)
+				.then(function(saved : Organisation) {
+					if (original.uuid)
+						jQuery.extend(true, original, saved);
 					else
-						vm.organisations.push(savedOrganisation);
+						vm.organisations.push(saved);
 
-					vm.log.success('Organisation saved', item, 'Save organisation');
+					vm.log.success('Organisation saved', original, 'Save organisation');
 				})
 				.catch(function (error : any) {
 					vm.log.error('Failed to save organisation', error, 'Save organisation');
