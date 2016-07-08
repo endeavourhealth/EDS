@@ -7,7 +7,6 @@ import org.apache.commons.io.IOUtils;
 import org.endeavourhealth.core.configuration.SftpReaderConfiguration;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
-import org.endeavourhealth.core.utility.FileHelper;
 import org.slf4j.*;
 
 import java.io.ByteArrayInputStream;
@@ -19,47 +18,65 @@ import java.nio.file.Paths;
 import java.util.TimerTask;
 import java.util.Vector;
 
-public class SftpConsumer extends TimerTask {
+public class SftpConsumer extends TimerTask
+{
 	private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(SftpConsumer.class);
 
 	private PipelineProcessor pipeline;
 	private SftpReaderConfiguration configuration;
 	private JSch jSch;
 
-	public SftpConsumer(SftpReaderConfiguration configuration) {
+	public SftpConsumer(SftpReaderConfiguration configuration)
+	{
 		this.configuration = configuration;
 		this.pipeline = new PipelineProcessor(configuration.getPipeline());
 		this.jSch = new JSch();
 	}
 
 	@Override
-	public void run() {
+	public void run()
+	{
 		Session session = null;
-		Channel channel = null;
+		ChannelSftp channel = null;
 
-		try {
+		try
+		{
 			session = getSession();
-			session.connect();
-			channel = session.openChannel("sftp");
-			channel.connect();
-			ChannelSftp channelSftp = (ChannelSftp)channel;
-			channelSftp.cd(configuration.getPath());
-			Vector fileList = channelSftp.ls(configuration.getFilename());
-			for (int i = 0; i<fileList.size(); i++) {
-				ChannelSftp.LsEntry entry = (ChannelSftp.LsEntry)fileList.get(i);
-				InputStream stream = channelSftp.get(entry.getFilename());
-				String messageData = IOUtils.toString(stream);
-				Exchange exchange = new Exchange(messageData);
-				pipeline.execute(exchange);
-			}
-		} catch (Exception e) {
+			channel = getChannel(session);
+
+			channel.cd(configuration.getPath());
+			Vector<ChannelSftp.LsEntry> fileList = channel.ls(configuration.getFilename());
+
+			for (ChannelSftp.LsEntry file : fileList)
+				processFile(file.getFilename(), channel.get(file.getFilename()));
+		}
+		catch (Exception e)
+		{
 			LOG.error(e.getMessage());
-		} finally {
+		}
+		finally
+		{
 			if (channel != null && channel.isConnected())
 				channel.disconnect();
+
 			if (session != null && session.isConnected())
 				session.disconnect();
 		}
+	}
+
+	private void processFile(String filename, InputStream fileStream) throws IOException
+	{
+		String messageData = IOUtils.toString(fileStream);
+		Exchange exchange = new Exchange(messageData);
+		pipeline.execute(exchange);
+	}
+
+	private ChannelSftp getChannel(Session session) throws JSchException
+	{
+		Channel channel = session.openChannel("sftp");
+		channel.connect();
+
+		return (ChannelSftp)channel;
 	}
 
 	private Session getSession() throws JSchException, IOException
@@ -72,6 +89,8 @@ public class SftpConsumer extends TimerTask {
 				configuration.getCredentials().getUsername(),
 				configuration.getHost(),
 				configuration.getPort());
+
+		session.connect();
 
 		return session;
 	}
