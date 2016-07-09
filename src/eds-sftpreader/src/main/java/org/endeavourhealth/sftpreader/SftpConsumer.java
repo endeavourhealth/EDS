@@ -3,6 +3,7 @@ package org.endeavourhealth.sftpreader;
 import com.google.common.io.Resources;
 import com.jcraft.jsch.*;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.endeavourhealth.core.configuration.SftpReaderConfiguration;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -13,8 +14,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.TimerTask;
 import java.util.Vector;
 
@@ -44,11 +44,20 @@ public class SftpConsumer extends TimerTask
 			session = getSession();
 			channel = getChannel(session);
 
-			channel.cd(configuration.getPath());
-			Vector<ChannelSftp.LsEntry> fileList = channel.ls(configuration.getFilename());
+			channel.cd(configuration.getRemotePath());
+			Vector<ChannelSftp.LsEntry> fileList = channel.ls(configuration.getRemotePath());
 
 			for (ChannelSftp.LsEntry file : fileList)
-				processFile(file.getFilename(), channel.get(file.getFilename()));
+			{
+				if (!file.getAttrs().isDir())
+				{
+					try (InputStream inputStream = channel.get(file.getFilename()))
+					{
+						String localPath = FilenameUtils.concat(configuration.getLocalPath(), file.getFilename());
+						Files.copy(inputStream, new File(localPath).toPath(), StandardCopyOption.REPLACE_EXISTING);
+					}
+				}
+			}
 		}
 		catch (Exception e)
 		{
@@ -62,13 +71,6 @@ public class SftpConsumer extends TimerTask
 			if (session != null && session.isConnected())
 				session.disconnect();
 		}
-	}
-
-	private void processFile(String filename, InputStream fileStream) throws IOException
-	{
-		String messageData = IOUtils.toString(fileStream);
-		Exchange exchange = new Exchange(messageData);
-		pipeline.execute(exchange);
 	}
 
 	private ChannelSftp getChannel(Session session) throws JSchException

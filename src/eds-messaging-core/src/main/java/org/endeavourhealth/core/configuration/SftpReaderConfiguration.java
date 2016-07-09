@@ -34,8 +34,8 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;/element>
  *         &lt;element name="Host" type="{}nonEmptyString"/>
  *         &lt;element name="Port" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
- *         &lt;element name="Path" type="{}nonEmptyString" minOccurs="0"/>
- *         &lt;element name="Filename" type="{}nonEmptyString" minOccurs="0"/>
+ *         &lt;element name="RemotePath" type="{}nonEmptyString"/>
+ *         &lt;element name="LocalPath" type="{}nonEmptyString"/>
  *         &lt;element name="Polltime" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *         &lt;element name="Pipeline" type="{}Pipeline"/>
  *       &lt;/sequence>
@@ -51,8 +51,8 @@ import javax.xml.bind.annotation.XmlType;
     "credentials",
     "host",
     "port",
-    "path",
-    "filename",
+    "remotePath",
+    "localPath",
     "polltime",
     "pipeline"
 })
@@ -65,10 +65,10 @@ public class SftpReaderConfiguration {
     protected String host;
     @XmlElement(name = "Port")
     protected Integer port;
-    @XmlElement(name = "Path")
-    protected String path;
-    @XmlElement(name = "Filename")
-    protected String filename;
+    @XmlElement(name = "RemotePath", required = true)
+    protected String remotePath;
+    @XmlElement(name = "LocalPath", required = true)
+    protected String localPath;
     @XmlElement(name = "Polltime")
     protected int polltime;
     @XmlElement(name = "Pipeline", required = true)
@@ -147,51 +147,51 @@ public class SftpReaderConfiguration {
     }
 
     /**
-     * Gets the value of the path property.
+     * Gets the value of the remotePath property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getPath() {
-        return path;
+    public String getRemotePath() {
+        return remotePath;
     }
 
     /**
-     * Sets the value of the path property.
+     * Sets the value of the remotePath property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setPath(String value) {
-        this.path = value;
+    public void setRemotePath(String value) {
+        this.remotePath = value;
     }
 
     /**
-     * Gets the value of the filename property.
+     * Gets the value of the localPath property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getFilename() {
-        return filename;
+    public String getLocalPath() {
+        return localPath;
     }
 
     /**
-     * Sets the value of the filename property.
+     * Sets the value of the localPath property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setFilename(String value) {
-        this.filename = value;
+    public void setLocalPath(String value) {
+        this.localPath = value;
     }
 
     /**

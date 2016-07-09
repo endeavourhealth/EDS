@@ -18,8 +18,8 @@
                 </xs:element>
                 <xs:element name="Host" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
                 <xs:element name="Port" type="xs:int" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="Path" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="Filename" type="nonEmptyString" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="RemotePath" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+                <xs:element name="LocalPath" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
                 <xs:element name="Polltime" type="xs:int" minOccurs="1" maxOccurs="1"/>
                 <xs:element name="Pipeline" type="Pipeline" minOccurs="1" maxOccurs="1"/>
             </xs:sequence>
