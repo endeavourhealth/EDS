@@ -3,11 +3,11 @@
     <entry>
         <resource>
             <MessageHeader>
-                <id value="PHYSIO01"/>
+                <id value="35663c09-0a0e-45c3-9989-e00334225906"/>
                 <timestamp value="2001-10-26T21:32:52"/>
                 <event/>
                 <source>
-                    <name value="35663c09-0a0e-45c3-9989-e00334225906"/>
+                    <name value="GP01"/>
                     <software value="EMISWeb"/>
                     <endpoint value="http://source.uri.com"/>
                 </source>

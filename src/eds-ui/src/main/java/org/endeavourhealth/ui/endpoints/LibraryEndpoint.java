@@ -1,6 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
 import org.endeavourhealth.core.data.admin.LibraryRepository;
+import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.admin.models.*;
 import org.endeavourhealth.core.data.admin.models.System;
 import org.endeavourhealth.ui.framework.security.Unsecured;
@@ -411,36 +412,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @Unsecured
     public Response getProtocols(@QueryParam("serviceId") String serviceId) throws Exception {
 
-        DefinitionItemType itemType = DefinitionItemType.Protocol;
-
-        Iterable<ActiveItem> activeItems = null;
-        List<Item> items = new ArrayList();
-        
-        LibraryRepository repository = new LibraryRepository();
-
-        activeItems = repository.getActiveItemByTypeId(itemType.getValue(), false);
-
-        for (ActiveItem activeItem: activeItems) {
-            Item item = repository.getItemByKey(activeItem.getItemId(), activeItem.getAuditId());
-            if (item.getIsDeleted()==false)
-                items.add(item);
-        }
-
-        List<LibraryItem> ret = new ArrayList<>();
-
-        for (int i = 0; i < items.size(); i++) {
-            Item item = items.get(i);
-            String xml = item.getXmlContent();
-            LibraryItem libraryItem = QueryDocumentSerializer.readLibraryItemFromXml(xml);
-            Protocol protocol = libraryItem.getProtocol();
-            List<ServiceContract> serviceContracts = protocol.getServiceContract();
-            for (int s = 0; s < serviceContracts.size(); s++) {
-                ServiceContract service = serviceContracts.get(s);
-                if (service.getService().getUuid().equals(serviceId)) {
-                    ret.add(QueryDocumentSerializer.readLibraryItemFromXml(xml));
-                }
-            }
-       }
+        List<LibraryItem> ret = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId);
 
         clearLogbackMarkers();
 
