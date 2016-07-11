@@ -40,23 +40,35 @@ public class DetermineRelevantProtocolIds implements PipelineComponent {
 
 		Service service = services.iterator().next();
 
-		// Determine relevant protocols
-		List<String> protocolIds = getProtocolIdsForService(service.getId(), exchange);
+		// Determine relevant publisher protocols
+		List<String> protocolIds = getProtocolIdsForPublisherService(service.getId());
 		if (protocolIds.size() == 0)
-			throw new PipelineException("No protocols found for service");
+			throw new PipelineException("No publisher protocols found for service");
 
 		exchange.setHeader(HeaderKeys.ProtocolIds, String.join(",", protocolIds));
-		LOG.debug("Data distribution protocols Loaded");
+		LOG.debug("Data distribution protocols identified");
 	}
 
-	private List<String> getProtocolIdsForService(UUID serviceId, Exchange exchange) throws PipelineException {
+	private List<String> getProtocolIdsForPublisherService(UUID serviceId) throws PipelineException {
 		List<LibraryItem> libraryItemList = null;
+
+		// Get all protocols the service is involved in...
 		try {
 			libraryItemList = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId.toString());
 		} catch (Exception e) {
 			throw new PipelineException(e.getMessage());
 		}
 
-		return libraryItemList.stream().map(LibraryItem::getUuid).collect(Collectors.toList());
+		// Get protocols where service is publisher
+		List<LibraryItem> publisherProtocols = libraryItemList.stream()
+				.filter(
+						libraryItem -> libraryItem.getProtocol().getServiceContract().stream()
+								.anyMatch(sc ->
+										sc.getType().equals("PUBLISHER")
+										&& sc.getService().getUuid().equals(serviceId.toString())))
+				.collect(Collectors.toList());
+
+		// Map to library item ids
+		return 	publisherProtocols.stream().map(LibraryItem::getUuid).collect(Collectors.toList());
 	}
 }
