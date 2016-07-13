@@ -6,7 +6,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PostToEventStore implements PipelineComponent {
+public class PostToEventStore extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(PostToEventStore.class);
 
 	private PostToEventStoreConfig config;

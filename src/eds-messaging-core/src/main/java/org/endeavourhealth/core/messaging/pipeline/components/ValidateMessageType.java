@@ -7,7 +7,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ValidateMessageType implements PipelineComponent {
+public class ValidateMessageType extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(ValidateMessageType.class);
 
 	private ValidateMessageTypeConfig config;
@@ -18,7 +18,10 @@ public class ValidateMessageType implements PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		String Sender = exchange.getHeader(HeaderKeys.Sender);
+		String sender = exchange.getHeader(HeaderKeys.Sender);
+		String contentType = exchange.getHeader(HeaderKeys.ContentType);
+		String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
+		String messageEvent = exchange.getHeader(HeaderKeys.MessageEvent);
 		String body = exchange.getBody();
 
 		// Determine type of message

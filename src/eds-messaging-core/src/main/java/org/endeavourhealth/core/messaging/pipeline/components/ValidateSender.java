@@ -8,7 +8,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ValidateSender implements PipelineComponent {
+public class ValidateSender extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(ValidateSender.class);
 
 	private ValidateSenderConfig config;

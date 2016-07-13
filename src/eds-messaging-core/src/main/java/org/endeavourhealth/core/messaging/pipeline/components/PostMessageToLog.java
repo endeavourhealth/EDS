@@ -9,7 +9,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PostMessageToLog implements PipelineComponent {
+public class PostMessageToLog extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToLog.class);
 
 	private PostMessageToLogConfig config;

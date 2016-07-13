@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.Response;
 
-public class PostToSubscriberWebService implements PipelineComponent {
+public class PostToSubscriberWebService extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(PostToSubscriberWebService.class);
 
 	private PostToSubscriberWebServiceConfig config;

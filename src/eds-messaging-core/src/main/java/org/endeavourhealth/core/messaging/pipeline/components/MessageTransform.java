@@ -7,7 +7,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MessageTransform implements PipelineComponent {
+public class MessageTransform extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(MessageTransform.class);
 
 	private MessageTransformConfig config;

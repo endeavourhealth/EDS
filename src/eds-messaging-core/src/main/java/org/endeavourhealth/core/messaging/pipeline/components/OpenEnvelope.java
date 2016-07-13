@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OpenEnvelope implements PipelineComponent {
+public class OpenEnvelope extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(OpenEnvelope.class);
 
 	private OpenEnvelopeConfig config;
@@ -32,12 +32,8 @@ public class OpenEnvelope implements PipelineComponent {
 		// Extract envelope properties to exchange properties
 		String body = exchange.getBody();
 
-		String format = exchange.getHeader(HeaderKeys.ContentType);
-		IParser parser;
-		if (format != null && "text/xml".equals(format))
-			parser = new XmlParser();
-		else
-			parser = new JsonParser();
+		String contentType = exchange.getHeader(HeaderKeys.ContentType);
+		IParser parser = getParser(contentType);
 
 		try {
 			Bundle bundle = (Bundle)parser.parse(body);
@@ -75,6 +71,7 @@ public class OpenEnvelope implements PipelineComponent {
 		exchange.setHeader(HeaderKeys.Sender, messageHeader.getSource().getName());
 		exchange.setHeader(HeaderKeys.ResponseUri, messageHeader.getSource().getEndpoint());
 		exchange.setHeader(HeaderKeys.SourceSystem, messageHeader.getSource().getSoftware());
+		exchange.setHeader(HeaderKeys.MessageEvent, messageHeader.getEvent().getCode());
 
 		processDestinations(exchange, messageHeader);
 	}

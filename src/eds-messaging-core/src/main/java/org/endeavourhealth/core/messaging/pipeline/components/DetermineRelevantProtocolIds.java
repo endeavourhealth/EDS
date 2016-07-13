@@ -1,5 +1,7 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.configuration.DetermineRelevantProtocolIdsConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
@@ -16,8 +18,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class DetermineRelevantProtocolIds implements PipelineComponent {
-	private static final String apiAddress = "http://localhost:8888/api";
+public class DetermineRelevantProtocolIds extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(DetermineRelevantProtocolIds.class);
 
 	private DetermineRelevantProtocolIdsConfig config;
@@ -41,16 +42,27 @@ public class DetermineRelevantProtocolIds implements PipelineComponent {
 		Service service = services.iterator().next();
 
 		// Determine relevant publisher protocols
-		List<String> protocolIds = getProtocolIdsForPublisherService(service.getId());
-		if (protocolIds.size() == 0)
+		List<LibraryItem> protocols = getProtocolsForPublisherService(service.getId());
+		if (protocols.size() == 0)
 			throw new PipelineException("No publisher protocols found for service");
 
-		exchange.setHeader(HeaderKeys.ProtocolIds, String.join(",", protocolIds));
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			String protocolsJson = mapper.writeValueAsString(protocols);
+			exchange.setHeader(HeaderKeys.ProtocolData, protocolsJson);
+		} catch (JsonProcessingException e) {
+			LOG.error("Unable to serialize protocols to JSON");
+			throw new PipelineException(e.getMessage());
+		}
+
+		List<String> protocolIds = protocols.stream().map(LibraryItem::getUuid).collect(Collectors.toList());
+		exchange.setHeader(HeaderKeys.ProtocolIds, String.join(",",protocolIds));
+
 		LOG.debug("Data distribution protocols identified");
 	}
 
-	private List<String> getProtocolIdsForPublisherService(UUID serviceId) throws PipelineException {
-		List<LibraryItem> libraryItemList = null;
+	private List<LibraryItem> getProtocolsForPublisherService(UUID serviceId) throws PipelineException {
+		List<LibraryItem> libraryItemList;
 
 		// Get all protocols the service is involved in...
 		try {
@@ -60,15 +72,12 @@ public class DetermineRelevantProtocolIds implements PipelineComponent {
 		}
 
 		// Get protocols where service is publisher
-		List<LibraryItem> publisherProtocols = libraryItemList.stream()
+		return libraryItemList.stream()
 				.filter(
 						libraryItem -> libraryItem.getProtocol().getServiceContract().stream()
 								.anyMatch(sc ->
 										sc.getType().equals("PUBLISHER")
 										&& sc.getService().getUuid().equals(serviceId.toString())))
 				.collect(Collectors.toList());
-
-		// Map to library item ids
-		return 	publisherProtocols.stream().map(LibraryItem::getUuid).collect(Collectors.toList());
 	}
 }

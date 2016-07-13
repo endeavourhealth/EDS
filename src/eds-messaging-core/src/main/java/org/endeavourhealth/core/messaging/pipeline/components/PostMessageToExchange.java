@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
-public class PostMessageToExchange implements PipelineComponent {
+public class PostMessageToExchange extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(PostMessageToExchange.class);
 
 	private PostMessageToExchangeConfig config;
@@ -27,72 +27,106 @@ public class PostMessageToExchange implements PipelineComponent {
 	}
 
 	@Override
-	public void process(Exchange exchange) throws IOException, PipelineException, TimeoutException {
+	public void process(Exchange exchange) throws PipelineException {
 		String routingKey = getRoutingKey(exchange);
 
 		// Generate message identifier and store message in db
 		UUID messageUuid = UUID.randomUUID();
 		new QueuedMessageRepository().save(messageUuid, exchange.getBody());
 
-		Channel channel = null;
-		try {
-			Connection connection = ConnectionManager.getConnection(
-					config.getCredentials().getUsername(),
-					config.getCredentials().getPassword(),
-					config.getNodes()
-			);
+		Connection connection = getConnection();
+		Channel channel = getChannel(connection);
 
-			channel = ConnectionManager.getPublishChannel(connection, config.getExchange());
+		Map<String, Object> headers = new HashMap<>();
+		for (String key : exchange.getHeaders().keySet())
+			headers.put(key, exchange.getHeader(key));
 
-			Map<String, Object> headers = new HashMap<>();
-			for (String key : exchange.getHeaders().keySet())
-				headers.put(key, exchange.getHeader(key));
+		AMQP.BasicProperties properties = new AMQP.BasicProperties()
+				.builder()
+				.deliveryMode(2)    // Persistent message
+				.headers(headers)
+				.build();
 
-			AMQP.BasicProperties properties = new AMQP.BasicProperties()
-					.builder()
-					.deliveryMode(2)		// Persistent message
-					.headers(headers)
-					.build();
 
-			channel.confirmSelect();
+		// Handle multicast
+		String multicastHeader = config.getMulticastHeader();
+		if (multicastHeader == null || multicastHeader.isEmpty()) {
+			publishMessage(routingKey, messageUuid, channel, properties);
+		} else {
+			String[] multicastValues = exchange.getHeader(multicastHeader).split(",", -1);
 
-			// Handle multicast
-			String multicastHeader = config.getMulticastHeader();
-			if (multicastHeader == null || multicastHeader.isEmpty()) {
-				channel.basicPublish(
-						config.getExchange(),
-						routingKey,
-						properties,
-						messageUuid.toString().getBytes());
-			} else {
-				String[] multicastValues = exchange.getHeader(multicastHeader).split(",", -1);
-
-				for (String multicastValue : multicastValues) {
-					// Replace header list with individual value
-					headers.put(multicastHeader, multicastValue);
-					properties = properties.builder().headers(headers).build();
-					channel.basicPublish(
-							config.getExchange(),
-							routingKey,
-							properties,
-							messageUuid.toString().getBytes());
-				}
+			for (String multicastValue : multicastValues) {
+				// Replace header list with individual value
+				headers.put(multicastHeader, multicastValue);
+				properties = properties.builder().headers(headers).build();
+				publishMessage(routingKey, messageUuid, channel, properties);
 			}
+		}
 
+		waitForConfirmations(channel);
+		closeChannel(channel);
+	}
+
+	private void closeChannel(Channel channel) {
+		if (channel != null)
+			try {
+				channel.close();
+			} catch (IOException e) {
+				LOG.warn("Couldn't close Rabbit channel : ", e);
+			} catch (TimeoutException e) {
+				e.printStackTrace();
+			}
+	}
+
+	private void waitForConfirmations(Channel channel) throws PipelineException {
+		try {
 			if (!channel.waitForConfirms())
 				throw new PipelineException("Messages posted but not confirmed");
 			else
 				LOG.debug("Message posted to exchange");
-		}
-		catch (TimeoutException e) {
-			LOG.error("Queue connection timed out");
-			throw new PipelineException(e.getMessage());
 		} catch (InterruptedException e) {
-			LOG.error("Unable to post message");
-			throw new PipelineException("Unable to post message to exchange");
-		} finally {
-			if (channel != null)
-				channel.close();
+			e.printStackTrace();
+		}
+	}
+
+	private void publishMessage(String routingKey, UUID messageUuid, Channel channel, AMQP.BasicProperties properties) throws PipelineException {
+		try {
+			channel.basicPublish(
+					config.getExchange(),
+					routingKey,
+					properties,
+					messageUuid.toString().getBytes());
+		} catch (IOException e) {
+			LOG.error("Unable to publish message");
+			throw new PipelineException("Unable to publish message: " + e.getMessage());
+		}
+	}
+
+	private Channel getChannel(Connection connection) throws PipelineException {
+		Channel channel;
+		try {
+			channel = ConnectionManager.getPublishChannel(connection, config.getExchange());
+			channel.confirmSelect();
+		} catch (IOException e) {
+			LOG.error("Unable to get publish channel");
+			throw new PipelineException("Unable to get publish channel: " + e.getMessage());
+		}
+		return channel;
+	}
+
+	private Connection getConnection() throws PipelineException {
+		try {
+			return ConnectionManager.getConnection(
+							config.getCredentials().getUsername(),
+							config.getCredentials().getPassword(),
+							config.getNodes()
+					);
+		} catch (IOException e) {
+			LOG.error("Unable to connect to rabbit");
+			throw new PipelineException("Unable to connect to Rabbit : " + e.getMessage());
+		} catch (TimeoutException e) {
+			LOG.error("Connection to Rabbit timed out");
+			throw new PipelineException("Connection to rabbit timed out : " + e.getMessage());
 		}
 	}
 

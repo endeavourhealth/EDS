@@ -15,7 +15,9 @@ import javax.ws.rs.core.Response;
 
 import org.glassfish.jersey.client.ClientConfig;
 
-public class PostToRest implements PipelineComponent {
+import java.util.Set;
+
+public class PostToRest extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(PostToRest.class);
 
 	private PostToRestConfig config;
@@ -44,9 +46,10 @@ public class PostToRest implements PipelineComponent {
 
 		// Is there a restricted header list?
 		String[] headersToSend;
-		if (config.getSendHeaders() == null || config.getSendHeaders().isEmpty())
-			headersToSend = exchange.getHeaders().keySet().toArray(new String[0]);
-		else
+		if (config.getSendHeaders() == null || config.getSendHeaders().isEmpty()) {
+			Set<String> headerKeys = exchange.getHeaders().keySet();
+			headersToSend = headerKeys.toArray(new String[headerKeys.size()]);
+		} else
 			headersToSend = config.getSendHeaders().split(",", -1);
 
 		for (String key : headersToSend) {

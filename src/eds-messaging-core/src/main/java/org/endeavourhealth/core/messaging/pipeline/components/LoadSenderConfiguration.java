@@ -6,7 +6,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LoadSenderConfiguration implements PipelineComponent {
+public class LoadSenderConfiguration extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(LoadSenderConfiguration.class);
 
 	private LoadSenderConfigurationConfig config;

@@ -18,7 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-public class EnvelopMessage implements PipelineComponent {
+public class EnvelopMessage extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(EnvelopMessage.class);
 
 	private EnvelopMessageConfig config;
@@ -35,13 +35,9 @@ public class EnvelopMessage implements PipelineComponent {
 		Bundle bundle = buildBundle(messageHeader, binary);
 
 		try {
-			String format = exchange.getHeader(HeaderKeys.ContentType);
+			String contentType = exchange.getHeader(HeaderKeys.ContentType);
 
-			IParser parser = null;
-			if (format != null && "text/xml".equals(format))
-				parser = new XmlParser();
-			else
-				parser = new JsonParser();
+			IParser parser = getParser(contentType);
 
 			String bundleXml = parser.composeString(bundle);
 			exchange.setBody(bundleXml);
@@ -65,9 +61,9 @@ public class EnvelopMessage implements PipelineComponent {
 		messageHeader.setSource(source);
 
 		String addresses = exchange.getHeader(HeaderKeys.DestinationAddress);
-		List<String> addressList = Arrays.asList(addresses.split("\\s*,\\s*"));
 
 		if (addresses != null) {
+			List<String> addressList = Arrays.asList(addresses.split("\\s*,\\s*"));
 			for (String address : addressList) {
 				MessageHeader.MessageDestinationComponent destination = new MessageHeader.MessageDestinationComponent();
 				destination.setEndpoint(address);

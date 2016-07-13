@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Date;
 import java.util.UUID;
 
-public class ReturnResponseAcknowledgement implements PipelineComponent {
+public class ReturnResponseAcknowledgement extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(ReturnResponseAcknowledgement.class);
 
 	private ReturnResponseAcknowledgementConfig config;
@@ -32,13 +32,9 @@ public class ReturnResponseAcknowledgement implements PipelineComponent {
 		MessageHeader messageHeader = buildMessageHeader(exchange);
 
 		try {
-			String format = exchange.getHeader(HeaderKeys.ContentType);
+			String contentType = exchange.getHeader(HeaderKeys.ContentType);
 
-			IParser parser = null;
-			if (format != null && "text/xml".equals(format))
-				parser = new XmlParser();
-			else
-				parser = new JsonParser();
+			IParser parser = getParser(contentType);
 
 			String message = parser.composeString(messageHeader);
 			exchange.setBody(message);
