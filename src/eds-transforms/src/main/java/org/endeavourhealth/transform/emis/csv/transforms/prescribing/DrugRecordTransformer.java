@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Prescribing_DrugRecord;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -14,19 +15,24 @@ import java.util.Date;
 
 public class DrugRecordTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
+    public static void transform(String folderPath,
+                                 CSVFormat csvFormat,
+                                 CsvProcessor csvProcessor,
+                                 EmisCsvHelper csvHelper) throws Exception {
 
         Prescribing_DrugRecord parser = new Prescribing_DrugRecord(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createResource(parser, objectStore);
+                createResource(parser, csvProcessor, csvHelper);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createResource(Prescribing_DrugRecord drugRecordParser, EmisCsvHelper objectStore) throws Exception {
+    private static void createResource(Prescribing_DrugRecord drugRecordParser,
+                                       CsvProcessor csvProcessor,
+                                       EmisCsvHelper csvHelper) throws Exception {
 
         MedicationStatement fhirMedication = new MedicationStatement();
         fhirMedication.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_AUTHORISATION));
@@ -37,18 +43,16 @@ public class DrugRecordTransformer {
 
         EmisCsvHelper.setUniqueId(fhirMedication, patientGuid, drugRecordGuid);
 
-        fhirMedication.setPatient(objectStore.createPatientReference(patientGuid));
-
-        boolean store = !drugRecordParser.getDeleted() && !drugRecordParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirMedication, store);
+        fhirMedication.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (!store) {
+        if (drugRecordParser.getDeleted() || drugRecordParser.getIsConfidential()) {
+            csvProcessor.deletePatientResource(fhirMedication, patientGuid);
             return;
         }
 
         String clinicianGuid = drugRecordParser.getClinicianUserInRoleGuid();
-        fhirMedication.setInformationSource(objectStore.createPractitionerReference(clinicianGuid, patientGuid));
+        fhirMedication.setInformationSource(csvHelper.createPractitionerReference(clinicianGuid));
 
         Date effectiveDate = drugRecordParser.getEffectiveDate();
         String effectiveDatePrecision = drugRecordParser.getEffectiveDatePrecision();
@@ -61,7 +65,7 @@ public class DrugRecordTransformer {
         }
 
         Long codeId = drugRecordParser.getCodeId();
-        fhirMedication.setMedication(objectStore.findMedication(codeId));
+        fhirMedication.setMedication(csvHelper.findMedication(codeId));
 
         String dose = drugRecordParser.getDosage();
         MedicationStatement.MedicationStatementDosageComponent fhirDose = fhirMedication.addDosage();
@@ -85,11 +89,11 @@ public class DrugRecordTransformer {
         }
 
         String problemObservationGuid = drugRecordParser.getProblemObservationGuid();
-        objectStore.linkToProblem(fhirMedication, problemObservationGuid, patientGuid);
+        csvHelper.linkToProblem(fhirMedication, problemObservationGuid, patientGuid);
 
         //if the Medication is linked to a Problem, then use the problem's Observation as the Medication reason
         if (problemObservationGuid != null) {
-            fhirMedication.setReasonForUse(objectStore.createObservationReference(problemObservationGuid, patientGuid));
+            fhirMedication.setReasonForUse(csvHelper.createObservationReference(problemObservationGuid, patientGuid));
         }
 
         Date cancellationDate = drugRecordParser.getCancellationDate();
@@ -99,6 +103,9 @@ public class DrugRecordTransformer {
         }
 
         //NOTE: first and most recent issue dates are set at the end of the IssueRecordTransformer
+        //TODO - first and most recent issue dates on FHIR MedicationStatement
+
+        csvProcessor.savePatientResource(fhirMedication, patientGuid);
     }
 
 }

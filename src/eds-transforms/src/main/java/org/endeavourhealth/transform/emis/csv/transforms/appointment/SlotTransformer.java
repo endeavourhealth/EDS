@@ -1,29 +1,36 @@
 package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
 import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.emis.csv.schema.Appointment_Slot;
+import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.Appointment_Slot;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Appointment;
+import org.hl7.fhir.instance.model.Meta;
+import org.hl7.fhir.instance.model.Slot;
 
 import java.util.Date;
 
 public class SlotTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
+    public static void transform(String folderPath,
+                                 CSVFormat csvFormat,
+                                 CsvProcessor csvProcessor,
+                                 EmisCsvHelper csvHelper) throws Exception {
 
         Appointment_Slot parser = new Appointment_Slot(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createSlotAndAppointment(parser, objectStore);
+                createSlotAndAppointment(parser, csvProcessor, csvHelper);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createSlotAndAppointment(Appointment_Slot slotParser, EmisCsvHelper objectStore) throws Exception {
+    private static void createSlotAndAppointment(Appointment_Slot slotParser,
+                                                 CsvProcessor csvProcessor,
+                                                 EmisCsvHelper csvHelper) throws Exception {
 
         String patientGuid = slotParser.getPatientGuid();
         String organisationGuid = slotParser.getOrganisationGuid();
@@ -40,17 +47,15 @@ public class SlotTransformer {
         //use the same slot GUID as the appointment GUID, since it's a different resource type, it should be fine
         EmisCsvHelper.setUniqueId(fhirAppointment, patientGuid, slotGuid);
 
-        boolean store = !slotParser.getDeleted();
-        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirSlot, store);
-        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirAppointment, store);
-
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (!store) {
+        if (slotParser.getDeleted()) {
+            csvProcessor.deleteAdminResource(fhirSlot);
+            csvProcessor.deletePatientResource(fhirAppointment, patientGuid);
             return;
         }
 
         String sessionGuid = slotParser.getSessionGuid();
-        fhirSlot.setSchedule(objectStore.createScheduleReference(sessionGuid, patientGuid));
+        fhirSlot.setSchedule(csvHelper.createScheduleReference(sessionGuid));
 
         fhirSlot.setFreeBusyType(Slot.SlotStatus.BUSY);
 
@@ -64,10 +69,10 @@ public class SlotTransformer {
 
         fhirAppointment.setStart(startDate);
         fhirAppointment.setEnd(new Date(endMillis));
-        fhirAppointment.addSlot(ReferenceHelper.createReference(ResourceType.Slot, slotGuid));
+        fhirAppointment.addSlot(csvHelper.createSlotReference(slotGuid));
 
         Appointment.AppointmentParticipantComponent fhirParticipant = fhirAppointment.addParticipant();
-        fhirParticipant.setActor(objectStore.createPatientReference(patientGuid));
+        fhirParticipant.setActor(csvHelper.createPatientReference(patientGuid));
         fhirParticipant.setStatus(Appointment.ParticipationStatus.ACCEPTED);
 
         if (slotParser.getDidNotAttend()) {
@@ -80,5 +85,7 @@ public class SlotTransformer {
             fhirAppointment.setStatus(Appointment.AppointmentStatus.BOOKED);
         }
 
+        csvProcessor.saveAdminResource(fhirSlot);
+        csvProcessor.savePatientResource(fhirAppointment, patientGuid);
     }
 }

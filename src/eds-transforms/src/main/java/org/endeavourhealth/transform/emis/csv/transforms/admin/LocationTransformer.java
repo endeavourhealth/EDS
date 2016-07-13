@@ -2,6 +2,8 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Location;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
@@ -13,38 +15,40 @@ import java.util.UUID;
 
 public class LocationTransformer {
 
-    public static HashMap<String, Location> transform(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static void transform(String folderPath,
+                                 CSVFormat csvFormat,
+                                 CsvProcessor csvProcessor,
+                                 EmisCsvHelper csvHelper) throws Exception {
 
         //to create the FHIR location resources, parse the Admin_OrganisationLocation file first
         //to get a map of which organisations each location belongs to
         HashMap<String, String> hmLocationToOrganisation = OrganisationLocationTransformer.transform(folderPath, csvFormat);
 
-        HashMap<String, Location> fhirLocationMap = new HashMap<>();
-
         Admin_Location parser = new Admin_Location(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createLocation(parser, fhirLocationMap, hmLocationToOrganisation);
+                createLocation(parser, csvProcessor, csvHelper, hmLocationToOrganisation);
             }
         } finally {
             parser.close();
         }
-
-        return fhirLocationMap;
     }
 
-    private static void createLocation(Admin_Location locationParser, HashMap<String, Location> fhirLocations, HashMap<String, String> hmLocationToOrganisation) throws Exception {
+    private static void createLocation(Admin_Location locationParser,
+                                       CsvProcessor csvProcessor,
+                                       EmisCsvHelper csvHelper,
+                                       HashMap<String, String> hmLocationToOrganisation) throws Exception {
 
         Location fhirLocation = new Location();
         fhirLocation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_LOCATION));
 
         String locationGuid = locationParser.getLocationGuid();
+        fhirLocation.setId(locationGuid);
 
-        //ID is set on the resource when it's copied for use in the object store
-        //fhirLocation.setId(locationGuid);
-
-        //add to map for later use
-        fhirLocations.put(locationGuid, fhirLocation);
+        if (locationParser.getDeleted()) {
+            csvProcessor.deleteAdminResource(fhirLocation);
+            return;
+        }
 
         String houseNameFlat = locationParser.getHouseNameFlatNumber();
         String numberAndStreet = locationParser.getNumberAndStreet();
@@ -93,13 +97,14 @@ public class LocationTransformer {
 
         String parentLocationGuid = locationParser.getParentLocationId();
         if (parentLocationGuid != null) {
-            fhirLocation.setPartOf(ReferenceHelper.createReference(ResourceType.Location, parentLocationGuid));
+            fhirLocation.setPartOf(csvHelper.createLocationReference(parentLocationGuid));
         }
 
         String organisationGuid = hmLocationToOrganisation.get(locationGuid);
         if (organisationGuid != null) {
-            fhirLocation.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, organisationGuid));
+            fhirLocation.setManagingOrganization(csvHelper.createOrganisationReference(organisationGuid));
         }
 
+        csvProcessor.saveAdminResource(fhirLocation);
     }
 }

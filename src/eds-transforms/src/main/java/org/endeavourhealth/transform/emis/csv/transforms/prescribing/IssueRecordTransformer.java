@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Prescribing_IssueRecord;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -14,19 +15,24 @@ import java.util.*;
 
 public class IssueRecordTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
+    public static void transform(String folderPath,
+                                 CSVFormat csvFormat,
+                                 CsvProcessor csvProcessor,
+                                 EmisCsvHelper csvHelper) throws Exception {
 
         Prescribing_IssueRecord parser = new Prescribing_IssueRecord(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createResource(parser, objectStore);
+                createResource(parser, csvProcessor, csvHelper);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createResource(Prescribing_IssueRecord issueParser, EmisCsvHelper objectStore) throws Exception {
+    private static void createResource(Prescribing_IssueRecord issueParser,
+                                       CsvProcessor csvProcessor,
+                                       EmisCsvHelper csvHelper) throws Exception {
 
         MedicationOrder fhirMedication = new MedicationOrder();
         fhirMedication.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_ORDER));
@@ -37,13 +43,11 @@ public class IssueRecordTransformer {
 
         EmisCsvHelper.setUniqueId(fhirMedication, patientGuid, issueGuid);
 
-        fhirMedication.setPatient(objectStore.createPatientReference(patientGuid));
-
-        boolean store = !issueParser.getDeleted() && !issueParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirMedication, store);
+        fhirMedication.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (!store) {
+        if (issueParser.getDeleted() || issueParser.getIsConfidential()) {
+            csvProcessor.deletePatientResource(fhirMedication, patientGuid);
             return;
         }
 
@@ -53,10 +57,10 @@ public class IssueRecordTransformer {
         fhirMedication.setDateWrittenElement(dateTime);
 
         String prescriberGuid = issueParser.getClinicianUserInRoleGuid();
-        fhirMedication.setPrescriber(objectStore.createPractitionerReference(prescriberGuid, patientGuid));
+        fhirMedication.setPrescriber(csvHelper.createPractitionerReference(prescriberGuid));
 
         Long codeId = issueParser.getCodeId();
-        fhirMedication.setMedication(objectStore.findMedication(codeId));
+        fhirMedication.setMedication(csvHelper.findMedication(codeId));
 
         String dose = issueParser.getDosage();
         MedicationOrder.MedicationOrderDosageInstructionComponent fhirDose = fhirMedication.addDosageInstruction();
@@ -74,16 +78,18 @@ public class IssueRecordTransformer {
         fhirMedication.setDispenseRequest(fhirDispenseRequest);
 
         String problemObservationGuid = issueParser.getProblemObservationGuid();
-        objectStore.linkToProblem(fhirMedication, problemObservationGuid, patientGuid);
+        csvHelper.linkToProblem(fhirMedication, problemObservationGuid, patientGuid);
 
         //if the Medication is linked to a Problem, then use the problem's Observation as the Medication reason
         if (problemObservationGuid != null) {
-            fhirMedication.setReason(objectStore.createObservationReference(problemObservationGuid, patientGuid));
+            fhirMedication.setReason(csvHelper.createObservationReference(problemObservationGuid, patientGuid));
         }
 
         String drugRecordGuid = issueParser.getDrugRecordGuid();
-        Reference authorisationReference = objectStore.createMedicationStatementReference(drugRecordGuid, patientGuid);
+        Reference authorisationReference = csvHelper.createMedicationStatementReference(drugRecordGuid, patientGuid);
         fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_ORDER_AUTHORISATION, authorisationReference));
+
+        csvProcessor.savePatientResource(fhirMedication, patientGuid);
     }
 
 }

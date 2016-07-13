@@ -1,6 +1,8 @@
 package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Organisation;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
@@ -13,34 +15,30 @@ import java.util.UUID;
 
 public class OrganisationTransformer {
 
-    public static HashMap<String, Organization> transform(String folderPath, CSVFormat csvFormat) throws Exception {
-
-        HashMap<String, Organization> fhirOrganisationMap = new HashMap<>();
+    public static void transform(String folderPath,
+                                 CSVFormat csvFormat,
+                                 CsvProcessor csvProcessor,
+                                 EmisCsvHelper csvHelper) throws Exception {
 
         Admin_Organisation parser = new Admin_Organisation(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createOrganisation(parser, fhirOrganisationMap);
+                createOrganisation(parser, csvProcessor, csvHelper);
             }
         } finally {
             parser.close();
         }
-
-        return fhirOrganisationMap;
     }
 
-    private static void createOrganisation(Admin_Organisation organisationParser, HashMap<String, Organization> fhirOrganisationMap) throws Exception {
+    private static void createOrganisation(Admin_Organisation organisationParser,
+                                           CsvProcessor csvProcessor,
+                                           EmisCsvHelper csvHelper) throws Exception {
 
         Organization fhirOrganisation = new Organization();
         fhirOrganisation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ORGANIZATION));
 
         String orgGuid = organisationParser.getOrganisationGuid();
-
-        //ID is set on the resource when it's copied for use in the object store
-        //fhirOrganisation.setId(orgGuid);
-
-        //add to map for later use
-        fhirOrganisationMap.put(orgGuid, fhirOrganisation);
+        fhirOrganisation.setId(orgGuid);
 
         String odsCode = organisationParser.getODScode();
         Identifier fhirIdentifier = IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, FhirUri.IDENTIFIER_SYSTEM_ODS_CODE, odsCode);
@@ -57,24 +55,25 @@ public class OrganisationTransformer {
 
         String parentOrganisationGuid = organisationParser.getParentOrganisationGuid();
         if (parentOrganisationGuid != null) {
-            fhirOrganisation.setPartOf(ReferenceHelper.createReference(ResourceType.Organization, parentOrganisationGuid));
+            fhirOrganisation.setPartOf(csvHelper.createOrganisationReference(parentOrganisationGuid));
         }
 
         String ccgOrganisationGuid = organisationParser.getCCGOrganisationGuid();
         if (ccgOrganisationGuid != null) {
-            fhirOrganisation.setPartOf(ReferenceHelper.createReference(ResourceType.Organization, ccgOrganisationGuid));
+            fhirOrganisation.setPartOf(csvHelper.createOrganisationReference(ccgOrganisationGuid));
         }
 
         OrganisationType fhirOrgType = convertOrganisationType(organisationParser.getOrganisationType());
         fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(fhirOrgType));
 
         String mainLocationGuid = organisationParser.getMainLocationGuid();
-        Reference fhirReference = ReferenceHelper.createReference(ResourceType.Location, mainLocationGuid);
+        Reference fhirReference = csvHelper.createLocationReference(mainLocationGuid);
         fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.LOCATION, fhirReference));
+
+        csvProcessor.saveAdminResource(fhirOrganisation);
     }
 
     private static OrganisationType convertOrganisationType(String csvOrganisationType) {
-        //TODO - verify EMIS CSV organisation types against FHIR organisationn types
         return OrganisationType.fromDescription(csvOrganisationType);
     }
 }

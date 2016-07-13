@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Problem;
@@ -16,19 +17,19 @@ import java.util.List;
 
 public class ProblemTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
+    public static void transform(String folderPath, CSVFormat csvFormat, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
 
         CareRecord_Problem parser = new CareRecord_Problem(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createProblem(parser, objectStore);
+                createProblem(parser, csvProcessor, csvHelper);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createProblem(CareRecord_Problem problemParser, EmisCsvHelper objectStore) throws Exception {
+    private static void createProblem(CareRecord_Problem problemParser, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
 
         Condition fhirProblem = new Condition();
         fhirProblem.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROBLEM));
@@ -39,13 +40,14 @@ public class ProblemTransformer {
 
         EmisCsvHelper.setUniqueId(fhirProblem, patientGuid, observationGuid);
 
-        fhirProblem.setPatient(objectStore.createPatientReference(patientGuid));
+        fhirProblem.setPatient(csvHelper.createPatientReference(patientGuid));
 
-        boolean store = !objectStore.isObservationToDelete(patientGuid, observationGuid);
-        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirProblem, store);
+        boolean store = !csvHelper.isObservationToDelete(patientGuid, observationGuid);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (!store) {
+            csvHelper.cacheCondition(fhirProblem);
+            csvProcessor.deletePatientResource(fhirProblem, patientGuid);
             return;
         }
 
@@ -81,14 +83,14 @@ public class ProblemTransformer {
 
             //this extension is composed of two separate extensions
             Extension typeExtension = ExtensionConverter.createExtension("type", new StringType(fhirRelationshipType.getCode()));
-            Extension referenceExtension = ExtensionConverter.createExtension("target", objectStore.createProblemReference(parentProblemGuid, patientGuid));
+            Extension referenceExtension = ExtensionConverter.createExtension("target", csvHelper.createProblemReference(parentProblemGuid, patientGuid));
             fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_RELATED, typeExtension, referenceExtension));
         }
 
         //TODO - need to set ClinicalStatus on Problem FHIR resource
 
         //several of the Resource fields are simply carried over from the Observation the Problem is linked to
-        Observation fhirObservation = objectStore.findObservation(observationGuid, patientGuid);
+        Observation fhirObservation = csvHelper.findObservation(observationGuid, patientGuid);
 
         DateTimeType fhirDateTime = fhirObservation.getEffectiveDateTimeType();
         Date date = fhirDateTime.getValue();
@@ -110,6 +112,9 @@ public class ProblemTransformer {
         fhirProblem.setEncounter(fhirObservation.getEncounter());
         fhirProblem.setCode(fhirObservation.getCode());
         fhirProblem.setAsserter(asserter);
+
+        csvHelper.cacheCondition(fhirProblem);
+        csvProcessor.savePatientResource(fhirProblem, patientGuid);
     }
 
     private static ProblemRelationshipType convertRelationshipType(String relationshipType) throws Exception {

@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Patient;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.openhr.schema.VocSex;
@@ -16,19 +17,24 @@ import java.util.*;
 
 public class PatientTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
+    public static void transform(String folderPath,
+                                 CSVFormat csvFormat,
+                                 CsvProcessor csvProcessor,
+                                 EmisCsvHelper csvHelper) throws Exception {
 
         Admin_Patient parser = new Admin_Patient(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createPatient(parser, objectStore);
+                createPatient(parser, csvProcessor, csvHelper);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createPatient(Admin_Patient patientParser, EmisCsvHelper objectStore) throws Exception {
+    private static void createPatient(Admin_Patient patientParser,
+                                      CsvProcessor csvProcessor,
+                                      EmisCsvHelper csvHelper) throws Exception {
 
         //create Patient Resource
         Patient fhirPatient = new Patient();
@@ -38,7 +44,6 @@ public class PatientTransformer {
         String organisationGuid = patientParser.getOrganisationGuid();
 
         EmisCsvHelper.setUniqueId(fhirPatient, patientGuid, null);
-        //fhirPatient.setId(patientGuid);
 
         //create Episode of Care Resource
         EpisodeOfCare fhirEpisode = new EpisodeOfCare();
@@ -46,14 +51,12 @@ public class PatientTransformer {
 
         EmisCsvHelper.setUniqueId(fhirEpisode, patientGuid, null);
 
-        fhirEpisode.setPatient(objectStore.createPatientReference(patientGuid.toString()));
-
-        boolean store = !patientParser.getDeleted() && !patientParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirPatient, store);
-        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirEpisode, store);
+        fhirEpisode.setPatient(csvHelper.createPatientReference(patientGuid.toString()));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (!store) {
+        if (patientParser.getDeleted() || patientParser.getIsConfidential()) {
+            csvProcessor.deletePatientResource(fhirPatient, patientGuid);
+            csvProcessor.deletePatientResource(fhirEpisode, patientGuid);
             return;
         }
 
@@ -109,21 +112,25 @@ public class PatientTransformer {
             fhirPatient.addTelecom(fhirContact);
         }
 
-        fhirPatient.setManagingOrganization(objectStore.createOrganisationReference(organisationGuid, patientGuid));
+        fhirPatient.setManagingOrganization(csvHelper.createOrganisationReference(organisationGuid));
 
         String carerName = patientParser.getCarerName();
         String carerRelationship = patientParser.getCarerRelation();
         if (!Strings.isNullOrEmpty(carerName)) {
 
             Patient.ContactComponent fhirContact = new Patient.ContactComponent();
+            fhirContact.setName(NameConverter.convert(carerName));
 
             if (!Strings.isNullOrEmpty(carerRelationship)) {
-
-                ContactRelationship contactRelationship = convertContactRelationship(carerRelationship);
-                fhirContact.addRelationship(CodeableConceptHelper.createCodeableConcept(contactRelationship));
+                //FHIR spec states that we should map to their relationship types if possible, but if
+                //not possible, then send as a textual codeable concept
+                ContactRelationship contactRelationship = ContactRelationship.fromCode(carerRelationship);
+                if (contactRelationship != null) {
+                    fhirContact.addRelationship(CodeableConceptHelper.createCodeableConcept(contactRelationship));
+                } else {
+                    fhirContact.addRelationship(CodeableConceptHelper.createCodeableConcept(carerRelationship));
+                }
             }
-
-            fhirContact.setName(NameConverter.convert(carerName));
 
             fhirPatient.addContact(fhirContact);
         }
@@ -138,26 +145,26 @@ public class PatientTransformer {
 
         String usualGpGuid = patientParser.getUsualGpUserInRoleGuid();
         if (usualGpGuid != null) {
-            fhirPatient.addCareProvider(objectStore.createPractitionerReference(usualGpGuid, patientGuid));
+            fhirPatient.addCareProvider(csvHelper.createPractitionerReference(usualGpGuid));
 
         } else {
             String externalGpGuid = patientParser.getExternalUsualGPGuid();
             if (externalGpGuid != null) {
-                fhirPatient.addCareProvider(objectStore.createPractitionerReference(externalGpGuid, patientGuid));
+                fhirPatient.addCareProvider(csvHelper.createPractitionerReference(externalGpGuid));
 
             } else {
                 String externalOrgGuid = patientParser.getExternalUsualGPOrganisation();
                 if (externalOrgGuid != null) {
-                    fhirPatient.addCareProvider(objectStore.createOrganisationReference(externalOrgGuid, patientGuid));
+                    fhirPatient.addCareProvider(csvHelper.createOrganisationReference(externalOrgGuid));
                 }
             }
         }
 
         String orgUuid = patientParser.getOrganisationGuid();
-        fhirEpisode.setManagingOrganization(objectStore.createOrganisationReference(orgUuid, patientGuid));
+        fhirEpisode.setManagingOrganization(csvHelper.createOrganisationReference(orgUuid));
 
         if (usualGpGuid != null) {
-            fhirEpisode.setCareManager(objectStore.createPractitionerReference(usualGpGuid, patientGuid));
+            fhirEpisode.setCareManager(csvHelper.createPractitionerReference(usualGpGuid));
         }
 
         Date regDate = patientParser.getDateOfRegistration();
@@ -172,6 +179,10 @@ public class PatientTransformer {
         } else {
             fhirEpisode.setStatus(EpisodeOfCare.EpisodeOfCareStatus.FINISHED);
         }
+
+        csvProcessor.savePatientResource(fhirPatient, patientGuid);
+        csvProcessor.savePatientResource(fhirEpisode, patientGuid);
+
     }
 
     /**
@@ -197,8 +208,4 @@ public class PatientTransformer {
         }
     }
 
-    private static ContactRelationship convertContactRelationship(String csvRelationship) {
-        //TODO - verify conversion of CSV carer relationship types to FHIR contact types
-        return ContactRelationship.fromCode(csvRelationship);
-    }
 }

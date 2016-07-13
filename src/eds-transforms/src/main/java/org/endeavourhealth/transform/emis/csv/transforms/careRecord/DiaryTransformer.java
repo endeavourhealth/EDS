@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Diary;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -15,19 +16,24 @@ import java.util.Date;
 
 public class DiaryTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
+    public static void transform(String folderPath,
+                                 CSVFormat csvFormat,
+                                 CsvProcessor csvProcessor,
+                                 EmisCsvHelper csvHelper) throws Exception {
 
         CareRecord_Diary parser = new CareRecord_Diary(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createProcedureRequest(parser, objectStore);
+                createProcedureRequest(parser, csvProcessor, csvHelper);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createProcedureRequest(CareRecord_Diary diaryParser, EmisCsvHelper objectStore) throws Exception {
+    private static void createProcedureRequest(CareRecord_Diary diaryParser,
+                                               CsvProcessor csvProcessor,
+                                               EmisCsvHelper csvHelper) throws Exception {
 
         ProcedureRequest fhirRequest = new ProcedureRequest();
         fhirRequest.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROCEDURE_REQUEST));
@@ -38,18 +44,16 @@ public class DiaryTransformer {
 
         EmisCsvHelper.setUniqueId(fhirRequest, patientGuid, diaryGuid);
 
-        fhirRequest.setSubject(objectStore.createPatientReference(patientGuid));
-
-        boolean store = !diaryParser.getDeleted() && !diaryParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirRequest, store);
+        fhirRequest.setSubject(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (!store) {
+        if (diaryParser.getDeleted() || diaryParser.getIsConfidential()) {
+            csvProcessor.deletePatientResource(fhirRequest, patientGuid);
             return;
         }
 
         Long codeId = diaryParser.getCodeId();
-        fhirRequest.setCode(objectStore.findClinicalCode(codeId));
+        fhirRequest.setCode(csvHelper.findClinicalCode(codeId));
 
         String originalTerm = diaryParser.getOriginalTerm();
         if (!Strings.isNullOrEmpty(originalTerm)) {
@@ -70,7 +74,7 @@ public class DiaryTransformer {
 
         String clinicianGuid = diaryParser.getClinicianUserInRoleGuid();
         if (clinicianGuid != null) {
-            fhirRequest.setPerformer(objectStore.createPractitionerReference(clinicianGuid, patientGuid));
+            fhirRequest.setPerformer(csvHelper.createPractitionerReference(clinicianGuid));
         }
 
         String associatedText = diaryParser.getAssociatedText();
@@ -83,12 +87,12 @@ public class DiaryTransformer {
 
         String enterdByGuid = diaryParser.getEnteredByUserInRoleGuid();
         if (enterdByGuid != null) {
-            fhirRequest.setOrderer(objectStore.createPractitionerReference(enterdByGuid, patientGuid));
+            fhirRequest.setOrderer(csvHelper.createPractitionerReference(enterdByGuid));
         }
 
         String consultationGuid = diaryParser.getConsultationGuid();
         if (consultationGuid != null) {
-            fhirRequest.setEncounter(objectStore.createEncounterReference(consultationGuid, patientGuid));
+            fhirRequest.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
 
         if (diaryParser.getIsComplete()) {
@@ -101,5 +105,7 @@ public class DiaryTransformer {
 
         //TODO - need somewhere to store Diary LocationTypeDescription in FHIR ProcedureRequest resource
         //String locationDescription = diaryParser.getLocationTypeDescription();
+
+        csvProcessor.savePatientResource(fhirRequest, patientGuid);
     }
 }

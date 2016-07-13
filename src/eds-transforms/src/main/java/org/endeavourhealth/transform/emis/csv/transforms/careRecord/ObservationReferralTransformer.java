@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_ObservationReferral;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -14,19 +15,24 @@ import java.util.List;
 
 public class ObservationReferralTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
+    public static void transform(String folderPath,
+                                 CSVFormat csvFormat,
+                                 CsvProcessor csvProcessor,
+                                 EmisCsvHelper csvHelper) throws Exception {
 
         CareRecord_ObservationReferral parser = new CareRecord_ObservationReferral(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createResource(parser, objectStore);
+                createResource(parser, csvProcessor, csvHelper);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createResource(CareRecord_ObservationReferral observationParser, EmisCsvHelper objectStore) throws Exception {
+    private static void createResource(CareRecord_ObservationReferral observationParser,
+                                       CsvProcessor csvProcessor,
+                                       EmisCsvHelper csvHelper) throws Exception {
 
         ReferralRequest fhirReferral = new ReferralRequest();
         fhirReferral.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_REFERRAL_REQUEST));
@@ -37,13 +43,11 @@ public class ObservationReferralTransformer {
 
         EmisCsvHelper.setUniqueId(fhirReferral, patientGuid, observationGuid);
 
-        fhirReferral.setPatient(objectStore.createPatientReference(patientGuid));
-
-        boolean store = !objectStore.isObservationToDelete(patientGuid, observationGuid);
-        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirReferral, store);
+        fhirReferral.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (!store) {
+        if (csvHelper.isObservationToDelete(patientGuid, observationGuid)) {
+            csvProcessor.deletePatientResource(fhirReferral, patientGuid);
             return;
         }
 
@@ -51,7 +55,7 @@ public class ObservationReferralTransformer {
         fhirReferral.addIdentifier(IdentifierHelper.createUbrnIdentifier(ubrn));
 
         String recipientOrgGuid = observationParser.getReferalTargetOrganisationGuid();
-        fhirReferral.addRecipient(objectStore.createOrganisationReference(recipientOrgGuid, patientGuid));
+        fhirReferral.addRecipient(csvHelper.createOrganisationReference(recipientOrgGuid));
 
         String urgency = observationParser.getReferralUrgency();
         if (!Strings.isNullOrEmpty(urgency)) {
@@ -65,7 +69,7 @@ public class ObservationReferralTransformer {
         }
 
         //several of the Resource fields are simply carried over from the Observation the Referral is linked to
-        Observation fhirObservation = objectStore.findObservation(observationGuid, patientGuid);
+        Observation fhirObservation = csvHelper.findObservation(observationGuid, patientGuid);
 
         fhirReferral.setDateElement(fhirObservation.getEffectiveDateTimeType());
         fhirReferral.setEncounter(fhirObservation.getEncounter());
@@ -87,6 +91,8 @@ public class ObservationReferralTransformer {
         //ReferralEpisodeClosureDate
         //ReferralEpisideDischargeLetterIssuedDate
         //ReferralClosureReasonCodeId
+
+        csvProcessor.savePatientResource(fhirReferral, patientGuid);
 
     }
 

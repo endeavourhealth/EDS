@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Consultation;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -12,19 +13,24 @@ import java.util.Date;
 
 public class ConsultationTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, EmisCsvHelper objectStore) throws Exception {
+    public static void transform(String folderPath,
+                                 CSVFormat csvFormat,
+                                 CsvProcessor csvProcessor,
+                                 EmisCsvHelper csvHelper) throws Exception {
 
         CareRecord_Consultation parser = new CareRecord_Consultation(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createEncounter(parser, objectStore);
+                createEncounter(parser, csvProcessor, csvHelper);
             }
         } finally {
             parser.close();
         }
     }
 
-    private static void createEncounter(CareRecord_Consultation consultationParser, EmisCsvHelper objectStore) throws Exception {
+    private static void createEncounter(CareRecord_Consultation consultationParser,
+                                        CsvProcessor csvProcessor,
+                                        EmisCsvHelper csvHelper) throws Exception {
 
         Encounter fhirEncounter = new Encounter();
         fhirEncounter.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ENCOUNTER));
@@ -35,13 +41,11 @@ public class ConsultationTransformer {
 
         EmisCsvHelper.setUniqueId(fhirEncounter, patientGuid, consultationGuid);
 
-        fhirEncounter.setPatient(objectStore.createPatientReference(patientGuid));
-
-        boolean store = !consultationParser.getDeleted() && !consultationParser.getIsConfidential();
-        objectStore.addResourceToSave(patientGuid, organisationGuid, fhirEncounter, store);
+        fhirEncounter.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (!store) {
+        if (consultationParser.getDeleted() || consultationParser.getIsConfidential()) {
+            csvProcessor.deletePatientResource(fhirEncounter, patientGuid);
             return;
         }
 
@@ -49,13 +53,13 @@ public class ConsultationTransformer {
 
         String appointmentGuid = consultationParser.getAppointmentSlotGuid();
         if (appointmentGuid != null) {
-            fhirEncounter.setAppointment(objectStore.createAppointmentReference(appointmentGuid, patientGuid));
+            fhirEncounter.setAppointment(csvHelper.createAppointmentReference(appointmentGuid, patientGuid));
         }
 
         String clinicianUuid = consultationParser.getClinicianUserInRoleGuid();
         if (clinicianUuid != null) {
             Encounter.EncounterParticipantComponent fhirParticipant = fhirEncounter.addParticipant();
-            fhirParticipant.setIndividual(objectStore.createPractitionerReference(clinicianUuid, patientGuid));
+            fhirParticipant.setIndividual(csvHelper.createPractitionerReference(clinicianUuid));
         }
 
         Date date = consultationParser.getEffectiveDate();
@@ -64,6 +68,8 @@ public class ConsultationTransformer {
         if (fhirPeriod != null) {
             fhirEncounter.setPeriod(fhirPeriod);
         }
+
+        csvProcessor.savePatientResource(fhirEncounter, patientGuid);
     }
 
     private static Period createPeriod(Date date, String precision) throws Exception {

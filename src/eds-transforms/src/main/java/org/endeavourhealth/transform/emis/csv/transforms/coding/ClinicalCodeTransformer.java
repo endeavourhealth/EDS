@@ -53,7 +53,11 @@ public abstract class ClinicalCodeTransformer {
             fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, emisTerm, emisCode);
 
             try {
-                String snomedTerm = Snomed.getTerm(snomedConceptId.longValue(), snomedDescriptionId.longValue());
+                //TODO - need faster way to lookup Snomed terms for concept and desc IDs
+                String snomedTerm = emisTerm;
+                //String snomedTerm = Snomed.getTerm(snomedConceptId.longValue(), snomedDescriptionId.longValue());
+                //TODO - need to validate Snomed concept IDs and remove non-valid ones
+
                 fhirConcept.addCoding(CodingHelper.createCoding(FhirUri.CODE_SYSTEM_SNOMED_CT, snomedTerm, snomedConceptId.toString()));
             } catch (Exception ex) {
                 LOG.error("Failed to find term for Coding_ClinicalCode CodeId: " + codeId + " SnomedConceptId: " +snomedConceptId + " SnomedTermId: " + snomedDescriptionId);

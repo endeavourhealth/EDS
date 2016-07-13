@@ -1,6 +1,8 @@
 package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Appointment_Session;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
@@ -10,7 +12,10 @@ import java.util.*;
 
 public class SessionTransformer {
 
-    public static Map<String, Schedule> transform(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static void transform(String folderPath,
+                                 CSVFormat csvFormat,
+                                 CsvProcessor csvProcessor,
+                                 EmisCsvHelper csvHelper) throws Exception {
 
         //first, process the CSV mapping staff to sessions
         Map<String, List<String>> sessionToStaffMap = SessionUserTransformer.transform(folderPath, csvFormat);
@@ -20,16 +25,17 @@ public class SessionTransformer {
         Appointment_Session sessionParser = new Appointment_Session(folderPath, csvFormat);
         try {
             while (sessionParser.nextRecord()) {
-                createSchedule(sessionParser, fhirSessions, sessionToStaffMap);
+                createSchedule(sessionParser, csvProcessor, csvHelper, sessionToStaffMap);
             }
         } finally {
             sessionParser.close();
         }
-
-        return fhirSessions;
     }
 
-    private static void createSchedule(Appointment_Session sessionParser, Map<String, Schedule> fhirSessions, Map<String, List<String>> sessionToStaffMap) throws Exception {
+    private static void createSchedule(Appointment_Session sessionParser,
+                                       CsvProcessor csvProcessor,
+                                       EmisCsvHelper csvHelper,
+                                       Map<String, List<String>> sessionToStaffMap) throws Exception {
 
         //skip deleted sessions
         if (sessionParser.getDeleted()) {
@@ -40,15 +46,10 @@ public class SessionTransformer {
         fhirSession.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SCHEDULE));
 
         String sessionGuid = sessionParser.getAppointmnetSessionGuid();
-
-        //ID is set on the resource when it's copied for use in the object store
-        //fhirSession.setId(sessionGuid);
-
-        //add to the map
-        fhirSessions.put(sessionGuid, fhirSession);
+        fhirSession.setId(sessionGuid);
 
         String locationGuid = sessionParser.getLocationGuid();
-        Reference fhirReference = ReferenceHelper.createReference(ResourceType.Location, locationGuid);
+        Reference fhirReference = csvHelper.createLocationReference(locationGuid);
         fhirSession.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.LOCATION, fhirReference));
 
         Date start = sessionParser.getStartDateTime();
@@ -64,11 +65,13 @@ public class SessionTransformer {
 
         List<String> staffGuids = sessionToStaffMap.get(sessionGuid);
         String firstStaffGuid = staffGuids.remove(0);
-        fhirSession.setActor(ReferenceHelper.createReference(ResourceType.Practitioner, firstStaffGuid));
+        fhirSession.setActor(csvHelper.createPractitionerReference(firstStaffGuid));
 
         for (String staffGuid: staffGuids) {
-            Reference fhirStaffReference = ReferenceHelper.createReference(ResourceType.Practitioner, staffGuid);
+            Reference fhirStaffReference = csvHelper.createPractitionerReference(staffGuid);
             fhirSession.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ADDITIONAL_ACTOR, fhirStaffReference));
         }
+
+        csvProcessor.saveAdminResource(fhirSession);
     }
 }
