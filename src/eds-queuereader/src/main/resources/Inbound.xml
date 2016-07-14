@@ -16,7 +16,7 @@
             </Credentials>
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsResponse</Exchange>
-            <RoutingHeader>Sender</RoutingHeader>
+            <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
         </PostMessageToExchange>
         <PostMessageToExchange>
             <Credentials>
@@ -25,7 +25,7 @@
             </Credentials>
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsProtocol</Exchange>
-            <RoutingHeader>Sender</RoutingHeader>
+            <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
             <MulticastHeader>ProtocolId</MulticastHeader>
         </PostMessageToExchange>
     </Pipeline>

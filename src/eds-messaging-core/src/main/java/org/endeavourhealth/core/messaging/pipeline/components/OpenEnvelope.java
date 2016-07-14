@@ -1,13 +1,13 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import org.endeavourhealth.core.configuration.OpenEnvelopeConfig;
+import org.endeavourhealth.core.data.admin.ServiceRepository;
+import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.hl7.fhir.instance.formats.IParser;
-import org.hl7.fhir.instance.formats.JsonParser;
-import org.hl7.fhir.instance.formats.XmlParser;
 import org.hl7.fhir.instance.model.Binary;
 import org.hl7.fhir.instance.model.Bundle;
 import org.hl7.fhir.instance.model.MessageHeader;
@@ -66,17 +66,38 @@ public class OpenEnvelope extends PipelineComponent {
 		LOG.debug("Message envelope processed");
 	}
 
-	private void processHeader(Exchange exchange, MessageHeader messageHeader) {
+	private void processHeader(Exchange exchange, MessageHeader messageHeader) throws PipelineException {
+
 		exchange.setHeader(HeaderKeys.MessageId, messageHeader.getId());
-		exchange.setHeader(HeaderKeys.Sender, messageHeader.getSource().getName());
-		exchange.setHeader(HeaderKeys.ResponseUri, messageHeader.getSource().getEndpoint());
+
+		exchange.setHeader(HeaderKeys.SenderLocalIdentifier, messageHeader.getSource().getName());
 		exchange.setHeader(HeaderKeys.SourceSystem, messageHeader.getSource().getSoftware());
+		exchange.setHeader(HeaderKeys.SystemVersion, messageHeader.getSource().getVersion());
+
+		exchange.setHeader(HeaderKeys.ResponseUri, messageHeader.getSource().getEndpoint());
 		exchange.setHeader(HeaderKeys.MessageEvent, messageHeader.getEvent().getCode());
 
+		getSenderUuid(exchange);
 		processDestinations(exchange, messageHeader);
 	}
 
+	private void getSenderUuid(Exchange exchange) throws PipelineException {
+		// Get service id
+		String senderId = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
+
+		// Get service id from sender id
+		ServiceRepository serviceRepository = new ServiceRepository();
+		Iterable<Service> services = serviceRepository.getByLocalIdentifier(senderId);
+
+		if (!services.iterator().hasNext())
+			throw new PipelineException("No service found for local identifier");
+
+		Service service = services.iterator().next();
+		exchange.setHeader(HeaderKeys.SenderUuid, service.getId().toString());
+	}
+
 	private void processBody(Exchange exchange, Binary binary) {
+		exchange.setHeader(HeaderKeys.MessageFormat, binary.getContentType());
 		if (binary.hasContent()) {
 			exchange.setBody(new String(binary.getContent()));
 		}

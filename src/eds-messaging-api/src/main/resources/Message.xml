@@ -8,7 +8,8 @@
                 <event/>
                 <source>
                     <name value="GP01"/>
-                    <software value="EMISWeb"/>
+                    <software value="ClientAPI"/>
+                    <version value="1.0"/>
                     <endpoint value="http://source.uri.com"/>
                 </source>
                 <destination>
@@ -41,7 +42,7 @@
         <resource>
             <Binary>
                 <id value="DATA_ID"/>
-                <contentType value="text/xml"/>
+                <contentType value="EMISCSV"/>
                 <content value="aGVsbG8gd29ybGQ="/>
             </Binary>
         </resource>

@@ -4,8 +4,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.endeavourhealth.core.data.admin.models.CodeSet;
-import org.endeavourhealth.core.data.admin.models.CodeSetValue;
+import org.endeavourhealth.core.xml.QueryDocument.CodeSet;
+import org.endeavourhealth.core.xml.QueryDocument.CodeSetValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

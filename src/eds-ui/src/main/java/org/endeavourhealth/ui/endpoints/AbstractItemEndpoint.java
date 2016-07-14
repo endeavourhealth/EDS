@@ -5,6 +5,7 @@ import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.Audit;
 import org.endeavourhealth.core.data.admin.models.ItemDependency;
 import org.endeavourhealth.core.data.admin.models.Item;
+import org.endeavourhealth.core.xml.QueryDocument.QueryDocument;
 import org.endeavourhealth.ui.json.JsonDeleteResponse;
 import org.endeavourhealth.ui.json.JsonMoveItem;
 import org.endeavourhealth.ui.json.JsonMoveItems;
@@ -12,7 +13,6 @@ import org.endeavourhealth.ui.utility.QueryDocumentReaderFindDependentUuids;
 import org.endeavourhealth.core.data.admin.models.DefinitionItemType;
 import org.endeavourhealth.ui.DependencyType;
 import org.endeavourhealth.ui.querydocument.QueryDocumentSerializer;
-import org.endeavourhealth.core.data.admin.models.QueryDocument;
 
 import javax.ws.rs.BadRequestException;
 import java.util.*;

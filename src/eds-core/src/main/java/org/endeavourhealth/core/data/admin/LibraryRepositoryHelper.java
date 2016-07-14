@@ -2,6 +2,8 @@ package org.endeavourhealth.core.data.admin;
 
 import org.endeavourhealth.core.data.admin.models.*;
 import org.endeavourhealth.core.utility.XmlSerializer;
+import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBException;
@@ -9,6 +11,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class LibraryRepositoryHelper {
 	private static final String XSD = "QueryDocument.xsd";
@@ -40,7 +43,23 @@ public class LibraryRepositoryHelper {
 			for (int s = 0; s < serviceContracts.size(); s++) {
 				ServiceContract service = serviceContracts.get(s);
 				if (service.getService().getUuid().equals(serviceId)) {
-					ret.add(XmlSerializer.deserializeFromString(LibraryItem.class, xml, XSD));
+					// Load full system details
+					String systemUuid = service.getSystem().getUuid();
+					ActiveItem activeSystemItem = repository.getActiveItemByItemId(UUID.fromString(systemUuid));
+					Item systemItem = repository.getItemByKey(activeSystemItem.getItemId(), activeSystemItem.getAuditId());
+					String systemLibraryItemXml = systemItem.getXmlContent();
+					LibraryItem systemLibraryItem = XmlSerializer.deserializeFromString(LibraryItem.class, systemLibraryItemXml, XSD);
+					System system = systemLibraryItem.getSystem();
+					service.setSystem(system);
+
+					TechnicalInterface technicalInterface = system.getTechnicalInterface().stream()
+							.filter(ti -> ti.getUuid().equals(service.getTechnicalInterface().getUuid()))
+							.findFirst()
+							.get();
+
+					service.setTechnicalInterface(technicalInterface);
+
+					ret.add(libraryItem);
 				}
 			}
 		}

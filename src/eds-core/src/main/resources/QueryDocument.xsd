@@ -278,9 +278,15 @@
 			<xs:element name="messageFormatVersion" type="xs:string" minOccurs="0"/>
 		</xs:sequence>
 	</xs:complexType>
+	<xs:simpleType name="serviceContractType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="PUBLISHER"/>
+			<xs:enumeration value="SUBSCRIBER"/>
+		</xs:restriction>
+	</xs:simpleType>
 	<xs:complexType name="serviceContract">
 		<xs:sequence>
-			<xs:element name="type" type="xs:string"/>
+			<xs:element name="type" type="serviceContractType"/>
 			<xs:element name="service" type="service"/>
 			<xs:element name="system" type="system"/>
 			<xs:element name="technicalInterface" type="technicalInterface"/>

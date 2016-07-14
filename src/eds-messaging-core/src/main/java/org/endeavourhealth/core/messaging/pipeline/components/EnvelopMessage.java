@@ -6,8 +6,6 @@ import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.hl7.fhir.instance.formats.IParser;
-import org.hl7.fhir.instance.formats.JsonParser;
-import org.hl7.fhir.instance.formats.XmlParser;
 import org.hl7.fhir.instance.model.Binary;
 import org.hl7.fhir.instance.model.Bundle;
 import org.hl7.fhir.instance.model.MessageHeader;
@@ -52,7 +50,7 @@ public class EnvelopMessage extends PipelineComponent {
 	private MessageHeader buildMessageHeader(Exchange exchange) {
 		MessageHeader.MessageSourceComponent source = new MessageHeader.MessageSourceComponent();
 
-		source.setName(exchange.getHeader(HeaderKeys.Sender));
+		source.setName(exchange.getHeader(HeaderKeys.SenderLocalIdentifier));
 		source.setEndpoint(exchange.getHeader(HeaderKeys.ResponseUri));
 		source.setSoftware(exchange.getHeader(HeaderKeys.SourceSystem));
 

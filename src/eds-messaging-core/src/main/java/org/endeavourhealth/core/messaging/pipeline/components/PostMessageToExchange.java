@@ -47,7 +47,6 @@ public class PostMessageToExchange extends PipelineComponent {
 				.headers(headers)
 				.build();
 
-
 		// Handle multicast
 		String multicastHeader = config.getMulticastHeader();
 		if (multicastHeader == null || multicastHeader.isEmpty()) {

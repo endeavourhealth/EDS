@@ -3,8 +3,9 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
-import org.endeavourhealth.core.data.admin.models.LibraryItem;
-import org.endeavourhealth.core.data.admin.models.TechnicalInterface;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
+import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
@@ -44,7 +45,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	private List<String> getSubscriberFormats(LibraryItem protocolToRun) {
 		// Get distinct output formats
 		return protocolToRun.getProtocol().getServiceContract().stream()
-				.filter(serviceContract -> serviceContract.getType().equals("SUBSCRIBER"))
+				.filter(serviceContract -> serviceContract.getType().equals(ServiceContractType.SUBSCRIBER))
 				.map(subscriberContract -> subscriberContract.getSystem().getTechnicalInterface())
 				.flatMap(Collection::stream)
 				.map(TechnicalInterface::getMessageFormat)

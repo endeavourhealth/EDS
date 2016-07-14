@@ -15,7 +15,7 @@
             </Credentials>
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsTransform</Exchange>
-            <RoutingHeader>Sender</RoutingHeader>
+            <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
             <MulticastHeader>TransformTo</MulticastHeader>
         </PostMessageToExchange>
     </Pipeline>

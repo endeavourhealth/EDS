@@ -1,6 +1,6 @@
 package org.endeavourhealth.ui.utility;
 
-import org.endeavourhealth.core.data.admin.models.*;
+import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.ui.querydocument.AbstractQueryDocumentReader;
 
 import java.util.HashSet;
