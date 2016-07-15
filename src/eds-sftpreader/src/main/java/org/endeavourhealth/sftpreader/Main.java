@@ -6,11 +6,9 @@ import org.endeavourhealth.core.engineConfiguration.EngineConfigurationSerialize
 import org.endeavourhealth.core.utility.XmlSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBException;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.util.Timer;
 
 public class Main
 {
@@ -78,22 +76,24 @@ public class Main
 
 	private static void runSftpHandlerAndWaitForInput(SftpReaderConfiguration configuration) throws IOException
 	{
-		LOG.info("Starting SFTP handler");
+		SftpTask sftpTask = new SftpTask(configuration);
 
-		SftpHandler sftpHandler = new SftpHandler(configuration);
-		sftpHandler.start();
+		Timer timer = new Timer(true);
 
-		LOG.info("SFTP handler started");
+		try
+		{
+			timer.scheduleAtFixedRate(sftpTask, 0, configuration.getPolltime() * 1000);
 
-		LOG.info("");
-		LOG.info("Press any key to exit...");
+			LOG.info("");
+			LOG.info("Press any key to exit...");
 
-		System.in.read();
+			System.in.read();
 
-		LOG.info("Stopping SFTP handler");
-
-		sftpHandler.stop();
-
-		LOG.info("SFTP handler stopped");
+			LOG.info("Stopping...");
+		}
+		finally
+		{
+			timer.cancel();
+		}
 	}
 }

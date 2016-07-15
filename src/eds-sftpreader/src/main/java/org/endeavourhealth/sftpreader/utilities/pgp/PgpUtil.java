@@ -1,4 +1,4 @@
-package org.endeavourhealth.sftpreader;
+package org.endeavourhealth.sftpreader.utilities.pgp;
 
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
