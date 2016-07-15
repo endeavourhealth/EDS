@@ -4,9 +4,7 @@ import com.google.common.io.Resources;
 import com.jcraft.jsch.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.endeavourhealth.core.configuration.SftpReaderConfiguration;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
 import org.slf4j.*;
 
@@ -15,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.*;
+import java.security.Security;
 import java.util.TimerTask;
 import java.util.Vector;
 
@@ -55,6 +54,9 @@ public class SftpConsumer extends TimerTask
 					{
 						String localPath = FilenameUtils.concat(configuration.getLocalPath(), file.getFilename());
 						Files.copy(inputStream, new File(localPath).toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+						if (file.getFilename().endsWith(".gpg"))
+							decryptFile(localPath, FilenameUtils.removeExtension(localPath));
 					}
 				}
 			}
@@ -71,6 +73,16 @@ public class SftpConsumer extends TimerTask
 			if (session != null && session.isConnected())
 				session.disconnect();
 		}
+	}
+
+	private void decryptFile(String inputFilePath, String outputFilePath) throws Exception
+	{
+		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+
+		String pgpSecretKey = Resources.getResource("test-pgp-endeavour-private.asc").getPath();
+		String pgpPublicKey = Resources.getResource("test-pgp-emis-public.asc").getPath();
+
+		PgpUtil.decryptAndVerify(inputFilePath, pgpPublicKey, pgpSecretKey, "password", outputFilePath);
 	}
 
 	private ChannelSftp getChannel(Session session) throws JSchException

@@ -46,6 +46,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link SftpReaderConfiguration.PgpDecryption }
+     * 
+     */
+    public SftpReaderConfiguration.PgpDecryption createSftpReaderConfigurationPgpDecryption() {
+        return new SftpReaderConfiguration.PgpDecryption();
+    }
+
+    /**
      * Create an instance of {@link Pipeline }
      * 
      */

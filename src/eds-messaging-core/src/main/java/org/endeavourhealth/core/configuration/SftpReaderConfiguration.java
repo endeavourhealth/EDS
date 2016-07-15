@@ -36,6 +36,20 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="Port" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *         &lt;element name="RemotePath" type="{}nonEmptyString"/>
  *         &lt;element name="LocalPath" type="{}nonEmptyString"/>
+ *         &lt;element name="PgpDecryption">
+ *           &lt;complexType>
+ *             &lt;complexContent>
+ *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+ *                 &lt;sequence>
+ *                   &lt;element name="PgpFileFilter" type="{}nonEmptyString"/>
+ *                   &lt;element name="RecipientPrivateKeyFilePath" type="{}nonEmptyString"/>
+ *                   &lt;element name="RecipientPrivateKeyPassword" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *                   &lt;element name="SenderPublicKeyFilePath" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *                 &lt;/sequence>
+ *               &lt;/restriction>
+ *             &lt;/complexContent>
+ *           &lt;/complexType>
+ *         &lt;/element>
  *         &lt;element name="Polltime" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *         &lt;element name="Pipeline" type="{}Pipeline"/>
  *       &lt;/sequence>
@@ -53,6 +67,7 @@ import javax.xml.bind.annotation.XmlType;
     "port",
     "remotePath",
     "localPath",
+    "pgpDecryption",
     "polltime",
     "pipeline"
 })
@@ -69,6 +84,8 @@ public class SftpReaderConfiguration {
     protected String remotePath;
     @XmlElement(name = "LocalPath", required = true)
     protected String localPath;
+    @XmlElement(name = "PgpDecryption", required = true)
+    protected SftpReaderConfiguration.PgpDecryption pgpDecryption;
     @XmlElement(name = "Polltime")
     protected int polltime;
     @XmlElement(name = "Pipeline", required = true)
@@ -192,6 +209,30 @@ public class SftpReaderConfiguration {
      */
     public void setLocalPath(String value) {
         this.localPath = value;
+    }
+
+    /**
+     * Gets the value of the pgpDecryption property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link SftpReaderConfiguration.PgpDecryption }
+     *     
+     */
+    public SftpReaderConfiguration.PgpDecryption getPgpDecryption() {
+        return pgpDecryption;
+    }
+
+    /**
+     * Sets the value of the pgpDecryption property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link SftpReaderConfiguration.PgpDecryption }
+     *     
+     */
+    public void setPgpDecryption(SftpReaderConfiguration.PgpDecryption value) {
+        this.pgpDecryption = value;
     }
 
     /**
@@ -369,6 +410,145 @@ public class SftpReaderConfiguration {
          */
         public void setHostPublicKeyFilePath(String value) {
             this.hostPublicKeyFilePath = value;
+        }
+
+    }
+
+
+    /**
+     * <p>Java class for anonymous complex type.
+     * 
+     * <p>The following schema fragment specifies the expected content contained within this class.
+     * 
+     * <pre>
+     * &lt;complexType>
+     *   &lt;complexContent>
+     *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+     *       &lt;sequence>
+     *         &lt;element name="PgpFileFilter" type="{}nonEmptyString"/>
+     *         &lt;element name="RecipientPrivateKeyFilePath" type="{}nonEmptyString"/>
+     *         &lt;element name="RecipientPrivateKeyPassword" type="{http://www.w3.org/2001/XMLSchema}string"/>
+     *         &lt;element name="SenderPublicKeyFilePath" type="{http://www.w3.org/2001/XMLSchema}string"/>
+     *       &lt;/sequence>
+     *     &lt;/restriction>
+     *   &lt;/complexContent>
+     * &lt;/complexType>
+     * </pre>
+     * 
+     * 
+     */
+    @XmlAccessorType(XmlAccessType.FIELD)
+    @XmlType(name = "", propOrder = {
+        "pgpFileFilter",
+        "recipientPrivateKeyFilePath",
+        "recipientPrivateKeyPassword",
+        "senderPublicKeyFilePath"
+    })
+    public static class PgpDecryption {
+
+        @XmlElement(name = "PgpFileFilter", required = true)
+        protected String pgpFileFilter;
+        @XmlElement(name = "RecipientPrivateKeyFilePath", required = true)
+        protected String recipientPrivateKeyFilePath;
+        @XmlElement(name = "RecipientPrivateKeyPassword", required = true)
+        protected String recipientPrivateKeyPassword;
+        @XmlElement(name = "SenderPublicKeyFilePath", required = true)
+        protected String senderPublicKeyFilePath;
+
+        /**
+         * Gets the value of the pgpFileFilter property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link String }
+         *     
+         */
+        public String getPgpFileFilter() {
+            return pgpFileFilter;
+        }
+
+        /**
+         * Sets the value of the pgpFileFilter property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link String }
+         *     
+         */
+        public void setPgpFileFilter(String value) {
+            this.pgpFileFilter = value;
+        }
+
+        /**
+         * Gets the value of the recipientPrivateKeyFilePath property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link String }
+         *     
+         */
+        public String getRecipientPrivateKeyFilePath() {
+            return recipientPrivateKeyFilePath;
+        }
+
+        /**
+         * Sets the value of the recipientPrivateKeyFilePath property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link String }
+         *     
+         */
+        public void setRecipientPrivateKeyFilePath(String value) {
+            this.recipientPrivateKeyFilePath = value;
+        }
+
+        /**
+         * Gets the value of the recipientPrivateKeyPassword property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link String }
+         *     
+         */
+        public String getRecipientPrivateKeyPassword() {
+            return recipientPrivateKeyPassword;
+        }
+
+        /**
+         * Sets the value of the recipientPrivateKeyPassword property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link String }
+         *     
+         */
+        public void setRecipientPrivateKeyPassword(String value) {
+            this.recipientPrivateKeyPassword = value;
+        }
+
+        /**
+         * Gets the value of the senderPublicKeyFilePath property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link String }
+         *     
+         */
+        public String getSenderPublicKeyFilePath() {
+            return senderPublicKeyFilePath;
+        }
+
+        /**
+         * Sets the value of the senderPublicKeyFilePath property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link String }
+         *     
+         */
+        public void setSenderPublicKeyFilePath(String value) {
+            this.senderPublicKeyFilePath = value;
         }
 
     }

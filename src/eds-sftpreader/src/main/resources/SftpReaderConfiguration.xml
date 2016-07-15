@@ -9,8 +9,14 @@
   </Credentials>
   <Host>endeavour-sftp.cloudapp.net</Host>
   <Port>22</Port>
-  <RemotePath>/</RemotePath>
-  <LocalPath>/Users/jonny/Code/Local/sftp</LocalPath>
+  <RemotePath>/gpg</RemotePath>
+  <LocalPath>~/Code/Local/sftp</LocalPath>
+  <PgpDecryption>
+      <PgpFileFilter>*.gpg</PgpFileFilter>
+      <RecipientPrivateKeyFilePath>test-pgp-endeavour-private.asc</RecipientPrivateKeyFilePath>
+      <RecipientPrivateKeyPassword>password</RecipientPrivateKeyPassword>
+      <SenderPublicKeyFilePath>test-pgp-emis-public.asc</SenderPublicKeyFilePath>
+  </PgpDecryption>
   <Polltime>1</Polltime>
     <Pipeline>
         <PGPDecrypt/>
