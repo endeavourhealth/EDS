@@ -30,7 +30,7 @@
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
-                <xs:element name="Polltime" type="xs:int" minOccurs="1" maxOccurs="1"/>
+                <xs:element name="PollDelaySeconds" type="xs:int" minOccurs="1" maxOccurs="1"/>
                 <xs:element name="Pipeline" type="Pipeline" minOccurs="1" maxOccurs="1"/>
             </xs:sequence>
         </xs:complexType>

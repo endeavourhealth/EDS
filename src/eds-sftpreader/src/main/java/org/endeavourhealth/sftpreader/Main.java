@@ -1,5 +1,6 @@
 package org.endeavourhealth.sftpreader;
 
+import com.google.common.io.Resources;
 import org.endeavourhealth.core.configuration.SftpReaderConfiguration;
 import org.endeavourhealth.core.data.logging.LogbackCassandraAppender;
 import org.endeavourhealth.core.engineConfiguration.EngineConfigurationSerializer;
@@ -8,7 +9,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Timer;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class Main
 {
@@ -71,6 +76,9 @@ public class Main
 			configuration = XmlSerializer.deserializeFromResource(SftpReaderConfiguration.class, CONFIG_RESOURCE, CONFIG_XSD);
 		}
 
+		configuration.getCredentials().setClientPrivateKeyFilePath(resolveFilePath(configuration.getCredentials().getClientPrivateKeyFilePath()));
+		configuration.getCredentials().setHostPublicKeyFilePath(resolveFilePath(configuration.getCredentials().getHostPublicKeyFilePath()));
+
 		return configuration;
 	}
 
@@ -82,7 +90,7 @@ public class Main
 
 		try
 		{
-			timer.scheduleAtFixedRate(sftpTask, 0, configuration.getPolltime() * 1000);
+			timer.scheduleAtFixedRate(sftpTask, 0, configuration.getPollDelaySeconds() * 1000);
 
 			LOG.info("");
 			LOG.info("Press any key to exit...");
@@ -95,5 +103,13 @@ public class Main
 		{
 			timer.cancel();
 		}
+	}
+
+	private static String resolveFilePath(String filePath)
+	{
+		if (!Files.exists(Paths.get(filePath)))
+			return Resources.getResource(filePath).getPath();
+
+		return filePath;
 	}
 }

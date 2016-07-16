@@ -50,7 +50,7 @@ import javax.xml.bind.annotation.XmlType;
  *             &lt;/complexContent>
  *           &lt;/complexType>
  *         &lt;/element>
- *         &lt;element name="Polltime" type="{http://www.w3.org/2001/XMLSchema}int"/>
+ *         &lt;element name="PollDelaySeconds" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *         &lt;element name="Pipeline" type="{}Pipeline"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -68,7 +68,7 @@ import javax.xml.bind.annotation.XmlType;
     "remotePath",
     "localPath",
     "pgpDecryption",
-    "polltime",
+    "pollDelaySeconds",
     "pipeline"
 })
 @XmlRootElement(name = "SftpReaderConfiguration")
@@ -86,8 +86,8 @@ public class SftpReaderConfiguration {
     protected String localPath;
     @XmlElement(name = "PgpDecryption", required = true)
     protected SftpReaderConfiguration.PgpDecryption pgpDecryption;
-    @XmlElement(name = "Polltime")
-    protected int polltime;
+    @XmlElement(name = "PollDelaySeconds")
+    protected int pollDelaySeconds;
     @XmlElement(name = "Pipeline", required = true)
     protected Pipeline pipeline;
 
@@ -236,19 +236,19 @@ public class SftpReaderConfiguration {
     }
 
     /**
-     * Gets the value of the polltime property.
+     * Gets the value of the pollDelaySeconds property.
      * 
      */
-    public int getPolltime() {
-        return polltime;
+    public int getPollDelaySeconds() {
+        return pollDelaySeconds;
     }
 
     /**
-     * Sets the value of the polltime property.
+     * Sets the value of the pollDelaySeconds property.
      * 
      */
-    public void setPolltime(int value) {
-        this.polltime = value;
+    public void setPollDelaySeconds(int value) {
+        this.pollDelaySeconds = value;
     }
 
     /**

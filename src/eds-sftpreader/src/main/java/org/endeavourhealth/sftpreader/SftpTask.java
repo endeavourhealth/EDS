@@ -1,14 +1,20 @@
 package org.endeavourhealth.sftpreader;
 
-import com.google.common.io.Resources;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.SftpException;
+import org.apache.commons.io.FilenameUtils;
 import org.endeavourhealth.core.configuration.SftpReaderConfiguration;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnection;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionDetails;
+import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionException;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.TimerTask;
 
@@ -26,36 +32,76 @@ public class SftpTask extends TimerTask
     @Override
     public void run()
     {
-        while (true)
-        {
-            int filesReceived = receiveAndProcessFiles();
-
-            if (filesReceived == 0)
-                break;
-        }
+        receiveAndProcessFiles();
     }
 
-    private int receiveAndProcessFiles()
+    private void receiveAndProcessFiles()
     {
-        int fileAvailable = 0;
+        SftpConnection sftpConnection = createConnection();
 
-        try (SftpConnection sftpConnection = new SftpConnection(getSftpConnectionDetails()))
+        try
         {
-            List<SftpRemoteFile> sftpRemoteFiles = sftpConnection.getFileList(configuration.getRemotePath());
+            openConnection(sftpConnection);
 
-            fileAvailable = sftpRemoteFiles.size();
-
-            for (SftpRemoteFile sftpRemoteFile : sftpRemoteFiles)
+            for (SftpRemoteFile sftpRemoteFile : getFileList(sftpConnection))
             {
-                LOG.info("Found " + sftpRemoteFile.getFilename());
+                processFile(sftpConnection, sftpRemoteFile);
             }
         }
         catch (Exception e)
         {
-
+            LOG.error("Exception occurred while processing files", e);
         }
+        finally
+        {
+            closeConnection(sftpConnection);
+        }
+    }
 
-        return fileAvailable;
+    private void processFile(SftpConnection sftpConnection, SftpRemoteFile sftpRemoteFile) throws SftpException, IOException
+    {
+        LOG.info("Processing file " + sftpRemoteFile.getFilename());
+
+        LOG.info(" Downloading file");
+
+        InputStream inputStream = sftpConnection.getFile(sftpRemoteFile.getFullPath());
+
+        String localPath = FilenameUtils.concat(configuration.getLocalPath(), sftpRemoteFile.getFilename());
+        Files.copy(inputStream, new File(localPath).toPath(), StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    private SftpConnection createConnection()
+    {
+        return new SftpConnection(getSftpConnectionDetails());
+    }
+
+    private void openConnection(SftpConnection sftpConnection) throws SftpConnectionException, JSchException, IOException
+    {
+        String hostname = sftpConnection.getConnectionDetails().getHostname();
+        String port = Integer.toString(sftpConnection.getConnectionDetails().getPort());
+        String username = sftpConnection.getConnectionDetails().getUsername();
+
+        LOG.info("Opening SFTP connection to " + hostname + " on port " + port + " with user " + username);
+
+        sftpConnection.open();
+    }
+
+    private void closeConnection(SftpConnection sftpConnection)
+    {
+        LOG.info("Closing SFTP connection");
+
+        sftpConnection.close();
+    }
+
+    private List<SftpRemoteFile> getFileList(SftpConnection sftpConnection) throws SftpException
+    {
+        LOG.info("Get file list at " + configuration.getRemotePath());
+
+        List<SftpRemoteFile> fileList = sftpConnection.getFileList(configuration.getRemotePath());
+
+        LOG.info("Found " + Integer.toString(fileList.size()) + " files");
+
+        return fileList;
     }
 
     private SftpConnectionDetails getSftpConnectionDetails()
@@ -64,25 +110,12 @@ public class SftpTask extends TimerTask
                 .setHostname(this.configuration.getHost())
                 .setPort(this.configuration.getPort())
                 .setUsername(this.configuration.getCredentials().getUsername())
-                .setClientPrivateKeyFilePath(resolveFilePath(this.configuration.getCredentials().getClientPrivateKeyFilePath()))
+                .setClientPrivateKeyFilePath(this.configuration.getCredentials().getClientPrivateKeyFilePath())
                 .setClientPrivateKeyPassword(this.configuration.getCredentials().getClientPrivateKeyPassword())
-                .setHostPublicKeyFilePath(resolveFilePath(this.configuration.getCredentials().getHostPublicKeyFilePath()));
+                .setHostPublicKeyFilePath(this.configuration.getCredentials().getHostPublicKeyFilePath());
     }
 
-    private String resolveFilePath(String filePath)
-    {
-        if (!Files.exists(Paths.get(filePath)))
-            return Resources.getResource(filePath).getPath();
 
-        return filePath;
-    }
-
-//    private void downloadFile()
-//    {
-//          String localPath = FilenameUtils.concat(configuration.getLocalPath(), file.getFilename());
-//          Files.copy(inputStream, new File(localPath).toPath(), StandardCopyOption.REPLACE_EXISTING);
-//    }
-//
 //    private void decryptFile(String inputFilePath, String outputFilePath) throws Exception
 //    {
 //        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
