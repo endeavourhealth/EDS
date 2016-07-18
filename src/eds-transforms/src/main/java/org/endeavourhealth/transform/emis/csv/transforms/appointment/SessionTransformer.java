@@ -42,36 +42,36 @@ public class SessionTransformer {
             return;
         }
 
-        Schedule fhirSession = new Schedule();
-        fhirSession.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SCHEDULE));
+        Schedule fhirSchedule = new Schedule();
+        fhirSchedule.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SCHEDULE));
 
         String sessionGuid = sessionParser.getAppointmnetSessionGuid();
-        fhirSession.setId(sessionGuid);
+        fhirSchedule.setId(sessionGuid);
 
         String locationGuid = sessionParser.getLocationGuid();
         Reference fhirReference = csvHelper.createLocationReference(locationGuid);
-        fhirSession.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.LOCATION, fhirReference));
+        fhirSchedule.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.LOCATION, fhirReference));
 
         Date start = sessionParser.getStartDateTime();
         Date end = sessionParser.getEndDateTime();
         Period fhirPeriod = PeriodHelper.createPeriod(start, end);
-        fhirSession.setPlanningHorizon(fhirPeriod);
+        fhirSchedule.setPlanningHorizon(fhirPeriod);
 
         String sessionType = sessionParser.getSessionTypeDescription();
-        fhirSession.addType(CodeableConceptHelper.createCodeableConcept(sessionType));
+        fhirSchedule.addType(CodeableConceptHelper.createCodeableConcept(sessionType));
 
         String description = sessionParser.getDescription();
-        fhirSession.setComment(description);
+        fhirSchedule.setComment(description);
 
         List<String> staffGuids = sessionToStaffMap.get(sessionGuid);
         String firstStaffGuid = staffGuids.remove(0);
-        fhirSession.setActor(csvHelper.createPractitionerReference(firstStaffGuid));
+        fhirSchedule.setActor(csvHelper.createPractitionerReference(firstStaffGuid));
 
         for (String staffGuid: staffGuids) {
             Reference fhirStaffReference = csvHelper.createPractitionerReference(staffGuid);
-            fhirSession.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ADDITIONAL_ACTOR, fhirStaffReference));
+            fhirSchedule.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ADDITIONAL_ACTOR, fhirStaffReference));
         }
 
-        csvProcessor.saveAdminResource(fhirSession);
+        csvProcessor.saveAdminResource(fhirSchedule);
     }
 }

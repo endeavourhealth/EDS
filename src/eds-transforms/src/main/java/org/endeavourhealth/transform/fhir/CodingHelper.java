@@ -1,9 +1,6 @@
 package org.endeavourhealth.transform.fhir;
 
-import org.endeavourhealth.transform.fhir.schema.ContactRelationship;
-import org.endeavourhealth.transform.fhir.schema.OrganisationType;
-import org.endeavourhealth.transform.fhir.schema.ProblemSignificance;
-import org.endeavourhealth.transform.fhir.schema.RegistrationType;
+import org.endeavourhealth.transform.fhir.schema.*;
 import org.endeavourhealth.transform.terminology.SnomedCode;
 import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.Coding;
@@ -55,6 +52,12 @@ public class CodingHelper {
                 .setCode(significance.getCode());
     }
 
+    public static Coding createCoding(FamilyMember familyMember) {
+        return new Coding()
+                .setSystem(familyMember.getSystem())
+                .setDisplay(familyMember.getDescription())
+                .setCode(familyMember.getCode());
+    }
 
     public static Coding createCoding(String system, String term, String code) {
         return new Coding()

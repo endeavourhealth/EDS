@@ -11,6 +11,7 @@ import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 public class LocationTransformer {
@@ -22,7 +23,7 @@ public class LocationTransformer {
 
         //to create the FHIR location resources, parse the Admin_OrganisationLocation file first
         //to get a map of which organisations each location belongs to
-        HashMap<String, String> hmLocationToOrganisation = OrganisationLocationTransformer.transform(folderPath, csvFormat);
+        HashMap<String, List<String>> hmLocationToOrganisation = OrganisationLocationTransformer.transform(folderPath, csvFormat);
 
         Admin_Location parser = new Admin_Location(folderPath, csvFormat);
         try {
@@ -37,7 +38,7 @@ public class LocationTransformer {
     private static void createLocation(Admin_Location locationParser,
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper,
-                                       HashMap<String, String> hmLocationToOrganisation) throws Exception {
+                                       HashMap<String, List<String>> hmLocationToOrganisation) throws Exception {
 
         Location fhirLocation = new Location();
         fhirLocation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_LOCATION));
@@ -96,12 +97,13 @@ public class LocationTransformer {
         fhirLocation.setType(CodeableConceptHelper.createCodeableConcept(type));
 
         String parentLocationGuid = locationParser.getParentLocationId();
-        if (parentLocationGuid != null) {
+        if (!Strings.isNullOrEmpty(parentLocationGuid)) {
             fhirLocation.setPartOf(csvHelper.createLocationReference(parentLocationGuid));
         }
 
-        String organisationGuid = hmLocationToOrganisation.get(locationGuid);
-        if (organisationGuid != null) {
+        List<String> organisationGuids = hmLocationToOrganisation.get(locationGuid);
+        if (organisationGuids != null) {
+            String organisationGuid = organisationGuids.get(0);
             fhirLocation.setManagingOrganization(csvHelper.createOrganisationReference(organisationGuid));
         }
 

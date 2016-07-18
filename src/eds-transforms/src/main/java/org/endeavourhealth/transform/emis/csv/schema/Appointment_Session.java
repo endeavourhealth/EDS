@@ -18,9 +18,9 @@ public class Appointment_Session extends AbstractCsvTransformer {
     @Override
     protected String[] getCsvHeaders() {
         return new String[]{
-                "OrganisationGuid",
                 "AppointmentSessionGuid",
                 "Description",
+                "LocationGuid",
                 "SessionTypeDescription",
                 "SessionCategoryDisplayName",
                 "StartDate",
@@ -28,19 +28,19 @@ public class Appointment_Session extends AbstractCsvTransformer {
                 "EndDate",
                 "EndTime",
                 "Private",
+                "OrganisationGuid",
                 "Deleted",
-                "ProcessingId",
-                "LocationGuid"
+                "ProcessingId"
         };
     }
 
-    public String getOrganisationGuid() {
+    public String getAppointmnetSessionGuid() {
         return super.getString(0);
     }
-    public String getAppointmnetSessionGuid() {
+    public String getDescription() {
         return super.getString(1);
     }
-    public String getDescription() {
+    public String getLocationGuid() {
         return super.getString(2);
     }
     public String getSessionTypeDescription() {
@@ -58,13 +58,14 @@ public class Appointment_Session extends AbstractCsvTransformer {
     public boolean getPrivate() {
         return super.getBoolean(9);
     }
+    public String getOrganisationGuid() {
+        return super.getString(10);
+    }
     public boolean getDeleted() {
-        return super.getBoolean(10);
+        return super.getBoolean(11);
     }
     public Integer getProcessingId() {
-        return super.getInt(11);
+        return super.getInt(12);
     }
-    public String getLocationGuid() {
-        return super.getString(12);
-    }
+
 }

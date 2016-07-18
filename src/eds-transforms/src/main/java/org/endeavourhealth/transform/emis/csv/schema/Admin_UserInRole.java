@@ -23,10 +23,10 @@ public class Admin_UserInRole extends AbstractCsvTransformer {
                 "Title",
                 "GivenName",
                 "Surname",
-                "ContactStartDate",
-                "ContractEndDate",
                 "JobCategoryCode",
                 "JobCategoryName",
+                "ContractStartDate",
+                "ContractEndDate",
                 "ProcessingId"
         };
     }
@@ -46,17 +46,17 @@ public class Admin_UserInRole extends AbstractCsvTransformer {
     public String getSurname() {
         return super.getString(4);
     }
-    public Date getContractStartDate() throws TransformException {
-        return super.getDate(5);
-    }
-    public Date getContractEndDate() throws TransformException {
-        return super.getDate(6);
-    }
     public String getJobCategoryCode() {
-        return super.getString(7);
+        return super.getString(5);
     }
     public String getJobCategoryName() {
-        return super.getString(8);
+        return super.getString(6);
+    }
+    public Date getContractStartDate() throws TransformException {
+        return super.getDate(7);
+    }
+    public Date getContractEndDate() throws TransformException {
+        return super.getDate(8);
     }
     public Integer getProcessingId() {
         return super.getInt(9);

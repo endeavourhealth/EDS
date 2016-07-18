@@ -42,15 +42,6 @@ public class ProblemTransformer {
 
         fhirProblem.setPatient(csvHelper.createPatientReference(patientGuid));
 
-        boolean store = !csvHelper.isObservationToDelete(patientGuid, observationGuid);
-
-        //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (!store) {
-            csvHelper.cacheCondition(fhirProblem);
-            csvProcessor.deletePatientResource(fhirProblem, patientGuid);
-            return;
-        }
-
         String comments = problemParser.getComment();
         fhirProblem.setNotes(comments);
 
@@ -87,47 +78,21 @@ public class ProblemTransformer {
             fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_RELATED, typeExtension, referenceExtension));
         }
 
-        //TODO - need to set ClinicalStatus on Problem FHIR resource
-
-        //several of the Resource fields are simply carried over from the Observation the Problem is linked to
-        Observation fhirObservation = csvHelper.findObservation(observationGuid, patientGuid);
-
-        DateTimeType fhirDateTime = fhirObservation.getEffectiveDateTimeType();
-        Date date = fhirDateTime.getValue();
-        TemporalPrecisionEnum precision = fhirDateTime.getPrecision();
-        //have to convert dateTimeType to just dateType
-        if (precision == TemporalPrecisionEnum.MILLI
-                || precision == TemporalPrecisionEnum.MINUTE
-                || precision == TemporalPrecisionEnum.SECOND) {
-            precision = TemporalPrecisionEnum.DAY;
-        }
-
-        Reference asserter = null;
-        List<Reference> performers = fhirObservation.getPerformer();
-        if (performers.size() > 0) {
-            asserter = performers.get(0);
-        }
-
-        fhirProblem.setDateRecordedElement(new DateType(date, precision));
-        fhirProblem.setEncounter(fhirObservation.getEncounter());
-        fhirProblem.setCode(fhirObservation.getCode());
-        fhirProblem.setAsserter(asserter);
-
-        csvHelper.cacheCondition(fhirProblem);
-        csvProcessor.savePatientResource(fhirProblem, patientGuid);
+        //until the Observation, DrugIssue and DrugRecord files are completed, we can't
+        //save the problem, so cache it in the helper to finish later
+        csvHelper.cacheProblem(patientGuid, observationGuid, fhirProblem);
     }
 
     private static ProblemRelationshipType convertRelationshipType(String relationshipType) throws Exception {
 
-        //TODO - validate possible problem relationship types from EMIS CSV
         if (relationshipType.equalsIgnoreCase("grouped")) {
             return ProblemRelationshipType.GROUPED;
         } else if (relationshipType.equalsIgnoreCase("combined")) {
             return ProblemRelationshipType.COMBINED;
-        } else if (relationshipType.equalsIgnoreCase("evolved from")) {
+        } else if (relationshipType.equalsIgnoreCase("evolved")) {
             return ProblemRelationshipType.EVOLVED_FROM;
         } else if (relationshipType.equalsIgnoreCase("replaced")) {
-            return ProblemRelationshipType.REPLACED;
+            return ProblemRelationshipType.REPLACES;
         } else {
             throw new TransformException("Unhanded problem relationship type " + relationshipType);
         }

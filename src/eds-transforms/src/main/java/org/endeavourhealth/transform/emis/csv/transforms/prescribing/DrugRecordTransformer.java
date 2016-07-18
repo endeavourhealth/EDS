@@ -65,7 +65,7 @@ public class DrugRecordTransformer {
         }
 
         Long codeId = drugRecordParser.getCodeId();
-        fhirMedication.setMedication(csvHelper.findMedication(codeId));
+        fhirMedication.setMedication(csvHelper.findMedication(codeId, csvProcessor));
 
         String dose = drugRecordParser.getDosage();
         MedicationStatement.MedicationStatementDosageComponent fhirDose = fhirMedication.addDosage();
@@ -88,24 +88,29 @@ public class DrugRecordTransformer {
             fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_NUMBER_OF_REPEATS_ISSUED, new PositiveIntType(issuesReceived)));
         }
 
-        String problemObservationGuid = drugRecordParser.getProblemObservationGuid();
-        csvHelper.linkToProblem(fhirMedication, problemObservationGuid, patientGuid);
-
         //if the Medication is linked to a Problem, then use the problem's Observation as the Medication reason
+        String problemObservationGuid = drugRecordParser.getProblemObservationGuid();
         if (problemObservationGuid != null) {
             fhirMedication.setReasonForUse(csvHelper.createObservationReference(problemObservationGuid, patientGuid));
         }
 
         Date cancellationDate = drugRecordParser.getCancellationDate();
         if (cancellationDate != null) {
-            //TODO - MedicationAuthorisation resource requires cancellation Performer, which isn't available
-            //fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_CANCELLATION
+            //the cancellation extension is a compound extension, so we have one extension inside another
+            Extension extension = ExtensionConverter.createExtension("performer", new DateType(cancellationDate));
+            fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_CANCELLATION, extension));
         }
 
         //NOTE: first and most recent issue dates are set at the end of the IssueRecordTransformer
         //TODO - first and most recent issue dates on FHIR MedicationStatement
 
         csvProcessor.savePatientResource(fhirMedication, patientGuid);
+
+        //if this record is linked to a problem, store this relationship in the helper
+        csvHelper.cacheProblemRelationship(drugRecordParser.getProblemObservationGuid(),
+                                            patientGuid,
+                                            drugRecordGuid,
+                                            fhirMedication.getResourceType());
     }
 
 }

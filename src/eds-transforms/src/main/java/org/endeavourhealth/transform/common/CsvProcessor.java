@@ -13,6 +13,7 @@ public class CsvProcessor {
     private UUID systemInstanceId = null;
     private Map<Resource, UUID> resourcesToSave = new HashMap<>();
     private Map<Resource, UUID> resourcesToDelete = new HashMap<>();
+    private Set<Resource> resourcesToIdMap = new HashSet<>();
     private Map<String, UUID> patientBatchIdMap = new HashMap<>();
     private UUID adminBatchId = null;
 
@@ -24,17 +25,31 @@ public class CsvProcessor {
 
 
     public void saveAdminResource(Resource resource) {
-        addResourceToQueue(resource, false, getAdminBatchId(), resourcesToSave, serviceId, systemInstanceId);
+        saveAdminResource(resource, true);
     }
+    public void saveAdminResource(Resource resource, boolean mapIds) {
+        addResourceToQueue(resource, false, mapIds, getAdminBatchId(), resourcesToSave);
+    }
+
     public void deleteAdminResource(Resource resource) {
-        addResourceToQueue(resource, false, getAdminBatchId(), resourcesToDelete, serviceId, systemInstanceId);
+        deleteAdminResource(resource, true);
+    }
+    public void deleteAdminResource(Resource resource, boolean mapIds) {
+        addResourceToQueue(resource, false, mapIds, getAdminBatchId(), resourcesToDelete);
     }
 
     public void savePatientResource(Resource resource, String sourcePatientId) {
-        addResourceToQueue(resource, true, getPatientBatchId(sourcePatientId), resourcesToSave, serviceId, systemInstanceId);
+        savePatientResource(resource, true, sourcePatientId);
     }
+    public void savePatientResource(Resource resource, boolean mapIds, String sourcePatientId) {
+        addResourceToQueue(resource, true, mapIds, getPatientBatchId(sourcePatientId), resourcesToSave);
+    }
+
     public void deletePatientResource(Resource resource, String sourcePatientId) {
-        addResourceToQueue(resource, true, getPatientBatchId(sourcePatientId), resourcesToDelete, serviceId, systemInstanceId);
+        deletePatientResource(resource, true, sourcePatientId);
+    }
+    public void deletePatientResource(Resource resource, boolean mapIds, String sourcePatientId) {
+        addResourceToQueue(resource, true, mapIds, getPatientBatchId(sourcePatientId), resourcesToDelete);
     }
 
     private UUID getAdminBatchId() {
@@ -53,12 +68,11 @@ public class CsvProcessor {
     }
 
 
-    private static void addResourceToQueue(Resource resource,
-                                           boolean expectingPatientResource,
-                                           UUID batchId,
-                                           Map<Resource, UUID> map,
-                                           UUID serviceId,
-                                           UUID systemInstanceId) {
+    private void addResourceToQueue(Resource resource,
+                                   boolean expectingPatientResource,
+                                   boolean mapIds,
+                                   UUID batchId,
+                                   Map<Resource, UUID> map) {
 
         if (isPatientResource(resource) != expectingPatientResource) {
             throw new RuntimeException("Trying to treat patient resource as admin or vice versa");
@@ -66,24 +80,32 @@ public class CsvProcessor {
 
         map.put(resource, batchId);
 
+        if (mapIds) {
+            resourcesToIdMap.add(resource);
+        }
+
         if (map.size() >= batchSaveSize) {
-            savePendingResources(map, serviceId, systemInstanceId);
+            savePendingResources(map);
         }
     }
-    private static void savePendingResources(Map<Resource, UUID> map, UUID serviceId, UUID systemInstanceId) {
+    private void savePendingResources(Map<Resource, UUID> map) {
+
+        if (!resourcesToIdMap.isEmpty()) {
+            List<Resource> resources = new ArrayList<>(resourcesToIdMap);
+            resourcesToIdMap.clear();
+
+            IdHelper.mapIds(serviceId, systemInstanceId, resources);
+        }
+
 
         Map<Resource, UUID> saveMap = new HashMap<>(map);
         map.clear();
-
-        List<Resource> resources = new ArrayList<>(saveMap.keySet());
-        IdHelper.mapIds(serviceId, systemInstanceId, resources);
-
         //TODO - invoke filer for resources
     }
 
     public void processingCompleted() {
-        savePendingResources(resourcesToSave, serviceId, systemInstanceId);
-        savePendingResources(resourcesToDelete, serviceId, systemInstanceId);
+        savePendingResources(resourcesToSave);
+        savePendingResources(resourcesToDelete);
 
         //TODO - send transaction IDs to next queue to start outgoing pipeline
     }
@@ -111,7 +133,6 @@ public class CsvProcessor {
             set.add(ProcedureRequest.class);
             set.add(ReferralRequest.class);
             set.add(RelatedPerson.class);
-            set.add(Schedule.class);
             set.add(Specimen.class);
 
             patientResourceClasses = set;
@@ -125,5 +146,13 @@ public class CsvProcessor {
      */
     public static void setBatchSaveSize(int batchSaveSize) {
         CsvProcessor.batchSaveSize = batchSaveSize;
+    }
+
+    public UUID getServiceId() {
+        return serviceId;
+    }
+
+    public UUID getSystemInstanceId() {
+        return systemInstanceId;
     }
 }

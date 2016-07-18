@@ -18,81 +18,82 @@ public class Admin_Location extends AbstractCsvTransformer {
     @Override
     protected String[] getCsvHeaders() {
         return new String[]{
+                "LocationGuid",
+                "LocationName",
+                "LocationTypeDescription",
+                "ParentLocationGuid",
+                "OpenDate",
+                "CloseDate",
+                "MainContactName",
+                "FaxNumber",
+                "EmailAddress",
+                "PhoneNumber",
                 "HouseNameFlatNumber",
                 "NumberAndStreet",
                 "Village",
                 "Town",
                 "County",
                 "Postcode",
-                "LocationGuid",
-                "ParentLocationId",
-                "LocationName",
-                "MainContactName",
-                "EmailAddress",
-                "PhoneNumber",
-                "FaxNumber",
-                "OpenDate",
-                "CloseDate",
-                "ProcessingId",
                 "Deleted",
-                "LocationTypeDescription"
+                "ProcessingId"
         };
     }
 
-    public String getHouseNameFlatNumber() {
+    public String getLocationGuid() {
         return super.getString(0);
     }
-    public String getNumberAndStreet() {
+    public String getLocationName() {
         return super.getString(1);
     }
-    public String getVillage() {
+    public String getLocationTypeDescription() {
         return super.getString(2);
     }
-    public String getTown() {
+    public String getParentLocationId() {
         return super.getString(3);
     }
-    public String getCounty() {
-        return super.getString(4);
-    }
-    public String getPostcode() {
-        return super.getString(5);
-    }
-    public String getLocationGuid() {
-        return super.getString(6);
-    }
-    public String getParentLocationId() {
-        return super.getString(7);
-    }
-    public String getLocationName() {
-        return super.getString(8);
-    }
-    public String getMainContactName() {
-        return super.getString(10);
-    }
-    public String getEmailAddress() {
-        return super.getString(11);
-    }
-    public String getPhoneNumber() {
-        return super.getString(12);
-    }
-    public String getFaxNumber() {
-        return super.getString(13);
-    }
     public Date getOpenDate() throws TransformException {
-        return super.getDate(14);
+        return super.getDate(4);
     }
     public Date getCloseDate() throws TransformException {
-        return super.getDate(15);
+        return super.getDate(5);
     }
-    public Integer getProcessingId() {
-        return super.getInt(16);
+    public String getMainContactName() {
+        return super.getString(6);
+    }
+    public String getFaxNumber() {
+        return super.getString(7);
+    }
+    public String getEmailAddress() {
+        return super.getString(8);
+    }
+    public String getPhoneNumber() {
+        return super.getString(9);
+    }
+    public String getHouseNameFlatNumber() {
+        return super.getString(10);
+    }
+    public String getNumberAndStreet() {
+        return super.getString(11);
+    }
+    public String getVillage() {
+        return super.getString(12);
+    }
+    public String getTown() {
+        return super.getString(13);
+    }
+    public String getCounty() {
+        return super.getString(14);
+    }
+    public String getPostcode() {
+        return super.getString(15);
     }
     public boolean getDeleted() {
-        return super.getBoolean(17);
+        return super.getBoolean(16);
     }
-    public String getLocationTypeDescription() {
-        return super.getString(18);
+    public Integer getProcessingId() {
+        return super.getInt(17);
     }
+
 
 
 

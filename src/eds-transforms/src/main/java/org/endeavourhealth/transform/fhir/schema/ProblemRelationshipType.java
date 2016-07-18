@@ -6,7 +6,7 @@ public enum ProblemRelationshipType {
 
     COMBINED("combined", "Combined"), //This problem is combined/merged with the target problem to form a single logical problem
     GROUPED("grouped", "Grouped"), //This problem is part of a group that includes the target problem as a member of the group
-    REPLACED("replaces", "Replaces"), //This problem replaces a previous problem (i.e. a revised diagnosis). The target problem is now obsolete
+    REPLACES("replaces", "Replaces"), //This problem replaces a previous problem (i.e. a revised diagnosis). The target problem is now obsolete
     EVOLVED_FROM("evolved-from", "Evolved From"); //This problem has evolved from the target problem
 
     private String code = null;

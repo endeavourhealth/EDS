@@ -14,9 +14,9 @@ import java.util.*;
 
 public class OrganisationLocationTransformer {
 
-    public static HashMap<String, String> transform(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static HashMap<String, List<String>> transform(String folderPath, CSVFormat csvFormat) throws Exception {
 
-        HashMap<String, String> hmLocationToOrganisation = new HashMap<>();
+        HashMap<String, List<String>> hmLocationToOrganisation = new HashMap<>();
 
         Admin_OrganisationLocation parser = new Admin_OrganisationLocation(folderPath, csvFormat);
         try {
@@ -30,21 +30,35 @@ public class OrganisationLocationTransformer {
         return hmLocationToOrganisation;
     }
 
-    private static void createLocationOrgansationMapping(Admin_OrganisationLocation organisationLocationParser, HashMap<String, String> hmLocationToOrganisation) throws Exception {
+    private static void createLocationOrgansationMapping(Admin_OrganisationLocation organisationLocationParser,
+                                                         HashMap<String, List<String>> hmLocationToOrganisation) throws Exception {
 
-        //TODO - how to handle deleted Organisation-Location links?
-        //skip any deleted links
-        /*if (organisationLocationParser.getDeleted()) {
+        //if an org-location link has been deleted, then either a) the location has been deleted
+        //in which case we'll sort it out because we'll have the deleted row in the Location CSV or
+        //b) it's now part of a new organisation, in which case we'll have a new non-deleted row
+        //in this CSV. In both cases, it's safe to simply ignore the delted records in this file.
+        if (organisationLocationParser.getDeleted()) {
             return;
         }
-*/
+
         String orgGuid = organisationLocationParser.getOrgansationGuid();
         String locationGuid = organisationLocationParser.getLocationGuid();
+        boolean mainLocation = organisationLocationParser.getIsMainLocation();
+        //the MainLocation field is duplicated from the Organisation CSV file and is processed from that file
 
-        if (hmLocationToOrganisation.get(locationGuid) != null) {
-            throw new TransformException("Location " + locationGuid + " is in more than on organisation");
+        List<String> orgGuids = hmLocationToOrganisation.get(locationGuid);
+        if (orgGuids == null) {
+            orgGuids = new ArrayList<>();
+            hmLocationToOrganisation.put(locationGuid, orgGuids);
         }
 
-        hmLocationToOrganisation.put(locationGuid, orgGuid);
+        //if this location link is for the main location of an organisation, then insert that
+        //org at the start of the list, so it's used as the managing organisation for the location
+        if (mainLocation) {
+            orgGuids.add(0, orgGuid);
+        } else {
+            orgGuids.add(orgGuid);
+        }
+
     }
 }

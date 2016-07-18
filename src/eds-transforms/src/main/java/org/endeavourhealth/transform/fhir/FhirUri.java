@@ -18,10 +18,11 @@ public class FhirUri
 
     public final static String VALUE_SET_REGISTRATION_TYPE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-patient-registration-type";
     public final static String VALUE_SET_ORGANISATION_TYPE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-organization-type";
-    public final static String VALUE_SET_CONTACT_RELATIONSHIP = "http://hl7.org/fhir/valueset-patient-contact-relationship.html";
+    public final static String VALUE_SET_CONTACT_RELATIONSHIP = "http://hl7.org/fhir/ValueSet/patient-contact-relationship";
     public final static String VALUE_SET_PROBLEM_SIGNIFICANCE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-problem-significance";
     public final static String VALUE_SET_PROBLEM_RELATIONSHIP_TYPE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-problem-relationshiptype";
     public final static String VALUE_SET_IMMUNIZATION_STATUS = "http://hl7.org/fhir/ValueSet/medication-admin-status";
+    public final static String VALUE_SET_FAMILY_MEMBER = "http://hl7.org/fhir/ValueSet/v3-FamilyMember";
 
     public final static String PROFILE_URI_ORGANIZATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-organization";
     public final static String PROFILE_URI_LOCATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-location";
@@ -49,7 +50,5 @@ public class FhirUri
     public final static String PROFILE_URI_EPISODE_OF_CARE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-episode-of-care";
     public final static String PROFILE_URI_TASK = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-task";
 
-    public final static String VALUE_SET_FAMILY_MEMBER = "http://hl7.org/fhir/ValueSet/v3-FamilyMember";
-    public final static String VALUE_SET_FAMILY_MEMBER_TERM = "family member";
-    public final static String VALUE_SET_FAMILY_MEMBER_CODE = "FAMMEMB";
+
 }

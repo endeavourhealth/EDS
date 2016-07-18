@@ -56,6 +56,7 @@ public class EmisDateTimeHelper {
             case YM:
                 return new DateType(date, TemporalPrecisionEnum.MONTH);
             case YMD:
+            case YMDT:
                 return new DateType(date, TemporalPrecisionEnum.DAY);
             default:
                 throw new TransformException("Unhandled date precision [" + vocPrecision + "]");

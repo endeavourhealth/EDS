@@ -37,11 +37,11 @@ public class IssueRecordTransformer {
         MedicationOrder fhirMedication = new MedicationOrder();
         fhirMedication.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_ORDER));
 
-        String issueGuid = issueParser.getIssueRecordGuid();
+        String issueRecordGuid = issueParser.getIssueRecordGuid();
         String patientGuid = issueParser.getPatientGuid();
         String organisationGuid = issueParser.getOrganisationGuid();
 
-        EmisCsvHelper.setUniqueId(fhirMedication, patientGuid, issueGuid);
+        EmisCsvHelper.setUniqueId(fhirMedication, patientGuid, issueRecordGuid);
 
         fhirMedication.setPatient(csvHelper.createPatientReference(patientGuid));
 
@@ -60,7 +60,7 @@ public class IssueRecordTransformer {
         fhirMedication.setPrescriber(csvHelper.createPractitionerReference(prescriberGuid));
 
         Long codeId = issueParser.getCodeId();
-        fhirMedication.setMedication(csvHelper.findMedication(codeId));
+        fhirMedication.setMedication(csvHelper.findMedication(codeId, csvProcessor));
 
         String dose = issueParser.getDosage();
         MedicationOrder.MedicationOrderDosageInstructionComponent fhirDose = fhirMedication.addDosageInstruction();
@@ -77,10 +77,8 @@ public class IssueRecordTransformer {
         fhirDispenseRequest.setExpectedSupplyDuration(QuantityHelper.createDuration(courseDuration, "days"));
         fhirMedication.setDispenseRequest(fhirDispenseRequest);
 
-        String problemObservationGuid = issueParser.getProblemObservationGuid();
-        csvHelper.linkToProblem(fhirMedication, problemObservationGuid, patientGuid);
-
         //if the Medication is linked to a Problem, then use the problem's Observation as the Medication reason
+        String problemObservationGuid = issueParser.getProblemObservationGuid();
         if (problemObservationGuid != null) {
             fhirMedication.setReason(csvHelper.createObservationReference(problemObservationGuid, patientGuid));
         }
@@ -90,6 +88,13 @@ public class IssueRecordTransformer {
         fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_ORDER_AUTHORISATION, authorisationReference));
 
         csvProcessor.savePatientResource(fhirMedication, patientGuid);
+
+        //if this record is linked to a problem, store this relationship in the helper
+        csvHelper.cacheProblemRelationship(issueParser.getProblemObservationGuid(),
+                patientGuid,
+                issueRecordGuid,
+                fhirMedication.getResourceType());
+
     }
 
 }

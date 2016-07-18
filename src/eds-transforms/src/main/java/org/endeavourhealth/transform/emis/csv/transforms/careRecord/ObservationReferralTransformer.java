@@ -45,12 +45,6 @@ public class ObservationReferralTransformer {
 
         fhirReferral.setPatient(csvHelper.createPatientReference(patientGuid));
 
-        //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (csvHelper.isObservationToDelete(patientGuid, observationGuid)) {
-            csvProcessor.deletePatientResource(fhirReferral, patientGuid);
-            return;
-        }
-
         String ubrn = observationParser.getReferralUBRN();
         fhirReferral.addIdentifier(IdentifierHelper.createUbrnIdentifier(ubrn));
 
@@ -68,18 +62,6 @@ public class ObservationReferralTransformer {
             fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(serviceType));
         }
 
-        //several of the Resource fields are simply carried over from the Observation the Referral is linked to
-        Observation fhirObservation = csvHelper.findObservation(observationGuid, patientGuid);
-
-        fhirReferral.setDateElement(fhirObservation.getEffectiveDateTimeType());
-        fhirReferral.setEncounter(fhirObservation.getEncounter());
-        fhirReferral.setReason(fhirObservation.getCode());
-
-        List<Reference> fhirPerformers = fhirObservation.getPerformer();
-        Reference fhirPerformer = fhirPerformers.get(0);
-        fhirReferral.setRequester(fhirPerformer);
-
-
         //although the columns exist in the CSV, the spec. states that they'll always be empty
         //ReferralReceivedDateTime
         //ReferralEndDate
@@ -92,7 +74,10 @@ public class ObservationReferralTransformer {
         //ReferralEpisideDischargeLetterIssuedDate
         //ReferralClosureReasonCodeId
 
-        csvProcessor.savePatientResource(fhirReferral, patientGuid);
+        //unlike other resources, we don't save the Referral immediately, as there's data we
+        //require on the corresponding row in the Observation file. So cache in the helper
+        //and we'll finish the job when we get to that.
+        csvHelper.cacheReferral(observationGuid, patientGuid, fhirReferral);
 
     }
 
@@ -105,16 +90,9 @@ public class ObservationReferralTransformer {
         } else if (urgency.equalsIgnoreCase("Soon")) {
             return DiagnosticOrder.DiagnosticOrderPriority.ASAP;
 
-        } else if (urgency.equalsIgnoreCase("Urgent")) {
+        } else if (urgency.equalsIgnoreCase("Urgent")
+                || urgency.equalsIgnoreCase("2 week wait")) { //2 week wait IS THE SAME as urgent
             return DiagnosticOrder.DiagnosticOrderPriority.URGENT;
-
-        } else if (urgency.equalsIgnoreCase("Dated")) {
-            //TODO - how to map EMIS Dated referral priority to FHIR
-            return null;
-
-        } else if (urgency.equalsIgnoreCase("2 week wait")) {
-            //TODO - how to map EMIS 2 Week Wait referral priority to FHIR
-            return null;
 
         } else {
             throw new TransformException("Unknown referral urgency " + urgency);

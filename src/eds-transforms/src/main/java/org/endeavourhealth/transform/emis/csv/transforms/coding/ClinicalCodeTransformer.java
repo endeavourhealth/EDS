@@ -1,7 +1,10 @@
 package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.ClinicalCodeType;
 import org.endeavourhealth.transform.emis.csv.schema.Coding_ClinicalCode;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.CodingHelper;
@@ -16,23 +19,24 @@ import java.util.HashMap;
 public abstract class ClinicalCodeTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(ClinicalCodeTransformer.class);
 
-    public static HashMap<Long, CodeableConcept> transform(String folderPath, CSVFormat csvFormat) throws Exception {
-
-        HashMap<Long, CodeableConcept> ret = new HashMap<>();
+    public static void transform(String folderPath,
+                               CSVFormat csvFormat,
+                               CsvProcessor csvProcessor,
+                               EmisCsvHelper csvHelper) throws Exception {
 
         Coding_ClinicalCode parser = new Coding_ClinicalCode(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                transform(parser, ret);
+                transform(parser, csvProcessor, csvHelper);
             }
         } finally {
             parser.close();
         }
-
-        return ret;
     }
 
-    private static void transform(Coding_ClinicalCode codeParser, HashMap<Long, CodeableConcept> map) throws Exception {
+    private static void transform(Coding_ClinicalCode codeParser,
+                                  CsvProcessor csvProcessor,
+                                  EmisCsvHelper csvHelper) throws Exception {
 
         Long codeId = codeParser.getCodeId();
 
@@ -65,7 +69,9 @@ public abstract class ClinicalCodeTransformer {
             }
         }
 
-        map.put(codeId, fhirConcept);
-    }
+        ClinicalCodeType codeType = ClinicalCodeType.fromValue(emisCategory);
+
+        csvHelper.addClinicalCode(codeId, fhirConcept, codeType, csvProcessor);
+   }
 
 }

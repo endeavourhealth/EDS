@@ -57,6 +57,10 @@ public enum ClinicalCodeType {
         this.value = value;
     }
 
+    public String getValue() {
+        return value;
+    }
+
     public static ClinicalCodeType fromValue(String v) {
         for (ClinicalCodeType c: ClinicalCodeType.values()) {
             if (c.value.equals(v)) {

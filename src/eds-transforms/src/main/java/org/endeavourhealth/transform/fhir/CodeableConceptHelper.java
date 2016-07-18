@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.fhir;
 
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.fhir.schema.ContactRelationship;
+import org.endeavourhealth.transform.fhir.schema.FamilyMember;
 import org.endeavourhealth.transform.fhir.schema.OrganisationType;
 import org.endeavourhealth.transform.fhir.schema.ProblemSignificance;
 import org.endeavourhealth.transform.terminology.SnomedCode;
@@ -34,7 +35,9 @@ public class CodeableConceptHelper {
         return new CodeableConcept().addCoding(CodingHelper.createCoding(significance));
     }
 
-
+    public static CodeableConcept createCodeableConcept(FamilyMember familyMember) {
+        return new CodeableConcept().addCoding(CodingHelper.createCoding(familyMember));
+    }
 
     public static CodeableConcept createCodeableConcept(String text) {
         return new CodeableConcept().setText(text);

@@ -1,29 +1,42 @@
 package org.endeavourhealth.transform.emis.csv;
 
+import com.datastax.driver.core.utils.UUIDs;
+import com.google.common.base.Strings;
+import org.endeavourhealth.core.data.ehr.PersonResourceRepository;
+import org.endeavourhealth.core.data.transform.EmisCsvCodeMapRepository;
+import org.endeavourhealth.core.data.transform.models.EmisCsvCodeMap;
+import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.*;
+import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class EmisCsvHelper {
 
+    private static final String CODEABLE_CONCEPT = "CodeableConcept";
+    private static final String ID_DELIMITER = "-";
+
     //metadata, not relating to patients
-    private Map<Long, CodeableConcept> clinicalCodes = null;
-    private Map<Long, CodeableConcept> fhirMedication = null;
+    private Map<Long, CodeableConcept> clinicalCodes = new HashMap<>();
+    private Map<Long, ClinicalCodeType> clinicalCodeTypes = new HashMap<>();
+    private Map<Long, CodeableConcept> medication = new HashMap<>();
+    private EmisCsvCodeMapRepository mappingRepository = new EmisCsvCodeMapRepository();
+    private JsonParser parser = new JsonParser();
 
     //some resources are referred to by others, so we cache them here for when we need them
-    private Map<String, Condition> conditionMap = new HashMap<>();
-    private Map<String, Observation> observationMap = new HashMap<>();
+    private Map<String, Condition> problemMap = new HashMap<>();
+    //private Map<String, Observation> observationMap = new HashMap<>();
+    private Map<String, ReferralRequest> referralMap = new HashMap<>();
     //private Map<String, DiagnosticReport> diagnosticReportMap = new HashMap<>();
+    private PersonResourceRepository resourceRepository = new PersonResourceRepository();
+    private Map<String, List<ResourceRelationship>> observationChildMap = new HashMap<>();
+    private Map<String, List<ResourceRelationship>> problemChildMap = new HashMap<>();
 
-    public EmisCsvHelper(Map<Long, CodeableConcept> clinicalCodes, Map<Long, CodeableConcept> fhirMedication) {
-
-        this.clinicalCodes = clinicalCodes;
-        this.fhirMedication = fhirMedication;
+    public EmisCsvHelper() {
     }
 
     /**
@@ -34,7 +47,16 @@ public class EmisCsvHelper {
         if (sourceGuid == null) {
             return patientGuid;
         } else {
-            return patientGuid + "-" + sourceGuid;
+            return patientGuid + ID_DELIMITER + sourceGuid;
+        }
+    }
+    private static String getPatientGuidFromUniqueId(String uniqueId) {
+        String[] toks = uniqueId.split(ID_DELIMITER);
+        if (toks.length == 1
+                || toks.length == 2) {
+            return toks[0];
+        } else {
+            throw new IllegalArgumentException("Invalid unique ID string [" + uniqueId + "]");
         }
     }
 
@@ -43,31 +65,98 @@ public class EmisCsvHelper {
     }
 
 
-    public CodeableConcept findClinicalCode(Long id) throws Exception {
-        CodeableConcept ret = clinicalCodes.get(id);
+
+    public void addMedication(Long codeId,
+                              CodeableConcept codeableConcept,
+                              CsvProcessor csvProcessor) throws Exception {
+        medication.put(codeId, codeableConcept);
+
+        //store the medication in the DB
+        String json = parser.composeString(codeableConcept, CODEABLE_CONCEPT);
+
+        EmisCsvCodeMap mapping = new EmisCsvCodeMap();
+        mapping.setServiceId(csvProcessor.getServiceId());
+        mapping.setSystemInstanceId(csvProcessor.getSystemInstanceId());
+        mapping.setMedication(true);
+        mapping.setCodeId(codeId);
+        mapping.setTimeUuid(UUIDs.timeBased());
+        mapping.setCodeType(null);
+        mapping.setCodeableConcept(json);
+
+        mappingRepository.save(mapping);
+    }
+    public void addClinicalCode(Long codeId,
+                                CodeableConcept codeableConcept,
+                                ClinicalCodeType type,
+                                CsvProcessor csvProcessor) throws Exception {
+        clinicalCodes.put(codeId, codeableConcept);
+        clinicalCodeTypes.put(codeId, type);
+
+        //store the medication in the DB
+        String json = parser.composeString(codeableConcept, CODEABLE_CONCEPT);
+
+        EmisCsvCodeMap mapping = new EmisCsvCodeMap();
+        mapping.setServiceId(csvProcessor.getServiceId());
+        mapping.setSystemInstanceId(csvProcessor.getSystemInstanceId());
+        mapping.setMedication(false);
+        mapping.setCodeId(codeId);
+        mapping.setTimeUuid(UUIDs.timeBased());
+        mapping.setCodeType(type.getValue());
+        mapping.setCodeableConcept(json);
+
+        mappingRepository.save(mapping);
+    }
+
+    public CodeableConcept findClinicalCode(Long codeId, CsvProcessor csvProcessor) throws Exception {
+        CodeableConcept ret = clinicalCodes.get(codeId);
         if (ret == null) {
-
-            //TODO - need to store these somewhere to handle deltas
-
-            throw new TransformException("Failed to find code CodeableConcept for id " + id);
+            retrieveClincalCode(codeId, csvProcessor);
+            ret = clinicalCodes.get(codeId);
         }
         return ret.copy();
     }
 
-    public ClinicalCodeType findClinicalCodeType(Long codeId) {
-        //TODO - implement this
-        return null;
+    private void retrieveClincalCode(Long codeId, CsvProcessor csvProcessor) throws Exception {
+        EmisCsvCodeMap mapping = mappingRepository.getMostRecent(csvProcessor.getServiceId(), csvProcessor.getSystemInstanceId(), false, codeId);
+        if (mapping == null) {
+            throw new TransformException("Failed to find clinical code CodeableConcept for codeId " + codeId);
+        }
+
+        String json = mapping.getCodeableConcept();
+        CodeableConcept codeableConcept = (CodeableConcept)parser.parseType(json, CODEABLE_CONCEPT);
+        clinicalCodes.put(codeId, codeableConcept);
+
+        ClinicalCodeType type = ClinicalCodeType.fromValue(mapping.getCodeType());
+        clinicalCodeTypes.put(codeId, type);
     }
 
-    public CodeableConcept findMedication(Long id) throws Exception {
-        CodeableConcept ret = fhirMedication.get(id);
+    public ClinicalCodeType findClinicalCodeType(Long codeId, CsvProcessor csvProcessor) throws Exception {
+        ClinicalCodeType ret = clinicalCodeTypes.get(codeId);
         if (ret == null) {
+            retrieveClincalCode(codeId, csvProcessor);
+            ret = clinicalCodeTypes.get(codeId);
+        }
+        return ret;
+    }
 
-            //TODO - need to store these somewhere to handle deltas
-
-            throw new TransformException("Failed to find medication CodeableConcept for id " + id);
+    public CodeableConcept findMedication(Long codeId, CsvProcessor csvProcessor) throws Exception {
+        CodeableConcept ret = medication.get(codeId);
+        if (ret == null) {
+            retrieveMedication(codeId, csvProcessor);
+            ret = medication.get(codeId);
         }
         return ret.copy();
+    }
+
+    private void retrieveMedication(Long codeId, CsvProcessor csvProcessor) throws Exception {
+        EmisCsvCodeMap mapping = mappingRepository.getMostRecent(csvProcessor.getServiceId(), csvProcessor.getSystemInstanceId(), true, codeId);
+        if (mapping == null) {
+            throw new TransformException("Failed to find medication CodeableConcept for codeId " + codeId);
+        }
+
+        String json = mapping.getCodeableConcept();
+        CodeableConcept codeableConcept = (CodeableConcept)parser.parseType(json, CODEABLE_CONCEPT);
+        medication.put(codeId, codeableConcept);
     }
 
     /**
@@ -113,87 +202,244 @@ public class EmisCsvHelper {
     }
 
 
-    public void cacheCondition(Condition condition) {
-        conditionMap.put(condition.getId(), condition);
-    }
-    public void cacheObservation(Observation observation) {
-        observationMap.put(observation.getId(), observation);
-    }
-    /*public void cacheDiagnosticReport(DiagnosticReport diagnosticReport) {
-        diagnosticReportMap.put(diagnosticReport.getId(), diagnosticReport);
-    }*/
 
+    public void cacheReferral(String observationGuid, String patientGuid, ReferralRequest fhirReferral) {
+        referralMap.put(createUniqueId(patientGuid, observationGuid), fhirReferral);
+    }
+
+    public ReferralRequest findReferral(String observationGuid, String patientGuid) {
+        return referralMap.get(createUniqueId(patientGuid, observationGuid));
+    }
+
+    public void cacheProblem(String observationGuid, String patientGuid, Condition fhirCondition) {
+        problemMap.put(createUniqueId(patientGuid, observationGuid), fhirCondition);
+    }
+
+    public Condition findProblem(String observationGuid, String patientGuid) {
+        return problemMap.get(createUniqueId(patientGuid, observationGuid));
+    }
+
+    public List<ResourceRelationship> getAndRemoveObservationParentRelationships(String parentObservationGuid, String patientGuid) {
+        return observationChildMap.remove(createUniqueId(patientGuid, parentObservationGuid));
+    }
+
+    public void cacheObservationParentRelationship(String parentObservationGuid, String patientGuid, String observationGuid) {
+
+        List<ResourceRelationship> list = observationChildMap.get(createUniqueId(patientGuid, parentObservationGuid));
+        if (list == null) {
+            list = new ArrayList<>();
+            observationChildMap.put(createUniqueId(patientGuid, parentObservationGuid), list);
+        }
+        list.add(new ResourceRelationship(patientGuid, observationGuid, ResourceType.Observation));
+    }
 
     /**
-     * tests if a resource already exists in a list. Resources don't implement the equals(..) or hashCode(..)
-     * functions, so regular contains(..) etc. tests can't be used
+     * as the end of processing all CSV files, there may be some new observations that link
+     * to past parent observations. These linkages are saved against the parent observation,
+     * so we need to retrieve them off the main repository, amend them and save them
      */
-    private static boolean listContains(List<Resource> resources, String objectGuid, String patientGuid, ResourceType resourceType) {
-        String uniqueId = createUniqueId(patientGuid, objectGuid);
-        return resources
-                .stream()
-                .filter(t -> t.getResourceType() == resourceType)
-                .filter(t -> t.getId().equals(uniqueId))
-                .findFirst()
-                .isPresent();
+    public void processRemainingObservationParentChildLinks(CsvProcessor csvProcessor) throws Exception {
+
+        Iterator<String> it = observationChildMap.keySet().iterator();
+        while (it.hasNext()) {
+            String locallyUniqueId = it.next();
+            List<ResourceRelationship> childObservationIds = observationChildMap.get(locallyUniqueId);
+
+            updateExistingObservationWithNewChildLinks(locallyUniqueId, childObservationIds, csvProcessor);
+        }
     }
 
+    private void updateExistingObservationWithNewChildLinks(String locallyUniqueId,
+                                                            List<ResourceRelationship> childResourceRelationships,
+                                                            CsvProcessor csvProcessor) throws Exception {
 
+        String globallyUniqueId = IdHelper.getEdsResourceId(csvProcessor.getServiceId(),
+                                                            csvProcessor.getSystemInstanceId(),
+                                                            ResourceType.Observation,
+                                                            locallyUniqueId);
 
+        Observation fhirObservation = null;
+        //TODO - retrieve observation from repository using globallyUniqueId
+        //resourceRepository.ge
 
-    public Condition findProblem(String problemGuid, String patientGuid) throws Exception {
-        return findResource(problemGuid, patientGuid, conditionMap);
-    }
+        boolean changed = false;
+        String patientGuid = null;
 
-    public Observation findObservation(String observationGuid, String patientGuid) throws Exception {
-        return findResource(observationGuid, patientGuid, observationMap);
-    }
+        for (ResourceRelationship childResourceRelationship : childResourceRelationships) {
 
-    /*public DiagnosticReport findDiagnosticReport(String observationGuid, String patientGuid) throws Exception {
-        return findResource(observationGuid, patientGuid, diagnosticReportMap);
-    }*/
+            //all the relationships have the same patientGuid, so it's safe to just keep reassigning this
+            patientGuid = childResourceRelationship.getPatientGuid();
 
-    private <T extends Resource> T findResource(String guid, String patientGuid, Map<String, T> map) throws Exception {
-        String uniqueId = createUniqueId(patientGuid, guid);
+            //the Observation resource is from the DB so has already had all its Ids mapped,
+            //so we need to convert the local ID to the globally unique ID we'll have used before
+            String locallyUniqueObservationId = createUniqueId(childResourceRelationship.getPatientGuid(), childResourceRelationship.getDependentResourceGuid());
 
-        T resource = map.get(uniqueId);
+            String globallyUniqueObservationId = IdHelper.getEdsResourceId(csvProcessor.getServiceId(),
+                                                                            csvProcessor.getSystemInstanceId(),
+                                                                            childResourceRelationship.getDependentResourceType(),
+                                                                            locallyUniqueObservationId);
 
-        if (resource == null) {
-            //TODO - if Resource not found, must retrieve from the EDS data store
+            Reference globallyUniqueReference = ReferenceHelper.createReference(childResourceRelationship.getDependentResourceType(),
+                                                                                globallyUniqueObservationId);
+
+            //check if the parent observation doesn't already have our ob linked to it
+            boolean alreadyLinked = false;
+            for (Observation.ObservationRelatedComponent related: fhirObservation.getRelated()) {
+                if (related.getType() == Observation.ObservationRelationshipType.HASMEMBER
+                        && related.getTarget().equalsShallow(globallyUniqueReference)) {
+                    alreadyLinked = true;
+                    break;
+                }
+            }
+
+            if (!alreadyLinked) {
+                Observation.ObservationRelatedComponent fhirRelation = fhirObservation.addRelated();
+                fhirRelation.setType(Observation.ObservationRelationshipType.HASMEMBER);
+                fhirRelation.setTarget(globallyUniqueReference);
+
+                changed = true;
+            }
         }
 
-        if (resource == null) {
-            throw new TransformException("Failed to find resource for guid " + guid);
+        if (changed) {
+            //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
+            csvProcessor.savePatientResource(fhirObservation, false, patientGuid);
         }
-
-        return resource;
     }
 
-    public void linkToProblem(Resource resource, String problemGuid, String patientGuid) throws Exception {
-        if (problemGuid == null) {
+    public void cacheProblemRelationship(String problemObservationGuid,
+                                         String patientGuid,
+                                         String resourceGuid,
+                                         ResourceType resourceType) {
+
+        if (Strings.isNullOrEmpty(problemObservationGuid)) {
             return;
         }
-//TODO - load from EHR problem if required
-        Reference reference = ReferenceHelper.createReference(resource);
-        Condition fhirProblem = findProblem(problemGuid, patientGuid);
-        //TODO - make sure to add to queue again?????
 
-        //TODO - validate if resource is already linked to the problem or not
-
-        fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, reference));
+        List<ResourceRelationship> list = problemChildMap.get(createUniqueId(patientGuid, resourceGuid));
+        if (list == null) {
+            list = new ArrayList<>();
+            problemChildMap.put(createUniqueId(patientGuid, resourceGuid), list);
+        }
+        list.add(new ResourceRelationship(patientGuid, resourceGuid, resourceType));
     }
 
-    public boolean isObservationToDelete(String patientGuid, String observationGuid) {
-        String uniqueId = createUniqueId(patientGuid, observationGuid);
-        Observation observation = observationMap.get(observationGuid);
-        if (observation == null) {
-            //if we're calling this function but haven't cached the observation for the GUID,
-            //it means the ob isn't deleted. If the ob were deleted, then we wouldn't be getting
-            //updates to the Referral or Problem file for things that relate to it.
-            return false;
+    public void processRemainingProblemRelationships(CsvProcessor csvProcessor) throws Exception {
+        Iterator<String> it = problemChildMap.keySet().iterator();
+        while (it.hasNext()) {
+            String problemLocallyUniqueId = it.next();
+            List<ResourceRelationship> childResourceRelationships = problemChildMap.get(problemLocallyUniqueId);
+
+            //the problem may be one just created, or one created previously
+            Condition fhirProblem = problemMap.get(problemLocallyUniqueId);
+            if (fhirProblem == null) {
+
+                String globallyUniqueId = IdHelper.getEdsResourceId(csvProcessor.getServiceId(),
+                        csvProcessor.getSystemInstanceId(),
+                        ResourceType.Condition,
+                        problemLocallyUniqueId);
+
+                Condition fhirCondition = null;
+                //TODO - retrieve Condition from repository using globallyUniqueId
+                //resourceRepository.ge
+
+                addRelationshipsToExistingProblem(fhirCondition, childResourceRelationships, csvProcessor);
+
+            } else {
+                addRelationshipsToNewProblem(fhirProblem, childResourceRelationships);
+            }
         }
 
-        //observations always have a code unless we're deleting the resource
-        return !observation.hasCode();
+        //make sure to save all problems now we've finished with them
+        Iterator<String> conditionIterator = problemMap.keySet().iterator();
+        while (conditionIterator.hasNext()) {
+            String locallyUniqueId = conditionIterator.next();
+            Condition fhirProblem = problemMap.get(locallyUniqueId);
+            String patientGuid = getPatientGuidFromUniqueId(locallyUniqueId);
+
+            csvProcessor.savePatientResource(fhirProblem, patientGuid);
+        }
     }
+
+    private void addRelationshipsToNewProblem(Condition fhirProblem, List<ResourceRelationship> resourceRelationships) throws Exception {
+
+        for (ResourceRelationship resourceRelationship : resourceRelationships) {
+
+            String uniqueId = createUniqueId(resourceRelationship.getPatientGuid(), resourceRelationship.getDependentResourceGuid());
+            Reference reference = ReferenceHelper.createReference(resourceRelationship.getDependentResourceType(), uniqueId);
+            fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, reference));
+        }
+    }
+
+    private void addRelationshipsToExistingProblem(Condition fhirCondition,
+                                                 List<ResourceRelationship> childResourceRelationships,
+                                                 CsvProcessor csvProcessor) throws Exception {
+
+        boolean changed = false;
+        String patientGuid = null;
+
+        for (ResourceRelationship childResourceRelationship : childResourceRelationships) {
+
+            //all the relationships have the same patientGuid, so it's safe to just keep reassigning this
+            patientGuid = childResourceRelationship.getPatientGuid();
+
+            String locallyUniqueId = createUniqueId(childResourceRelationship.getPatientGuid(), childResourceRelationship.getDependentResourceGuid());
+
+            String globallyUniqueId = IdHelper.getEdsResourceId(csvProcessor.getServiceId(),
+                    csvProcessor.getSystemInstanceId(),
+                    ResourceType.Observation,
+                    locallyUniqueId);
+
+            Reference globallyUniqueReference = ReferenceHelper.createReference(ResourceType.Observation, globallyUniqueId);
+
+            //check to see if this resource is already linked to the problem
+            boolean alreadyLinked = false;
+            for (Extension extension: fhirCondition.getExtension()) {
+                if (extension.getUrl().equals(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE)
+                        && extension.getValue().equalsShallow(globallyUniqueReference)) {
+                    alreadyLinked = true;
+                    break;
+                }
+            }
+
+            if (!alreadyLinked) {
+                fhirCondition.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, globallyUniqueReference));
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
+            csvProcessor.savePatientResource(fhirCondition, false, patientGuid);
+        }
+    }
+
+    /**
+     * object to temporarily store relationships between resources, such as things linked to a problem
+     * or observations linked to a parent observation
+     */
+    public class ResourceRelationship {
+        private String patientGuid = null;
+        private String dependentResourceGuid = null;
+        private ResourceType dependentResourceType = null;
+
+        public ResourceRelationship(String patientGuid, String dependentResourceGuid, ResourceType dependantResourceType) {
+            this.patientGuid = patientGuid;
+            this.dependentResourceGuid = dependentResourceGuid;
+            this.dependentResourceType = dependantResourceType;
+        }
+
+        public String getPatientGuid() {
+            return patientGuid;
+        }
+
+        public String getDependentResourceGuid() {
+            return dependentResourceGuid;
+        }
+
+        public ResourceType getDependentResourceType() {
+            return dependentResourceType;
+        }
+    }
+
 }

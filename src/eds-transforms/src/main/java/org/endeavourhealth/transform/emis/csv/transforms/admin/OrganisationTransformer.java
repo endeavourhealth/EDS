@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
+import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -54,12 +55,12 @@ public class OrganisationTransformer {
         fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ORGANISATION_ACTIVE_PERIOD, fhirPeriod));
 
         String parentOrganisationGuid = organisationParser.getParentOrganisationGuid();
-        if (parentOrganisationGuid != null) {
+        if (!Strings.isNullOrEmpty(parentOrganisationGuid)) {
             fhirOrganisation.setPartOf(csvHelper.createOrganisationReference(parentOrganisationGuid));
         }
 
         String ccgOrganisationGuid = organisationParser.getCCGOrganisationGuid();
-        if (ccgOrganisationGuid != null) {
+        if (!Strings.isNullOrEmpty(ccgOrganisationGuid)) {
             fhirOrganisation.setPartOf(csvHelper.createOrganisationReference(ccgOrganisationGuid));
         }
 
@@ -74,6 +75,12 @@ public class OrganisationTransformer {
     }
 
     private static OrganisationType convertOrganisationType(String csvOrganisationType) {
-        return OrganisationType.fromDescription(csvOrganisationType);
+        try {
+            return OrganisationType.fromDescription(csvOrganisationType);
+        } catch (Exception ex) {
+            //TODO - need proper mapping of EMIS org types to value set
+            return OrganisationType.GP_PRACTICE;
+        }
+
     }
 }

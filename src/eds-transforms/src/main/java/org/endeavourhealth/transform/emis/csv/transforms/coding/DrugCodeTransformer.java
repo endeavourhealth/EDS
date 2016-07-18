@@ -1,6 +1,8 @@
 package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Coding_DrugCode;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.CodingHelper;
@@ -15,23 +17,24 @@ import java.util.HashMap;
 public class DrugCodeTransformer {
 
 
-    public static HashMap<Long, CodeableConcept> transform(String folderPath, CSVFormat csvFormat) throws Exception {
-
-        HashMap<Long, CodeableConcept> ret = new HashMap<>();
+    public static void transform(String folderPath,
+                               CSVFormat csvFormat,
+                               CsvProcessor csvProcessor,
+                               EmisCsvHelper csvHelper) throws Exception {
 
         Coding_DrugCode parser = new Coding_DrugCode(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                transform(parser, ret);
+                transform(parser, csvProcessor, csvHelper);
             }
         } finally {
             parser.close();
         }
-
-        return ret;
     }
 
-    private static void transform(Coding_DrugCode drugParser, HashMap<Long, CodeableConcept> map) {
+    private static void transform(Coding_DrugCode drugParser,
+                                  CsvProcessor csvProcessor,
+                                  EmisCsvHelper csvHelper) throws Exception {
 
         Long codeId = drugParser.getCodeId();
         String term = drugParser.getTerm();
@@ -44,6 +47,6 @@ public class DrugCodeTransformer {
             fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_SNOMED_CT, term, dmdId.toString());
         }
 
-        map.put(codeId, fhirConcept);
+        csvHelper.addMedication(codeId, fhirConcept, csvProcessor);
     }
 }

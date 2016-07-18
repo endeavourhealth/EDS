@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
+import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.TransformException;
@@ -43,6 +44,13 @@ public class UserInRoleTransformer {
         String title = userInRoleParser.getTitle();
         String givenName = userInRoleParser.getGivenName();
         String surname = userInRoleParser.getSurname();
+
+        //the sample data contains users with a given name but no surname. FHIR requires all names
+        //to have a surname, so treat the sole given name as the surname
+        if (Strings.isNullOrEmpty(surname)) {
+            surname = givenName;
+            givenName = "";
+        }
 
         fhirPractitioner.setName(NameConverter.convert(givenName, surname, title));
 
