@@ -23,6 +23,18 @@ public class EndUser {
     @Column(name = "is_super_user")
     private Boolean isSuperUser;
 
+    public EndUser() {
+    }
+
+    public EndUser(UUID id, String title, String forename, String surname, String email, Boolean isSuperUser) {
+        this.id = id;
+        this.title = title;
+        this.forename = forename;
+        this.surname = surname;
+        this.email = email;
+        this.isSuperUser = isSuperUser;
+    }
+
     public UUID getId() {
         return id;
     }

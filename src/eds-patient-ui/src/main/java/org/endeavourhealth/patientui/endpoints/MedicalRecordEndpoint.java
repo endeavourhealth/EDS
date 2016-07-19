@@ -2,7 +2,6 @@ package org.endeavourhealth.patientui.endpoints;
 
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
-import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.ehr.PersonIdentifierByNhsNumberRepository;
 import org.endeavourhealth.core.data.ehr.PersonResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.PersonIdentifierByNhsNumber;

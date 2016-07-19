@@ -2,6 +2,7 @@ package org.endeavourhealth.patientui.framework.security;
 
 import java.security.Principal;
 
+// TODO: replace
 public class UserPrincipal implements Principal {
     private UserWrapper userWrapper = null;
 

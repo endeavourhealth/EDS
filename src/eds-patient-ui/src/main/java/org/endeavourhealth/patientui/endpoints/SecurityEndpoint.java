@@ -1,14 +1,15 @@
 package org.endeavourhealth.patientui.endpoints;
 
-import org.endeavourhealth.patientui.framework.security.TokenHelper;
-import org.endeavourhealth.patientui.framework.security.Unsecured;
 import org.endeavourhealth.patientui.json.JsonLoginParameters;
 import org.endeavourhealth.patientui.json.JsonUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import java.util.Date;
 import java.util.UUID;
 
@@ -20,7 +21,6 @@ public final class SecurityEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/login")
-    @Unsecured
     public Response login(@Context SecurityContext sc, JsonLoginParameters loginParameters) throws Exception {
         super.setLogbackMarkers(sc);
 
@@ -55,14 +55,11 @@ public final class SecurityEndpoint extends AbstractEndpoint {
         ret.setSurname(surname);
         ret.setDob(dob);
 
-        NewCookie cookie = TokenHelper.createTokenAsCookie(nhsNumber, personId);
-
         clearLogbackMarkers();
 
         return Response
                 .ok()
                 .entity(ret)
-                .cookie(cookie)
                 .build();
     }
 
@@ -70,20 +67,15 @@ public final class SecurityEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/logoff")
-    @Unsecured
     public Response logoff(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
 
         LOG.trace("Logoff");
 
-        //replace the cookie on the client with an empty one
-        NewCookie cookie = TokenHelper.createTokenAsCookie(null, null);
-
         clearLogbackMarkers();
 
         return Response
                 .ok()
-                .cookie(cookie)
                 .build();
     }
 

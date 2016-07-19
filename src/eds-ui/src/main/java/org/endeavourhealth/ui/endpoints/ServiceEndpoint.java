@@ -4,6 +4,7 @@ import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
+import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.ui.json.JsonOrganisation;
 import org.endeavourhealth.ui.json.JsonService;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/")
+	@RequiresAdmin
 	public Response post(@Context SecurityContext sc, JsonService service) throws Exception {
 		super.setLogbackMarkers(sc);
 
@@ -49,11 +51,11 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 				.build();
 	}
 
-
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/")
+	@RequiresAdmin
 	public Response deleteService(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
 

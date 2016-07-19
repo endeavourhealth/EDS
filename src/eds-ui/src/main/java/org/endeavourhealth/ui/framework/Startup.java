@@ -1,12 +1,14 @@
 package org.endeavourhealth.ui.framework;
 
 import org.endeavourhealth.core.engineConfiguration.EngineConfigurationSerializer;
+import org.endeavourhealth.ui.database.DatabaseManager;
 import org.endeavourhealth.ui.email.EmailProvider;
 import org.endeavourhealth.ui.framework.config.ConfigSerializer;
-import org.endeavourhealth.ui.framework.config.models.*;
-import org.endeavourhealth.ui.framework.security.SecurityConfig;
+import org.endeavourhealth.ui.framework.config.models.Config;
+import org.endeavourhealth.ui.framework.config.models.Email;
+import org.endeavourhealth.ui.framework.config.models.MessagingQueue;
+import org.endeavourhealth.ui.framework.config.models.Template;
 import org.endeavourhealth.ui.utility.MessagingQueueProvider;
-import org.endeavourhealth.ui.database.DatabaseManager;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -32,11 +34,6 @@ public final class Startup implements ServletContextListener {
 
         //tell our database manager to set up logging to db
         DatabaseManager.getInstance().registerLogbackDbAppender();
-
-        //domain for our cookies
-        WebServer ws = config.getWebServer();
-        String cookieDomain = ws.getCookieDomain();
-        SecurityConfig.AUTH_COOKIE_VALID_DOMAIN = cookieDomain;
 
         //set up our email provision
         Email emailSettings = config.getEmail();
