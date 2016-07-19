@@ -83,11 +83,11 @@ public abstract class EmisCsvTransformer {
         LOG.trace("ObservationTransformer");
         ObservationTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
 
-        LOG.trace("DrugRecordTransformer");
-        DrugRecordTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-
         LOG.trace("IssueRecordTransformer");
         IssueRecordTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
+
+        LOG.trace("DrugRecordTransformer");
+        DrugRecordTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
 
         LOG.trace("SlotTransformer");
         SlotTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);

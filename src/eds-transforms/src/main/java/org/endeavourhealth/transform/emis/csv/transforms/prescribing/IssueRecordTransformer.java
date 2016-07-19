@@ -59,6 +59,10 @@ public class IssueRecordTransformer {
         DateTimeType dateTime = EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision);
         fhirMedication.setDateWrittenElement(dateTime);
 
+        //cache the date against the drug record GUID, so we can pick it up when processing the DrugRecord CSV
+        String drugRecordGuid = issueParser.getDrugRecordGuid();
+        csvHelper.cacheDrugRecordDate(drugRecordGuid, patientGuid, dateTime);
+
         String prescriberGuid = issueParser.getClinicianUserInRoleGuid();
         fhirMedication.setPrescriber(csvHelper.createPractitionerReference(prescriberGuid));
 
@@ -86,7 +90,6 @@ public class IssueRecordTransformer {
             fhirMedication.setReason(csvHelper.createObservationReference(problemObservationGuid, patientGuid));
         }
 
-        String drugRecordGuid = issueParser.getDrugRecordGuid();
         Reference authorisationReference = csvHelper.createMedicationStatementReference(drugRecordGuid, patientGuid);
         fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_ORDER_AUTHORISATION, authorisationReference));
 

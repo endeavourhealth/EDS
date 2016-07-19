@@ -35,6 +35,7 @@ public class EmisCsvHelper {
     private PersonResourceRepository resourceRepository = new PersonResourceRepository();
     private Map<String, List<ResourceRelationship>> observationChildMap = new HashMap<>();
     private Map<String, List<ResourceRelationship>> problemChildMap = new HashMap<>();
+    private Map<String, DateTimeType> issueRecordDateMap = new HashMap<>();
 
     public EmisCsvHelper() {
     }
@@ -412,6 +413,18 @@ public class EmisCsvHelper {
             //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
             csvProcessor.savePatientResource(fhirCondition, false, patientGuid);
         }
+    }
+
+    public void cacheDrugRecordDate(String drugRecordGuid, String patientGuid, DateTimeType dateTime) {
+        String uniqueId = createUniqueId(patientGuid, drugRecordGuid);
+        DateTimeType previous = issueRecordDateMap.get(uniqueId);
+        if (previous == null
+                || dateTime.after(previous)) {
+            issueRecordDateMap.put(uniqueId, dateTime);
+        }
+    }
+    public DateTimeType getDrugRecordDate(String drugRecordId, String patientGuid) {
+        return issueRecordDateMap.get(createUniqueId(patientGuid, drugRecordId));
     }
 
     /**

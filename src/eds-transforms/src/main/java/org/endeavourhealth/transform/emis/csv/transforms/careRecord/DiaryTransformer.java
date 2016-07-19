@@ -71,7 +71,7 @@ public class DiaryTransformer {
         } else {
             String freeTextDuration = diaryParser.getDurationTerm();
             if (!Strings.isNullOrEmpty(freeTextDuration)) {
-                //TODO - need somewhere to store Diary DurationTerm in ProcedureRequest resource
+                //TODO - need somewhere to store Diary DurationTerm in ProcedureRequest resource (asking EMIS for advice)
             }
         }
 
@@ -106,7 +106,7 @@ public class DiaryTransformer {
             fhirRequest.setStatus(ProcedureRequest.ProcedureRequestStatus.SUSPENDED);
         }
 
-        //TODO - need somewhere to store Diary LocationTypeDescription in FHIR ProcedureRequest resource
+        //TODO - need somewhere to store Diary LocationTypeDescription in FHIR ProcedureRequest resource (asking EMIS for advice)
         //String locationDescription = diaryParser.getLocationTypeDescription();
 
         csvProcessor.savePatientResource(fhirRequest, patientGuid);

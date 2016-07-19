@@ -104,8 +104,10 @@ public class DrugRecordTransformer {
             fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_CANCELLATION, extension));
         }
 
-        //NOTE: first and most recent issue dates are set at the end of the IssueRecordTransformer
-        //TODO - first and most recent issue dates on FHIR MedicationStatement
+        DateTimeType mostRecentDate = csvHelper.getDrugRecordDate(drugRecordGuid, patientGuid);
+        if (mostRecentDate != null) {
+            fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_MOST_RECENT_ISSUE_DATE, mostRecentDate));
+        }
 
         csvProcessor.savePatientResource(fhirMedication, patientGuid);
 

@@ -420,7 +420,6 @@ public class ObservationTransformer {
 
         Long codeId = observationParser.getCodeId();
         fhirAllergy.setSubstance(csvHelper.findClinicalCode(codeId, csvProcessor));
-        //TODO - need to convert Snomed allergy code to FHIR substance
 
         Date effectiveDate = observationParser.getEffectiveDate();
         String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
