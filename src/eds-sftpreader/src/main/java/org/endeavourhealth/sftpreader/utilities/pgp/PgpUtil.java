@@ -10,6 +10,7 @@ import org.bouncycastle.util.io.Streams;
 
 import java.io.*;
 import java.security.NoSuchProviderException;
+import java.security.Security;
 import java.security.SignatureException;
 import java.util.Iterator;
 
@@ -17,6 +18,8 @@ public class PgpUtil
 {
     public static void decryptAndVerify(String inputFileName, String publicKeyFileName, String secretKeyFileName, String secretKeyPassword, String outputFileName) throws IOException, NoSuchProviderException, PGPException, SignatureException
     {
+        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+
         try (InputStream fileIn = new BufferedInputStream(new FileInputStream(inputFileName));
              InputStream publicKeyIn = new BufferedInputStream(new FileInputStream(publicKeyFileName));
              InputStream secretKeyIn = new BufferedInputStream(new FileInputStream(secretKeyFileName));

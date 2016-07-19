@@ -41,7 +41,7 @@ import javax.xml.bind.annotation.XmlType;
  *             &lt;complexContent>
  *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *                 &lt;sequence>
- *                   &lt;element name="PgpFileFilter" type="{}nonEmptyString"/>
+ *                   &lt;element name="PgpFileExtension" type="{}nonEmptyString"/>
  *                   &lt;element name="RecipientPrivateKeyFilePath" type="{}nonEmptyString"/>
  *                   &lt;element name="RecipientPrivateKeyPassword" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *                   &lt;element name="SenderPublicKeyFilePath" type="{http://www.w3.org/2001/XMLSchema}string"/>
@@ -425,7 +425,7 @@ public class SftpReaderConfiguration {
      *   &lt;complexContent>
      *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
      *       &lt;sequence>
-     *         &lt;element name="PgpFileFilter" type="{}nonEmptyString"/>
+     *         &lt;element name="PgpFileExtension" type="{}nonEmptyString"/>
      *         &lt;element name="RecipientPrivateKeyFilePath" type="{}nonEmptyString"/>
      *         &lt;element name="RecipientPrivateKeyPassword" type="{http://www.w3.org/2001/XMLSchema}string"/>
      *         &lt;element name="SenderPublicKeyFilePath" type="{http://www.w3.org/2001/XMLSchema}string"/>
@@ -439,15 +439,15 @@ public class SftpReaderConfiguration {
      */
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlType(name = "", propOrder = {
-        "pgpFileFilter",
+        "pgpFileExtension",
         "recipientPrivateKeyFilePath",
         "recipientPrivateKeyPassword",
         "senderPublicKeyFilePath"
     })
     public static class PgpDecryption {
 
-        @XmlElement(name = "PgpFileFilter", required = true)
-        protected String pgpFileFilter;
+        @XmlElement(name = "PgpFileExtension", required = true)
+        protected String pgpFileExtension;
         @XmlElement(name = "RecipientPrivateKeyFilePath", required = true)
         protected String recipientPrivateKeyFilePath;
         @XmlElement(name = "RecipientPrivateKeyPassword", required = true)
@@ -456,27 +456,27 @@ public class SftpReaderConfiguration {
         protected String senderPublicKeyFilePath;
 
         /**
-         * Gets the value of the pgpFileFilter property.
+         * Gets the value of the pgpFileExtension property.
          * 
          * @return
          *     possible object is
          *     {@link String }
          *     
          */
-        public String getPgpFileFilter() {
-            return pgpFileFilter;
+        public String getPgpFileExtension() {
+            return pgpFileExtension;
         }
 
         /**
-         * Sets the value of the pgpFileFilter property.
+         * Sets the value of the pgpFileExtension property.
          * 
          * @param value
          *     allowed object is
          *     {@link String }
          *     
          */
-        public void setPgpFileFilter(String value) {
-            this.pgpFileFilter = value;
+        public void setPgpFileExtension(String value) {
+            this.pgpFileExtension = value;
         }
 
         /**

@@ -12,7 +12,7 @@
   <RemotePath>/gpg</RemotePath>
   <LocalPath>/Users/jonny/Code/Local/sftp</LocalPath>
   <PgpDecryption>
-      <PgpFileFilter>*.gpg</PgpFileFilter>
+      <PgpFileExtension>.gpg</PgpFileExtension>
       <RecipientPrivateKeyFilePath>test-pgp-endeavour-private.asc</RecipientPrivateKeyFilePath>
       <RecipientPrivateKeyPassword>password</RecipientPrivateKeyPassword>
       <SenderPublicKeyFilePath>test-pgp-emis-public.asc</SenderPublicKeyFilePath>

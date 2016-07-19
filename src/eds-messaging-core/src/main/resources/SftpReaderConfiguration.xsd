@@ -23,7 +23,7 @@
                 <xs:element name="PgpDecryption">
                     <xs:complexType>
                         <xs:sequence>
-                            <xs:element name="PgpFileFilter" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+                            <xs:element name="PgpFileExtension" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
                             <xs:element name="RecipientPrivateKeyFilePath" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
                             <xs:element name="RecipientPrivateKeyPassword" type="xs:string" minOccurs="1" maxOccurs="1"/>
                             <xs:element name="SenderPublicKeyFilePath" type="xs:string" minOccurs="1" maxOccurs="1"/>

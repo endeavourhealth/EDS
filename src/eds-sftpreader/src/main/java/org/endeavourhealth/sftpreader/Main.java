@@ -13,8 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Timer;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 public class Main
 {
 	private static final String PROGRAM_DISPLAY_NAME = "EDS SFTP poller";
@@ -78,6 +76,12 @@ public class Main
 
 		configuration.getCredentials().setClientPrivateKeyFilePath(resolveFilePath(configuration.getCredentials().getClientPrivateKeyFilePath()));
 		configuration.getCredentials().setHostPublicKeyFilePath(resolveFilePath(configuration.getCredentials().getHostPublicKeyFilePath()));
+
+		if (configuration.getPgpDecryption() != null)
+		{
+			configuration.getPgpDecryption().setRecipientPrivateKeyFilePath(resolveFilePath(configuration.getPgpDecryption().getRecipientPrivateKeyFilePath()));
+			configuration.getPgpDecryption().setSenderPublicKeyFilePath(resolveFilePath(configuration.getPgpDecryption().getSenderPublicKeyFilePath()));
+		}
 
 		return configuration;
 	}

@@ -64,6 +64,11 @@ public class SftpConnection
         return channel.get(remotePath);
     }
 
+    public void deleteFile(String remotePath) throws SftpException
+    {
+        channel.rm(remotePath);
+    }
+
     public void close()
     {
         if (channel != null && channel.isConnected())
