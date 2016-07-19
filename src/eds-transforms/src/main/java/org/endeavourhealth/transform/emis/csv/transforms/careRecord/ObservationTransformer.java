@@ -29,6 +29,8 @@ public class ObservationTransformer {
             while (parser.nextRecord()) {
                 createResource(parser, csvProcessor, csvHelper);
             }
+        } catch (Exception ex) {
+            throw new TransformException(parser.getErrorLine(), ex);
         } finally {
             parser.close();
         }
@@ -241,7 +243,7 @@ public class ObservationTransformer {
         fhirSpecimen.setCollection(fhirCollection);
 
         Date effectiveDate = observationParser.getEffectiveDate();
-        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
+        String effectiveDatePrecision = observationParser.getEndDatePrecision();
         fhirCollection.setCollected(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         String clinicianGuid = observationParser.getClinicianUserInRoleGuid();

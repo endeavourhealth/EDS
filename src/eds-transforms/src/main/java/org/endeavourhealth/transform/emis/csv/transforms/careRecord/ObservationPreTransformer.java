@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Observation;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -26,6 +27,8 @@ public class ObservationPreTransformer {
                     csvHelper.cacheObservationParentRelationship(parentGuid, patientGuid, observationGuid);
                 }
             }
+        } catch (Exception ex) {
+            throw new TransformException(parser.getErrorLine(), ex);
         } finally {
             parser.close();
         }

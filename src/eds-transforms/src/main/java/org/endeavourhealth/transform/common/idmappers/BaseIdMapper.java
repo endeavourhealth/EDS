@@ -30,7 +30,8 @@ public abstract class BaseIdMapper {
         }
 
         for (Extension extension: resource.getExtension()) {
-            if (extension.getValue() instanceof Reference) {
+            if (extension.hasValue()
+                && extension.getValue() instanceof Reference) {
                 mapReference((Reference)extension.getValue(), serviceId, systemInstanceId);
             }
         }
@@ -41,7 +42,9 @@ public abstract class BaseIdMapper {
      */
     protected void mapIdentifiers(List<Identifier> identifiers, UUID serviceId, UUID systemInstanceId) {
         for (Identifier identifier: identifiers) {
-            mapReference(identifier.getAssigner(), serviceId, systemInstanceId);
+            if (identifier.hasAssigner()) {
+                mapReference(identifier.getAssigner(), serviceId, systemInstanceId);
+            }
         }
     }
 

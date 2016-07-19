@@ -29,6 +29,8 @@ public abstract class ClinicalCodeTransformer {
             while (parser.nextRecord()) {
                 transform(parser, csvProcessor, csvHelper);
             }
+        } catch (Exception ex) {
+            throw new TransformException(parser.getErrorLine(), ex);
         } finally {
             parser.close();
         }

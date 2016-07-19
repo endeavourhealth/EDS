@@ -1,18 +1,15 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.UUID;
 
 public class Admin_UserInRole extends AbstractCsvTransformer {
 
     public Admin_UserInRole(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
@@ -32,33 +29,33 @@ public class Admin_UserInRole extends AbstractCsvTransformer {
     }
 
     public String getUserInRoleGuid() {
-        return super.getString(0);
+        return super.getString("UserInRoleGuid");
     }
     public String getOrganisationGuid() {
-        return super.getString(1);
+        return super.getString("OrganisationGuid");
     }
     public String getTitle() {
-        return super.getString(2);
+        return super.getString("Title");
     }
     public String getGivenName() {
-        return super.getString(3);
+        return super.getString("GivenName");
     }
     public String getSurname() {
-        return super.getString(4);
+        return super.getString("Surname");
     }
     public String getJobCategoryCode() {
-        return super.getString(5);
+        return super.getString("JobCategoryCode");
     }
     public String getJobCategoryName() {
-        return super.getString(6);
+        return super.getString("JobCategoryName");
     }
     public Date getContractStartDate() throws TransformException {
-        return super.getDate(7);
+        return super.getDate("ContractStartDate");
     }
     public Date getContractEndDate() throws TransformException {
-        return super.getDate(8);
+        return super.getDate("ContractEndDate");
     }
     public Integer getProcessingId() {
-        return super.getInt(9);
+        return super.getInt("ProcessingId");
     }
 }

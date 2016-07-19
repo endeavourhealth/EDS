@@ -1,18 +1,15 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.UUID;
 
 public class Admin_Patient extends AbstractCsvTransformer {
 
     public Admin_Patient(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
@@ -20,6 +17,7 @@ public class Admin_Patient extends AbstractCsvTransformer {
         return new String[] {
                 "PatientGuid",
                 "OrganisationGuid",
+                "UsualGpUserInRoleGuid",
                 "Sex",
                 "DateOfBirth",
                 "DateOfDeath",
@@ -38,137 +36,137 @@ public class Admin_Patient extends AbstractCsvTransformer {
                 "Town",
                 "County",
                 "Postcode",
-                "EmailAddress",
-                "HomePhone",
-                "MobilePhone",
                 "ResidentialInstituteCode",
                 "NHSNumberStatus",
                 "CarerName",
                 "CarerRelation",
-                "PersonGUID",
-                "UsualGpUserInRoleGuid",
+                "PersonGuid",
+                "DateOfDeactivation",
+                "Deleted",
+                "SpineSensitive",
+                "IsConfidential",
+                "EmailAddress",
+                "HomePhone",
+                "MobilePhone",
                 "ExternalUsualGPGuid",
                 "ExternalUsualGP",
                 "ExternalUsualGPOrganisation",
-                "SpineSensitive",
-                "ProcessingId",
-                "DateofDeactivation",
-                "Deleted",
-                "IsConfidential"
-
+                "ProcessingId"
         };
     }
 
     public String getPatientGuid() {
-        return super.getString(0);
+        return super.getString("PatientGuid");
     }
     public String getOrganisationGuid() {
-        return super.getString(1);
-    }
-    public String getSex() {
-        return super.getString(2);
-    }
-    public Date getDateOfBirth() throws TransformException {
-        return super.getDate(3);
-    }
-    public Date getDateOfDeath() throws TransformException {
-        return super.getDate(4);
-    }
-    public String getTitle() {
-        return super.getString(5);
-    }
-    public String getGivenName() {
-        return super.getString(6);
-    }
-    public String getMiddleNames() {
-        return super.getString(7);
-    }
-    public String getSurname() {
-        return super.getString(8);
-    }
-    public Date getDateOfRegistration() throws TransformException {
-        return super.getDate(9);
-    }
-    public String getNhsNumber() {
-        return super.getString(10);
-    }
-    public int getPatientNumber() {
-        return super.getInt(11);
-    }
-    public String getPatientTypedescription() {
-        return super.getString(12);
-    }
-    public boolean getDummyType() {
-        return super.getBoolean(13);
-    }
-    public String getHouseNameFlatNumber() {
-        return super.getString(14);
-    }
-    public String getNumberAndStreet() {
-        return super.getString(15);
-    }
-    public String getVillage() {
-        return super.getString(16);
-    }
-    public String getTown() {
-        return super.getString(17);
-    }
-    public String getCounty() {
-        return super.getString(18);
-    }
-    public String getPostcode() {
-        return super.getString(19);
-    }
-    public String getEmailAddress() {
-        return super.getString(20);
-    }
-    public String getHomePhone() {
-        return super.getString(21);
-    }
-    public String getMobilePhone() {
-        return super.getString(22);
-    }
-    public String getResidentialInstituteCode() {
-        return super.getString(23);
-    }
-    public String getNHSNumberStatus() {
-        return super.getString(24);
-    }
-    public String getCarerName() {
-        return super.getString(25);
-    }
-    public String getCarerRelation() {
-        return super.getString(26);
-    }
-    public String getPersonGUID() {
-        return super.getString(27);
+        return super.getString("OrganisationGuid");
     }
     public String getUsualGpUserInRoleGuid() {
-        return super.getString(28);
+        return super.getString("UsualGpUserInRoleGuid");
     }
-    public String getExternalUsualGPGuid() {
-        return super.getString(29);
+    public String getSex() {
+        return super.getString("Sex");
     }
-    public String getExternalUsualGP() {
-        return super.getString(30);
+    public Date getDateOfBirth() throws TransformException {
+        return super.getDate("DateOfBirth");
     }
-    public String getExternalUsualGPOrganisation() {
-        return super.getString(31);
+    public Date getDateOfDeath() throws TransformException {
+        return super.getDate("DateOfDeath");
     }
-    public boolean getSpineSensitive() {
-        return super.getBoolean(32);
+    public String getTitle() {
+        return super.getString("Title");
     }
-    public Integer getProcessingId() {
-        return super.getInt(33);
+    public String getGivenName() {
+        return super.getString("GivenName");
+    }
+    public String getMiddleNames() {
+        return super.getString("MiddleNames");
+    }
+    public String getSurname() {
+        return super.getString("Surname");
+    }
+    public Date getDateOfRegistration() throws TransformException {
+        return super.getDate("DateOfRegistration");
+    }
+    public String getNhsNumber() {
+        return super.getString("NhsNumber");
+    }
+    public int getPatientNumber() {
+        return super.getInt("PatientNumber");
+    }
+    public String getPatientTypedescription() {
+        return super.getString("PatientTypeDescription");
+    }
+    public boolean getDummyType() {
+        return super.getBoolean("DummyType");
+    }
+    public String getHouseNameFlatNumber() {
+        return super.getString("HouseNameFlatNumber");
+    }
+    public String getNumberAndStreet() {
+        return super.getString("NumberAndStreet");
+    }
+    public String getVillage() {
+        return super.getString("Village");
+    }
+    public String getTown() {
+        return super.getString("Town");
+    }
+    public String getCounty() {
+        return super.getString("County");
+    }
+    public String getPostcode() {
+        return super.getString("Postcode");
+    }
+    public String getResidentialInstituteCode() {
+        return super.getString("ResidentialInstituteCode");
+    }
+    public String getNHSNumberStatus() {
+        return super.getString("NHSNumberStatus");
+    }
+    public String getCarerName() {
+        return super.getString("CarerName");
+    }
+    public String getCarerRelation() {
+        return super.getString("CarerRelation");
+    }
+    public String getPersonGUID() {
+        return super.getString("PersonGuid");
     }
     public Date getDateOfDeactivation() throws TransformException {
-        return super.getDate(34);
+        return super.getDate("DateOfDeactivation");
     }
     public boolean getDeleted() {
-        return super.getBoolean(35);
+        return super.getBoolean("Deleted");
+    }
+    public boolean getSpineSensitive() {
+        return super.getBoolean("SpineSensitive");
     }
     public boolean getIsConfidential() {
-        return super.getBoolean(36);
+        return super.getBoolean("IsConfidential");
     }
+    public String getEmailAddress() {
+        return super.getString("EmailAddress");
+    }
+    public String getHomePhone() {
+        return super.getString("HomePhone");
+    }
+    public String getMobilePhone() {
+        return super.getString("MobilePhone");
+    }
+    public String getExternalUsualGPGuid() {
+        return super.getString("ExternalUsualGPGuid");
+    }
+    public String getExternalUsualGP() {
+        return super.getString("ExternalUsualGP");
+    }
+    public String getExternalUsualGPOrganisation() {
+        return super.getString("ExternalUsualGPOrganisation");
+    }
+    public Integer getProcessingId() {
+        return super.getInt("ProcessingId");
+    }
+
+
 
 }

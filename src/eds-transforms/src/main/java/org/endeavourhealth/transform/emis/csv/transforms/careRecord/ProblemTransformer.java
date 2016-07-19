@@ -13,7 +13,6 @@ import org.endeavourhealth.transform.fhir.schema.ProblemSignificance;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
-import java.util.List;
 
 public class ProblemTransformer {
 
@@ -24,6 +23,8 @@ public class ProblemTransformer {
             while (parser.nextRecord()) {
                 createProblem(parser, csvProcessor, csvHelper);
             }
+        } catch (Exception ex) {
+            throw new TransformException(parser.getErrorLine(), ex);
         } finally {
             parser.close();
         }
@@ -46,7 +47,7 @@ public class ProblemTransformer {
         fhirProblem.setNotes(comments);
 
         Date endDate = problemParser.getEndDate();
-        String endDatePrecision = problemParser.getEffectiveDatePrecision(); //NOTE; documentation refers to this as EffectiveDate, but this should be EndDate
+        String endDatePrecision = problemParser.getEndDatePrecision(); //NOTE; documentation refers to this as EffectiveDate, but this should be EndDate
         fhirProblem.setAbatement(EmisDateTimeHelper.createDateType(endDate, endDatePrecision));
 
         fhirProblem.setVerificationStatus(Condition.ConditionVerificationStatus.CONFIRMED);

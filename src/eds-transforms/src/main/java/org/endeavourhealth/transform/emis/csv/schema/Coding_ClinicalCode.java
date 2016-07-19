@@ -1,15 +1,12 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
-
-import java.io.IOException;
 
 public class Coding_ClinicalCode extends AbstractCsvTransformer {
 
     public Coding_ClinicalCode(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
@@ -29,33 +26,33 @@ public class Coding_ClinicalCode extends AbstractCsvTransformer {
     }
 
     public Long getCodeId() {
-        return super.getLong(0);
+        return super.getLong("CodeId");
     }
     public String getTerm() {
-        return super.getString(1);
+        return super.getString("Term");
     }
     public String getReadTermId() {
-        return super.getString(2);
+        return super.getString("ReadTermId");
     }
     public Long getSnomedCTConceptId() {
-        return super.getLong(3);
+        return super.getLong("SnomedCTConceptId");
     }
     public Long getSnomedCTDescriptionId() {
-        return super.getLong(4);
+        return super.getLong("SnomedCTDescriptionId");
     }
     public String getNationalCode() {
-        return super.getString(5);
+        return super.getString("NationalCode");
     }
     public String getNationalCodeCategory() {
-        return super.getString(6);
+        return super.getString("NationalCodeCategory");
     }
     public String getNationalDescription() {
-        return super.getString(7);
+        return super.getString("NationalDescription");
     }
     public String getEmisCodeCategoryDescription() {
-        return super.getString(8);
+        return super.getString("EmisCodeCategoryDescription");
     }
     public Integer getProcessingId() {
-        return super.getInt(9);
+        return super.getInt("ProcessingId");
     }
 }

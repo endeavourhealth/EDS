@@ -1,16 +1,12 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
-
-import java.io.IOException;
-import java.util.UUID;
 
 public class Appointment_SessionUser extends AbstractCsvTransformer {
 
     public Appointment_SessionUser(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
@@ -24,15 +20,15 @@ public class Appointment_SessionUser extends AbstractCsvTransformer {
     }
 
     public String getSessionGuid() {
-        return super.getString(0);
+        return super.getString("SessionGuid");
     }
     public String getUserInRoleGuid() {
-        return super.getString(1);
+        return super.getString("UserInRoleGuid");
     }
     public boolean getdDeleted() {
-        return super.getBoolean(2);
+        return super.getBoolean("Deleted");
     }
     public int getProcessingId() {
-        return super.getInt(3);
+        return super.getInt("ProcessingId");
     }
 }

@@ -1,85 +1,82 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.UUID;
 
 public class CareRecord_Problem extends AbstractCsvTransformer {
 
     public CareRecord_Problem(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
     protected String[] getCsvHeaders() {
         return new String[]{
                 "ObservationGuid",
-                "ParentProblemObservationGuid",
                 "PatientGuid",
                 "OrganisationGuid",
+                "ParentProblemObservationGuid",
+                "Comment",
                 "EndDate",
-                "EffectiveDatePrecision",
+                "EndDatePrecision",
+                "ExpectedDuration",
                 "LastReviewDate",
                 "LastReviewDatePrecision",
                 "LastReviewUserInRoleGuid",
-                "ExpectedDuration",
-                "SignificanceDescription",
-                "ProblemStatusDescription",
                 "ParentProblemRelationship",
-                "Comment",
+                "ProblemStatusDescription",
+                "SignificanceDescription",
                 "ProcessingId"
         };
     }
 
     public String getObservationGuid() {
-        return super.getString(0);
+        return super.getString("ObservationGuid");
     }
     public String getParentProblemObservationGuid() {
-        return super.getString(1);
+        return super.getString("ParentProblemObservationGuid");
     }
     public String getPatientGuid() {
-        return super.getString(2);
+        return super.getString("PatientGuid");
     }
     public String getOrganisationGuid() {
-        return super.getString(3);
+        return super.getString("OrganisationGuid");
     }
     public Date getEndDate() throws TransformException {
-        return super.getDate(4);
+        return super.getDate("EndDate");
     }
-    public String getEffectiveDatePrecision() {
-        return super.getString(5);
+    public String getEndDatePrecision() {
+        return super.getString("EndDatePrecision");
     }
     public Date getLastReviewDate() throws TransformException {
-        return super.getDate(6);
+        return super.getDate("LastReviewDate");
     }
     public String getLastReviewDatePrecision() {
-        return super.getString(7);
+        return super.getString("LastReviewDatePrecision");
     }
     public String getLastReviewUserInRoleGuid() {
-        return super.getString(8);
+        return super.getString("LastReviewUserInRoleGuid");
     }
     public Integer getExpectedDuration() {
-        return super.getInt(9);
+        return super.getInt("ExpectedDuration");
     }
     public String getSignificanceDescription() {
-        return super.getString(10);
+        return super.getString("SignificanceDescription");
     }
     public String getProblemStatusDescription() {
-        return super.getString(11);
+        return super.getString("ProblemStatusDescription");
     }
     public String getParentProblemRelationship() {
-        return super.getString(12);
+        return super.getString("ParentProblemRelationship");
     }
     public String getComment() {
-        return super.getString(13);
+        return super.getString("Comment");
     }
     public Integer getProcessingId() {
-        return super.getInt(14);
+        return super.getInt("ProcessingId");
     }
 
 }

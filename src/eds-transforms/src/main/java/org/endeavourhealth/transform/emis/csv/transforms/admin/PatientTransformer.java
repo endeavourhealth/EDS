@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Patient;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.openhr.schema.VocSex;
@@ -27,6 +28,8 @@ public class PatientTransformer {
             while (parser.nextRecord()) {
                 createPatient(parser, csvProcessor, csvHelper);
             }
+        } catch (Exception ex) {
+            throw new TransformException(parser.getErrorLine(), ex);
         } finally {
             parser.close();
         }
@@ -75,11 +78,20 @@ public class PatientTransformer {
         Enumerations.AdministrativeGender gender = SexConverter.convertSex(vocSex);
         fhirPatient.setGender(gender);
 
+        String title = patientParser.getTitle();
         String givenName = patientParser.getGivenName();
         String middleNames = patientParser.getMiddleNames();
+        String surname = patientParser.getSurname();
+
+        //the test CSV data has at least one patient with no surname, so treat the given name as surname
+        if (Strings.isNullOrEmpty(surname)) {
+            surname = givenName;
+            givenName = "";
+        }
+
         String forenames = (givenName + " " + middleNames).trim();
 
-        List<HumanName> fhirNames = NameConverter.convert(patientParser.getTitle(), forenames, patientParser.getSurname(), null, null, null);
+        List<HumanName> fhirNames = NameConverter.convert(title, forenames, surname, null, null, null);
         if (fhirNames != null) {
             fhirNames.forEach(fhirPatient::addName);
         }
@@ -124,10 +136,10 @@ public class PatientTransformer {
             if (!Strings.isNullOrEmpty(carerRelationship)) {
                 //FHIR spec states that we should map to their relationship types if possible, but if
                 //not possible, then send as a textual codeable concept
-                ContactRelationship contactRelationship = ContactRelationship.fromCode(carerRelationship);
-                if (contactRelationship != null) {
-                    fhirContact.addRelationship(CodeableConceptHelper.createCodeableConcept(contactRelationship));
-                } else {
+                try {
+                    ContactRelationship fhirContactRelationship = ContactRelationship.fromCode(carerRelationship);
+                    fhirContact.addRelationship(CodeableConceptHelper.createCodeableConcept(fhirContactRelationship));
+                } catch (IllegalArgumentException ex) {
                     fhirContact.addRelationship(CodeableConceptHelper.createCodeableConcept(carerRelationship));
                 }
             }
@@ -144,17 +156,17 @@ public class PatientTransformer {
         }
 
         String usualGpGuid = patientParser.getUsualGpUserInRoleGuid();
-        if (usualGpGuid != null) {
+        if (!Strings.isNullOrEmpty(usualGpGuid)) {
             fhirPatient.addCareProvider(csvHelper.createPractitionerReference(usualGpGuid));
 
         } else {
             String externalGpGuid = patientParser.getExternalUsualGPGuid();
-            if (externalGpGuid != null) {
+            if (!Strings.isNullOrEmpty(externalGpGuid)) {
                 fhirPatient.addCareProvider(csvHelper.createPractitionerReference(externalGpGuid));
 
             } else {
                 String externalOrgGuid = patientParser.getExternalUsualGPOrganisation();
-                if (externalOrgGuid != null) {
+                if (!Strings.isNullOrEmpty(externalOrgGuid)) {
                     fhirPatient.addCareProvider(csvHelper.createOrganisationReference(externalOrgGuid));
                 }
             }
@@ -163,7 +175,7 @@ public class PatientTransformer {
         String orgUuid = patientParser.getOrganisationGuid();
         fhirEpisode.setManagingOrganization(csvHelper.createOrganisationReference(orgUuid));
 
-        if (usualGpGuid != null) {
+        if (!Strings.isNullOrEmpty(usualGpGuid)) {
             fhirEpisode.setCareManager(csvHelper.createPractitionerReference(usualGpGuid));
         }
 

@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Appointment_Session;
 import org.endeavourhealth.transform.fhir.*;
@@ -22,13 +23,15 @@ public class SessionTransformer {
 
         Map<String, Schedule> fhirSessions = new HashMap<>();
 
-        Appointment_Session sessionParser = new Appointment_Session(folderPath, csvFormat);
+        Appointment_Session parser = new Appointment_Session(folderPath, csvFormat);
         try {
-            while (sessionParser.nextRecord()) {
-                createSchedule(sessionParser, csvProcessor, csvHelper, sessionToStaffMap);
+            while (parser.nextRecord()) {
+                createSchedule(parser, csvProcessor, csvHelper, sessionToStaffMap);
             }
+        } catch (Exception ex) {
+            throw new TransformException(parser.getErrorLine(), ex);
         } finally {
-            sessionParser.close();
+            parser.close();
         }
     }
 
@@ -64,12 +67,17 @@ public class SessionTransformer {
         fhirSchedule.setComment(description);
 
         List<String> staffGuids = sessionToStaffMap.get(sessionGuid);
-        String firstStaffGuid = staffGuids.remove(0);
-        fhirSchedule.setActor(csvHelper.createPractitionerReference(firstStaffGuid));
 
-        for (String staffGuid: staffGuids) {
-            Reference fhirStaffReference = csvHelper.createPractitionerReference(staffGuid);
-            fhirSchedule.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ADDITIONAL_ACTOR, fhirStaffReference));
+        //in production data, there should always be a staff GUID for a session, but the
+        //test data contains at least one session that doesn, so this check is required
+        if (staffGuids != null && staffGuids.isEmpty()) {
+            String firstStaffGuid = staffGuids.remove(0);
+            fhirSchedule.setActor(csvHelper.createPractitionerReference(firstStaffGuid));
+
+            for (String staffGuid: staffGuids) {
+                Reference fhirStaffReference = csvHelper.createPractitionerReference(staffGuid);
+                fhirSchedule.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ADDITIONAL_ACTOR, fhirStaffReference));
+            }
         }
 
         csvProcessor.saveAdminResource(fhirSchedule);

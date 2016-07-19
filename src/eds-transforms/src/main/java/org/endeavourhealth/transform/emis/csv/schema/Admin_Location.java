@@ -1,18 +1,15 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.UUID;
 
 public class Admin_Location extends AbstractCsvTransformer {
 
     public Admin_Location(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
@@ -40,58 +37,58 @@ public class Admin_Location extends AbstractCsvTransformer {
     }
 
     public String getLocationGuid() {
-        return super.getString(0);
+        return super.getString("LocationGuid");
     }
     public String getLocationName() {
-        return super.getString(1);
+        return super.getString("LocationName");
     }
     public String getLocationTypeDescription() {
-        return super.getString(2);
+        return super.getString("LocationTypeDescription");
     }
     public String getParentLocationId() {
-        return super.getString(3);
+        return super.getString("ParentLocationGuid");
     }
     public Date getOpenDate() throws TransformException {
-        return super.getDate(4);
+        return super.getDate("OpenDate");
     }
     public Date getCloseDate() throws TransformException {
-        return super.getDate(5);
+        return super.getDate("CloseDate");
     }
     public String getMainContactName() {
-        return super.getString(6);
+        return super.getString("MainContactName");
     }
     public String getFaxNumber() {
-        return super.getString(7);
+        return super.getString("FaxNumber");
     }
     public String getEmailAddress() {
-        return super.getString(8);
+        return super.getString("EmailAddress");
     }
     public String getPhoneNumber() {
-        return super.getString(9);
+        return super.getString("PhoneNumber");
     }
     public String getHouseNameFlatNumber() {
-        return super.getString(10);
+        return super.getString("HouseNameFlatNumber");
     }
     public String getNumberAndStreet() {
-        return super.getString(11);
+        return super.getString("NumberAndStreet");
     }
     public String getVillage() {
-        return super.getString(12);
+        return super.getString("Village");
     }
     public String getTown() {
-        return super.getString(13);
+        return super.getString("Town");
     }
     public String getCounty() {
-        return super.getString(14);
+        return super.getString("County");
     }
     public String getPostcode() {
-        return super.getString(15);
+        return super.getString("Postcode");
     }
     public boolean getDeleted() {
-        return super.getBoolean(16);
+        return super.getBoolean("Deleted");
     }
     public Integer getProcessingId() {
-        return super.getInt(17);
+        return super.getInt("ProcessingId");
     }
 
 

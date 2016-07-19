@@ -1,18 +1,15 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.UUID;
 
 public class Appointment_Slot extends AbstractCsvTransformer {
 
     public Appointment_Slot(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
@@ -38,48 +35,48 @@ public class Appointment_Slot extends AbstractCsvTransformer {
     }
 
     public String getSlotGuid() {
-        return super.getString(0);
+        return super.getString("SlotGuid");
     }
     public Date getAppointmentStartDateTime() throws TransformException {
-        return super.getDateTime(1, 2);
+        return super.getDateTime("AppointmentDate", "AppointmentStartTime");
     }
     public Integer getPlannedDurationInMinutes() {
-        return super.getInt(3);
+        return super.getInt("PlannedDurationInMinutes");
     }
     public String getPatientGuid() {
-        return super.getString(4);
+        return super.getString("PatientGuid");
     }
     public Date getSendInDateTime() throws TransformException {
-        return super.getDateTime(1, 5);
+        return super.getDateTime("AppointmentDate", "SendInTime");
     }
     public Date getLeftDateTime() throws TransformException {
-        return super.getDateTime(1, 6);
+        return super.getDateTime("AppointmentDate", "LeftTime");
     }
     public boolean getDidNotAttend() {
-        return super.getBoolean(7);
+        return super.getBoolean("DidNotAttend");
     }
     public Integer getPatientWaitInMin() {
-        return super.getInt(8);
+        return super.getInt("PatientWaitInMin");
     }
     public Integer getAppointmentDelayInMin() {
-        return super.getInt(9);
+        return super.getInt("AppointmentDelayInMin");
     }
     public Integer getActualDurationInMinutes() {
-        return super.getInt(10);
+        return super.getInt("ActualDurationInMinutes");
     }
     public String getOrganisationGuid() {
-        return super.getString(11);
+        return super.getString("OrganisationGuid");
     }
     public String getSessionGuid() {
-        return super.getString(12);
+        return super.getString("SessionGuid");
     }
     public Long getDnaReasonCodeId() {
-        return super.getLong(13);
+        return super.getLong("DnaReasonCodeId");
     }
     public boolean getDeleted() {
-        return super.getBoolean(14);
+        return super.getBoolean("Deleted");
     }
     public Integer getProcessingId() {
-        return super.getInt(15);
+        return super.getInt("ProcessingId");
     }
 }

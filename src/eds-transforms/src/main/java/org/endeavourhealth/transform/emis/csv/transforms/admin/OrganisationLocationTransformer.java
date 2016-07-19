@@ -23,6 +23,8 @@ public class OrganisationLocationTransformer {
             while (parser.nextRecord()) {
                 createLocationOrgansationMapping(parser, hmLocationToOrganisation);
             }
+        } catch (Exception ex) {
+            throw new TransformException(parser.getErrorLine(), ex);
         } finally {
             parser.close();
         }

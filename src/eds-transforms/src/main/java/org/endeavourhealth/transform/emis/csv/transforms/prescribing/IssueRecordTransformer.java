@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Prescribing_IssueRecord;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -25,6 +26,8 @@ public class IssueRecordTransformer {
             while (parser.nextRecord()) {
                 createResource(parser, csvProcessor, csvHelper);
             }
+        } catch (Exception ex) {
+            throw new TransformException(parser.getErrorLine(), ex);
         } finally {
             parser.close();
         }

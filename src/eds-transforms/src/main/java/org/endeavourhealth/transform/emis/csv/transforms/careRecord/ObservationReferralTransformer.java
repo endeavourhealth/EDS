@@ -25,6 +25,8 @@ public class ObservationReferralTransformer {
             while (parser.nextRecord()) {
                 createResource(parser, csvProcessor, csvHelper);
             }
+        } catch (Exception ex) {
+            throw new TransformException(parser.getErrorLine(), ex);
         } finally {
             parser.close();
         }

@@ -9,7 +9,7 @@ import java.util.Date;
 public class Audit_RegistrationAudit extends AbstractCsvTransformer {
 
     public Audit_RegistrationAudit(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
@@ -26,21 +26,21 @@ public class Audit_RegistrationAudit extends AbstractCsvTransformer {
     }
 
     public String getPatientGuid() {
-        return getString(0);
+        return getString("PatientGuid");
     }
     public String getOrganisationGuid() {
-        return getString(1);
+        return getString("OrganisationGuid");
     }
     public Date getModifiedDateTime() throws TransformException {
-        return getDateTime(2, 3);
+        return getDateTime("ModifiedDate", "ModifiedTime");
     }
     public String getUserInRoleGuid() {
-        return getString(4);
+        return getString("UserInRoleGuid");
     }
     public String getModeType() {
-        return getString(5);
+        return getString("ModeType");
     }
     public Integer getProcessingId() {
-        return getInt(6);
+        return getInt("ProcessingId");
     }
 }

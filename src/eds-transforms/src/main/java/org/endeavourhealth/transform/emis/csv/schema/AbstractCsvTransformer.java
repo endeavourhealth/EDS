@@ -28,8 +28,8 @@ public abstract class AbstractCsvTransformer {
     private DateFormat timeFormat = null;
 
     public AbstractCsvTransformer(String folderPath, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
-        String csvFileName = getClass().getSimpleName() + ".csv";
-        File file = new File(folderPath, csvFileName);
+
+        File file = new File(folderPath, getFileName());
 
         //calling withHeader() on the format, forces it to read in the first row as the headers, which we can then validate against
         this.csvReader = CSVParser.parse(file, Charset.defaultCharset(), csvFormat.withHeader());
@@ -40,19 +40,24 @@ public abstract class AbstractCsvTransformer {
         Map<String, Integer> headerMap = csvReader.getHeaderMap();
         String[] expectedHeaders = getCsvHeaders();
         if (headerMap.size() != expectedHeaders.length) {
-            throw new TransformException("Mismatch in number of CSV columns in " + csvFileName + " expected " + expectedHeaders.length + " but found " + headerMap.size());
+            throw new TransformException("Mismatch in number of CSV columns in " + getFileName() + " expected " + expectedHeaders.length + " but found " + headerMap.size());
         }
 
         for (int i=0; i<expectedHeaders.length; i++) {
             String expectedHeader = expectedHeaders[i];
             Integer mapIndex = headerMap.get(expectedHeader);
             if (mapIndex == null) {
-                throw new TransformException("Missing column " + expectedHeader + " in " + csvFileName);
+                throw new TransformException("Missing column " + expectedHeader + " in " + getFileName());
             } else if (mapIndex.intValue() != i) {
-                throw new TransformException("Out of order column " + expectedHeader + " in " + csvFileName + " expected at " + i + " but found at " + mapIndex);
+                throw new TransformException("Out of order column " + expectedHeader + " in " + getFileName() + " expected at " + i + " but found at " + mapIndex);
             }
         }
     }
+
+    private String getFileName() {
+        return getClass().getSimpleName() + ".csv";
+    }
+
 
     protected abstract String[] getCsvHeaders();
 
@@ -70,35 +75,35 @@ public abstract class AbstractCsvTransformer {
         this.csvReader.close();
     }
 
-    public String getString(int index) {
-        return csvRecord.get(index);
+    public String getString(String column) {
+        return csvRecord.get(column);
     }
-    public Integer getInt(int index) {
-        String s = csvRecord.get(index);
+    public Integer getInt(String column) {
+        String s = csvRecord.get(column);
         if (Strings.isNullOrEmpty(s)) {
             return null;
         }
 
         return new Integer(s);
     }
-    public Long getLong(int index) {
-        String s = csvRecord.get(index);
+    public Long getLong(String column) {
+        String s = csvRecord.get(column);
         if (Strings.isNullOrEmpty(s)) {
             return null;
         }
 
         return new Long(s);
     }
-    public Double getDouble(int index) {
-        String s = csvRecord.get(index);
+    public Double getDouble(String column) {
+        String s = csvRecord.get(column);
         if (Strings.isNullOrEmpty(s)) {
             return null;
         }
 
         return new Double(s);
     }
-    public Date getDate(int index) throws TransformException {
-        String s = csvRecord.get(index);
+    public Date getDate(String column) throws TransformException {
+        String s = csvRecord.get(column);
         if (Strings.isNullOrEmpty(s)) {
             return null;
         }
@@ -109,8 +114,8 @@ public abstract class AbstractCsvTransformer {
             throw new TransformException("Invalid date format [" + s + "]", pe);
         }
     }
-    public Date getTime(int index) throws TransformException {
-        String s = csvRecord.get(index);
+    public Date getTime(String column) throws TransformException {
+        String s = csvRecord.get(column);
         if (Strings.isNullOrEmpty(s)) {
             return null;
         }
@@ -121,9 +126,9 @@ public abstract class AbstractCsvTransformer {
             throw new TransformException("Invalid time format [" + s + "]", pe);
         }
     }
-    public Date getDateTime(int dateIndex, int timeIndex) throws TransformException {
-        Date d = getDate(dateIndex);
-        Date t = getTime(timeIndex);
+    public Date getDateTime(String dateColumn, String timeColumn) throws TransformException {
+        Date d = getDate(dateColumn);
+        Date t = getTime(timeColumn);
         if (d == null) {
             return null;
         } else if (t == null) {
@@ -140,12 +145,19 @@ public abstract class AbstractCsvTransformer {
 
         return UUID.fromString(s);
     }*/
-    public boolean getBoolean(int index) {
-        String s = csvRecord.get(index);
+    public boolean getBoolean(String column) {
+        String s = csvRecord.get(column);
         if (Strings.isNullOrEmpty(s)) {
             return false;
         }
 
         return Boolean.parseBoolean(s);
+    }
+
+    /**
+     * if an error is encountered in a transform, this function is used to get detail on the line at fault
+     */
+    public String getErrorLine() {
+        return "Error processing line " + csvReader.getCurrentLineNumber() + " of " + getFileName();
     }
 }

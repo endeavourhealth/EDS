@@ -1,18 +1,15 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.UUID;
 
 public class Prescribing_IssueRecord extends AbstractCsvTransformer {
 
     public Prescribing_IssueRecord(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
@@ -21,81 +18,81 @@ public class Prescribing_IssueRecord extends AbstractCsvTransformer {
                 "IssueRecordGuid",
                 "PatientGuid",
                 "OrganisationGuid",
+                "DrugRecordGuid",
                 "EffectiveDate",
                 "EffectiveDatePrecision",
                 "EnteredDate",
-                "EnteredTime",
+                //"EnteredTime", //spec says this will be here, but test data doesn't have it
                 "ClinicianUserInRoleGuid",
                 "EnteredByUserInRoleGuid",
                 "CodeId",
+                "Dosage",
                 "Quantity",
+                "QuantityUnit",
+                "ProblemObservationGuid",
                 "CourseDurationInDays",
                 "EstimatedNhsCost",
-                "ProblemObservationGuid",
-                "Dosage",
-                "QuantityUnit",
-                "DrugRecordGuid",
+                "IsConfidential",
                 "Deleted",
-                "ProcessingId",
-                "IsConfidential"
+                "ProcessingId"
         };
     }
 
     public String getIssueRecordGuid() {
-        return super.getString(0);
+        return super.getString("IssueRecordGuid");
     }
     public String getPatientGuid() {
-        return super.getString(1);
+        return super.getString("PatientGuid");
     }
     public String getOrganisationGuid() {
-        return super.getString(2);
+        return super.getString("OrganisationGuid");
     }
     public Date getEffectiveDate() throws TransformException {
-        return super.getDate(3);
+        return super.getDate("EffectiveDate");
     }
     public String getEffectiveDatePrecision() {
-        return super.getString(4);
+        return super.getString("EffectiveDatePrecision");
     }
     public Date getEnteredDateTime() throws TransformException {
-        return super.getDateTime(5, 6);
+        return super.getDateTime("EnteredDate", "EnteredTime");
     }
     public String getClinicianUserInRoleGuid() {
-        return super.getString(7);
+        return super.getString("ClinicianUserInRoleGuid");
     }
     public String getEnteredByUserInRoleGuid() {
-        return super.getString(8);
+        return super.getString("EnteredByUserInRoleGuid");
     }
     public Long getCodeId() {
-        return super.getLong(9);
+        return super.getLong("CodeId");
     }
     public Double getQuantity() {
-        return super.getDouble(10);
+        return super.getDouble("Quantity");
     }
     public Integer getCourseDurationInDays() {
-        return super.getInt(11);
+        return super.getInt("CourseDurationInDays");
     }
     public Double getEstimatedNhsCost() {
-        return super.getDouble(12);
+        return super.getDouble("EstimatedNhsCost");
     }
     public String getProblemObservationGuid() {
-        return super.getString(13);
+        return super.getString("ProblemObservationGuid");
     }
     public String getDosage() {
-        return super.getString(14);
+        return super.getString("Dosage");
     }
     public String getQuantityUnit() {
-        return super.getString(15);
+        return super.getString("QuantityUnit");
     }
     public String getDrugRecordGuid() {
-        return super.getString(16);
+        return super.getString("DrugRecordGuid");
     }
     public boolean getDeleted() {
-        return super.getBoolean(17);
+        return super.getBoolean("Deleted");
     }
     public Integer getProcessingId() {
-        return super.getInt(18);
+        return super.getInt("ProcessingId");
     }
     public boolean getIsConfidential() {
-        return super.getBoolean(19);
+        return super.getBoolean("IsConfidential");
     }
 }

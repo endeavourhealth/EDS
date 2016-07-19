@@ -157,7 +157,8 @@ public class NameConverter
 
     /**
      * in cases where we have a name as a single string, this takes a best-guess approach to
-     * tokenise that name to fit the minimum requirements of the FHIR resource
+     * tokenise that name to fit the minimum requirements of the FHIR resource, based on the
+     * NHS standard name format; SURNAME, forename (title)
      */
     public static HumanName convert(String name) {
         name = StringUtils.trimToNull(name);
@@ -169,24 +170,53 @@ public class NameConverter
         fhirName.setUse(HumanName.NameUse.USUAL);
         fhirName.setText(name);
 
-        List<String> tokens = split(name);
-        fhirName.addFamily(tokens.remove(tokens.size()-1));
-
-        if (tokens.size() > 0) {
-            String first = tokens.remove(0);
-
-            if (isTitle(first) || isTitle(first + ".")) {
-                fhirName.addPrefix(first);
-            } else {
-                fhirName.addGiven(first);
-            }
-
-            for (String token: tokens) {
-                fhirName.addGiven(token);
-            }
+        String[] tokens = name.split(",");
+        if (tokens.length != 2) {
+            //if there's no comma, then just treat the name as a surname
+            setSurname(fhirName, name);
+            return fhirName;
         }
 
+        String surname = tokens[0];
+        setSurname(fhirName, surname);
+
+        String firstAndTitle = tokens[1];
+        tokens = firstAndTitle.split("\\(");
+        if (tokens.length != 2) {
+            //if there's no bracket, then treat what we have as first name
+            setForename(fhirName, firstAndTitle);
+            return fhirName;
+        }
+
+        String forenames = tokens[0];
+        setForename(fhirName, forenames);
+
+        String title = tokens[1];
+        title = title.replaceAll("\\)", "");
+        setTitle(fhirName, title);
+
         return fhirName;
+    }
+    private static void setTitle(HumanName fhirName, String s) {
+        s = s.trim();
+        String[] tokens = s.split(" ");
+        for (String token: tokens) {
+            fhirName.addPrefix(token);
+        }
+    }
+    private static void setForename(HumanName fhirName, String s) {
+        s = s.trim();
+        String[] tokens = s.split(" ");
+        for (String token: tokens) {
+            fhirName.addGiven(token);
+        }
+    }
+    private static void setSurname(HumanName fhirName, String s) {
+        s = s.trim();
+        String[] tokens = s.split(" ");
+        for (String token: tokens) {
+            fhirName.addFamily(token);
+        }
     }
     private static boolean isTitle(String s) {
         return s.equalsIgnoreCase("mr.")

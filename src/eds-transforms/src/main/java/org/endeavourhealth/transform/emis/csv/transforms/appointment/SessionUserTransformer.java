@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.Appointment_Session;
 import org.endeavourhealth.transform.emis.csv.schema.Appointment_SessionUser;
 import org.hl7.fhir.instance.model.Schedule;
@@ -21,6 +22,8 @@ public class SessionUserTransformer {
             while (parser.nextRecord()) {
                 createSessionUserMapping(parser, sessionToUserMap);
             }
+        } catch (Exception ex) {
+            throw new TransformException(parser.getErrorLine(), ex);
         } finally {
             parser.close();
         }

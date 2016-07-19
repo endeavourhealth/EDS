@@ -1,16 +1,12 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
-
-import java.io.IOException;
-import java.util.UUID;
 
 public class Admin_OrganisationLocation extends AbstractCsvTransformer {
 
     public Admin_OrganisationLocation(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
@@ -25,18 +21,18 @@ public class Admin_OrganisationLocation extends AbstractCsvTransformer {
     }
 
     public String getOrgansationGuid() {
-        return super.getString(0);
+        return super.getString("OrganisationGuid");
     }
     public String getLocationGuid() {
-        return super.getString(1);
+        return super.getString("LocationGuid");
     }
     public boolean getIsMainLocation() {
-        return super.getBoolean(2);
+        return super.getBoolean("IsMainLocation");
     }
     public boolean getDeleted() {
-        return super.getBoolean(3);
+        return super.getBoolean("Deleted");
     }
     public Integer getProcessingId() {
-        return super.getInt(4);
+        return super.getInt("ProcessingId");
     }
 }

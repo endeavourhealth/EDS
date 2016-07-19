@@ -1,18 +1,15 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.UUID;
 
 public class CareRecord_Diary extends AbstractCsvTransformer {
 
     public CareRecord_Diary(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
@@ -32,71 +29,72 @@ public class CareRecord_Diary extends AbstractCsvTransformer {
                 "AssociatedText",
                 "DurationTerm",
                 "LocationTypeDescription",
-                "ConsultationGuid",
+                "Deleted",
                 "IsConfidential",
                 "IsActive",
                 "IsComplete",
-                "Deleted",
+                "ConsultationGuid",
                 "ProcessingId"
+
         };
     }
 
     public String getDiaryGuid() {
-        return super.getString(0);
+        return super.getString("DiaryGuid");
     }
     public String getPatientGuid() {
-        return super.getString(1);
+        return super.getString("PatientGuid");
     }
     public String getOrganisationGuid() {
-        return super.getString(2);
+        return super.getString("OrganisationGuid");
     }
     public Date getEffectiveDate() throws TransformException {
-        return super.getDate(3);
+        return super.getDate("EffectiveDate");
     }
     public String getEffectiveDatePrecision() {
-        return super.getString(4);
+        return super.getString("EffectiveDatePrecision");
     }
     public Date getEnteredDateTime() throws TransformException {
-        return super.getDateTime(5, 6);
+        return super.getDateTime("EnteredDate", "EnteredTime");
     }
     public String getClinicianUserInRoleGuid() {
-        return super.getString(7);
+        return super.getString("ClinicianUserInRoleGuid");
     }
     public String getEnteredByUserInRoleGuid() {
-        return super.getString(8);
+        return super.getString("EnteredByUserInRoleGuid");
     }
     public Long getCodeId() {
-        return super.getLong(9);
+        return super.getLong("CodeId");
     }
     public String getOriginalTerm() {
-        return super.getString(10);
+        return super.getString("OriginalTerm");
     }
     public String getAssociatedText() {
-        return super.getString(11);
+        return super.getString("AssociatedText");
     }
     public String getDurationTerm() {
-        return super.getString(12);
+        return super.getString("DurationTerm");
     }
     public String getLocationTypeDescription() {
-        return super.getString(13);
+        return super.getString("LocationTypeDescription");
     }
     public String getConsultationGuid() {
-        return super.getString(14);
+        return super.getString("ConsultationGuid");
     }
     public boolean getIsConfidential() {
-        return super.getBoolean(15);
+        return super.getBoolean("IsConfidential");
     }
     public boolean getIsActive() {
-        return super.getBoolean(16);
+        return super.getBoolean("IsActive");
     }
     public boolean getIsComplete() {
-        return super.getBoolean(17);
+        return super.getBoolean("IsComplete");
     }
     public boolean getDeleted() {
-        return super.getBoolean(18);
+        return super.getBoolean("Deleted");
     }
     public Integer getProcessingId() {
-        return super.getInt(19);
+        return super.getInt("ProcessingId");
     }
 
 }

@@ -21,13 +21,15 @@ public class UserInRoleTransformer {
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Admin_UserInRole userInRoleParser = new Admin_UserInRole(folderPath, csvFormat);
+        Admin_UserInRole parser = new Admin_UserInRole(folderPath, csvFormat);
         try {
-            while (userInRoleParser.nextRecord()) {
-                createPractitioner(userInRoleParser, csvProcessor, csvHelper);
+            while (parser.nextRecord()) {
+                createPractitioner(parser, csvProcessor, csvHelper);
             }
+        } catch (Exception ex) {
+            throw new TransformException(parser.getErrorLine(), ex);
         } finally {
-            userInRoleParser.close();
+            parser.close();
         }
     }
 

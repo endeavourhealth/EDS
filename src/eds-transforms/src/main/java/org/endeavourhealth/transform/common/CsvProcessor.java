@@ -1,13 +1,17 @@
 package org.endeavourhealth.transform.common;
 
 import org.hl7.fhir.instance.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public class CsvProcessor {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CsvProcessor.class);
+
     private static Set<Class> patientResourceClasses = null;
-    private static int batchSaveSize = 10000;
+    private static int batchSaveSize = 1000000;
 
     private UUID serviceId = null;
     private UUID systemInstanceId = null;
@@ -90,6 +94,7 @@ public class CsvProcessor {
     }
     private void savePendingResources(Map<Resource, UUID> map) {
 
+        LOG.trace("Mapping IDs of " + map.size() + " resources");
         if (!resourcesToIdMap.isEmpty()) {
             List<Resource> resources = new ArrayList<>(resourcesToIdMap);
             resourcesToIdMap.clear();
@@ -97,7 +102,7 @@ public class CsvProcessor {
             IdHelper.mapIds(serviceId, systemInstanceId, resources);
         }
 
-
+        LOG.trace("Saving pending batch of " + map.size() + " resources");
         Map<Resource, UUID> saveMap = new HashMap<>(map);
         map.clear();
         //TODO - invoke filer for resources
@@ -134,6 +139,10 @@ public class CsvProcessor {
             set.add(ReferralRequest.class);
             set.add(RelatedPerson.class);
             set.add(Specimen.class);
+
+            //although Slot isn't technically linked to a patient, it is saved at the same time as
+            //Appointment resources, so should be treated as one
+            set.add(Slot.class);
 
             patientResourceClasses = set;
         }

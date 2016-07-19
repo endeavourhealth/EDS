@@ -1,7 +1,9 @@
 package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
+import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Appointment_Slot;
 import org.endeavourhealth.transform.fhir.FhirUri;
@@ -23,6 +25,8 @@ public class SlotTransformer {
             while (parser.nextRecord()) {
                 createSlotAndAppointment(parser, csvProcessor, csvHelper);
             }
+        } catch (Exception ex) {
+            throw new TransformException(parser.getErrorLine(), ex);
         } finally {
             parser.close();
         }
@@ -33,6 +37,12 @@ public class SlotTransformer {
                                                  EmisCsvHelper csvHelper) throws Exception {
 
         String patientGuid = slotParser.getPatientGuid();
+
+        //the slots CSV contains data on empty slots too; ignore them
+        if (Strings.isNullOrEmpty(patientGuid)) {
+            return;
+        }
+
         String organisationGuid = slotParser.getOrganisationGuid();
 
         Slot fhirSlot = new Slot();
@@ -49,7 +59,7 @@ public class SlotTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (slotParser.getDeleted()) {
-            csvProcessor.deleteAdminResource(fhirSlot);
+            csvProcessor.deletePatientResource(fhirSlot, patientGuid);
             csvProcessor.deletePatientResource(fhirAppointment, patientGuid);
             return;
         }
@@ -85,7 +95,7 @@ public class SlotTransformer {
             fhirAppointment.setStatus(Appointment.AppointmentStatus.BOOKED);
         }
 
-        csvProcessor.saveAdminResource(fhirSlot);
+        csvProcessor.savePatientResource(fhirSlot, patientGuid);
         csvProcessor.savePatientResource(fhirAppointment, patientGuid);
     }
 }

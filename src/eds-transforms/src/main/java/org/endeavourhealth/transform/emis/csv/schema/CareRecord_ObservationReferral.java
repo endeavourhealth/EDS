@@ -1,18 +1,15 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.UUID;
 
 public class CareRecord_ObservationReferral extends AbstractCsvTransformer {
 
     public CareRecord_ObservationReferral(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
 
@@ -24,8 +21,8 @@ public class CareRecord_ObservationReferral extends AbstractCsvTransformer {
                 "OrganisationGuid",
                 "ReferralTargetOrganisationGuid",
                 "ReferralUrgency",
-                "ReferralMode",
                 "ReferralServiceType",
+                "ReferralMode",
                 "ReferralReceivedDate",
                 "ReferralReceivedTime",
                 "ReferralEndDate",
@@ -43,60 +40,60 @@ public class CareRecord_ObservationReferral extends AbstractCsvTransformer {
     }
 
     public String getObservationGuid() {
-        return super.getString(0);
+        return super.getString("ObservationGuid");
     }
     public String getPatientGuid() {
-        return super.getString(1);
+        return super.getString("PatientGuid");
     }
     public String getOrganisationGuid() {
-        return super.getString(2);
+        return super.getString("OrganisationGuid");
     }
     public String getReferalTargetOrganisationGuid() {
-        return super.getString(3);
+        return super.getString("ReferralTargetOrganisationGuid");
     }
     public String getReferralUrgency() {
-        return super.getString(4);
+        return super.getString("ReferralUrgency");
     }
     public String getReferralMode() {
-        return super.getString(5);
+        return super.getString("ReferralMode");
     }
     public String getReferralServiceType() {
-        return super.getString(6);
+        return super.getString("ReferralServiceType");
     }
     public Date getReferralReceivedDateTime() throws TransformException {
-        return super.getDateTime(7, 8);
+        return super.getDateTime("ReferralReceivedDate", "ReferralReceivedTime");
     }
     public Date getReferralEndDate() throws TransformException {
-        return super.getDate(9);
+        return super.getDate("ReferralEndDate");
     }
     public Long getReferralSourceId() {
-        return super.getLong(10);
+        return super.getLong("ReferralSourceId");
     }
     public String getReferralSourceOrganisationGuid() {
-        return super.getString(11);
+        return super.getString("ReferralSourceOrganisationGuid");
     }
     public String getReferralUBRN() {
-        return super.getString(12);
+        return super.getString("ReferralUBRN");
     }
     public Long getReferralReasonCodeId() {
-        return super.getLong(13);
+        return super.getLong("ReferralReasonCodeId");
     }
     public Long getReferringCareProfessionalStaffGroupCodeId() {
-        return super.getLong(14);
+        return super.getLong("ReferringCareProfessionalStaffGroupCodeId");
     }
     public Long getReferralEpisodeRTTMeasurmentTypeId() {
-        return super.getLong(15);
+        return super.getLong("ReferralEpisodeRTTMeasurementTypeId");
     }
     public Date getReferralEpisodeClosureDate() throws TransformException {
-        return super.getDate(16);
+        return super.getDate("ReferralEpisodeClosureDate");
     }
     public Date getReferralEpisideDischargeLetterIssuedDate() throws TransformException {
-        return super.getDate(17);
+        return super.getDate("ReferralEpisodeDischargeLetterIssuedDate");
     }
     public Long getReferralClosureReasonCodeId() {
-        return super.getLong(18);
+        return super.getLong("ReferralClosureReasonCodeId");
     }
     public Integer getProcessingId() {
-        return super.getInt(19);
+        return super.getInt("ProcessingId");
     }
 }

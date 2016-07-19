@@ -1,17 +1,14 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.UUID;
 
 public class Prescribing_DrugRecord extends AbstractCsvTransformer {
     public Prescribing_DrugRecord(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
@@ -23,7 +20,7 @@ public class Prescribing_DrugRecord extends AbstractCsvTransformer {
                 "EffectiveDate",
                 "EffectiveDatePrecision",
                 "EnteredDate",
-                "EnteredTime",
+                //"EnteredTime", //spec states this should be present, but test data doesn't have it
                 "ClinicianUserInRoleGuid",
                 "EnteredByUserInRoleGuid",
                 "CodeId",
@@ -36,73 +33,73 @@ public class Prescribing_DrugRecord extends AbstractCsvTransformer {
                 "CancellationDate",
                 "NumberOfIssues",
                 "NumberOfIssuesAuthorised",
+                "IsConfidential",
                 "Deleted",
-                "ProcessingId",
-                "IsConfidential"
+                "ProcessingId"
         };
     }
 
     public String getDrugRecordGuid() {
-        return super.getString(0);
+        return super.getString("DrugRecordGuid");
     }
     public String getPatientGuid() {
-        return super.getString(1);
+        return super.getString("PatientGuid");
     }
     public String getOrganisationGuid() {
-        return super.getString(2);
+        return super.getString("OrganisationGuid");
     }
     public Date getEffectiveDate() throws TransformException {
-        return super.getDate(3);
+        return super.getDate("EffectiveDate");
     }
     public String getEffectiveDatePrecision() {
-        return super.getString(4);
+        return super.getString("EffectiveDatePrecision");
     }
     public Date getEnteredDateTime() throws TransformException {
-        return super.getDateTime(5, 6);
+        return super.getDateTime("EnteredDate", "EnteredTime");
     }
     public String getClinicianUserInRoleGuid() {
-        return super.getString(7);
+        return super.getString("ClinicianUserInRoleGuid");
     }
     public String getEnteredByUserInRoleGuid() {
-        return super.getString(8);
+        return super.getString("EnteredByUserInRoleGuid");
     }
     public Long getCodeId() {
-        return super.getLong(9);
+        return super.getLong("CodeId");
     }
     public String getDosage() {
-        return super.getString(10);
+        return super.getString("Dosage");
     }
     public Double getQuantity() {
-        return super.getDouble(11);
+        return super.getDouble("Quantity");
     }
     public String getQuantityUnit() {
-        return super.getString(12);
+        return super.getString("QuantityUnit");
     }
     public String getProblemObservationGuid() {
-        return super.getString(13);
+        return super.getString("ProblemObservationGuid");
     }
     public String getPrescriptionType() {
-        return super.getString(14);
+        return super.getString("PrescriptionType");
     }
     public boolean getIsActive() {
-        return super.getBoolean(15);
+        return super.getBoolean("IsActive");
     }
     public Date getCancellationDate() throws TransformException {
-        return super.getDate(16);
+        return super.getDate("CancellationDate");
     }
     public Integer getNumberOfIssues() {
-        return super.getInt(17);
+        return super.getInt("NumberOfIssues");
     }
     public Integer getNumberOfIssuesAuthorised() {
-        return super.getInt(18);
+        return super.getInt("NumberOfIssuesAuthorised");
     }
     public boolean getDeleted() {
-        return super.getBoolean(19);
+        return super.getBoolean("Deleted");
     }
     public Integer getProcessingId() {
-        return super.getInt(20);
+        return super.getInt("ProcessingId");
     }
     public boolean getIsConfidential() {
-        return super.getBoolean(21);
+        return super.getBoolean("IsConfidential");
     }
 }

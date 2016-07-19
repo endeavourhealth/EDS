@@ -1,18 +1,15 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.UUID;
 
 public class Agreements_SharingOrganisation extends AbstractCsvTransformer {
 
     public Agreements_SharingOrganisation(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
@@ -27,18 +24,18 @@ public class Agreements_SharingOrganisation extends AbstractCsvTransformer {
     }
 
     public String getOrganisationGuid() {
-        return super.getString(0);
+        return super.getString("OrganisationGuid");
     }
     public boolean getIsActivated() {
-        return super.getBoolean(1);
+        return super.getBoolean("IsActivated");
     }
     public boolean getDisabled() {
-        return super.getBoolean(2);
+        return super.getBoolean("Disabled");
     }
     public boolean getDeleted() {
-        return super.getBoolean(3);
+        return super.getBoolean("Deleted");
     }
     public Date getLastModifiedDate() throws TransformException {
-        return super.getDate(4);
+        return super.getDate("LastModifiedDate");
     }
 }

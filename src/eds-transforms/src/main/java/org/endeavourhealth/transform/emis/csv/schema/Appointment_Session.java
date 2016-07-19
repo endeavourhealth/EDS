@@ -1,18 +1,15 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.endeavourhealth.transform.common.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.UUID;
 
 public class Appointment_Session extends AbstractCsvTransformer {
 
     public Appointment_Session(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT, EmisCsvTransformer.TIME_FORMAT);
+        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
@@ -35,37 +32,37 @@ public class Appointment_Session extends AbstractCsvTransformer {
     }
 
     public String getAppointmnetSessionGuid() {
-        return super.getString(0);
+        return super.getString("AppointmentSessionGuid");
     }
     public String getDescription() {
-        return super.getString(1);
+        return super.getString("Description");
     }
     public String getLocationGuid() {
-        return super.getString(2);
+        return super.getString("LocationGuid");
     }
     public String getSessionTypeDescription() {
-        return super.getString(3);
+        return super.getString("SessionTypeDescription");
     }
     public String getSessionCategoryDisplayName() {
-        return super.getString(4);
+        return super.getString("SessionCategoryDisplayName");
     }
     public Date getStartDateTime() throws TransformException {
-        return super.getDateTime(5, 6);
+        return super.getDateTime("StartDate", "StartTime");
     }
     public Date getEndDateTime() throws TransformException {
-        return super.getDateTime(7, 8);
+        return super.getDateTime("EndDate", "EndTime");
     }
     public boolean getPrivate() {
-        return super.getBoolean(9);
+        return super.getBoolean("Private");
     }
     public String getOrganisationGuid() {
-        return super.getString(10);
+        return super.getString("OrganisationGuid");
     }
     public boolean getDeleted() {
-        return super.getBoolean(11);
+        return super.getBoolean("Deleted");
     }
     public Integer getProcessingId() {
-        return super.getInt(12);
+        return super.getInt("ProcessingId");
     }
 
 }
