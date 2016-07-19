@@ -1,0 +1,6 @@
+{
+    "themes": [{
+        "name" : "eds",
+        "types": [ "account", "login", "email" ]
+    }]
+}
