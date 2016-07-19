@@ -1,3 +1,7 @@
+#kc-container.eds-padding {
+    padding-top: 6em;
+}
+
 #kc-container.vcenter {
     min-height: 100%; /* Fallback for vh unit */
     min-height: 100vh;
@@ -117,6 +121,7 @@ a#kc-current-locale-link::after {
 }
 
 .login-eds .container {
+    width: auto !important;
 }
 
 .login-eds a:hover {
