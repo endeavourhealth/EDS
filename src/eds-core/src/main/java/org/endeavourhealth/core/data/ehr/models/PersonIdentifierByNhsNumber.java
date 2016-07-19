@@ -11,30 +11,22 @@ import java.util.UUID;
 public class PersonIdentifierByNhsNumber {
 
     @ClusteringColumn(1)
-    @Column(name = "organisation_id")
-    private UUID organisationId = null;
-    @ClusteringColumn(2)
     @Column(name = "service_id")
     private UUID serviceId = null;
+    @ClusteringColumn(2)
+    @Column(name = "system_instance_id")
+    private UUID systemInstanceId = null;
     @ClusteringColumn(3)
     @Column(name = "local_id")
     private String localId = null;
     @ClusteringColumn(0)
     @Column(name = "nhs_number")
     private String nhsNumber = null;
-    @Column(name = "person_id")
-    private UUID personId = null;
+    @Column(name = "patient_id")
+    private UUID patientId = null;
     @ClusteringColumn(4)
     @Column(name = "timestamp")
     private Date timestamp = null;
-
-    public UUID getOrganisationId() {
-        return organisationId;
-    }
-
-    public void setOrganisationId(UUID organisationId) {
-        this.organisationId = organisationId;
-    }
 
     public UUID getServiceId() {
         return serviceId;
@@ -42,6 +34,14 @@ public class PersonIdentifierByNhsNumber {
 
     public void setServiceId(UUID serviceId) {
         this.serviceId = serviceId;
+    }
+
+    public UUID getSystemInstanceId() {
+        return systemInstanceId;
+    }
+
+    public void setSystemInstanceId(UUID systemInstanceId) {
+        this.systemInstanceId = systemInstanceId;
     }
 
     public String getLocalId() {
@@ -60,12 +60,12 @@ public class PersonIdentifierByNhsNumber {
         this.nhsNumber = nhsNumber;
     }
 
-    public UUID getPersonId() {
-        return personId;
+    public UUID getPatientId() {
+        return patientId;
     }
 
-    public void setPersonId(UUID personId) {
-        this.personId = personId;
+    public void setPatientId(UUID patientId) {
+        this.patientId = patientId;
     }
 
     public Date getTimestamp() {

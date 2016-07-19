@@ -14,6 +14,7 @@ import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.ProcedureRequest;
 
 import java.util.Date;
+import java.util.UUID;
 
 public class DiaryTransformer {
 
@@ -51,7 +52,10 @@ public class DiaryTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (diaryParser.getDeleted() || diaryParser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirRequest, patientGuid);
+            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
+            if (patientId != null) {
+                csvProcessor.deletePatientResource(fhirRequest, patientId);
+            }
             return;
         }
 
@@ -109,6 +113,9 @@ public class DiaryTransformer {
         //TODO - need somewhere to store Diary LocationTypeDescription in FHIR ProcedureRequest resource (asking EMIS for advice)
         //String locationDescription = diaryParser.getLocationTypeDescription();
 
-        csvProcessor.savePatientResource(fhirRequest, patientGuid);
+        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
+        if (patientId != null) {
+            csvProcessor.savePatientResource(fhirRequest, patientId);
+        }
     }
 }

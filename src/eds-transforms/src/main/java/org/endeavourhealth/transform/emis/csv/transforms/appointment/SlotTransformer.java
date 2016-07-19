@@ -12,6 +12,7 @@ import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.Slot;
 
 import java.util.Date;
+import java.util.UUID;
 
 public class SlotTransformer {
 
@@ -59,8 +60,11 @@ public class SlotTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (slotParser.getDeleted()) {
-            csvProcessor.deletePatientResource(fhirSlot, patientGuid);
-            csvProcessor.deletePatientResource(fhirAppointment, patientGuid);
+            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
+            if (patientId != null) {
+                csvProcessor.deletePatientResource(fhirSlot, patientId);
+                csvProcessor.deletePatientResource(fhirAppointment, patientId);
+            }
             return;
         }
 
@@ -95,7 +99,10 @@ public class SlotTransformer {
             fhirAppointment.setStatus(Appointment.AppointmentStatus.BOOKED);
         }
 
-        csvProcessor.savePatientResource(fhirSlot, patientGuid);
-        csvProcessor.savePatientResource(fhirAppointment, patientGuid);
+        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
+        if (patientId != null) {
+            csvProcessor.savePatientResource(fhirSlot, patientId);
+            csvProcessor.savePatientResource(fhirAppointment, patientId);
+        }
     }
 }

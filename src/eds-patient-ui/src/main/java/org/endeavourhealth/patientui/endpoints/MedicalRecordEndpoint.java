@@ -2,7 +2,6 @@ package org.endeavourhealth.patientui.endpoints;
 
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
-import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.ehr.PersonIdentifierByNhsNumberRepository;
 import org.endeavourhealth.core.data.ehr.PersonResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.PersonIdentifierByNhsNumber;
@@ -43,8 +42,8 @@ public class MedicalRecordEndpoint extends AbstractEndpoint {
         List<JsonService> ret = new ArrayList<>();
 
         for (PersonIdentifierByNhsNumber identifier: identifiers) {
-            UUID serviceId = identifier.getServiceId();
-            UUID orgId = identifier.getOrganisationId();
+            UUID serviceId = identifier.getSystemInstanceId();
+            UUID orgId = identifier.getServiceId();
 
             Organisation org = organisationRepository.getById(orgId);
             Map<UUID, String> serviceDetails = org.getServices();

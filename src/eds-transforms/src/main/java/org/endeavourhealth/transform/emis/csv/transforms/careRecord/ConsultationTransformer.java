@@ -10,6 +10,7 @@ import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
+import java.util.UUID;
 
 public class ConsultationTransformer {
 
@@ -47,7 +48,10 @@ public class ConsultationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (consultationParser.getDeleted() || consultationParser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirEncounter, patientGuid);
+            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
+            if (patientId != null) {
+                csvProcessor.deletePatientResource(fhirEncounter, patientId);
+            }
             return;
         }
 
@@ -71,7 +75,10 @@ public class ConsultationTransformer {
             fhirEncounter.setPeriod(fhirPeriod);
         }
 
-        csvProcessor.savePatientResource(fhirEncounter, patientGuid);
+        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
+        if (patientId != null) {
+            csvProcessor.savePatientResource(fhirEncounter, patientId);
+        }
     }
 
     private static Period createPeriod(Date date, String precision) throws Exception {

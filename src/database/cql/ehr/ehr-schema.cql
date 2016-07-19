@@ -14,10 +14,10 @@ DROP TABLE IF EXISTS person_consent_global;
 DROP TABLE IF EXISTS person_consent_protocol;
 DROP TABLE IF EXISTS person_consent_organisation;
 
-DROP MATERIALIZED VIEW IF EXISTS person_identifier;
-DROP TABLE IF EXISTS person_identifier_by_nhs_number;
+DROP MATERIALIZED VIEW IF EXISTS person_identifier_by_nhs_number;
+DROP TABLE IF EXISTS person_identifier;
 
-DROP TABLE IS EXISTS resource_id_map;
+DROP TABLE IF EXISTS resource_id_map;
 
 CREATE TABLE person_resource (  person_id uuid,  resource_type text,  service_id uuid,  system_instance_id uuid,  resource_id text,
   effective_date timestamp,
@@ -79,37 +79,28 @@ CREATE TABLE person_consent_organisation (
 	
 
 CREATE TABLE person_identifier (
-	organisation_id UUID,
 	service_id UUID,
+	system_instance_id UUID,
 	local_id text,
 	nhs_number text,
 	forenames text,
 	surname text,
 	date_of_birth TIMESTAMP,
 	postcode text,
-	sex text,
-	person_id UUID,
+	gender text,
+	patient_id UUID,
 	timestamp TIMESTAMP,
-	PRIMARY KEY (organisation_id, service_id, local_id, timestamp))
-	WITH CLUSTERING ORDER BY (service_id ASC, local_id ASC, timestamp DESC);
+	PRIMARY KEY (service_id, system_instance_id, local_id, timestamp))
+	WITH CLUSTERING ORDER BY (system_instance_id ASC, local_id ASC, timestamp DESC);
 	
 CREATE MATERIALIZED VIEW person_identifier_by_nhs_number AS  
-	SELECT organisation_id, service_id, local_id, nhs_number, person_id, timestamp 
+	SELECT service_id, system_instance_id, local_id, nhs_number, patient_id, timestamp 
 	FROM person_identifier  
 	WHERE nhs_number IS NOT NULL  
-	AND organisation_id IS NOT NULL 
+	AND service_id IS NOT NULL 
+	AND system_instance_id IS NOT NULL 
 	AND timestamp IS NOT NULL 
-	AND person_id IS NOT NULL 
+	AND patient_id IS NOT NULL 
 	AND local_id IS NOT NULL 
-	AND service_id IS NOT NULL
-	PRIMARY KEY(nhs_number, organisation_id, service_id, local_id, timestamp); 
+	PRIMARY KEY(nhs_number, service_id, system_instance_id, local_id, timestamp); 
 
-CREATE TABLE resource_id_map (
-	service_id UUID, 
-	system_instance_id UUID, 
-	resource_type text, 
-	source_id text, 
-	eds_id UUID, 
-	PRIMARY KEY ((service_id), system_instance_id, resource_type, source_id));
-	
-		

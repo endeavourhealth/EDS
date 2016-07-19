@@ -6,6 +6,8 @@ USE transform;
  
 DROP TABLE IF EXISTS emis_csv_code_map;
 
+DROP TABLE IF EXISTS resource_id_map;
+
   
 CREATE TABLE emis_csv_code_map (
   service_id uuid,
@@ -17,3 +19,12 @@ CREATE TABLE emis_csv_code_map (
   codeable_concept text,
   PRIMARY KEY ((service_id), system_instance_id, medication, code_id, time_uuid))
   WITH CLUSTERING ORDER BY (system_instance_id ASC, medication ASC, code_id ASC, time_uuid DESC);
+
+CREATE TABLE resource_id_map (
+	service_id UUID, 
+	system_instance_id UUID, 
+	resource_type text, 
+	source_id text, 
+	eds_id UUID, 
+	PRIMARY KEY ((service_id), system_instance_id, resource_type, source_id));
+	  

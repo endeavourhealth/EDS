@@ -21,10 +21,10 @@ public class PersonIdentifierRepository extends Repository {
         mapper.save(personIdentifier);
     }
 
-    public PersonIdentifier getMostRecent(UUID organisationId, String localId) {
+    public PersonIdentifier getMostRecent(UUID serviceId, UUID systemInstanceId, String localId) {
 
         PersonIdentifierAccessor accessor = getMappingManager().createAccessor(PersonIdentifierAccessor.class);
-        Iterator<PersonIdentifier> iterator = accessor.getMostRecent(organisationId, localId).iterator();
+        Iterator<PersonIdentifier> iterator = accessor.getMostRecent(serviceId, systemInstanceId, localId).iterator();
         if (iterator.hasNext()) {
             return iterator.next();
         } else {

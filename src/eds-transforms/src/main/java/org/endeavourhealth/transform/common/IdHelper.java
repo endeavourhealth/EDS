@@ -2,15 +2,14 @@ package org.endeavourhealth.transform.common;
 
 import org.apache.jcs.JCS;
 import org.apache.jcs.access.exception.CacheException;
-import org.endeavourhealth.core.data.ehr.ResourceIdMapRepository;
-import org.endeavourhealth.core.data.ehr.models.ResourceIdMap;
+import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
+import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
 import org.endeavourhealth.transform.common.idmappers.BaseIdMapper;
 import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +35,9 @@ public class IdHelper {
 
     public static String getEdsResourceId(UUID serviceId, UUID systemInstanceId, ResourceType resourceType, String sourceId) {
         String key = createCacheKey(serviceId, systemInstanceId, resourceType, sourceId);
-        String edsId = (String)cache.get(key);
+
+        String edsId = null;
+        //String edsId = (String)cache.get(key);
         if (edsId == null) {
             ResourceIdMap mapping = repository.getResourceIdMap(serviceId, systemInstanceId, resourceType.toString(), sourceId);
             if (mapping == null) {
@@ -50,20 +51,29 @@ public class IdHelper {
             }
 
             edsId = mapping.getEdsId().toString();
-            try {
+            /*try {
                 cache.put(key, edsId);
             } catch (Exception ex) {
                 LOG.error("Error adding key [" + key + "] value [" + edsId + "] to ID map cache", ex);
-            }
+            }*/
         }
         return edsId;
     }
 
-    public static void mapIds(UUID serviceId, UUID systemInstanceId, List<Resource> resources) {
+    /*public static void mapIds(UUID serviceId, UUID systemInstanceId, List<Resource> resources) {
+
+        long millis = System.currentTimeMillis();
+        LOG.trace("Mapping IDs of " + resources.size() + " resources");
+
+        //use a parallel stream to get best throughput on lots of cores
         resources
                 .parallelStream()
                 .forEach((resource) -> { mapIds(serviceId, systemInstanceId, resource); });
-    }
+
+        LOG.trace("Completed ID mapping in " + (System.currentTimeMillis() - millis) + "ms");
+
+    }*/
+
     public static void mapIds(UUID serviceId, UUID systemInstanceId, Resource resource) {
 
         BaseIdMapper mapper = idMappers.get(resource.getClass());
@@ -76,7 +86,6 @@ public class IdHelper {
             } catch (Exception ex) {
                 throw new RuntimeException("Exception creating ID Mapper for " + clsName, ex);
             }
-
         }
 
         mapper.mapIds(resource, serviceId, systemInstanceId);

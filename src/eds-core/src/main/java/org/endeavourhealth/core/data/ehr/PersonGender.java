@@ -1,9 +1,9 @@
 package org.endeavourhealth.core.data.ehr;
 
-public enum PersonSex {
+public enum PersonGender {
     Male,
     Female,
-    Indeterminate,
+    Other,
     Unknown;
 
 }

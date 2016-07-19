@@ -1,4 +1,4 @@
-package org.endeavourhealth.core.data.ehr.models;
+package org.endeavourhealth.core.data.transform.models;
 
 import com.datastax.driver.mapping.annotations.ClusteringColumn;
 import com.datastax.driver.mapping.annotations.Column;
@@ -7,7 +7,7 @@ import com.datastax.driver.mapping.annotations.Table;
 
 import java.util.UUID;
 
-@Table(keyspace = "ehr", name = "resource_id_map")
+@Table(keyspace = "transform", name = "resource_id_map")
 public class ResourceIdMap {
 
     @PartitionKey

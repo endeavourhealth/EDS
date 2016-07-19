@@ -58,8 +58,11 @@ public class PatientTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (patientParser.getDeleted() || patientParser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirPatient, patientGuid);
-            csvProcessor.deletePatientResource(fhirEpisode, patientGuid);
+            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
+            if (patientId != null) {
+                csvProcessor.deletePatientResource(fhirPatient, patientId);
+                csvProcessor.deletePatientResource(fhirEpisode, patientId);
+            }
             return;
         }
 
@@ -74,6 +77,7 @@ public class PatientTransformer {
             fhirPatient.setDeceased(new DateType(dod));
         }
 
+        //EMIS only provides sex but FHIR requires gender, but will treat as the same concept
         VocSex vocSex = VocSex.fromValue(patientParser.getSex());
         Enumerations.AdministrativeGender gender = SexConverter.convertSex(vocSex);
         fhirPatient.setGender(gender);
@@ -150,11 +154,6 @@ public class PatientTransformer {
         RegistrationType registrationType = convertRegistrationType(patientParser.getPatientTypedescription(), patientParser.getDummyType());
         fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.REGISTRATION_TYPE, CodingHelper.createCoding(registrationType)));
 
-        //ignore dummy patient records
-        if (patientParser.getDummyType()) {
-            return;
-        }
-
         String usualGpGuid = patientParser.getUsualGpUserInRoleGuid();
         if (!Strings.isNullOrEmpty(usualGpGuid)) {
             fhirPatient.addCareProvider(csvHelper.createPractitionerReference(usualGpGuid));
@@ -192,9 +191,14 @@ public class PatientTransformer {
             fhirEpisode.setStatus(EpisodeOfCare.EpisodeOfCareStatus.FINISHED);
         }
 
-        csvProcessor.savePatientResource(fhirPatient, patientGuid);
-        csvProcessor.savePatientResource(fhirEpisode, patientGuid);
+        //register our patient with the helper class, so we generate a EDS patient UUID if necessary
+        csvHelper.registerPatient(fhirPatient, patientGuid, csvProcessor);
 
+        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
+        if (patientId != null) {
+            csvProcessor.savePatientResource(fhirPatient, patientId);
+            csvProcessor.savePatientResource(fhirEpisode, patientId);
+        }
     }
 
     /**

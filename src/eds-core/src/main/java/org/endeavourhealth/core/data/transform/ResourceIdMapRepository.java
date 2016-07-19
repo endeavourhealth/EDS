@@ -1,11 +1,9 @@
-package org.endeavourhealth.core.data.ehr;
+package org.endeavourhealth.core.data.transform;
 
 import com.datastax.driver.mapping.Mapper;
 import org.endeavourhealth.core.data.Repository;
-import org.endeavourhealth.core.data.ehr.accessors.PersonConsentGlobalAccessor;
-import org.endeavourhealth.core.data.ehr.accessors.ResourceIdMapAccessor;
-import org.endeavourhealth.core.data.ehr.models.PersonConsentGlobal;
-import org.endeavourhealth.core.data.ehr.models.ResourceIdMap;
+import org.endeavourhealth.core.data.transform.accessors.ResourceIdMapAccessor;
+import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
 
 import java.util.Iterator;
 import java.util.UUID;

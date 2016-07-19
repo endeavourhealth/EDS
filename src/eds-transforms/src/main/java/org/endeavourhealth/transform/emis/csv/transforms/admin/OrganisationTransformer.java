@@ -81,7 +81,7 @@ public class OrganisationTransformer {
         try {
             return OrganisationType.fromDescription(csvOrganisationType);
         } catch (Exception ex) {
-            //TODO - need proper mapping of EMIS org types to value set
+            //TODO - need proper mapping of EMIS org types to value set (asking EMIS re this)
             return OrganisationType.GP_PRACTICE;
         }
 

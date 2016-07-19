@@ -2,7 +2,11 @@ package org.endeavourhealth.transform.emis.csv;
 
 import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.base.Strings;
+import com.google.gson.stream.MalformedJsonException;
+import org.endeavourhealth.core.data.ehr.PersonGender;
+import org.endeavourhealth.core.data.ehr.PersonIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.PersonResourceRepository;
+import org.endeavourhealth.core.data.ehr.models.PersonIdentifier;
 import org.endeavourhealth.core.data.transform.EmisCsvCodeMapRepository;
 import org.endeavourhealth.core.data.transform.models.EmisCsvCodeMap;
 import org.endeavourhealth.transform.common.CsvProcessor;
@@ -18,7 +22,7 @@ import java.util.*;
 public class EmisCsvHelper {
 
     private static final String CODEABLE_CONCEPT = "CodeableConcept";
-    private static final String ID_DELIMITER = "-";
+    private static final String ID_DELIMITER = "//";
 
     //metadata, not relating to patients
     private Map<Long, CodeableConcept> clinicalCodes = new HashMap<>();
@@ -36,6 +40,8 @@ public class EmisCsvHelper {
     private Map<String, List<ResourceRelationship>> observationChildMap = new HashMap<>();
     private Map<String, List<ResourceRelationship>> problemChildMap = new HashMap<>();
     private Map<String, DateTimeType> issueRecordDateMap = new HashMap<>();
+    private Map<String, UUID> patientGuidToUuidMap = new HashMap<>();
+    private PersonIdentifierRepository personIdentifierRepository = new PersonIdentifierRepository();
 
     public EmisCsvHelper() {
     }
@@ -124,11 +130,16 @@ public class EmisCsvHelper {
         }
 
         String json = mapping.getCodeableConcept();
-        CodeableConcept codeableConcept = (CodeableConcept)parser.parseType(json, CODEABLE_CONCEPT);
-        clinicalCodes.put(codeId, codeableConcept);
+        try {
+            CodeableConcept codeableConcept = (CodeableConcept)parser.parseType(json, CODEABLE_CONCEPT);
+            clinicalCodes.put(codeId, codeableConcept);
 
-        ClinicalCodeType type = ClinicalCodeType.fromValue(mapping.getCodeType());
-        clinicalCodeTypes.put(codeId, type);
+            ClinicalCodeType type = ClinicalCodeType.fromValue(mapping.getCodeType());
+            clinicalCodeTypes.put(codeId, type);
+        } catch (Exception ex) {
+            throw new TransformException("Error parsing JSON [" + json + "]", ex);
+        }
+
     }
 
     public ClinicalCodeType findClinicalCodeType(Long codeId, CsvProcessor csvProcessor) throws Exception {
@@ -259,7 +270,7 @@ public class EmisCsvHelper {
                                                             ResourceType.Observation,
                                                             locallyUniqueId);
 
-        Observation fhirObservation = null;
+        Observation fhirObservation = new Observation();
         //TODO - retrieve observation from repository using globallyUniqueId
         //resourceRepository.ge
 
@@ -304,7 +315,10 @@ public class EmisCsvHelper {
 
         if (changed) {
             //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
-            csvProcessor.savePatientResource(fhirObservation, false, patientGuid);
+            UUID patientId = this.getPatientUUidForGuid(patientGuid, csvProcessor);
+            if (patientId != null) {
+                csvProcessor.savePatientResource(fhirObservation, false, patientId);
+            }
         }
     }
 
@@ -340,7 +354,7 @@ public class EmisCsvHelper {
                         ResourceType.Condition,
                         problemLocallyUniqueId);
 
-                Condition fhirCondition = null;
+                Condition fhirCondition = new Condition();
                 //TODO - retrieve Condition from repository using globallyUniqueId
                 //resourceRepository.ge
 
@@ -358,7 +372,10 @@ public class EmisCsvHelper {
             Condition fhirProblem = problemMap.get(locallyUniqueId);
             String patientGuid = getPatientGuidFromUniqueId(locallyUniqueId);
 
-            csvProcessor.savePatientResource(fhirProblem, patientGuid);
+            UUID patientId = this.getPatientUUidForGuid(patientGuid, csvProcessor);
+            if (patientId != null) {
+                csvProcessor.savePatientResource(fhirProblem, patientId);
+            }
         }
     }
 
@@ -411,7 +428,10 @@ public class EmisCsvHelper {
 
         if (changed) {
             //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
-            csvProcessor.savePatientResource(fhirCondition, false, patientGuid);
+            UUID patientId = this.getPatientUUidForGuid(patientGuid, csvProcessor);
+            if (patientId != null) {
+                csvProcessor.savePatientResource(fhirCondition, false, patientId);
+            }
         }
     }
 
@@ -426,6 +446,116 @@ public class EmisCsvHelper {
     public DateTimeType getDrugRecordDate(String drugRecordId, String patientGuid) {
         return issueRecordDateMap.get(createUniqueId(patientGuid, drugRecordId));
     }
+
+    /**
+     * returns the EDS properly unique patient UUID for the EMIS patient GUID
+     */
+    public UUID getPatientUUidForGuid(String patientGuid, CsvProcessor csvProcessor) throws TransformException {
+
+        UUID uuid = patientGuidToUuidMap.get(patientGuid);
+        if (uuid == null) {
+
+            PersonIdentifier personIdentifier = personIdentifierRepository.getMostRecent(csvProcessor.getServiceId(),
+                    csvProcessor.getSystemInstanceId(),
+                    patientGuid);
+
+            //we may get a null identifier if the patient record is confidential or similar, where
+            if (personIdentifier == null) {
+                return null;
+            }
+
+            uuid = personIdentifier.getPatientId();
+            patientGuidToUuidMap.put(patientGuid, uuid);
+        }
+        return uuid;
+    }
+
+    /**
+     * when an EMIS Patient record is processed, this function creates a permanent mapping to an EDS patientUuid
+     */
+    public void registerPatient(Patient fhirPatient, String patientGuid, CsvProcessor csvProcessor) throws TransformException {
+
+        PersonIdentifier personIdentifier = personIdentifierRepository.getMostRecent(csvProcessor.getServiceId(),
+                csvProcessor.getSystemInstanceId(),
+                patientGuid);
+
+        //if we've never encountered this patient before, create a new personIdentifier record
+        if (personIdentifier == null) {
+            personIdentifier = new PersonIdentifier();
+            personIdentifier.setServiceId(csvProcessor.getServiceId());
+            personIdentifier.setSystemInstanceId(csvProcessor.getSystemInstanceId());
+            personIdentifier.setLocalId(patientGuid);
+            personIdentifier.setPatientId(UUID.randomUUID());
+        }
+
+        //whether we've encountered this patient before or not, refresh the record with the latest demographics
+        String nhsNumber = null;
+        for (Identifier fhirIdentifier: fhirPatient.getIdentifier()) {
+            if (fhirIdentifier.getSystem() != FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER) {
+                continue;
+            }
+
+            nhsNumber = fhirIdentifier.getValue();
+        }
+
+
+        List<String> forenames = new ArrayList<>();
+        List<String> surnames = new ArrayList<>();
+
+        for (HumanName fhirName: fhirPatient.getName()) {
+            if (fhirName.getUse() != HumanName.NameUse.OFFICIAL) {
+                continue;
+            }
+
+            for (StringType family: fhirName.getFamily()) {
+                surnames.add(family.getValue());
+            }
+            for (StringType given: fhirName.getGiven()) {
+                forenames.add(given.getValue());
+            }
+        }
+
+        String postcode = null;
+        for (Address fhirAddress: fhirPatient.getAddress()) {
+            if (fhirAddress.getUse() != Address.AddressUse.HOME) {
+                continue;
+            }
+            postcode = fhirAddress.getPostalCode();
+        }
+
+        PersonGender gender = null;
+        switch (fhirPatient.getGender()) {
+            case MALE:
+                gender = PersonGender.Male;
+                break;
+            case FEMALE:
+                gender = PersonGender.Female;
+                break;
+            case OTHER:
+                gender = PersonGender.Other;
+                break;
+            case UNKNOWN:
+                gender = PersonGender.Unknown;
+                break;
+            default:
+                throw new TransformException("Unhandled FHIR gender " + fhirPatient.getGender());
+
+        }
+
+        personIdentifier.setForenames(String.join(" ", forenames));
+        personIdentifier.setSurname(String.join(" ", surnames));
+        personIdentifier.setNhsNumber(nhsNumber);
+        personIdentifier.setDateOfBirth(fhirPatient.getBirthDate());
+        personIdentifier.setPostcode(postcode);
+        personIdentifier.setGender(gender);
+        personIdentifier.setTimestamp(new Date());
+
+        personIdentifierRepository.insert(personIdentifier);
+
+        UUID patientId = personIdentifier.getPatientId();
+        patientGuidToUuidMap.put(patientGuid, patientId);
+    }
+
 
     /**
      * object to temporarily store relationships between resources, such as things linked to a problem

@@ -13,6 +13,7 @@ import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.UUID;
 
 public class DrugRecordTransformer {
 
@@ -50,7 +51,10 @@ public class DrugRecordTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (drugRecordParser.getDeleted() || drugRecordParser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirMedication, patientGuid);
+            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
+            if (patientId != null) {
+                csvProcessor.deletePatientResource(fhirMedication, patientId);
+            }
             return;
         }
 
@@ -109,7 +113,10 @@ public class DrugRecordTransformer {
             fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_MOST_RECENT_ISSUE_DATE, mostRecentDate));
         }
 
-        csvProcessor.savePatientResource(fhirMedication, patientGuid);
+        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
+        if (patientId != null) {
+            csvProcessor.savePatientResource(fhirMedication, patientId);
+        }
 
         //if this record is linked to a problem, store this relationship in the helper
         csvHelper.cacheProblemRelationship(drugRecordParser.getProblemObservationGuid(),

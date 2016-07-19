@@ -15,6 +15,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public abstract class ClinicalCodeTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(ClinicalCodeTransformer.class);
@@ -24,21 +28,35 @@ public abstract class ClinicalCodeTransformer {
                                CsvProcessor csvProcessor,
                                EmisCsvHelper csvHelper) throws Exception {
 
+        //because we have to hit a third party web resource, we use a thread pool to support
+        //threading these calls to improve performance
+        ExecutorService threadPool = Executors.newFixedThreadPool(15);
+
         Coding_ClinicalCode parser = new Coding_ClinicalCode(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                transform(parser, csvProcessor, csvHelper);
+                transform(parser, csvProcessor, csvHelper, threadPool);
             }
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {
             parser.close();
         }
+
+        //close and let our thread pool finish
+        threadPool.shutdown();
+        try {
+            threadPool.awaitTermination(1, TimeUnit.HOURS);
+        } catch (InterruptedException ex) {
+            LOG.error("Thread interrupted", ex);
+        }
+
     }
 
     private static void transform(Coding_ClinicalCode codeParser,
                                   CsvProcessor csvProcessor,
-                                  EmisCsvHelper csvHelper) throws Exception {
+                                  EmisCsvHelper csvHelper,
+                                  ExecutorService threadPool) throws Exception {
 
         Long codeId = codeParser.getCodeId();
 
@@ -51,29 +69,62 @@ public abstract class ClinicalCodeTransformer {
         Long snomedDescriptionId = codeParser.getSnomedCTDescriptionId();
         String emisCategory = codeParser.getEmisCodeCategoryDescription();
 
+        ClinicalCodeType codeType = ClinicalCodeType.fromValue(emisCategory);
+
         CodeableConcept fhirConcept = null;
 
         if (emisCode == null) {
             fhirConcept = CodeableConceptHelper.createCodeableConcept(emisTerm);
         } else {
             fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, emisTerm, emisCode);
-
-            try {
-                //TODO - need faster way to lookup Snomed terms for concept and desc IDs
-                String snomedTerm = emisTerm;
-                //String snomedTerm = Snomed.getTerm(snomedConceptId.longValue(), snomedDescriptionId.longValue());
-                //TODO - need to validate Snomed concept IDs and remove non-valid ones
-
-                fhirConcept.addCoding(CodingHelper.createCoding(FhirUri.CODE_SYSTEM_SNOMED_CT, snomedTerm, snomedConceptId.toString()));
-            } catch (Exception ex) {
-                LOG.error("Failed to find term for Coding_ClinicalCode CodeId: " + codeId + " SnomedConceptId: " +snomedConceptId + " SnomedTermId: " + snomedDescriptionId);
-                //throw new TransformException("Failed to find term for Clinical CodeId " + codeId + " SnomedConceptId: " +snomedConceptId + " SnomedTermId: " + snomedDescriptionId, ex);
-            }
         }
 
-        ClinicalCodeType codeType = ClinicalCodeType.fromValue(emisCategory);
+        threadPool.submit(new WebServiceLookup(codeId, fhirConcept, codeType, snomedConceptId,
+                                                snomedDescriptionId, csvProcessor, csvHelper));
+    }
 
-        csvHelper.addClinicalCode(codeId, fhirConcept, codeType, csvProcessor);
-   }
+    static class WebServiceLookup implements Callable {
 
+        private Long codeId = null;
+        private CodeableConcept fhirConcept = null;
+        private ClinicalCodeType codeType = null;
+        private Long snomedConceptId = null;
+        private Long snomedDescriptionId = null;
+        private CsvProcessor csvProcessor = null;
+        private EmisCsvHelper csvHelper = null;
+
+        public WebServiceLookup(Long codeId,
+                                CodeableConcept fhirConcept,
+                                ClinicalCodeType codeType,
+                                Long snomedConceptId,
+                                Long snomedDescriptionId,
+                                CsvProcessor csvProcessor,
+                                EmisCsvHelper csvHelper) {
+
+            this.codeId = codeId;
+            this.fhirConcept = fhirConcept;
+            this.codeType = codeType;
+            this.snomedConceptId = snomedConceptId;
+            this.snomedDescriptionId = snomedDescriptionId;
+            this.csvProcessor = csvProcessor;
+            this.csvHelper = csvHelper;
+        }
+
+        @Override
+        public Object call() throws Exception {
+
+            //LOG.trace("Looking up for " + snomedConceptId);
+            try {
+                String snomedTerm = Snomed.getTerm(snomedConceptId.longValue(), snomedDescriptionId.longValue());
+                fhirConcept.addCoding(CodingHelper.createCoding(FhirUri.CODE_SYSTEM_SNOMED_CT, snomedTerm, snomedConceptId.toString()));
+            } catch (Exception ex) {
+                //if we didn't get a term for the IDs, then it was a local term, so even though the Snomed code
+                //may have been non-null, the mapping wasn't to a valid Snomed concept/term pair, so don't add it to the FHIR resource
+            }
+
+            csvHelper.addClinicalCode(codeId, fhirConcept, codeType, csvProcessor);
+            //LOG.trace("    Finished up for " + snomedConceptId);
+            return null;
+        }
+    }
 }

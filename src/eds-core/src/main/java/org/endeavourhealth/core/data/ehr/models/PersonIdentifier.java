@@ -3,7 +3,7 @@ package org.endeavourhealth.core.data.ehr.models;
 import com.datastax.driver.mapping.annotations.ClusteringColumn;
 import com.datastax.driver.mapping.annotations.Column;
 import com.datastax.driver.mapping.annotations.Table;
-import org.endeavourhealth.core.data.ehr.PersonSex;
+import org.endeavourhealth.core.data.ehr.PersonGender;
 
 import java.util.Date;
 import java.util.UUID;
@@ -12,11 +12,11 @@ import java.util.UUID;
 public class PersonIdentifier {
 
     @ClusteringColumn(0)
-    @Column(name = "organisation_id")
-    private UUID organisationId = null;
-    @ClusteringColumn(1)
     @Column(name = "service_id")
     private UUID serviceId = null;
+    @ClusteringColumn(1)
+    @Column(name = "system_instance_id")
+    private UUID systemInstanceId = null;
     @ClusteringColumn(2)
     @Column(name = "local_id")
     private String localId = null;
@@ -30,21 +30,13 @@ public class PersonIdentifier {
     private Date dateOfBirth = null;
     @Column(name = "postcode")
     private String postcode = null;
-    @Column(name = "sex")
-    private PersonSex sex = null;
-    @Column(name = "person_id")
-    private UUID personId = null;
+    @Column(name = "gender")
+    private PersonGender gender = null;
+    @Column(name = "patient_id")
+    private UUID patientId = null;
     @ClusteringColumn(3)
     @Column(name = "timestamp")
     private Date timestamp = null;
-
-    public UUID getOrganisationId() {
-        return organisationId;
-    }
-
-    public void setOrganisationId(UUID organisationId) {
-        this.organisationId = organisationId;
-    }
 
     public UUID getServiceId() {
         return serviceId;
@@ -52,6 +44,14 @@ public class PersonIdentifier {
 
     public void setServiceId(UUID serviceId) {
         this.serviceId = serviceId;
+    }
+
+    public UUID getSystemInstanceId() {
+        return systemInstanceId;
+    }
+
+    public void setSystemInstanceId(UUID systemInstanceId) {
+        this.systemInstanceId = systemInstanceId;
     }
 
     public String getLocalId() {
@@ -102,20 +102,20 @@ public class PersonIdentifier {
         this.postcode = postcode;
     }
 
-    public PersonSex getSex() {
-        return sex;
+    public PersonGender getGender() {
+        return gender;
     }
 
-    public void setSex(PersonSex sex) {
-        this.sex = sex;
+    public void setGender(PersonGender gender) {
+        this.gender = gender;
     }
 
-    public UUID getPersonId() {
-        return personId;
+    public UUID getPatientId() {
+        return patientId;
     }
 
-    public void setPersonId(UUID personId) {
-        this.personId = personId;
+    public void setPatientId(UUID patientId) {
+        this.patientId = patientId;
     }
 
     public Date getTimestamp() {
