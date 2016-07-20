@@ -5,6 +5,7 @@ module app.models {
 		uuid:string;
 		localIdentifier : string;
 		name:string;
+		endpoints:Endpoint[];
 		organisations:{ [key:string]:string; };
 
 		constructor() {}

@@ -13,6 +13,7 @@
                 <Header Key="TransformTo">OpenHR</Header>
             </ExchangeHeaders>
         </MessageTransform>
+        <PostToSubscriberWebService/>
         <PostMessageToLog>
             <EventType>Validate</EventType>
         </PostMessageToLog>

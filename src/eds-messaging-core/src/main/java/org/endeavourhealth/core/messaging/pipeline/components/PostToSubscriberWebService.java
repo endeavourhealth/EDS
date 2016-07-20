@@ -1,17 +1,19 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import org.apache.http.HttpStatus;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.configuration.PostToSubscriberWebServiceConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
-import org.glassfish.jersey.client.ClientConfig;
-import org.glassfish.jersey.filter.LoggingFilter;
+import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.client.*;
-import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class PostToSubscriberWebService extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(PostToSubscriberWebService.class);
@@ -23,39 +25,30 @@ public class PostToSubscriberWebService extends PipelineComponent {
 	}
 
 	@Override
-	public void process(Exchange exchange) {
-		String subscriberList = exchange.getHeader(HeaderKeys.Subscribers);
-		if (subscriberList == null || subscriberList.isEmpty()) {
-			LOG.info("No subscriber addresses provided");
-			return;
+	public void process(Exchange exchange) throws PipelineException {
+		String messageFormat = exchange.getHeader(HeaderKeys.TransformTo);
+		String messageVersion = exchange.getHeader(HeaderKeys.SystemVersion);
+		String protocolData = exchange.getHeader(HeaderKeys.ProtocolData);
+		LibraryItem protocol;
+		try {
+			protocol = new ObjectMapper().readValue(protocolData, LibraryItem.class);
+		} catch (IOException e) {
+			LOG.error("Unable to deserialize protocol");
+			throw new PipelineException(e.getMessage());
 		}
 
-		String[] subscriberEndpoints = subscriberList.split(",", -1);
+		// Find subscribers to this protocol that need this format/version
+		List<String> subscribers = protocol.getProtocol().getServiceContract().stream()
+				.filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER)
+						&& sc.getTechnicalInterface().getMessageFormat().equals(messageFormat)
+						&& sc.getTechnicalInterface().getMessageFormatVersion().equals(messageVersion))
+				.map(sc -> sc.getService().getUuid())
+				.collect(Collectors.toList());
 
-		for (String subscriberEndpoint : subscriberEndpoints) {
-			if (postToSubscriber(exchange, subscriberEndpoint))
-				LOG.debug("Message posted to subscriber [" + subscriberEndpoint + "]");
-			else
-				LOG.debug("Failed to post message to subscriber [" + subscriberEndpoint + "]");
-		}
-	}
+		// Get relevant endpoint addresses for subscribers given technical interface Id
 
-	private boolean postToSubscriber(Exchange exchange, String subscriberEndpoint) {
-		Client client = ClientBuilder.newClient( new ClientConfig().register( LoggingFilter.class ) );
-		WebTarget webTarget = client.target(subscriberEndpoint);
+		// Determine which protocol subscribers want this transform format
+		exchange.setHeader(HeaderKeys.Subscribers, String.join(",", subscribers));
 
-		String format = exchange.getHeader(HeaderKeys.ContentType);
-		Invocation.Builder invocationBuilder =  webTarget.request(format);
-
-		for(String key : exchange.getHeaders().keySet())
-			invocationBuilder.header(key, exchange.getHeader(key));
-
-		Entity entity = Entity.entity(exchange.getBody(), format);
-
-		Response response = invocationBuilder.post(entity);
-
-		exchange.setBody(response.readEntity(String.class));
-
-		return (response.getStatus() == HttpStatus.SC_OK);
 	}
 }

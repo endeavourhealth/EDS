@@ -10,11 +10,12 @@ module app.service {
 	export class ServiceListController {
 		services : Service[];
 
-		static $inject = ['$uibModal', 'ServiceService', 'LoggerService'];
+		static $inject = ['$uibModal', 'ServiceService', 'LoggerService','$state'];
 
 		constructor(private $modal : IModalService,
 								private serviceService : IServiceService,
-								private log : ILoggerService) {
+								private log : ILoggerService,
+								protected $state : IStateService) {
 			this.getAll();
 		}
 
@@ -35,13 +36,7 @@ module app.service {
 		}
 
 		edit(item : Service) {
-			var vm = this;
-			ServiceEditorController
-				.open(vm.$modal, item)
-				.result
-				.then(function(result : Service) {
-					vm.save(item, result);
-				});
+			this.$state.go('app.serviceAction', {itemUuid: item.uuid, itemAction: 'edit'});
 		}
 
 		save(original : Service, edited : Service) {

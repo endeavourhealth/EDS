@@ -112,7 +112,7 @@ module app.dashboard {
 		}
 
 		getExchangeRateAsWidthStylePercent(exchange : RabbitExchange){
-			if (!exchange || !exchange.message_stats)
+			if (!exchange || !exchange.message_stats || !exchange.message_stats.publish_in_details || !exchange.message_stats.publish_in_details.rate)
 				return {width : '0%'};
 
 			var pcnt = (exchange.message_stats.publish_in_details.rate * 100) / this.exchangeRateMax;
@@ -120,7 +120,7 @@ module app.dashboard {
 		}
 
 		getQueueRateAsWidthStylePercent(queue : RabbitQueue){
-			if (!queue || !queue.message_stats)
+			if (!queue || !queue.message_stats || !queue.message_stats.publish_details || !queue.message_stats.publish_details.rate)
 				return {width : '0%'};
 
 			var pcnt = (queue.message_stats.publish_details.rate * 100) / this.queueRateMax;

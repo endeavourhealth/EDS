@@ -1,4 +1,4 @@
-/// <reference path="../../../typings/index.d.ts" />
+/// <reference path="../../typings/index.d.ts" />
 
 module app.service {
 	'use strict';
@@ -22,6 +22,15 @@ module app.service {
 						url: '/service',
 						templateUrl: 'app/services/list/serviceList.html',
 						controller: 'ServiceListController',
+						controllerAs: 'ctrl'
+					}
+				},
+				{
+					state: 'app.serviceAction',
+					config: {
+						url: '/service/:itemUuid/:itemAction',
+						templateUrl: 'app/services/editor/serviceEditor.html',
+						controller: 'ServiceEditorController',
 						controllerAs: 'ctrl'
 					}
 				}

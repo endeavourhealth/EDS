@@ -17,6 +17,8 @@ public class Service {
     private String localIdentifier;
     @Column(name = "name")
     private String name;
+    @Column(name = "endpoints")
+    private String endpoints;
     @Column(name = "organisations")
     private Map<UUID, String> organisations = new HashMap<>();
 
@@ -53,5 +55,13 @@ public class Service {
 
     public void setLocalIdentifier(String localIdentifier) {
         this.localIdentifier = localIdentifier;
+    }
+
+    public String getEndpoints() {
+        return endpoints;
+    }
+
+    public void setEndpoints(String endpoints) {
+        this.endpoints = endpoints;
     }
 }

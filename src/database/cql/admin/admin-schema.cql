@@ -209,6 +209,7 @@ create table service
 	id UUID,
 	name TEXT,
 	local_identifier TEXT,
+	endpoints TEXT,
 	organisations map<UUID, TEXT>,
 	primary key (id)
 );
@@ -257,7 +258,6 @@ CREATE TABLE queuedMessage
 	messageBody TEXT,
 	PRIMARY KEY (id)
 );
-
 
 INSERT INTO dependency_type
 (id, description)

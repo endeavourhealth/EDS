@@ -18,8 +18,6 @@ public class MessageTransform extends PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
-		// Determine which subscribers want this format
-		exchange.setHeader(HeaderKeys.Subscribers, "http://192.168.100.1, http://192.168.100.2, http://192.168.100.3");
 		LOG.debug("Message transformed");
 	}
 }

@@ -10,6 +10,6 @@
         <PostMessageToLog>
             <EventType>Send</EventType>
         </PostMessageToLog>
-        <PostToSubscriberWebService/>
+        <PostToRest/>
     </Pipeline>
 </QueueReaderConfiguration>

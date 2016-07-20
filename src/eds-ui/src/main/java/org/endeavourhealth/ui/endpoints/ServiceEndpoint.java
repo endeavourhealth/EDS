@@ -1,5 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
@@ -36,6 +37,10 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 		dbService.setName(service.getName());
 		dbService.setLocalIdentifier(service.getLocalIdentifier());
 		dbService.setOrganisations(service.getOrganisations());
+
+		String endpointsJson = new ObjectMapper().writeValueAsString(service.getEndpoints());
+		dbService.setEndpoints(endpointsJson);
+
 		UUID serviceId = repository.save(dbService);
 
 		if (service.getUuid() == null)
