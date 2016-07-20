@@ -4,11 +4,14 @@ CREATE KEYSPACE ehr WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replicatio
 
 USE ehr;
 
-DROP MATERIALIZED VIEW IF EXISTS person_resource_event_store_by_date;
-DROP TABLE IF EXISTS person_resource_event_store;
+DROP TABLE IF EXISTS resource_history;
 
-DROP MATERIALIZED VIEW IF EXISTS person_resource_metadata_by_date;
-DROP TABLE IF EXISTS person_resource;
+DROP MATERIALIZED VIEW IF EXISTS resource_by_last_updated;
+DROP MATERIALIZED VIEW IF EXISTS resource_by_patient;
+DROP TABLE IF EXISTS resource_by_service;
+
+DROP TABLE IF EXISTS resource_by_exchange_batch;
+DROP TABLE IF EXISTS exchange_batch;
 
 DROP TABLE IF EXISTS person_consent_global;
 DROP TABLE IF EXISTS person_consent_protocol;
@@ -19,39 +22,80 @@ DROP TABLE IF EXISTS person_identifier;
 
 DROP TABLE IF EXISTS resource_id_map;
 
-CREATE TABLE person_resource (  person_id uuid,  resource_type text,  service_id uuid,  system_instance_id uuid,  resource_id text,
-  effective_date timestamp,
-  version text,
-  last_updated timestamp,  resource_metadata text,  schema_version text,  resource_data text,  PRIMARY KEY ((person_id), resource_type, service_id, system_instance_id, resource_id));
+// 1. Get Resource based on ID and Type				= resource_history
+// 2. Get Resource History						= resource_history
+// 3. Get Resources based on Type for a Service			= resource_by_service
+// 4. Get Resources based on Type for a Service with Date Range	= resource_history_by_service
+// 5. Get Resources based on Type for a Patient			= resource_by_patient
+// 6. Get Resources based on Exchange Batch				= resource_by_exchange_batch
 
-CREATE MATERIALIZED VIEW person_resource_metadata_by_date AS 
-SELECT person_id, resource_type, effective_date, service_id, system_instance_id, resource_id, resource_metadata
-FROM person_resource
-WHERE person_id IS NOT NULL
+CREATE TABLE resource_history (
+  resource_id uuid,
+  resource_type text,
+  version timeuuid,
+  created_at timestamp,
+  service_id uuid,
+  system_id uuid,
+  is_deleted boolean,
+  schema_version text,
+  resource_data text,
+  PRIMARY KEY ((resource_id, resource_type), version)
+) WITH CLUSTERING ORDER BY (version DESC);
+
+CREATE TABLE resource_history_by_service (
+  service_id uuid,
+  system_id uuid,
+  resource_type text,
+  created_at timestamp,
+  resource_id uuid,
+  version timeuuid,
+  is_deleted boolean,
+  schema_version text,
+  resource_data text,
+  PRIMARY KEY ((service_id, system_id, resource_type), created_at, resource_id, version)
+) WITH CLUSTERING ORDER BY (created_at DESC, resource_id ASC, version DESC);
+
+CREATE TABLE resource_by_service (
+  service_id uuid,
+  system_id uuid,
+  resource_type text,
+  resource_id uuid,
+  current_version timeuuid,
+  updated_at timestamp,
+  patient_id uuid,
+  schema_version text,
+  resource_data text,
+  PRIMARY KEY((service_id, system_id, resource_type), resource_id)
+);
+
+CREATE MATERIALIZED VIEW resource_by_patient AS
+SELECT service_id, system_id, patient_id, resource_type, resource_id, schema_version, resource_data
+FROM resource_by_service
+WHERE service_id IS NOT NULL
+  AND system_id IS NOT NULL
+  AND patient_id IS NOT NULL
   AND resource_type IS NOT NULL
-  AND effective_date IS NOT NULL
-  AND service_id IS NOT NULL
-  AND system_instance_id IS NOT NULL
   AND resource_id IS NOT NULL
-PRIMARY KEY((person_id), resource_type, effective_date, service_id, system_instance_id, resource_id)
-WITH CLUSTERING ORDER BY (resource_type ASC, effective_date DESC, service_id ASC, system_instance_id ASC, resource_id ASC);
+PRIMARY KEY((service_id, system_id, patient_id), resource_type, resource_id);
 
-CREATE TABLE person_resource_event_store (  person_id uuid,  resource_type text,  service_id uuid,  system_instance_id uuid,  resource_id text,
-  version text,
-  created timestamp,  mode text,
-  resource_metadata text,  schema_version text,  resource_data text,  PRIMARY KEY ((person_id), resource_type, service_id, system_instance_id, resource_id, version));
+CREATE TABLE resource_by_exchange_batch (
+  batch_id uuid,
+  exchange_id uuid,
+  resource_type text,
+  resource_id uuid,
+  version timeuuid,
+  is_deleted boolean,
+  schema_version text,
+  resource_data text,
+  PRIMARY KEY((batch_id), resource_type, resource_id, version)
+);
 
-CREATE MATERIALIZED VIEW person_resource_event_store_by_date AS 
-SELECT person_id, created, resource_type, service_id, system_instance_id, resource_id, version, mode
-FROM person_resource_event_store
-WHERE person_id IS NOT NULL
-  AND created IS NOT NULL
-  AND resource_type IS NOT NULL
-  AND service_id IS NOT NULL
-  AND system_instance_id IS NOT NULL
-  AND resource_id IS NOT NULL
-  AND version IS NOT NULL
-PRIMARY KEY((person_id), created, resource_type, service_id, system_instance_id, resource_id, version);
+CREATE TABLE exchange_batch (
+  exchange_id uuid,
+  batch_id uuid,
+  inserted_at timestamp,
+  PRIMARY KEY((exchange_id), batch_id)
+);
 
 CREATE TABLE person_consent_global (
 	person_id UUID,
