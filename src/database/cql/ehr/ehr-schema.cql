@@ -5,8 +5,8 @@ CREATE KEYSPACE ehr WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replicatio
 USE ehr;
 
 DROP TABLE IF EXISTS resource_history;
+DROP TABLE IF EXISTS resource_history_by_service;
 
-DROP MATERIALIZED VIEW IF EXISTS resource_by_last_updated;
 DROP MATERIALIZED VIEW IF EXISTS resource_by_patient;
 DROP TABLE IF EXISTS resource_by_service;
 
