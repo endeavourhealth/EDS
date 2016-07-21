@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Consultation;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
@@ -10,7 +10,6 @@ import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
-import java.util.UUID;
 
 public class ConsultationTransformer {
 
@@ -48,10 +47,7 @@ public class ConsultationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (consultationParser.getDeleted() || consultationParser.getIsConfidential()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirEncounter, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirEncounter, patientGuid);
             return;
         }
 
@@ -75,10 +71,7 @@ public class ConsultationTransformer {
             fhirEncounter.setPeriod(fhirPeriod);
         }
 
-        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-        if (patientId != null) {
-            csvProcessor.savePatientResource(fhirEncounter, patientId);
-        }
+        csvProcessor.savePatientResource(fhirEncounter, patientGuid);
     }
 
     private static Period createPeriod(Date date, String precision) throws Exception {
@@ -88,7 +81,7 @@ public class ConsultationTransformer {
 
         VocDatePart vocPrecision = VocDatePart.fromValue(precision);
         if (vocPrecision == null) {
-            throw new TransformException("Unsupported consultation precision [" + precision + "]");
+            throw new IllegalArgumentException("Unsupported consultation precision [" + precision + "]");
         }
 
         Period fhirPeriod = new Period();
@@ -108,7 +101,7 @@ public class ConsultationTransformer {
                 fhirPeriod.setStartElement(new DateTimeType(date, TemporalPrecisionEnum.SECOND));
                 break;
             default:
-                throw new TransformException("Unexpected date precision " + vocPrecision);
+                throw new IllegalArgumentException("Unexpected date precision " + vocPrecision);
         }
         return fhirPeriod;
     }

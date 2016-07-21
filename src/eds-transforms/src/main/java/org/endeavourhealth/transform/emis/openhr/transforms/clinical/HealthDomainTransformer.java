@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.emis.openhr.transforms.clinical;
 
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.DtCodeQualified;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001HealthDomain;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Problem;

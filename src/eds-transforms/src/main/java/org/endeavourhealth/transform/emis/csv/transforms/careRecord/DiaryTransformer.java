@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Diary;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -14,7 +14,6 @@ import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.ProcedureRequest;
 
 import java.util.Date;
-import java.util.UUID;
 
 public class DiaryTransformer {
 
@@ -52,10 +51,7 @@ public class DiaryTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (diaryParser.getDeleted() || diaryParser.getIsConfidential()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirRequest, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirRequest, patientGuid);
             return;
         }
 
@@ -113,9 +109,6 @@ public class DiaryTransformer {
         //TODO - need somewhere to store Diary LocationTypeDescription in FHIR ProcedureRequest resource (asking EMIS for advice)
         //String locationDescription = diaryParser.getLocationTypeDescription();
 
-        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-        if (patientId != null) {
-            csvProcessor.savePatientResource(fhirRequest, patientId);
-        }
+        csvProcessor.savePatientResource(fhirRequest, patientGuid);
     }
 }

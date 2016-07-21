@@ -2,9 +2,9 @@ package org.endeavourhealth.patientui.endpoints;
 
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
-import org.endeavourhealth.core.data.ehr.PersonIdentifierByNhsNumberRepository;
+import org.endeavourhealth.core.data.ehr.PatientIdentifierByNhsNumberRepository;
 import org.endeavourhealth.core.data.ehr.PersonResourceRepository;
-import org.endeavourhealth.core.data.ehr.models.PersonIdentifierByNhsNumber;
+import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByNhsNumber;
 import org.endeavourhealth.core.data.ehr.models.PersonResource;
 import org.endeavourhealth.patientui.json.JsonService;
 import org.slf4j.Logger;
@@ -25,7 +25,7 @@ public class MedicalRecordEndpoint extends AbstractEndpoint {
 
     private static final Logger LOG = LoggerFactory.getLogger(MedicalRecordEndpoint.class);
 
-    private static PersonIdentifierByNhsNumberRepository identifierRepository = new PersonIdentifierByNhsNumberRepository();
+    private static PatientIdentifierByNhsNumberRepository identifierRepository = new PatientIdentifierByNhsNumberRepository();
     //private static ServiceRepository serviceRepository = new ServiceRepository();
     private static OrganisationRepository organisationRepository = new OrganisationRepository();
 
@@ -37,11 +37,11 @@ public class MedicalRecordEndpoint extends AbstractEndpoint {
         super.setLogbackMarkers(sc);
 
         String nhsNumber = getNhsNumberFromSession(sc);
-        List<PersonIdentifierByNhsNumber> identifiers = identifierRepository.getForNhsNumber(nhsNumber);
+        List<PatientIdentifierByNhsNumber> identifiers = identifierRepository.getForNhsNumber(nhsNumber);
 
         List<JsonService> ret = new ArrayList<>();
 
-        for (PersonIdentifierByNhsNumber identifier: identifiers) {
+        for (PatientIdentifierByNhsNumber identifier: identifiers) {
             UUID serviceId = identifier.getSystemInstanceId();
             UUID orgId = identifier.getServiceId();
 

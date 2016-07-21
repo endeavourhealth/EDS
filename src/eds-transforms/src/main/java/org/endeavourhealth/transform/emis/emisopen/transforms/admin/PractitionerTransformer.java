@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.admin;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.PersonType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.AddressConverter;

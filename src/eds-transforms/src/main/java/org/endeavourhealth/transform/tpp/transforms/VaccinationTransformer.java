@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.tpp.transforms;
 
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.tpp.schema.Event;
 import org.endeavourhealth.transform.tpp.schema.Vaccination;

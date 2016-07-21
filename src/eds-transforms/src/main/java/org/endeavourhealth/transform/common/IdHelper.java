@@ -33,10 +33,14 @@ public class IdHelper {
         return serviceId + "/" + systemInstanceId + "/" + resourceType + "/" + sourceId;
     }
 
-    public static String getEdsResourceId(UUID serviceId, UUID systemInstanceId, ResourceType resourceType, String sourceId) {
+    public static String getEdsResourceIdString(UUID serviceId, UUID systemInstanceId, ResourceType resourceType, String sourceId) {
+        return getEdsResourceId(serviceId, systemInstanceId, resourceType, sourceId).toString();
+    }
+
+    public static UUID getEdsResourceId(UUID serviceId, UUID systemInstanceId, ResourceType resourceType, String sourceId) {
         String key = createCacheKey(serviceId, systemInstanceId, resourceType, sourceId);
 
-        String edsId = null;
+        UUID edsId = null;
         //String edsId = (String)cache.get(key);
         if (edsId == null) {
             ResourceIdMap mapping = repository.getResourceIdMap(serviceId, systemInstanceId, resourceType.toString(), sourceId);
@@ -50,7 +54,7 @@ public class IdHelper {
                 repository.insert(mapping);
             }
 
-            edsId = mapping.getEdsId().toString();
+            edsId = mapping.getEdsId();
             /*try {
                 cache.put(key, edsId);
             } catch (Exception ex) {

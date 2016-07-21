@@ -5,8 +5,6 @@ import org.endeavourhealth.transform.fhir.ReferenceComponents;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,7 +15,7 @@ public abstract class BaseIdMapper {
      */
     protected void mapResourceId(Resource resource, UUID serviceId, UUID systemInstanceId) {
 
-        String newId = IdHelper.getEdsResourceId(serviceId, systemInstanceId, resource.getResourceType(), resource.getId());
+        String newId = IdHelper.getEdsResourceIdString(serviceId, systemInstanceId, resource.getResourceType(), resource.getId());
         resource.setId(newId);
     }
 
@@ -57,7 +55,7 @@ public abstract class BaseIdMapper {
         }
 
         ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
-        String newId = IdHelper.getEdsResourceId(serviceId, systemInstanceId, comps.getResourceType(), comps.getId());
+        String newId = IdHelper.getEdsResourceIdString(serviceId, systemInstanceId, comps.getResourceType(), comps.getId());
         reference.setReference(ReferenceHelper.createResourceReference(comps.getResourceType(), newId));
     }
 

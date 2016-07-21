@@ -9,7 +9,7 @@ public enum ClinicalCodeType {
     Biological_Values("Biological values"),
     Body_Structure("Body structure"),
     Care_Episode_Outcome("Care episode outcome"),
-    Conditiions_Operations_Procedures("Conditions, operations and procedures"),
+    Conditions_Operations_Procedures("Conditions, operations and procedures"),
     Cyology_Histology("Cytology/Histology"),
     Dental_Disorder("Dental disorder"),
     Dental_Finding("Dental finding"),

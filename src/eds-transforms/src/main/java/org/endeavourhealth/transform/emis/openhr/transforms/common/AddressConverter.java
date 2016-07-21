@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.emis.openhr.transforms.common;
 
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.DtAddress;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Person;
 import org.endeavourhealth.transform.emis.openhr.schema.VocAddressType;

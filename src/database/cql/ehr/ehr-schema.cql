@@ -17,10 +17,8 @@ DROP TABLE IF EXISTS person_consent_global;
 DROP TABLE IF EXISTS person_consent_protocol;
 DROP TABLE IF EXISTS person_consent_organisation;
 
-DROP MATERIALIZED VIEW IF EXISTS person_identifier_by_nhs_number;
-DROP TABLE IF EXISTS person_identifier;
-
-DROP TABLE IF EXISTS resource_id_map;
+DROP MATERIALIZED VIEW IF EXISTS patient_identifier_by_nhs_number;
+DROP TABLE IF EXISTS patient_identifier;
 
 // 1. Get Resource based on ID and Type				= resource_history
 // 2. Get Resource History						= resource_history
@@ -122,7 +120,8 @@ CREATE TABLE person_consent_organisation (
 	WITH CLUSTERING ORDER BY (protocol_id ASC, organisation_id ASC, timestamp DESC);
 	
 
-CREATE TABLE person_identifier (
+
+CREATE TABLE patient_identifier (
 	service_id UUID,
 	system_instance_id UUID,
 	local_id text,
@@ -134,17 +133,19 @@ CREATE TABLE person_identifier (
 	gender text,
 	patient_id UUID,
 	timestamp TIMESTAMP,
-	PRIMARY KEY (service_id, system_instance_id, local_id, timestamp))
-	WITH CLUSTERING ORDER BY (system_instance_id ASC, local_id ASC, timestamp DESC);
+	version TIMEUUID,
+	PRIMARY KEY ((service_id), system_instance_id, patient_id, version))
+	WITH CLUSTERING ORDER BY (system_instance_id ASC, patient_id ASC, version DESC);
 	
-CREATE MATERIALIZED VIEW person_identifier_by_nhs_number AS  
-	SELECT service_id, system_instance_id, local_id, nhs_number, patient_id, timestamp 
-	FROM person_identifier  
+CREATE MATERIALIZED VIEW patient_identifier_by_nhs_number AS  
+	SELECT service_id, system_instance_id, nhs_number, patient_id, timestamp, version 
+	FROM patient_identifier  
 	WHERE nhs_number IS NOT NULL  
 	AND service_id IS NOT NULL 
 	AND system_instance_id IS NOT NULL 
 	AND timestamp IS NOT NULL 
 	AND patient_id IS NOT NULL 
-	AND local_id IS NOT NULL 
-	PRIMARY KEY(nhs_number, service_id, system_instance_id, local_id, timestamp); 
+	AND version IS NOT null
+	PRIMARY KEY(nhs_number, service_id, system_instance_id, patient_id, version)
+	WITH CLUSTERING ORDER BY (service_id ASC, system_instance_id ASC, patient_id ASC, version DESC);
 

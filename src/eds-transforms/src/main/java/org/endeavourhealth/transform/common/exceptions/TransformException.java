@@ -1,6 +1,6 @@
-package org.endeavourhealth.transform.common;
+package org.endeavourhealth.transform.common.exceptions;
 
-public final class TransformException extends Exception {
+public class TransformException extends Exception {
 
     public TransformException(String message) {
         super(message);

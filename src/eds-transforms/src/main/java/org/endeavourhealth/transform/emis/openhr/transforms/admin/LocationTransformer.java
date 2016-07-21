@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001AdminDomain;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Location;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Organisation;

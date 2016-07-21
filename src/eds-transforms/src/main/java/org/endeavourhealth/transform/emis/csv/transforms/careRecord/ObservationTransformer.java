@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Observation;
@@ -12,7 +12,6 @@ import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.FamilyMember;
 import org.endeavourhealth.transform.fhir.schema.ImmunizationStatus;
 import org.endeavourhealth.transform.terminology.Read2;
-import org.endeavourhealth.transform.terminology.Snomed;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.*;
@@ -45,7 +44,7 @@ public class ObservationTransformer {
         Long codeId = observationParser.getCodeId();
         ClinicalCodeType codeType = csvHelper.findClinicalCodeType(codeId, csvProcessor);
         switch (codeType) {
-            case Conditiions_Operations_Procedures:
+            case Conditions_Operations_Procedures:
 
                 if (isProcedure(codeId, csvProcessor, csvHelper)) {
                     createProcedure(observationParser, csvProcessor, csvHelper);
@@ -119,7 +118,7 @@ public class ObservationTransformer {
             case Pathology_Specimen:
                 createSpecimen(observationParser, csvProcessor, csvHelper);
             default:
-                throw new TransformException("Unhandled observationType " + codeType);
+                throw new IllegalArgumentException("Unhandled observationType " + codeType);
         }
 
         String observationGuid = observationParser.getObservationGuid();
@@ -139,6 +138,10 @@ public class ObservationTransformer {
         if (fhirProblem != null) {
             completeProblem(observationParser, fhirProblem, csvProcessor, csvHelper);
         }
+
+        //remove any cached links of child observations that link to the row we just processed. If the row used
+        //the links, they'll already have been removed. If not, then we can't use them anyway.
+        csvHelper.getAndRemoveObservationParentRelationships(observationGuid, patientGuid);
     }
 
     private static void completeProblem(CareRecord_Observation observationParser,
@@ -149,10 +152,7 @@ public class ObservationTransformer {
         String patientGuid = observationParser.getPatientGuid();
 
         if (observationParser.getDeleted()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirProblem, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirProblem, patientGuid);
             return;
         }
 
@@ -180,10 +180,7 @@ public class ObservationTransformer {
         String patientGuid = observationParser.getPatientGuid();
 
         if (observationParser.getDeleted()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirReferral, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirReferral, patientGuid);
             return;
         }
 
@@ -200,10 +197,7 @@ public class ObservationTransformer {
         String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
         fhirReferral.setRequester(csvHelper.createPractitionerReference(clinicianGuid));
 
-        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-        if (patientId != null) {
-            csvProcessor.savePatientResource(fhirReferral, patientId);
-        }
+        csvProcessor.savePatientResource(fhirReferral, patientGuid);
 
         //if this record is linked to a problem, store this relationship in the helper
         csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
@@ -292,10 +286,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirSpecimen, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirSpecimen, patientGuid);
             return;
         }
 
@@ -315,10 +306,7 @@ public class ObservationTransformer {
         String associatedText = observationParser.getAssociatedText();
         fhirCollection.addComment(associatedText);
 
-        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-        if (patientId != null) {
-            csvProcessor.savePatientResource(fhirSpecimen, patientId);
-        }
+        csvProcessor.savePatientResource(fhirSpecimen, patientGuid);
 
         //if this record is linked to a problem, store this relationship in the helper
         csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
@@ -378,10 +366,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirOrder, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirOrder, patientGuid);
             return;
         }
 
@@ -407,10 +392,7 @@ public class ObservationTransformer {
         String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
         diagnosticOrderEventComponent.setDateTimeElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
-        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-        if (patientId != null) {
-            csvProcessor.savePatientResource(fhirOrder, patientId);
-        }
+        csvProcessor.savePatientResource(fhirOrder, patientGuid);
 
         //if this record is linked to a problem, store this relationship in the helper
         csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
@@ -436,10 +418,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirAllergy, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirAllergy, patientGuid);
             return;
         }
 
@@ -465,10 +444,7 @@ public class ObservationTransformer {
             fhirAllergy.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, reference));
         }
 
-        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-        if (patientId != null) {
-            csvProcessor.savePatientResource(fhirAllergy, patientId);
-        }
+        csvProcessor.savePatientResource(fhirAllergy, patientGuid);
 
         //if this record is linked to a problem, store this relationship in the helper
         csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
@@ -494,10 +470,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirProcedure, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirProcedure, patientGuid);
             return;
         }
 
@@ -521,10 +494,7 @@ public class ObservationTransformer {
             fhirProcedure.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
 
-        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-        if (patientId != null) {
-            csvProcessor.savePatientResource(fhirProcedure, patientId);
-        }
+        csvProcessor.savePatientResource(fhirProcedure, patientGuid);
 
         //if this record is linked to a problem, store this relationship in the helper
         csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
@@ -551,10 +521,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirCondition, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirCondition, patientGuid);
             return;
         }
 
@@ -583,10 +550,7 @@ public class ObservationTransformer {
             fhirCondition.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
 
-        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-        if (patientId != null) {
-            csvProcessor.savePatientResource(fhirCondition, patientId);
-        }
+        csvProcessor.savePatientResource(fhirCondition, patientGuid);
 
         //if this record is linked to a problem, store this relationship in the helper
         csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
@@ -612,10 +576,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirObservation, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirObservation, patientGuid);
             return;
         }
 
@@ -668,10 +629,7 @@ public class ObservationTransformer {
         List<EmisCsvHelper.ResourceRelationship> childObservationIds = csvHelper.getAndRemoveObservationParentRelationships(observationGuid, patientGuid);
         linkChildObservations(csvHelper, fhirObservation, patientGuid, childObservationIds);
 
-        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-        if (patientId != null) {
-            csvProcessor.savePatientResource(fhirObservation, patientId);
-        }
+        csvProcessor.savePatientResource(fhirObservation, patientGuid);
 
         //if this record is linked to a problem, store this relationship in the helper
         csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
@@ -727,10 +685,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirFamilyHistory, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirFamilyHistory, patientGuid);
             return;
         }
 
@@ -762,10 +717,7 @@ public class ObservationTransformer {
             fhirFamilyHistory.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, reference));
         }
 
-        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-        if (patientId != null) {
-            csvProcessor.savePatientResource(fhirFamilyHistory, patientId);
-        }
+        csvProcessor.savePatientResource(fhirFamilyHistory, patientGuid);
 
         //if this record is linked to a problem, store this relationship in the helper
         csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
@@ -791,10 +743,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirImmunisation, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirImmunisation, patientGuid);
             return;
         }
 
@@ -822,10 +771,7 @@ public class ObservationTransformer {
         String associatedText = observationParser.getAssociatedText();
         fhirImmunisation.addNote(AnnotationHelper.createAnnotation(associatedText));
 
-        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-        if (patientId != null) {
-            csvProcessor.savePatientResource(fhirImmunisation, patientId);
-        }
+        csvProcessor.savePatientResource(fhirImmunisation, patientGuid);
 
         //if this record is linked to a problem, store this relationship in the helper
         csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),

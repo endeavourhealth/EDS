@@ -18,7 +18,7 @@ import java.util.UUID;
 
 public class AuditRepository extends Repository{
 
-    public void save(Exchange exchange, ExchangeEvent event){
+    public void save(Exchange exchange, ExchangeEvent event) {
 
         BatchStatement batch = new BatchStatement();
 

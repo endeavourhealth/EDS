@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.common;
 
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.hl7.fhir.instance.model.Enumerations;
 
 public class SexConverter

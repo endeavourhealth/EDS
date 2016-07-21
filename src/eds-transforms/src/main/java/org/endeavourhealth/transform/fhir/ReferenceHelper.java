@@ -1,13 +1,10 @@
 package org.endeavourhealth.transform.fhir;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.hl7.fhir.instance.model.*;
 
-import java.sql.Ref;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ReferenceHelper
 {

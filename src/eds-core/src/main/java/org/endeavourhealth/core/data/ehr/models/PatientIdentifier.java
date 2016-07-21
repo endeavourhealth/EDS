@@ -3,13 +3,13 @@ package org.endeavourhealth.core.data.ehr.models;
 import com.datastax.driver.mapping.annotations.ClusteringColumn;
 import com.datastax.driver.mapping.annotations.Column;
 import com.datastax.driver.mapping.annotations.Table;
-import org.endeavourhealth.core.data.ehr.PersonGender;
+import org.hl7.fhir.instance.model.Enumerations;
 
 import java.util.Date;
 import java.util.UUID;
 
-@Table(keyspace = "ehr", name = "person_identifier")
-public class PersonIdentifier {
+@Table(keyspace = "ehr", name = "patient_identifier")
+public class PatientIdentifier {
 
     @ClusteringColumn(0)
     @Column(name = "service_id")
@@ -17,7 +17,6 @@ public class PersonIdentifier {
     @ClusteringColumn(1)
     @Column(name = "system_instance_id")
     private UUID systemInstanceId = null;
-    @ClusteringColumn(2)
     @Column(name = "local_id")
     private String localId = null;
     @Column(name = "nhs_number")
@@ -31,12 +30,15 @@ public class PersonIdentifier {
     @Column(name = "postcode")
     private String postcode = null;
     @Column(name = "gender")
-    private PersonGender gender = null;
+    private Enumerations.AdministrativeGender gender = null;
+    @ClusteringColumn(2)
     @Column(name = "patient_id")
     private UUID patientId = null;
-    @ClusteringColumn(3)
     @Column(name = "timestamp")
     private Date timestamp = null;
+    @ClusteringColumn(3)
+    @Column(name = "version")
+    private UUID version = null;
 
     public UUID getServiceId() {
         return serviceId;
@@ -102,11 +104,11 @@ public class PersonIdentifier {
         this.postcode = postcode;
     }
 
-    public PersonGender getGender() {
+    public Enumerations.AdministrativeGender getGender() {
         return gender;
     }
 
-    public void setGender(PersonGender gender) {
+    public void setGender(Enumerations.AdministrativeGender gender) {
         this.gender = gender;
     }
 
@@ -124,5 +126,13 @@ public class PersonIdentifier {
 
     public void setTimestamp(Date timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public UUID getVersion() {
+        return version;
+    }
+
+    public void setVersion(UUID version) {
+        this.version = version;
     }
 }

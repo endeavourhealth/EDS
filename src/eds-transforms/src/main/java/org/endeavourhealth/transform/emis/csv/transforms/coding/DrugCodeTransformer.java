@@ -2,18 +2,12 @@ package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Coding_DrugCode;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
-import org.endeavourhealth.transform.fhir.CodingHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.CodeableConcept;
-import org.hl7.fhir.instance.model.Medication;
-import org.hl7.fhir.instance.model.Meta;
-
-import java.io.IOException;
-import java.util.HashMap;
 
 public class DrugCodeTransformer {
 

@@ -2,19 +2,17 @@ package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.ClinicalCodeType;
 import org.endeavourhealth.transform.emis.csv.schema.Coding_ClinicalCode;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.CodingHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.terminology.Snomed;
 import org.hl7.fhir.instance.model.CodeableConcept;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -115,7 +113,9 @@ public abstract class ClinicalCodeTransformer {
 
             //LOG.trace("Looking up for " + snomedConceptId);
             try {
-                String snomedTerm = Snomed.getTerm(snomedConceptId.longValue(), snomedDescriptionId.longValue());
+                //TODO - restore snomed lookup
+                String snomedTerm = "MISSING";
+                //String snomedTerm = Snomed.getTerm(snomedConceptId.longValue(), snomedDescriptionId.longValue());
                 fhirConcept.addCoding(CodingHelper.createCoding(FhirUri.CODE_SYSTEM_SNOMED_CT, snomedTerm, snomedConceptId.toString()));
             } catch (Exception ex) {
                 //if we didn't get a term for the IDs, then it was a local term, so even though the Snomed code

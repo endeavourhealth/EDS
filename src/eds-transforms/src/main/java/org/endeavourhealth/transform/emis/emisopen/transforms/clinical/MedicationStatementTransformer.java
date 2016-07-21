@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicationType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
@@ -9,7 +9,6 @@ import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConvert
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
-import org.endeavourhealth.transform.tpp.schema.*;
 import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;

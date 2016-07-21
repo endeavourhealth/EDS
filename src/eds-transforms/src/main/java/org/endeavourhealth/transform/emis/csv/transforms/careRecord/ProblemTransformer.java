@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Problem;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -95,7 +95,7 @@ public class ProblemTransformer {
         } else if (relationshipType.equalsIgnoreCase("replaced")) {
             return ProblemRelationshipType.REPLACES;
         } else {
-            throw new TransformException("Unhanded problem relationship type " + relationshipType);
+            throw new IllegalArgumentException("Unhanded problem relationship type " + relationshipType);
         }
     }
 

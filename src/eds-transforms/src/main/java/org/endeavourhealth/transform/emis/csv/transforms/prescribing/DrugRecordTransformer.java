@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Prescribing_DrugRecord;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -13,7 +13,6 @@ import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.UUID;
 
 public class DrugRecordTransformer {
 
@@ -51,10 +50,7 @@ public class DrugRecordTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (drugRecordParser.getDeleted() || drugRecordParser.getIsConfidential()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirMedication, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirMedication, patientGuid);
             return;
         }
 
@@ -113,13 +109,10 @@ public class DrugRecordTransformer {
             fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_MOST_RECENT_ISSUE_DATE, mostRecentDate));
         }
 
-        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-        if (patientId != null) {
-            csvProcessor.savePatientResource(fhirMedication, patientId);
-        }
+        csvProcessor.savePatientResource(fhirMedication, patientGuid);
 
         //if this record is linked to a problem, store this relationship in the helper
-        csvHelper.cacheProblemRelationship(drugRecordParser.getProblemObservationGuid(),
+        csvHelper.cacheProblemRelationship(problemObservationGuid,
                                             patientGuid,
                                             drugRecordGuid,
                                             fhirMedication.getResourceType());

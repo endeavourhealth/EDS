@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
 import java.util.Date;

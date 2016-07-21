@@ -4,7 +4,10 @@ import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.FileFormatException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,11 +18,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.UUID;
 
 public abstract class AbstractCsvTransformer {
 
-    public static String DATE_FORMAT = "yyyyMMdd";
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractCsvTransformer.class);
 
     private CSVParser csvReader = null;
     private Iterator<CSVRecord> csvIterator = null;
@@ -40,16 +42,16 @@ public abstract class AbstractCsvTransformer {
         Map<String, Integer> headerMap = csvReader.getHeaderMap();
         String[] expectedHeaders = getCsvHeaders();
         if (headerMap.size() != expectedHeaders.length) {
-            throw new TransformException("Mismatch in number of CSV columns in " + getFileName() + " expected " + expectedHeaders.length + " but found " + headerMap.size());
+            throw new FileFormatException(getFileName(), "Mismatch in number of CSV columns in " + getFileName() + " expected " + expectedHeaders.length + " but found " + headerMap.size());
         }
 
         for (int i=0; i<expectedHeaders.length; i++) {
             String expectedHeader = expectedHeaders[i];
             Integer mapIndex = headerMap.get(expectedHeader);
             if (mapIndex == null) {
-                throw new TransformException("Missing column " + expectedHeader + " in " + getFileName());
+                throw new FileFormatException(getFileName(), "Missing column " + expectedHeader + " in " + getFileName());
             } else if (mapIndex.intValue() != i) {
-                throw new TransformException("Out of order column " + expectedHeader + " in " + getFileName() + " expected at " + i + " but found at " + mapIndex);
+                throw new FileFormatException(getFileName(), "Out of order column " + expectedHeader + " in " + getFileName() + " expected at " + i + " but found at " + mapIndex);
             }
         }
     }
@@ -64,9 +66,15 @@ public abstract class AbstractCsvTransformer {
     public boolean nextRecord() {
         if (csvIterator.hasNext()) {
             this.csvRecord = csvIterator.next();
+
+            if (csvReader.getCurrentLineNumber() % 1000 == 0) {
+                LOG.trace("Starting line " + csvReader.getCurrentLineNumber());
+            }
+
             return true;
         } else {
             this.csvRecord = null;
+            LOG.trace("Completed file");
             return false;
         }
     }
@@ -111,7 +119,7 @@ public abstract class AbstractCsvTransformer {
         try {
             return dateFormat.parse(s);
         } catch (ParseException pe) {
-            throw new TransformException("Invalid date format [" + s + "]", pe);
+            throw new FileFormatException(getFileName(), "Invalid date format [" + s + "]", pe);
         }
     }
     public Date getTime(String column) throws TransformException {
@@ -123,7 +131,7 @@ public abstract class AbstractCsvTransformer {
         try {
             return timeFormat.parse(s);
         } catch (ParseException pe) {
-            throw new TransformException("Invalid time format [" + s + "]", pe);
+            throw new FileFormatException(getFileName(), "Invalid time format [" + s + "]", pe);
         }
     }
     public Date getDateTime(String dateColumn, String timeColumn) throws TransformException {

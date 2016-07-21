@@ -16,6 +16,9 @@ public abstract class HeaderKeys {
 	public static final String MessageFormat = "MessageFormat";
 	public static final String ResponseUri = "ResponseUri";
 
+	// Transform
+	public static final String BatchIds = "BatchIds";
+
 	// Pipeline
 	public static final String DestinationAddress = "DestinationAddress";
 	public static final String ProtocolIds = "ProtocolIds";

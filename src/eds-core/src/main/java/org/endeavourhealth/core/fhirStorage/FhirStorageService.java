@@ -1,6 +1,7 @@
 package org.endeavourhealth.core.fhirStorage;
 
 import com.datastax.driver.core.utils.UUIDs;
+import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceEntry;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
@@ -11,6 +12,7 @@ import org.endeavourhealth.core.fhirStorage.metadata.PatientCompartment;
 import org.endeavourhealth.core.fhirStorage.metadata.ResourceMetadata;
 import org.endeavourhealth.core.fhirStorage.metadata.MetadataFactory;
 import org.hl7.fhir.instance.model.Meta;
+import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.Resource;
 
 import java.util.Date;
@@ -21,6 +23,7 @@ public class FhirStorageService {
     private static final String SCHEMA_VERSION = "1.0";
 
     private final ResourceRepository repository;
+    private final PatientIdentifierRepository identifierRepository;
 
     private final UUID serviceId;
     private final UUID systemId;
@@ -29,6 +32,7 @@ public class FhirStorageService {
         this.serviceId = serviceId;
         this.systemId = systemId;
         this.repository = new ResourceRepository();
+        identifierRepository = new PatientIdentifierRepository();
     }
 
     public FhirResponse update(Resource resource) throws UnprocessableEntityException, SerializationException {
@@ -86,6 +90,10 @@ public class FhirStorageService {
         updateResourceMeta(resource, entry.getVersion(), entry.getCreatedAt());
 
         repository.save(entry, exchangeId, batchId);
+
+        if (resource instanceof Patient) {
+            identifierRepository.savePatientIdentity((Patient)resource, serviceId, systemId);
+        }
     }
 
     private void delete(Resource resource, UUID exchangeId, UUID batchId) throws UnprocessableEntityException, SerializationException {

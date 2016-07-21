@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.fhir;
 
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.fhir.schema.ContactRelationship;
 import org.endeavourhealth.transform.fhir.schema.FamilyMember;
 import org.endeavourhealth.transform.fhir.schema.OrganisationType;

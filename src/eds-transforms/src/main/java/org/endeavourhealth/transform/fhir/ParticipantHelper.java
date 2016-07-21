@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.fhir;
 
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.hl7.fhir.instance.model.Appointment;
 import org.hl7.fhir.instance.model.ResourceType;
 

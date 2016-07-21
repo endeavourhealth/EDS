@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Patient;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.openhr.schema.VocSex;
@@ -58,16 +58,19 @@ public class PatientTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (patientParser.getDeleted() || patientParser.getIsConfidential()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirPatient, patientId);
-                csvProcessor.deletePatientResource(fhirEpisode, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirPatient, patientGuid);
+            csvProcessor.deletePatientResource(fhirEpisode, patientGuid);
             return;
         }
 
         String nhsNumber = patientParser.getNhsNumber();
-        fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nhsNumber, FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER));
+        if (!Strings.isNullOrEmpty(nhsNumber)) {
+            fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nhsNumber, FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER));
+        }
+
+        //store the local ID in the patient resource
+        //TODO - need namespace for the local identifier to be stored in
+        fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, patientGuid, ""));
 
         Date dob = patientParser.getDateOfBirth();
         fhirPatient.setBirthDate(dob);
@@ -191,14 +194,8 @@ public class PatientTransformer {
             fhirEpisode.setStatus(EpisodeOfCare.EpisodeOfCareStatus.FINISHED);
         }
 
-        //register our patient with the helper class, so we generate a EDS patient UUID if necessary
-        csvHelper.registerPatient(fhirPatient, patientGuid, csvProcessor);
-
-        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-        if (patientId != null) {
-            csvProcessor.savePatientResource(fhirPatient, patientId);
-            csvProcessor.savePatientResource(fhirEpisode, patientId);
-        }
+        csvProcessor.savePatientResource(fhirPatient, patientGuid);
+        csvProcessor.savePatientResource(fhirEpisode, patientGuid);
     }
 
     /**

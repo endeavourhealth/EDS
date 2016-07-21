@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.common;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.IntegerCodeType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.StringCodeType;
 import org.endeavourhealth.transform.fhir.FhirUri;

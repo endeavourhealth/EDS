@@ -3,15 +3,13 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_ObservationReferral;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.IdentifierHelper;
 import org.hl7.fhir.instance.model.*;
-
-import java.util.List;
 
 public class ObservationReferralTransformer {
 
@@ -97,7 +95,7 @@ public class ObservationReferralTransformer {
             return DiagnosticOrder.DiagnosticOrderPriority.URGENT;
 
         } else {
-            throw new TransformException("Unknown referral urgency " + urgency);
+            throw new IllegalArgumentException("Unknown referral urgency " + urgency);
         }
     }
 

@@ -5,7 +5,6 @@ import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.PersonConsentGlobalAccessor;
 import org.endeavourhealth.core.data.ehr.models.PersonConsentGlobal;
-import org.endeavourhealth.core.data.ehr.models.PersonIdentifier;
 
 import java.util.Iterator;
 import java.util.List;

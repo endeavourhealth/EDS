@@ -7,8 +7,8 @@ import com.datastax.driver.mapping.annotations.Table;
 import java.util.Date;
 import java.util.UUID;
 
-@Table(keyspace = "ehr", name = "person_identifier_by_nhs_number")
-public class PersonIdentifierByNhsNumber {
+@Table(keyspace = "ehr", name = "patient_identifier_by_nhs_number")
+public class PatientIdentifierByNhsNumber {
 
     @ClusteringColumn(1)
     @Column(name = "service_id")
@@ -16,17 +16,19 @@ public class PersonIdentifierByNhsNumber {
     @ClusteringColumn(2)
     @Column(name = "system_instance_id")
     private UUID systemInstanceId = null;
-    @ClusteringColumn(3)
     @Column(name = "local_id")
     private String localId = null;
     @ClusteringColumn(0)
     @Column(name = "nhs_number")
     private String nhsNumber = null;
+    @ClusteringColumn(3)
     @Column(name = "patient_id")
     private UUID patientId = null;
-    @ClusteringColumn(4)
     @Column(name = "timestamp")
     private Date timestamp = null;
+    @ClusteringColumn(4)
+    @Column(name = "version")
+    private UUID version = null;
 
     public UUID getServiceId() {
         return serviceId;
@@ -74,5 +76,13 @@ public class PersonIdentifierByNhsNumber {
 
     public void setTimestamp(Date timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public UUID getVersion() {
+        return version;
+    }
+
+    public void setVersion(UUID version) {
+        this.version = version;
     }
 }

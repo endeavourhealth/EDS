@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 public abstract class EmisCsvTransformer {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmisCsvTransformer.class);
+
     public static final String DATE_FORMAT_YYYY_MM_DD = "yyyy-MM-dd"; //EMIS spec says "dd/MM/yyyy", but test data has different
     public static final String TIME_FORMAT = "hh:mm:ss";
     public static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;

@@ -1,5 +1,11 @@
 package org.endeavourhealth.transform.common;
 
+import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
+import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
+import org.endeavourhealth.core.fhirStorage.FhirStorageService;
+import org.endeavourhealth.core.messaging.exchange.Exchange;
+import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,60 +19,76 @@ public class CsvProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(CsvProcessor.class);
 
-    private static final int MAPPING_BATCH_SIZE = 5000;
-    private static final int SAVING_BATCH_SIZE = 10000;
-    private static final int THREAD_POOL_SIZE = 5;
+    /*private static final int MAPPING_BATCH_SIZE = 5000;
+    private static final int SAVING_BATCH_SIZE = 10;*/
+    private static final int THREAD_POOL_SIZE = 10;
 
     private static Set<Class> patientResourceClasses = null;
 
+    private Exchange exchange = null;
     private UUID serviceId = null;
     private UUID systemInstanceId = null;
-    private Map<UUID, UUID> patientBatchIdMap = new HashMap<>();
-    private UUID adminBatchId = null;
+    private FhirStorageService storageService = null;
 
-    private ExecutorService threadPool = null;
-    private List<ResourceWrapper> resourcesToMap = new ArrayList<>();
+    private Map<String, UUID> patientBatchIdMap = new HashMap<>();
+    private UUID adminBatchId = null;
+    private ExecutorService threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+/*    private List<ResourceWrapper> resourcesToMap = new ArrayList<>();
     private List<ResourceWrapper> resourcesToSave = new ArrayList<>();
     private Lock lock = new ReentrantLock();
-    private Stack<Future<?>> mappingFutures = new Stack<>();
+    private Stack<Future<?>> mappingFutures = new Stack<>();*/
+    private ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
 
-    public CsvProcessor(UUID serviceId, UUID systemInstanceId) {
+    public CsvProcessor(Exchange exchange, UUID serviceId, UUID systemInstanceId) {
+        this.exchange = exchange;
         this.serviceId = serviceId;
         this.systemInstanceId = systemInstanceId;
-        this.threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+        this.storageService = new FhirStorageService(serviceId, systemInstanceId);
     }
 
 
-
-    public void saveAdminResource(Resource resource) {
+    public void saveAdminResource(Resource resource) throws Exception {
         saveAdminResource(resource, true);
     }
-    public void saveAdminResource(Resource resource, boolean mapIds) {
+    public void saveAdminResource(Resource resource, boolean mapIds) throws Exception {
         addResourceToQueue(resource, false, mapIds, getAdminBatchId(), false);
     }
 
-    public void deleteAdminResource(Resource resource) {
+    public void deleteAdminResource(Resource resource) throws Exception {
         deleteAdminResource(resource, true);
     }
-    public void deleteAdminResource(Resource resource, boolean mapIds) {
+    public void deleteAdminResource(Resource resource, boolean mapIds) throws Exception {
         addResourceToQueue(resource, false, mapIds, getAdminBatchId(), true);
     }
 
-    public void savePatientResource(Resource resource, UUID patientUuid) {
-        savePatientResource(resource, true, patientUuid);
+    public void savePatientResource(Resource resource, String patientId) throws Exception {
+        savePatientResource(resource, true, patientId);
     }
-    public void savePatientResource(Resource resource, boolean mapIds, UUID patientUuid) {
-        addResourceToQueue(resource, true, mapIds, getPatientBatchId(patientUuid), false);
+    public void savePatientResource(Resource resource, boolean mapIds, String patientId) throws Exception {
+        addResourceToQueue(resource, true, mapIds, getPatientBatchId(patientId), false);
     }
 
-    public void deletePatientResource(Resource resource, UUID patientUuid) {
-        deletePatientResource(resource, true, patientUuid);
+    public void deletePatientResource(Resource resource, String patientId) throws Exception {
+        deletePatientResource(resource, true, patientId);
     }
-    public void deletePatientResource(Resource resource, boolean mapIds, UUID patientUuid) {
-        addResourceToQueue(resource, true, mapIds, getPatientBatchId(patientUuid), true);
+    public void deletePatientResource(Resource resource, boolean mapIds, String patientId) throws Exception {
+        addResourceToQueue(resource, true, mapIds, getPatientBatchId(patientId), true);
     }
 
     private void addResourceToQueue(Resource resource,
+                                    boolean expectingPatientResource,
+                                    boolean mapIds,
+                                    UUID batchId,
+                                    boolean toDelete) throws Exception {
+
+        if (isPatientResource(resource) != expectingPatientResource) {
+            throw new PatientResourceException(resource.getResourceType(), expectingPatientResource);
+        }
+
+        threadPool.submit(new WorkerCallable(resource, batchId, toDelete, mapIds));
+    }
+
+    /*private void addResourceToQueue(Resource resource,
                                     boolean expectingPatientResource,
                                     boolean mapIds,
                                     UUID batchId,
@@ -111,25 +133,64 @@ public class CsvProcessor {
     private void saveResources() {
         threadPool.submit(new SaveCallable(new ArrayList<>(resourcesToMap)));
         resourcesToSave.clear();
-    }
+    }*/
 
 
     private UUID getAdminBatchId() {
         if (adminBatchId == null) {
             adminBatchId = UUID.randomUUID();
+            saveExchangeBatch(adminBatchId);
         }
         return adminBatchId;
     }
-    private UUID getPatientBatchId(UUID patientUuid) {
-        UUID patientBatchId = patientBatchIdMap.get(patientUuid);
+    private UUID getPatientBatchId(String patientId) {
+        UUID patientBatchId = patientBatchIdMap.get(patientId);
         if (patientBatchId == null) {
             patientBatchId = UUID.randomUUID();
-            patientBatchIdMap.put(patientUuid, patientBatchId);
+            patientBatchIdMap.put(patientId, patientBatchId);
+            saveExchangeBatch(patientBatchId);
         }
         return patientBatchId;
     }
+    private void saveExchangeBatch(UUID batchId) {
+        ExchangeBatch exchangeBatch = new ExchangeBatch();
+        exchangeBatch.setBatchId(batchId);
+        exchangeBatch.setExchangeId(exchange.getExchangeId());
+        exchangeBatch.setInsertedAt(new Date());
+        exchangeBatchRepository.save(exchangeBatch);
+    }
+
 
     public void processingCompleted() {
+
+        LOG.trace("Processing completion starting");
+
+        //shutdown the threadpool and wait for all runnables to complete
+        threadPool.shutdown();
+        try {
+            LOG.trace("Waiting for thread pool to complete");
+            threadPool.awaitTermination(24, TimeUnit.HOURS);
+        } catch (InterruptedException ex) {
+            LOG.error("Error waiting for pool to finish", ex);
+        }
+
+        //update the Exchange with the batch IDs, for the next step in the pipeline
+        List<String> batchIds = new ArrayList<>();
+        if (adminBatchId != null) {
+            batchIds.add(adminBatchId.toString());
+        }
+        Iterator<UUID> it = patientBatchIdMap.values().iterator();
+        while (it.hasNext()) {
+            UUID batchId = it.next();
+            batchIds.add(batchId.toString());
+        }
+
+        exchange.setHeader(HeaderKeys.BatchIds, String.join(";", batchIds));
+
+        LOG.trace("Processing fully completed");
+    }
+
+    /*public void processingCompleted() {
 
         LOG.trace("Processing completion starting");
 
@@ -160,7 +221,7 @@ public class CsvProcessor {
             LOG.error("Error waiting for pool to finish", ex);
         }
 
-        //TODO - send transaction IDs to next queue to start outgoing pipeline
+        //TODO - send batch IDs to next queue to start outgoing pipeline
 
         LOG.trace("Processing fully completed");
     }
@@ -175,7 +236,7 @@ public class CsvProcessor {
             }
         }
         return false;
-    }
+    }*/
 
     private static boolean isPatientResource(Resource resource) {
         Class cls = resource.getClass();
@@ -220,7 +281,41 @@ public class CsvProcessor {
         return systemInstanceId;
     }
 
-    class SaveCallable implements Callable {
+    class WorkerCallable implements Callable {
+
+        private Resource resource = null;
+        private UUID batchUuid = null;
+        private boolean isDelete = false;
+        private boolean mapIds = false;
+
+        public WorkerCallable(Resource resource, UUID batchUuid, boolean isDelete, boolean mapIds) {
+            this.resource = resource;
+            this.batchUuid = batchUuid;
+            this.isDelete = isDelete;
+            this.mapIds = mapIds;
+        }
+
+        @Override
+        public Object call() throws Exception {
+
+            if (mapIds) {
+                IdHelper.mapIds(serviceId, systemInstanceId, resource);
+            }
+
+            List<Resource> list = new ArrayList<>();
+            list.add(resource);
+
+            if (isDelete) {
+                storageService.exchangeBatchDelete(exchange.getExchangeId(), batchUuid, list);
+            } else {
+                storageService.exchangeBatchUpdate(exchange.getExchangeId(), batchUuid, list);
+            }
+
+            return null;
+        }
+    }
+
+    /*class SaveCallable implements Callable {
         private List<ResourceWrapper> resourceWrappers = null;
 
         public SaveCallable(List<ResourceWrapper> resourceWrappers) {
@@ -230,54 +325,42 @@ public class CsvProcessor {
         @Override
         public Object call() throws Exception {
 
-            //work out an ordered list of the resource types, using a hashSet for speed of checking
-            List<ResourceType> resourceTypes = new ArrayList<>();
-            Set<ResourceType> resourceTypeSet = new HashSet<>();
-            Map<ResourceType, List<ResourceWrapper>> mapToSave = new HashMap<>();
-            Map<ResourceType, List<ResourceWrapper>> mapToDelete = new HashMap<>();
+            LOG.trace("Saving " + resourceWrappers.size() + " resources");
+            Map<UUID, List<Resource>> hmToSave = new HashMap<>();
+            Map<UUID, List<Resource>> hmToDelete = new HashMap<>();
 
             for (ResourceWrapper resourceWrapper: resourceWrappers) {
 
-                ResourceType resourceType = resourceWrapper.getResource().getResourceType();
-                if (!resourceTypeSet.contains(resourceType)) {
-                    resourceTypes.add(resourceType);
-                    resourceTypeSet.add(resourceType);
-                }
-
-                Map<ResourceType, List<ResourceWrapper>> map = null;
+                Map<UUID, List<Resource>> map = null;
                 if (resourceWrapper.isDelete()) {
-                    map = mapToDelete;
+                    map = hmToDelete;
                 } else {
-                    map = mapToSave;
+                    map = hmToSave;
                 }
 
-                List<ResourceWrapper> list = map.get(resourceType);
+                List<Resource> list = map.get(resourceWrapper.getBatchUuid());
                 if (list == null) {
                     list = new ArrayList<>();
-                    map.put(resourceType, list);
+                    map.put(resourceWrapper.getBatchUuid(), list);
                 }
-                list.add(resourceWrapper);
+                list.add(resourceWrapper.getResource());
             }
 
-            for (ResourceType resourceType: resourceTypes) {
-
-                List<ResourceWrapper> toSave = mapToSave.get(resourceType);
-                if (toSave != null) {
-
-                }
+            Iterator<UUID> iterator = hmToSave.keySet().iterator();
+            while (iterator.hasNext()) {
+                UUID batchId = iterator.next();
+                List<Resource> list = hmToSave.get(batchId);
+                storageService.exchangeBatchUpdate(exchangeId, batchId, list);
             }
 
-            for (ResourceType resourceType: resourceTypes) {
-
-                List<ResourceWrapper> toDelete = mapToDelete.get(resourceType);
-                if (toDelete != null) {
-
-                }
+            iterator = hmToDelete.keySet().iterator();
+            while (iterator.hasNext()) {
+                UUID batchId = iterator.next();
+                List<Resource> list = hmToDelete.get(batchId);
+                storageService.exchangeBatchDelete(exchangeId, batchId, list);
             }
 
-
-            //TODO - invoke filer to save resources, saving by resource type doing saves before deletes
-
+            LOG.trace("Finished " + resourceWrappers.size() + " resources");
             return null;
         }
     }
@@ -296,12 +379,17 @@ public class CsvProcessor {
             LOG.trace("Mapping IDs for " + resourceWrappers.size() + " resources");
             resourceWrappers.parallelStream()
                     .forEach((resourceWrapper) -> { mapId(resourceWrapper); });
+
+            LOG.trace("Finished mapping IDs for " + resourceWrappers.size() + " resources");
             return null;
         }
 
         private void mapId(ResourceWrapper resourceWrapper) {
+            //LOG.trace("Doing " + resourceWrapper.getResource());
             IdHelper.mapIds(serviceId, systemInstanceId, resourceWrapper.getResource());
+            //LOG.trace("Done " + resourceWrapper.getResource());
             addResourceWrapperToQueue(resourceWrapper, false);
+            //LOG.trace("Added to queue " + resourceWrapper.getResource());
         }
     }
 
@@ -327,5 +415,5 @@ public class CsvProcessor {
         public boolean isDelete() {
             return isDelete;
         }
-    }
+    }*/
 }

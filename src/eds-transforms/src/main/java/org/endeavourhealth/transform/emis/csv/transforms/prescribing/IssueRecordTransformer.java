@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Prescribing_IssueRecord;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -50,10 +50,7 @@ public class IssueRecordTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (issueParser.getDeleted() || issueParser.getIsConfidential()) {
-            UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-            if (patientId != null) {
-                csvProcessor.deletePatientResource(fhirMedication, patientId);
-            }
+            csvProcessor.deletePatientResource(fhirMedication, patientGuid);
             return;
         }
 
@@ -96,13 +93,10 @@ public class IssueRecordTransformer {
         Reference authorisationReference = csvHelper.createMedicationStatementReference(drugRecordGuid, patientGuid);
         fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_ORDER_AUTHORISATION, authorisationReference));
 
-        UUID patientId = csvHelper.getPatientUUidForGuid(patientGuid, csvProcessor);
-        if (patientId != null) {
-            csvProcessor.savePatientResource(fhirMedication, patientId);
-        }
+        csvProcessor.savePatientResource(fhirMedication, patientGuid);
 
         //if this record is linked to a problem, store this relationship in the helper
-        csvHelper.cacheProblemRelationship(issueParser.getProblemObservationGuid(),
+        csvHelper.cacheProblemRelationship(problemObservationGuid,
                 patientGuid,
                 issueRecordGuid,
                 fhirMedication.getResourceType());

@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
-import org.endeavourhealth.transform.common.TransformException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.EventType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.hl7.fhir.instance.model.*;

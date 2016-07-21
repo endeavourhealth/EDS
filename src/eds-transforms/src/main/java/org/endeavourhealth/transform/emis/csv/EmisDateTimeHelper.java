@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.emis.csv;
 
-import org.endeavourhealth.transform.common.TransformException;
+import com.sun.javaws.exceptions.InvalidArgumentException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.DateType;
@@ -19,7 +20,7 @@ public class EmisDateTimeHelper {
         //the precision String matches the precisions used in the other EMIS extract
         VocDatePart vocPrecision = VocDatePart.fromValue(precision);
         if (vocPrecision == null) {
-            throw new TransformException("Unsupported consultation precision [" + precision + "]");
+            throw new IllegalArgumentException("Unsupported consultation precision [" + precision + "]");
         }
 
         switch (vocPrecision) {
@@ -34,7 +35,7 @@ public class EmisDateTimeHelper {
             case YMDT:
                 return new DateTimeType(date, TemporalPrecisionEnum.MINUTE);
             default:
-                throw new TransformException("Unhandled date precision [" + vocPrecision + "]");
+                throw new IllegalArgumentException("Unknown date precision [" + vocPrecision + "]");
         }
     }
 
@@ -45,7 +46,7 @@ public class EmisDateTimeHelper {
 
         VocDatePart vocPrecision = VocDatePart.fromValue(precision);
         if (vocPrecision == null) {
-            throw new TransformException("Unsupported consultation precision [" + precision + "]");
+            throw new IllegalArgumentException("Unsupported consultation precision [" + precision + "]");
         }
 
         switch (vocPrecision) {
@@ -59,7 +60,7 @@ public class EmisDateTimeHelper {
             case YMDT:
                 return new DateType(date, TemporalPrecisionEnum.DAY);
             default:
-                throw new TransformException("Unhandled date precision [" + vocPrecision + "]");
+                throw new IllegalArgumentException("Unhandled date precision [" + vocPrecision + "]");
         }
     }
 }
