@@ -1,5 +1,8 @@
 package org.endeavourhealth.core.security;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Priority;
 import javax.annotation.security.DenyAll;
 import javax.annotation.security.PermitAll;
@@ -13,13 +16,17 @@ import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.FeatureContext;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 @Provider
 public class CustomRolesAllowedFeature implements DynamicFeature {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CustomRolesAllowedFeature.class);
+
     @Override
     public void configure(ResourceInfo resourceInfo, FeatureContext configuration) {
+
         Method resourceMethod = resourceInfo.getResourceMethod();
 
         if (resourceMethod.isAnnotationPresent(DenyAll.class)) {
@@ -28,6 +35,20 @@ public class CustomRolesAllowedFeature implements DynamicFeature {
         }
 
         RolesAllowed ra = resourceMethod.getAnnotation(RolesAllowed.class);
+        if(ra == null) {
+            for(Annotation a : resourceMethod.getDeclaredAnnotations()) {
+                String pckg = "org.endeavourhealth.core.security.annotations";
+                if(a.getClass().getName().contains(pckg) || a.toString().contains(pckg)) {    // sometimes proxies are created, so can't use simple reflection
+                    ra = a.getClass().getAnnotation(RolesAllowed.class);
+                    if(ra == null) {
+                        // handle the proxy class
+                        ra = a.annotationType().getAnnotation(RolesAllowed.class);
+                    }
+                    break;
+                }
+            }
+        }
+
         if (ra != null) {
             configuration.register(new RolesAllowedRequestFilter(ra.value()));
             return;
@@ -36,6 +57,7 @@ public class CustomRolesAllowedFeature implements DynamicFeature {
         if (resourceMethod.isAnnotationPresent(PermitAll.class)) {
             return;
         }
+
 
         ra = resourceInfo.getResourceClass().getAnnotation(RolesAllowed.class);
         if (ra != null) {

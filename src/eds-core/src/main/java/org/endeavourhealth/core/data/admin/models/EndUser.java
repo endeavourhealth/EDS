@@ -83,4 +83,13 @@ public class EndUser {
         this.isSuperUser = isSuperUser;
     }
 
+    @Override
+    public String toString() {
+        return "EndUser{" +
+                "id=" + id +
+                ", forename='" + forename + '\'' +
+                ", surname='" + surname + '\'' +
+                ", email='" + email + '\'' +
+                '}';
+    }
 }
