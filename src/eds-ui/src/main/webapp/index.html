@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html ng-app="app" ng-strict-di>
+<html ng-strict-di>
 	<head>
 		<meta charset="UTF-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -29,18 +29,28 @@
 		<script src="/bower_components/angular-ui-router/release/angular-ui-router.js"></script>
 		<script src="/bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
 		<script src="/bower_components/toastr/toastr.js"></script>
+		<script src="/bower_components/keycloak/dist/keycloak.min.js"></script>
+        <script src="/bower_components/keycloak/dist/keycloak-authz.min.js"></script>
 		<script src="/angular-ui-tree-withFix.js"></script>
 		<script src="/bower_components/angular-dragdrop/src/angular-dragdrop.js"></script>
 		<script src="/bower_components/angular-uuid-generator/angular-uuid-generator.js"></script>
 
-		<!-- Main application script -->
-		<script src="app/app.module.js"></script>
-		<script src="app/app.route.js"></script>
+        <!-- must go first -->
+		<script src="app/appstartup/appstartup.module.js"></script>
+		<script src="app/appstartup/appstartup.auth.js"></script>
+
+        <!-- Models -->
+        <script src="app/models/models.module.js"></script>
+        <script src="app/models/User.js"></script>
+        <script src="app/models/ItemType.js"></script>
+        <script src="app/models/FolderType.js"></script>
+        <script src="app/models/UuidNameKVP.js"></script>
 
 		<!-- Core (i.e. config/constants/services) -->
 		<script src="app/core/core.module.js"></script>
+        <script src="app/core/baseHttp.service.js"></script>
 		<script src="app/core/core.config.js"></script>
-		<script src="app/core/baseHttp.service.js"></script>
+        <script src="app/core/security.auth.js"></script>
 		<script src="app/core/security.service.js"></script>
 		<script src="app/core/admin.service.js"></script>
 		<script src="app/core/moduleState.service.js"></script>
@@ -50,18 +60,16 @@
 		<script src="app/core/coding.service.js"></script>
 		<script src="app/core/rabbit.service.js"></script>
 
+        <!-- Main application script -->
+        <script src="app/app.module.js"></script>
+        <script src="app/app.route.js"></script>
+
 		<!-- Config -->
 		<script src="app/config/config.module.js"></script>
 		<script src="app/config/config.service.js"></script>
 
 		<!-- Termlex -->
 		<script src="app/termlex/termlexCoding.service.js"></script>
-
-		<!-- Models -->
-		<script src="app/models/models.module.js"></script>
-		<script src="app/models/ItemType.js"></script>
-		<script src="app/models/FolderType.js"></script>
-		<script src="app/models/UuidNameKVP.js"></script>
 
 		<!-- Blocks -->
 		<script src="app/blocks/blocks.module.js"></script>
@@ -88,11 +96,6 @@
 		<script src="app/layout/sidebar.controller.js"></script>
 		<script src="app/layout/topnav.controller.js"></script>
 		<script src="app/layout/shell.controller.js"></script>
-
-		<!-- Login -->
-		<script src="app/login/login.module.js"></script>
-		<script src="app/login/login.route.js"></script>
-		<script src="app/login/login.controller.js"></script>
 
 		<!-- Modules -->
 
@@ -161,7 +164,6 @@
 		<script src="app/services/list/serviceListController.js"></script>
 		<script src="app/services/editor/serviceEditor.controller.js"></script>
 		<script src="app/services/service/service.service.js"></script>
-
-	</body>
+    </body>
 </html>
 

@@ -8,10 +8,14 @@ module app.layout {
 	class SidebarController {
 		menuOptions:app.models.MenuOption[];
 
-		static $inject = ['AdminService'];
+		static $inject = ['AdminService', 'SecurityService'];
 
-		constructor(adminService:app.core.IAdminService) {
+		constructor(protected adminService:app.core.IAdminService, protected securityService:ISecurityService) {
 			this.menuOptions = adminService.getMenuOptions();
+		}
+
+		logout() {
+			this.securityService.logout();
 		}
 	}
 

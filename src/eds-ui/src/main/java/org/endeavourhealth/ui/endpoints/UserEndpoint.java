@@ -12,6 +12,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.net.URI;
+import java.net.URLEncoder;
 
 @Path("/user")
 public final class UserEndpoint extends AbstractEndpoint {
@@ -33,6 +34,24 @@ public final class UserEndpoint extends AbstractEndpoint {
 
         String url = String.format("http://localhost:9080/auth/realms/%s/account",      // TODO: make auth server URL config
                 SecurityUtils.getKeycloakSecurityContext(sc).getRealm());
+
+        return Response
+                .seeOther(new URI(url))
+                .build();
+    }
+
+    @GET
+    @Path("/logout")
+    public Response logout(@Context SecurityContext sc) throws Exception {
+
+        LOG.info("Logout: {}", SecurityUtils.getCurrentUser(sc));
+
+        String redirectUrl = URLEncoder.encode("http://localhost:8080/api/user/details", "UTF-8");                  // TODO: make url config
+
+        String url = String.format("http://localhost:9080/auth/realms/%s/protocol/openid-connect/logout?redirect_uri=%s",      // TODO: make auth server URL config
+                SecurityUtils.getKeycloakSecurityContext(sc).getRealm(), redirectUrl);
+
+        LOG.debug("url: {}", url);
 
         return Response
                 .seeOther(new URI(url))

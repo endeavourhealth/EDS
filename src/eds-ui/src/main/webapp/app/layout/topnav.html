@@ -5,8 +5,7 @@
 				<span class="logo">Data Service Manager</span>
 		</div>
 		<div ng-controller="TopnavController as topnav" class="pull-right" style="padding: 10px;color:gray">
-			Logged in : {{topnav.currentUser.title}} {{topnav.currentUser.forename}} {{topnav.currentUser.surname}}
-
+			Logged in : <a ng-click="topnav.showUserAccountTab()">{{topnav.currentUser.displayName()}}</a>
 
 			<!--<div class="dropdown" uib-dropdown>-->
 				<!--Organisation : <a href="#" class="dropdown-toggle" uib-dropdown-toggle>-->
