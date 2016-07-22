@@ -1,9 +1,7 @@
 package org.endeavourhealth.sftpreader;
 
-import com.google.common.io.Resources;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.openpgp.PGPException;
@@ -18,9 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.NoSuchProviderException;
 import java.security.SignatureException;
 import java.time.ZoneOffset;

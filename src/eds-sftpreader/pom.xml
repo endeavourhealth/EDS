@@ -10,6 +10,7 @@
 
     <dependencies>
 
+        <!-- endeavour dependencies -->
         <dependency>
             <groupId>org.endeavourhealth</groupId>
             <artifactId>eds-core</artifactId>
@@ -21,23 +22,39 @@
             <version>1.0-SNAPSHOT</version>
         </dependency>
 
+        <!-- SFTP library -->
         <dependency>
             <groupId>com.jcraft</groupId>
             <artifactId>jsch</artifactId>
             <version>0.1.53</version>
         </dependency>
 
+        <!-- PGP crypto libraries -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
             <version>1.54</version>
         </dependency>
-
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpg-jdk15on</artifactId>
             <version>1.54</version>
         </dependency>
+
+        <!-- CSV parsing library -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.3</version>
+        </dependency>
+
+        <!-- Postgres library -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>9.4.1208</version>
+        </dependency>
+
     </dependencies>
 
     <build>
