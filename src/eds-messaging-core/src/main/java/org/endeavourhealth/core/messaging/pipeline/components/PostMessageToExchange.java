@@ -49,7 +49,7 @@ public class PostMessageToExchange extends PipelineComponent {
 
 		// Handle multicast
 		String multicastHeader = config.getMulticastHeader();
-		if (multicastHeader == null || multicastHeader.isEmpty()) {
+		if (multicastHeader == null || multicastHeader.isEmpty() || exchange.getHeader(multicastHeader) == null) {
 			publishMessage(routingKey, messageUuid, channel, properties);
 		} else {
 			String[] multicastValues = exchange.getHeader(multicastHeader).split(",", -1);

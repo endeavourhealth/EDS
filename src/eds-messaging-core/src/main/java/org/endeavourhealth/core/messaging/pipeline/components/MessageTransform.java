@@ -18,6 +18,10 @@ public class MessageTransform extends PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) {
+		String technicalInterfaceId = exchange.getHeader(HeaderKeys.TransformTo);
+
+		// Transform to tech interface format
+
 		LOG.debug("Message transformed");
 	}
 }

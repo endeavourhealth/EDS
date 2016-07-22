@@ -35,16 +35,16 @@ public class RabbitConsumer extends DefaultConsumer {
 		Exchange exchange = new Exchange(queuedMessage.getMessageBody());
 		Map<String, Object> headers = properties.getHeaders();
 		if (headers != null) {
-			for (String headerKey : headers.keySet()) {
-				exchange.setHeader(headerKey, headers.get(headerKey).toString());
-			}
+			headers.keySet().stream()
+					.filter(headerKey -> headers.get(headerKey) != null)
+					.forEach(headerKey -> exchange.setHeader(headerKey, headers.get(headerKey).toString()));
 		}
 
 		// Process the message
 		if (pipeline.execute(exchange)) {
 			this.getChannel().basicAck(envelope.getDeliveryTag(), false);
 		} else {
-			this.getChannel().basicReject(envelope.getDeliveryTag(), false);
+			this.getChannel().basicReject(envelope.getDeliveryTag(), true);
 		}
 	}
 }

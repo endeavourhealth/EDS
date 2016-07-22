@@ -1,9 +1,11 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
 import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -30,25 +32,26 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
 		LibraryItem protocolToRun = getProtocol(exchange);
+		setProtocolData(exchange, protocolToRun);
+
 		String fhirMessage = exchange.getBody();
 
 		// Run DDP
 		// new ProtocolRunner().execute(fhirMessage, protocolToRun);
 
 		// Get output format list for multicast
-		List<String> subscriberFormats = getSubscriberFormats(protocolToRun);
-		exchange.setHeader(HeaderKeys.TransformTo, String.join(",", subscriberFormats));
+		List<String> technicalInterfaceIds = getTechnicalInterfaceIds(protocolToRun);
+		exchange.setHeader(HeaderKeys.TransformTo, String.join(",", technicalInterfaceIds));
 
 		LOG.debug("Data distribution protocols executed");
 	}
 
-	private List<String> getSubscriberFormats(LibraryItem protocolToRun) {
+	private List<String> getTechnicalInterfaceIds(LibraryItem protocolToRun) {
 		// Get distinct output formats
 		return protocolToRun.getProtocol().getServiceContract().stream()
 				.filter(serviceContract -> serviceContract.getType().equals(ServiceContractType.SUBSCRIBER))
-				.map(subscriberContract -> subscriberContract.getSystem().getTechnicalInterface())
-				.flatMap(Collection::stream)
-				.map(TechnicalInterface::getMessageFormat)
+				.map(ServiceContract::getTechnicalInterface)
+				.map(TechnicalInterface::getUuid)
 				.distinct()
 				.collect(Collectors.toList());
 	}
@@ -72,5 +75,16 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 				.filter(libraryItem -> libraryItem.getUuid().equals(protocolId))
 				.findFirst()
 				.orElseThrow(() -> new PipelineException("Unknown protocol id"));
+	}
+
+	private void setProtocolData(Exchange exchange, LibraryItem protocol) throws PipelineException {
+		try {
+			String protocolData = new ObjectMapper().writeValueAsString(protocol);
+			exchange.setHeader(HeaderKeys.ProtocolData, protocolData);
+		} catch (JsonProcessingException e) {
+			LOG.error("Unable to serialize protocol");
+			throw new PipelineException(e.getMessage());
+		}
+
 	}
 }

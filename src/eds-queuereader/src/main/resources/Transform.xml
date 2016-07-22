@@ -5,14 +5,9 @@
         <Password>guest</Password>
     </Credentials>
     <Nodes>localhost:5672</Nodes>
-    <Queue>EdsTransform-N-Z</Queue>
+    <Queue>EdsTransform-A-M</Queue>
     <Pipeline>
-        <MessageTransform>
-            <ExchangeHeaders>
-                <Header Key="TransformFrom">OpenHR</Header>
-                <Header Key="TransformTo">OpenHR</Header>
-            </ExchangeHeaders>
-        </MessageTransform>
+        <MessageTransform/>
         <PostToSubscriberWebService/>
         <PostMessageToLog>
             <EventType>Validate</EventType>
@@ -24,7 +19,7 @@
             </Credentials>
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsSubscriber</Exchange>
-            <RoutingHeader>SubscriberList</RoutingHeader>
+            <RoutingHeader>Subscribers</RoutingHeader>
         </PostMessageToExchange>
     </Pipeline>
 </QueueReaderConfiguration>

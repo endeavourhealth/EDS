@@ -1,10 +1,7 @@
-package org.endeavourhealth.ui.json;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
+package org.endeavourhealth.core.json;
 
 import java.util.UUID;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public final class JsonServiceInterfaceEndpoint {
     private UUID systemUuid = null;
     private UUID technicalInterfaceUuid = null;
