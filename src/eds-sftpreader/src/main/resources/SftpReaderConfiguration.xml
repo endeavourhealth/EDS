@@ -3,12 +3,22 @@
                          xsi:noNamespaceSchemaLocation="../../../../eds-messaging-core/src/main/resources/SftpReaderConfiguration.xsd">
 
     <InstanceId>EMIS001</InstanceId>
-    <PostgresConnetion>
-        <Hostname>localhost</Hostname>
-        <Port>5432</Port>
-        <Database>sftpreader</Database>
-        <Username>postgres</Username>
-        <Password></Password>
-    </PostgresConnetion>
+
+    <DatabaseConnections>
+        <SftpReader>
+            <Hostname>localhost</Hostname>
+            <Port>5432</Port>
+            <Database>sftpreader</Database>
+            <Username>postgres</Username>
+            <Password></Password>
+        </SftpReader>
+        <Logback>
+            <Hostname>localhost</Hostname>
+            <Port>5432</Port>
+            <Database>logback</Database>
+            <Username>postgres</Username>
+            <Password></Password>
+        </Logback>
+    </DatabaseConnections>
 
 </SftpReaderConfiguration>

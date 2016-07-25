@@ -1,5 +1,8 @@
 package org.endeavourhealth.sftpreader;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.db.DBAppender;
+import ch.qos.logback.core.db.DriverManagerConnectionSource;
 import org.endeavourhealth.core.data.logging.LogbackCassandraAppender;
 import org.endeavourhealth.sftpreader.dbModel.DbConfiguration;
 import org.slf4j.Logger;
@@ -17,13 +20,7 @@ public class Main
 	{
 		try
 		{
-			DataLayer dataLayer = new DataLayer(Configuration.getInstance().getDataSource());
-
-			DbConfiguration dbConfiguration = dataLayer.getConfiguration(Configuration.getInstance().getInstanceId());
-
-			Configuration.getInstance().initialiseEngineConfiguration(args);
-
-			startCassandraLogging();
+			DbConfiguration dbConfiguration = Configuration.getInstance().getDbConfiguration();
 
 			writeHeaderLogLine(PROGRAM_DISPLAY_NAME);
 
@@ -35,11 +32,6 @@ public class Main
 		{
 			LOG.error("Fatal exception occurred", e);
 		}
-	}
-
-	private static void startCassandraLogging()
-	{
-		LogbackCassandraAppender.tryRegisterDbAppender();
 	}
 
 	private static void writeHeaderLogLine(String text)

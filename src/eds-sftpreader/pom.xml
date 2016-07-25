@@ -55,6 +55,13 @@
             <version>9.4.1208</version>
         </dependency>
 
+        <!-- Enterprise DB library wrapper -->
+        <dependency>
+            <groupId>com.mchange</groupId>
+            <artifactId>c3p0</artifactId>
+            <version>0.9.5.2</version>
+        </dependency>
+
     </dependencies>
 
     <build>

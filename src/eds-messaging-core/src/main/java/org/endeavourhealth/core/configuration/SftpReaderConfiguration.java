@@ -1,7 +1,6 @@
 
 package org.endeavourhealth.core.configuration;
 
-import java.math.BigInteger;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -20,16 +19,13 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="InstanceId" type="{}nonEmptyString"/>
- *         &lt;element name="PostgresConnetion">
+ *         &lt;element name="DatabaseConnections">
  *           &lt;complexType>
  *             &lt;complexContent>
  *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *                 &lt;sequence>
- *                   &lt;element name="Hostname" type="{}nonEmptyString"/>
- *                   &lt;element name="Port" type="{http://www.w3.org/2001/XMLSchema}integer"/>
- *                   &lt;element name="Database" type="{}nonEmptyString"/>
- *                   &lt;element name="Username" type="{}nonEmptyString"/>
- *                   &lt;element name="Password" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *                   &lt;element name="SftpReader" type="{}DatabaseConnection"/>
+ *                   &lt;element name="Logback" type="{}DatabaseConnection"/>
  *                 &lt;/sequence>
  *               &lt;/restriction>
  *             &lt;/complexContent>
@@ -46,15 +42,15 @@ import javax.xml.bind.annotation.XmlType;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
     "instanceId",
-    "postgresConnetion"
+    "databaseConnections"
 })
 @XmlRootElement(name = "SftpReaderConfiguration")
 public class SftpReaderConfiguration {
 
     @XmlElement(name = "InstanceId", required = true)
     protected String instanceId;
-    @XmlElement(name = "PostgresConnetion", required = true)
-    protected SftpReaderConfiguration.PostgresConnetion postgresConnetion;
+    @XmlElement(name = "DatabaseConnections", required = true)
+    protected SftpReaderConfiguration.DatabaseConnections databaseConnections;
 
     /**
      * Gets the value of the instanceId property.
@@ -81,27 +77,27 @@ public class SftpReaderConfiguration {
     }
 
     /**
-     * Gets the value of the postgresConnetion property.
+     * Gets the value of the databaseConnections property.
      * 
      * @return
      *     possible object is
-     *     {@link SftpReaderConfiguration.PostgresConnetion }
+     *     {@link SftpReaderConfiguration.DatabaseConnections }
      *     
      */
-    public SftpReaderConfiguration.PostgresConnetion getPostgresConnetion() {
-        return postgresConnetion;
+    public SftpReaderConfiguration.DatabaseConnections getDatabaseConnections() {
+        return databaseConnections;
     }
 
     /**
-     * Sets the value of the postgresConnetion property.
+     * Sets the value of the databaseConnections property.
      * 
      * @param value
      *     allowed object is
-     *     {@link SftpReaderConfiguration.PostgresConnetion }
+     *     {@link SftpReaderConfiguration.DatabaseConnections }
      *     
      */
-    public void setPostgresConnetion(SftpReaderConfiguration.PostgresConnetion value) {
-        this.postgresConnetion = value;
+    public void setDatabaseConnections(SftpReaderConfiguration.DatabaseConnections value) {
+        this.databaseConnections = value;
     }
 
 
@@ -115,11 +111,8 @@ public class SftpReaderConfiguration {
      *   &lt;complexContent>
      *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
      *       &lt;sequence>
-     *         &lt;element name="Hostname" type="{}nonEmptyString"/>
-     *         &lt;element name="Port" type="{http://www.w3.org/2001/XMLSchema}integer"/>
-     *         &lt;element name="Database" type="{}nonEmptyString"/>
-     *         &lt;element name="Username" type="{}nonEmptyString"/>
-     *         &lt;element name="Password" type="{http://www.w3.org/2001/XMLSchema}string"/>
+     *         &lt;element name="SftpReader" type="{}DatabaseConnection"/>
+     *         &lt;element name="Logback" type="{}DatabaseConnection"/>
      *       &lt;/sequence>
      *     &lt;/restriction>
      *   &lt;/complexContent>
@@ -130,143 +123,62 @@ public class SftpReaderConfiguration {
      */
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlType(name = "", propOrder = {
-        "hostname",
-        "port",
-        "database",
-        "username",
-        "password"
+        "sftpReader",
+        "logback"
     })
-    public static class PostgresConnetion {
+    public static class DatabaseConnections {
 
-        @XmlElement(name = "Hostname", required = true)
-        protected String hostname;
-        @XmlElement(name = "Port", required = true)
-        protected BigInteger port;
-        @XmlElement(name = "Database", required = true)
-        protected String database;
-        @XmlElement(name = "Username", required = true)
-        protected String username;
-        @XmlElement(name = "Password", required = true)
-        protected String password;
+        @XmlElement(name = "SftpReader", required = true)
+        protected DatabaseConnection sftpReader;
+        @XmlElement(name = "Logback", required = true)
+        protected DatabaseConnection logback;
 
         /**
-         * Gets the value of the hostname property.
+         * Gets the value of the sftpReader property.
          * 
          * @return
          *     possible object is
-         *     {@link String }
+         *     {@link DatabaseConnection }
          *     
          */
-        public String getHostname() {
-            return hostname;
+        public DatabaseConnection getSftpReader() {
+            return sftpReader;
         }
 
         /**
-         * Sets the value of the hostname property.
+         * Sets the value of the sftpReader property.
          * 
          * @param value
          *     allowed object is
-         *     {@link String }
+         *     {@link DatabaseConnection }
          *     
          */
-        public void setHostname(String value) {
-            this.hostname = value;
+        public void setSftpReader(DatabaseConnection value) {
+            this.sftpReader = value;
         }
 
         /**
-         * Gets the value of the port property.
+         * Gets the value of the logback property.
          * 
          * @return
          *     possible object is
-         *     {@link BigInteger }
+         *     {@link DatabaseConnection }
          *     
          */
-        public BigInteger getPort() {
-            return port;
+        public DatabaseConnection getLogback() {
+            return logback;
         }
 
         /**
-         * Sets the value of the port property.
+         * Sets the value of the logback property.
          * 
          * @param value
          *     allowed object is
-         *     {@link BigInteger }
+         *     {@link DatabaseConnection }
          *     
          */
-        public void setPort(BigInteger value) {
-            this.port = value;
-        }
-
-        /**
-         * Gets the value of the database property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getDatabase() {
-            return database;
-        }
-
-        /**
-         * Sets the value of the database property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setDatabase(String value) {
-            this.database = value;
-        }
-
-        /**
-         * Gets the value of the username property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getUsername() {
-            return username;
-        }
-
-        /**
-         * Sets the value of the username property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setUsername(String value) {
-            this.username = value;
-        }
-
-        /**
-         * Gets the value of the password property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getPassword() {
-            return password;
-        }
-
-        /**
-         * Sets the value of the password property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setPassword(String value) {
-            this.password = value;
+        public void setLogback(DatabaseConnection value) {
+            this.logback = value;
         }
 
     }
