@@ -14,8 +14,8 @@ public class PatientIdentifierByNhsNumber {
     @Column(name = "service_id")
     private UUID serviceId = null;
     @ClusteringColumn(2)
-    @Column(name = "system_instance_id")
-    private UUID systemInstanceId = null;
+    @Column(name = "system_id")
+    private UUID systemId = null;
     @Column(name = "local_id")
     private String localId = null;
     @ClusteringColumn(0)
@@ -38,12 +38,12 @@ public class PatientIdentifierByNhsNumber {
         this.serviceId = serviceId;
     }
 
-    public UUID getSystemInstanceId() {
-        return systemInstanceId;
+    public UUID getInstanceId() {
+        return systemId;
     }
 
-    public void setSystemInstanceId(UUID systemInstanceId) {
-        this.systemInstanceId = systemInstanceId;
+    public void setInstanceId(UUID systemId) {
+        this.systemId = systemId;
     }
 
     public String getLocalId() {

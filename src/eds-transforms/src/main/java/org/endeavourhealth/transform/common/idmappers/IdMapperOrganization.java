@@ -8,17 +8,17 @@ import java.util.UUID;
 
 public class IdMapperOrganization extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemInstanceId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
         Organization organization = (Organization)resource;
 
-        super.mapResourceId(organization, serviceId, systemInstanceId);
-        super.mapExtensions(organization, serviceId, systemInstanceId);
+        super.mapResourceId(organization, serviceId, systemId);
+        super.mapExtensions(organization, serviceId, systemId);
 
         if (organization.hasIdentifier()) {
-            super.mapIdentifiers(organization.getIdentifier(), serviceId, systemInstanceId);
+            super.mapIdentifiers(organization.getIdentifier(), serviceId, systemId);
         }
         if (organization.hasPartOf()) {
-            super.mapReference(organization.getPartOf(), serviceId, systemInstanceId);
+            super.mapReference(organization.getPartOf(), serviceId, systemId);
         }
     }
 }

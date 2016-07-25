@@ -8,23 +8,23 @@ import java.util.UUID;
 
 public class IdMapperCondition extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemInstanceId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
         Condition condition = (Condition)resource;
 
-        super.mapResourceId(condition, serviceId, systemInstanceId);
-        super.mapExtensions(condition, serviceId, systemInstanceId);
+        super.mapResourceId(condition, serviceId, systemId);
+        super.mapExtensions(condition, serviceId, systemId);
 
         if (condition.hasIdentifier()) {
-            super.mapIdentifiers(condition.getIdentifier(), serviceId, systemInstanceId);
+            super.mapIdentifiers(condition.getIdentifier(), serviceId, systemId);
         }
         if (condition.hasPatient()) {
-            super.mapReference(condition.getPatient(), serviceId, systemInstanceId);
+            super.mapReference(condition.getPatient(), serviceId, systemId);
         }
         if (condition.hasEncounter()) {
-            super.mapReference(condition.getEncounter(), serviceId, systemInstanceId);
+            super.mapReference(condition.getEncounter(), serviceId, systemId);
         }
         if (condition.hasAsserter()) {
-            super.mapReference(condition.getAsserter(), serviceId, systemInstanceId);
+            super.mapReference(condition.getAsserter(), serviceId, systemId);
         }
 
 

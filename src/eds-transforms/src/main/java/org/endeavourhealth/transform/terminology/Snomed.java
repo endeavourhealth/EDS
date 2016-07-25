@@ -38,6 +38,11 @@ public class Snomed {
     static {
 
         try {
+
+            //by default the Java Caching System has a load of logging enabled, which is really slow, so turn it off
+            org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger("org.apache.jcs");
+            logger.setLevel(org.apache.log4j.Level.OFF);
+
             cachedTermsForConceptAndDescription = JCS.getInstance("SnomedTermsForConceptAndDescription");
             cachedDescendantForConcept = JCS.getInstance("SnomedDescendantsForConcept");
         } catch (CacheException ex) {

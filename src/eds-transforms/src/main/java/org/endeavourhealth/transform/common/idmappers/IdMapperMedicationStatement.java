@@ -8,25 +8,25 @@ import java.util.UUID;
 
 public class IdMapperMedicationStatement extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemInstanceId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
         MedicationStatement medicationStatement = (MedicationStatement)resource;
 
-        super.mapResourceId(medicationStatement, serviceId, systemInstanceId);
-        super.mapExtensions(medicationStatement, serviceId, systemInstanceId);
+        super.mapResourceId(medicationStatement, serviceId, systemId);
+        super.mapExtensions(medicationStatement, serviceId, systemId);
 
         if (medicationStatement.hasIdentifier()) {
-            super.mapIdentifiers(medicationStatement.getIdentifier(), serviceId, systemInstanceId);
+            super.mapIdentifiers(medicationStatement.getIdentifier(), serviceId, systemId);
         }
         if (medicationStatement.hasPatient()) {
-            super.mapReference(medicationStatement.getPatient(), serviceId, systemInstanceId);
+            super.mapReference(medicationStatement.getPatient(), serviceId, systemId);
         }
         if (medicationStatement.hasInformationSource()) {
-            super.mapReference(medicationStatement.getInformationSource(), serviceId, systemInstanceId);
+            super.mapReference(medicationStatement.getInformationSource(), serviceId, systemId);
         }
         if (medicationStatement.hasReasonForUse()) {
             try {
                 if (medicationStatement.hasReasonForUseReference()) {
-                    super.mapReference(medicationStatement.getReasonForUseReference(), serviceId, systemInstanceId);
+                    super.mapReference(medicationStatement.getReasonForUseReference(), serviceId, systemId);
                 }
             } catch (Exception ex) {
                 //do nothing if not a reference
@@ -35,7 +35,7 @@ public class IdMapperMedicationStatement extends BaseIdMapper {
         if (medicationStatement.hasMedication()) {
             try {
                 if (medicationStatement.hasMedicationReference()) {
-                    super.mapReference(medicationStatement.getMedicationReference(), serviceId, systemInstanceId);
+                    super.mapReference(medicationStatement.getMedicationReference(), serviceId, systemId);
                 }
             } catch (Exception ex) {
                 //do nothing if not a reference
@@ -45,7 +45,7 @@ public class IdMapperMedicationStatement extends BaseIdMapper {
             for (MedicationStatement.MedicationStatementDosageComponent dosage: medicationStatement.getDosage()) {
                 try {
                     if (dosage.hasSiteReference()) {
-                        super.mapReference(dosage.getSiteReference(), serviceId, systemInstanceId);
+                        super.mapReference(dosage.getSiteReference(), serviceId, systemId);
                     }
                 } catch (Exception ex) {
                     //do nothing if not a reference

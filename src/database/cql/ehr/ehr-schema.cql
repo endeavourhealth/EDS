@@ -123,7 +123,7 @@ CREATE TABLE person_consent_organisation (
 
 CREATE TABLE patient_identifier (
 	service_id UUID,
-	system_instance_id UUID,
+	system_id UUID,
 	local_id text,
 	nhs_number text,
 	forenames text,
@@ -134,18 +134,18 @@ CREATE TABLE patient_identifier (
 	patient_id UUID,
 	timestamp TIMESTAMP,
 	version TIMEUUID,
-	PRIMARY KEY ((service_id), system_instance_id, patient_id, version))
-	WITH CLUSTERING ORDER BY (system_instance_id ASC, patient_id ASC, version DESC);
+	PRIMARY KEY ((service_id), system_id, patient_id, version))
+	WITH CLUSTERING ORDER BY (system_id ASC, patient_id ASC, version DESC);
 	
 CREATE MATERIALIZED VIEW patient_identifier_by_nhs_number AS  
-	SELECT service_id, system_instance_id, nhs_number, patient_id, timestamp, version 
+	SELECT service_id, system_id, nhs_number, patient_id, timestamp, version 
 	FROM patient_identifier  
 	WHERE nhs_number IS NOT NULL  
 	AND service_id IS NOT NULL 
-	AND system_instance_id IS NOT NULL 
+	AND system_id IS NOT NULL 
 	AND timestamp IS NOT NULL 
 	AND patient_id IS NOT NULL 
 	AND version IS NOT null
-	PRIMARY KEY(nhs_number, service_id, system_instance_id, patient_id, version)
-	WITH CLUSTERING ORDER BY (service_id ASC, system_instance_id ASC, patient_id ASC, version DESC);
+	PRIMARY KEY(nhs_number, service_id, system_id, patient_id, version)
+	WITH CLUSTERING ORDER BY (service_id ASC, system_id ASC, patient_id ASC, version DESC);
 

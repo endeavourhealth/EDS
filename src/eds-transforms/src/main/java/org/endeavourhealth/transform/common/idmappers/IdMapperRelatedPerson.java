@@ -8,17 +8,17 @@ import java.util.UUID;
 
 public class IdMapperRelatedPerson extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemInstanceId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
         RelatedPerson relatedPerson = (RelatedPerson)resource;
 
-        super.mapResourceId(relatedPerson, serviceId, systemInstanceId);
-        super.mapExtensions(relatedPerson, serviceId, systemInstanceId);
+        super.mapResourceId(relatedPerson, serviceId, systemId);
+        super.mapExtensions(relatedPerson, serviceId, systemId);
 
         if (relatedPerson.hasIdentifier()) {
-            super.mapIdentifiers(relatedPerson.getIdentifier(), serviceId, systemInstanceId);
+            super.mapIdentifiers(relatedPerson.getIdentifier(), serviceId, systemId);
         }
         if (relatedPerson.hasPatient()) {
-            super.mapReference(relatedPerson.getPatient(), serviceId, systemInstanceId);
+            super.mapReference(relatedPerson.getPatient(), serviceId, systemId);
         }
     }
 }

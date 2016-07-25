@@ -23,31 +23,36 @@ public class IdHelper {
 
     static {
         try {
+
+            //by default the Java Caching System has a load of logging enabled, which is really slow, so turn it off
+            org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger("org.apache.jcs");
+            logger.setLevel(org.apache.log4j.Level.OFF);
+
             cache = JCS.getInstance("ResourceIdentifiers");
         } catch (CacheException ex) {
             throw new RuntimeException("Error initialising cache", ex);
         }
     }
 
-    private static String createCacheKey(UUID serviceId, UUID systemInstanceId, ResourceType resourceType, String sourceId) {
-        return serviceId + "/" + systemInstanceId + "/" + resourceType + "/" + sourceId;
+    private static String createCacheKey(UUID serviceId, UUID systemId, ResourceType resourceType, String sourceId) {
+        return serviceId + "/" + systemId + "/" + resourceType + "/" + sourceId;
     }
 
-    public static String getEdsResourceIdString(UUID serviceId, UUID systemInstanceId, ResourceType resourceType, String sourceId) {
-        return getEdsResourceId(serviceId, systemInstanceId, resourceType, sourceId).toString();
+    public static String getEdsResourceIdString(UUID serviceId, UUID systemId, ResourceType resourceType, String sourceId) {
+        return getEdsResourceId(serviceId, systemId, resourceType, sourceId).toString();
     }
 
-    public static UUID getEdsResourceId(UUID serviceId, UUID systemInstanceId, ResourceType resourceType, String sourceId) {
-        String key = createCacheKey(serviceId, systemInstanceId, resourceType, sourceId);
+    public static UUID getEdsResourceId(UUID serviceId, UUID systemId, ResourceType resourceType, String sourceId) {
+        String key = createCacheKey(serviceId, systemId, resourceType, sourceId);
 
-        UUID edsId = null;
-        //String edsId = (String)cache.get(key);
+        //UUID edsId = null;
+        UUID edsId = (UUID)cache.get(key);
         if (edsId == null) {
-            ResourceIdMap mapping = repository.getResourceIdMap(serviceId, systemInstanceId, resourceType.toString(), sourceId);
+            ResourceIdMap mapping = repository.getResourceIdMap(serviceId, systemId, resourceType.toString(), sourceId);
             if (mapping == null) {
                 mapping = new ResourceIdMap();
                 mapping.setServiceId(serviceId);
-                mapping.setSystemInstanceId(systemInstanceId);
+                mapping.setSystemId(systemId);
                 mapping.setResourceType(resourceType.toString());
                 mapping.setSourceId(sourceId);
                 mapping.setEdsId(UUID.randomUUID());
@@ -55,16 +60,16 @@ public class IdHelper {
             }
 
             edsId = mapping.getEdsId();
-            /*try {
+            try {
                 cache.put(key, edsId);
             } catch (Exception ex) {
                 LOG.error("Error adding key [" + key + "] value [" + edsId + "] to ID map cache", ex);
-            }*/
+            }
         }
         return edsId;
     }
 
-    /*public static void mapIds(UUID serviceId, UUID systemInstanceId, List<Resource> resources) {
+    /*public static void mapIds(UUID serviceId, UUID systemId, List<Resource> resources) {
 
         long millis = System.currentTimeMillis();
         LOG.trace("Mapping IDs of " + resources.size() + " resources");
@@ -72,13 +77,13 @@ public class IdHelper {
         //use a parallel stream to get best throughput on lots of cores
         resources
                 .parallelStream()
-                .forEach((resource) -> { mapIds(serviceId, systemInstanceId, resource); });
+                .forEach((resource) -> { mapIds(serviceId, systemId, resource); });
 
         LOG.trace("Completed ID mapping in " + (System.currentTimeMillis() - millis) + "ms");
 
     }*/
 
-    public static void mapIds(UUID serviceId, UUID systemInstanceId, Resource resource) {
+    public static void mapIds(UUID serviceId, UUID systemId, Resource resource) {
 
         BaseIdMapper mapper = idMappers.get(resource.getClass());
         if (mapper == null) {
@@ -92,6 +97,6 @@ public class IdHelper {
             }
         }
 
-        mapper.mapIds(resource, serviceId, systemInstanceId);
+        mapper.mapIds(resource, serviceId, systemId);
     }
 }

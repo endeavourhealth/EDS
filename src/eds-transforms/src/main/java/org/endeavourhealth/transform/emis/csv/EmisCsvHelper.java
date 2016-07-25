@@ -80,7 +80,7 @@ public class EmisCsvHelper {
 
         EmisCsvCodeMap mapping = new EmisCsvCodeMap();
         mapping.setServiceId(csvProcessor.getServiceId());
-        mapping.setSystemInstanceId(csvProcessor.getSystemInstanceId());
+        mapping.setSystemId(csvProcessor.getSystemId());
         mapping.setMedication(true);
         mapping.setCodeId(codeId);
         mapping.setTimeUuid(UUIDs.timeBased());
@@ -101,7 +101,7 @@ public class EmisCsvHelper {
 
         EmisCsvCodeMap mapping = new EmisCsvCodeMap();
         mapping.setServiceId(csvProcessor.getServiceId());
-        mapping.setSystemInstanceId(csvProcessor.getSystemInstanceId());
+        mapping.setSystemId(csvProcessor.getSystemId());
         mapping.setMedication(false);
         mapping.setCodeId(codeId);
         mapping.setTimeUuid(UUIDs.timeBased());
@@ -121,7 +121,7 @@ public class EmisCsvHelper {
     }
 
     private void retrieveClincalCode(Long codeId, CsvProcessor csvProcessor) throws Exception {
-        EmisCsvCodeMap mapping = mappingRepository.getMostRecent(csvProcessor.getServiceId(), csvProcessor.getSystemInstanceId(), false, codeId);
+        EmisCsvCodeMap mapping = mappingRepository.getMostRecent(csvProcessor.getServiceId(), csvProcessor.getSystemId(), false, codeId);
         if (mapping == null) {
             throw new ClinicalCodeNotFoundException(codeId, false);
         }
@@ -154,7 +154,7 @@ public class EmisCsvHelper {
     }
 
     private void retrieveMedication(Long codeId, CsvProcessor csvProcessor) throws Exception {
-        EmisCsvCodeMap mapping = mappingRepository.getMostRecent(csvProcessor.getServiceId(), csvProcessor.getSystemInstanceId(), true, codeId);
+        EmisCsvCodeMap mapping = mappingRepository.getMostRecent(csvProcessor.getServiceId(), csvProcessor.getSystemId(), true, codeId);
         if (mapping == null) {
             throw new ClinicalCodeNotFoundException(codeId, true);
         }
@@ -257,7 +257,7 @@ public class EmisCsvHelper {
     private Resource retrieveResource(String locallyUniqueId, ResourceType resourceType, CsvProcessor csvProcessor) throws Exception {
 
         UUID globallyUniqueId = IdHelper.getEdsResourceId(csvProcessor.getServiceId(),
-                                                        csvProcessor.getSystemInstanceId(),
+                                                        csvProcessor.getSystemId(),
                                                         resourceType,
                                                         locallyUniqueId);
 
@@ -300,7 +300,7 @@ public class EmisCsvHelper {
             String locallyUniqueObservationId = createUniqueId(childResourceRelationship.getPatientGuid(), childResourceRelationship.getDependentResourceGuid());
 
             String globallyUniqueObservationId = IdHelper.getEdsResourceIdString(csvProcessor.getServiceId(),
-                                                                            csvProcessor.getSystemInstanceId(),
+                                                                            csvProcessor.getSystemId(),
                                                                             childResourceRelationship.getDependentResourceType(),
                                                                             locallyUniqueObservationId);
 
@@ -406,7 +406,7 @@ public class EmisCsvHelper {
             String locallyUniqueId = createUniqueId(childResourceRelationship.getPatientGuid(), childResourceRelationship.getDependentResourceGuid());
 
             String globallyUniqueId = IdHelper.getEdsResourceIdString(csvProcessor.getServiceId(),
-                    csvProcessor.getSystemInstanceId(),
+                    csvProcessor.getSystemId(),
                     ResourceType.Observation,
                     locallyUniqueId);
 

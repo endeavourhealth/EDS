@@ -6,6 +6,7 @@ import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Observation;
+import org.hl7.fhir.instance.model.ResourceType;
 
 public class ObservationPreTransformer {
 
@@ -19,13 +20,17 @@ public class ObservationPreTransformer {
         try {
             while (parser.nextRecord()) {
 
-                String parentGuid = parser.getParentObservationGuid();
-                if (!Strings.isNullOrEmpty(parentGuid)) {
-                    String patientGuid = parser.getPatientGuid();
-                    String observationGuid = parser.getObservationGuid();
+                Long codeId = parser.getCodeId();
+                ResourceType resourceType = ObservationTransformer.getTargetResourceType(codeId, csvProcessor, csvHelper);
+                if (resourceType == ResourceType.Observation) {
 
-                    //TODO - only cache the child relationships where the child will become an Observation resource itself
-                    csvHelper.cacheObservationParentRelationship(parentGuid, patientGuid, observationGuid);
+                    String parentGuid = parser.getParentObservationGuid();
+                    if (!Strings.isNullOrEmpty(parentGuid)) {
+                        String patientGuid = parser.getPatientGuid();
+                        String observationGuid = parser.getObservationGuid();
+
+                        csvHelper.cacheObservationParentRelationship(parentGuid, patientGuid, observationGuid);
+                    }
                 }
             }
         } catch (Exception ex) {

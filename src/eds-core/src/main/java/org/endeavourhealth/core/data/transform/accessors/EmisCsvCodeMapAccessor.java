@@ -12,9 +12,9 @@ import java.util.UUID;
 @Accessor
 public interface EmisCsvCodeMapAccessor {
 
-    @Query("SELECT * FROM transform.emis_csv_code_map WHERE service_id = :service_id AND system_instance_id = :system_instance_id AND medication = :medication AND code_id = :code_id LIMIT 1")
+    @Query("SELECT * FROM transform.emis_csv_code_map WHERE service_id = :service_id AND system_id = :system_id AND medication = :medication AND code_id = :code_id LIMIT 1")
     Result<EmisCsvCodeMap> getMostRecent(@Param("service_id") UUID serviceId,
-                                         @Param("system_instance_id") UUID systemInstanceId,
+                                         @Param("system_id") UUID systemId,
                                          @Param("medication") boolean medication,
                                          @Param("code_id") Long codeId);
 

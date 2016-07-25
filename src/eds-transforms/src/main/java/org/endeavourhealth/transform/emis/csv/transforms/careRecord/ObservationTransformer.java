@@ -42,27 +42,77 @@ public class ObservationTransformer {
                                        EmisCsvHelper csvHelper) throws Exception {
 
         Long codeId = observationParser.getCodeId();
+        ResourceType resourceType = getTargetResourceType(codeId, csvProcessor, csvHelper);
+        switch (resourceType) {
+            case Observation:
+                createObservation(observationParser, csvProcessor, csvHelper);
+                break;
+            case Condition:
+                createCondition(observationParser, csvProcessor, csvHelper);
+                break;
+            case Procedure:
+                createProcedure(observationParser, csvProcessor, csvHelper);
+                break;
+            case AllergyIntolerance:
+                createAllergy(observationParser, csvProcessor, csvHelper);
+                break;
+            case FamilyMemberHistory:
+                createFamilyMemberHistory(observationParser, csvProcessor, csvHelper);
+                break;
+            case Immunization:
+                createImmunization(observationParser, csvProcessor, csvHelper);
+                break;
+            case DiagnosticOrder:
+                createDiagnosticOrder(observationParser, csvProcessor, csvHelper);
+                break;
+            case Specimen:
+                createSpecimen(observationParser, csvProcessor, csvHelper);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported resource type: " + resourceType);
+        }
+
+        String observationGuid = observationParser.getObservationGuid();
+        String patientGuid = observationParser.getPatientGuid();
+
+        //as well as processing the Observation row into a FHIR resource, we
+        //may also have a row in the Referral file that we've previously processed into
+        //a FHIR ReferralRequest that we need to complete
+        ReferralRequest fhirReferral = csvHelper.findReferral(observationGuid, patientGuid);
+        if (fhirReferral != null) {
+            completeReferral(observationParser, fhirReferral, csvProcessor, csvHelper);
+        }
+
+        //the observation row may also be referenced by a row in the Problems file, which
+        //we've already processed. Check this, and complete processing if required.
+        Condition fhirProblem = csvHelper.findProblem(observationGuid, patientGuid);
+        if (fhirProblem != null) {
+            completeProblem(observationParser, fhirProblem, csvProcessor, csvHelper);
+        }
+
+        //remove any cached links of child observations that link to the row we just processed. If the row used
+        //the links, they'll already have been removed. If not, then we can't use them anyway.
+        csvHelper.getAndRemoveObservationParentRelationships(observationGuid, patientGuid);
+    }
+
+    public static ResourceType getTargetResourceType(Long codeId, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
+
         ClinicalCodeType codeType = csvHelper.findClinicalCodeType(codeId, csvProcessor);
+
         switch (codeType) {
             case Conditions_Operations_Procedures:
 
                 if (isProcedure(codeId, csvProcessor, csvHelper)) {
-                    createProcedure(observationParser, csvProcessor, csvHelper);
+                    return ResourceType.Procedure;
                 } else {
-                    createCondition(observationParser, csvProcessor, csvHelper);
+                    return ResourceType.Condition;
                 }
-                break;
-
             case Dental_Disorder:
             case Symptoms_Findings:
-                createCondition(observationParser, csvProcessor, csvHelper);
-                break;
-
+                return ResourceType.Condition;
             case Dental_Procedure:
             case Procedure:
-                createProcedure(observationParser, csvProcessor, csvHelper);
-                break;
-
+                return ResourceType.Procedure;
             case Adminisation_Documents_Attachments:
             case Biochemistry:
             case Biological_Values:
@@ -99,50 +149,24 @@ public class ObservationTransformer {
             case Religion:
             case Trade_Branch:
             case Unset:
-                createObservation(observationParser, csvProcessor, csvHelper);
-                break;
+                return ResourceType.Observation;
             case Allergy_Adverse_Drug_Reations:
             case Allergy_Adverse_Reations:
-                createAllergy(observationParser, csvProcessor, csvHelper);
-                break;
+                return ResourceType.AllergyIntolerance;
             case Family_History:
-                createFamilyMemberHistory(observationParser, csvProcessor, csvHelper);
-                break;
+                return ResourceType.FamilyMemberHistory;
             case Immunisations:
-                createImmunization(observationParser, csvProcessor, csvHelper);
-                break;
+                return ResourceType.Immunization;
             case Diagnostics:
             case Investigation_Requests:
-                createDiagnosticOrder(observationParser, csvProcessor, csvHelper);
-                break;
+                return ResourceType.DiagnosticOrder;
             case Pathology_Specimen:
-                createSpecimen(observationParser, csvProcessor, csvHelper);
+                return ResourceType.Specimen;
             default:
                 throw new IllegalArgumentException("Unhandled observationType " + codeType);
         }
-
-        String observationGuid = observationParser.getObservationGuid();
-        String patientGuid = observationParser.getPatientGuid();
-
-        //as well as processing the Observation row into a FHIR resource, we
-        //may also have a row in the Referral file that we've previously processed into
-        //a FHIR ReferralRequest that we need to complete
-        ReferralRequest fhirReferral = csvHelper.findReferral(observationGuid, patientGuid);
-        if (fhirReferral != null) {
-            completeReferral(observationParser, fhirReferral, csvProcessor, csvHelper);
-        }
-
-        //the observation row may also be referenced by a row in the Problems file, which
-        //we've already processed. Check this, and complete processing if required.
-        Condition fhirProblem = csvHelper.findProblem(observationGuid, patientGuid);
-        if (fhirProblem != null) {
-            completeProblem(observationParser, fhirProblem, csvProcessor, csvHelper);
-        }
-
-        //remove any cached links of child observations that link to the row we just processed. If the row used
-        //the links, they'll already have been removed. If not, then we can't use them anyway.
-        csvHelper.getAndRemoveObservationParentRelationships(observationGuid, patientGuid);
     }
+
 
     private static void completeProblem(CareRecord_Observation observationParser,
                                          Condition fhirProblem,

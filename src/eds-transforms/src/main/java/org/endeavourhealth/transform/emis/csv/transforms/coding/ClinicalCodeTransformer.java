@@ -9,6 +9,7 @@ import org.endeavourhealth.transform.emis.csv.schema.Coding_ClinicalCode;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.CodingHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.terminology.Snomed;
 import org.hl7.fhir.instance.model.CodeableConcept;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,11 +45,10 @@ public abstract class ClinicalCodeTransformer {
         //close and let our thread pool finish
         threadPool.shutdown();
         try {
-            threadPool.awaitTermination(1, TimeUnit.HOURS);
+            threadPool.awaitTermination(24, TimeUnit.HOURS);
         } catch (InterruptedException ex) {
             LOG.error("Thread interrupted", ex);
         }
-
     }
 
     private static void transform(Coding_ClinicalCode codeParser,
@@ -113,9 +113,7 @@ public abstract class ClinicalCodeTransformer {
 
             //LOG.trace("Looking up for " + snomedConceptId);
             try {
-                //TODO - restore snomed lookup
-                String snomedTerm = "MISSING";
-                //String snomedTerm = Snomed.getTerm(snomedConceptId.longValue(), snomedDescriptionId.longValue());
+                String snomedTerm = Snomed.getTerm(snomedConceptId.longValue(), snomedDescriptionId.longValue());
                 fhirConcept.addCoding(CodingHelper.createCoding(FhirUri.CODE_SYSTEM_SNOMED_CT, snomedTerm, snomedConceptId.toString()));
             } catch (Exception ex) {
                 //if we didn't get a term for the IDs, then it was a local term, so even though the Snomed code

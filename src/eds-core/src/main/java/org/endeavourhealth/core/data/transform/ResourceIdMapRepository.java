@@ -19,10 +19,10 @@ public class ResourceIdMapRepository extends Repository {
         mapper.save(resourceIdMap);
     }
 
-    public ResourceIdMap getResourceIdMap(UUID serviceId, UUID systemInstanceId, String resourceType, String sourceId) {
+    public ResourceIdMap getResourceIdMap(UUID serviceId, UUID systemId, String resourceType, String sourceId) {
 
         ResourceIdMapAccessor accessor = getMappingManager().createAccessor(ResourceIdMapAccessor.class);
-        Iterator<ResourceIdMap> iterator = accessor.getResourceIdMap(serviceId, systemInstanceId, resourceType, sourceId).iterator();
+        Iterator<ResourceIdMap> iterator = accessor.getResourceIdMap(serviceId, systemId, resourceType, sourceId).iterator();
         if (iterator.hasNext()) {
             return iterator.next();
         } else {

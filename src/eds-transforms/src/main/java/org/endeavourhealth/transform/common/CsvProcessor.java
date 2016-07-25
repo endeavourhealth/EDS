@@ -27,7 +27,7 @@ public class CsvProcessor {
 
     private Exchange exchange = null;
     private UUID serviceId = null;
-    private UUID systemInstanceId = null;
+    private UUID systemId = null;
     private FhirStorageService storageService = null;
 
     private Map<String, UUID> patientBatchIdMap = new HashMap<>();
@@ -39,11 +39,11 @@ public class CsvProcessor {
     private Stack<Future<?>> mappingFutures = new Stack<>();*/
     private ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
 
-    public CsvProcessor(Exchange exchange, UUID serviceId, UUID systemInstanceId) {
+    public CsvProcessor(Exchange exchange, UUID serviceId, UUID systemId) {
         this.exchange = exchange;
         this.serviceId = serviceId;
-        this.systemInstanceId = systemInstanceId;
-        this.storageService = new FhirStorageService(serviceId, systemInstanceId);
+        this.systemId = systemId;
+        this.storageService = new FhirStorageService(serviceId, systemId);
     }
 
 
@@ -277,8 +277,8 @@ public class CsvProcessor {
         return serviceId;
     }
 
-    public UUID getSystemInstanceId() {
-        return systemInstanceId;
+    public UUID getSystemId() {
+        return systemId;
     }
 
     class WorkerCallable implements Callable {
@@ -299,7 +299,7 @@ public class CsvProcessor {
         public Object call() throws Exception {
 
             if (mapIds) {
-                IdHelper.mapIds(serviceId, systemInstanceId, resource);
+                IdHelper.mapIds(serviceId, systemId, resource);
             }
 
             List<Resource> list = new ArrayList<>();
@@ -386,7 +386,7 @@ public class CsvProcessor {
 
         private void mapId(ResourceWrapper resourceWrapper) {
             //LOG.trace("Doing " + resourceWrapper.getResource());
-            IdHelper.mapIds(serviceId, systemInstanceId, resourceWrapper.getResource());
+            IdHelper.mapIds(serviceId, systemId, resourceWrapper.getResource());
             //LOG.trace("Done " + resourceWrapper.getResource());
             addResourceWrapperToQueue(resourceWrapper, false);
             //LOG.trace("Added to queue " + resourceWrapper.getResource());

@@ -42,8 +42,8 @@ public class MedicalRecordEndpoint extends AbstractEndpoint {
         List<JsonService> ret = new ArrayList<>();
 
         for (PatientIdentifierByNhsNumber identifier: identifiers) {
-            UUID serviceId = identifier.getSystemInstanceId();
-            UUID orgId = identifier.getServiceId();
+            UUID serviceId = identifier.getServiceId();
+            UUID orgId = null; //identifier.getServiceId();
 
             Organisation org = organisationRepository.getById(orgId);
             Map<UUID, String> serviceDetails = org.getServices();

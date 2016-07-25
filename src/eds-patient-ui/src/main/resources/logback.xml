@@ -17,9 +17,9 @@
     </encoder>
   </appender>-->
 
-
-  <logger name="org.endeavourhealth.patientui" level="TRACE"/>
   <logger name="com.mchange" level="INFO"/>  <!--not interested in logback debug logging -->
+  <logger name="org.endeavourhealth.patientui" level="TRACE"/>
+
 
   <root level="debug">
     <appender-ref ref="STDOUT" />

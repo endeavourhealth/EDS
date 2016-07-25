@@ -13,16 +13,16 @@ public abstract class BaseIdMapper {
     /**
      * maps the main ID of any resource
      */
-    protected void mapResourceId(Resource resource, UUID serviceId, UUID systemInstanceId) {
+    protected void mapResourceId(Resource resource, UUID serviceId, UUID systemId) {
 
-        String newId = IdHelper.getEdsResourceIdString(serviceId, systemInstanceId, resource.getResourceType(), resource.getId());
+        String newId = IdHelper.getEdsResourceIdString(serviceId, systemId, resource.getResourceType(), resource.getId());
         resource.setId(newId);
     }
 
     /**
      * maps the IDs in any extensions of a resource
      */
-    protected void mapExtensions(DomainResource resource, UUID serviceId, UUID systemInstanceId) {
+    protected void mapExtensions(DomainResource resource, UUID serviceId, UUID systemId) {
         if (!resource.hasExtension()) {
             return;
         }
@@ -30,7 +30,7 @@ public abstract class BaseIdMapper {
         for (Extension extension: resource.getExtension()) {
             if (extension.hasValue()
                 && extension.getValue() instanceof Reference) {
-                mapReference((Reference)extension.getValue(), serviceId, systemInstanceId);
+                mapReference((Reference)extension.getValue(), serviceId, systemId);
             }
         }
     }
@@ -38,10 +38,10 @@ public abstract class BaseIdMapper {
     /**
      * maps the IDs in any identifiers of a resource
      */
-    protected void mapIdentifiers(List<Identifier> identifiers, UUID serviceId, UUID systemInstanceId) {
+    protected void mapIdentifiers(List<Identifier> identifiers, UUID serviceId, UUID systemId) {
         for (Identifier identifier: identifiers) {
             if (identifier.hasAssigner()) {
-                mapReference(identifier.getAssigner(), serviceId, systemInstanceId);
+                mapReference(identifier.getAssigner(), serviceId, systemId);
             }
         }
     }
@@ -49,31 +49,31 @@ public abstract class BaseIdMapper {
     /**
      * maps the ID within any reference
      */
-    protected void mapReference(Reference reference, UUID serviceId, UUID systemInstanceId) {
+    protected void mapReference(Reference reference, UUID serviceId, UUID systemId) {
         if (reference == null) {
             return;
         }
 
         ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
-        String newId = IdHelper.getEdsResourceIdString(serviceId, systemInstanceId, comps.getResourceType(), comps.getId());
+        String newId = IdHelper.getEdsResourceIdString(serviceId, systemId, comps.getResourceType(), comps.getId());
         reference.setReference(ReferenceHelper.createResourceReference(comps.getResourceType(), newId));
     }
 
     /**
      * maps the ID within any reference
      */
-    protected void mapReferences(List<Reference> references, UUID serviceId, UUID systemInstanceId) {
+    protected void mapReferences(List<Reference> references, UUID serviceId, UUID systemId) {
         if (references == null
                 || references.isEmpty()) {
             return;
         }
 
         for (Reference reference: references) {
-            mapReference(reference, serviceId, systemInstanceId);
+            mapReference(reference, serviceId, systemId);
         }
     }
 
-    public abstract void mapIds(Resource resource, UUID serviceId, UUID systemInstanceId);
+    public abstract void mapIds(Resource resource, UUID serviceId, UUID systemId);
 
 
 }

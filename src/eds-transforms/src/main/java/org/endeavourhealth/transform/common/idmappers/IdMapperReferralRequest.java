@@ -8,29 +8,29 @@ import java.util.UUID;
 
 public class IdMapperReferralRequest extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemInstanceId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
         ReferralRequest referralRequest = (ReferralRequest)resource;
 
-        super.mapResourceId(referralRequest, serviceId, systemInstanceId);
-        super.mapExtensions(referralRequest, serviceId, systemInstanceId);
+        super.mapResourceId(referralRequest, serviceId, systemId);
+        super.mapExtensions(referralRequest, serviceId, systemId);
 
         if (referralRequest.hasIdentifier()) {
-            super.mapIdentifiers(referralRequest.getIdentifier(), serviceId, systemInstanceId);
+            super.mapIdentifiers(referralRequest.getIdentifier(), serviceId, systemId);
         }
         if (referralRequest.hasPatient()) {
-            super.mapReference(referralRequest.getPatient(), serviceId, systemInstanceId);
+            super.mapReference(referralRequest.getPatient(), serviceId, systemId);
         }
         if (referralRequest.hasRequester()) {
-            super.mapReference(referralRequest.getRequester(), serviceId, systemInstanceId);
+            super.mapReference(referralRequest.getRequester(), serviceId, systemId);
         }
         if (referralRequest.hasRecipient()) {
-            super.mapReferences(referralRequest.getRecipient(), serviceId, systemInstanceId);
+            super.mapReferences(referralRequest.getRecipient(), serviceId, systemId);
         }
         if (referralRequest.hasEncounter()) {
-            super.mapReference(referralRequest.getEncounter(), serviceId, systemInstanceId);
+            super.mapReference(referralRequest.getEncounter(), serviceId, systemId);
         }
         if (referralRequest.hasSupportingInformation()) {
-            super.mapReferences(referralRequest.getSupportingInformation(), serviceId, systemInstanceId);
+            super.mapReferences(referralRequest.getSupportingInformation(), serviceId, systemId);
         }
     }
 }

@@ -8,17 +8,17 @@ import java.util.UUID;
 
 public class IdMapperSchedule extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemInstanceId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
         Schedule schedule = (Schedule)resource;
 
-        super.mapResourceId(schedule, serviceId, systemInstanceId);
-        super.mapExtensions(schedule, serviceId, systemInstanceId);
+        super.mapResourceId(schedule, serviceId, systemId);
+        super.mapExtensions(schedule, serviceId, systemId);
 
         if (schedule.hasIdentifier()) {
-            super.mapIdentifiers(schedule.getIdentifier(), serviceId, systemInstanceId);
+            super.mapIdentifiers(schedule.getIdentifier(), serviceId, systemId);
         }
         if (schedule.hasActor()) {
-            super.mapReference(schedule.getActor(), serviceId, systemInstanceId);
+            super.mapReference(schedule.getActor(), serviceId, systemId);
         }
     }
 }

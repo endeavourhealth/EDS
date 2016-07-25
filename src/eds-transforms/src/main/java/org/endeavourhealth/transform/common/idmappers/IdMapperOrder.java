@@ -8,33 +8,33 @@ import java.util.UUID;
 
 public class IdMapperOrder extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemInstanceId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
         Order order = (Order)resource;
 
-        super.mapResourceId(order, serviceId, systemInstanceId);
-        super.mapExtensions(order, serviceId, systemInstanceId);
+        super.mapResourceId(order, serviceId, systemId);
+        super.mapExtensions(order, serviceId, systemId);
 
         if (order.hasIdentifier()) {
-            super.mapIdentifiers(order.getIdentifier(), serviceId, systemInstanceId);
+            super.mapIdentifiers(order.getIdentifier(), serviceId, systemId);
         }
         if (order.hasSubject()) {
-            super.mapReference(order.getSubject(), serviceId, systemInstanceId);
+            super.mapReference(order.getSubject(), serviceId, systemId);
         }
         if (order.hasSource()) {
-            super.mapReference(order.getSource(), serviceId, systemInstanceId);
+            super.mapReference(order.getSource(), serviceId, systemId);
         }
         if (order.hasTarget()) {
-            super.mapReference(order.getTarget(), serviceId, systemInstanceId);
+            super.mapReference(order.getTarget(), serviceId, systemId);
         }
         if (order.hasReason()) {
             try {
-                super.mapReference(order.getReasonReference(), serviceId, systemInstanceId);
+                super.mapReference(order.getReasonReference(), serviceId, systemId);
             } catch (Exception ex) {
                 //not a problem if not a reference
             }
         }
         if (order.hasDetail()) {
-            super.mapReferences(order.getDetail(), serviceId, systemInstanceId);
+            super.mapReferences(order.getDetail(), serviceId, systemId);
         }
     }
 }

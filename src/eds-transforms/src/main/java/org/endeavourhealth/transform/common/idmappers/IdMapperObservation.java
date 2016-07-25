@@ -8,34 +8,34 @@ import java.util.UUID;
 
 public class IdMapperObservation extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemInstanceId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
         Observation observation = (Observation)resource;
 
-        super.mapResourceId(observation, serviceId, systemInstanceId);
-        super.mapExtensions(observation, serviceId, systemInstanceId);
+        super.mapResourceId(observation, serviceId, systemId);
+        super.mapExtensions(observation, serviceId, systemId);
 
         if (observation.hasIdentifier()) {
-            super.mapIdentifiers(observation.getIdentifier(), serviceId, systemInstanceId);
+            super.mapIdentifiers(observation.getIdentifier(), serviceId, systemId);
         }
         if (observation.hasSubject()) {
-            super.mapReference(observation.getSubject(), serviceId, systemInstanceId);
+            super.mapReference(observation.getSubject(), serviceId, systemId);
         }
         if (observation.hasEncounter()) {
-            super.mapReference(observation.getEncounter(), serviceId, systemInstanceId);
+            super.mapReference(observation.getEncounter(), serviceId, systemId);
         }
         if (observation.hasPerformer()) {
-            super.mapReferences(observation.getPerformer(), serviceId, systemInstanceId);
+            super.mapReferences(observation.getPerformer(), serviceId, systemId);
         }
         if (observation.hasSpecimen()) {
-            super.mapReference(observation.getSpecimen(), serviceId, systemInstanceId);
+            super.mapReference(observation.getSpecimen(), serviceId, systemId);
         }
         if (observation.hasDevice()) {
-            super.mapReference(observation.getDevice(), serviceId, systemInstanceId);
+            super.mapReference(observation.getDevice(), serviceId, systemId);
         }
         if (observation.hasRelated()) {
             for (Observation.ObservationRelatedComponent related: observation.getRelated()) {
                 if (related.hasTarget()) {
-                    super.mapReference(related.getTarget(), serviceId, systemInstanceId);
+                    super.mapReference(related.getTarget(), serviceId, systemId);
                 }
             }
         }

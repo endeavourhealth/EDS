@@ -19,10 +19,10 @@ public class EmisCsvCodeMapRepository extends Repository {
         mapper.save(mapping);
     }
 
-    public EmisCsvCodeMap getMostRecent(UUID serviceId, UUID systemInstanceId, boolean medication, Long codeId) {
+    public EmisCsvCodeMap getMostRecent(UUID serviceId, UUID systemId, boolean medication, Long codeId) {
 
         EmisCsvCodeMapAccessor accessor = getMappingManager().createAccessor(EmisCsvCodeMapAccessor.class);
-        Iterator<EmisCsvCodeMap> iterator = accessor.getMostRecent(serviceId, systemInstanceId, medication, codeId).iterator();
+        Iterator<EmisCsvCodeMap> iterator = accessor.getMostRecent(serviceId, systemId, medication, codeId).iterator();
         if (iterator.hasNext()) {
             return iterator.next();
         } else {

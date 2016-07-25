@@ -11,9 +11,9 @@ import java.util.UUID;
 @Accessor
 public interface ResourceIdMapAccessor {
 
-    @Query("SELECT * FROM transform.resource_id_map WHERE service_id = :service_id AND system_instance_id = :system_instance_id AND resource_type = :resource_type AND source_id = :source_id LIMIT 1")
+    @Query("SELECT * FROM transform.resource_id_map WHERE service_id = :service_id AND system_id = :system_id AND resource_type = :resource_type AND source_id = :source_id LIMIT 1")
     Result<ResourceIdMap> getResourceIdMap(@Param("service_id") UUID serviceId,
-                                           @Param("system_instance_id") UUID systemInstanceId,
+                                           @Param("system_id") UUID systemId,
                                            @Param("resource_type") String resourceType,
                                            @Param("source_id") String sourceId);
 

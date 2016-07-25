@@ -17,17 +17,17 @@ public class PatientIdentifierRepository extends Repository {
 
     public void savePatientIdentity(Patient fhirPatient,
                                     UUID serviceId,
-                                    UUID systemInstanceId) {
+                                    UUID systemId) {
 
         UUID patientId = UUID.fromString(fhirPatient.getId());
 
-        PatientIdentifier patientIdentifier = getMostRecent(serviceId, systemInstanceId, patientId);
+        PatientIdentifier patientIdentifier = getMostRecent(serviceId, systemId, patientId);
 
         //if we've never encountered this patient before, create a new personIdentifier record
         if (patientIdentifier == null) {
             patientIdentifier = new PatientIdentifier();
             patientIdentifier.setServiceId(serviceId);
-            patientIdentifier.setSystemInstanceId(systemInstanceId);
+            patientIdentifier.setSystemId(systemId);
             patientIdentifier.setPatientId(patientId);
         }
 
@@ -123,10 +123,10 @@ public class PatientIdentifierRepository extends Repository {
         mapper.save(patientIdentifier);
     }
 
-    public PatientIdentifier getMostRecent(UUID serviceId, UUID systemInstanceId, UUID patientId) {
+    public PatientIdentifier getMostRecent(UUID serviceId, UUID systemId, UUID patientId) {
 
         PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
-        Iterator<PatientIdentifier> iterator = accessor.getMostRecent(serviceId, systemInstanceId, patientId).iterator();
+        Iterator<PatientIdentifier> iterator = accessor.getMostRecent(serviceId, systemId, patientId).iterator();
         if (iterator.hasNext()) {
             return iterator.next();
         } else {

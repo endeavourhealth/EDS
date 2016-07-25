@@ -8,20 +8,20 @@ import java.util.UUID;
 
 public class IdMapperLocation extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemInstanceId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
         Location location = (Location)resource;
 
-        super.mapResourceId(location, serviceId, systemInstanceId);
-        super.mapExtensions(location, serviceId, systemInstanceId);
+        super.mapResourceId(location, serviceId, systemId);
+        super.mapExtensions(location, serviceId, systemId);
 
         if (location.hasIdentifier()) {
-            super.mapIdentifiers(location.getIdentifier(), serviceId, systemInstanceId);
+            super.mapIdentifiers(location.getIdentifier(), serviceId, systemId);
         }
         if (location.hasManagingOrganization()) {
-            super.mapReference(location.getManagingOrganization(), serviceId, systemInstanceId);
+            super.mapReference(location.getManagingOrganization(), serviceId, systemId);
         }
         if (location.hasPartOf()) {
-            super.mapReference(location.getPartOf(), serviceId, systemInstanceId);
+            super.mapReference(location.getPartOf(), serviceId, systemId);
         }
     }
 }

@@ -8,34 +8,34 @@ import java.util.UUID;
 
 public class IdMapperEpisodeOfCare extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemInstanceId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
         EpisodeOfCare episodeOfCare = (EpisodeOfCare)resource;
 
-        super.mapResourceId(episodeOfCare, serviceId, systemInstanceId);
-        super.mapExtensions(episodeOfCare, serviceId, systemInstanceId);
+        super.mapResourceId(episodeOfCare, serviceId, systemId);
+        super.mapExtensions(episodeOfCare, serviceId, systemId);
 
         if (episodeOfCare.hasIdentifier()) {
-            super.mapIdentifiers(episodeOfCare.getIdentifier(), serviceId, systemInstanceId);
+            super.mapIdentifiers(episodeOfCare.getIdentifier(), serviceId, systemId);
         }
         if (episodeOfCare.hasCondition()) {
-            super.mapReferences(episodeOfCare.getCondition(), serviceId, systemInstanceId);
+            super.mapReferences(episodeOfCare.getCondition(), serviceId, systemId);
         }
         if (episodeOfCare.hasPatient()) {
-            super.mapReference(episodeOfCare.getPatient(), serviceId, systemInstanceId);
+            super.mapReference(episodeOfCare.getPatient(), serviceId, systemId);
         }
         if (episodeOfCare.hasManagingOrganization()) {
-            super.mapReference(episodeOfCare.getManagingOrganization(), serviceId, systemInstanceId);
+            super.mapReference(episodeOfCare.getManagingOrganization(), serviceId, systemId);
         }
         if (episodeOfCare.hasReferralRequest()) {
-            super.mapReferences(episodeOfCare.getReferralRequest(), serviceId, systemInstanceId);
+            super.mapReferences(episodeOfCare.getReferralRequest(), serviceId, systemId);
         }
         if (episodeOfCare.hasCareManager()) {
-            super.mapReference(episodeOfCare.getCareManager(), serviceId, systemInstanceId);
+            super.mapReference(episodeOfCare.getCareManager(), serviceId, systemId);
         }
         if (episodeOfCare.hasCareTeam()) {
             for (EpisodeOfCare.EpisodeOfCareCareTeamComponent careTeam: episodeOfCare.getCareTeam()) {
                 if (careTeam.hasMember()) {
-                    super.mapReference(careTeam.getMember(), serviceId, systemInstanceId);
+                    super.mapReference(careTeam.getMember(), serviceId, systemId);
                 }
             }
         }

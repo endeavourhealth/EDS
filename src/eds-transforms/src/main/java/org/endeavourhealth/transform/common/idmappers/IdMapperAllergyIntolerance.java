@@ -8,20 +8,20 @@ import java.util.UUID;
 public class IdMapperAllergyIntolerance extends BaseIdMapper {
 
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemInstanceId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
         AllergyIntolerance allergyIntolerance = (AllergyIntolerance)resource;
 
-        super.mapResourceId(allergyIntolerance, serviceId, systemInstanceId);
-        super.mapExtensions(allergyIntolerance, serviceId, systemInstanceId);
+        super.mapResourceId(allergyIntolerance, serviceId, systemId);
+        super.mapExtensions(allergyIntolerance, serviceId, systemId);
 
         if (allergyIntolerance.hasIdentifier()) {
-            super.mapIdentifiers(allergyIntolerance.getIdentifier(), serviceId, systemInstanceId);
+            super.mapIdentifiers(allergyIntolerance.getIdentifier(), serviceId, systemId);
         }
         if (allergyIntolerance.hasRecorder()) {
-            super.mapReference(allergyIntolerance.getRecorder(), serviceId, systemInstanceId);
+            super.mapReference(allergyIntolerance.getRecorder(), serviceId, systemId);
         }
         if (allergyIntolerance.hasPatient()) {
-            super.mapReference(allergyIntolerance.getPatient(), serviceId, systemInstanceId);
+            super.mapReference(allergyIntolerance.getPatient(), serviceId, systemId);
         }
     }
 }

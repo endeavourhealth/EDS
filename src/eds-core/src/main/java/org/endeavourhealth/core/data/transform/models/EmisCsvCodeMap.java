@@ -14,8 +14,8 @@ public class EmisCsvCodeMap {
     @Column(name = "service_id")
     private UUID serviceId = null;
     @ClusteringColumn(0)
-    @Column(name = "system_instance_id")
-    private UUID systemInstanceId = null;
+    @Column(name = "system_id")
+    private UUID systemId = null;
     @ClusteringColumn(1)
     @Column(name = "medication")
     private boolean medication = false;
@@ -39,12 +39,12 @@ public class EmisCsvCodeMap {
         this.serviceId = serviceId;
     }
 
-    public UUID getSystemInstanceId() {
-        return systemInstanceId;
+    public UUID getSystemId() {
+        return systemId;
     }
 
-    public void setSystemInstanceId(UUID systemInstanceId) {
-        this.systemInstanceId = systemInstanceId;
+    public void setSystemId(UUID systemId) {
+        this.systemId = systemId;
     }
 
     public boolean isMedication() {
