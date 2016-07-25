@@ -9,6 +9,9 @@ import org.endeavourhealth.core.data.ehr.EventStoreMode;
 import java.util.UUID;
 
 public class ConfigurationRepository extends Repository {
+    public static final UUID RABBIT_NODES = UUID.fromString("7b9dcacf-50b8-4224-8bcc-b93524fc9ae9");
+    public static final UUID ROUTE_GROUPS = UUID.fromString("b9b14e26-5a52-4f36-ad89-f01e465c1361");
+
     public void insert(ConfigurationResource configurationResource){
         if (configurationResource == null)
             throw new IllegalArgumentException("configurationResource is null");

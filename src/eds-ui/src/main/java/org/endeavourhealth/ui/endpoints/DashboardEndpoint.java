@@ -71,11 +71,12 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	@Path("/rabbitNodes")
 	public Response getRabbitNodes(@Context SecurityContext sc) throws Exception {
 		super.setLogbackMarkers(sc);
-		// TODO : Extract to config
+
+		ConfigurationResource rabbitNodes = new ConfigurationRepository().getByKey(ConfigurationRepository.RABBIT_NODES);
+
 		List<JsonRabbitNode> ret = new ArrayList<>();
-		ret.add(new JsonRabbitNode("localhost:15672", 0));
-		ret.add(new JsonRabbitNode("localhost:15673", 0));
-		ret.add(new JsonRabbitNode("localhost:15674", 0));
+		for (String node : rabbitNodes.getConfigurationData().split(",", -1))
+			ret.add(new JsonRabbitNode(node, 0));
 
 		clearLogbackMarkers();
 
