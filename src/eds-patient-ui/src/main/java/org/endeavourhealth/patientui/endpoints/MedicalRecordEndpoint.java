@@ -3,9 +3,7 @@ package org.endeavourhealth.patientui.endpoints;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.ehr.PatientIdentifierByNhsNumberRepository;
-import org.endeavourhealth.core.data.ehr.PersonResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByNhsNumber;
-import org.endeavourhealth.core.data.ehr.models.PersonResource;
 import org.endeavourhealth.patientui.json.JsonService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,12 +72,14 @@ public class MedicalRecordEndpoint extends AbstractEndpoint {
         //TODO - change EHR model to allow getting all resources
         UUID personId = getPersonIdFromSession(sc);
 
+        List<String> ret = new ArrayList<>();
+
+/*
         PersonResourceRepository repository = new PersonResourceRepository();
         Iterable<PersonResource> personResources = repository.getByService(personId,
                 "Organization", UUID.fromString(serviceId));
 
         //List<Resource> ret = new ArrayList<>();
-        List<String> ret = new ArrayList<>();
 
         for (PersonResource personResource: personResources) {
 
@@ -89,7 +89,7 @@ public class MedicalRecordEndpoint extends AbstractEndpoint {
             //Resource resource = p.parse(json);
             //ret.add(resource);
         }
-
+*/
         clearLogbackMarkers();
 
         String json = ret.get(0);

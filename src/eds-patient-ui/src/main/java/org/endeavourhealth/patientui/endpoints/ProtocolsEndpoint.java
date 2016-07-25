@@ -1,7 +1,5 @@
 package org.endeavourhealth.patientui.endpoints;
 
-import org.endeavourhealth.core.data.ehr.PersonResourceRepository;
-import org.endeavourhealth.core.data.ehr.models.PersonResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
