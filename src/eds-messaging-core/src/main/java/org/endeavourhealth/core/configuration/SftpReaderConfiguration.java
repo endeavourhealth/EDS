@@ -1,6 +1,7 @@
 
 package org.endeavourhealth.core.configuration;
 
+import java.math.BigInteger;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -18,7 +19,23 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="Credentials">
+ *         &lt;element name="SftpReaderIdentifier" type="{}nonEmptyString"/>
+ *         &lt;element name="PostgresConnetion">
+ *           &lt;complexType>
+ *             &lt;complexContent>
+ *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+ *                 &lt;sequence>
+ *                   &lt;element name="Hostname" type="{}nonEmptyString"/>
+ *                   &lt;element name="Port" type="{http://www.w3.org/2001/XMLSchema}integer"/>
+ *                   &lt;element name="Database" type="{}nonEmptyString"/>
+ *                   &lt;element name="Username" type="{}nonEmptyString"/>
+ *                   &lt;element name="Password" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *                 &lt;/sequence>
+ *               &lt;/restriction>
+ *             &lt;/complexContent>
+ *           &lt;/complexType>
+ *         &lt;/element>
+ *         &lt;element name="SftpCredentials">
  *           &lt;complexType>
  *             &lt;complexContent>
  *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
@@ -62,7 +79,9 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
-    "credentials",
+    "sftpReaderIdentifier",
+    "postgresConnetion",
+    "sftpCredentials",
     "host",
     "port",
     "remotePath",
@@ -74,8 +93,12 @@ import javax.xml.bind.annotation.XmlType;
 @XmlRootElement(name = "SftpReaderConfiguration")
 public class SftpReaderConfiguration {
 
-    @XmlElement(name = "Credentials", required = true)
-    protected SftpReaderConfiguration.Credentials credentials;
+    @XmlElement(name = "SftpReaderIdentifier", required = true)
+    protected String sftpReaderIdentifier;
+    @XmlElement(name = "PostgresConnetion", required = true)
+    protected SftpReaderConfiguration.PostgresConnetion postgresConnetion;
+    @XmlElement(name = "SftpCredentials", required = true)
+    protected SftpReaderConfiguration.SftpCredentials sftpCredentials;
     @XmlElement(name = "Host", required = true)
     protected String host;
     @XmlElement(name = "Port")
@@ -92,27 +115,75 @@ public class SftpReaderConfiguration {
     protected Pipeline pipeline;
 
     /**
-     * Gets the value of the credentials property.
+     * Gets the value of the sftpReaderIdentifier property.
      * 
      * @return
      *     possible object is
-     *     {@link SftpReaderConfiguration.Credentials }
+     *     {@link String }
      *     
      */
-    public SftpReaderConfiguration.Credentials getCredentials() {
-        return credentials;
+    public String getSftpReaderIdentifier() {
+        return sftpReaderIdentifier;
     }
 
     /**
-     * Sets the value of the credentials property.
+     * Sets the value of the sftpReaderIdentifier property.
      * 
      * @param value
      *     allowed object is
-     *     {@link SftpReaderConfiguration.Credentials }
+     *     {@link String }
      *     
      */
-    public void setCredentials(SftpReaderConfiguration.Credentials value) {
-        this.credentials = value;
+    public void setSftpReaderIdentifier(String value) {
+        this.sftpReaderIdentifier = value;
+    }
+
+    /**
+     * Gets the value of the postgresConnetion property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link SftpReaderConfiguration.PostgresConnetion }
+     *     
+     */
+    public SftpReaderConfiguration.PostgresConnetion getPostgresConnetion() {
+        return postgresConnetion;
+    }
+
+    /**
+     * Sets the value of the postgresConnetion property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link SftpReaderConfiguration.PostgresConnetion }
+     *     
+     */
+    public void setPostgresConnetion(SftpReaderConfiguration.PostgresConnetion value) {
+        this.postgresConnetion = value;
+    }
+
+    /**
+     * Gets the value of the sftpCredentials property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link SftpReaderConfiguration.SftpCredentials }
+     *     
+     */
+    public SftpReaderConfiguration.SftpCredentials getSftpCredentials() {
+        return sftpCredentials;
+    }
+
+    /**
+     * Sets the value of the sftpCredentials property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link SftpReaderConfiguration.SftpCredentials }
+     *     
+     */
+    public void setSftpCredentials(SftpReaderConfiguration.SftpCredentials value) {
+        this.sftpCredentials = value;
     }
 
     /**
@@ -286,145 +357,6 @@ public class SftpReaderConfiguration {
      *   &lt;complexContent>
      *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
      *       &lt;sequence>
-     *         &lt;element name="Username" type="{}nonEmptyString"/>
-     *         &lt;element name="ClientPrivateKeyFilePath" type="{}nonEmptyString"/>
-     *         &lt;element name="ClientPrivateKeyPassword" type="{http://www.w3.org/2001/XMLSchema}string"/>
-     *         &lt;element name="HostPublicKeyFilePath" type="{}nonEmptyString"/>
-     *       &lt;/sequence>
-     *     &lt;/restriction>
-     *   &lt;/complexContent>
-     * &lt;/complexType>
-     * </pre>
-     * 
-     * 
-     */
-    @XmlAccessorType(XmlAccessType.FIELD)
-    @XmlType(name = "", propOrder = {
-        "username",
-        "clientPrivateKeyFilePath",
-        "clientPrivateKeyPassword",
-        "hostPublicKeyFilePath"
-    })
-    public static class Credentials {
-
-        @XmlElement(name = "Username", required = true)
-        protected String username;
-        @XmlElement(name = "ClientPrivateKeyFilePath", required = true)
-        protected String clientPrivateKeyFilePath;
-        @XmlElement(name = "ClientPrivateKeyPassword", required = true)
-        protected String clientPrivateKeyPassword;
-        @XmlElement(name = "HostPublicKeyFilePath", required = true)
-        protected String hostPublicKeyFilePath;
-
-        /**
-         * Gets the value of the username property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getUsername() {
-            return username;
-        }
-
-        /**
-         * Sets the value of the username property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setUsername(String value) {
-            this.username = value;
-        }
-
-        /**
-         * Gets the value of the clientPrivateKeyFilePath property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getClientPrivateKeyFilePath() {
-            return clientPrivateKeyFilePath;
-        }
-
-        /**
-         * Sets the value of the clientPrivateKeyFilePath property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setClientPrivateKeyFilePath(String value) {
-            this.clientPrivateKeyFilePath = value;
-        }
-
-        /**
-         * Gets the value of the clientPrivateKeyPassword property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getClientPrivateKeyPassword() {
-            return clientPrivateKeyPassword;
-        }
-
-        /**
-         * Sets the value of the clientPrivateKeyPassword property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setClientPrivateKeyPassword(String value) {
-            this.clientPrivateKeyPassword = value;
-        }
-
-        /**
-         * Gets the value of the hostPublicKeyFilePath property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getHostPublicKeyFilePath() {
-            return hostPublicKeyFilePath;
-        }
-
-        /**
-         * Sets the value of the hostPublicKeyFilePath property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setHostPublicKeyFilePath(String value) {
-            this.hostPublicKeyFilePath = value;
-        }
-
-    }
-
-
-    /**
-     * <p>Java class for anonymous complex type.
-     * 
-     * <p>The following schema fragment specifies the expected content contained within this class.
-     * 
-     * <pre>
-     * &lt;complexType>
-     *   &lt;complexContent>
-     *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
-     *       &lt;sequence>
      *         &lt;element name="PgpFileExtension" type="{}nonEmptyString"/>
      *         &lt;element name="RecipientPrivateKeyFilePath" type="{}nonEmptyString"/>
      *         &lt;element name="RecipientPrivateKeyPassword" type="{http://www.w3.org/2001/XMLSchema}string"/>
@@ -549,6 +481,312 @@ public class SftpReaderConfiguration {
          */
         public void setSenderPublicKeyFilePath(String value) {
             this.senderPublicKeyFilePath = value;
+        }
+
+    }
+
+
+    /**
+     * <p>Java class for anonymous complex type.
+     * 
+     * <p>The following schema fragment specifies the expected content contained within this class.
+     * 
+     * <pre>
+     * &lt;complexType>
+     *   &lt;complexContent>
+     *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+     *       &lt;sequence>
+     *         &lt;element name="Hostname" type="{}nonEmptyString"/>
+     *         &lt;element name="Port" type="{http://www.w3.org/2001/XMLSchema}integer"/>
+     *         &lt;element name="Database" type="{}nonEmptyString"/>
+     *         &lt;element name="Username" type="{}nonEmptyString"/>
+     *         &lt;element name="Password" type="{http://www.w3.org/2001/XMLSchema}string"/>
+     *       &lt;/sequence>
+     *     &lt;/restriction>
+     *   &lt;/complexContent>
+     * &lt;/complexType>
+     * </pre>
+     * 
+     * 
+     */
+    @XmlAccessorType(XmlAccessType.FIELD)
+    @XmlType(name = "", propOrder = {
+        "hostname",
+        "port",
+        "database",
+        "username",
+        "password"
+    })
+    public static class PostgresConnetion {
+
+        @XmlElement(name = "Hostname", required = true)
+        protected String hostname;
+        @XmlElement(name = "Port", required = true)
+        protected BigInteger port;
+        @XmlElement(name = "Database", required = true)
+        protected String database;
+        @XmlElement(name = "Username", required = true)
+        protected String username;
+        @XmlElement(name = "Password", required = true)
+        protected String password;
+
+        /**
+         * Gets the value of the hostname property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link String }
+         *     
+         */
+        public String getHostname() {
+            return hostname;
+        }
+
+        /**
+         * Sets the value of the hostname property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link String }
+         *     
+         */
+        public void setHostname(String value) {
+            this.hostname = value;
+        }
+
+        /**
+         * Gets the value of the port property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link BigInteger }
+         *     
+         */
+        public BigInteger getPort() {
+            return port;
+        }
+
+        /**
+         * Sets the value of the port property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link BigInteger }
+         *     
+         */
+        public void setPort(BigInteger value) {
+            this.port = value;
+        }
+
+        /**
+         * Gets the value of the database property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link String }
+         *     
+         */
+        public String getDatabase() {
+            return database;
+        }
+
+        /**
+         * Sets the value of the database property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link String }
+         *     
+         */
+        public void setDatabase(String value) {
+            this.database = value;
+        }
+
+        /**
+         * Gets the value of the username property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link String }
+         *     
+         */
+        public String getUsername() {
+            return username;
+        }
+
+        /**
+         * Sets the value of the username property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link String }
+         *     
+         */
+        public void setUsername(String value) {
+            this.username = value;
+        }
+
+        /**
+         * Gets the value of the password property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link String }
+         *     
+         */
+        public String getPassword() {
+            return password;
+        }
+
+        /**
+         * Sets the value of the password property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link String }
+         *     
+         */
+        public void setPassword(String value) {
+            this.password = value;
+        }
+
+    }
+
+
+    /**
+     * <p>Java class for anonymous complex type.
+     * 
+     * <p>The following schema fragment specifies the expected content contained within this class.
+     * 
+     * <pre>
+     * &lt;complexType>
+     *   &lt;complexContent>
+     *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+     *       &lt;sequence>
+     *         &lt;element name="Username" type="{}nonEmptyString"/>
+     *         &lt;element name="ClientPrivateKeyFilePath" type="{}nonEmptyString"/>
+     *         &lt;element name="ClientPrivateKeyPassword" type="{http://www.w3.org/2001/XMLSchema}string"/>
+     *         &lt;element name="HostPublicKeyFilePath" type="{}nonEmptyString"/>
+     *       &lt;/sequence>
+     *     &lt;/restriction>
+     *   &lt;/complexContent>
+     * &lt;/complexType>
+     * </pre>
+     * 
+     * 
+     */
+    @XmlAccessorType(XmlAccessType.FIELD)
+    @XmlType(name = "", propOrder = {
+        "username",
+        "clientPrivateKeyFilePath",
+        "clientPrivateKeyPassword",
+        "hostPublicKeyFilePath"
+    })
+    public static class SftpCredentials {
+
+        @XmlElement(name = "Username", required = true)
+        protected String username;
+        @XmlElement(name = "ClientPrivateKeyFilePath", required = true)
+        protected String clientPrivateKeyFilePath;
+        @XmlElement(name = "ClientPrivateKeyPassword", required = true)
+        protected String clientPrivateKeyPassword;
+        @XmlElement(name = "HostPublicKeyFilePath", required = true)
+        protected String hostPublicKeyFilePath;
+
+        /**
+         * Gets the value of the username property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link String }
+         *     
+         */
+        public String getUsername() {
+            return username;
+        }
+
+        /**
+         * Sets the value of the username property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link String }
+         *     
+         */
+        public void setUsername(String value) {
+            this.username = value;
+        }
+
+        /**
+         * Gets the value of the clientPrivateKeyFilePath property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link String }
+         *     
+         */
+        public String getClientPrivateKeyFilePath() {
+            return clientPrivateKeyFilePath;
+        }
+
+        /**
+         * Sets the value of the clientPrivateKeyFilePath property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link String }
+         *     
+         */
+        public void setClientPrivateKeyFilePath(String value) {
+            this.clientPrivateKeyFilePath = value;
+        }
+
+        /**
+         * Gets the value of the clientPrivateKeyPassword property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link String }
+         *     
+         */
+        public String getClientPrivateKeyPassword() {
+            return clientPrivateKeyPassword;
+        }
+
+        /**
+         * Sets the value of the clientPrivateKeyPassword property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link String }
+         *     
+         */
+        public void setClientPrivateKeyPassword(String value) {
+            this.clientPrivateKeyPassword = value;
+        }
+
+        /**
+         * Gets the value of the hostPublicKeyFilePath property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link String }
+         *     
+         */
+        public String getHostPublicKeyFilePath() {
+            return hostPublicKeyFilePath;
+        }
+
+        /**
+         * Sets the value of the hostPublicKeyFilePath property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link String }
+         *     
+         */
+        public void setHostPublicKeyFilePath(String value) {
+            this.hostPublicKeyFilePath = value;
         }
 
     }

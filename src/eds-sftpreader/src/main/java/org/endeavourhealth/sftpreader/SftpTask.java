@@ -220,9 +220,9 @@ public class SftpTask extends TimerTask
         return new SftpConnectionDetails()
                 .setHostname(this.configuration.getHost())
                 .setPort(this.configuration.getPort())
-                .setUsername(this.configuration.getCredentials().getUsername())
-                .setClientPrivateKeyFilePath(this.configuration.getCredentials().getClientPrivateKeyFilePath())
-                .setClientPrivateKeyPassword(this.configuration.getCredentials().getClientPrivateKeyPassword())
-                .setHostPublicKeyFilePath(this.configuration.getCredentials().getHostPublicKeyFilePath());
+                .setUsername(this.configuration.getSftpCredentials().getUsername())
+                .setClientPrivateKeyFilePath(this.configuration.getSftpCredentials().getClientPrivateKeyFilePath())
+                .setClientPrivateKeyPassword(this.configuration.getSftpCredentials().getClientPrivateKeyPassword())
+                .setHostPublicKeyFilePath(this.configuration.getSftpCredentials().getHostPublicKeyFilePath());
     }
 }

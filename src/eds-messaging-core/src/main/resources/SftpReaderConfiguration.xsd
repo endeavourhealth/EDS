@@ -6,7 +6,19 @@
     <xs:element name="SftpReaderConfiguration">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="Credentials">
+                <xs:element name="SftpReaderIdentifier" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+                <xs:element name="PostgresConnetion">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="Hostname" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+                            <xs:element name="Port" type="xs:integer" minOccurs="1" maxOccurs="1"/>
+                            <xs:element name="Database" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+                            <xs:element name="Username" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+                            <xs:element name="Password" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="SftpCredentials">
                     <xs:complexType>
                         <xs:sequence>
                             <xs:element name="Username" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>

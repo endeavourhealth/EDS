@@ -38,11 +38,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link SftpReaderConfiguration.Credentials }
+     * Create an instance of {@link SftpReaderConfiguration.PostgresConnetion }
      * 
      */
-    public SftpReaderConfiguration.Credentials createSftpReaderConfigurationCredentials() {
-        return new SftpReaderConfiguration.Credentials();
+    public SftpReaderConfiguration.PostgresConnetion createSftpReaderConfigurationPostgresConnetion() {
+        return new SftpReaderConfiguration.PostgresConnetion();
+    }
+
+    /**
+     * Create an instance of {@link SftpReaderConfiguration.SftpCredentials }
+     * 
+     */
+    public SftpReaderConfiguration.SftpCredentials createSftpReaderConfigurationSftpCredentials() {
+        return new SftpReaderConfiguration.SftpCredentials();
     }
 
     /**
@@ -206,11 +214,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link org.endeavourhealth.core.configuration.Credentials }
+     * Create an instance of {@link Credentials }
      * 
      */
-    public org.endeavourhealth.core.configuration.Credentials createCredentials() {
-        return new org.endeavourhealth.core.configuration.Credentials();
+    public Credentials createCredentials() {
+        return new Credentials();
     }
 
 }

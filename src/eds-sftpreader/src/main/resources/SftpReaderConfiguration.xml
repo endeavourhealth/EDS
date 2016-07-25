@@ -1,25 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <SftpReaderConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                          xsi:noNamespaceSchemaLocation="../../../../eds-messaging-core/src/main/resources/SftpReaderConfiguration.xsd">
-  <Credentials>
-    <Username>test-endeavour</Username>
-    <ClientPrivateKeyFilePath>test-ssh-client-private.key</ClientPrivateKeyFilePath>
-    <ClientPrivateKeyPassword></ClientPrivateKeyPassword>
-    <HostPublicKeyFilePath>test-ssh-host-public.pub</HostPublicKeyFilePath>
-  </Credentials>
-  <Host>endeavour-sftp.cloudapp.net</Host>
-  <Port>22</Port>
-  <RemotePath>/gpg</RemotePath>
-  <LocalPath>/Users/jonny/Code/Local/sftp</LocalPath>
-  <PgpDecryption>
-      <PgpFileExtension>.gpg</PgpFileExtension>
-      <RecipientPrivateKeyFilePath>test-pgp-endeavour-private.asc</RecipientPrivateKeyFilePath>
-      <RecipientPrivateKeyPassword>password</RecipientPrivateKeyPassword>
-      <SenderPublicKeyFilePath>test-pgp-emis-public.asc</SenderPublicKeyFilePath>
-  </PgpDecryption>
-  <PollDelaySeconds>10</PollDelaySeconds>
+    <SftpReaderIdentifier>EMIS001</SftpReaderIdentifier>
+    <PostgresConnetion>
+        <Hostname>localhost</Hostname>
+        <Port>5432</Port>
+        <Database>sftpreader</Database>
+        <Username>postgres</Username>
+        <Password></Password>
+    </PostgresConnetion>
+
+    <!-- move to database -->
+    <SftpCredentials>
+        <Username>test-endeavour</Username>
+        <ClientPrivateKeyFilePath>test-ssh-client-private.key</ClientPrivateKeyFilePath>
+        <ClientPrivateKeyPassword></ClientPrivateKeyPassword>
+        <HostPublicKeyFilePath>test-ssh-host-public.pub</HostPublicKeyFilePath>
+    </SftpCredentials>
+    <Host>endeavour-sftp.cloudapp.net</Host>
+    <Port>22</Port>
+    <RemotePath>/gpg</RemotePath>
+    <LocalPath>/Users/jonny/Code/Local/sftp</LocalPath>
+    <PgpDecryption>
+        <PgpFileExtension>.gpg</PgpFileExtension>
+        <RecipientPrivateKeyFilePath>test-pgp-endeavour-private.asc</RecipientPrivateKeyFilePath>
+        <RecipientPrivateKeyPassword>password</RecipientPrivateKeyPassword>
+        <SenderPublicKeyFilePath>test-pgp-emis-public.asc</SenderPublicKeyFilePath>
+    </PgpDecryption>
+    <PollDelaySeconds>10</PollDelaySeconds>
     <Pipeline>
-        <PGPDecrypt/>
         <EnvelopMessage>
             <ExchangeHeaders>
                 <Header Key="content-type">text/json</Header>
@@ -36,4 +45,5 @@
             <SendHeaders>Content-Type</SendHeaders>
         </PostToRest>
     </Pipeline>
+    <!-- -->
 </SftpReaderConfiguration>
