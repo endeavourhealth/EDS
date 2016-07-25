@@ -63,10 +63,6 @@ public class ValidateMessageType extends PipelineComponent {
 			throw new PipelineException("Error parsing protocol JSON : " + e.getMessage());
 		}
 
-		// Determine type of message
-
-		// Ensure type is valid for sender
-
 		LOG.debug("Message validated");
 	}
 }

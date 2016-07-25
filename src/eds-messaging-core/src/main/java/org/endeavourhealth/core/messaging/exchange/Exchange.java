@@ -1,14 +1,9 @@
 package org.endeavourhealth.core.messaging.exchange;
 
-import org.endeavourhealth.core.messaging.EDSMethod;
-
 import java.util.*;
 
 public class Exchange {
 	private Exception exception;
-
-	private EDSMethod method;
-	private String requester;
 
 	private Map<String, String> headers;
 	private UUID exchangeId = null;
@@ -57,22 +52,6 @@ public class Exchange {
 
 	public Map<String, String> getHeaders() {
 		return headers;
-	}
-
-	public void setMethod(EDSMethod method) {
-		this.method = method;
-	}
-
-	public EDSMethod getMethod() {
-		return this.method;
-	}
-
-	public String getRequester() {
-		return requester;
-	}
-
-	public void setRequester(String requester) {
-		this.requester = requester;
 	}
 
 	public Exception getException() {

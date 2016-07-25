@@ -25,7 +25,7 @@ public class ReturnResponseAcknowledgement extends PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
-		// NOTE: Doesnt actually return response here, just sets response body to be returned by AbstractEndpoint process()
+		// NOTE: Doesn't actually return response here, just sets response body to be returned by AbstractEndpoint process()
 
 		MessageHeader messageHeader = buildMessageHeader(exchange);
 
