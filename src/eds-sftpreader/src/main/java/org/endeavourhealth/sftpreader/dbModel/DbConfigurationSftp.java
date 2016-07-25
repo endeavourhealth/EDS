@@ -1,8 +1,7 @@
-package org.endeavourhealth.sftpreader.model;
+package org.endeavourhealth.sftpreader.dbModel;
 
-public class DBConfiguration
+public class DbConfigurationSftp
 {
-    private String instanceId;
     private String hostname;
     private int port;
     private String remotePath;
@@ -11,23 +10,12 @@ public class DBConfiguration
     private String clientPrivateKeyPassword;
     private String hostPublicKey;
 
-    public String getInstanceId()
-    {
-        return instanceId;
-    }
-
-    public DBConfiguration setInstanceId(String instanceId)
-    {
-        this.instanceId = instanceId;
-        return this;
-    }
-
     public String getHostname()
     {
         return hostname;
     }
 
-    public DBConfiguration setHostname(String hostname)
+    public DbConfigurationSftp setHostname(String hostname)
     {
         this.hostname = hostname;
         return this;
@@ -38,7 +26,7 @@ public class DBConfiguration
         return port;
     }
 
-    public DBConfiguration setPort(int port)
+    public DbConfigurationSftp setPort(int port)
     {
         this.port = port;
         return this;
@@ -49,7 +37,7 @@ public class DBConfiguration
         return remotePath;
     }
 
-    public DBConfiguration setRemotePath(String remotePath)
+    public DbConfigurationSftp setRemotePath(String remotePath)
     {
         this.remotePath = remotePath;
         return this;
@@ -60,7 +48,7 @@ public class DBConfiguration
         return username;
     }
 
-    public DBConfiguration setUsername(String username)
+    public DbConfigurationSftp setUsername(String username)
     {
         this.username = username;
         return this;
@@ -71,7 +59,7 @@ public class DBConfiguration
         return clientPrivateKey;
     }
 
-    public DBConfiguration setClientPrivateKey(String clientPrivateKey)
+    public DbConfigurationSftp setClientPrivateKey(String clientPrivateKey)
     {
         this.clientPrivateKey = clientPrivateKey;
         return this;
@@ -82,7 +70,7 @@ public class DBConfiguration
         return clientPrivateKeyPassword;
     }
 
-    public DBConfiguration setClientPrivateKeyPassword(String clientPrivateKeyPassword)
+    public DbConfigurationSftp setClientPrivateKeyPassword(String clientPrivateKeyPassword)
     {
         this.clientPrivateKeyPassword = clientPrivateKeyPassword;
         return this;
@@ -93,7 +81,7 @@ public class DBConfiguration
         return hostPublicKey;
     }
 
-    public DBConfiguration setHostPublicKey(String hostPublicKey)
+    public DbConfigurationSftp setHostPublicKey(String hostPublicKey)
     {
         this.hostPublicKey = hostPublicKey;
         return this;

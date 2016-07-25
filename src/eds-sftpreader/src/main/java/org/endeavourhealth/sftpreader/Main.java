@@ -1,7 +1,7 @@
 package org.endeavourhealth.sftpreader;
 
-import org.endeavourhealth.core.configuration.SftpReaderConfiguration;
 import org.endeavourhealth.core.data.logging.LogbackCassandraAppender;
+import org.endeavourhealth.sftpreader.dbModel.DbConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,15 +17,17 @@ public class Main
 	{
 		try
 		{
-			Configuration.initialiseEngineConfiguration(args);
+			DataLayer dataLayer = new DataLayer(Configuration.getInstance().getDataSource());
+
+			DbConfiguration dbConfiguration = dataLayer.getConfiguration(Configuration.getInstance().getInstanceId());
+
+			Configuration.getInstance().initialiseEngineConfiguration(args);
 
 			startCassandraLogging();
 
 			writeHeaderLogLine(PROGRAM_DISPLAY_NAME);
 
-			SftpReaderConfiguration configuration = Configuration.loadLocalConfiguration(args);
-
-			runSftpHandlerAndWaitForInput(configuration);
+			runSftpHandlerAndWaitForInput(dbConfiguration);
 
 			writeHeaderLogLine(PROGRAM_DISPLAY_NAME + " stopped");
 		}
@@ -47,15 +49,15 @@ public class Main
 		LOG.info("--------------------------------------------------");
 	}
 
-	private static void runSftpHandlerAndWaitForInput(SftpReaderConfiguration configuration) throws IOException
+	private static void runSftpHandlerAndWaitForInput(DbConfiguration dbConfiguration) throws IOException
 	{
-		SftpTask sftpTask = new SftpTask(configuration);
+		SftpTask sftpTask = new SftpTask(dbConfiguration);
 
 		Timer timer = new Timer(true);
 
 		try
 		{
-			timer.scheduleAtFixedRate(sftpTask, 0, configuration.getPollDelaySeconds() * 1000);
+			timer.scheduleAtFixedRate(sftpTask, 0, dbConfiguration.getPollFrequencySeconds() * 1000);
 
 			LOG.info("");
 			LOG.info("Press any key to exit...");

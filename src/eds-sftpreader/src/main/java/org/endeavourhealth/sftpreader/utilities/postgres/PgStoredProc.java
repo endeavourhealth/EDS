@@ -68,6 +68,22 @@ public class PgStoredProc
         return this.outParameters.get(name);
     }
 
+    public <T extends Object> T executeScalar(IResultSetPopulator<T> rowMapper) throws PgStoredProcException
+    {
+        List<T> resultList = executeQuery(rowMapper);
+
+        if (resultList == null)
+            throw new PgStoredProcException("No results returned (null list)");
+
+        if (resultList.size() == 0)
+            throw new PgStoredProcException("No results returned");
+
+        if (resultList.size() > 1)
+            throw new PgStoredProcException("More than one result returned");
+
+        return resultList.get(0);
+    }
+
     public <T extends Object> List<T> executeQuery(IResultSetPopulator<T> rowMapper) throws PgStoredProcException
     {
         try

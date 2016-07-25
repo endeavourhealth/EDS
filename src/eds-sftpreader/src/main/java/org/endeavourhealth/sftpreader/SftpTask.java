@@ -1,11 +1,12 @@
 package org.endeavourhealth.sftpreader;
 
+import com.google.common.io.Resources;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.openpgp.PGPException;
-import org.endeavourhealth.core.configuration.SftpReaderConfiguration;
+import org.endeavourhealth.sftpreader.dbModel.*;
 import org.endeavourhealth.sftpreader.utilities.pgp.PgpUtil;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnection;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionDetails;
@@ -17,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.NoSuchProviderException;
 import java.security.SignatureException;
 import java.time.ZoneOffset;
@@ -29,11 +31,11 @@ public class SftpTask extends TimerTask
 {
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(SftpTask.class);
 
-    private SftpReaderConfiguration configuration;
+    private DbConfiguration configuration;
 
-    public SftpTask(SftpReaderConfiguration configuration)
+    public SftpTask(DbConfiguration dbConfiguration)
     {
-        this.configuration = configuration;
+        this.configuration = dbConfiguration;
     }
 
     @Override
@@ -48,8 +50,8 @@ public class SftpTask extends TimerTask
 
         try
         {
-            String destinationPath = configuration.getLocalPath();
-            String sessionPath = createSessionDirectory(configuration.getLocalPath());
+            String destinationPath = configuration.getLocalRootPath();
+            String sessionPath = createSessionDirectory(configuration.getLocalRootPath());
 
             sftpConnection = openSftpConnection();
 
@@ -77,6 +79,8 @@ public class SftpTask extends TimerTask
 
                 //deleteRemoteFile(sftpConnection, remoteFilePath);
 
+
+
                 LOG.info(">End Processing file " + sftpRemoteFile.getFilename());
             }
         }
@@ -92,8 +96,8 @@ public class SftpTask extends TimerTask
 
     private boolean doesFileNeedDecrypting(String localFilePath)
     {
-        if (configuration.getPgpDecryption() != null)
-            if (localFilePath.endsWith(configuration.getPgpDecryption().getPgpFileExtension()))
+        if (configuration.getDbConfigurationPgp() != null)
+            if (localFilePath.endsWith(configuration.getDbConfigurationPgp().getPgpFileExtensionFilter()))
                 return true;
 
         return false;
@@ -101,7 +105,7 @@ public class SftpTask extends TimerTask
 
     private String getDecryptedFilePath(String localFilePath)
     {
-        return StringUtils.removeEnd(localFilePath, configuration.getPgpDecryption().getPgpFileExtension());
+        return StringUtils.removeEnd(localFilePath, configuration.getDbConfigurationPgp().getPgpFileExtensionFilter());
     }
 
     private void copyFileToDestination(String sourceFilePath, String destinationDirectory) throws IOException
@@ -139,9 +143,9 @@ public class SftpTask extends TimerTask
     {
         LOG.info("Decrypting file " + localFilePath);
 
-        String senderPublicKeyFilePath = configuration.getPgpDecryption().getSenderPublicKeyFilePath();
-        String recipientPrivateKeyFilePath = configuration.getPgpDecryption().getRecipientPrivateKeyFilePath();
-        String recipientPrivateKeyPassword = configuration.getPgpDecryption().getRecipientPrivateKeyPassword();
+        String senderPublicKeyFilePath = resolveFilePath(configuration.getDbConfigurationPgp().getPgpSenderPublicKey());
+        String recipientPrivateKeyFilePath = resolveFilePath(configuration.getDbConfigurationPgp().getPgpRecipientPrivateKey());
+        String recipientPrivateKeyPassword = configuration.getDbConfigurationPgp().getPgpRecipientPrivateKeyPassword();
 
         PgpUtil.decryptAndVerify(localFilePath, senderPublicKeyFilePath, recipientPrivateKeyFilePath, recipientPrivateKeyPassword, decryptedLocalFilePath);
     }
@@ -206,9 +210,11 @@ public class SftpTask extends TimerTask
 
     private List<SftpRemoteFile> getFileList(SftpConnection sftpConnection) throws SftpException
     {
-        LOG.info("Get file list at " + configuration.getRemotePath());
+        String remotePath = configuration.getDbConfigurationSftp().getRemotePath();
 
-        List<SftpRemoteFile> fileList = sftpConnection.getFileList(configuration.getRemotePath());
+        LOG.info("Get file list at " + remotePath);
+
+        List<SftpRemoteFile> fileList = sftpConnection.getFileList(remotePath);
 
         LOG.info("Found " + Integer.toString(fileList.size()) + " files");
 
@@ -217,12 +223,22 @@ public class SftpTask extends TimerTask
 
     private SftpConnectionDetails getSftpConnectionDetails()
     {
+        DbConfigurationSftp configurationSftp = configuration.getDbConfigurationSftp();
+
         return new SftpConnectionDetails()
-                .setHostname(this.configuration.getHost())
-                .setPort(this.configuration.getPort())
-                .setUsername(this.configuration.getSftpCredentials().getUsername())
-                .setClientPrivateKeyFilePath(this.configuration.getSftpCredentials().getClientPrivateKeyFilePath())
-                .setClientPrivateKeyPassword(this.configuration.getSftpCredentials().getClientPrivateKeyPassword())
-                .setHostPublicKeyFilePath(this.configuration.getSftpCredentials().getHostPublicKeyFilePath());
+                .setHostname(configurationSftp.getHostname())
+                .setPort(configurationSftp.getPort())
+                .setUsername(configurationSftp.getUsername())
+                .setClientPrivateKeyFilePath(resolveFilePath(configurationSftp.getClientPrivateKey()))
+                .setClientPrivateKeyPassword(configurationSftp.getClientPrivateKeyPassword())
+                .setHostPublicKeyFilePath(resolveFilePath(configurationSftp.getHostPublicKey()));
+    }
+
+    private static String resolveFilePath(String filePath)
+    {
+        if (!Files.exists(Paths.get(filePath)))
+            return Resources.getResource(filePath).getPath();
+
+        return filePath;
     }
 }

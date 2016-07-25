@@ -46,30 +46,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link SftpReaderConfiguration.SftpCredentials }
-     * 
-     */
-    public SftpReaderConfiguration.SftpCredentials createSftpReaderConfigurationSftpCredentials() {
-        return new SftpReaderConfiguration.SftpCredentials();
-    }
-
-    /**
-     * Create an instance of {@link SftpReaderConfiguration.PgpDecryption }
-     * 
-     */
-    public SftpReaderConfiguration.PgpDecryption createSftpReaderConfigurationPgpDecryption() {
-        return new SftpReaderConfiguration.PgpDecryption();
-    }
-
-    /**
-     * Create an instance of {@link Pipeline }
-     * 
-     */
-    public Pipeline createPipeline() {
-        return new Pipeline();
-    }
-
-    /**
      * Create an instance of {@link PostToRestConfig }
      * 
      */
@@ -139,6 +115,14 @@ public class ObjectFactory {
      */
     public PGPDecryptConfig createPGPDecryptConfig() {
         return new PGPDecryptConfig();
+    }
+
+    /**
+     * Create an instance of {@link Pipeline }
+     * 
+     */
+    public Pipeline createPipeline() {
+        return new Pipeline();
     }
 
     /**

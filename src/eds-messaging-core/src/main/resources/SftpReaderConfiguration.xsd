@@ -6,8 +6,8 @@
     <xs:element name="SftpReaderConfiguration">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="SftpReaderIdentifier" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
-                <xs:element name="PostgresConnetion">
+                <xs:element name="InstanceId" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+                <xs:element name="PostgresConnetion" minOccurs="1" maxOccurs="1">
                     <xs:complexType>
                         <xs:sequence>
                             <xs:element name="Hostname" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
@@ -18,32 +18,6 @@
                         </xs:sequence>
                     </xs:complexType>
                 </xs:element>
-                <xs:element name="SftpCredentials">
-                    <xs:complexType>
-                        <xs:sequence>
-                            <xs:element name="Username" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
-                            <xs:element name="ClientPrivateKeyFilePath" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
-                            <xs:element name="ClientPrivateKeyPassword" type="xs:string" minOccurs="1" maxOccurs="1"/>
-                            <xs:element name="HostPublicKeyFilePath" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
-                        </xs:sequence>
-                    </xs:complexType>
-                </xs:element>
-                <xs:element name="Host" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
-                <xs:element name="Port" type="xs:int" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="RemotePath" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
-                <xs:element name="LocalPath" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
-                <xs:element name="PgpDecryption">
-                    <xs:complexType>
-                        <xs:sequence>
-                            <xs:element name="PgpFileExtension" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
-                            <xs:element name="RecipientPrivateKeyFilePath" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
-                            <xs:element name="RecipientPrivateKeyPassword" type="xs:string" minOccurs="1" maxOccurs="1"/>
-                            <xs:element name="SenderPublicKeyFilePath" type="xs:string" minOccurs="1" maxOccurs="1"/>
-                        </xs:sequence>
-                    </xs:complexType>
-                </xs:element>
-                <xs:element name="PollDelaySeconds" type="xs:int" minOccurs="1" maxOccurs="1"/>
-                <xs:element name="Pipeline" type="Pipeline" minOccurs="1" maxOccurs="1"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
