@@ -8,7 +8,6 @@
     <Queue>EdsInbound-A-M</Queue>
     <Pipeline>
         <MessageTransform/>
-        <PostToEventStore/>
         <PostMessageToExchange>
             <Credentials>
                 <Username>guest</Username>

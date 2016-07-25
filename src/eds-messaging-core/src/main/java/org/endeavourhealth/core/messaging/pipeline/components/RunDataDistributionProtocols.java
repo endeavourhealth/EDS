@@ -34,6 +34,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		LibraryItem protocolToRun = getProtocol(exchange);
 		setProtocolData(exchange, protocolToRun);
 
+		String batchIds = exchange.getHeader(HeaderKeys.BatchIds);
 		String fhirMessage = exchange.getBody();
 
 		// Run DDP

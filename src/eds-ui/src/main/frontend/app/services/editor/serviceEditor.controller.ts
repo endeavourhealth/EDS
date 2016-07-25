@@ -53,7 +53,8 @@ module app.service {
 		create(uuid : string) {
 			this.service = {
 				uuid : uuid,
-				name : 'New item'
+				name : 'New item',
+				endpoints : []
 			} as Service;
 		}
 
@@ -90,7 +91,7 @@ module app.service {
 
 		private addEndpoint() {
 			var newEndpoint = {
-
+				endpoint : "http://"
 			} as Endpoint;
 			this.service.endpoints.push(newEndpoint);
 			this.selectedEndpoint = newEndpoint;

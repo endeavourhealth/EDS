@@ -31,8 +31,7 @@ module app.service {
 		}
 
 		add() {
-			var newService : Service = new Service();
-			this.edit(newService);
+			this.$state.go('app.serviceAction', {itemUuid: null, itemAction: 'add'});
 		}
 
 		edit(item : Service) {

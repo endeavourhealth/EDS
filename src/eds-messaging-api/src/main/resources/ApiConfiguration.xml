@@ -21,7 +21,6 @@
             <OpenEnvelope/>
             <DetermineRelevantProtocolIds/>
             <ValidateSender/>
-            <LoadSenderConfiguration/>
             <ValidateMessageType/>
             <PostMessageToLog>
                 <EventType>Receive</EventType>
