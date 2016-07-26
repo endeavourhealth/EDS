@@ -1,8 +1,8 @@
 package org.endeavourhealth.sftpreader;
 
-import org.endeavourhealth.sftpreader.dbModel.DbConfiguration;
-import org.endeavourhealth.sftpreader.dbModel.DbConfigurationPgp;
-import org.endeavourhealth.sftpreader.dbModel.DbConfigurationSftp;
+import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
+import org.endeavourhealth.sftpreader.model.db.DbConfigurationPgp;
+import org.endeavourhealth.sftpreader.model.db.DbConfigurationSftp;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProc;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 

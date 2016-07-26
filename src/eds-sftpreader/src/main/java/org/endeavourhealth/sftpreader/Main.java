@@ -1,10 +1,6 @@
 package org.endeavourhealth.sftpreader;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.db.DBAppender;
-import ch.qos.logback.core.db.DriverManagerConnectionSource;
-import org.endeavourhealth.core.data.logging.LogbackCassandraAppender;
-import org.endeavourhealth.sftpreader.dbModel.DbConfiguration;
+import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

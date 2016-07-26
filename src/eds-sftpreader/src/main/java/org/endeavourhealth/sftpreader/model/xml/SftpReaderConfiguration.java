@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.core.configuration;
+package org.endeavourhealth.sftpreader.model.xml;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

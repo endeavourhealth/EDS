@@ -30,22 +30,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link SftpReaderConfiguration }
-     * 
-     */
-    public SftpReaderConfiguration createSftpReaderConfiguration() {
-        return new SftpReaderConfiguration();
-    }
-
-    /**
-     * Create an instance of {@link SftpReaderConfiguration.PostgresConnetion }
-     * 
-     */
-    public SftpReaderConfiguration.PostgresConnetion createSftpReaderConfigurationPostgresConnetion() {
-        return new SftpReaderConfiguration.PostgresConnetion();
-    }
-
-    /**
      * Create an instance of {@link PostToRestConfig }
      * 
      */

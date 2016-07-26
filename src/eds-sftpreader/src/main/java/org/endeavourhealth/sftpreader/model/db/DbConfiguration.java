@@ -1,4 +1,4 @@
-package org.endeavourhealth.sftpreader.dbModel;
+package org.endeavourhealth.sftpreader.model.db;
 
 public class DbConfiguration
 {

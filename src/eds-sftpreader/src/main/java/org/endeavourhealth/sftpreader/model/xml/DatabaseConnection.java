@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.core.configuration;
+package org.endeavourhealth.sftpreader.model.xml;
 
 import java.math.BigInteger;
 import javax.xml.bind.annotation.XmlAccessType;
