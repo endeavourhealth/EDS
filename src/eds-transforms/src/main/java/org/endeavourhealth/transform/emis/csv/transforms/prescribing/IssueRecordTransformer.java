@@ -42,7 +42,6 @@ public class IssueRecordTransformer {
 
         String issueRecordGuid = issueParser.getIssueRecordGuid();
         String patientGuid = issueParser.getPatientGuid();
-        String organisationGuid = issueParser.getOrganisationGuid();
 
         EmisCsvHelper.setUniqueId(fhirMedication, patientGuid, issueRecordGuid);
 

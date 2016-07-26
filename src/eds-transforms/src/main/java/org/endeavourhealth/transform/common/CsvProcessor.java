@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.common;
 
+import com.datastax.driver.core.utils.UUIDs;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
@@ -33,10 +34,6 @@ public class CsvProcessor {
     private Map<String, UUID> patientBatchIdMap = new HashMap<>();
     private UUID adminBatchId = null;
     private ExecutorService threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-/*    private List<ResourceWrapper> resourcesToMap = new ArrayList<>();
-    private List<ResourceWrapper> resourcesToSave = new ArrayList<>();
-    private Lock lock = new ReentrantLock();
-    private Stack<Future<?>> mappingFutures = new Stack<>();*/
     private ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
 
     public CsvProcessor(Exchange exchange, UUID serviceId, UUID systemId) {
@@ -88,57 +85,10 @@ public class CsvProcessor {
         threadPool.submit(new WorkerCallable(resource, batchId, toDelete, mapIds));
     }
 
-    /*private void addResourceToQueue(Resource resource,
-                                    boolean expectingPatientResource,
-                                    boolean mapIds,
-                                    UUID batchId,
-                                    boolean toDelete) {
-
-        if (isPatientResource(resource) != expectingPatientResource) {
-            throw new RuntimeException("Trying to treat patient resource as admin or vice versa");
-        }
-
-        addResourceWrapperToQueue(new ResourceWrapper(resource, batchId, toDelete), mapIds);
-    }
-    private void addResourceWrapperToQueue(ResourceWrapper resourceWrapper, boolean mapIds) {
-
-        //make sure to get the lock before manipulating any of the queues
-        lock.lock();
-
-        if (mapIds) {
-            resourcesToMap.add(resourceWrapper);
-
-            //if we've got a batch to map, then set that off
-            if (resourcesToMap.size() >= MAPPING_BATCH_SIZE) {
-                mapIds();
-            }
-        } else {
-            resourcesToSave.add(resourceWrapper);
-
-            //if we've got a batch to map, then set that off
-            if (resourcesToSave.size() >= SAVING_BATCH_SIZE) {
-                saveResources();
-            }
-        }
-
-        lock.unlock();
-    }
-
-    private void mapIds() {
-        Future<?> future = threadPool.submit(new MapIpsCallable(new ArrayList<>(resourcesToMap)));
-        mappingFutures.add(future);
-
-        resourcesToMap.clear();
-    }
-    private void saveResources() {
-        threadPool.submit(new SaveCallable(new ArrayList<>(resourcesToMap)));
-        resourcesToSave.clear();
-    }*/
-
 
     private UUID getAdminBatchId() {
         if (adminBatchId == null) {
-            adminBatchId = UUID.randomUUID();
+            adminBatchId = UUIDs.timeBased();
             saveExchangeBatch(adminBatchId);
         }
         return adminBatchId;
@@ -146,7 +96,7 @@ public class CsvProcessor {
     private UUID getPatientBatchId(String patientId) {
         UUID patientBatchId = patientBatchIdMap.get(patientId);
         if (patientBatchId == null) {
-            patientBatchId = UUID.randomUUID();
+            patientBatchId = UUIDs.timeBased();
             patientBatchIdMap.put(patientId, patientBatchId);
             saveExchangeBatch(patientBatchId);
         }
@@ -189,54 +139,6 @@ public class CsvProcessor {
 
         LOG.trace("Processing fully completed");
     }
-
-    /*public void processingCompleted() {
-
-        LOG.trace("Processing completion starting");
-
-        //start off any mapping and saving we can
-        lock.lock();
-        mapIds();
-        saveResources();
-        lock.unlock();
-
-        //then we need to wait until all mapping processes have been finished
-        while (stillMapping()) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ex) {
-                LOG.error("Thread interrupted", ex);
-            }
-        }
-
-        //once all mapping operations are completed, we can start off the last saving process and shutdown the pool
-        lock.lock();
-        saveResources();
-        lock.unlock();
-
-        threadPool.shutdown();
-        try {
-            threadPool.awaitTermination(1, TimeUnit.HOURS);
-        } catch (InterruptedException ex) {
-            LOG.error("Error waiting for pool to finish", ex);
-        }
-
-        //TODO - send batch IDs to next queue to start outgoing pipeline
-
-        LOG.trace("Processing fully completed");
-    }
-
-    private boolean stillMapping() {
-        while (!mappingFutures.isEmpty()) {
-
-            if (mappingFutures.peek().isDone()) {
-                mappingFutures.pop();
-            } else {
-                return true;
-            }
-        }
-        return false;
-    }*/
 
     private static boolean isPatientResource(Resource resource) {
         Class cls = resource.getClass();
