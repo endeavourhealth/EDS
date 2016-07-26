@@ -33,9 +33,6 @@ public abstract class EmisCsvTransformer {
         transformCodes(folderPath, csvProcessor, csvHelper);
         transformAdminData(folderPath, csvProcessor, csvHelper);
         transformPatientData(folderPath, csvProcessor, csvHelper);
-
-        //tell the processor we've completed all the files, so we can now start passing work to the protocols queue
-        csvProcessor.processingCompleted();
     }
 
     private static void transformCodes(String folderPath, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {

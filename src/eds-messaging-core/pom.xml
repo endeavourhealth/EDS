@@ -57,6 +57,11 @@
             <artifactId>fhir-dstu2</artifactId>
             <version>1.0.1.7108</version>
         </dependency>
+        <dependency>
+            <groupId>org.endeavourhealth</groupId>
+            <artifactId>eds-transforms</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>

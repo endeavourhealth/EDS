@@ -9,8 +9,8 @@ public abstract class HeaderKeys {
 	public static final String MessageEvent = "MessageEvent";
 
 	// Message source
-	public static final String SenderLocalIdentifier = "SenderLocalIdentifier";
-	public static final String SenderUuid = "SenderUuid";
+	public static final String SenderLocalIdentifier = "SenderLocalIdentifier"; //e.g. ODS code
+	public static final String SenderUuid = "SenderUuid";  //serviceId
 	public static final String SourceSystem = "SourceSystem";
 	public static final String SystemVersion = "SystemVersion";
 	public static final String MessageFormat = "MessageFormat";

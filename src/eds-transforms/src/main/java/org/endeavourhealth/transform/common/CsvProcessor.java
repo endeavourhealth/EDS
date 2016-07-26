@@ -4,8 +4,6 @@ import com.datastax.driver.core.utils.UUIDs;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -26,7 +24,7 @@ public class CsvProcessor {
 
     private static Set<Class> patientResourceClasses = null;
 
-    private Exchange exchange = null;
+    private UUID exchangeId = null;
     private UUID serviceId = null;
     private UUID systemId = null;
     private FhirStorageService storageService = null;
@@ -36,8 +34,8 @@ public class CsvProcessor {
     private ExecutorService threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
     private ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
 
-    public CsvProcessor(Exchange exchange, UUID serviceId, UUID systemId) {
-        this.exchange = exchange;
+    public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId) {
+        this.exchangeId = exchangeId;
         this.serviceId = serviceId;
         this.systemId = systemId;
         this.storageService = new FhirStorageService(serviceId, systemId);
@@ -105,13 +103,13 @@ public class CsvProcessor {
     private void saveExchangeBatch(UUID batchId) {
         ExchangeBatch exchangeBatch = new ExchangeBatch();
         exchangeBatch.setBatchId(batchId);
-        exchangeBatch.setExchangeId(exchange.getExchangeId());
+        exchangeBatch.setExchangeId(exchangeId);
         exchangeBatch.setInsertedAt(new Date());
         exchangeBatchRepository.save(exchangeBatch);
     }
 
 
-    public void processingCompleted() {
+    public List<UUID> getBatchIdsCreated() {
 
         LOG.trace("Processing completion starting");
 
@@ -124,20 +122,19 @@ public class CsvProcessor {
             LOG.error("Error waiting for pool to finish", ex);
         }
 
-        //update the Exchange with the batch IDs, for the next step in the pipeline
-        List<String> batchIds = new ArrayList<>();
+        LOG.trace("Processing fully completed");
+
+
+        List<UUID> batchIds = new ArrayList<>();
         if (adminBatchId != null) {
-            batchIds.add(adminBatchId.toString());
+            batchIds.add(adminBatchId);
         }
         Iterator<UUID> it = patientBatchIdMap.values().iterator();
         while (it.hasNext()) {
             UUID batchId = it.next();
-            batchIds.add(batchId.toString());
+            batchIds.add(batchId);
         }
-
-        exchange.setHeader(HeaderKeys.BatchIds, String.join(";", batchIds));
-
-        LOG.trace("Processing fully completed");
+        return batchIds;
     }
 
     private static boolean isPatientResource(Resource resource) {
@@ -208,9 +205,9 @@ public class CsvProcessor {
             list.add(resource);
 
             if (isDelete) {
-                storageService.exchangeBatchDelete(exchange.getExchangeId(), batchUuid, list);
+                storageService.exchangeBatchDelete(exchangeId, batchUuid, list);
             } else {
-                storageService.exchangeBatchUpdate(exchange.getExchangeId(), batchUuid, list);
+                storageService.exchangeBatchUpdate(exchangeId, batchUuid, list);
             }
 
             return null;
