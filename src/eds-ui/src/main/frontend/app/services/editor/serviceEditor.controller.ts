@@ -6,6 +6,7 @@ module app.service {
 	import IModalSettings = angular.ui.bootstrap.IModalSettings;
 	import IModalService = angular.ui.bootstrap.IModalService;
 	import IWindowService = angular.IWindowService;
+	import MessageBoxController = app.dialogs.MessageBoxController;
 	import BaseDialogController = app.dialogs.BaseDialogController;
 	import Service = app.models.Service;
 	import Organisation = app.models.Organisation;
@@ -168,10 +169,11 @@ module app.service {
 							vm.technicalInterfaces.push(technicalInterface);
 						}
 					}
-
 				})
 				.catch(function (error) {
 					vm.log.error('Failed to load systems', error, 'Load systems');
+					MessageBoxController.open(vm.$modal,
+						'Load systems', 'Failed to load Systems.  Ensure Systems are configured in the protocol manager', 'OK', null);
 				});
 		}
 	}
