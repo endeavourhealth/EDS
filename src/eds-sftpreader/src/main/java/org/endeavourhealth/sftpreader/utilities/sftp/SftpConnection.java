@@ -35,10 +35,11 @@ public class SftpConnection
     {
         this.jSch = new JSch();
 
-        jSch.addIdentity(this.connectionDetails.getClientPrivateKeyFilePath(), this.connectionDetails.getClientPrivateKeyPassword());
+        jSch.addIdentity("client-private-key", this.connectionDetails.getClientPrivateKey().getBytes(), null, this.connectionDetails.getClientPrivateKeyPassword().getBytes());
         jSch.setKnownHosts(new ByteArrayInputStream(this.connectionDetails.getKnownHostsString().getBytes()));
 
         this.session = jSch.getSession(connectionDetails.getUsername(), connectionDetails.getHostname(), connectionDetails.getPort());
+
         this.session.connect();
 
         this.channel = (ChannelSftp)session.openChannel("sftp");

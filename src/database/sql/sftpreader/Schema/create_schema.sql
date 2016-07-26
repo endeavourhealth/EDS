@@ -37,7 +37,7 @@ create table sftpreader.configuration_sftp
 	host_public_key varchar(8000) not null,
 
 	constraint sftpreader_configurationsftp_instanceid_pk primary key (instance_id),
-	constraint sftpreader_configurationsftp_instanceid_fk foreign key (instance_id) references sftpreader.instance (instance_id),
+	constraint sftpreader_configurationsftp_instanceid_fk foreign key (instance_id) references sftpreader.configuration (instance_id),
 	constraint sftpreader_configurationsftp_port_ck check (port > 0),
 	constraint sftpreader_configurationsftp_remotepath_ck check (char_length(trim(remote_path)) > 0),
 	constraint sftpreader_configurationsftp_username_ck check (char_length(trim(username)) > 0)
@@ -53,5 +53,5 @@ create table sftpreader.configuration_pgp
 	recipient_private_key_password varchar(1000) not null,
 
 	constraint sftpreader_configurationpgp_intsanceid_pk primary key (instance_id),
-	constraint sftpreader_configurationpgp_instanceid_fk foreign key (instance_id) references sftpreader.instance (instance_id)
+	constraint sftpreader_configurationpgp_instanceid_fk foreign key (instance_id) references sftpreader.configuration (instance_id)
 );

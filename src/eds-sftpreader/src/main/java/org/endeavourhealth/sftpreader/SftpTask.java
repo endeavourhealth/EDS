@@ -230,9 +230,9 @@ public class SftpTask extends TimerTask
                 .setHostname(configurationSftp.getHostname())
                 .setPort(configurationSftp.getPort())
                 .setUsername(configurationSftp.getUsername())
-                .setClientPrivateKeyFilePath(resolveFilePath(configurationSftp.getClientPrivateKey()))
+                .setClientPrivateKey(configurationSftp.getClientPrivateKey())
                 .setClientPrivateKeyPassword(configurationSftp.getClientPrivateKeyPassword())
-                .setHostPublicKeyFilePath(resolveFilePath(configurationSftp.getHostPublicKey()));
+                .setHostPublicKey(configurationSftp.getHostPublicKey());
     }
 
     private static String resolveFilePath(String filePath)

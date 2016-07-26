@@ -1,8 +1,5 @@
 package org.endeavourhealth.sftpreader.utilities.sftp;
 
-import org.apache.commons.io.FileUtils;
-
-import java.io.File;
 import java.io.IOException;
 
 public class SftpConnectionDetails
@@ -10,9 +7,9 @@ public class SftpConnectionDetails
     private String hostname;
     private int port;
     private String username;
-    private String clientPrivateKeyFilePath;
+    private String clientPrivateKey;
     private String clientPrivateKeyPassword;
-    private String hostPublicKeyFilePath;
+    private String hostPublicKey;
 
     public String getHostname()
     {
@@ -47,14 +44,14 @@ public class SftpConnectionDetails
         return this;
     }
 
-    public String getClientPrivateKeyFilePath()
+    public String getClientPrivateKey()
     {
-        return clientPrivateKeyFilePath;
+        return clientPrivateKey;
     }
 
-    public SftpConnectionDetails setClientPrivateKeyFilePath(String clientPrivateKeyFilePath)
+    public SftpConnectionDetails setClientPrivateKey(String clientPrivateKey)
     {
-        this.clientPrivateKeyFilePath = clientPrivateKeyFilePath;
+        this.clientPrivateKey = clientPrivateKey;
         return this;
     }
 
@@ -69,20 +66,19 @@ public class SftpConnectionDetails
         return this;
     }
 
-    public String getHostPublicKeyFilePath()
+    public String getHostPublicKey()
     {
-        return hostPublicKeyFilePath;
+        return hostPublicKey;
     }
 
-    public SftpConnectionDetails setHostPublicKeyFilePath(String hostPublicKeyFilePath)
+    public SftpConnectionDetails setHostPublicKey(String hostPublicKey)
     {
-        this.hostPublicKeyFilePath = hostPublicKeyFilePath;
+        this.hostPublicKey = hostPublicKey;
         return this;
     }
 
     public String getKnownHostsString() throws IOException
     {
-        String hostPublicKey = FileUtils.readFileToString(new File(this.hostPublicKeyFilePath));
-        return this.getHostname() + " " + hostPublicKey;
+        return this.getHostname() + " " + hostPublicKey + "\n";
     }
 }
