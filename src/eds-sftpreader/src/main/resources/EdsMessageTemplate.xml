@@ -1,0 +1,29 @@
+<Bundle>
+    <type value="collection"/>
+    <entry>
+        <resource>
+            <MessageHeader>
+                <id value="{{message-id}}"/>
+                <timestamp value="{{timestamp}}"/>
+                <source>
+                    <name value="{{source-name}}"/>
+                    <software value="{{source-software}}"/>
+                    <version value="{{source-version}}"/>
+                    <endpoint value="{{source-endpoint}}"/>
+                </source>
+                <data>
+                    <reference value="Binary/{{payload-id}}"/>
+                </data>
+            </MessageHeader>
+        </resource>
+    </entry>
+    <entry>
+        <resource>
+            <Binary>
+                <id value="{{payload-id}}"/>
+                <contentType value="{{payload-type}}"/>
+                <content value="{{payload-base64}}"/>
+            </Binary>
+        </resource>
+    </entry>
+</Bundle>

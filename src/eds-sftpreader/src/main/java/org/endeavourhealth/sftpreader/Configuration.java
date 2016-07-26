@@ -3,10 +3,10 @@ package org.endeavourhealth.sftpreader;
 import ch.qos.logback.classic.db.DBAppender;
 import ch.qos.logback.core.db.DataSourceConnectionSource;
 import com.mchange.v2.c3p0.DataSources;
-import org.endeavourhealth.core.utility.XmlSerializer;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.xml.DatabaseConnection;
 import org.endeavourhealth.sftpreader.model.xml.SftpReaderConfiguration;
+import org.endeavourhealth.sftpreader.utilities.xml.XmlDeserializer;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
@@ -46,7 +46,7 @@ public final class Configuration
     private void loadLocalConfiguration() throws Exception
     {
         LOG.info("Loading local configuration file from resource " + CONFIG_RESOURCE);
-        localConfiguration = XmlSerializer.deserializeFromResource(SftpReaderConfiguration.class, CONFIG_RESOURCE, CONFIG_XSD);
+        localConfiguration = XmlDeserializer.deserializeFromResource(SftpReaderConfiguration.class, CONFIG_RESOURCE, CONFIG_XSD);
     }
 
     private void loadDbConfiguration() throws PgStoredProcException, SQLException

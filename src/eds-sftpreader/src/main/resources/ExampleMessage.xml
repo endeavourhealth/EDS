@@ -1,0 +1,29 @@
+<Bundle>
+    <type value="collection"/>
+    <entry>
+        <resource>
+            <MessageHeader>
+                <id value="35663c09-0a0e-45c3-9989-e00334225906"/>
+                <timestamp value="2001-10-26T21:32:52"/>
+                <source>
+                    <name value="EMIS001"/>
+                    <software value="EmisExtractService"/>
+                    <version value="5.1"/>
+                    <endpoint value="http://source.uri.com"/>
+                </source>
+                <data>
+                    <reference value="Binary/91620633-b8d0-47b8-9391-7091c80944c4"/>
+                </data>
+            </MessageHeader>
+        </resource>
+    </entry>
+    <entry>
+        <resource>
+            <Binary>
+                <id value="91620633-b8d0-47b8-9391-7091c80944c4"/>
+                <contentType value="EMISCSV"/>
+                <content value="aGVsbG8gd29ybGQ="/>
+            </Binary>
+        </resource>
+    </entry>
+</Bundle>
