@@ -1,5 +1,6 @@
 package org.endeavourhealth.sftpreader;
 
+import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
@@ -25,14 +26,13 @@ import java.security.SignatureException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.TimerTask;
+import java.util.*;
 
 public class SftpTask extends TimerTask
 {
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(SftpTask.class);
 
-    private DbConfiguration configuration;
+    private DbConfiguration configuration = null;
 
     public SftpTask(DbConfiguration dbConfiguration)
     {
@@ -43,6 +43,7 @@ public class SftpTask extends TimerTask
     public void run()
     {
         receiveAndProcessFiles();
+        notifyOnwardPipeline();
     }
 
     private void receiveAndProcessFiles()
@@ -94,6 +95,20 @@ public class SftpTask extends TimerTask
             closeConnection(sftpConnection);
         }
     }
+
+    private void notifyOnwardPipeline()
+    {
+        try
+        {
+            
+        }
+        catch (Exception e)
+        {
+            LOG.info("Exception while notifying onward pipeline", e);
+        }
+    }
+
+
 
     private boolean doesFileNeedDecrypting(String localFilePath)
     {
