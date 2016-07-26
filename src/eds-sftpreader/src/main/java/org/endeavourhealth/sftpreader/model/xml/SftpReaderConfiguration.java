@@ -25,7 +25,6 @@ import javax.xml.bind.annotation.XmlType;
  *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *                 &lt;sequence>
  *                   &lt;element name="SftpReader" type="{}DatabaseConnection"/>
- *                   &lt;element name="Logback" type="{}DatabaseConnection"/>
  *                 &lt;/sequence>
  *               &lt;/restriction>
  *             &lt;/complexContent>
@@ -112,7 +111,6 @@ public class SftpReaderConfiguration {
      *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
      *       &lt;sequence>
      *         &lt;element name="SftpReader" type="{}DatabaseConnection"/>
-     *         &lt;element name="Logback" type="{}DatabaseConnection"/>
      *       &lt;/sequence>
      *     &lt;/restriction>
      *   &lt;/complexContent>
@@ -123,15 +121,12 @@ public class SftpReaderConfiguration {
      */
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlType(name = "", propOrder = {
-        "sftpReader",
-        "logback"
+        "sftpReader"
     })
     public static class DatabaseConnections {
 
         @XmlElement(name = "SftpReader", required = true)
         protected DatabaseConnection sftpReader;
-        @XmlElement(name = "Logback", required = true)
-        protected DatabaseConnection logback;
 
         /**
          * Gets the value of the sftpReader property.
@@ -155,30 +150,6 @@ public class SftpReaderConfiguration {
          */
         public void setSftpReader(DatabaseConnection value) {
             this.sftpReader = value;
-        }
-
-        /**
-         * Gets the value of the logback property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link DatabaseConnection }
-         *     
-         */
-        public DatabaseConnection getLogback() {
-            return logback;
-        }
-
-        /**
-         * Sets the value of the logback property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link DatabaseConnection }
-         *     
-         */
-        public void setLogback(DatabaseConnection value) {
-            this.logback = value;
         }
 
     }

@@ -43,12 +43,12 @@
             <version>9.4.1208</version>
         </dependency>
 
-        <!-- Enterprise DB library wrapper -->
+        <!-- Enterprise DB library wrapper
         <dependency>
             <groupId>com.mchange</groupId>
             <artifactId>c3p0</artifactId>
             <version>0.9.5.2</version>
-        </dependency>
+        </dependency> -->
 
         <!-- Jersey REST client -->
         <dependency>
@@ -74,6 +74,11 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-io</artifactId>
             <version>1.3.2</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-daemon</groupId>
+            <artifactId>commons-daemon</artifactId>
+            <version>1.0.15</version>
         </dependency>
 
         <!-- Google Guava -->

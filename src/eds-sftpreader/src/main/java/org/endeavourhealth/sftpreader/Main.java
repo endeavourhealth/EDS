@@ -1,5 +1,8 @@
 package org.endeavourhealth.sftpreader;
 
+import org.apache.commons.daemon.Daemon;
+import org.apache.commons.daemon.DaemonContext;
+import org.apache.commons.daemon.DaemonInitException;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,11 +19,9 @@ public class Main
 	{
 		try
 		{
-			DbConfiguration dbConfiguration = Configuration.getInstance().getDbConfiguration();
-
 			writeHeaderLogLine(PROGRAM_DISPLAY_NAME);
 
-			runSftpHandlerAndWaitForInput(dbConfiguration);
+			runSftpHandlerAndWaitForInput();
 
 			writeHeaderLogLine(PROGRAM_DISPLAY_NAME + " stopped");
 		}
@@ -37,8 +38,10 @@ public class Main
 		LOG.info("--------------------------------------------------");
 	}
 
-	private static void runSftpHandlerAndWaitForInput(DbConfiguration dbConfiguration) throws IOException
+	private static void runSftpHandlerAndWaitForInput() throws Exception
 	{
+		DbConfiguration dbConfiguration = Configuration.getInstance().getDbConfiguration();
+
 		SftpTask sftpTask = new SftpTask(dbConfiguration);
 
 		Timer timer = new Timer(true);

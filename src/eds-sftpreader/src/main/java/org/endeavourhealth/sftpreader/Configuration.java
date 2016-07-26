@@ -1,8 +1,5 @@
 package org.endeavourhealth.sftpreader;
 
-import ch.qos.logback.classic.db.DBAppender;
-import ch.qos.logback.core.db.DataSourceConnectionSource;
-import com.mchange.v2.c3p0.DataSources;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.xml.DatabaseConnection;
 import org.endeavourhealth.sftpreader.model.xml.SftpReaderConfiguration;
@@ -35,11 +32,11 @@ public final class Configuration
     // instance members //
     private SftpReaderConfiguration localConfiguration;
     private DbConfiguration dbConfiguration;
+    private DataSource dataSource;
 
     private Configuration() throws Exception
     {
         loadLocalConfiguration();
-        registerLogbackDbAppender();
         loadDbConfiguration();
     }
 
@@ -55,24 +52,6 @@ public final class Configuration
         this.dbConfiguration = dataLayer.getConfiguration(getInstanceId());
     }
 
-    private void registerLogbackDbAppender() throws SQLException
-    {
-        ch.qos.logback.classic.Logger rootLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-
-        DataSourceConnectionSource dataSourceConnectionSource = new DataSourceConnectionSource();
-        dataSourceConnectionSource.setDataSource(getDataSource(localConfiguration.getDatabaseConnections().getLogback()));
-        dataSourceConnectionSource.setContext(rootLogger.getLoggerContext());
-        dataSourceConnectionSource.start();
-
-        DBAppender dbAppender = new DBAppender();
-        dbAppender.setConnectionSource(dataSourceConnectionSource);
-        dbAppender.setContext(rootLogger.getLoggerContext());
-        dbAppender.setName("PostgresDbAppender");
-        dbAppender.start();
-
-        rootLogger.addAppender(dbAppender);
-    }
-
     private static DataSource getDataSource(DatabaseConnection databaseConnection) throws SQLException
     {
         PGSimpleDataSource pgSimpleDataSource = new PGSimpleDataSource();
@@ -81,7 +60,8 @@ public final class Configuration
         pgSimpleDataSource.setDatabaseName(databaseConnection.getDatabase());
         pgSimpleDataSource.setUser(databaseConnection.getUsername());
         pgSimpleDataSource.setPassword(databaseConnection.getPassword());
-        return DataSources.pooledDataSource(pgSimpleDataSource);
+        return pgSimpleDataSource;
+        //return DataSources.pooledDataSource(pgSimpleDataSource);
     }
 
     public String getInstanceId()
