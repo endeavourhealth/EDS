@@ -144,11 +144,11 @@ public class SftpTask extends TimerTask
     {
         LOG.info("Decrypting file " + localFilePath);
 
-        String senderPublicKeyFilePath = resolveFilePath(configuration.getDbConfigurationPgp().getPgpSenderPublicKey());
-        String recipientPrivateKeyFilePath = resolveFilePath(configuration.getDbConfigurationPgp().getPgpRecipientPrivateKey());
+        String senderPublicKey = configuration.getDbConfigurationPgp().getPgpSenderPublicKey();
+        String recipientPrivateKey = configuration.getDbConfigurationPgp().getPgpRecipientPrivateKey();
         String recipientPrivateKeyPassword = configuration.getDbConfigurationPgp().getPgpRecipientPrivateKeyPassword();
 
-        PgpUtil.decryptAndVerify(localFilePath, senderPublicKeyFilePath, recipientPrivateKeyFilePath, recipientPrivateKeyPassword, decryptedLocalFilePath);
+        PgpUtil.decryptAndVerify(localFilePath, senderPublicKey, recipientPrivateKey, recipientPrivateKeyPassword, decryptedLocalFilePath);
     }
 
     private String createSessionDirectory(String localPath) throws IOException

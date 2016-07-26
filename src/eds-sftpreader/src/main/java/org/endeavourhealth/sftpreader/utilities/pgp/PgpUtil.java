@@ -16,13 +16,13 @@ import java.util.Iterator;
 
 public class PgpUtil
 {
-    public static void decryptAndVerify(String inputFileName, String publicKeyFileName, String secretKeyFileName, String secretKeyPassword, String outputFileName) throws IOException, NoSuchProviderException, PGPException, SignatureException
+    public static void decryptAndVerify(String inputFileName, String publicKey, String secretKey, String secretKeyPassword, String outputFileName) throws IOException, NoSuchProviderException, PGPException, SignatureException
     {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
         try (InputStream fileIn = new BufferedInputStream(new FileInputStream(inputFileName));
-             InputStream publicKeyIn = new BufferedInputStream(new FileInputStream(publicKeyFileName));
-             InputStream secretKeyIn = new BufferedInputStream(new FileInputStream(secretKeyFileName));
+             InputStream publicKeyIn = new BufferedInputStream(new ByteArrayInputStream(publicKey.getBytes()));
+             InputStream secretKeyIn = new BufferedInputStream(new ByteArrayInputStream(secretKey.getBytes()));
              OutputStream fileOut = new FileOutputStream(outputFileName);)
         {
             decryptAndVerify(fileIn, fileOut, publicKeyIn, secretKeyIn, secretKeyPassword);
