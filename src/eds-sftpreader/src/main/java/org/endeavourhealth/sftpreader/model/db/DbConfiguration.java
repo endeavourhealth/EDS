@@ -3,6 +3,9 @@ package org.endeavourhealth.sftpreader.model.db;
 public class DbConfiguration
 {
     private String instanceId;
+    private String instanceDescription;
+    private int batchTypeId;
+    private String batchTypeDescription;
     private int pollFrequencySeconds;
     private String localRootPath;
     private DbConfigurationSftp dbConfigurationSftp;
@@ -16,6 +19,39 @@ public class DbConfiguration
     public DbConfiguration setInstanceId(String instanceId)
     {
         this.instanceId = instanceId;
+        return this;
+    }
+
+    public String getInstanceDescription()
+    {
+        return instanceDescription;
+    }
+
+    public DbConfiguration setInstanceDescription(String instanceDescription)
+    {
+        this.instanceDescription = instanceDescription;
+        return this;
+    }
+
+    public int getBatchTypeId()
+    {
+        return batchTypeId;
+    }
+
+    public DbConfiguration setBatchTypeId(int batchTypeId)
+    {
+        this.batchTypeId = batchTypeId;
+        return this;
+    }
+
+    public String getBatchTypeDescription()
+    {
+        return batchTypeDescription;
+    }
+
+    public DbConfiguration setBatchTypeDescription(String batchTypeDescription)
+    {
+        this.batchTypeDescription = batchTypeDescription;
         return this;
     }
 

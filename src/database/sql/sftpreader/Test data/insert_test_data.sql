@@ -4,22 +4,26 @@
 
 insert into sftpreader.instance
 (
-	instance_id
+	instance_id,
+	description
 )
 values
 (
-	'EMIS001'
+	'EMIS001',
+	'Endeavour test EMIS instance connecting to endeavour-sftp.cloudapp.net'
 );
 
 insert into sftpreader.configuration
 (
 	instance_id,
+	batch_type_id,
 	local_root_path,
 	poll_frequency_seconds
 )
 values
 (
 	'EMIS001',
+	1,
 	'/Users/jonny/Code/Local/sftp',
 	10
 );

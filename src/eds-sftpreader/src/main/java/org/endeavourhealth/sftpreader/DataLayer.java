@@ -27,6 +27,9 @@ public class DataLayer
                 new DbConfiguration()
 
                         .setInstanceId(resultSet.getString("instance_id"))
+                        .setInstanceDescription(resultSet.getString("instance_description"))
+                        .setBatchTypeId(resultSet.getInt("batch_type_id"))
+                        .setBatchTypeDescription(resultSet.getString("batch_type_description"))
                         .setPollFrequencySeconds(resultSet.getInt("poll_frequency_seconds"))
                         .setLocalRootPath(resultSet.getString("local_root_path"))
 
