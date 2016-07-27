@@ -1,6 +1,5 @@
 package org.endeavourhealth.sftpreader;
 
-import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
@@ -10,6 +9,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.db.DbConfigurationSftp;
 import org.endeavourhealth.sftpreader.utilities.pgp.PgpUtil;
+import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnection;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionDetails;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionException;
@@ -32,18 +32,34 @@ public class SftpTask extends TimerTask
 {
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(SftpTask.class);
 
-    private DbConfiguration configuration = null;
+    private Configuration configuration = null;
+    private DbConfiguration dbConfiguration = null;
+    private DataLayer dataLayer = null;
 
-    public SftpTask(DbConfiguration dbConfiguration)
+    public SftpTask(Configuration configuration)
     {
-        this.configuration = dbConfiguration;
+        this.configuration = configuration;
     }
 
     @Override
     public void run()
     {
-        receiveAndProcessFiles();
-        notifyOnwardPipeline();
+        try
+        {
+            initialise();
+            receiveAndProcessFiles();
+            notifyOnwardPipeline();
+        }
+        catch (Exception e)
+        {
+            LOG.error("Fatal exception in SftpTask.run", e);
+        }
+    }
+
+    private void initialise() throws Exception
+    {
+        this.dbConfiguration = configuration.getDbConfiguration();
+        this.dataLayer = new DataLayer(configuration.getDatabaseConnection());
     }
 
     private void receiveAndProcessFiles()
@@ -52,8 +68,8 @@ public class SftpTask extends TimerTask
 
         try
         {
-            String destinationPath = configuration.getLocalRootPath();
-            String sessionPath = createSessionDirectory(configuration.getLocalRootPath());
+            String destinationPath = dbConfiguration.getLocalRootPath();
+            String sessionPath = createSessionDirectory(dbConfiguration.getLocalRootPath());
 
             sftpConnection = openSftpConnection();
 
@@ -79,6 +95,8 @@ public class SftpTask extends TimerTask
                     copyFileToDestination(localFilePath, destinationPath);
                 }
 
+                recordFileInDatabase(sftpRemoteFile.getFilename(), destinationPath, 0);
+
                 //deleteRemoteFile(sftpConnection, remoteFilePath);
 
 
@@ -94,6 +112,14 @@ public class SftpTask extends TimerTask
         {
             closeConnection(sftpConnection);
         }
+    }
+
+    private void recordFileInDatabase(String filename, String filePath, long fileSize) throws PgStoredProcException
+    {
+        String instanceId = configuration.getInstanceId();
+        String fileSetIdentifier = "aaaa";
+
+        this.dataLayer.addFile(instanceId, fileSetIdentifier, filename, filePath, fileSize);
     }
 
     private void notifyOnwardPipeline()
@@ -112,8 +138,8 @@ public class SftpTask extends TimerTask
 
     private boolean doesFileNeedDecrypting(String localFilePath)
     {
-        if (configuration.getDbConfigurationPgp() != null)
-            if (localFilePath.endsWith(configuration.getDbConfigurationPgp().getPgpFileExtensionFilter()))
+        if (dbConfiguration.getDbConfigurationPgp() != null)
+            if (localFilePath.endsWith(dbConfiguration.getDbConfigurationPgp().getPgpFileExtensionFilter()))
                 return true;
 
         return false;
@@ -121,7 +147,7 @@ public class SftpTask extends TimerTask
 
     private String getDecryptedFilePath(String localFilePath)
     {
-        return StringUtils.removeEnd(localFilePath, configuration.getDbConfigurationPgp().getPgpFileExtensionFilter());
+        return StringUtils.removeEnd(localFilePath, dbConfiguration.getDbConfigurationPgp().getPgpFileExtensionFilter());
     }
 
     private void copyFileToDestination(String sourceFilePath, String destinationDirectory) throws IOException
@@ -159,9 +185,9 @@ public class SftpTask extends TimerTask
     {
         LOG.info("Decrypting file " + localFilePath);
 
-        String senderPublicKey = configuration.getDbConfigurationPgp().getPgpSenderPublicKey();
-        String recipientPrivateKey = configuration.getDbConfigurationPgp().getPgpRecipientPrivateKey();
-        String recipientPrivateKeyPassword = configuration.getDbConfigurationPgp().getPgpRecipientPrivateKeyPassword();
+        String senderPublicKey = dbConfiguration.getDbConfigurationPgp().getPgpSenderPublicKey();
+        String recipientPrivateKey = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPrivateKey();
+        String recipientPrivateKeyPassword = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPrivateKeyPassword();
 
         PgpUtil.decryptAndVerify(localFilePath, senderPublicKey, recipientPrivateKey, recipientPrivateKeyPassword, decryptedLocalFilePath);
     }
@@ -226,7 +252,7 @@ public class SftpTask extends TimerTask
 
     private List<SftpRemoteFile> getFileList(SftpConnection sftpConnection) throws SftpException
     {
-        String remotePath = configuration.getDbConfigurationSftp().getRemotePath();
+        String remotePath = dbConfiguration.getDbConfigurationSftp().getRemotePath();
 
         LOG.info("Get file list at " + remotePath);
 
@@ -239,7 +265,7 @@ public class SftpTask extends TimerTask
 
     private SftpConnectionDetails getSftpConnectionDetails()
     {
-        DbConfigurationSftp configurationSftp = configuration.getDbConfigurationSftp();
+        DbConfigurationSftp configurationSftp = dbConfiguration.getDbConfigurationSftp();
 
         return new SftpConnectionDetails()
                 .setHostname(configurationSftp.getHostname())

@@ -1,25 +1,23 @@
 package org.endeavourhealth.sftpreader;
 
-import org.apache.commons.daemon.Daemon;
-import org.apache.commons.daemon.DaemonContext;
-import org.apache.commons.daemon.DaemonInitException;
-import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Timer;
 
 public class Main
 {
 	private static final String PROGRAM_DISPLAY_NAME = "EDS SFTP poller";
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+    private static Configuration configuration;
 
 	public static void main(String[] args)
 	{
 		try
 		{
 			writeHeaderLogLine(PROGRAM_DISPLAY_NAME);
+
+            loadConfiguration();
 
 			runSftpHandlerAndWaitForInput();
 
@@ -38,17 +36,20 @@ public class Main
 		LOG.info("--------------------------------------------------");
 	}
 
+	private static void loadConfiguration() throws Exception
+    {
+        configuration = Configuration.getInstance();
+    }
+
 	private static void runSftpHandlerAndWaitForInput() throws Exception
 	{
-		DbConfiguration dbConfiguration = Configuration.getInstance().getDbConfiguration();
-
-		SftpTask sftpTask = new SftpTask(dbConfiguration);
+		SftpTask sftpTask = new SftpTask(configuration);
 
 		Timer timer = new Timer(true);
 
 		try
 		{
-			timer.scheduleAtFixedRate(sftpTask, 0, dbConfiguration.getPollFrequencySeconds() * 1000);
+			timer.scheduleAtFixedRate(sftpTask, 0, configuration.getDbConfiguration().getPollFrequencySeconds() * 1000);
 
 			LOG.info("");
 			LOG.info("Press any key to exit...");

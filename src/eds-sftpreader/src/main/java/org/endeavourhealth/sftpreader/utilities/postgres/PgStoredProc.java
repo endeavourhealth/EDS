@@ -134,7 +134,7 @@ public class PgStoredProc
 
     private static String getFormattedParameterValue(Object value)
     {
-        if (value instanceof Integer)
+        if ((value instanceof Integer) || (value instanceof Long))
             return value.toString();
         else if ((value instanceof Character) || (value instanceof String))
             return "'" + value + "'";

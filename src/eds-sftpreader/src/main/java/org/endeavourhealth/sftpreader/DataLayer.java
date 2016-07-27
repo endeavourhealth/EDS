@@ -46,4 +46,17 @@ public class DataLayer
                             .setPgpRecipientPrivateKey(resultSet.getString("pgp_recipient_private_key"))
                             .setPgpRecipientPrivateKeyPassword(resultSet.getString("pgp_recipient_private_key_password"))));
     }
+
+    public void addFile(String instanceId, String fileSetIdentifier, String filename, String filePath, long fileSize) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.add_file")
+                .addParameter("_instance_id", instanceId)
+                .addParameter("_file_set_local_identifier", fileSetIdentifier)
+                .addParameter("_file_name", filename)
+                .addParameter("_file_path", filePath)
+                .addParameter("_file_size", fileSize);
+
+        pgStoredProc.execute();
+    }
 }

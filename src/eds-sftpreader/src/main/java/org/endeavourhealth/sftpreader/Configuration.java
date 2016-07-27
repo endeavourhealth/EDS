@@ -48,8 +48,13 @@ public final class Configuration
 
     private void loadDbConfiguration() throws PgStoredProcException, SQLException
     {
-        DataLayer dataLayer = new DataLayer(getDataSource(localConfiguration.getDatabaseConnections().getSftpReader()));
+        DataLayer dataLayer = new DataLayer(getDatabaseConnection());
         this.dbConfiguration = dataLayer.getConfiguration(getInstanceId());
+    }
+
+    public DataSource getDatabaseConnection() throws SQLException
+    {
+        return getDataSource(localConfiguration.getDatabaseConnections().getSftpReader());
     }
 
     private static DataSource getDataSource(DatabaseConnection databaseConnection) throws SQLException

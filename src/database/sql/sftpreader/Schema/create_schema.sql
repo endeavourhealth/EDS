@@ -62,9 +62,9 @@ create table sftpreader.file_set
 	instance_id varchar(100) not null,
 	local_identifier varchar(500) not null,
 	create_date timestamp not null,
-	is_complete boolean not null,
+	is_complete boolean not null default false,
 	complete_date timestamp null,
-	have_notified boolean not null,
+	have_notified boolean not null default false,
 	notification_date timestamp null,
 
 	constraint sftpreader_fileset_filesetid_pk primary key (file_set_id),
@@ -85,11 +85,13 @@ create table sftpreader.file
 	instance_id varchar(100) not null,
 	file_set_id integer not null,
 	file_name varchar(1000) not null,
-	relative_file_path varchar(1000) not null,
+	file_path varchar(1000) not null,
+	file_size_bytes bigint not null,
 	download_date timestamp not null,
 
 	constraint sftpreader_file_fileid_pk primary key (file_id),
 	constraint sftpreader_file_instanceid_filesetid_fk foreign key (instance_id, file_set_id) references sftpreader.file_set (instance_id, file_set_id),
 	constraint sftpreader_file_instanceid_filename_uq unique (instance_id, file_name),
-	constraint sftpreader_file_filename_ck check (char_length(trim(file_name)) > 0)
+	constraint sftpreader_file_filename_ck check (char_length(trim(file_name)) > 0),
+	constraint sftpreader_file_filesizebytes check (file_size_bytes >= 0)
 );
