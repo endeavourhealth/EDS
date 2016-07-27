@@ -136,7 +136,6 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 
-		address = "localhost:15672";
 		WebTarget resource = client.target("http://"+address+"/api/queues");
 		Invocation.Builder request = resource.request();
 
@@ -168,7 +167,6 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 
-		address = "localhost:15672";
 		WebTarget resource = client.target("http://"+address+"/api/exchanges");
 		Invocation.Builder request = resource.request();
 
@@ -215,8 +213,6 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 		String[] pipelines = {"EdsInbound", "EdsProtocol", "EdsTransform", "EdsResponse", "EdsSubscriber"};
 
 		super.setLogbackMarkers(sc);
-
-		address = "localhost:15672";
 
 		// Load current bindings
 		List<JsonRabbitBinding> currentBindings = getCurrentRabbitBindings(address);
@@ -267,7 +263,6 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 		Client client = ClientBuilder.newClient();
 		client.register(feature);
 
-		address = "localhost:15672";
 		WebTarget resource = client.target("http://"+address+"/api/bindings");
 		Invocation.Builder request = resource.request();
 

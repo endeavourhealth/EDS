@@ -6,9 +6,12 @@ module app.routeGroup {
 	import MessageBoxController = app.dialogs.MessageBoxController;
 	import IRabbitService = app.core.IRabbitService;
 	import RabbitBinding = app.models.RabbitBinding;
+	import RabbitNode = app.models.RabbitNode;
 	'use strict';
 
 	export class RouteGroupListController {
+		rabbitNodes:RabbitNode[];
+		quickestNode : RabbitNode;
 		routeGroups : RouteGroup[];
 		inboundBindings : RabbitBinding[];
 		protocolBindings : RabbitBinding[];
@@ -22,8 +25,38 @@ module app.routeGroup {
 								private routeGroupService : IRouteGroupService,
 								private rabbitService : IRabbitService,
 								private log : ILoggerService) {
-			this.getRouteGroups();
-			this.getRabbitBindings();
+			this.getRabbitNodes();
+		}
+
+		getRabbitNodes() {
+			var vm = this;
+			vm.rabbitNodes = null;
+			vm.rabbitService.getRabbitNodes()
+				.then(function (data : RabbitNode[]) {
+					vm.rabbitNodes = data;
+					vm.getRabbitNodePings();
+				});
+		}
+
+		getRabbitNodePings() {
+			var vm = this;
+			vm.quickestNode = null;
+			for(var idx in vm.rabbitNodes) {
+				vm.rabbitService.pingRabbitNode(vm.rabbitNodes[idx].address)
+					.then(function (result : RabbitNode) {
+
+						if (vm.quickestNode === null) {
+							vm.quickestNode = result;
+							vm.getRouteGroups();
+							vm.getRabbitBindings();
+						}
+
+						var rabbitNode : RabbitNode[] = $.grep(vm.rabbitNodes, function(i) { return i.address === result.address;});
+						if (rabbitNode.length === 1) {
+							rabbitNode[0].ping = result.ping;
+						}
+					})
+			}
 		}
 
 		getRouteGroups() {
@@ -40,7 +73,7 @@ module app.routeGroup {
 		getRabbitBindings() {
 			var vm = this;
 			// TODO : Determine fastest node and use for address
-			vm.rabbitService.getRabbitBindings('DUMMYADDRESS')
+			vm.rabbitService.getRabbitBindings(vm.quickestNode.address)
 				.then(function(result : RabbitBinding[]) {
 					vm.separateBindings(result);
 				})
@@ -100,7 +133,7 @@ module app.routeGroup {
 				'Synchronise RabbitMQ', 'Are you sure you want to synchronise RabbitMQ with the defined route groups?', 'Yes', 'No')
 				.result.then(function() {
 					//  TODO : Determine fastest node and use for address
-					vm.rabbitService.synchronize("DUMMYADDRESS")
+					vm.rabbitService.synchronize(vm.quickestNode.address)
 					.then(function(result : RabbitBinding[]) {
 						vm.log.success('RabbitMQ synchronized');
 						vm.separateBindings(result);

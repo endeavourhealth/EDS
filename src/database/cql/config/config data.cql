@@ -53,3 +53,16 @@ values
 	"description": "Default fallback group, initial character 0-9"
 }]'
 );
+
+INSERT INTO configuration_resource
+( 
+	configuration_id,
+	configuration_name,
+	configuration_data
+)
+VALUES
+(
+	7b9dcacf-50b8-4224-8bcc-b93524fc9ae9,
+	'RabbitNodes',
+	'localhost:15672,localhost:15673,localhost:15674'
+);
