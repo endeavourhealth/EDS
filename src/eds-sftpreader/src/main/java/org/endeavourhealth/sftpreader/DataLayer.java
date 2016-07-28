@@ -1,6 +1,7 @@
 package org.endeavourhealth.sftpreader;
 
 import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFile;
+import org.endeavourhealth.sftpreader.model.db.AddFileResult;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.db.DbConfigurationPgp;
 import org.endeavourhealth.sftpreader.model.db.DbConfigurationSftp;
@@ -51,7 +52,17 @@ public class DataLayer
                             .setPgpRecipientPrivateKeyPassword(resultSet.getString("pgp_recipient_private_key_password"))));
     }
 
-    public int addFile(String instanceId, BatchFile batchFile) throws PgStoredProcException
+    public boolean isBatchFileTypeValid(String instanceId, BatchFile batchFile) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.is_batch_file_type_valid")
+                .addParameter("_instance_id", instanceId)
+                .addParameter("_remote_file_type_identifier", batchFile.getRemoteFileTypeIdentifier());
+
+        return pgStoredProc.executeSingleRow(resultSet -> resultSet.getBoolean("is_batch_file_type_valid"));
+    }
+
+    public AddFileResult addFile(String instanceId, BatchFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.add_file")
@@ -59,10 +70,35 @@ public class DataLayer
                 .addParameter("_remote_batch_identifier", batchFile.getRemoteBatchIdentifier())
                 .addParameter("_remote_file_type_identifier", batchFile.getRemoteFileTypeIdentifier())
                 .addParameter("_filename", batchFile.getFilename())
-                .addParameter("_remote_file_size_bytes", batchFile.getRemoteFileSizeInBytes())
-                .addParameter("_remote_created_date", batchFile.getRemoteLastModifiedDate());
+                .addParameter("_local_relative_path", batchFile.getLocalRelativePath())
+                .addParameter("_remote_size_bytes", batchFile.getRemoteFileSizeInBytes())
+                .addParameter("_remote_created_date", batchFile.getRemoteLastModifiedDate())
+                .addParameter("_requires_decryption", batchFile.doesFileNeedDecrypting());
 
-        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("add_file"));
-        // create executeScalar function instead of above syntax
+        return pgStoredProc.executeSingleRow((resultSet) ->
+                new AddFileResult()
+                    .setFileAlreadyProcessed(resultSet.getBoolean("file_already_processed"))
+                    .setBatchFileId(resultSet.getInt("__batch_file_id")));
+    }
+
+    public void setFileAsDownloaded(BatchFile batchFile) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.set_file_as_downloaded")
+                .addParameter("_batch_file_id", batchFile.getBatchFileId())
+                .addParameter("_local_size_bytes", batchFile.getLocalFileSizeBytes());
+
+        pgStoredProc.execute();
+    }
+
+    public void setFileAsDecrypted(BatchFile batchFile) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.set_file_as_decrypted")
+                .addParameter("_batch_file_id", batchFile.getBatchFileId())
+                .addParameter("_decrypted_filename", batchFile.getDecryptedFilename())
+                .addParameter("_decrypted_size_bytes", batchFile.getDecryptedFileSizeBytes());
+
+        pgStoredProc.execute();
     }
 }

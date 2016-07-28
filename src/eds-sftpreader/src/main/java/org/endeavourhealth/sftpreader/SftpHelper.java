@@ -1,5 +1,6 @@
 package org.endeavourhealth.sftpreader;
 
+import com.jcraft.jsch.IO;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import org.endeavourhealth.sftpreader.model.db.DbConfigurationSftp;
@@ -52,7 +53,8 @@ public class SftpHelper
         File temporaryDownloadFile = new File(localFilePath + ".download");
 
         if (temporaryDownloadFile.exists())
-            throw new IOException("Temporary download file " + temporaryDownloadFile + " already exists");
+            if (!temporaryDownloadFile.delete())
+                throw new IOException("Could not delete existing temporary download file " + temporaryDownloadFile);
 
         InputStream inputStream = sftpConnection.getFile(remoteFilePath);
 

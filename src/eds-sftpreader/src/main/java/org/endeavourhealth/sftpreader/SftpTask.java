@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.openpgp.PGPException;
 import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFile;
 import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFileFactory;
+import org.endeavourhealth.sftpreader.model.db.AddFileResult;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.db.DbConfigurationSftp;
 import org.endeavourhealth.sftpreader.utilities.pgp.PgpUtil;
@@ -38,7 +39,7 @@ public class SftpTask extends TimerTask
 
     private Configuration configuration = null;
     private DbConfiguration dbConfiguration = null;
-    private DataLayer dataLayer = null;
+    private DataLayer db = null;
 
     public SftpTask(Configuration configuration)
     {
@@ -63,7 +64,7 @@ public class SftpTask extends TimerTask
     private void initialise() throws Exception
     {
         this.dbConfiguration = configuration.getDbConfiguration();
-        this.dataLayer = new DataLayer(configuration.getDatabaseConnection());
+        this.db = new DataLayer(configuration.getDatabaseConnection());
     }
 
     private void receiveAndProcessFiles()
@@ -89,20 +90,34 @@ public class SftpTask extends TimerTask
             ///////////////////////////////////////////////////////////////////
             for (SftpRemoteFile sftpRemoteFile : sftpRemoteFiles)
             {
-                LOG.info(">Start Processing file " + sftpRemoteFile.getFilename());
+                LOG.info("Start processing file " + sftpRemoteFile.getFilename());
 
-                BatchFile batchFile = BatchFileFactory.create(sftpRemoteFile, dbConfiguration.getLocalRootPath(), dbConfiguration.getPgpFileExtensionFilter());
+                BatchFile batchFile = instantiateBatchFile(sftpRemoteFile);
 
-                int batchFileId = writeFileDetailsToDatabase(batchFile);
+                if ((!batchFile.isFilenameValid()) || (!db.isBatchFileTypeValid(configuration.getInstanceId(), batchFile)))
+                {
+                    LOG.info("Invalid filename or batch file type identifier");
+                    
+                }
+
+                AddFileResult addFileResult = db.addFile(configuration.getInstanceId(), batchFile);
+
+                if (addFileResult.isFileAlreadyProcessed())
+                {
+                    LOG.info("Skipping file as already processed " + batchFile.getFilename());
+                    continue;
+                }
+
+                batchFile.setBatchFileId(addFileResult.getBatchFileId());
 
                 createBatchDirectory(batchFile);
 
                 downloadFile(sftpConnection, batchFile);
 
-//                if (batchFile.doesFileNeedDecrypting())
-//                    decryptFile(batchFile);
+                if (batchFile.doesFileNeedDecrypting())
+                    decryptFile(batchFile);
 
-                LOG.info(">End Processing file " + batchFile.getFilename());
+                LOG.info("End processing file " + batchFile.getFilename());
             }
         }
         catch (Exception e)
@@ -115,9 +130,9 @@ public class SftpTask extends TimerTask
         }
     }
 
-    private int writeFileDetailsToDatabase(BatchFile batchFile) throws PgStoredProcException
+    private BatchFile instantiateBatchFile(SftpRemoteFile sftpRemoteFile)
     {
-        return dataLayer.addFile(configuration.getInstanceId(), batchFile);
+        return BatchFileFactory.create(sftpRemoteFile, dbConfiguration.getLocalRootPath(), dbConfiguration.getPgpFileExtensionFilter());
     }
 
     private void createBatchDirectory(BatchFile batchFile) throws IOException
@@ -129,9 +144,13 @@ public class SftpTask extends TimerTask
                 throw new IOException("Could not create path " + localPath);
     }
 
-    private void downloadFile(SftpConnection sftpConnection, BatchFile batchFile) throws IOException, SftpException
+    private void downloadFile(SftpConnection sftpConnection, BatchFile batchFile) throws Exception
     {
         SftpHelper.downloadFile(sftpConnection, batchFile.getRemoteFilePath(), batchFile.getLocalFilePath());
+
+        batchFile.setLocalFileSizeBytes(getFileSizeBytes(batchFile.getLocalFilePath()));
+
+        db.setFileAsDownloaded(batchFile);
     }
 
     private void deleteRemoteFile(SftpConnection sftpConnection, String remoteFilePath) throws SftpException
@@ -141,7 +160,7 @@ public class SftpTask extends TimerTask
         sftpConnection.deleteFile(remoteFilePath);
     }
 
-    private void decryptFile(BatchFile batchFile) throws PGPException, SignatureException, NoSuchProviderException, IOException
+    private void decryptFile(BatchFile batchFile) throws Exception
     {
         String localFilePath = batchFile.getLocalFilePath();
         String decryptedLocalFilePath = batchFile.getDecryptedLocalFilePath();
@@ -152,8 +171,11 @@ public class SftpTask extends TimerTask
         LOG.info("Decrypting file " + localFilePath + " to " + decryptedLocalFilePath);
 
         PgpUtil.decryptAndVerify(localFilePath, senderPublicKey, recipientPrivateKey, recipientPrivateKeyPassword, decryptedLocalFilePath);
-    }
 
+        batchFile.setDecryptedFileSizeBytes(getFileSizeBytes(batchFile.getDecryptedLocalFilePath()));
+
+        db.setFileAsDecrypted(batchFile);
+    }
 
     private void notifyOnwardPipeline()
     {
@@ -165,5 +187,11 @@ public class SftpTask extends TimerTask
         {
             LOG.info("Exception while notifying onward pipeline", e);
         }
+    }
+
+    private static long getFileSizeBytes(String filePath)
+    {
+        File file = new File(filePath);
+        return file.length();
     }
 }

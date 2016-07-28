@@ -138,6 +138,8 @@ public class PgStoredProc
             return value.toString();
         else if ((value instanceof Character) || (value instanceof String))
             return "'" + value + "'";
+        else if ((value instanceof Boolean))
+            return value.toString();
         else if (value instanceof java.time.LocalDate)
             return "'" + ((java.time.LocalDate)value).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + "'";
 

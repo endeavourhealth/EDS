@@ -1,6 +1,7 @@
 package org.endeavourhealth.sftpreader.batchFileImplementations;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
 
@@ -11,6 +12,9 @@ public abstract class BatchFile
     private SftpRemoteFile sftpRemoteFile;
     private String localRootPath;
     protected String pgpFileExtensionFilter;
+    private Long localFileSizeBytes = null;
+    private Long decryptedFileSizeBytes = null;
+    private Integer batchFileId = null;
 
     BatchFile(SftpRemoteFile sftpRemoteFile, String localRootPath, String pgpFileExtensionFilter)
     {
@@ -58,7 +62,12 @@ public abstract class BatchFile
 
     public String getDecryptedLocalFilePath()
     {
-        return StringUtils.removeEnd(getLocalFilePath(), this.pgpFileExtensionFilter);
+        return FilenameUtils.concat(getLocalPath(), getDecryptedFilename());
+    }
+
+    public String getDecryptedFilename()
+    {
+        return StringUtils.removeEnd(getFilename(), this.pgpFileExtensionFilter);
     }
 
     public long getRemoteFileSizeInBytes()
@@ -69,5 +78,44 @@ public abstract class BatchFile
     public LocalDateTime getRemoteLastModifiedDate()
     {
         return sftpRemoteFile.getLastModified();
+    }
+
+    public long getLocalFileSizeBytes()
+    {
+        if (localFileSizeBytes == null)
+            throw new NullPointerException("localFileSizeBytes is null");
+
+        return this.localFileSizeBytes;
+    }
+
+    public void setLocalFileSizeBytes(long localFileSizeBytes)
+    {
+        this.localFileSizeBytes = localFileSizeBytes;
+    }
+
+    public long getDecryptedFileSizeBytes()
+    {
+        if (decryptedFileSizeBytes == null)
+            throw new NullPointerException("decryptedFileSizeBytes is null");
+
+        return this.decryptedFileSizeBytes;
+    }
+
+    public void setDecryptedFileSizeBytes(long localFileSizeBytes)
+    {
+        this.decryptedFileSizeBytes = localFileSizeBytes;
+    }
+
+    public int getBatchFileId()
+    {
+        if (batchFileId == null)
+            throw new NullPointerException("batchFileId is null");
+
+        return this.batchFileId;
+    }
+
+    public void setBatchFileId(int batchFileId)
+    {
+        this.batchFileId = batchFileId;
     }
 }
