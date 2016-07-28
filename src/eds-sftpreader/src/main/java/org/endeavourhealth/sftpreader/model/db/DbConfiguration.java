@@ -4,8 +4,8 @@ public class DbConfiguration
 {
     private String instanceId;
     private String instanceDescription;
-    private int batchTypeId;
-    private String batchTypeDescription;
+    private int interfaceTypeId;
+    private String interfaceTypeDescription;
     private int pollFrequencySeconds;
     private String localRootPath;
     private DbConfigurationSftp dbConfigurationSftp;
@@ -33,25 +33,25 @@ public class DbConfiguration
         return this;
     }
 
-    public int getBatchTypeId()
+    public int getInterfaceTypeId()
     {
-        return batchTypeId;
+        return interfaceTypeId;
     }
 
-    public DbConfiguration setBatchTypeId(int batchTypeId)
+    public DbConfiguration setInterfaceTypeId(int interfaceTypeId)
     {
-        this.batchTypeId = batchTypeId;
+        this.interfaceTypeId = interfaceTypeId;
         return this;
     }
 
-    public String getBatchTypeDescription()
+    public String getInterfaceTypeDescription()
     {
-        return batchTypeDescription;
+        return interfaceTypeDescription;
     }
 
-    public DbConfiguration setBatchTypeDescription(String batchTypeDescription)
+    public DbConfiguration setInterfaceTypeDescription(String interfaceTypeDescription)
     {
-        this.batchTypeDescription = batchTypeDescription;
+        this.interfaceTypeDescription = interfaceTypeDescription;
         return this;
     }
 

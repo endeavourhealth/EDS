@@ -1,37 +1,19 @@
 package org.endeavourhealth.sftpreader;
 
-import com.google.common.io.Resources;
-import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
-import org.apache.commons.io.FileSystemUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.bouncycastle.openpgp.PGPException;
 import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFile;
 import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFileFactory;
 import org.endeavourhealth.sftpreader.model.db.AddFileResult;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
-import org.endeavourhealth.sftpreader.model.db.DbConfigurationSftp;
 import org.endeavourhealth.sftpreader.utilities.pgp.PgpUtil;
-import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnection;
-import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionDetails;
-import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionException;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.NoSuchProviderException;
-import java.security.SignatureException;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.TimerTask;
 
 public class SftpTask extends TimerTask
 {
@@ -94,10 +76,10 @@ public class SftpTask extends TimerTask
 
                 BatchFile batchFile = instantiateBatchFile(sftpRemoteFile);
 
-                if ((!batchFile.isFilenameValid()) || (!db.isBatchFileTypeValid(configuration.getInstanceId(), batchFile)))
+                if ((!batchFile.isFilenameValid()) || (!db.isFileTypeIdentifierValid(configuration.getInstanceId(), batchFile)))
                 {
                     LOG.info("Invalid filename or batch file type identifier");
-                    
+
                 }
 
                 AddFileResult addFileResult = db.addFile(configuration.getInstanceId(), batchFile);

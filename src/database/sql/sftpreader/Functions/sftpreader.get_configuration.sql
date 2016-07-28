@@ -7,8 +7,8 @@ returns table
 (
 	instance_id varchar,
 	instance_description varchar,
-	batch_type_id integer,
-	batch_type_description varchar,
+	interface_type_id integer,
+	interface_type_description varchar,
 	poll_frequency_seconds integer,
 	local_root_path varchar,
 	hostname varchar,
@@ -29,8 +29,8 @@ as $$
 	select
 		i.instance_id,
 		i.description as instance_description,
-		c.batch_type_id,
-		bt.description as batch_type_description,
+		c.interface_type_id,
+		it.description as interface_type_description,
 		c.poll_frequency_seconds,	
 		c.local_root_path,
 		cs.hostname,
@@ -47,7 +47,7 @@ as $$
 		cp.recipient_private_key_password as pgp_private_key_password
 	from sftpreader.instance i
 	left outer join sftpreader.configuration c on i.instance_id = c.instance_id
-	left outer join sftpreader.batch_type bt on c.batch_type_id = bt.batch_type_id
+	left outer join sftpreader.interface_type it on c.interface_type_id = it.interface_type_id
 	left outer join sftpreader.configuration_sftp cs on i.instance_id = cs.instance_id
 	left outer join sftpreader.configuration_pgp cp on i.instance_id = cp.instance_id
 	where i.instance_id = _instance_id;

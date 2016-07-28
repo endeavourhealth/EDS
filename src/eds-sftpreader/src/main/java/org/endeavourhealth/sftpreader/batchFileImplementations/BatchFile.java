@@ -1,7 +1,6 @@
 package org.endeavourhealth.sftpreader.batchFileImplementations;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
 
@@ -24,8 +23,8 @@ public abstract class BatchFile
     }
 
     public abstract boolean isFilenameValid();
-    public abstract String getRemoteBatchIdentifier();
-    public abstract String getRemoteFileTypeIdentifier();
+    public abstract String getBatchIdentifier();
+    public abstract String getFileTypeIdentifier();
 
     public String getRemoteFilePath()
     {
@@ -39,12 +38,12 @@ public abstract class BatchFile
 
     public String getLocalPath()
     {
-        return FilenameUtils.concat(this.localRootPath, this.getRemoteBatchIdentifier());
+        return FilenameUtils.concat(this.localRootPath, this.getBatchIdentifier());
     }
 
     public String getLocalRelativePath()
     {
-        return this.getRemoteBatchIdentifier();
+        return this.getBatchIdentifier();
     }
 
     public String getLocalFilePath()

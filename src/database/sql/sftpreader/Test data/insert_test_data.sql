@@ -16,7 +16,7 @@ values
 insert into sftpreader.configuration
 (
 	instance_id,
-	batch_type_id,
+	interface_type_id,
 	local_root_path,
 	poll_frequency_seconds
 )

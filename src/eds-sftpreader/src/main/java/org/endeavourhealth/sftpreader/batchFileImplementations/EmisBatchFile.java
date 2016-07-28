@@ -37,7 +37,7 @@ public class EmisBatchFile extends BatchFile
     }
 
     @Override
-    public String getRemoteBatchIdentifier()
+    public String getBatchIdentifier()
     {
         if (!isFilenameValid)
             return "UNKNOWN";
@@ -46,7 +46,7 @@ public class EmisBatchFile extends BatchFile
     }
 
     @Override
-    public String getRemoteFileTypeIdentifier()
+    public String getFileTypeIdentifier()
     {
         if (!isFilenameValid)
             return "UNKNOWN";

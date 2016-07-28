@@ -2,8 +2,8 @@
 create or replace function sftpreader.add_file
 (
 	_instance_id varchar,
-	_remote_batch_identifier varchar,
-	_remote_file_type_identifier varchar,
+	_batch_identifier varchar,
+	_file_type_identifier varchar,
 	_filename varchar,
 	_local_relative_path varchar,
 	_remote_size_bytes bigint,
@@ -17,7 +17,7 @@ returns table
 )
 as $$
 	declare _batch_id integer;
-	declare _batch_type_id integer;
+	declare _interface_type_id integer;
 	declare _batch_file_id integer;
 	declare _file_already_processed boolean;
 begin
@@ -28,12 +28,12 @@ begin
 		_batch_id
 	from sftpreader.batch
 	where instance_id = _instance_id
-	and remote_batch_identifier = _remote_batch_identifier;
+	and batch_identifier = _batch_identifier;
 
 	select
-		batch_type_id
+		interface_type_id
 	into
-		_batch_type_id
+		_interface_type_id
 	from sftpreader.configuration
 	where instance_id = _instance_id;
 
@@ -43,15 +43,15 @@ begin
 		insert into sftpreader.batch
 		(
 			instance_id,
-			remote_batch_identifier,
-			batch_type_id,
+			batch_identifier,
+			interface_type_id,
 			local_relative_path
 		)
 		values
 		(
 			_instance_id,
-			_remote_batch_identifier,
-			_batch_type_id,
+			_batch_identifier,
+			_interface_type_id,
 			_local_relative_path
 		)
 		returning batch_id into _batch_id;
@@ -59,21 +59,21 @@ begin
 	end if;
 
 	select 
-		batch_file_id,
+		bf.batch_file_id,
 		(is_downloaded and ((not requires_decryption) or is_decrypted))
 	into
 		_batch_file_id,
 		_file_already_processed 
-	from sftpreader.batch_file
+	from sftpreader.batch_file bf
 	where batch_id = _batch_id
-	and remote_file_type_identifier = _remote_file_type_identifier;
+	and file_type_identifier = _file_type_identifier;
 
 	if (_batch_file_id is not null)
 	then
 		if (not _file_already_processed)
 		then
-			delete from sftpreader.batch_file
-			where batch_file_id = _batch_file_id;
+			delete from sftpreader.batch_file bf
+			where bf.batch_file_id = _batch_file_id;
 
 			_batch_file_id = null;
 		end if;
@@ -84,8 +84,8 @@ begin
 		insert into sftpreader.batch_file
 		(
 			batch_id,
-			batch_type_id,
-			remote_file_type_identifier,
+			interface_type_id,
+			file_type_identifier,
 			filename,
 			remote_size_bytes,
 			remote_created_date,
@@ -95,15 +95,15 @@ begin
 		values
 		(
 			_batch_id,
-			_batch_type_id,
-			_remote_file_type_identifier,
+			_interface_type_id,
+			_file_type_identifier,
 			_filename,
 			_remote_size_bytes,
 			_remote_created_date,
 			_requires_decryption,
 			case when _requires_decryption then false else null end
 		)
-		returning batch_file_id into _batch_file_id;
+		returning sftpreader.batch_file.batch_file_id into _batch_file_id;
 	end if;
 
 	return query

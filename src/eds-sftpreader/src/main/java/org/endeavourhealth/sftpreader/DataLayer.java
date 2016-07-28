@@ -30,8 +30,8 @@ public class DataLayer
 
                         .setInstanceId(resultSet.getString("instance_id"))
                         .setInstanceDescription(resultSet.getString("instance_description"))
-                        .setBatchTypeId(resultSet.getInt("batch_type_id"))
-                        .setBatchTypeDescription(resultSet.getString("batch_type_description"))
+                        .setInterfaceTypeId(resultSet.getInt("interface_type_id"))
+                        .setInterfaceTypeDescription(resultSet.getString("interface_type_description"))
                         .setPollFrequencySeconds(resultSet.getInt("poll_frequency_seconds"))
                         .setLocalRootPath(resultSet.getString("local_root_path"))
 
@@ -52,14 +52,14 @@ public class DataLayer
                             .setPgpRecipientPrivateKeyPassword(resultSet.getString("pgp_recipient_private_key_password"))));
     }
 
-    public boolean isBatchFileTypeValid(String instanceId, BatchFile batchFile) throws PgStoredProcException
+    public boolean isFileTypeIdentifierValid(String instanceId, BatchFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.is_batch_file_type_valid")
+                .setName("sftpreader.is_file_type_identifier_valid")
                 .addParameter("_instance_id", instanceId)
-                .addParameter("_remote_file_type_identifier", batchFile.getRemoteFileTypeIdentifier());
+                .addParameter("_file_type_identifier", batchFile.getFileTypeIdentifier());
 
-        return pgStoredProc.executeSingleRow(resultSet -> resultSet.getBoolean("is_batch_file_type_valid"));
+        return pgStoredProc.executeSingleRow(resultSet -> resultSet.getBoolean("is_file_type_identifier_valid"));
     }
 
     public AddFileResult addFile(String instanceId, BatchFile batchFile) throws PgStoredProcException
@@ -67,8 +67,8 @@ public class DataLayer
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.add_file")
                 .addParameter("_instance_id", instanceId)
-                .addParameter("_remote_batch_identifier", batchFile.getRemoteBatchIdentifier())
-                .addParameter("_remote_file_type_identifier", batchFile.getRemoteFileTypeIdentifier())
+                .addParameter("_batch_identifier", batchFile.getBatchIdentifier())
+                .addParameter("_file_type_identifier", batchFile.getFileTypeIdentifier())
                 .addParameter("_filename", batchFile.getFilename())
                 .addParameter("_local_relative_path", batchFile.getLocalRelativePath())
                 .addParameter("_remote_size_bytes", batchFile.getRemoteFileSizeInBytes())
@@ -78,7 +78,7 @@ public class DataLayer
         return pgStoredProc.executeSingleRow((resultSet) ->
                 new AddFileResult()
                     .setFileAlreadyProcessed(resultSet.getBoolean("file_already_processed"))
-                    .setBatchFileId(resultSet.getInt("__batch_file_id")));
+                    .setBatchFileId(resultSet.getInt("batch_file_id")));
     }
 
     public void setFileAsDownloaded(BatchFile batchFile) throws PgStoredProcException
