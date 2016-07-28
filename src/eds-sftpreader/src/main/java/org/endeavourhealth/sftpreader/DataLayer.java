@@ -1,5 +1,6 @@
 package org.endeavourhealth.sftpreader;
 
+import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFile;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.db.DbConfigurationPgp;
 import org.endeavourhealth.sftpreader.model.db.DbConfigurationSftp;
@@ -23,7 +24,7 @@ public class DataLayer
                 .setName("sftpreader.get_configuration")
                 .addParameter("_instance_id", instanceId);
 
-        return pgStoredProc.executeScalar((resultSet) ->
+        return pgStoredProc.executeSingleRow((resultSet) ->
                 new DbConfiguration()
 
                         .setInstanceId(resultSet.getString("instance_id"))
@@ -50,16 +51,18 @@ public class DataLayer
                             .setPgpRecipientPrivateKeyPassword(resultSet.getString("pgp_recipient_private_key_password"))));
     }
 
-    public void addFile(String instanceId, String fileSetIdentifier, String filename, String filePath, long fileSize) throws PgStoredProcException
+    public int addFile(String instanceId, BatchFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.add_file")
                 .addParameter("_instance_id", instanceId)
-                .addParameter("_file_set_local_identifier", fileSetIdentifier)
-                .addParameter("_file_name", filename)
-                .addParameter("_file_path", filePath)
-                .addParameter("_file_size", fileSize);
+                .addParameter("_remote_batch_identifier", batchFile.getRemoteBatchIdentifier())
+                .addParameter("_remote_file_type_identifier", batchFile.getRemoteFileTypeIdentifier())
+                .addParameter("_filename", batchFile.getFilename())
+                .addParameter("_remote_file_size_bytes", batchFile.getRemoteFileSizeInBytes())
+                .addParameter("_remote_created_date", batchFile.getRemoteLastModifiedDate());
 
-        pgStoredProc.execute();
+        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("add_file"));
+        // create executeScalar function instead of above syntax
     }
 }

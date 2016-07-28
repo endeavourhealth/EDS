@@ -39,17 +39,17 @@ values
 create table sftpreader.batch_file_type
 (
 	batch_type_id integer not null,
-	local_file_type_identifier varchar(1000),
+	remote_file_type_identifier varchar(1000),
 
-	constraint sftpreader_batchfiletype_batchtypeid_localfiletypeidentifier_pk primary key (batch_type_id, local_file_type_identifier),
+	constraint sftpreader_batchfiletype_batchtypeid_remotefiletypeidentifier_pk primary key (batch_type_id, remote_file_type_identifier),
 	constraint sftpreader_batchfiletype_batchtypeid_fk foreign key (batch_type_id) references sftpreader.batch_type (batch_type_id),
-	constraint sftpreader_batchfiletype_localfiletypeidentifier_ck check (char_length(trim(local_file_type_identifier)) > 0)
+	constraint sftpreader_batchfiletype_remotefiletypeidentifier_ck check (char_length(trim(remote_file_type_identifier)) > 0)
 );
 
 insert into sftpreader.batch_file_type
 (
 	batch_type_id,
-	local_file_type_identifier
+	remote_file_type_identifier
 )
 values
 (1, 'Admin_Location'),
@@ -85,7 +85,8 @@ create table sftpreader.configuration
 	constraint sftpreader_configuration_instanceid_fk foreign key (instance_id) references sftpreader.instance (instance_id),
 	constraint sftpreader_configuration_batchtypeid_fk foreign key (batch_type_id) references sftpreader.batch_type (batch_type_id),
 	constraint sftpreader_configuration_instanceid_batchtypeid_uq unique (instance_id, batch_type_id),
-	constraint sftpreader_configuration_pollfrequencyseconds check (poll_frequency_seconds >= 0),
+	constraint sftpreader_configuration_pollfrequencyseconds_ck check (poll_frequency_seconds >= 0),
+	constraint sftpreader_configuration_localrootpath_uq unique (local_root_path),
 	constraint sftpreader_configuration_localrootpath_ck check (char_length(trim(local_root_path)) > 0)
 );
 
@@ -126,7 +127,7 @@ create table sftpreader.batch
 	batch_id serial not null,
 	instance_id varchar(100) not null,
 	batch_type_id integer not null,
-	local_batch_identifier varchar(500) not null,
+	remote_batch_identifier varchar(500) not null,
 	create_date timestamp not null default now(),
 	is_complete boolean not null default false,
 	complete_date timestamp null,
@@ -136,8 +137,8 @@ create table sftpreader.batch
 	constraint sftpreader_batch_filesetid_pk primary key (batch_id),
 	constraint sftpreader_batch_instanceid_batchtypeid_fk foreign key (instance_id, batch_type_id) references sftpreader.configuration (instance_id, batch_type_id),
 	constraint sftpreader_batch_instanceid_batchid_uq unique (instance_id, batch_id),
-	constraint sftpreader_batch_instanceid_localbatchidentifier_uq unique (instance_id, local_batch_identifier),
-	constraint sftpreader_batch_localbatchidentifier_ck check (char_length(trim(local_batch_identifier)) > 0),
+	constraint sftpreader_batch_instanceid_remotebatchidentifier_uq unique (instance_id, remote_batch_identifier),
+	constraint sftpreader_batch_remotebatchidentifier_ck check (char_length(trim(remote_batch_identifier)) > 0),
 	constraint sftpreader_batch_createdate_completedate_ck check ((complete_date is null) or (create_date <= complete_date)),
 	constraint sftpreader_batch_completedate_notificationdate_ck check ((complete_date is null or notification_date is null) or (complete_date <= notification_date)),
 	constraint sftpreader_batch_iscomplete_completedate_ck check ((is_complete and complete_date is not null) or ((not is_complete) and complete_date is null)),
@@ -150,18 +151,27 @@ create table sftpreader.batch_file
 	batch_file_id serial not null,
 	batch_id integer not null,
 	batch_type_id integer not null,
-	local_file_type_identifier varchar(1000) not null,
-	file_name varchar(1000) not null,
-	file_path varchar(1000) not null,
-	file_size_bytes bigint not null,
-	download_date timestamp not null default now(),
+	remote_file_type_identifier varchar(1000) not null,
+	filename varchar(1000) not null,
+	is_downloaded boolean not null default (false),
+	download_date timestamp null,
+	local_relative_path varchar(1000) null,
+	is_decrypted boolean not null default (false),
+	decrypt_date timestamp null,
+	decrypted_filename varchar(1000) null,
+	remote_file_size_bytes bigint not null,
+	remote_created_date timestamp not null,
 
 	constraint sftpreader_batchfile_batchfileid_pk primary key (batch_file_id),
 	constraint sftpreader_batchfile_batchid_fk foreign key (batch_id) references sftpreader.batch (batch_id),
-	constraint sftpreader_batchfile_batchtypeid_localfiletypeidentifier_fk foreign key (batch_type_id, local_file_type_identifier) references sftpreader.batch_file_type (batch_type_id, local_file_type_identifier),
-	constraint sftpreader_batchfile_batchid_localfiletypeidentifier_uq unique (batch_id, local_file_type_identifier),
-	constraint sftpreader_batchfile_batchid_filename_uq unique (batch_id, file_name),
-	constraint sftpreader_batchfile_filename_ck check (char_length(trim(file_name)) > 0),
-	constraint sftpreader_batchfile_filesizebytes check (file_size_bytes >= 0)
+	constraint sftpreader_batchfile_batchtypeid_remotefiletypeidentifier_fk foreign key (batch_type_id, remote_file_type_identifier) references sftpreader.batch_file_type (batch_type_id, remote_file_type_identifier),
+	constraint sftpreader_batchfile_batchid_remotefiletypeidentifier_uq unique (batch_id, remote_file_type_identifier),
+	constraint sftpreader_batchfile_batchid_filename_uq unique (batch_id, filename),
+	constraint sftpreader_batchfile_filename_ck check (char_length(trim(filename)) > 0),
+	constraint sftpreader_batchfile_isdownloaded_downloaddate_localrelativepath_ck check ((is_downloaded and download_date is not null and local_relative_path is not null) or ((not is_downloaded) and download_date is null and local_relative_path is null)),
+	constraint sftpreader_batchfile_isdecrypted_decryptdate_decryptedfilename_ck check ((is_decrypted and decrypt_date is not null and decrypted_filename is not null) or ((not is_decrypted) and decrypt_date is null and decrypted_filename is null)),
+	constraint sftpreader_batchfile_isdownloaded_isdecrypted_ck check ((not is_decrypted) or is_downloaded),
+	constraint sftpreader_batchfile_batchid_decryptedfilename_uq unique (batch_id, decrypted_filename),
+	constraint sftpreader_batchfile_decryptedfilename_ck check (decrypted_filename is null or (char_length(trim(decrypted_filename)) > 0)),
+	constraint sftpreader_batchfile_remotefilesizebytes_ck check (remote_file_size_bytes >= 0)
 );
-

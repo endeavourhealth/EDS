@@ -9,6 +9,9 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 import java.util.stream.Collectors;
@@ -56,7 +59,13 @@ public class SftpConnection
                 .stream()
                 .filter(t -> !FilenameUtils.getName(t.getFilename()).equals("."))
                 .filter(t -> !FilenameUtils.getName(t.getFilename()).equals(".."))
-                .map(t -> new SftpRemoteFile(t.getFilename(), remotePath))
+                .map(t ->
+                        new SftpRemoteFile(t.getFilename(),
+                                remotePath,
+                                t.getAttrs().getSize(),
+                                LocalDateTime.ofInstant(new Date((long)t.getAttrs().getMTime() * 1000L).toInstant(), ZoneId.systemDefault())
+                        )
+                )
                 .collect(Collectors.toList());
     }
 

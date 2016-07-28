@@ -68,7 +68,7 @@ public class PgStoredProc
         return this.outParameters.get(name);
     }
 
-    public <T extends Object> T executeScalar(IResultSetPopulator<T> rowMapper) throws PgStoredProcException
+    public <T extends Object> T executeSingleRow(IResultSetPopulator<T> rowMapper) throws PgStoredProcException
     {
         List<T> resultList = executeQuery(rowMapper);
 

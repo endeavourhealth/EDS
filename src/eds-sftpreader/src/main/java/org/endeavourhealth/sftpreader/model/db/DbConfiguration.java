@@ -92,4 +92,12 @@ public class DbConfiguration
         this.dbConfigurationSftp = dbConfigurationSftp;
         return this;
     }
+
+    public String getPgpFileExtensionFilter()
+    {
+        if (this.getDbConfigurationPgp() == null)
+            return null;
+
+        return this.getDbConfigurationPgp().getPgpFileExtensionFilter();
+    }
 }

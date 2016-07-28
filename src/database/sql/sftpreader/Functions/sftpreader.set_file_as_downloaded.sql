@@ -1,18 +1,17 @@
 
-create or replace function sftpreader.add_file
+create or replace function sftpreader.addRemoteFileDetails
 (
-	_instance_id varchar,
-	_remote_batch_identifier varchar,
-	_remote_file_type_identifier varchar,
-	_filename varchar,
+	_instance_id varchar(100),
+	_remote_batch_identifier varchar(500),
+	_remote_file_type_identifier varchar(500),
+	_filename varchar(1000),
 	_remote_file_size_bytes bigint,
 	_remote_created_date timestamp
 )
-returns integer
+returns void
 as $$
 	declare _batch_id integer;
 	declare _batch_type_id integer;
-	declare _batch_file_id integer;
 begin
 
 	select 
@@ -62,10 +61,7 @@ begin
 		_filename,
 		_remote_file_size_bytes,
 		_remote_created_date
-	)
-	returning batch_file_id into _batch_file_id;
-
-	return _batch_file_id;
+	);
 
 end;
 $$ language plpgsql;
