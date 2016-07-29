@@ -40,6 +40,8 @@
 									data-ng-click="testEditor.showFilter('AGE')" ng-show="testEditor.ageFilter">Age</button>
 							<button type="button" class="btn btn-primary"
 									data-ng-click="testEditor.showFilter('REGISTRATION_DATE')" ng-show="testEditor.regFilter">Reg Date</button>
+							<button type="button" class="btn btn-primary"
+									data-ng-click="testEditor.showFilter('NHS_NO')" ng-show="testEditor.nhsFilter">NHS No.</button>
 						</div>
 					</div>
 				</div>
@@ -195,6 +197,16 @@
 						</div>
 					</div>
 				</div>
+				<div class='row' ng-show="testEditor.valueSetEditor">
+					<hr/>
+					<div class="col-xs-6">
+						<div class="form-group">
+							<label>Filter by {{testEditor.valueSetField}}:</label>
+							<a class="queryLink" ng-click="testEditor.removeFilter('valueSet')"><i class="fa fa-times"></i> Remove filter</a>
+							<input type="text" class="form-control" ng-model="testEditor.filterValueSet" ng-blur="testEditor.filterValueSetChange(testEditor.filterValueSet)" placeholder="Specify {{testEditor.valueSetField}}(s) separated by commas">
+						</div>
+					</div>
+				</div>
 				<div ng-show="testEditor.addRestriction">
 					<hr/>
 					<a class="queryLink" ng-click="testEditor.toggleRestriction()"><i class="fa fa-sort-amount-asc"></i> Add Restriction (limit the number of entries filtered)</a>
@@ -248,6 +260,8 @@
 									data-ng-click="testEditor.showFieldTest('AGE')" ng-show="testEditor.ageFilter">Age</button>
 							<button type="button" class="btn btn-primary"
 									data-ng-click="testEditor.showFieldTest('REGISTRATION_DATE')" ng-show="testEditor.regFilter">Reg Date</button>
+							<button type="button" class="btn btn-primary"
+									data-ng-click="testEditor.showFieldTest('NHS_NO')" ng-show="testEditor.nhsFilter">NHS No.</button>
 						</div>
 					</div>
 				</div>
@@ -402,6 +416,16 @@
 						<div class="form-group">
 							<label>Test by {{testEditor.fieldTestValueField}} To:</label>
 							<input type="text" class="form-control" ng-model="testEditor.fieldTestValueTo" ng-blur="testEditor.fieldTestValueToChange(testEditor.fieldTestValueTo)" placeholder="Select {{testEditor.fieldTestValueField}} to">
+						</div>
+					</div>
+				</div>
+				<div class='row' ng-show="testEditor.fieldTestValueSetEditor">
+					<hr/>
+					<div class="col-xs-6">
+						<div class="form-group">
+							<label>Test by {{testEditor.fieldTestValueSetField}}:</label>
+							<a class="queryLink" ng-click="testEditor.removeFieldTest('valueSet')"><i class="fa fa-times"></i> Remove filter</a>
+							<input type="text" class="form-control" ng-model="testEditor.fieldTestValueSet" ng-blur="testEditor.fieldTestValueSetChange(testEditor.fieldTestValueSet)" placeholder="Specify {{testEditor.fieldTestValueSetField}}(s) separated by commas">
 						</div>
 					</div>
 				</div>

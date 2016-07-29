@@ -34,8 +34,10 @@ module app.dialogs {
 		dateEditor : boolean = false;
 		dobEditor : boolean = false;
 		valueEditor : boolean = false;
+		valueSetEditor : boolean = false;
 		sexEditor : boolean = false;
 		valueField : string;
+		valueSetField : string;
 		dateLabel : string;
 		dobLabel : string;
 		sexLabel : string;
@@ -43,8 +45,10 @@ module app.dialogs {
 		fieldTestDateEditor : boolean = false;
 		fieldTestDobEditor : boolean = false;
 		fieldTestValueEditor : boolean = false;
+		fieldTestValueSetEditor : boolean = false;
 		fieldTestSexEditor : boolean = false;
 		fieldTestValueField : string;
+		fieldTestValueSetField : string;
 		fieldTestDateLabel : string;
 		fieldTestDobLabel : string;
 		fieldTestSexLabel : string;
@@ -68,9 +72,11 @@ module app.dialogs {
 		filterDOBToRelativeValue : String;
 		filterDOBFromRelativePeriod : String;
 		filterDOBToRelativePeriod : String;
+		filterValueSet : string;
 		filterValueFrom : string;
 		filterValueTo : string;
 		filterSex : string;
+
 		fieldTestDateFrom : Date;
 		fieldTestDateTo : Date;
 		fieldTestDateFromRelativeValue : String;
@@ -85,7 +91,9 @@ module app.dialogs {
 		fieldTestDOBToRelativePeriod : String;
 		fieldTestValueFrom : string;
 		fieldTestValueTo : string;
+		fieldTestValueSet : string;
 		fieldTestSex : string;
+
 		restrictionFieldName: string;
 		restrictionOrderDirection: string;
 		restrictionCount: string = "1";
@@ -96,6 +104,7 @@ module app.dialogs {
 		sexFilter : boolean = false;
 		ageFilter : boolean = false;
 		regFilter : boolean = false;
+		nhsFilter : boolean = false;
 		disableRestrictionCount : boolean = false;
 
 		editMode : boolean = false;
@@ -361,6 +370,13 @@ module app.dialogs {
 						if (filter.valueSet)
 							vm.filterSex = filter.valueSet.value[0];
 						break;
+					case "NHS_NO":
+						if (filter.valueSet) {
+							//console.log(filter.valueSet.value);
+							vm.filterValueSet = filter.valueSet.value.join();
+						}
+
+						break;
 					default:
 				}
 			}
@@ -435,6 +451,10 @@ module app.dialogs {
 						case "SEX":
 							if (fieldTest.valueSet)
 								vm.fieldTestSex = fieldTest.valueSet.value[0];
+							break;
+						case "NHS_NO":
+							if (fieldTest.valueSet)
+								vm.fieldTestValueSet = fieldTest.valueSet.value.join();
 							break;
 						default:
 					}
@@ -535,6 +555,12 @@ module app.dialogs {
 							vm.resultData.resource.filter.splice(i, 1);
 						}
 						break;
+					case "valueSet":
+						if (f.field=="NHS_NO") {
+							vm.valueSetEditor = false;
+							vm.resultData.resource.filter.splice(i, 1);
+						}
+						break;
 					case "restriction":
 						vm.showRestriction = false;
 						vm.resultData.resource.restriction = null;
@@ -581,6 +607,12 @@ module app.dialogs {
 					case "value":
 						if (f.field=="VALUE"||f.field=="AGE") {
 							vm.fieldTestValueEditor = false;
+							vm.resultData.fieldTest.splice(i, 1);
+						}
+						break;
+					case "valueSet":
+						if (f.field=="NHS_NO") {
+							vm.fieldTestValueSetEditor = false;
 							vm.resultData.fieldTest.splice(i, 1);
 						}
 						break;
@@ -642,11 +674,13 @@ module app.dialogs {
 			vm.dateEditor = false;
 			vm.dobEditor = false;
 			vm.valueEditor = false;
+			vm.valueSetEditor = false;
 			vm.sexEditor = false;
 			vm.fieldTestCodeEditor = false;
 			vm.fieldTestDateEditor = false;
 			vm.fieldTestDobEditor = false;
 			vm.fieldTestValueEditor = false;
+			vm.fieldTestValueSetEditor = false;
 			vm.fieldTestSexEditor = false;
 			vm.addRestriction = true;
 			vm.showRestriction = false;
@@ -654,6 +688,7 @@ module app.dialogs {
 			vm.codeFilter = false;
 			vm.dateFilter = false;
 			vm.valueFilter = false;
+			vm.nhsFilter = false;
 			vm.dobFilter = false;
 			vm.sexFilter = false;
 			vm.ageFilter = false;
@@ -676,6 +711,7 @@ module app.dialogs {
 					vm.sexFilter = true;
 					vm.ageFilter = true;
 					vm.regFilter = true;
+					vm.nhsFilter = true;
 					break;
 				default:
 			}
@@ -706,6 +742,10 @@ module app.dialogs {
 					vm.sexEditor = true;
 					vm.sexLabel = value;
 					break;
+				case "NHS_NO":
+					vm.valueSetEditor = true;
+					vm.valueSetField = value;
+					break;
 				default:
 			}
 		}
@@ -734,6 +774,10 @@ module app.dialogs {
 				case "SEX":
 					vm.fieldTestSexEditor = true;
 					vm.fieldTestSexLabel = value;
+					break;
+				case "NHS_NO":
+					vm.fieldTestValueSetEditor = true;
+					vm.fieldTestValueSetField = value;
 					break;
 				default:
 			}
@@ -1065,6 +1109,48 @@ module app.dialogs {
 
 		}
 
+		filterValueSetChange(value : any) {
+			var vm = this;
+
+			if (!value)
+				value="";
+
+			var array = value.split(',');
+
+			var valueSet : ValueSet = {
+				value: array
+			}
+
+			var fieldTest : FieldTest = {
+				field: vm.valueSetField,
+				valueFrom: null,
+				valueTo: null,
+				valueRange: null,
+				valueEqualTo: null,
+				codeSet: null,
+				valueSet: valueSet,
+				codeSetLibraryItemUuid: null,
+				negate: false
+			};
+
+			var foundEntry : boolean = false;
+
+			for (var i = 0; i < vm.resultData.resource.filter.length; ++i) {
+				var filter = vm.resultData.resource.filter[i];
+
+				if (filter.field==vm.valueSetField && filter.valueSet && value!="") {
+					foundEntry = true;
+					filter.valueSet = valueSet;
+					break;
+				}
+				else if (filter.field==vm.valueSetField && filter.valueSet && value=="")
+					vm.resultData.resource.filter.splice(i, 1);
+			}
+
+			if (!foundEntry && value!="")
+				vm.resultData.resource.filter.push(fieldTest);
+		}
+
 		fieldTestDateFromChange(value : any, dateField : any) {
 			var vm = this;
 
@@ -1380,6 +1466,48 @@ module app.dialogs {
 			if (!foundEntry && value!="")
 				vm.resultData.fieldTest.push(fieldTest);
 
+		}
+
+		fieldTestValueSetChange(value : any) {
+			var vm = this;
+
+			if (!value)
+				value="";
+
+			var array = value.split(',');
+
+			var valueSet : ValueSet = {
+				value: array
+			}
+
+			var fieldTest : FieldTest = {
+				field: vm.fieldTestValueSetField,
+				valueFrom: null,
+				valueTo: null,
+				valueRange: null,
+				valueEqualTo: null,
+				codeSet: null,
+				valueSet: valueSet,
+				codeSetLibraryItemUuid: null,
+				negate: false
+			};
+
+			var foundEntry : boolean = false;
+
+			for (var i = 0; i < vm.resultData.fieldTest.length; ++i) {
+				var ftest = vm.resultData.fieldTest[i];
+
+				if (ftest.field==vm.fieldTestValueSetField && ftest.valueSet && value!="") {
+					foundEntry = true;
+					ftest.valueSet = valueSet;
+					break;
+				}
+				else if (ftest.field==vm.fieldTestValueSetField && ftest.valueSet && value=="")
+					vm.resultData.fieldTest.splice(i, 1);
+			}
+
+			if (!foundEntry && value!="")
+				vm.resultData.fieldTest.push(fieldTest);
 		}
 
 		restrictionChange(value : any) {
