@@ -47,8 +47,18 @@ public class ProblemTransformer {
         fhirProblem.setNotes(comments);
 
         Date endDate = problemParser.getEndDate();
-        String endDatePrecision = problemParser.getEndDatePrecision(); //NOTE; documentation refers to this as EffectiveDate, but this should be EndDate
-        fhirProblem.setAbatement(EmisDateTimeHelper.createDateType(endDate, endDatePrecision));
+        if (endDate != null) {
+            String endDatePrecision = problemParser.getEndDatePrecision(); //NOTE; documentation refers to this as EffectiveDate, but this should be EndDate
+            fhirProblem.setAbatement(EmisDateTimeHelper.createDateType(endDate, endDatePrecision));
+        } else {
+
+            //if there's no end date, the problem may still be ended, which is in the status description
+            String problemStatus = problemParser.getProblemStatusDescription();
+            if (problemStatus.equalsIgnoreCase("Past Problem")) {
+                fhirProblem.setAbatement(new BooleanType(true));
+            }
+        }
+
 
         fhirProblem.setVerificationStatus(Condition.ConditionVerificationStatus.CONFIRMED);
 

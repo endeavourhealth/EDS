@@ -34,34 +34,28 @@ public abstract class AbstractCsvTransformer {
 
     public AbstractCsvTransformer(String folderPath, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
 
-        try {
+        this.file = findFile(folderPath);
 
-            this.file = findFile(folderPath);
+        //calling withHeader() on the format, forces it to read in the first row as the headers, which we can then validate against
+        this.csvReader = CSVParser.parse(file, Charset.defaultCharset(), csvFormat.withHeader());
+        this.csvIterator = csvReader.iterator();
+        this.dateFormat = new SimpleDateFormat(dateFormat);
+        this.timeFormat = new SimpleDateFormat(timeFormat);
 
-            //calling withHeader() on the format, forces it to read in the first row as the headers, which we can then validate against
-            this.csvReader = CSVParser.parse(file, Charset.defaultCharset(), csvFormat.withHeader());
-            this.csvIterator = csvReader.iterator();
-            this.dateFormat = new SimpleDateFormat(dateFormat);
-            this.timeFormat = new SimpleDateFormat(timeFormat);
+        Map<String, Integer> headerMap = csvReader.getHeaderMap();
+        String[] expectedHeaders = getCsvHeaders();
+        if (headerMap.size() != expectedHeaders.length) {
+            throw new FileFormatException(file.getName(), "Mismatch in number of CSV columns in " + file.getName() + " expected " + expectedHeaders.length + " but found " + headerMap.size());
+        }
 
-            Map<String, Integer> headerMap = csvReader.getHeaderMap();
-            String[] expectedHeaders = getCsvHeaders();
-            if (headerMap.size() != expectedHeaders.length) {
-                throw new FileFormatException(file.getName(), "Mismatch in number of CSV columns in " + file.getName() + " expected " + expectedHeaders.length + " but found " + headerMap.size());
+        for (int i = 0; i < expectedHeaders.length; i++) {
+            String expectedHeader = expectedHeaders[i];
+            Integer mapIndex = headerMap.get(expectedHeader);
+            if (mapIndex == null) {
+                throw new FileFormatException(file.getName(), "Missing column " + expectedHeader + " in " + file.getName());
+            } else if (mapIndex.intValue() != i) {
+                throw new FileFormatException(file.getName(), "Out of order column " + expectedHeader + " in " + file.getName() + " expected at " + i + " but found at " + mapIndex);
             }
-
-            for (int i = 0; i < expectedHeaders.length; i++) {
-                String expectedHeader = expectedHeaders[i];
-                Integer mapIndex = headerMap.get(expectedHeader);
-                if (mapIndex == null) {
-                    throw new FileFormatException(file.getName(), "Missing column " + expectedHeader + " in " + file.getName());
-                } else if (mapIndex.intValue() != i) {
-                    throw new FileFormatException(file.getName(), "Out of order column " + expectedHeader + " in " + file.getName() + " expected at " + i + " but found at " + mapIndex);
-                }
-            }
-        } catch (FileNotFoundException fnfe) {
-            //we don't always have full file sets, so just catch any file not found exceptions
-            LOG.trace(fnfe.getMessage());
         }
     }
 
@@ -103,7 +97,7 @@ public abstract class AbstractCsvTransformer {
         if (csvIterator.hasNext()) {
             this.csvRecord = csvIterator.next();
 
-            if (csvReader.getCurrentLineNumber() % 1000 == 0) {
+            if (csvReader.getCurrentLineNumber() % 10000 == 0) {
                 LOG.trace("Starting line " + csvReader.getCurrentLineNumber());
             }
 

@@ -68,7 +68,8 @@ public class UserInRoleTransformer {
         fhirRole.setManagingOrganization(csvHelper.createOrganisationReference(orgUuid));
 
         String roleName = userInRoleParser.getJobCategoryName();
-        fhirRole.setRole(new CodeableConcept().setText(roleName));
+        String roleCode = userInRoleParser.getJobCategoryCode();
+        fhirRole.setRole(CodeableConceptHelper.createCodeableConcept(FhirUri.VALUE_SET_JOB_ROLE_CODES, roleName, roleCode));
 
         csvProcessor.saveAdminResource(fhirPractitioner);
     }

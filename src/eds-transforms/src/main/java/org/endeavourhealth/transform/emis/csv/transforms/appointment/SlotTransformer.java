@@ -70,15 +70,20 @@ public class SlotTransformer {
         fhirSlot.setFreeBusyType(Slot.SlotStatus.BUSY);
 
         Date startDate = slotParser.getAppointmentStartDateTime();
-        fhirSlot.setStart(startDate);
 
         //calculate expected end datetime from start, plus duration in mins
         long endMillis = startDate.getTime() + (slotParser.getPlannedDurationInMinutes() * 60 * 1000);
         Date endDate = new Date(endMillis);
+
+        fhirSlot.setStart(startDate);
         fhirSlot.setEnd(endDate);
 
         fhirAppointment.setStart(startDate);
         fhirAppointment.setEnd(new Date(endMillis));
+
+        Integer duration = slotParser.getActualDurationInMinutes();
+        fhirAppointment.setMinutesDuration(duration);
+
         fhirAppointment.addSlot(csvHelper.createSlotReference(slotGuid));
 
         Appointment.AppointmentParticipantComponent fhirParticipant = fhirAppointment.addParticipant();

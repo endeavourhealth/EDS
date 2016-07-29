@@ -39,7 +39,6 @@ public class ObservationReferralTransformer {
 
         String observationGuid = observationParser.getObservationGuid();
         String patientGuid = observationParser.getPatientGuid();
-        String organisationGuid = observationParser.getOrganisationGuid();
 
         EmisCsvHelper.setUniqueId(fhirReferral, patientGuid, observationGuid);
 
@@ -59,7 +58,12 @@ public class ObservationReferralTransformer {
 
         String serviceType = observationParser.getReferralServiceType();
         if (!Strings.isNullOrEmpty(serviceType)) {
-            fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(serviceType));
+            fhirReferral.addServiceRequested(CodeableConceptHelper.createCodeableConcept(serviceType));
+        }
+
+        String mode = observationParser.getReferralMode();
+        if (!Strings.isNullOrEmpty(mode)) {
+            fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(mode));
         }
 
         //although the columns exist in the CSV, the spec. states that they'll always be empty

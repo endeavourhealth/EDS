@@ -83,6 +83,9 @@ public class DiaryTransformer {
         String associatedText = diaryParser.getAssociatedText();
         fhirRequest.addNotes(AnnotationHelper.createAnnotation(associatedText));
 
+        String locationTypeDescription = diaryParser.getLocationTypeDescription();
+        fhirRequest.addNotes(AnnotationHelper.createAnnotation(locationTypeDescription));
+
         Date entererdDateTime = diaryParser.getEnteredDateTime();
         if (entererdDateTime != null) {
             fhirRequest.setOrderedOn(entererdDateTime);
@@ -105,9 +108,6 @@ public class DiaryTransformer {
         } else {
             fhirRequest.setStatus(ProcedureRequest.ProcedureRequestStatus.SUSPENDED);
         }
-
-        //TODO - need somewhere to store Diary LocationTypeDescription in FHIR ProcedureRequest resource (asking EMIS for advice)
-        //String locationDescription = diaryParser.getLocationTypeDescription();
 
         csvProcessor.savePatientResource(fhirRequest, patientGuid);
     }

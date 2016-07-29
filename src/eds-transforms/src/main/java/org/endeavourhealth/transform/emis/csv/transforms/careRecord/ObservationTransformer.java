@@ -574,6 +574,12 @@ public class ObservationTransformer {
             fhirCondition.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
 
+        String problemGuid = observationParser.getProblemUGuid();
+        if (!Strings.isNullOrEmpty(problemGuid)) {
+            Reference problemReference = csvHelper.createProblemReference(problemGuid, patientGuid);
+            fhirCondition.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.CONDITION_PART_OF_PROBLEM, problemReference));
+        }
+
         csvProcessor.savePatientResource(fhirCondition, patientGuid);
 
         //if this record is linked to a problem, store this relationship in the helper

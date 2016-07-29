@@ -60,9 +60,6 @@ public abstract class ClinicalCodeTransformer {
 
         String emisTerm = codeParser.getTerm();
         String emisCode = codeParser.getReadTermId();
-        String nationalCategory = codeParser.getNationalCodeCategory();
-        String nationalCode = codeParser.getNationalCode();
-        String nationalDescription = codeParser.getNationalDescription();
         Long snomedConceptId = codeParser.getSnomedCTConceptId();
         Long snomedDescriptionId = codeParser.getSnomedCTDescriptionId();
         String emisCategory = codeParser.getEmisCodeCategoryDescription();

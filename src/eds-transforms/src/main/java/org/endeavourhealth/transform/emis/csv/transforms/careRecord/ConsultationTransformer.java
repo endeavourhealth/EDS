@@ -1,12 +1,16 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
+import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Consultation;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.PeriodHelper;
+import org.endeavourhealth.transform.fhir.schema.EncounterParticipantType;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
@@ -39,7 +43,6 @@ public class ConsultationTransformer {
 
         String consultationGuid = consultationParser.getConsultationGuid();
         String patientGuid = consultationParser.getPatientGuid();
-        String organisationGuid = consultationParser.getOrganisationGuid();
 
         EmisCsvHelper.setUniqueId(fhirEncounter, patientGuid, consultationGuid);
 
@@ -59,9 +62,26 @@ public class ConsultationTransformer {
         }
 
         String clinicianUuid = consultationParser.getClinicianUserInRoleGuid();
-        if (clinicianUuid != null) {
+        if (!Strings.isNullOrEmpty(clinicianUuid)) {
             Encounter.EncounterParticipantComponent fhirParticipant = fhirEncounter.addParticipant();
+            fhirParticipant.addType(CodeableConceptHelper.createCodeableConcept(EncounterParticipantType.PRIMARY_PERFORMER));
             fhirParticipant.setIndividual(csvHelper.createPractitionerReference(clinicianUuid));
+        }
+
+        String enteredByUuid = consultationParser.getEnteredByUserInRoleGuid();
+        Date enteredDateTime = consultationParser.getEnteredDateTime();
+        if (!Strings.isNullOrEmpty(enteredByUuid)
+                && enteredDateTime != null) {
+            Encounter.EncounterParticipantComponent fhirParticipant = fhirEncounter.addParticipant();
+            fhirParticipant.addType(CodeableConceptHelper.createCodeableConcept("Entered By"));
+
+            if (!Strings.isNullOrEmpty(enteredByUuid)) {
+                fhirParticipant.setIndividual(csvHelper.createPractitionerReference(enteredByUuid));
+            }
+
+            if (enteredDateTime != null) {
+                fhirParticipant.setPeriod(PeriodHelper.createPeriod(enteredDateTime, null));
+            }
         }
 
         Date date = consultationParser.getEffectiveDate();
@@ -69,6 +89,12 @@ public class ConsultationTransformer {
         Period fhirPeriod = createPeriod(date, precision);
         if (fhirPeriod != null) {
             fhirEncounter.setPeriod(fhirPeriod);
+        }
+
+        Long codeId = consultationParser.getConsultationSourceCodeId();
+        if (codeId != null) {
+            CodeableConcept fhirCode = csvHelper.findClinicalCode(codeId, csvProcessor);
+            fhirEncounter.addReason(fhirCode);
         }
 
         csvProcessor.savePatientResource(fhirEncounter, patientGuid);

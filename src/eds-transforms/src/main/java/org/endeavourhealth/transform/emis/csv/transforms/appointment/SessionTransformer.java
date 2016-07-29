@@ -63,6 +63,9 @@ public class SessionTransformer {
         String sessionType = sessionParser.getSessionTypeDescription();
         fhirSchedule.addType(CodeableConceptHelper.createCodeableConcept(sessionType));
 
+        String category = sessionParser.getSessionCategoryDisplayName();
+        fhirSchedule.setComment(category); //the FHIR description of "Comment" seems approproate to store the category
+
         String description = sessionParser.getDescription();
         fhirSchedule.setComment(description);
 

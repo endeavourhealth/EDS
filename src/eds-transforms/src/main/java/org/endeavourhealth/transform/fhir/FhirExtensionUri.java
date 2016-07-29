@@ -42,5 +42,5 @@ public class FhirExtensionUri
 
     public final static String PROCEDURED_RECORDED = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-daterecorded-extension";
 
-
+    public final static String CONDITION_PART_OF_PROBLEM = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-condition-partofproblemepisode-extension";
 }

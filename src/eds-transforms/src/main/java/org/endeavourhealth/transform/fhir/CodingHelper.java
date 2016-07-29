@@ -59,6 +59,13 @@ public class CodingHelper {
                 .setCode(familyMember.getCode());
     }
 
+    public static Coding createCoding(EncounterParticipantType participantType) {
+        return new Coding()
+                .setSystem(participantType.getSystem())
+                .setDisplay(participantType.getDescription())
+                .setCode(participantType.getCode());
+    }
+
     public static Coding createCoding(String system, String term, String code) {
         return new Coding()
                 .setSystem(system)
