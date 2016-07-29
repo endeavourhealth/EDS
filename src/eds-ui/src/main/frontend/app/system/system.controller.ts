@@ -22,6 +22,7 @@ module app.system {
 
 		formats = ["EMISOPEN", "OPENHR", "EMISCSV", "TPPCSV", "TPPXML", "FHIRJSON", "FHIRXML", "VITRUCARE", "EDWXML", "TABLEAU"];
 		types = ["Patient Record","Demographics","Appointments","Summary","Discharge","Episode"];
+		frequencies = ["Transactional","Hourly","Daily"];
 
 		static $inject = ['LibraryService', 'ServiceService', 'LoggerService',
 			'$uibModal', 'AdminService', '$window', '$stateParams'];
@@ -60,6 +61,7 @@ module app.system {
 			this.selectedInterface = {
 				uuid: null,
 				name: 'New interface',
+				frequency: '',
 				messageType: '',
 				messageFormat: '',
 				messageFormatVersion: ''

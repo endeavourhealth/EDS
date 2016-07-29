@@ -74,6 +74,17 @@
 						</div>
 						<div class="row">
 							<div class="form-group col-md-12">
+								<label>Transaction Frequency</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-calendar fa-lg fa-fw"></i></span>
+									<select class="form-control" ng-model="systemCtrl.selectedInterface.frequency">
+										<option ng-repeat="frequency in systemCtrl.frequencies" value="{{frequency}}">{{frequency}}</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-12">
 								<label>Message Type</label>
 								<div class="input-group">
 									<span class="input-group-addon"><i class="fa fa-question fa-lg fa-fw"></i></span>

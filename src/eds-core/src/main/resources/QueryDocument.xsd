@@ -273,6 +273,7 @@
 		<xs:sequence>
 			<xs:element name="uuid" type="xs:string"/>
 			<xs:element name="name" type="xs:string"/>
+			<xs:element name="frequency" type="xs:string" minOccurs="0"/>
 			<xs:element name="messageType" type="xs:string" minOccurs="0"/>
 			<xs:element name="messageFormat" type="xs:string" minOccurs="0"/>
 			<xs:element name="messageFormatVersion" type="xs:string" minOccurs="0"/>
