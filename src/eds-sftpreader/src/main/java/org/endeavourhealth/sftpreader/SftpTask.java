@@ -6,6 +6,7 @@ import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFileFactory;
 import org.endeavourhealth.sftpreader.model.db.AddFileResult;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.utilities.pgp.PgpUtil;
+import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnection;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,8 @@ public class SftpTask extends TimerTask
         try
         {
             initialise();
-            receiveAndProcessFiles();
+            downloadAndProcessFiles();
+            validateBatches();
             notifyOnwardPipeline();
         }
         catch (Exception e)
@@ -49,27 +51,21 @@ public class SftpTask extends TimerTask
         this.db = new DataLayer(configuration.getDatabaseConnection());
     }
 
-    private void receiveAndProcessFiles()
+    private void downloadAndProcessFiles()
     {
         SftpConnection sftpConnection = null;
 
         try
         {
-            ///////////////////////////////////////////////////////////////////
             // open connection
-            ///////////////////////////////////////////////////////////////////
             sftpConnection = SftpHelper.openSftpConnection(dbConfiguration.getDbConfigurationSftp());
 
-            ///////////////////////////////////////////////////////////////////
             // get file list
-            ///////////////////////////////////////////////////////////////////
             String remotePath = dbConfiguration.getDbConfigurationSftp().getRemotePath();
 
             List<SftpRemoteFile> sftpRemoteFiles = SftpHelper.getFileList(sftpConnection, remotePath);
 
-            ///////////////////////////////////////////////////////////////////
             // process batch
-            ///////////////////////////////////////////////////////////////////
             for (SftpRemoteFile sftpRemoteFile : sftpRemoteFiles)
             {
                 LOG.info("Start processing file " + sftpRemoteFile.getFilename());
@@ -163,6 +159,17 @@ public class SftpTask extends TimerTask
         db.setFileAsDecrypted(batchFile);
     }
 
+    private static long getFileSizeBytes(String filePath)
+    {
+        File file = new File(filePath);
+        return file.length();
+    }
+
+    private void validateBatches() throws PgStoredProcException
+    {
+        db.getIncompleteBatches(dbConfiguration.getInstanceId());
+    }
+
     private void notifyOnwardPipeline()
     {
         try
@@ -173,11 +180,5 @@ public class SftpTask extends TimerTask
         {
             LOG.info("Exception while notifying onward pipeline", e);
         }
-    }
-
-    private static long getFileSizeBytes(String filePath)
-    {
-        File file = new File(filePath);
-        return file.length();
     }
 }

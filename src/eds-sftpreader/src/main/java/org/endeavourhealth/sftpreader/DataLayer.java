@@ -1,15 +1,15 @@
 package org.endeavourhealth.sftpreader;
 
+import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFile;
-import org.endeavourhealth.sftpreader.model.db.AddFileResult;
-import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
-import org.endeavourhealth.sftpreader.model.db.DbConfigurationPgp;
-import org.endeavourhealth.sftpreader.model.db.DbConfigurationSftp;
+import org.endeavourhealth.sftpreader.model.db.*;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProc;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 
 import javax.sql.DataSource;
+import java.sql.ResultSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class DataLayer
 {
@@ -116,5 +116,41 @@ public class DataLayer
                 .addParameter("_remote_created_date", batchFile.getRemoteLastModifiedDate());
 
         pgStoredProc.execute();
+    }
+
+    public List<IncompleteBatch> getIncompleteBatches(String instanceId) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.get_incomplete_batches")
+                .addParameter("_instance_id", instanceId);
+
+        List<IncompleteBatch> incompleteBatches = pgStoredProc.executeMultiQuery(resultSet ->
+                new IncompleteBatch()
+                        .setBatchId(resultSet.getInt("batch_id"))
+                        .setBatchIdentifier(resultSet.getString("batch_identifier"))
+                        .setLocalRelativePath(resultSet.getString("local_relative_path")));
+
+        List<IncompleteBatchFile> incompleteBatchFiles = pgStoredProc.nextMultiQuery(resultSet ->
+                new IncompleteBatchFile()
+                        .setBatchId(resultSet.getInt("batch_id"))
+                        .setBatchFileId(resultSet.getInt("batch_file_id"))
+                        .setFileTypeIdentifier(resultSet.getString("file_type_identifier"))
+                        .setFilename(resultSet.getString("filename"))
+                        .setRemoteSizeBytes(resultSet.getLong("remote_size_bytes"))
+                        .setDownloaded(resultSet.getBoolean("is_downloaded"))
+                        .setLocalSizeBytes(resultSet.getLong("local_size_bytes"))
+                        .setRequiresDecryption(resultSet.getBoolean("requires_decryption"))
+                        .setDecrypted(resultSet.getBoolean("is_decrypted"))
+                        .setDecryptedFilename(resultSet.getString("decrypted_filename"))
+                        .setDecryptedSizeBytes(resultSet.getLong("decrypted_size_bytes")));
+
+        incompleteBatchFiles.forEach(t ->
+                incompleteBatches
+                        .stream()
+                        .filter(s -> s.getBatchId() == t.getBatchId())
+                        .collect(StreamExtension.singleCollector())
+                        .addIncompleteBatchFile(t));
+
+        return incompleteBatches;
     }
 }

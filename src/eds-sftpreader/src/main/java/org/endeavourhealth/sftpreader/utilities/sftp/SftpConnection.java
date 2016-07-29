@@ -56,8 +56,7 @@ public class SftpConnection
 
         return fileList
                 .stream()
-                .filter(t -> !FilenameUtils.getName(t.getFilename()).equals("."))
-                .filter(t -> !FilenameUtils.getName(t.getFilename()).equals(".."))
+                .filter(t -> !t.getAttrs().isDir())
                 .map(t ->
                         new SftpRemoteFile(t.getFilename(),
                                 remotePath,

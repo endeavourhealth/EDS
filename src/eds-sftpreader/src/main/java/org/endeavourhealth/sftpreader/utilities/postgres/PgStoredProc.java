@@ -25,6 +25,9 @@ public class PgStoredProc
     private String storedProcedureName;
     private Map<String, Object> parameters;
     private Map<String, Object> outParameters;
+    private Connection multiConnection;
+    private Statement multiStatement;
+    private ResultSet multiResultSet;
 
     public PgStoredProc(DataSource dataSource)
     {
@@ -34,6 +37,9 @@ public class PgStoredProc
         this.dataSource = dataSource;
         this.parameters = new HashMap<>();
         this.outParameters = new HashMap<>();
+        this.multiConnection = null;
+        this.multiStatement = null;
+        this.multiResultSet = null;
     }
 
     public PgStoredProc setName(String storedProcedureName)
@@ -70,7 +76,16 @@ public class PgStoredProc
 
     public <T extends Object> T executeSingleRow(IResultSetPopulator<T> rowMapper) throws PgStoredProcException
     {
-        List<T> resultList = executeQuery(rowMapper);
+        List<T> resultList;
+
+        try
+        {
+            resultList = executeQuery(rowMapper);
+        }
+        catch (PgStoredProcException e)
+        {
+            throw new PgStoredProcException("executeSingleRow error, see inner exception", e.getCause());
+        }
 
         if (resultList == null)
             throw new PgStoredProcException("No results returned (null list)");
@@ -88,20 +103,13 @@ public class PgStoredProc
     {
         try
         {
-            this.outParameters = new HashMap<>();
-
             try (Connection connection = this.dataSource.getConnection())
             {
                 try (Statement statement = connection.createStatement())
                 {
                     try (ResultSet resultSet = statement.executeQuery(getFormattedQuery()))
                     {
-                        List<T> results = new ArrayList<>();
-
-                        while (resultSet.next())
-                            results.add(rowMapper.populate(resultSet));
-
-                        return results;
+                        return populatePojo(resultSet, rowMapper);
                     }
                 }
             }
@@ -110,6 +118,68 @@ public class PgStoredProc
         {
             throw new PgStoredProcException("executeQuery error, see inner exception", e);
         }
+    }
+
+    public <T extends Object> List<T> executeMultiQuery(IResultSetPopulator<T> firstRowMapper) throws PgStoredProcException
+    {
+        try
+        {
+            this.multiResultSet = null;
+            this.multiConnection = this.dataSource.getConnection();
+            this.multiConnection.setAutoCommit(false);
+            this.multiStatement = this.multiConnection.createStatement();
+            this.multiResultSet = this.multiStatement.executeQuery(getFormattedQuery());
+
+            if (!this.multiResultSet.next())
+                throw new PgStoredProcException("No resultsets found");
+
+            return populatePojoFromMultiResultSet(firstRowMapper);
+        }
+        catch (Exception e)
+        {
+            closeMultiResourcesQuietly();
+
+            throw new PgStoredProcException("executeMultiQuery error, see inner exception", e);
+        }
+    }
+
+    public <T extends Object> List<T> nextMultiQuery(IResultSetPopulator<T> nextRowMapper) throws PgStoredProcException
+    {
+        try
+        {
+            return populatePojoFromMultiResultSet(nextRowMapper);
+        }
+        catch (Exception e)
+        {
+            closeMultiResourcesQuietly();
+
+            throw new PgStoredProcException("getNextMultiQuery error, see inner exception", e);
+        }
+    }
+
+    private static <T extends Object> List<T> populatePojo(ResultSet resultSet, IResultSetPopulator<T> rowMapper) throws SQLException
+    {
+        List<T> results = new ArrayList<>();
+
+        while (resultSet.next())
+            results.add(rowMapper.populate(resultSet));
+
+        return results;
+    }
+
+    private <T extends Object> List<T> populatePojoFromMultiResultSet(IResultSetPopulator<T> rowMapper) throws SQLException
+    {
+        List<T> result;
+
+        try (ResultSet resultSet = (ResultSet)this.multiResultSet.getObject(1))
+        {
+            result = populatePojo(resultSet, rowMapper);
+        }
+
+        if (!this.multiResultSet.next())
+            closeMultiResources();
+
+        return result;
     }
 
     private String getFormattedQuery()
@@ -144,5 +214,32 @@ public class PgStoredProc
             return "'" + ((java.time.LocalDate)value).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + "'";
 
         throw new NotImplementedException("Parameter type not supported");
+    }
+
+    private void closeMultiResourcesQuietly()
+    {
+        try
+        {
+            closeMultiResources();
+        }
+        catch (Exception e)
+        {
+            // log
+        }
+    }
+
+    private void closeMultiResources() throws SQLException
+    {
+        if (this.multiResultSet != null)
+            if (!this.multiResultSet.isClosed())
+                this.multiResultSet.close();
+
+        if (this.multiStatement != null)
+            if (!this.multiStatement.isClosed())
+                this.multiStatement.close();
+
+        if (this.multiConnection != null)
+            if (!this.multiConnection.isClosed())
+                this.multiConnection.close();
     }
 }
