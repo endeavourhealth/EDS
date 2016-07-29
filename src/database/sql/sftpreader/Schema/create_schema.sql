@@ -193,18 +193,10 @@ create table sftpreader.unknown_file
 	filename varchar(1000) not null,
 	remote_created_date timestamp not null,
 	remote_size_bytes bigint not null,
-	is_downloaded boolean not null default (false),
-	local_relative_path varchar(1000) null,
-	download_date timestamp null,
-	local_size_bytes bigint null,
 
 	constraint sftpreader_unknownfile_unknownfileid_pk primary key (unknown_file_id),
 	constraint sftpreader_unknownfile_instanceid_fk foreign key (instance_id) references sftpreader.configuration (instance_id),
-	constraint sftpreader_unknownfile_insertdate_downloaddate_ck check (download_date is null or (insert_date <= download_date)),
 	constraint sftpreader_unknownfile_filename_ck check (char_length(trim(filename)) > 0),
-	constraint sftpreader_unknownfile_remotesizebytes_ck check (remote_size_bytes >= 0),
-	constraint sftpreader_unknownfile_localsizebytes_ck check (local_size_bytes is null or (local_size_bytes >= 0)),
-	constraint sftpreader_unknownfile_isdownloaded_localrelativepath_downloaddate_localsizebytes_ck check (((not is_downloaded) and local_relative_path is null and download_date is null and local_size_bytes is null) or (is_downloaded and local_relative_path is not null and download_date is not null and local_size_bytes is null)),
-	constraint sftpreader_unknownfile_localrelativepath_filename_uq unique (local_relative_path, filename)
+	constraint sftpreader_unknownfile_remotesizebytes_ck check (remote_size_bytes >= 0)
 );
 

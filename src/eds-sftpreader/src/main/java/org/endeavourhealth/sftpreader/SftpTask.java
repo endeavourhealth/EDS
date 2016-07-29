@@ -76,10 +76,11 @@ public class SftpTask extends TimerTask
 
                 BatchFile batchFile = instantiateBatchFile(sftpRemoteFile);
 
-                if ((!batchFile.isFilenameValid()) || (!db.isFileTypeIdentifierValid(configuration.getInstanceId(), batchFile)))
+                if (!batchFile.isFilenameValid())
                 {
-                    LOG.info("Invalid filename or batch file type identifier");
-
+                    LOG.info("Invalid filename or batch file type identifier " + batchFile.getFilename() + ", skipping");
+                    db.addUnknownFile(dbConfiguration.getInstanceId(), batchFile);
+                    continue;
                 }
 
                 AddFileResult addFileResult = db.addFile(configuration.getInstanceId(), batchFile);
@@ -114,7 +115,10 @@ public class SftpTask extends TimerTask
 
     private BatchFile instantiateBatchFile(SftpRemoteFile sftpRemoteFile)
     {
-        return BatchFileFactory.create(sftpRemoteFile, dbConfiguration.getLocalRootPath(), dbConfiguration.getPgpFileExtensionFilter());
+        return BatchFileFactory.create(sftpRemoteFile,
+                dbConfiguration.getLocalRootPath(),
+                dbConfiguration.getPgpFileExtensionFilter(),
+                dbConfiguration.getInterfaceFileTypes());
     }
 
     private void createBatchDirectory(BatchFile batchFile) throws IOException

@@ -5,21 +5,24 @@ import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public abstract class BatchFile
 {
     private SftpRemoteFile sftpRemoteFile;
     private String localRootPath;
     protected String pgpFileExtensionFilter;
+    protected List<String> validFileTypeIdentifiers;
     private Long localFileSizeBytes = null;
     private Long decryptedFileSizeBytes = null;
     private Integer batchFileId = null;
 
-    BatchFile(SftpRemoteFile sftpRemoteFile, String localRootPath, String pgpFileExtensionFilter)
+    BatchFile(SftpRemoteFile sftpRemoteFile, String localRootPath, String pgpFileExtensionFilter, List<String> validFileTypeIdentifiers)
     {
         this.sftpRemoteFile = sftpRemoteFile;
         this.localRootPath = localRootPath;
         this.pgpFileExtensionFilter = pgpFileExtensionFilter;
+        this.validFileTypeIdentifiers = validFileTypeIdentifiers;
     }
 
     public abstract boolean isFilenameValid();

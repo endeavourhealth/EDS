@@ -1,5 +1,7 @@
 package org.endeavourhealth.sftpreader.model.db;
 
+import java.util.List;
+
 public class DbConfiguration
 {
     private String instanceId;
@@ -10,6 +12,7 @@ public class DbConfiguration
     private String localRootPath;
     private DbConfigurationSftp dbConfigurationSftp;
     private DbConfigurationPgp dbConfigurationPgp;
+    private List<String> interfaceFileTypes;
 
     public String getInstanceId()
     {
@@ -99,5 +102,16 @@ public class DbConfiguration
             return null;
 
         return this.getDbConfigurationPgp().getPgpFileExtensionFilter();
+    }
+
+    public List<String> getInterfaceFileTypes()
+    {
+        return this.interfaceFileTypes;
+    }
+
+    public DbConfiguration setInterfaceFileTypes(List<String> interfaceFileTypes)
+    {
+        this.interfaceFileTypes = interfaceFileTypes;
+        return this;
     }
 }

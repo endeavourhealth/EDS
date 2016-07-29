@@ -9,6 +9,7 @@ import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProc;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 
 import javax.sql.DataSource;
+import java.util.List;
 
 public class DataLayer
 {
@@ -25,7 +26,7 @@ public class DataLayer
                 .setName("sftpreader.get_configuration")
                 .addParameter("_instance_id", instanceId);
 
-        return pgStoredProc.executeSingleRow((resultSet) ->
+        DbConfiguration dbConfiguration = pgStoredProc.executeSingleRow((resultSet) ->
                 new DbConfiguration()
 
                         .setInstanceId(resultSet.getString("instance_id"))
@@ -50,16 +51,19 @@ public class DataLayer
                             .setPgpRecipientPublicKey(resultSet.getString("pgp_recipient_public_key"))
                             .setPgpRecipientPrivateKey(resultSet.getString("pgp_recipient_private_key"))
                             .setPgpRecipientPrivateKeyPassword(resultSet.getString("pgp_recipient_private_key_password"))));
+
+        dbConfiguration.setInterfaceFileTypes(getInterfaceFileTypes(instanceId));
+
+        return dbConfiguration;
     }
 
-    public boolean isFileTypeIdentifierValid(String instanceId, BatchFile batchFile) throws PgStoredProcException
+    public List<String> getInterfaceFileTypes(String instanceId) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.is_file_type_identifier_valid")
-                .addParameter("_instance_id", instanceId)
-                .addParameter("_file_type_identifier", batchFile.getFileTypeIdentifier());
+                .setName("sftpreader.get_interface_file_types")
+                .addParameter("_instance_id", instanceId);
 
-        return pgStoredProc.executeSingleRow(resultSet -> resultSet.getBoolean("is_file_type_identifier_valid"));
+        return pgStoredProc.executeQuery(resultSet -> resultSet.getString("file_type_identifier"));
     }
 
     public AddFileResult addFile(String instanceId, BatchFile batchFile) throws PgStoredProcException
@@ -98,6 +102,18 @@ public class DataLayer
                 .addParameter("_batch_file_id", batchFile.getBatchFileId())
                 .addParameter("_decrypted_filename", batchFile.getDecryptedFilename())
                 .addParameter("_decrypted_size_bytes", batchFile.getDecryptedFileSizeBytes());
+
+        pgStoredProc.execute();
+    }
+
+    public void addUnknownFile(String instanceId, BatchFile batchFile) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.add_unknown_file")
+                .addParameter("_instance_id", instanceId)
+                .addParameter("_filename", batchFile.getFilename())
+                .addParameter("_remote_size_bytes", batchFile.getRemoteFileSizeInBytes())
+                .addParameter("_remote_created_date", batchFile.getRemoteLastModifiedDate());
 
         pgStoredProc.execute();
     }

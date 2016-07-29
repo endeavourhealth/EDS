@@ -1,9 +1,8 @@
 package org.endeavourhealth.sftpreader.utilities.sftp;
 
-import com.google.common.base.Preconditions;
 import com.jcraft.jsch.*;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
@@ -27,9 +26,9 @@ public class SftpConnection
 
     public SftpConnection(SftpConnectionDetails connectionDetails)
     {
-        Preconditions.checkArgument(!StringUtils.isEmpty(connectionDetails.getHostname()), "hostname is empty");
-        Preconditions.checkArgument(!StringUtils.isEmpty(connectionDetails.getUsername()), "username is empty");
-        Preconditions.checkArgument(connectionDetails.getPort() > 0, "port must be positive");
+        Validate.notEmpty(connectionDetails.getHostname(), "hostname is empty");
+        Validate.notEmpty(connectionDetails.getUsername(), "username is empty");
+        Validate.isTrue(connectionDetails.getPort() > 0, "port must be positive");
 
         this.connectionDetails = connectionDetails;
     }

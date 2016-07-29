@@ -25,7 +25,7 @@ values
 	'EMIS001',
 	1,
 	'/Users/jonny/Code/Local/sftp',
-	10
+	60
 );
 
 insert into sftpreader.configuration_sftp

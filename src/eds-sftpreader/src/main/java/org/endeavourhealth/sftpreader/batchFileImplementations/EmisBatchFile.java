@@ -1,11 +1,13 @@
 package org.endeavourhealth.sftpreader.batchFileImplementations;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 
 public class EmisBatchFile extends BatchFile
@@ -20,12 +22,14 @@ public class EmisBatchFile extends BatchFile
     private LocalDateTime extractDateTime;
     private UUID sharingAgreementUuid;
 
-    EmisBatchFile(SftpRemoteFile sftpRemoteFile, String localRootPath, String pgpFileExtensionFilter)
+    EmisBatchFile(SftpRemoteFile sftpRemoteFile, String localRootPath, String pgpFileExtensionFilter, List<String> validFileTypeIdentifiers)
     {
-        super(sftpRemoteFile, localRootPath, pgpFileExtensionFilter);
+        super(sftpRemoteFile, localRootPath, pgpFileExtensionFilter, validFileTypeIdentifiers);
 
-        if (StringUtils.isBlank(this.pgpFileExtensionFilter))
-            throw new IllegalArgumentException("PGP file extension is blank");
+        Validate.notNull(sftpRemoteFile, "sftpRemoteFile is null");
+        Validate.notBlank(localRootPath, "localRootPath is blank");
+        Validate.notBlank(pgpFileExtensionFilter, "pgpFileExtensionFilter is blank");
+        Validate.notNull(validFileTypeIdentifiers, "validFileTypeIdentifiers is null");
 
         parseFilename();
     }
@@ -33,7 +37,7 @@ public class EmisBatchFile extends BatchFile
     @Override
     public boolean isFilenameValid()
     {
-        return isFilenameValid;
+        return (isFilenameValid && validFileTypeIdentifiers.contains(getFileTypeIdentifier()));
     }
 
     @Override
