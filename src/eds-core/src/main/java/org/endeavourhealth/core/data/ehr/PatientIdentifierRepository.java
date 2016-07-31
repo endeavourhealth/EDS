@@ -2,13 +2,11 @@ package org.endeavourhealth.core.data.ehr;
 
 import com.datastax.driver.core.utils.UUIDs;
 import com.datastax.driver.mapping.Mapper;
-import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.PatientIdentifierAccessor;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifier;
 import org.hl7.fhir.instance.model.*;
 
-import javax.xml.crypto.dsig.TransformException;
 import java.util.*;
 
 public class PatientIdentifierRepository extends Repository {
@@ -37,7 +35,6 @@ public class PatientIdentifierRepository extends Repository {
         String surname = findSurname(fhirPatient);
         String postcode = findPostcode(fhirPatient);
         Enumerations.AdministrativeGender gender = fhirPatient.getGender();
-        String localIdentifier = findLocalIdentifier(fhirPatient);
 
         patientIdentifier.setForenames(forenames);
         patientIdentifier.setSurname(surname);
@@ -45,7 +42,6 @@ public class PatientIdentifierRepository extends Repository {
         patientIdentifier.setDateOfBirth(fhirPatient.getBirthDate());
         patientIdentifier.setPostcode(postcode);
         patientIdentifier.setGender(gender);
-        patientIdentifier.setLocalId(localIdentifier);
         patientIdentifier.setTimestamp(new Date());
         patientIdentifier.setVersion(UUIDs.timeBased());
 
@@ -103,7 +99,7 @@ public class PatientIdentifierRepository extends Repository {
         return null;
     }
 
-    private String findLocalIdentifier(Patient fhirPatient) {
+    /*private String findLocalIdentifier(Patient fhirPatient) {
 
         for (Identifier fhirIdentifier: fhirPatient.getIdentifier()) {
             if (fhirIdentifier.getSystem() == null
@@ -112,7 +108,7 @@ public class PatientIdentifierRepository extends Repository {
             }
         }
         return null;
-    }
+    }*/
 
     public void save(PatientIdentifier patientIdentifier) {
         if (patientIdentifier == null) {

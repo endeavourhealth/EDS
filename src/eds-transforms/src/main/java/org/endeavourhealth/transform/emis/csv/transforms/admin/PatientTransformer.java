@@ -4,17 +4,17 @@ import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.schema.Admin_Patient;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.Admin_Patient;
 import org.endeavourhealth.transform.emis.openhr.schema.VocSex;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.SexConverter;
 import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.schema.ContactRelationship;
 import org.endeavourhealth.transform.fhir.schema.RegistrationType;
 import org.hl7.fhir.instance.model.*;
 
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 
 public class PatientTransformer {
 
@@ -69,8 +69,7 @@ public class PatientTransformer {
         }
 
         //store the local ID in the patient resource
-        //TODO - need namespace for the local identifier to be stored in
-        fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, patientGuid, ""));
+        //fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, patientGuid, ""));
 
         Date dob = patientParser.getDateOfBirth();
         fhirPatient.setBirthDate(dob);

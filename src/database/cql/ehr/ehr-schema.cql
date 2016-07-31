@@ -124,7 +124,6 @@ CREATE TABLE person_consent_organisation (
 CREATE TABLE patient_identifier (
 	service_id UUID,
 	system_id UUID,
-	local_id text,
 	nhs_number text,
 	forenames text,
 	surname text,

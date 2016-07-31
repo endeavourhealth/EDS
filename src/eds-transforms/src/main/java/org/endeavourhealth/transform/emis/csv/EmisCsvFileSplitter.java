@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.emis.csv;
 import com.google.common.io.Files;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvSplitter;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 
 import java.io.*;
 import java.util.HashSet;
@@ -86,7 +87,7 @@ public class EmisCsvFileSplitter {
 
     private static void createMissingFiles(String partialFileName, File srcDir, File dstDir) throws Exception {
 
-        File srcFile = findFileByPartialName(partialFileName, srcDir);
+        File srcFile = EmisCsvTransformer.getFileByPartialName(partialFileName, srcDir);
         String fileName = srcFile.getName();
 
         //read in the first line of the source file, as we use that as the content for the empty files
@@ -140,7 +141,7 @@ public class EmisCsvFileSplitter {
 
     private static void splitFile(String partialFileName, File srcDir, File dstDir, CSVFormat csvFormat) throws Exception {
 
-        File srcFile = findFileByPartialName(partialFileName, srcDir);
+        File srcFile = EmisCsvTransformer.getFileByPartialName(partialFileName, srcDir);
 
         CsvSplitter csvSplitter = new CsvSplitter(srcFile, dstDir, csvFormat, SPLIT_COLUMN);
         csvSplitter.go();
@@ -148,32 +149,11 @@ public class EmisCsvFileSplitter {
 
     private static void copyFile(String partialFileName, File srcDir, File dstDir) throws Exception {
 
-        File srcFile = findFileByPartialName(partialFileName, srcDir);
+        File srcFile = EmisCsvTransformer.getFileByPartialName(partialFileName, srcDir);
         File dstFile = new File(dstDir, srcFile.getName());
 
         //this uses a 4k buffer for copying. This may prove too slow, and need re-implementing to use a larger buffer
         Files.copy(srcFile, dstFile);
     }
 
-    private static File findFileByPartialName(String partialFileName, File dir) throws FileNotFoundException {
-
-        //append a trailing underscore, so we don't pick up CareRecord_ObservationReferral when looking for CareRecord_Observation
-        partialFileName += "_";
-
-        for (File f: dir.listFiles()) {
-            String name = f.getName();
-            String extension = Files.getFileExtension(name);
-            if (!extension.equalsIgnoreCase("csv")) {
-                continue;
-            }
-
-            if (name.indexOf(partialFileName) == -1) {
-                continue;
-            }
-
-            return f;
-        }
-
-        throw new FileNotFoundException("Failed to find CSV file for " + partialFileName);
-    }
 }

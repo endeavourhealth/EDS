@@ -20,7 +20,7 @@ public class Prescribing_DrugRecord extends AbstractCsvTransformer {
                 "EffectiveDate",
                 "EffectiveDatePrecision",
                 "EnteredDate",
-                //"EnteredTime", //spec states this should be present, but test data doesn't have it
+                "EnteredTime",
                 "ClinicianUserInRoleGuid",
                 "EnteredByUserInRoleGuid",
                 "CodeId",

@@ -22,7 +22,7 @@ public class Prescribing_IssueRecord extends AbstractCsvTransformer {
                 "EffectiveDate",
                 "EffectiveDatePrecision",
                 "EnteredDate",
-                //"EnteredTime", //spec says this will be here, but test data doesn't have it
+                "EnteredTime",
                 "ClinicianUserInRoleGuid",
                 "EnteredByUserInRoleGuid",
                 "CodeId",

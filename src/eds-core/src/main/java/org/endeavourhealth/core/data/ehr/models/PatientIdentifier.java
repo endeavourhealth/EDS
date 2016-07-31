@@ -17,8 +17,6 @@ public class PatientIdentifier {
     @ClusteringColumn(1)
     @Column(name = "system_id")
     private UUID systemId = null;
-    @Column(name = "local_id")
-    private String localId = null;
     @Column(name = "nhs_number")
     private String nhsNumber = null;
     @Column(name = "forenames")
@@ -54,14 +52,6 @@ public class PatientIdentifier {
 
     public void setSystemId(UUID systemId) {
         this.systemId = systemId;
-    }
-
-    public String getLocalId() {
-        return localId;
-    }
-
-    public void setLocalId(String localId) {
-        this.localId = localId;
     }
 
     public String getNhsNumber() {

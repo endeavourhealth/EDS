@@ -4,8 +4,8 @@ import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Consultation;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Consultation;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
@@ -68,6 +68,7 @@ public class ConsultationTransformer {
             fhirParticipant.setIndividual(csvHelper.createPractitionerReference(clinicianUuid));
         }
 
+        //the test files do not contain a column for the entered
         String enteredByUuid = consultationParser.getEnteredByUserInRoleGuid();
         Date enteredDateTime = consultationParser.getEnteredDateTime();
         if (!Strings.isNullOrEmpty(enteredByUuid)

@@ -4,12 +4,14 @@ import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.schema.CareRecord_ObservationReferral;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.CareRecord_ObservationReferral;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.IdentifierHelper;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.DiagnosticOrder;
+import org.hl7.fhir.instance.model.Meta;
+import org.hl7.fhir.instance.model.ReferralRequest;
 
 public class ObservationReferralTransformer {
 
@@ -52,8 +54,13 @@ public class ObservationReferralTransformer {
 
         String urgency = observationParser.getReferralUrgency();
         if (!Strings.isNullOrEmpty(urgency)) {
-            DiagnosticOrder.DiagnosticOrderPriority priority = convertUrgency(urgency);
-            fhirReferral.setPriority(CodeableConceptHelper.createCodeableConcept(priority));
+            DiagnosticOrder.DiagnosticOrderPriority fhirPriority = convertUrgency(urgency);
+            if (fhirPriority != null) {
+                fhirReferral.setPriority(CodeableConceptHelper.createCodeableConcept(fhirPriority));
+            } else {
+                //if the CSV urgency couldn't be mapped to a FHIR priority, then we can use free-text
+                fhirReferral.setPriority(CodeableConceptHelper.createCodeableConcept(urgency));
+            }
         }
 
         String serviceType = observationParser.getReferralServiceType();
@@ -94,12 +101,11 @@ public class ObservationReferralTransformer {
         } else if (urgency.equalsIgnoreCase("Soon")) {
             return DiagnosticOrder.DiagnosticOrderPriority.ASAP;
 
-        } else if (urgency.equalsIgnoreCase("Urgent")
-                || urgency.equalsIgnoreCase("2 week wait")) { //2 week wait IS THE SAME as urgent
+        } else if (urgency.equalsIgnoreCase("Urgent")) {
             return DiagnosticOrder.DiagnosticOrderPriority.URGENT;
 
         } else {
-            throw new IllegalArgumentException("Unknown referral urgency " + urgency);
+            return null;
         }
     }
 

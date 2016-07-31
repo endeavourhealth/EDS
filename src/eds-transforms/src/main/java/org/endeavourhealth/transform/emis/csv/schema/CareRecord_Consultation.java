@@ -21,7 +21,7 @@ public class CareRecord_Consultation extends AbstractCsvTransformer {
                 "EffectiveDate",
                 "EffectiveDatePrecision",
                 "EnteredDate",
-                //"EnteredTime", //spec.states this column is present, but test data doesn't contain it
+                "EnteredTime",
                 "ClinicianUserInRoleGuid",
                 "EnteredByUserInRoleGuid",
                 "AppointmentSlotGuid",

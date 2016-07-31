@@ -82,7 +82,9 @@ public class SlotTransformer {
         fhirAppointment.setEnd(new Date(endMillis));
 
         Integer duration = slotParser.getActualDurationInMinutes();
-        fhirAppointment.setMinutesDuration(duration);
+        if (duration != null) {
+            fhirAppointment.setMinutesDuration(duration.intValue());
+        }
 
         fhirAppointment.addSlot(csvHelper.createSlotReference(slotGuid));
 

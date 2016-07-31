@@ -7,7 +7,6 @@ import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.Admin_Organisation;
 import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.schema.OrganisationType;
 import org.hl7.fhir.instance.model.*;
 
@@ -65,8 +64,14 @@ public class OrganisationTransformer {
             fhirOrganisation.setPartOf(csvHelper.createOrganisationReference(ccgOrganisationGuid));
         }
 
-        OrganisationType fhirOrgType = convertOrganisationType(organisationParser.getOrganisationType());
-        fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(fhirOrgType));
+        String organisationType = organisationParser.getOrganisationType();
+        OrganisationType fhirOrgType = convertOrganisationType(organisationType);
+        if (fhirOrgType != null) {
+            fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(fhirOrgType));
+        } else {
+            //if the org type from the CSV can't be mapped to one of the value set, store as a freetext type
+            fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(organisationType));
+        }
 
         String mainLocationGuid = organisationParser.getMainLocationGuid();
         Reference fhirReference = csvHelper.createLocationReference(mainLocationGuid);
@@ -79,8 +84,31 @@ public class OrganisationTransformer {
         try {
             return OrganisationType.fromDescription(csvOrganisationType);
         } catch (Exception ex) {
-            //TODO - need proper mapping of EMIS org types to value set (asking EMIS re this)
-            return OrganisationType.GP_PRACTICE;
+
+            //the below mappings are based on what was present in the EMIS CSV sample files
+            //EMIS has been asked for a complete list, but until this is made available, these
+            //are the only known types. There are a number of organisation types, such as "Hospice"
+            //or "Community" which don't map to any official NHS organisation type
+            if (csvOrganisationType.equalsIgnoreCase("General Practice")
+                || csvOrganisationType.equalsIgnoreCase("General Practice Surgery")
+                || csvOrganisationType.equalsIgnoreCase("Main Surgery")) {
+                return OrganisationType.GP_PRACTICE;
+
+            } else if (csvOrganisationType.equalsIgnoreCase("CCG")) {
+                return OrganisationType.CCG;
+
+            } else if (csvOrganisationType.equalsIgnoreCase("PCT Site")
+                    || csvOrganisationType.equalsIgnoreCase("Primary Care Trust")) {
+                return OrganisationType.PCT;
+
+            } else if (csvOrganisationType.equalsIgnoreCase("Hospital")
+                    || csvOrganisationType.equalsIgnoreCase("NHS Trust Site")
+                    || csvOrganisationType.equalsIgnoreCase("NHS Trust")) {
+                return OrganisationType.NHS_TRUST;
+
+            } else {
+                return null;
+            }
         }
 
     }

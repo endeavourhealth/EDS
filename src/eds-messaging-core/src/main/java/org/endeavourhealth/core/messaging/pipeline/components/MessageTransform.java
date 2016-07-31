@@ -2,7 +2,6 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 import org.endeavourhealth.core.configuration.MessageTransformConfig;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
@@ -10,8 +9,10 @@ import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.SoftwareNotSupportedException;
+import org.endeavourhealth.transform.common.exceptions.VersionNotSupportedException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.glassfish.jersey.internal.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,55 +34,87 @@ public class MessageTransform extends PipelineComponent {
 
 		try {
 
-			//work out the systemId from the endPoints registered against the serice
 			UUID serviceId = UUID.fromString(exchange.getHeader(HeaderKeys.SenderUuid));
+			String software = exchange.getHeader(HeaderKeys.SourceSystem);
+
+			//find technical interface for software name
+
+			String version = exchange.getHeader(HeaderKeys.SystemVersion);
+
+			//find the system ID by using values from the message header
 			ServiceRepository serviceRepository = new ServiceRepository();
 			Service service = serviceRepository.getById(serviceId);
 			List<JsonServiceInterfaceEndpoint> endpoints = new ObjectMapper().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
-			UUID systemId = null;
+
+			//TODO - need proper way of getting system ID from service ID and software and version
+			UUID systemId = endpoints.stream().map(JsonServiceInterfaceEndpoint::getSystemUuid).findFirst().get();
+
 			List<UUID> batchIds = null;
 
-			//TODO - need proper mapping of Exchange headers to sender SystemId and transform Class
-			//the below code is just a placeholder and should be replaced with a proper lookup from the exchange headers
-			systemId = endpoints.stream().map(JsonServiceInterfaceEndpoint::getSystemUuid).findFirst().get();
-			batchIds = processEmisCsvTransform(exchange, serviceId, systemId);
+			if (software.equalsIgnoreCase("EmisExtractService")) {
+				if (!version.equalsIgnoreCase("5.1")) {
+					throw new VersionNotSupportedException(software, version);
+				}
+				batchIds = processEmisCsvTransform(exchange, serviceId, systemId, version);
+
+			} else if (software.equalsIgnoreCase("EmisOpen")) {
+				//TODO - validate version for EmisOpen
+				batchIds = processEmisOpenTransform(exchange, serviceId, systemId, version);
+
+			} else if (software.equalsIgnoreCase("OpenHR")) {
+				//TODO - validate version for EmisOpen
+				batchIds = processEmisOpenHrTransform(exchange, serviceId, systemId, version);
+
+			} else if (software.equalsIgnoreCase("TPPExtractService")) {
+				//TODO - validate version for TPPExtractService
+				batchIds = processTppXmlTransform(exchange, serviceId, systemId, version);
+
+			} else {
+				throw new SoftwareNotSupportedException(software, version);
+			}
 
 			//update the Exchange with the batch IDs, for the next step in the pipeline
-			List<String> batchIdStrings = batchIds
-											.stream()
-											.map(t -> t.toString())
-											.collect(Collectors.toList());
-			String batchIdString = String.join(";", batchIdStrings);
+			String batchIdString = convertUUidsToStrings(batchIds);
 			exchange.setHeader(HeaderKeys.BatchIds, batchIdString);
+
+			LOG.debug("Message transformed");
 
 		} catch (Exception e) {
 			exchange.setException(e);
 			LOG.error("Error", e);
 		}
-
-		LOG.debug("Message transformed");
 	}
 
-	private List<UUID> processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId) throws Exception {
-
-		//for EMIS CSV, the exchange body will be the path of the directory containing the CSV files
-		String folderPath = exchange.getBody();
-
-		CsvProcessor processor = new CsvProcessor(exchange.getExchangeId(), serviceId, systemId);
-		EmisCsvTransformer.transform(folderPath, processor);
-		return processor.getBatchIdsCreated();
-
+	private static String convertUUidsToStrings(List<UUID> uuids) {
+		List<String> batchIdStrings = uuids
+				.stream()
+				.map(t -> t.toString())
+				.collect(Collectors.toList());
+		return String.join(";", batchIdStrings);
 	}
 
-	private List<UUID> processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId) throws Exception {
+	private List<UUID> processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version) throws Exception {
+
+		//for EMIS CSV, the exchange body will be a list of files received
+		String base64 = exchange.getBody();
+		String decodedFileString = Base64.decodeAsString(base64);
+		String[] decodedFiles = decodedFileString.split("\n");
+
+		return EmisCsvTransformer.splitAndTransform(decodedFiles, exchange.getExchangeId(), serviceId, systemId);
+	}
+
+	private List<UUID> processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version) throws Exception {
+		//TODO - plug in TPP XML transform
 		return null;
 	}
 
-	private List<UUID> processEmisOpenTransform(Exchange exchange, UUID serviceId, UUID systemId) throws Exception {
+	private List<UUID> processEmisOpenTransform(Exchange exchange, UUID serviceId, UUID systemId, String version) throws Exception {
+		//TODO - plug in EMIS OPEN transform
 		return null;
 	}
 
-	private List<UUID> processEmisOpenHrTransform(Exchange exchange, UUID serviceId, UUID systemId) throws Exception {
+	private List<UUID> processEmisOpenHrTransform(Exchange exchange, UUID serviceId, UUID systemId, String version) throws Exception {
+		//TODO - plug in OpenHR transform
 		return null;
 	}
 }

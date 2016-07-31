@@ -7,14 +7,15 @@ import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Observation;
-import org.endeavourhealth.transform.emis.csv.schema.ClinicalCodeType;
+import org.endeavourhealth.transform.emis.csv.schema.ObservationType;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.FamilyMember;
 import org.endeavourhealth.transform.fhir.schema.ImmunizationStatus;
 import org.endeavourhealth.transform.terminology.Read2;
 import org.hl7.fhir.instance.model.*;
 
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 
 public class ObservationTransformer {
 
@@ -41,8 +42,8 @@ public class ObservationTransformer {
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 
-        Long codeId = observationParser.getCodeId();
-        ResourceType resourceType = getTargetResourceType(codeId, csvProcessor, csvHelper);
+
+        ResourceType resourceType = getTargetResourceType(observationParser, csvProcessor, csvHelper);
         switch (resourceType) {
             case Observation:
                 createObservation(observationParser, csvProcessor, csvHelper);
@@ -65,23 +66,18 @@ public class ObservationTransformer {
             case DiagnosticOrder:
                 createDiagnosticOrder(observationParser, csvProcessor, csvHelper);
                 break;
-            case Specimen:
-                createSpecimen(observationParser, csvProcessor, csvHelper);
+            case ReferralRequest:
+                createReferralRequest(observationParser, csvProcessor, csvHelper);
                 break;
+/*            case Specimen:
+                createSpecimen(observationParser, csvProcessor, csvHelper);
+                break;*/
             default:
                 throw new IllegalArgumentException("Unsupported resource type: " + resourceType);
         }
 
         String observationGuid = observationParser.getObservationGuid();
         String patientGuid = observationParser.getPatientGuid();
-
-        //as well as processing the Observation row into a FHIR resource, we
-        //may also have a row in the Referral file that we've previously processed into
-        //a FHIR ReferralRequest that we need to complete
-        ReferralRequest fhirReferral = csvHelper.findReferral(observationGuid, patientGuid);
-        if (fhirReferral != null) {
-            completeReferral(observationParser, fhirReferral, csvProcessor, csvHelper);
-        }
 
         //the observation row may also be referenced by a row in the Problems file, which
         //we've already processed. Check this, and complete processing if required.
@@ -95,8 +91,50 @@ public class ObservationTransformer {
         csvHelper.getAndRemoveObservationParentRelationships(observationGuid, patientGuid);
     }
 
-    public static ResourceType getTargetResourceType(Long codeId, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
+    /**
+     * the FHIR resource type is roughly derived from the ObservationType, although the Value and ReadCode
+     * are also used as it's not a perfect match.
+     */
+    public static ResourceType getTargetResourceType(CareRecord_Observation parser, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
 
+        String observationTypeString = parser.getObservationType();
+        ObservationType observationType = ObservationType.fromValue(observationTypeString);
+        Double value = parser.getValue();
+        Long codeId = parser.getCodeId();
+
+        if (observationType == ObservationType.VALUE
+                || observationType == ObservationType.INVESTIGATION
+                || value != null) {
+            //anything with a value, even if not labelled as a Value has to go into an Observation resource
+            return ResourceType.Observation;
+        } else if (observationType == ObservationType.ALLERGY) {
+            return ResourceType.AllergyIntolerance;
+        } else if (observationType == ObservationType.TEST_REQUEST) {
+            return ResourceType.DiagnosticOrder;
+        } else if (observationType == ObservationType.IMMUNISATION) {
+            return ResourceType.Immunization;
+        } else if (observationType == ObservationType.FAMILY_HISTORY) {
+            return ResourceType.FamilyMemberHistory;
+        } else if (observationType == ObservationType.REFERRAL) {
+            return ResourceType.ReferralRequest;
+        } else if (observationType == ObservationType.DOCUMENT) {
+            return ResourceType.Observation;
+        } else if (observationType == ObservationType.ANNOTATED_IMAGE) {
+            return ResourceType.Observation;
+        } else if (observationType == ObservationType.OBSERVATION) {
+            if (isProcedure(codeId, csvProcessor, csvHelper)) {
+                return ResourceType.Procedure;
+            } else {
+                return ResourceType.Condition;
+            }
+        } else {
+            throw new IllegalArgumentException("Unhandled ObservationType " + observationType);
+        }
+    }
+
+    /*public static ResourceType getTargetResourceType(CareRecord_Observation parser, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
+
+        Long codeId = parser.getCodeId();
         ClinicalCodeType codeType = csvHelper.findClinicalCodeType(codeId, csvProcessor);
 
         switch (codeType) {
@@ -165,7 +203,7 @@ public class ObservationTransformer {
             default:
                 throw new IllegalArgumentException("Unhandled observationType " + codeType);
         }
-    }
+    }*/
 
 
     private static void completeProblem(CareRecord_Observation observationParser,
@@ -196,39 +234,6 @@ public class ObservationTransformer {
         //problems are added to the processor after all files are finished, so it doesn't need saving here
     }
 
-    private static void completeReferral(CareRecord_Observation observationParser,
-                                         ReferralRequest fhirReferral,
-                                         CsvProcessor csvProcessor,
-                                         EmisCsvHelper csvHelper) throws Exception {
-
-        String patientGuid = observationParser.getPatientGuid();
-
-        if (observationParser.getDeleted()) {
-            csvProcessor.deletePatientResource(fhirReferral, patientGuid);
-            return;
-        }
-
-        Date effectiveDate = observationParser.getEffectiveDate();
-        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
-        fhirReferral.setDateElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
-
-        String consultationGuid = observationParser.getConsultationGuid();
-        fhirReferral.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
-
-        Long codeId = observationParser.getCodeId();
-        fhirReferral.setReason(csvHelper.findClinicalCode(codeId, csvProcessor));
-
-        String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
-        fhirReferral.setRequester(csvHelper.createPractitionerReference(clinicianGuid));
-
-        csvProcessor.savePatientResource(fhirReferral, patientGuid);
-
-        //if this record is linked to a problem, store this relationship in the helper
-        csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
-                                            patientGuid,
-                                            observationParser.getObservationGuid(),
-                                            fhirReferral.getResourceType());
-    }
 
     private static boolean isProcedure(Long codeId,
                                        CsvProcessor csvProcessor,
@@ -293,7 +298,7 @@ public class ObservationTransformer {
         csvProcessor.savePatientResource(fhirSpecimen, patientGuid);
     }*/
 
-    private static void createSpecimen(CareRecord_Observation observationParser,
+    /*private static void createSpecimen(CareRecord_Observation observationParser,
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 
@@ -337,7 +342,7 @@ public class ObservationTransformer {
                 patientGuid,
                 observationGuid,
                 fhirSpecimen.getResourceType());
-    }
+    }*/
 
     /*private static void createDiagnosticReport(CareRecord_Observation observationParser, EmisCsvHelper csvHelper) throws Exception {
         DiagnosticReport fhirReport = new DiagnosticReport();
@@ -373,6 +378,58 @@ public class ObservationTransformer {
 
         csvHelper.cacheDiagnosticReport(fhirReport);
     }*/
+
+    private static void createReferralRequest(CareRecord_Observation observationParser,
+                                         CsvProcessor csvProcessor,
+                                         EmisCsvHelper csvHelper) throws Exception {
+
+        //we have already parsed the ObservationReferral file, and will have created ReferralRequest
+        //resources for all records in that file. So, first find any pre-created ReferralRequest for our record
+        String observationGuid = observationParser.getObservationGuid();
+        String patientGuid = observationParser.getPatientGuid();
+
+        //as well as processing the Observation row into a FHIR resource, we
+        //may also have a row in the Referral file that we've previously processed into
+        //a FHIR ReferralRequest that we need to complete
+        ReferralRequest fhirReferral = csvHelper.findReferral(observationGuid, patientGuid);
+        if (fhirReferral == null) {
+
+            //if we didn't have a record in the ObservationReferral file, we need to create a new one
+            fhirReferral = new ReferralRequest();
+            fhirReferral.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_REFERRAL_REQUEST));
+
+            EmisCsvHelper.setUniqueId(fhirReferral, patientGuid, observationGuid);
+
+            fhirReferral.setPatient(csvHelper.createPatientReference(patientGuid));
+        }
+
+        if (observationParser.getDeleted()) {
+            csvProcessor.deletePatientResource(fhirReferral, patientGuid);
+            return;
+        }
+
+        Date effectiveDate = observationParser.getEffectiveDate();
+        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
+        fhirReferral.setDateElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
+
+        String consultationGuid = observationParser.getConsultationGuid();
+        fhirReferral.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
+
+        Long codeId = observationParser.getCodeId();
+        fhirReferral.setReason(csvHelper.findClinicalCode(codeId, csvProcessor));
+
+        String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
+        fhirReferral.setRequester(csvHelper.createPractitionerReference(clinicianGuid));
+
+        csvProcessor.savePatientResource(fhirReferral, patientGuid);
+
+        //if this record is linked to a problem, store this relationship in the helper
+        csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
+                                            patientGuid,
+                                            observationParser.getObservationGuid(),
+                                            fhirReferral.getResourceType());
+    }
+
 
     private static void createDiagnosticOrder(CareRecord_Observation observationParser,
                                               CsvProcessor csvProcessor,

@@ -10,9 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class CsvProcessor {
 
@@ -213,106 +214,4 @@ public class CsvProcessor {
             return null;
         }
     }
-
-    /*class SaveCallable implements Callable {
-        private List<ResourceWrapper> resourceWrappers = null;
-
-        public SaveCallable(List<ResourceWrapper> resourceWrappers) {
-            this.resourceWrappers = resourceWrappers;
-        }
-
-        @Override
-        public Object call() throws Exception {
-
-            LOG.trace("Saving " + resourceWrappers.size() + " resources");
-            Map<UUID, List<Resource>> hmToSave = new HashMap<>();
-            Map<UUID, List<Resource>> hmToDelete = new HashMap<>();
-
-            for (ResourceWrapper resourceWrapper: resourceWrappers) {
-
-                Map<UUID, List<Resource>> map = null;
-                if (resourceWrapper.isDelete()) {
-                    map = hmToDelete;
-                } else {
-                    map = hmToSave;
-                }
-
-                List<Resource> list = map.get(resourceWrapper.getBatchUuid());
-                if (list == null) {
-                    list = new ArrayList<>();
-                    map.put(resourceWrapper.getBatchUuid(), list);
-                }
-                list.add(resourceWrapper.getResource());
-            }
-
-            Iterator<UUID> iterator = hmToSave.keySet().iterator();
-            while (iterator.hasNext()) {
-                UUID batchId = iterator.next();
-                List<Resource> list = hmToSave.get(batchId);
-                storageService.exchangeBatchUpdate(exchangeId, batchId, list);
-            }
-
-            iterator = hmToDelete.keySet().iterator();
-            while (iterator.hasNext()) {
-                UUID batchId = iterator.next();
-                List<Resource> list = hmToDelete.get(batchId);
-                storageService.exchangeBatchDelete(exchangeId, batchId, list);
-            }
-
-            LOG.trace("Finished " + resourceWrappers.size() + " resources");
-            return null;
-        }
-    }
-
-    class MapIpsCallable implements Callable {
-
-        private List<ResourceWrapper> resourceWrappers = null;
-
-        public MapIpsCallable(List<ResourceWrapper> resourceWrappers) {
-            this.resourceWrappers = resourceWrappers;
-        }
-
-        @Override
-        public Object call() throws Exception {
-
-            LOG.trace("Mapping IDs for " + resourceWrappers.size() + " resources");
-            resourceWrappers.parallelStream()
-                    .forEach((resourceWrapper) -> { mapId(resourceWrapper); });
-
-            LOG.trace("Finished mapping IDs for " + resourceWrappers.size() + " resources");
-            return null;
-        }
-
-        private void mapId(ResourceWrapper resourceWrapper) {
-            //LOG.trace("Doing " + resourceWrapper.getResource());
-            IdHelper.mapIds(serviceId, systemId, resourceWrapper.getResource());
-            //LOG.trace("Done " + resourceWrapper.getResource());
-            addResourceWrapperToQueue(resourceWrapper, false);
-            //LOG.trace("Added to queue " + resourceWrapper.getResource());
-        }
-    }
-
-    class ResourceWrapper {
-        private Resource resource = null;
-        private UUID batchUuid = null;
-        private boolean isDelete = false;
-
-        public ResourceWrapper(Resource resource, UUID batchUuid, boolean isDelete) {
-            this.resource = resource;
-            this.batchUuid = batchUuid;
-            this.isDelete = isDelete;
-        }
-
-        public Resource getResource() {
-            return resource;
-        }
-
-        public UUID getBatchUuid() {
-            return batchUuid;
-        }
-
-        public boolean isDelete() {
-            return isDelete;
-        }
-    }*/
 }

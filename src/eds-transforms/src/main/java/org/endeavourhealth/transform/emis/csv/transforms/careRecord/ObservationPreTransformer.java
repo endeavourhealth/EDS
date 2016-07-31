@@ -21,7 +21,7 @@ public class ObservationPreTransformer {
             while (parser.nextRecord()) {
 
                 Long codeId = parser.getCodeId();
-                ResourceType resourceType = ObservationTransformer.getTargetResourceType(codeId, csvProcessor, csvHelper);
+                ResourceType resourceType = ObservationTransformer.getTargetResourceType(parser, csvProcessor, csvHelper);
                 if (resourceType == ResourceType.Observation) {
 
                     String parentGuid = parser.getParentObservationGuid();

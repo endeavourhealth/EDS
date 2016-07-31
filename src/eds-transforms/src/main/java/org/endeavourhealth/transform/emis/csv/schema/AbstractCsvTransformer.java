@@ -1,17 +1,16 @@
 package org.endeavourhealth.transform.emis.csv.schema;
 
 import com.google.common.base.Strings;
-import com.google.common.io.Files;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.transform.common.exceptions.FileFormatException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
@@ -34,7 +33,7 @@ public abstract class AbstractCsvTransformer {
 
     public AbstractCsvTransformer(String folderPath, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
 
-        this.file = findFile(folderPath);
+        this.file = EmisCsvTransformer.getFileByPartialName(getClass().getSimpleName(), new File(folderPath));
 
         //calling withHeader() on the format, forces it to read in the first row as the headers, which we can then validate against
         this.csvReader = CSVParser.parse(file, Charset.defaultCharset(), csvFormat.withHeader());
@@ -59,32 +58,6 @@ public abstract class AbstractCsvTransformer {
         }
     }
 
-    /**
-     * looks in the folder and finds the file matching our class name.
-     * The file names are of the format: NNN_classname_datetime_UUID.csv
-     */
-    private File findFile(String folderPath) throws FileNotFoundException {
-
-        String expected = getClass().getSimpleName() + "_";
-
-        File dir = new File(folderPath);
-        for (File f: dir.listFiles()) {
-            String name = f.getName();
-            String extension = Files.getFileExtension(name);
-            if (!extension.equalsIgnoreCase("csv")) {
-                continue;
-            }
-
-            if (name.indexOf(expected) == -1) {
-                continue;
-            }
-
-            return f;
-        }
-
-        throw new FileNotFoundException("Failed to find CSV file for " + getClass().getSimpleName());
-    }
-
     protected abstract String[] getCsvHeaders();
 
     public boolean nextRecord() {
@@ -98,13 +71,13 @@ public abstract class AbstractCsvTransformer {
             this.csvRecord = csvIterator.next();
 
             if (csvReader.getCurrentLineNumber() % 10000 == 0) {
-                LOG.trace("Starting line " + csvReader.getCurrentLineNumber());
+                LOG.trace("Starting line " + csvReader.getCurrentLineNumber() + " of " + getClass().getSimpleName());
             }
 
             return true;
         } else {
             this.csvRecord = null;
-            LOG.trace("Completed " + file.getName());
+            LOG.trace("Completed " + getClass().getSimpleName());
             return false;
         }
     }
