@@ -19,24 +19,32 @@ header .navbar {
 }
 
 .navbar-title {
-    background-image: url('../img/logo.png');
-    height: 25px;
+    background-image: url('../img/endeavour_logo.png');
     background-repeat: no-repeat;
-    width: 123px;
-    margin: 3px 10px 5px;
+    margin: 0;
+    padding: 0;
+    background-size: cover;
+    height: 50px;
+    width: 50px;
+    display: inline-block;
+    vertical-align: middle;
     text-indent: -99999px;
 }
 
+.navbar {
+    margin-bottom: 0;
+}
+
 .navbar-pf .navbar-utility {
-	right: 20px;
-    top: -34px;
-    font-size: 12px;
+	/*right: 20px;*/
+    /*top: -34px;*/
+    /*font-size: 12px;*/
 }
 
 .navbar-pf .navbar-utility > li > a {
-    color: #fff !important;
-    padding-bottom: 12px;
-    padding-top: 11px;
+    /*color: #000 !important;*/
+    /*padding-bottom: 12px;*/
+    /*padding-top: 11px;*/
     border-left: medium none;
 }
 
@@ -102,8 +110,8 @@ header .navbar {
 
 
 .content-area h2 {
-    font-family: "Open Sans", sans-serif;
-    font-weight: 100;
+    /*font-family: "Open Sans", sans-serif;*/
+    /*font-weight: 100;*/
     font-size: 24px;
     margin-bottom: 25px;
     margin-top: 25px;
