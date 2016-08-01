@@ -1,6 +1,6 @@
 package org.endeavourhealth.sftpreader.model.db;
 
-public class IncompleteBatchFile
+public class BatchFile
 {
     private int batchId;
     private int batchFileId;
@@ -19,7 +19,7 @@ public class IncompleteBatchFile
         return batchId;
     }
 
-    public IncompleteBatchFile setBatchId(int batchId)
+    public BatchFile setBatchId(int batchId)
     {
         this.batchId = batchId;
         return this;
@@ -30,7 +30,7 @@ public class IncompleteBatchFile
         return batchFileId;
     }
 
-    public IncompleteBatchFile setBatchFileId(int batchFileId)
+    public BatchFile setBatchFileId(int batchFileId)
     {
         this.batchFileId = batchFileId;
         return this;
@@ -41,7 +41,7 @@ public class IncompleteBatchFile
         return fileTypeIdentifier;
     }
 
-    public IncompleteBatchFile setFileTypeIdentifier(String fileTypeIdentifier)
+    public BatchFile setFileTypeIdentifier(String fileTypeIdentifier)
     {
         this.fileTypeIdentifier = fileTypeIdentifier;
         return this;
@@ -52,7 +52,7 @@ public class IncompleteBatchFile
         return filename;
     }
 
-    public IncompleteBatchFile setFilename(String filename)
+    public BatchFile setFilename(String filename)
     {
         this.filename = filename;
         return this;
@@ -63,7 +63,7 @@ public class IncompleteBatchFile
         return remoteSizeBytes;
     }
 
-    public IncompleteBatchFile setRemoteSizeBytes(long remoteSizeBytes)
+    public BatchFile setRemoteSizeBytes(long remoteSizeBytes)
     {
         this.remoteSizeBytes = remoteSizeBytes;
         return this;
@@ -74,7 +74,7 @@ public class IncompleteBatchFile
         return isDownloaded;
     }
 
-    public IncompleteBatchFile setDownloaded(boolean downloaded)
+    public BatchFile setDownloaded(boolean downloaded)
     {
         isDownloaded = downloaded;
         return this;
@@ -85,7 +85,7 @@ public class IncompleteBatchFile
         return localSizeBytes;
     }
 
-    public IncompleteBatchFile setLocalSizeBytes(long localSizeBytes)
+    public BatchFile setLocalSizeBytes(long localSizeBytes)
     {
         this.localSizeBytes = localSizeBytes;
         return this;
@@ -96,7 +96,7 @@ public class IncompleteBatchFile
         return requiresDecryption;
     }
 
-    public IncompleteBatchFile setRequiresDecryption(boolean requiresDecryption)
+    public BatchFile setRequiresDecryption(boolean requiresDecryption)
     {
         this.requiresDecryption = requiresDecryption;
         return this;
@@ -107,7 +107,7 @@ public class IncompleteBatchFile
         return isDecrypted;
     }
 
-    public IncompleteBatchFile setDecrypted(boolean decrypted)
+    public BatchFile setDecrypted(boolean decrypted)
     {
         isDecrypted = decrypted;
         return this;
@@ -118,7 +118,7 @@ public class IncompleteBatchFile
         return decryptedFilename;
     }
 
-    public IncompleteBatchFile setDecryptedFilename(String decryptedFilename)
+    public BatchFile setDecryptedFilename(String decryptedFilename)
     {
         this.decryptedFilename = decryptedFilename;
         return this;
@@ -129,7 +129,7 @@ public class IncompleteBatchFile
         return decryptedSizeBytes;
     }
 
-    public IncompleteBatchFile setDecryptedSizeBytes(long decryptedSizeBytes)
+    public BatchFile setDecryptedSizeBytes(long decryptedSizeBytes)
     {
         this.decryptedSizeBytes = decryptedSizeBytes;
         return this;

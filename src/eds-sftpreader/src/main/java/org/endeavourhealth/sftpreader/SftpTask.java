@@ -1,10 +1,17 @@
 package org.endeavourhealth.sftpreader;
 
 import com.jcraft.jsch.SftpException;
-import org.endeavourhealth.sftpreader.implementations.emis.EmisSftpFilenameParser;
+import org.endeavourhealth.sftpreader.implementations.ImplementationActivator;
+import org.endeavourhealth.sftpreader.implementations.SftpBatchSequencer;
+import org.endeavourhealth.sftpreader.implementations.SftpBatchValidator;
+import org.endeavourhealth.sftpreader.implementations.SftpFilenameParser;
 import org.endeavourhealth.sftpreader.model.db.AddFileResult;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
+import org.endeavourhealth.sftpreader.model.db.Batch;
+import org.endeavourhealth.sftpreader.model.exceptions.SftpFilenameParseException;
+import org.endeavourhealth.sftpreader.model.exceptions.SftpValidationException;
 import org.endeavourhealth.sftpreader.utilities.PgpUtil;
+import org.endeavourhealth.sftpreader.utilities.StreamExtension;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnection;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
@@ -13,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.TimerTask;
 
 public class SftpTask extends TimerTask
@@ -35,7 +43,7 @@ public class SftpTask extends TimerTask
         {
             initialise();
             downloadAndProcessFiles();
-            validateBatches();
+            validateAndSequenceBatches();
             notifyOnwardPipeline();
         }
         catch (Exception e)
@@ -110,8 +118,7 @@ public class SftpTask extends TimerTask
 
     private SftpFile instantiateSftpBatchFile(SftpRemoteFile sftpRemoteFile)
     {
-        // instatiate this dynamically based on the interface type
-        EmisSftpFilenameParser emisSftpFilenameParser = new EmisSftpFilenameParser(sftpRemoteFile.getFilename(),
+        SftpFilenameParser emisSftpFilenameParser = ImplementationActivator.createFilenameParser(sftpRemoteFile.getFilename(),
                         dbConfiguration.getPgpFileExtensionFilter(),
                         dbConfiguration.getInterfaceFileTypes());
 
@@ -168,15 +175,28 @@ public class SftpTask extends TimerTask
         return file.length();
     }
 
-    private void validateBatches() throws PgStoredProcException
+    private void validateAndSequenceBatches() throws PgStoredProcException, SftpValidationException, SftpFilenameParseException
     {
-        db.getIncompleteBatches(dbConfiguration.getInstanceId());
+        List<Batch> incompleteBatches = db.getIncompleteBatches(dbConfiguration.getInstanceId());
+        Batch lastCompleteBatch = db.getLastCompleteBatch(dbConfiguration.getInstanceId());
+
+        SftpBatchValidator sftpBatchValidator = ImplementationActivator.createSftpBatchValidator();
+        sftpBatchValidator.validateBatches(incompleteBatches, lastCompleteBatch, dbConfiguration);
+
+        SftpBatchSequencer sftpBatchSequencer = ImplementationActivator.createSftpBatchSequencer();
+        Map<Batch, Integer> batchSequence = sftpBatchSequencer.determineBatchSequenceNumbers(incompleteBatches, lastCompleteBatch);
+
+        Map<Batch, Integer> sortedBatchSequence = StreamExtension.sortByValue(batchSequence);
+
+        for (Batch batch : sortedBatchSequence.keySet())
+            db.completeBatch(batch, sortedBatchSequence.get(batch));
     }
 
     private void notifyOnwardPipeline()
     {
         try
         {
+            //List<Batch> unnotifiedBatches = db.getUnnotifiedBatches(dbConfiguration.getInstanceId());
 
         }
         catch (Exception e)

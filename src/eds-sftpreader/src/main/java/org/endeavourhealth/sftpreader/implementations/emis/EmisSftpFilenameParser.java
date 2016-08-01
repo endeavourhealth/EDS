@@ -1,18 +1,18 @@
 package org.endeavourhealth.sftpreader.implementations.emis;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.sftpreader.SftpFilenameParseException;
-import org.endeavourhealth.sftpreader.SftpFilenameParser;
+import org.endeavourhealth.sftpreader.implementations.SftpFilenameParser;
+import org.endeavourhealth.sftpreader.model.exceptions.SftpFilenameParseException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class EmisSftpFilenameParser extends SftpFilenameParser
 {
-    private int processingIdStart;
-    private int processingIdEnd;
+    private ProcessingIdSet processingIds;
     private String schemaName;
     private String tableName;
     private LocalDateTime extractDateTime;
@@ -26,7 +26,7 @@ public class EmisSftpFilenameParser extends SftpFilenameParser
     @Override
     public String generateBatchIdentifier()
     {
-        return Integer.toString(processingIdStart) + "-" + Integer.toString(processingIdEnd);
+        return this.processingIds.getBatchIdentifier();
     }
 
     @Override
@@ -49,19 +49,7 @@ public class EmisSftpFilenameParser extends SftpFilenameParser
         String extractDateTimePart = parts[3];
         String sharingAgreementGuidWithFileExtensionPart = parts[4];
 
-        if (StringUtils.isBlank(processingIdPart))
-            throw new SftpFilenameParseException("No processing ids present");
-
-        String[] processingIdParts = processingIdPart.split("-");
-
-        this.processingIdStart = Integer.parseInt(processingIdParts[0]);
-
-        this.processingIdEnd = this.processingIdStart;
-
-        if (processingIdParts.length == 2)
-            this.processingIdEnd = Integer.parseInt(processingIdParts[1]);
-        else if (processingIdParts.length > 2)
-            throw new SftpFilenameParseException("Too many processing ids");
+        this.processingIds = ProcessingIdSet.parseBatchIdentifier(processingIdPart);
 
         if (StringUtils.isEmpty(schemaNamePart))
             throw new SftpFilenameParseException("Schema name is empty");
@@ -88,5 +76,20 @@ public class EmisSftpFilenameParser extends SftpFilenameParser
             throw new SftpFilenameParseException("Sharing agreement UUID is empty");
 
         this.sharingAgreementUuid = UUID.fromString(sharingAgreementGuid);
+    }
+
+    public ProcessingIdSet getProcessingIds()
+    {
+        return this.processingIds;
+    }
+
+    public LocalDateTime getExtractDateTime()
+    {
+        return extractDateTime;
+    }
+
+    public UUID getSharingAgreementUuid()
+    {
+        return sharingAgreementUuid;
     }
 }

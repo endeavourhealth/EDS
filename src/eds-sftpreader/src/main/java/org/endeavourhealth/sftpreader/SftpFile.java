@@ -3,6 +3,7 @@ package org.endeavourhealth.sftpreader;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.endeavourhealth.sftpreader.implementations.SftpFilenameParser;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
 
 import java.time.LocalDateTime;

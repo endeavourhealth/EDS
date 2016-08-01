@@ -6,6 +6,8 @@ import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProc;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 
 import javax.sql.DataSource;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 public class DataLayer
@@ -115,20 +117,43 @@ public class DataLayer
         pgStoredProc.execute();
     }
 
-    public List<IncompleteBatch> getIncompleteBatches(String instanceId) throws PgStoredProcException
+    public List<Batch> getIncompleteBatches(String instanceId) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.get_incomplete_batches")
                 .addParameter("_instance_id", instanceId);
 
-        List<IncompleteBatch> incompleteBatches = pgStoredProc.executeMultiQuery(resultSet ->
-                new IncompleteBatch()
+        return populateBatch(pgStoredProc);
+    }
+
+    public Batch getLastCompleteBatch(String instanceId) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.get_last_complete_batch")
+                .addParameter("_instance_id", instanceId);
+
+        List<Batch> batches = populateBatch(pgStoredProc);
+
+        if (batches.size() > 1)
+            throw new PgStoredProcException("More than one last complete batch returned");
+
+        if (batches.size() == 0)
+            return null;
+
+        return batches.get(0);
+    }
+
+    private static List<Batch> populateBatch(PgStoredProc pgStoredProc) throws PgStoredProcException
+    {
+        List<Batch> batches = pgStoredProc.executeMultiQuery(resultSet ->
+                new Batch()
                         .setBatchId(resultSet.getInt("batch_id"))
                         .setBatchIdentifier(resultSet.getString("batch_identifier"))
-                        .setLocalRelativePath(resultSet.getString("local_relative_path")));
+                        .setLocalRelativePath(resultSet.getString("local_relative_path"))
+                        .setSequenceNumber(getInteger(resultSet, "sequence_number")));
 
-        List<IncompleteBatchFile> incompleteBatchFiles = pgStoredProc.nextMultiQuery(resultSet ->
-                new IncompleteBatchFile()
+        List<BatchFile> batchFiles = pgStoredProc.nextMultiQuery(resultSet ->
+                new BatchFile()
                         .setBatchId(resultSet.getInt("batch_id"))
                         .setBatchFileId(resultSet.getInt("batch_file_id"))
                         .setFileTypeIdentifier(resultSet.getString("file_type_identifier"))
@@ -141,13 +166,34 @@ public class DataLayer
                         .setDecryptedFilename(resultSet.getString("decrypted_filename"))
                         .setDecryptedSizeBytes(resultSet.getLong("decrypted_size_bytes")));
 
-        incompleteBatchFiles.forEach(t ->
-                incompleteBatches
+        batchFiles.forEach(t ->
+                batches
                         .stream()
                         .filter(s -> s.getBatchId() == t.getBatchId())
                         .collect(StreamExtension.singleCollector())
-                        .addIncompleteBatchFile(t));
+                        .addBatchFile(t));
 
-        return incompleteBatches;
+        return batches;
+    }
+
+    public void completeBatch(Batch batch, int sequenceNumber) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.complete_batch")
+                .addParameter("_batch_id", batch.getBatchId())
+                .addParameter("_sequence_number", Integer.toString(sequenceNumber));
+
+        pgStoredProc.execute();
+    }
+
+    // move to better place
+    private static Integer getInteger(ResultSet resultSet, String columnName) throws SQLException
+    {
+        int result = resultSet.getInt(columnName);
+
+        if (resultSet.wasNull())
+            return null;
+
+        return result;
     }
 }

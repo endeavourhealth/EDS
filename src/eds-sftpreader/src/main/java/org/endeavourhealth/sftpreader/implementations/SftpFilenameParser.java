@@ -1,5 +1,6 @@
-package org.endeavourhealth.sftpreader;
+package org.endeavourhealth.sftpreader.implementations;
 
+import org.endeavourhealth.sftpreader.model.exceptions.SftpFilenameParseException;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;

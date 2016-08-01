@@ -145,7 +145,7 @@ create table sftpreader.batch
 	constraint sftpreader_batch_sequencenumber_ck check (sequence_number is null or (sequence_number > 0)),
 	constraint sftpreader_batch_instanceid_sequencenumber_uq unique (instance_id, sequence_number),
 	constraint sftpreader_batch_completedate_notificationdate_ck check ((complete_date is null or notification_date is null) or (complete_date <= notification_date)),
-	constraint sftpreader_batch_iscomplete_completedate_sequencenumber_ck check ((is_complete and complete_date is not null and sequence_number is not null) or ((not is_complete) and complete_date is null)),
+	constraint sftpreader_batch_iscomplete_completedate_sequencenumber_ck check ((is_complete and complete_date is not null and sequence_number is not null) or ((not is_complete) and complete_date is null and sequence_number is null)),
 	constraint sftpreader_batch_havenotified_notificationdate_ck check ((have_notified and notification_date is not null) or ((not have_notified) and notification_date is null)),
 	constraint sftpreader_batch_iscomplete_havenotified_ck check (is_complete or (not have_notified))
 );
