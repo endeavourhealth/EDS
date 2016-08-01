@@ -3,18 +3,20 @@ package org.endeavourhealth.ui.endpoints;
 import org.endeavourhealth.core.data.admin.UserRepository;
 import org.endeavourhealth.core.data.admin.models.EndUser;
 import org.endeavourhealth.core.data.admin.models.Organisation;
-import org.endeavourhealth.ui.email.EmailProvider;
-import org.endeavourhealth.ui.framework.security.PasswordHash;
-import org.endeavourhealth.ui.json.JsonEndUser;
-import org.endeavourhealth.ui.json.JsonEndUserList;
-import org.endeavourhealth.ui.json.JsonOrganisation;
-import org.endeavourhealth.core.data.admin.models.DefinitionItemType;
+import org.endeavourhealth.core.security.RoleUtils;
+import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.ui.database.DatabaseManager;
 import org.endeavourhealth.ui.database.DbAbstractTable;
-import org.endeavourhealth.ui.database.administration.*;
+import org.endeavourhealth.ui.database.administration.DbEndUser;
+import org.endeavourhealth.ui.database.administration.DbEndUserEmailInvite;
+import org.endeavourhealth.ui.database.administration.DbOrganisationEndUserLink;
+import org.endeavourhealth.ui.json.JsonEndUser;
+import org.endeavourhealth.ui.json.JsonEndUserList;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -37,6 +39,7 @@ public final class AdminEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/saveUser")
+    @RequiresAdmin
     public Response saveUser(@Context SecurityContext sc, JsonEndUser userParameters) throws Exception {
         super.setLogbackMarkers(sc);
 
@@ -238,35 +241,6 @@ public final class AdminEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private static void changePassword(DbEndUser user, DbEndUser loggedOnUser, String newPwd, List<DbAbstractTable> toSave) throws Exception {
-
-        //validate the user is changing their own password or is an admin
-        Boolean oneTimeUse = Boolean.FALSE;
-        if (!loggedOnUser.equals(user)) {
-            oneTimeUse = Boolean.TRUE; //if an admin resets a password, then it is one-time use
-        }
-
-        String hash = PasswordHash.createHash(newPwd);
-
-        //retrieve the most recent password for the person
-        UUID uuid = user.getEndUserUuid();
-        DbEndUserPwd oldPwd = DbEndUserPwd.retrieveForEndUserNotExpired(uuid);
-
-        //create the new password entity
-        DbEndUserPwd p = new DbEndUserPwd();
-        p.setEndUserUuid(uuid);
-        p.setPwdHash(hash);
-        p.setOneTimeUse(oneTimeUse);
-        p.setFailedAttempts(new Integer(0));
-        toSave.add(p);
-
-        //expire the old password, if there was one
-        if (oldPwd != null) {
-            oldPwd.setDtExpired(Instant.now());
-            toSave.add(oldPwd);
-        }
-    }
-
     private static void createAndSendInvite(EndUser user, Organisation org, List<DbAbstractTable> toSave) throws Exception {
         UUID userUuid = user.getId();
 
@@ -289,6 +263,7 @@ public final class AdminEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/deleteUser")
+    @RequiresAdmin
     public Response deleteUser(@Context SecurityContext sc, JsonEndUser userParameters) throws Exception {
         super.setLogbackMarkers(sc);
 
@@ -303,7 +278,7 @@ public final class AdminEndpoint extends AbstractEndpoint {
 
         LOG.trace("DeletingUser UserUUID {}", userUuid);
 
-        UUID currentUserUuid = getEndUserUuidFromToken(sc);
+        UUID currentUserUuid = SecurityUtils.getCurrentUserId(sc);
         if (userUuid.equals(currentUserUuid)) {
             throw new BadRequestException("Cannot delete your own account");
         }

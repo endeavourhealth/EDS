@@ -1,0 +1,8 @@
+{
+  "realm": "Endeavour",
+  "realm-public-key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAssVIvhexb8weQ2rIgWfQbTJ/qxmAQTlQbE1W5+GGhLVS8ERDXSKsG7u+iJvFL28OOmM9MF59SbpuhGzPfCwI3LCnc1CH7FXnvdhB8xKV9t5GY5vVTF2emSFKuqNxLmz9EO2FS6oEJ4oRn9sflz+Q6S/sdiSpxJQ4Mw4wA2IU5oA2ramuhxh123ONMvRsAnjFzFA1f9M3DANmhZzSYleqU604bRniJVe6thG3HKwErgFsCdafgwHtsKGQwCy8vg7cAg1uINv6uVgrqCytwNS5LrBDgfEyWnocthZ5jdPzzxIcDM38YLB+HeoI0fsasCuu0Wc9aIvmQH7gmZm4mzubPwIDAQAB",
+  "auth-server-url": "http://localhost:9080/auth",
+  "ssl-required": "external",
+  "resource": "example-app",
+  "public-client": true
+}

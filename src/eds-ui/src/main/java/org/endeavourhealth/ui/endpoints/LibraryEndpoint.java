@@ -3,12 +3,13 @@ package org.endeavourhealth.ui.endpoints;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.admin.models.*;
+import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.QueryDocument.System;
-import org.endeavourhealth.ui.framework.security.Unsecured;
 import org.endeavourhealth.ui.json.*;
 import org.endeavourhealth.ui.DependencyType;
 import org.endeavourhealth.ui.querydocument.QueryDocumentSerializer;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -65,13 +66,14 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/saveLibraryItem")
+    @RequiresAdmin
     public Response saveLibraryItem(@Context SecurityContext sc, LibraryItem libraryItem) throws Exception {
         super.setLogbackMarkers(sc);
 
         LibraryRepository repository = new LibraryRepository();
 
         UUID orgUuid = getOrganisationUuidFromToken(sc);
-        UUID userUuid = getEndUserUuidFromToken(sc);
+        UUID userUuid = SecurityUtils.getCurrentUserId(sc);
 
         UUID libraryItemUuid = parseUuidFromStr(libraryItem.getUuid());
         String name = libraryItem.getName();
@@ -158,12 +160,13 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/deleteLibraryItem")
+    @RequiresAdmin
     public Response deleteLibraryItem(@Context SecurityContext sc, LibraryItem libraryItem) throws Exception {
         super.setLogbackMarkers(sc);
 
         UUID libraryItemUuid = parseUuidFromStr(libraryItem.getUuid());
         UUID orgUuid = getOrganisationUuidFromToken(sc);
-        UUID userUuid = getEndUserUuidFromToken(sc);
+        UUID userUuid = SecurityUtils.getCurrentUserId(sc);
 
         LOG.trace("DeletingLibraryItem UUID {}", libraryItemUuid);
 
@@ -217,11 +220,12 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/moveLibraryItems")
+    @RequiresAdmin
     public Response moveLibraryItems(@Context SecurityContext sc, JsonMoveItems parameters) throws Exception {
         super.setLogbackMarkers(sc);
 
         UUID orgUuid = getOrganisationUuidFromToken(sc);
-        UUID userUuid = getEndUserUuidFromToken(sc);
+        UUID userUuid = SecurityUtils.getCurrentUserId(sc);
 
         LOG.trace("moveLibraryItems");
 
@@ -410,7 +414,6 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/getProtocols")
-    @Unsecured
     public Response getProtocols(@QueryParam("serviceId") String serviceId) throws Exception {
 
         List<LibraryItem> ret = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId);

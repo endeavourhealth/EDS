@@ -3,24 +3,26 @@ package org.endeavourhealth.ui.endpoints;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.UserRepository;
 import org.endeavourhealth.core.data.admin.models.EndUser;
-import org.endeavourhealth.core.data.admin.models.EndUserPwd;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.OrganisationEndUserLink;
-import org.endeavourhealth.ui.email.EmailProvider;
-import org.endeavourhealth.ui.framework.security.PasswordHash;
-import org.endeavourhealth.ui.framework.security.SecurityConfig;
-import org.endeavourhealth.ui.framework.security.TokenHelper;
-import org.endeavourhealth.ui.framework.security.Unsecured;
+import org.endeavourhealth.core.security.RoleUtils;
+import org.endeavourhealth.ui.database.DatabaseManager;
+import org.endeavourhealth.ui.database.DbAbstractTable;
+import org.endeavourhealth.ui.database.administration.DbEndUser;
+import org.endeavourhealth.ui.database.administration.DbEndUserEmailInvite;
+import org.endeavourhealth.ui.database.administration.DbOrganisationEndUserLink;
 import org.endeavourhealth.ui.json.*;
-import org.endeavourhealth.ui.database.*;
-import org.endeavourhealth.ui.database.administration.*;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.UUID;
 
 @Path("/security")
 public final class SecurityEndpoint extends AbstractEndpoint {
@@ -30,63 +32,10 @@ public final class SecurityEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/login")
-    @Unsecured
-    public Response login(@Context SecurityContext sc, JsonEndUser personParameters) throws Exception {
+    public Response login(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
 
-        String email = personParameters.getUsername();
-        String password = personParameters.getPassword();
-
-        LOG.trace("Login for {}", email);
-
-        if (email == null
-                || email.length() == 0
-                || password == null
-                || password.length() == 0) {
-            throw new BadRequestException("Missing username or password in request");
-        }
-
-        UserRepository userRepository = new UserRepository();
-
-        EndUser user = userRepository.getEndUserByEmail(email);
-
-        if (user == null) {
-            throw new NotAuthorizedException("No user found for email");
-        }
-
-        //retrieve the most recent password for the person
-        UUID uuid = user.getId();
-        EndUserPwd pwd = userRepository.getEndUserPwdById(uuid); // TODO: Check for password expired
-
-        if (pwd == null) {
-            throw new NotAuthorizedException("No active password for email");
-        }
-
-        //validate the password
-        String hash = pwd.getPwdHash();
-        if (!PasswordHash.validatePassword(password, hash)) {
-
-            int failedAttempts = pwd.getFailedAttempts();
-            failedAttempts ++;
-            pwd.setFailedAttempts(failedAttempts);
-            if (failedAttempts >= SecurityConfig.MAX_FAILED_PASSWORD_ATTEMPTS) {
-                pwd.setDtExpired(new Date());
-            }
-
-            userRepository.updateEndUserPwd(pwd);
-
-            throw new NotAuthorizedException("Invalid password");
-        }
-
-        Boolean mustChangePassword = null;
-        if (pwd.getIsOneTimeUse()) {
-            pwd.setDtExpired(new Date());
-            mustChangePassword = Boolean.TRUE;
-        }
-
-        pwd.setFailedAttempts(0);
-
-        userRepository.updateEndUserPwd(pwd);
+        UUID uuid = SecurityUtils.getCurrentUserId(sc);
 
         JsonOrganisationList ret = ret = new JsonOrganisationList();
         Organisation orgToAutoSelect = null;
@@ -96,7 +45,7 @@ public final class SecurityEndpoint extends AbstractEndpoint {
         //if the person is a superUser, then we want to now prompt them to log on to ANY organisation
         OrganisationRepository organisationRepository = new OrganisationRepository();
 
-        if (user.getIsSuperUser()) {
+        if (RoleUtils.isSuperUser(sc)) {
 
             Iterable<Organisation> orgs = organisationRepository.getAll();
 
@@ -129,16 +78,14 @@ public final class SecurityEndpoint extends AbstractEndpoint {
         }
 
         //set the user details in the return object as well
-        ret.setUser(new JsonEndUser(user, null, mustChangePassword));
-
-        NewCookie cookie = TokenHelper.createTokenAsCookie(user, orgToAutoSelect, isAdminForAutoSelect);
+        EndUser user = SecurityUtils.getCurrentUser(sc);
+        ret.setUser(new JsonEndUser(user, null, false));
 
         clearLogbackMarkers();
 
         return Response
                 .ok()
                 .entity(ret)
-                .cookie(cookie)
                 .build();
     }
 
@@ -149,7 +96,7 @@ public final class SecurityEndpoint extends AbstractEndpoint {
     public Response selectOrganisation(@Context SecurityContext sc, JsonOrganisation orgParameters) throws Exception {
         super.setLogbackMarkers(sc);
 
-        UUID uuid = getEndUserUuidFromToken(sc);
+        UUID uuid = SecurityUtils.getCurrentUserId(sc);
         UserRepository userRepository = new UserRepository();
 
         EndUser endUser = userRepository.getById(uuid);
@@ -192,9 +139,6 @@ public final class SecurityEndpoint extends AbstractEndpoint {
             isAdmin = link.getIsAdmin();
         }
 
-        //issue a new cookie, with the newly selected organisation
-        NewCookie cookie = TokenHelper.createTokenAsCookie(endUser, org, isAdmin);
-
         //return the full org details and the user's role at this place
         JsonOrganisation ret = new JsonOrganisation(org, isAdmin);
 
@@ -203,7 +147,6 @@ public final class SecurityEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .entity(ret)
-                .cookie(cookie)
                 .build();
     }
 
@@ -211,20 +154,17 @@ public final class SecurityEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/logoff")
-    @Unsecured
     public Response logoff(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
 
         LOG.trace("Logoff");
 
-        //replace the cookie on the client with an empty one
-        NewCookie cookie = TokenHelper.createTokenAsCookie(null, null, false);
+        // TODO: logoff
 
         clearLogbackMarkers();
 
         return Response
                 .ok()
-                .cookie(cookie)
                 .build();
     }
 
@@ -233,7 +173,6 @@ public final class SecurityEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/setPasswordFromInviteToken")
-    @Unsecured
     public Response setPasswordFromInviteToken(@Context SecurityContext sc, JsonEmailInviteParameters parameters) throws Exception {
         super.setLogbackMarkers(sc);
 
@@ -248,20 +187,13 @@ public final class SecurityEndpoint extends AbstractEndpoint {
             throw new BadRequestException("No invite found for token");
         }
 
-        UUID userUuid = invite.getEndUserUuid();
-        String hash = PasswordHash.createHash(password);
-
-        //now we've found the invite, we can set up the new password for the user
-        DbEndUserPwd p = new DbEndUserPwd();
-        p.setEndUserUuid(userUuid);
-        p.setPwdHash(hash);
-
-        //save
-        p.writeToDb();
 
         //now we've correctly set up the new password for the user, we can delete the invite
         invite.setDtCompleted(Instant.now());
         invite.writeToDb();
+
+        UUID userUuid = SecurityUtils.getCurrentUserId(sc);
+
 
         //retrieve the link entity for the org and person
         UUID orgUuid = getOrganisationUuidFromToken(sc);
@@ -287,7 +219,6 @@ public final class SecurityEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/sendPasswordForgottenEmail")
-    @Unsecured
     public Response sendPasswordForgottenEmail(@Context SecurityContext sc, JsonUserEmail parameters) throws Exception {
         super.setLogbackMarkers(sc);
 

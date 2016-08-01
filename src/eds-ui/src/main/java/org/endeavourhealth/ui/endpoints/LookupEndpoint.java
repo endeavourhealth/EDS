@@ -1,5 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
+import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.ui.json.JsonSourceOrganisation;
 import org.endeavourhealth.ui.json.JsonSourceOrganisationSet;
 import org.endeavourhealth.ui.database.TableSaveMode;
@@ -102,6 +103,7 @@ public final class LookupEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/saveOrganisationSet")
+    @RequiresAdmin
     public Response saveOrganisationSet(@Context SecurityContext sc, JsonSourceOrganisationSet orgSet) throws Exception {
         super.setLogbackMarkers(sc);
 
@@ -156,6 +158,7 @@ public final class LookupEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/deleteOrganisationSet")
+    @RequiresAdmin
     public Response deleteOrganisationSet(@Context SecurityContext sc, JsonSourceOrganisationSet orgSet) throws Exception {
         super.setLogbackMarkers(sc);
 
@@ -250,11 +253,4 @@ public final class LookupEndpoint extends AbstractEndpoint {
                 .entity(ret)
                 .build();
     }
-
-
-
-
-
-
-
 }
