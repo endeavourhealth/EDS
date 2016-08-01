@@ -130,6 +130,7 @@ create table sftpreader.batch
 	batch_identifier varchar(500) not null,
 	local_relative_path varchar(1000) not null,
 	insert_date timestamp not null default (date_trunc('second', now()::timestamp)),
+	sequence_number integer null,
 	is_complete boolean not null default false,
 	complete_date timestamp null,
 	have_notified boolean not null default false,
@@ -141,8 +142,10 @@ create table sftpreader.batch
 	constraint sftpreader_batch_instanceid_batchidentifier_uq unique (instance_id, batch_identifier),
 	constraint sftpreader_batch_batchidentifier_ck check (char_length(trim(batch_identifier)) > 0),
 	constraint sftpreader_batch_insertdate_completedate_ck check ((complete_date is null) or (insert_date <= complete_date)),
+	constraint sftpreader_batch_sequencenumber_ck check (sequence_number is null or (sequence_number > 0)),
+	constraint sftpreader_batch_instanceid_sequencenumber_uq unique (instance_id, sequence_number),
 	constraint sftpreader_batch_completedate_notificationdate_ck check ((complete_date is null or notification_date is null) or (complete_date <= notification_date)),
-	constraint sftpreader_batch_iscomplete_completedate_ck check ((is_complete and complete_date is not null) or ((not is_complete) and complete_date is null)),
+	constraint sftpreader_batch_iscomplete_completedate_sequencenumber_ck check ((is_complete and complete_date is not null and sequence_number is not null) or ((not is_complete) and complete_date is null)),
 	constraint sftpreader_batch_havenotified_notificationdate_ck check ((have_notified and notification_date is not null) or ((not have_notified) and notification_date is null)),
 	constraint sftpreader_batch_iscomplete_havenotified_ck check (is_complete or (not have_notified))
 );
@@ -199,4 +202,3 @@ create table sftpreader.unknown_file
 	constraint sftpreader_unknownfile_filename_ck check (char_length(trim(filename)) > 0),
 	constraint sftpreader_unknownfile_remotesizebytes_ck check (remote_size_bytes >= 0)
 );
-
