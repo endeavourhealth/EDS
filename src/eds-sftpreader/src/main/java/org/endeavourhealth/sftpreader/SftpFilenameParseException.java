@@ -1,4 +1,4 @@
-package org.endeavourhealth.sftpreader.parsers;
+package org.endeavourhealth.sftpreader;
 
 public class SftpFilenameParseException extends Exception
 {

@@ -1,7 +1,7 @@
 package org.endeavourhealth.sftpreader;
 
 import com.jcraft.jsch.SftpException;
-import org.endeavourhealth.sftpreader.parsers.EmisSftpFilenameParser;
+import org.endeavourhealth.sftpreader.implementations.emis.EmisSftpFilenameParser;
 import org.endeavourhealth.sftpreader.model.db.AddFileResult;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.utilities.PgpUtil;

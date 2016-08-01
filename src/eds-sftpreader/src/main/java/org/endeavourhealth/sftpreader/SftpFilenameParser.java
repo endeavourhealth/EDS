@@ -1,4 +1,4 @@
-package org.endeavourhealth.sftpreader.parsers;
+package org.endeavourhealth.sftpreader;
 
 import org.slf4j.LoggerFactory;
 
