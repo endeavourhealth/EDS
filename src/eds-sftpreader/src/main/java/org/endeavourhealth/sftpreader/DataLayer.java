@@ -143,6 +143,15 @@ public class DataLayer
         return batches.get(0);
     }
 
+    public List<Batch> getUnnotifiedBatches(String instanceId) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.get_unnotified_batches")
+                .addParameter("_instance_id", instanceId);
+
+        return populateBatch(pgStoredProc);
+    }
+
     private static List<Batch> populateBatch(PgStoredProc pgStoredProc) throws PgStoredProcException
     {
         List<Batch> batches = pgStoredProc.executeMultiQuery(resultSet ->

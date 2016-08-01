@@ -24,7 +24,13 @@ public class EmisSftpBatchValidator extends SftpBatchValidator
         {
             checkFilenamesAreConsistentAcrossBatch(incompleteBatch, dbConfiguration);
             checkAllFilesArePresentInBatch(incompleteBatch, dbConfiguration);
+
+            // further checks to complete
+            //
             // check sharing agreement guid is the same across all batches
+            // check there are no overlapping sequence numbers
+            // check that remote bytes == downloaded bytes
+            // check all file attributes are complete
         }
     }
 

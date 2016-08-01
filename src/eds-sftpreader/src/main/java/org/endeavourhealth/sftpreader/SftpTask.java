@@ -1,5 +1,6 @@
 package org.endeavourhealth.sftpreader;
 
+import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import org.endeavourhealth.sftpreader.implementations.ImplementationActivator;
 import org.endeavourhealth.sftpreader.implementations.SftpBatchSequencer;
@@ -8,20 +9,27 @@ import org.endeavourhealth.sftpreader.implementations.SftpFilenameParser;
 import org.endeavourhealth.sftpreader.model.db.AddFileResult;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.db.Batch;
+import org.endeavourhealth.sftpreader.model.db.DbConfigurationSftp;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpFilenameParseException;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpValidationException;
 import org.endeavourhealth.sftpreader.utilities.PgpUtil;
 import org.endeavourhealth.sftpreader.utilities.StreamExtension;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnection;
+import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionDetails;
+import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionException;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 public class SftpTask extends TimerTask
 {
@@ -65,12 +73,12 @@ public class SftpTask extends TimerTask
         try
         {
             // open connection
-            sftpConnection = SftpHelper.openSftpConnection(dbConfiguration.getDbConfigurationSftp());
+            sftpConnection = openSftpConnection(dbConfiguration.getDbConfigurationSftp());
 
             // get file list
             String remotePath = dbConfiguration.getDbConfigurationSftp().getRemotePath();
 
-            List<SftpRemoteFile> sftpRemoteFiles = SftpHelper.getFileList(sftpConnection, remotePath);
+            List<SftpRemoteFile> sftpRemoteFiles = getFileList(sftpConnection, remotePath);
 
             // process batch
             for (SftpRemoteFile sftpRemoteFile : sftpRemoteFiles)
@@ -112,8 +120,79 @@ public class SftpTask extends TimerTask
         }
         finally
         {
-            SftpHelper.closeConnection(sftpConnection);
+            closeConnection(sftpConnection);
         }
+    }
+
+    private static SftpConnection openSftpConnection(DbConfigurationSftp configurationSftp) throws SftpConnectionException, JSchException, IOException
+    {
+        SftpConnection sftpConnection = new SftpConnection(getSftpConnectionDetails(configurationSftp));
+
+        String hostname = sftpConnection.getConnectionDetails().getHostname();
+        String port = Integer.toString(sftpConnection.getConnectionDetails().getPort());
+        String username = sftpConnection.getConnectionDetails().getUsername();
+
+        LOG.info("Opening SFTP connection to " + hostname + " on port " + port + " with user " + username);
+
+        sftpConnection.open();
+
+        return sftpConnection;
+    }
+
+    private static SftpConnectionDetails getSftpConnectionDetails(DbConfigurationSftp configurationSftp)
+    {
+        return new SftpConnectionDetails()
+                .setHostname(configurationSftp.getHostname())
+                .setPort(configurationSftp.getPort())
+                .setUsername(configurationSftp.getUsername())
+                .setClientPrivateKey(configurationSftp.getClientPrivateKey())
+                .setClientPrivateKeyPassword(configurationSftp.getClientPrivateKeyPassword())
+                .setHostPublicKey(configurationSftp.getHostPublicKey());
+    }
+
+    private static void closeConnection(SftpConnection sftpConnection)
+    {
+        LOG.info("Closing SFTP connection");
+
+        sftpConnection.close();
+    }
+
+    private static List<SftpRemoteFile> getFileList(SftpConnection sftpConnection, String remotePath) throws SftpException
+    {
+        LOG.info("Get file list at " + remotePath);
+
+        List<SftpRemoteFile> fileList = sftpConnection.getFileList(remotePath);
+
+        LOG.info("Found " + Integer.toString(fileList.size()) + " files");
+
+        return fileList;
+    }
+
+    private void downloadFile(SftpConnection sftpConnection, SftpFile batchFile) throws Exception
+    {
+        downloadFile(sftpConnection, batchFile.getRemoteFilePath(), batchFile.getLocalFilePath());
+
+        batchFile.setLocalFileSizeBytes(getFileSizeBytes(batchFile.getLocalFilePath()));
+
+        db.setFileAsDownloaded(batchFile);
+    }
+
+    private static void downloadFile(SftpConnection sftpConnection, String remoteFilePath, String localFilePath) throws SftpException, IOException
+    {
+        LOG.info("Downloading file");
+
+        File temporaryDownloadFile = new File(localFilePath + ".download");
+
+        if (temporaryDownloadFile.exists())
+            if (!temporaryDownloadFile.delete())
+                throw new IOException("Could not delete existing temporary download file " + temporaryDownloadFile);
+
+        InputStream inputStream = sftpConnection.getFile(remoteFilePath);
+
+        Files.copy(inputStream, temporaryDownloadFile.toPath());
+
+        if (!temporaryDownloadFile.renameTo(new File(localFilePath)))
+            throw new IOException("Could not temporary download file to " + localFilePath);
     }
 
     private SftpFile instantiateSftpBatchFile(SftpRemoteFile sftpRemoteFile)
@@ -134,15 +213,6 @@ public class SftpTask extends TimerTask
         if (!localPath.exists())
             if (!localPath.mkdirs())
                 throw new IOException("Could not create path " + localPath);
-    }
-
-    private void downloadFile(SftpConnection sftpConnection, SftpFile batchFile) throws Exception
-    {
-        SftpHelper.downloadFile(sftpConnection, batchFile.getRemoteFilePath(), batchFile.getLocalFilePath());
-
-        batchFile.setLocalFileSizeBytes(getFileSizeBytes(batchFile.getLocalFilePath()));
-
-        db.setFileAsDownloaded(batchFile);
     }
 
     private void deleteRemoteFile(SftpConnection sftpConnection, String remoteFilePath) throws SftpException
@@ -192,16 +262,21 @@ public class SftpTask extends TimerTask
             db.completeBatch(batch, sortedBatchSequence.get(batch));
     }
 
-    private void notifyOnwardPipeline()
+    private void notifyOnwardPipeline() throws PgStoredProcException
     {
-        try
-        {
-            //List<Batch> unnotifiedBatches = db.getUnnotifiedBatches(dbConfiguration.getInstanceId());
+        List<Batch> unnotifiedBatches = db.getUnnotifiedBatches(dbConfiguration.getInstanceId());
 
-        }
-        catch (Exception e)
-        {
-            LOG.info("Exception while notifying onward pipeline", e);
-        }
+        unnotifiedBatches = unnotifiedBatches
+                .stream()
+                .sorted(Comparator.comparing(t -> t.getSequenceNumber()))
+                .collect(Collectors.toList());
+
+        for (Batch unnotifiedBatch : unnotifiedBatches)
+            notify(unnotifiedBatch);
+    }
+
+    private void notify(Batch unnotifiedBatch)
+    {
+        // do notifiy
     }
 }
