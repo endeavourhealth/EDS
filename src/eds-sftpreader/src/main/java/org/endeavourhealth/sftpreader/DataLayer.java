@@ -1,7 +1,6 @@
 package org.endeavourhealth.sftpreader;
 
 import org.endeavourhealth.sftpreader.utilities.StreamExtension;
-import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFile;
 import org.endeavourhealth.sftpreader.model.db.*;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProc;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
@@ -64,7 +63,7 @@ public class DataLayer
         return pgStoredProc.executeQuery(resultSet -> resultSet.getString("file_type_identifier"));
     }
 
-    public AddFileResult addFile(String instanceId, BatchFile batchFile) throws PgStoredProcException
+    public AddFileResult addFile(String instanceId, SftpFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.add_file")
@@ -83,7 +82,7 @@ public class DataLayer
                     .setBatchFileId(resultSet.getInt("batch_file_id")));
     }
 
-    public void setFileAsDownloaded(BatchFile batchFile) throws PgStoredProcException
+    public void setFileAsDownloaded(SftpFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.set_file_as_downloaded")
@@ -93,7 +92,7 @@ public class DataLayer
         pgStoredProc.execute();
     }
 
-    public void setFileAsDecrypted(BatchFile batchFile) throws PgStoredProcException
+    public void setFileAsDecrypted(SftpFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.set_file_as_decrypted")
@@ -104,7 +103,7 @@ public class DataLayer
         pgStoredProc.execute();
     }
 
-    public void addUnknownFile(String instanceId, BatchFile batchFile) throws PgStoredProcException
+    public void addUnknownFile(String instanceId, SftpFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.add_unknown_file")

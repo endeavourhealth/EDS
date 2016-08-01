@@ -1,33 +1,49 @@
-package org.endeavourhealth.sftpreader.batchFileImplementations;
+package org.endeavourhealth.sftpreader;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+import org.endeavourhealth.sftpreader.parsers.SftpFilenameParser;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
-public abstract class BatchFile
+public class SftpFile
 {
     private SftpRemoteFile sftpRemoteFile;
+    private SftpFilenameParser sftpFilenameParser;
     private String localRootPath;
     protected String pgpFileExtensionFilter;
-    protected List<String> validFileTypeIdentifiers;
     private Long localFileSizeBytes = null;
     private Long decryptedFileSizeBytes = null;
     private Integer batchFileId = null;
 
-    BatchFile(SftpRemoteFile sftpRemoteFile, String localRootPath, String pgpFileExtensionFilter, List<String> validFileTypeIdentifiers)
+    protected SftpFile(SftpRemoteFile sftpRemoteFile, SftpFilenameParser sftpFilenameParser, String localRootPath)
     {
+        Validate.notNull(sftpRemoteFile, "sftpRemoteFile");
+        Validate.notNull(sftpFilenameParser, "sftpFilenameParser");
+        Validate.notNull(localRootPath, "localRootPath");
+
         this.sftpRemoteFile = sftpRemoteFile;
+        this.sftpFilenameParser = sftpFilenameParser;
         this.localRootPath = localRootPath;
-        this.pgpFileExtensionFilter = pgpFileExtensionFilter;
-        this.validFileTypeIdentifiers = validFileTypeIdentifiers;
+        this.pgpFileExtensionFilter = sftpFilenameParser.getPgpFileExtensionFilter();
     }
 
-    public abstract boolean isFilenameValid();
-    public abstract String getBatchIdentifier();
-    public abstract String getFileTypeIdentifier();
+    public boolean isFilenameValid()
+    {
+        return this.sftpFilenameParser.isFilenameValid();
+    }
+
+    public String getBatchIdentifier()
+    {
+        return this.sftpFilenameParser.getBatchIdentifier();
+    }
+
+    public String getFileTypeIdentifier()
+    {
+        return this.sftpFilenameParser.getFileTypeIdentifier();
+    }
 
     public String getRemoteFilePath()
     {

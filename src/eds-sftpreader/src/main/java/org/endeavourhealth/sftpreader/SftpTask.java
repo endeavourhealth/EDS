@@ -1,8 +1,7 @@
 package org.endeavourhealth.sftpreader;
 
 import com.jcraft.jsch.SftpException;
-import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFile;
-import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFileFactory;
+import org.endeavourhealth.sftpreader.parsers.EmisSftpFilenameParser;
 import org.endeavourhealth.sftpreader.model.db.AddFileResult;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.utilities.PgpUtil;
@@ -70,7 +69,7 @@ public class SftpTask extends TimerTask
             {
                 LOG.info("Start processing file " + sftpRemoteFile.getFilename());
 
-                BatchFile batchFile = instantiateBatchFile(sftpRemoteFile);
+                SftpFile batchFile = instantiateSftpBatchFile(sftpRemoteFile);
 
                 if (!batchFile.isFilenameValid())
                 {
@@ -109,15 +108,19 @@ public class SftpTask extends TimerTask
         }
     }
 
-    private BatchFile instantiateBatchFile(SftpRemoteFile sftpRemoteFile)
+    private SftpFile instantiateSftpBatchFile(SftpRemoteFile sftpRemoteFile)
     {
-        return BatchFileFactory.create(sftpRemoteFile,
-                dbConfiguration.getLocalRootPath(),
-                dbConfiguration.getPgpFileExtensionFilter(),
-                dbConfiguration.getInterfaceFileTypes());
+        // instatiate this dynamically based on the interface type
+        EmisSftpFilenameParser emisSftpFilenameParser = new EmisSftpFilenameParser(sftpRemoteFile.getFilename(),
+                        dbConfiguration.getPgpFileExtensionFilter(),
+                        dbConfiguration.getInterfaceFileTypes());
+
+        return new SftpFile(sftpRemoteFile,
+                emisSftpFilenameParser,
+                dbConfiguration.getLocalRootPath());
     }
 
-    private void createBatchDirectory(BatchFile batchFile) throws IOException
+    private void createBatchDirectory(SftpFile batchFile) throws IOException
     {
         File localPath = new File(batchFile.getLocalPath());
 
@@ -126,7 +129,7 @@ public class SftpTask extends TimerTask
                 throw new IOException("Could not create path " + localPath);
     }
 
-    private void downloadFile(SftpConnection sftpConnection, BatchFile batchFile) throws Exception
+    private void downloadFile(SftpConnection sftpConnection, SftpFile batchFile) throws Exception
     {
         SftpHelper.downloadFile(sftpConnection, batchFile.getRemoteFilePath(), batchFile.getLocalFilePath());
 
@@ -142,7 +145,7 @@ public class SftpTask extends TimerTask
         sftpConnection.deleteFile(remoteFilePath);
     }
 
-    private void decryptFile(BatchFile batchFile) throws Exception
+    private void decryptFile(SftpFile batchFile) throws Exception
     {
         String localFilePath = batchFile.getLocalFilePath();
         String decryptedLocalFilePath = batchFile.getDecryptedLocalFilePath();
