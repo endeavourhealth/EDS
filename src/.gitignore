@@ -9,7 +9,6 @@ target/
 node/
 node_modules/
 bower_components/
-typings/
 uiDesigner.xml
 workspace.xml
 vcs.xml
