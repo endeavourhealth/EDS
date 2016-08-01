@@ -5,7 +5,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,7 +14,7 @@ public class EdsNotifier
 {
     public void notifyEds(String url, String message) throws IOException
     {
-        HttpClient httpClient = new DefaultHttpClient();
+        HttpClient httpClient = HttpClientBuilder.create().build();
 
         HttpPost httpPost = new HttpPost(url);
         httpPost.setEntity(new ByteArrayEntity(message.getBytes()));

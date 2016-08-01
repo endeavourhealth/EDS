@@ -5,7 +5,7 @@ import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFile;
 import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFileFactory;
 import org.endeavourhealth.sftpreader.model.db.AddFileResult;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
-import org.endeavourhealth.sftpreader.utilities.pgp.PgpUtil;
+import org.endeavourhealth.sftpreader.utilities.PgpUtil;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnection;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;

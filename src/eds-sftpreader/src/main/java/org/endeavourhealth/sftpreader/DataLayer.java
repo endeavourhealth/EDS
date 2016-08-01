@@ -1,15 +1,13 @@
 package org.endeavourhealth.sftpreader;
 
-import org.endeavourhealth.core.utility.StreamExtension;
+import org.endeavourhealth.sftpreader.utilities.StreamExtension;
 import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFile;
 import org.endeavourhealth.sftpreader.model.db.*;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProc;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 
 import javax.sql.DataSource;
-import java.sql.ResultSet;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class DataLayer
 {

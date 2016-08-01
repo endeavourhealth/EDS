@@ -1,4 +1,4 @@
-package org.endeavourhealth.sftpreader.utilities.pgp;
+package org.endeavourhealth.sftpreader.utilities;
 
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
@@ -14,6 +14,7 @@ import java.security.Security;
 import java.security.SignatureException;
 import java.util.Iterator;
 
+@SuppressWarnings("unchecked")
 public class PgpUtil
 {
     public static void decryptAndVerify(String inputFileName, String publicKey, String secretKey, String secretKeyPassword, String outputFileName) throws IOException, NoSuchProviderException, PGPException, SignatureException

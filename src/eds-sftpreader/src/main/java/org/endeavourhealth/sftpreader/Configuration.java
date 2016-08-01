@@ -1,6 +1,6 @@
 package org.endeavourhealth.sftpreader;
 
-import org.endeavourhealth.core.utility.XmlSerializer;
+import org.endeavourhealth.sftpreader.utilities.XmlSerializer;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.xml.DatabaseConnection;
 import org.endeavourhealth.sftpreader.model.xml.SftpReaderConfiguration;

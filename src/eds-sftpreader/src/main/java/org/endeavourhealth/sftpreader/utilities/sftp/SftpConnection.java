@@ -50,6 +50,7 @@ public class SftpConnection
         LOG.info("Connection opened");
     }
 
+    @SuppressWarnings("unchecked")
     public List<SftpRemoteFile> getFileList(String remotePath) throws SftpException
     {
         Vector<ChannelSftp.LsEntry> fileList = channel.ls(remotePath);
