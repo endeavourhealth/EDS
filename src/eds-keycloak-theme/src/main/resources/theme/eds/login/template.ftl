@@ -63,6 +63,14 @@
                                 </div>
                                 <div class="panel-body">
 
+                                    <#if displayInfo>
+                                        <div id="kc-info" class="${properties.kcInfoAreaClass!}">
+                                            <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
+                                                <#nested "info">
+                                            </div>
+                                        </div>
+                                    </#if>
+
                                     <#if displayMessage && message?has_content>
                                         <div class="${properties.kcFeedbackAreaClass!}">
                                             <div class="alert alert-${message.type}">
@@ -81,13 +89,8 @@
                         </div>
                     </div>
 
-                    <#if displayInfo>
-                        <div id="kc-info" class="${properties.kcInfoAreaClass!}">
-                            <div id="kc-info-wrapper" class="${properties.kcInfoAreaWrapperClass!}">
-                                <#nested "info">
-                            </div>
-                        </div>
-                    </#if>
+                    <#nested "social">
+                    <#nested "registration">
                 </div>
             </div>
         </div>

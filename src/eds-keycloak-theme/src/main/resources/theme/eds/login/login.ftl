@@ -33,6 +33,13 @@
                     </div>
 
                     <div class="${properties.kcFormGroupClass!}">
+
+                        <div id="kc-form-buttons">
+                            <div class="${properties.kcFormButtonsWrapperClass!}">
+                                <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>
+                            </div>
+                        </div>
+
                         <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
                             <#if realm.rememberMe && !usernameEditDisabled??>
                                 <div class="checkbox">
@@ -47,36 +54,39 @@
                             </#if>
                             <div class="${properties.kcFormOptionsWrapperClass!}">
                                 <#if realm.resetPasswordAllowed>
-                                    <span><a href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a></span>
+                                    <span><a class="kc-forgot-password" href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a></span>
                                 </#if>
                             </div>
                         </div>
 
-                        <div id="kc-form-buttons">
-                            <div class="${properties.kcFormButtonsWrapperClass!}">
-                                <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>
-                            </div>
-                         </div>
                     </div>
                 </div>
             </div>
         </form>
         </#if>
-    <#elseif section = "info" >
-        <#if realm.password && realm.registrationAllowed && !usernameEditDisabled??>
-            <div id="kc-registration">
-                <span>${msg("noAccount")} <a href="${url.registrationUrl}">${msg("doRegister")}</a></span>
+    <#elseif section = "social" >
+        <#if realm.password && social.providers??>
+            <div class="container">
+                <div id="kc-social-providers" class="col-md-4 col-md-offset-4">
+                    <div id="kc-social-providers-prompt">
+                    or login using one of the following:
+                    </div>
+                    <ul>
+                        <#list social.providers as p>
+                            <li><a href="${p.loginUrl}" id="zocial-${p.alias}" class="zocial ${p.providerId}"> <span class="text">${p.alias}</span></a></li>
+                        </#list>
+                    </ul>
+                </div>
             </div>
         </#if>
 
-        <#if realm.password && social.providers??>
-            <div id="kc-social-providers">
-                <ul>
-                    <#list social.providers as p>
-                        <li><a href="${p.loginUrl}" id="zocial-${p.alias}" class="zocial ${p.providerId}"> <span class="text">${p.alias}</span></a></li>
-                    </#list>
-                </ul>
+    <#elseif section = "registration" >
+        <#if realm.password && realm.registrationAllowed && !usernameEditDisabled??>
+            <div class="container">
+                <div id="kc-registration">
+                    <span>${msg("noAccount")} <a href="${url.registrationUrl}">${msg("doRegister")}</a></span>
+                </div>
             </div>
-        </#if>
+        </#if>        
     </#if>
 </@layout.registrationLayout>

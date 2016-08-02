@@ -14,7 +14,7 @@
             <tr>
                 <td class="provider">${msg("mobile")}</td>
                 <td class="action">
-                    <a id="remove-mobile" href="${url.totpRemoveUrl}"><i class="pficon pficon-delete"></i></a>
+                    <a id="remove-mobile" href="${url.totpRemoveUrl}"><i class="fa fa-trash"></i></a>
                 </td>
             </tr>
             </tbody>
