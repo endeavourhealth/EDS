@@ -1,7 +1,7 @@
 package org.endeavourhealth.ui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.endeavourhealth.ui.database.lookups.DbSourceOrganisationSet;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,10 +15,7 @@ public final class JsonSourceOrganisationSet implements Comparable {
 
     public JsonSourceOrganisationSet() {}
 
-    public JsonSourceOrganisationSet(DbSourceOrganisationSet set) {
-        this.uuid = set.getSourceOrganisationSetUuid();
-        this.name = set.getName();
-    }
+
 
     public void addOrganisation(JsonSourceOrganisation organisation) {
         if (organisations == null) {

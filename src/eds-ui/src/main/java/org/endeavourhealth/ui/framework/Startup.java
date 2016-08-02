@@ -6,7 +6,6 @@ import org.endeavourhealth.ui.framework.config.ConfigSerializer;
 import org.endeavourhealth.ui.framework.config.models.*;
 import org.endeavourhealth.ui.framework.security.SecurityConfig;
 import org.endeavourhealth.ui.utility.MessagingQueueProvider;
-import org.endeavourhealth.ui.database.DatabaseManager;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -28,10 +27,6 @@ public final class Startup implements ServletContextListener {
         String url = config.getDatabase().getUrl();
         String username = config.getDatabase().getUsername();
         String password = config.getDatabase().getPassword();
-        DatabaseManager.getInstance().setConnectionProperties(url, username, password);
-
-        //tell our database manager to set up logging to db
-        DatabaseManager.getInstance().registerLogbackDbAppender();
 
         //domain for our cookies
         WebServer ws = config.getWebServer();
@@ -61,7 +56,6 @@ public final class Startup implements ServletContextListener {
     }
 
     public void contextDestroyed(ServletContextEvent contextEvent) {
-        DatabaseManager.getInstance().deregisterLogbackDbAppender();
     }
 
 

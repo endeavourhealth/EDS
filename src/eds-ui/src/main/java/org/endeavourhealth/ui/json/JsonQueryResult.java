@@ -2,7 +2,6 @@ package org.endeavourhealth.ui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.ui.PercentageCalculator;
-import org.endeavourhealth.ui.database.definition.DbItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,16 +19,6 @@ public final class JsonQueryResult {
 
     public JsonQueryResult() {}
 
-    public JsonQueryResult(DbItem item, Integer resultCount, Integer parentCount) {
-        this.name = item.getTitle();
-        this.description = item.getDescription();
-        this.uuid = item.getItemUuid();
-        this.resultCount = resultCount;
-
-        if (resultCount != null && parentCount != null) {
-            this.percentageOfParent = PercentageCalculator.calculatorPercentString(parentCount.doubleValue(), resultCount.intValue());
-        }
-    }
 
     public void addChildReult(JsonQueryResult result) {
         if (childQueries == null) {

@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.endeavourhealth.ui.database.lookups.DbSourceOrganisation;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class JsonSourceOrganisation implements Comparable {
@@ -10,10 +9,6 @@ public final class JsonSourceOrganisation implements Comparable {
 
     public JsonSourceOrganisation() {}
 
-    public JsonSourceOrganisation(DbSourceOrganisation org) {
-        this.odsCode = org.getOdsCode();
-        this.name = org.getName();
-    }
 
     /**
      * gets/sets
