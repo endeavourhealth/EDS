@@ -14,7 +14,7 @@ begin
 	from sftpreader.batch b
 	where b.instance_id = _instance_id
 	and b.is_complete = true
-	and b.is_notified = false;
+	and b.have_notified = false;
 
 	return query
 	select
