@@ -30,6 +30,11 @@
 		<!--<cookieDomain>37.48.245.69</cookieDomain>-->
 </webServer>
 
+	<rabbitmq>
+		<username>guest</username>
+		<password>guest</password>
+	</rabbitmq>
+
 <!--GMail settings-->
 	<email>
 		<url>smtp.gmail.com</url>
