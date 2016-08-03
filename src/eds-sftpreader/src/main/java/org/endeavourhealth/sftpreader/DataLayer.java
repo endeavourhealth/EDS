@@ -202,11 +202,17 @@ public class DataLayer
         pgStoredProc.execute();
     }
 
-    public void setBatchAsNotified(int batchId) throws PgStoredProcException
+    public void addBatchNotification(int batchId, String instanceId, EdsNotifier edsNotifier, boolean wasSuccess, String errorText) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.set_batch_as_complete")
-                .addParameter("_batch_id", batchId);
+                .setName("sftpreader.add_batch_notification")
+                .addParameter("_batch_id", batchId)
+                .addParameter("_instance_id", instanceId)
+                .addParameter("_message_uuid", edsNotifier.getMessageId())
+                .addParameter("_outbound_message", edsNotifier.getOutboundMessage())
+                .addParameter("_inbound_message", edsNotifier.getInboundMessage())
+                .addParameter("_was_success", wasSuccess)
+                .addParameter("_error_text", errorText);
 
         pgStoredProc.execute();
     }

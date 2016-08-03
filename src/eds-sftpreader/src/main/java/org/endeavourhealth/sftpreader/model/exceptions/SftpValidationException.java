@@ -1,6 +1,6 @@
 package org.endeavourhealth.sftpreader.model.exceptions;
 
-public class SftpValidationException extends Exception
+public class SftpValidationException extends SftpReaderException
 {
     public SftpValidationException() {
         super();

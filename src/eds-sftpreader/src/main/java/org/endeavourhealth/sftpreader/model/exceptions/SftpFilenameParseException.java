@@ -1,6 +1,6 @@
 package org.endeavourhealth.sftpreader.model.exceptions;
 
-public class SftpFilenameParseException extends Exception
+public class SftpFilenameParseException extends SftpReaderException
 {
     public SftpFilenameParseException() {
         super();

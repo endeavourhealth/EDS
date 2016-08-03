@@ -28,6 +28,8 @@ public class EdsNotifier
     private String payload;
     private UUID messageId;
     private LocalDateTime timestamp;
+    private String outboundMessage;
+    private String inboundMessage;
 
     public EdsNotifier(DbConfigurationEds dbConfigurationEds, String payload)
     {
@@ -42,12 +44,12 @@ public class EdsNotifier
 
     public void notifyEds() throws IOException
     {
-        String message = buildEnvelope();
+        outboundMessage = buildEnvelope();
 
         HttpClient httpClient = HttpClientBuilder.create().build();
 
         HttpPost httpPost = new HttpPost(dbConfigurationEds.getEdsUrl());
-        httpPost.setEntity(new ByteArrayEntity(message.getBytes()));
+        httpPost.setEntity(new ByteArrayEntity(outboundMessage.getBytes()));
 
         HttpResponse response = httpClient.execute(httpPost);
         HttpEntity entity = response.getEntity();
@@ -96,5 +98,20 @@ public class EdsNotifier
             edsEnvelope = edsEnvelope.replace(replacement, test.get(replacement));
 
         return edsEnvelope;
+    }
+
+    public UUID getMessageId()
+    {
+        return this.messageId;
+    }
+
+    public String getOutboundMessage()
+    {
+        return this.outboundMessage;
+    }
+
+    public String getInboundMessage()
+    {
+        return this.inboundMessage;
     }
 }

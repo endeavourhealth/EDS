@@ -8,6 +8,7 @@ import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.db.Batch;
 import org.endeavourhealth.sftpreader.model.db.DbConfigurationSftp;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpFilenameParseException;
+import org.endeavourhealth.sftpreader.model.exceptions.SftpReaderException;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpValidationException;
 import org.endeavourhealth.sftpreader.utilities.PgpUtil;
 import org.endeavourhealth.sftpreader.utilities.StreamExtension;
@@ -294,7 +295,7 @@ public class SftpTask extends TimerTask
         return lastCompleteBatch.getSequenceNumber() + 1;
     }
 
-    private void notifyOnwardPipeline() throws PgStoredProcException, IOException
+    private void notifyOnwardPipeline() throws PgStoredProcException, SftpReaderException
     {
         List<Batch> unnotifiedBatches = db.getUnnotifiedBatches(dbConfiguration.getInstanceId());
 
@@ -307,15 +308,35 @@ public class SftpTask extends TimerTask
             notify(unnotifiedBatch);
     }
 
-    private void notify(Batch unnotifiedBatch) throws IOException, PgStoredProcException
+    private void notify(Batch unnotifiedBatch) throws SftpReaderException, PgStoredProcException
     {
         SftpNotificationCreator sftpNotificationCreator = ImplementationActivator.createSftpNotificationCreator();
 
         String message = sftpNotificationCreator.createNotificationMessage(dbConfiguration, unnotifiedBatch);
 
         EdsNotifier edsNotifier = new EdsNotifier(dbConfiguration.getDbConfigurationEds(), message);
-        edsNotifier.notifyEds();
-        
-        db.setBatchAsNotified(unnotifiedBatch.getBatchId());
+
+        boolean wasError = false;
+        String errorMessage = null;
+        Exception exception = null;
+
+        try
+        {
+            edsNotifier.notifyEds();
+
+        }
+        catch (Exception e)
+        {
+            wasError = true;
+            errorMessage = e.getMessage();
+            exception = e;
+
+            LOG.error("Error notifying EDS for batch " + unnotifiedBatch.getBatchIdentifier(), e);
+        }
+
+        db.addBatchNotification(unnotifiedBatch.getBatchId(), dbConfiguration.getInstanceId(), edsNotifier, (!wasError), errorMessage);
+
+        if (exception != null)
+            throw new SftpReaderException("Error notifying EDS for batch " + unnotifiedBatch.getBatchIdentifier(), exception);
     }
 }

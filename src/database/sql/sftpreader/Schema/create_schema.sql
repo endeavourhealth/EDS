@@ -61,8 +61,12 @@ values
 (1, 'Appointment_Session'),
 (1, 'Appointment_SessionUser'),
 (1, 'Appointment_Slot'),
-(1, 'Audit_RegistrationAudit'),
-(1, 'Audit_PatientAudit'),
+--
+-- temporarily remove as test pack does not contain these files
+--
+--(1, 'Audit_RegistrationAudit'),
+--(1, 'Audit_PatientAudit'),
+--
 (1, 'CareRecord_Consultation'),
 (1, 'CareRecord_Diary'),
 (1, 'CareRecord_Observation'),
@@ -221,3 +225,24 @@ create table sftpreader.unknown_file
 	constraint sftpreader_unknownfile_filename_ck check (char_length(trim(filename)) > 0),
 	constraint sftpreader_unknownfile_remotesizebytes_ck check (remote_size_bytes >= 0)
 );
+
+create table sftpreader.notification_message
+(
+	notification_message_id serial not null,
+	batch_id integer not null,
+	instance_id varchar(100) not null,
+	message_uuid uuid not null, 
+	timestamp timestamp not null,
+	outbound varchar(20000) not null,
+	inbound varchar(20000) null,
+	was_success boolean not null,
+	error_text varchar(1000) null,
+
+	constraint sftpreader_notificationmessage_notificationmessageid_pk primary key (notification_message_id),
+	constraint sftpreader_notificationmessage_batchid_instanceid_fk foreign key (batch_id, instance_id) references sftpreader.batch (batch_id, instance_id),
+	constraint sftpreader_notificationmessage_messageuuid_uq unique (message_uuid),
+	constraint sftpreader_notificationmessage_outbound_ck check (char_length(trim(outbound)) > 0),
+	constraint sftpreader_notificationmessage_inbound_wassuccess_ck check (inbound is not null or (not was_success)),
+	constraint sftpreader_notificationmessage_wassuccess_errortext_ck check ((was_success and error_text is null) or ((not was_success) and error_text is not null))
+);
+

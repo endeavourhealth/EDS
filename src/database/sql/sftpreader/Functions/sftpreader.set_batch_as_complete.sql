@@ -11,7 +11,7 @@ as $$
 	set
 		sequence_number = _sequence_number,
 		is_complete = true,
-		complete_date = now()
+		complete_date = date_trunc('second', now()::timestamp)
 	where batch_id = _batch_id
 	and is_complete = false;
 
