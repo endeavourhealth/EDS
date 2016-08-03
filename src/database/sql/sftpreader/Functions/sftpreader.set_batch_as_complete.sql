@@ -1,5 +1,5 @@
 
-create or replace function sftpreader.complete_batch
+create or replace function sftpreader.set_batch_as_complete
 (
 	_batch_id integer,
 	_sequence_number integer

@@ -192,12 +192,21 @@ public class DataLayer
         return batches;
     }
 
-    public void completeBatch(Batch batch, int sequenceNumber) throws PgStoredProcException
+    public void setBatchAsComplete(Batch batch, int sequenceNumber) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.complete_batch")
+                .setName("sftpreader.set_batch_as_complete")
                 .addParameter("_batch_id", batch.getBatchId())
                 .addParameter("_sequence_number", Integer.toString(sequenceNumber));
+
+        pgStoredProc.execute();
+    }
+
+    public void setBatchAsNotified(int batchId) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.set_batch_as_complete")
+                .addParameter("_batch_id", batchId);
 
         pgStoredProc.execute();
     }

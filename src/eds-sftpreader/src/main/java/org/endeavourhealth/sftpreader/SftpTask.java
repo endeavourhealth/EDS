@@ -258,7 +258,7 @@ public class SftpTask extends TimerTask
         Map<Batch, Integer> sortedBatchSequence = sequenceBatches(incompleteBatches, lastCompleteBatch);
 
         for (Batch batch : sortedBatchSequence.keySet())
-            db.completeBatch(batch, sortedBatchSequence.get(batch));
+            db.setBatchAsComplete(batch, sortedBatchSequence.get(batch));
     }
 
     private void validateBatches(List<Batch> incompleteBatches, Batch lastCompleteBatch) throws SftpValidationException
@@ -307,7 +307,7 @@ public class SftpTask extends TimerTask
             notify(unnotifiedBatch);
     }
 
-    private void notify(Batch unnotifiedBatch) throws IOException
+    private void notify(Batch unnotifiedBatch) throws IOException, PgStoredProcException
     {
         SftpNotificationCreator sftpNotificationCreator = ImplementationActivator.createSftpNotificationCreator();
 
@@ -315,5 +315,7 @@ public class SftpTask extends TimerTask
 
         EdsNotifier edsNotifier = new EdsNotifier(dbConfiguration.getDbConfigurationEds(), message);
         edsNotifier.notifyEds();
+        
+        db.setBatchAsNotified(unnotifiedBatch.getBatchId());
     }
 }
