@@ -5,6 +5,9 @@ import com.google.common.io.Resources;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import javax.xml.XMLConstants;
 import javax.xml.bind.*;
 import javax.xml.parsers.DocumentBuilder;
@@ -51,6 +54,12 @@ public abstract class XmlSerializer
     {
         URL urlItem = Resources.getResource(xmlResourceName);
         String xml = com.google.common.io.Resources.toString(urlItem, Charsets.UTF_8);
+        return deserializeFromString(cls, xml, xsdName);
+    }
+
+    public static <T> T deserializeFromFile(Class cls, String path, String xsdName) throws ParserConfigurationException, JAXBException, IOException, SAXException
+    {
+        String xml = new String(Files.readAllBytes(Paths.get(path)), StandardCharsets.UTF_8);
         return deserializeFromString(cls, xml, xsdName);
     }
 
