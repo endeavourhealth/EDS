@@ -24,8 +24,27 @@ values
 (
 	'EMIS001',
 	1,
-	'/Users/jonny/Code/Local/sftp',
+	'/Users/jonny/Code/Local/sftp/EMIS001',
 	60
+);
+
+insert into sftpreader.configuration_eds
+(
+	instance_id,
+	eds_url,
+	eds_service_identifier,
+	software_name,
+	software_version,
+	envelope_content_type
+)
+values
+(
+	'EMIS001',
+	'http://localhost:8080/api/PostAsync',
+	'EMIS001',
+	'EmisExtractService',
+	'5.1',
+	'EMISCSV'
 );
 
 insert into sftpreader.configuration_sftp

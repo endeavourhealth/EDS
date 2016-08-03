@@ -18,17 +18,17 @@ create table sftpreader.instance
 create table sftpreader.interface_type
 (
 	interface_type_id integer not null,
-	description varchar(1000) not null,
+	interface_type_name varchar(1000) not null,
 
 	constraint sftpreader_interfacetype_interfacetypeid_pk primary key (interface_type_id),
-	constraint sftpreader_interfacetype_description_uq unique (description),
-	constraint sftpreader_interfacetype_description_ck check (char_length(trim(description)) > 0)
+	constraint sftpreader_interfacetype_interfacetypename_uq unique (interface_type_name),
+	constraint sftpreader_interfacetype_interfacetypename_ck check (char_length(trim(interface_type_name)) > 0)
 );
 
 insert into sftpreader.interface_type
 (
 	interface_type_id,
-	description
+	interface_type_name
 )
 values
 (
@@ -121,6 +121,25 @@ create table sftpreader.configuration_pgp
 	constraint sftpreader_configurationpgp_intsanceid_pk primary key (instance_id),
 	constraint sftpreader_configurationpgp_instanceid_fk foreign key (instance_id) references sftpreader.configuration (instance_id)
 );
+
+create table sftpreader.configuration_eds
+(
+	instance_id varchar(100) not null,
+	eds_url varchar(1000) not null,
+	eds_service_identifier varchar(100) not null,
+	software_name varchar(100) not null,
+	software_version varchar(100) not null,
+	envelope_content_type varchar(100) not null,
+
+	constraint sftpreader_configurationeds_instanceid_pk primary key (instance_id),
+	constraint sftpreader_configurationeds_instanceid_fk foreign key (instance_id) references sftpreader.configuration (instance_id),
+	constraint sftpreader_configurationeds_edsurl_ck check (char_length(trim(eds_url)) > 0),
+	constraint sftpreader_configurationeds_edsserviceidentifier_uq unique (eds_service_identifier),
+	constraint sftpreader_configurationeds_edsserviceidentifier_ck check (char_length(trim(eds_service_identifier)) > 0),
+	constraint sftpreader_configurationeds_softwarename_ck check (char_length(trim(software_name)) > 0),
+	constraint sftpreader_configurationeds_softwareversion_ck check (char_length(trim(software_version)) > 0),
+	constraint sftpreader_configurationeds_envelopecontenttype_ck check (char_length(trim(envelope_content_type)) > 0)
+);	
 
 create table sftpreader.batch
 (

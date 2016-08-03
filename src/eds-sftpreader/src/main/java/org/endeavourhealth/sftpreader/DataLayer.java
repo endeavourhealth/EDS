@@ -2,6 +2,7 @@ package org.endeavourhealth.sftpreader;
 
 import org.endeavourhealth.sftpreader.utilities.StreamExtension;
 import org.endeavourhealth.sftpreader.model.db.*;
+import org.endeavourhealth.sftpreader.utilities.postgres.PgResultSet;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProc;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 
@@ -30,8 +31,7 @@ public class DataLayer
 
                         .setInstanceId(resultSet.getString("instance_id"))
                         .setInstanceDescription(resultSet.getString("instance_description"))
-                        .setInterfaceTypeId(resultSet.getInt("interface_type_id"))
-                        .setInterfaceTypeDescription(resultSet.getString("interface_type_description"))
+                        .setInterfaceTypeName(resultSet.getString("interface_type_name"))
                         .setPollFrequencySeconds(resultSet.getInt("poll_frequency_seconds"))
                         .setLocalRootPath(resultSet.getString("local_root_path"))
 
@@ -49,7 +49,14 @@ public class DataLayer
                             .setPgpSenderPublicKey(resultSet.getString("pgp_sender_public_key"))
                             .setPgpRecipientPublicKey(resultSet.getString("pgp_recipient_public_key"))
                             .setPgpRecipientPrivateKey(resultSet.getString("pgp_recipient_private_key"))
-                            .setPgpRecipientPrivateKeyPassword(resultSet.getString("pgp_recipient_private_key_password"))));
+                            .setPgpRecipientPrivateKeyPassword(resultSet.getString("pgp_recipient_private_key_password")))
+
+                        .setDbConfigurationEds(new DbConfigurationEds()
+                            .setEdsUrl(resultSet.getString("eds_url"))
+                            .setEdsServiceIdentifier(resultSet.getString("eds_service_identifier"))
+                            .setSoftwareName(resultSet.getString("software_name"))
+                            .setSoftwareVersion(resultSet.getString("software_version"))
+                            .setEnvelopeContentType(resultSet.getString("envelope_content_type"))));
 
         dbConfiguration.setInterfaceFileTypes(getInterfaceFileTypes(instanceId));
 
@@ -159,7 +166,7 @@ public class DataLayer
                         .setBatchId(resultSet.getInt("batch_id"))
                         .setBatchIdentifier(resultSet.getString("batch_identifier"))
                         .setLocalRelativePath(resultSet.getString("local_relative_path"))
-                        .setSequenceNumber(getInteger(resultSet, "sequence_number")));
+                        .setSequenceNumber(PgResultSet.getInteger(resultSet, "sequence_number")));
 
         List<BatchFile> batchFiles = pgStoredProc.nextMultiQuery(resultSet ->
                 new BatchFile()
@@ -193,16 +200,5 @@ public class DataLayer
                 .addParameter("_sequence_number", Integer.toString(sequenceNumber));
 
         pgStoredProc.execute();
-    }
-
-    // move to better place
-    private static Integer getInteger(ResultSet resultSet, String columnName) throws SQLException
-    {
-        int result = resultSet.getInt(columnName);
-
-        if (resultSet.wasNull())
-            return null;
-
-        return result;
     }
 }

@@ -49,14 +49,23 @@ public class SftpTask extends TimerTask
     {
         try
         {
+            LOG.info(">>>Starting scheduled SftpTask run, initialising");
             initialise();
+
+            LOG.info(">>>Downloading and decrypting files");
             downloadAndProcessFiles();
+
+            LOG.info(">>>Validating and sequencing batches");
             validateAndSequenceBatches();
+
+            LOG.info(">>>Notifying onward actors");
             notifyOnwardPipeline();
+
+            LOG.info(">>>Completed SftpTask run");
         }
         catch (Exception e)
         {
-            LOG.error("Fatal exception in SftpTask.run", e);
+            LOG.error(">>>Fatal exception in SftpTask run, terminating this run", e);
         }
     }
 
@@ -83,7 +92,7 @@ public class SftpTask extends TimerTask
             // process batch
             for (SftpRemoteFile sftpRemoteFile : sftpRemoteFiles)
             {
-                LOG.info("Start processing file " + sftpRemoteFile.getFilename());
+                LOG.info("Found file " + sftpRemoteFile.getFilename());
 
                 SftpFile batchFile = instantiateSftpBatchFile(sftpRemoteFile);
 

@@ -6,12 +6,12 @@ public class DbConfiguration
 {
     private String instanceId;
     private String instanceDescription;
-    private int interfaceTypeId;
-    private String interfaceTypeDescription;
+    private String interfaceTypeName;
     private int pollFrequencySeconds;
     private String localRootPath;
     private DbConfigurationSftp dbConfigurationSftp;
     private DbConfigurationPgp dbConfigurationPgp;
+    private DbConfigurationEds dbConfigurationEds;
     private List<String> interfaceFileTypes;
 
     public String getInstanceId()
@@ -36,25 +36,14 @@ public class DbConfiguration
         return this;
     }
 
-    public int getInterfaceTypeId()
+    public String getInterfaceTypeName()
     {
-        return interfaceTypeId;
+        return interfaceTypeName;
     }
 
-    public DbConfiguration setInterfaceTypeId(int interfaceTypeId)
+    public DbConfiguration setInterfaceTypeName(String interfaceTypeName)
     {
-        this.interfaceTypeId = interfaceTypeId;
-        return this;
-    }
-
-    public String getInterfaceTypeDescription()
-    {
-        return interfaceTypeDescription;
-    }
-
-    public DbConfiguration setInterfaceTypeDescription(String interfaceTypeDescription)
-    {
-        this.interfaceTypeDescription = interfaceTypeDescription;
+        this.interfaceTypeName = interfaceTypeName;
         return this;
     }
 
@@ -112,6 +101,17 @@ public class DbConfiguration
     public DbConfiguration setInterfaceFileTypes(List<String> interfaceFileTypes)
     {
         this.interfaceFileTypes = interfaceFileTypes;
+        return this;
+    }
+
+    public DbConfigurationEds getDbConfigurationEds()
+    {
+        return this.dbConfigurationEds;
+    }
+
+    public DbConfiguration setDbConfigurationEds(DbConfigurationEds dbConfigurationEds)
+    {
+        this.dbConfigurationEds = dbConfigurationEds;
         return this;
     }
 }

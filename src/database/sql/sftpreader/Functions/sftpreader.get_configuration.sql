@@ -7,8 +7,7 @@ returns table
 (
 	instance_id varchar,
 	instance_description varchar,
-	interface_type_id integer,
-	interface_type_description varchar,
+	interface_type_name varchar,
 	poll_frequency_seconds integer,
 	local_root_path varchar,
 	hostname varchar,
@@ -22,15 +21,19 @@ returns table
 	pgp_sender_public_key varchar,
 	pgp_recipient_public_key varchar,
 	pgp_recipient_private_key varchar,
-	pgp_recipient_private_key_password varchar
+	pgp_recipient_private_key_password varchar,
+	eds_url varchar,
+	eds_service_identifier varchar,
+	software_name varchar,
+	software_version varchar,
+	envelope_content_type varchar
 )
 as $$
 
 	select
 		i.instance_id,
 		i.description as instance_description,
-		c.interface_type_id,
-		it.description as interface_type_description,
+		it.interface_type_name,
 		c.poll_frequency_seconds,	
 		c.local_root_path,
 		cs.hostname,
@@ -44,12 +47,18 @@ as $$
 		cp.sender_public_key as pgp_sender_public_key,
 		cp.recipient_public_key as pgp_recipient_public_key,
 		cp.recipient_private_key as pgp_recipient_private_key,
-		cp.recipient_private_key_password as pgp_private_key_password
+		cp.recipient_private_key_password as pgp_private_key_password,
+		ce.eds_url,
+		ce.eds_service_identifier,
+		ce.software_name,
+		ce.software_version,
+		ce.envelope_content_type
 	from sftpreader.instance i
-	left outer join sftpreader.configuration c on i.instance_id = c.instance_id
-	left outer join sftpreader.interface_type it on c.interface_type_id = it.interface_type_id
-	left outer join sftpreader.configuration_sftp cs on i.instance_id = cs.instance_id
-	left outer join sftpreader.configuration_pgp cp on i.instance_id = cp.instance_id
+	inner join sftpreader.configuration c on i.instance_id = c.instance_id
+	inner join sftpreader.interface_type it on c.interface_type_id = it.interface_type_id
+	inner join sftpreader.configuration_sftp cs on c.instance_id = cs.instance_id
+	inner join sftpreader.configuration_eds ce on c.instance_id = ce.instance_id
+	left outer join sftpreader.configuration_pgp cp on c.instance_id = cp.instance_id
 	where i.instance_id = _instance_id;
 
 $$ language sql;
