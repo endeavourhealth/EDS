@@ -9,11 +9,10 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.endeavourhealth.sftpreader.model.db.Envelope;
+import org.endeavourhealth.sftpreader.model.db.DbConfigurationEds;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
@@ -25,11 +24,29 @@ public class EdsNotifier
 {
     private static final String EDS_ENVELOPE_TEMPLATE_FILENAME = "EdsEnvelopeTemplate.xml";
 
-    public void notifyEds(String url, String message) throws IOException
+    private DbConfigurationEds dbConfigurationEds;
+    private String payload;
+    private UUID messageId;
+    private LocalDateTime timestamp;
+
+    public EdsNotifier(DbConfigurationEds dbConfigurationEds, String payload)
     {
+        Validate.notNull(dbConfigurationEds, "dbConfigurationEds is null");
+        Validate.notBlank(payload, "payload is blank");
+
+        this.dbConfigurationEds = dbConfigurationEds;
+        this.payload = payload;
+        this.messageId = UUID.randomUUID();
+        this.timestamp = LocalDateTime.now();
+    }
+
+    public void notifyEds() throws IOException
+    {
+        String message = buildEnvelope();
+
         HttpClient httpClient = HttpClientBuilder.create().build();
 
-        HttpPost httpPost = new HttpPost(url);
+        HttpPost httpPost = new HttpPost(dbConfigurationEds.getEdsUrl());
         httpPost.setEntity(new ByteArrayEntity(message.getBytes()));
 
         HttpResponse response = httpClient.execute(httpPost);
@@ -50,28 +67,33 @@ public class EdsNotifier
         }
     }
 
-    private String buildEnvelope(Envelope envelope) throws IOException
+    private String buildEnvelope() throws IOException
     {
-        Validate.notNull(envelope, "envelope is null");
+        Validate.notNull(dbConfigurationEds, "dbConfigurationEds is null");
+        Validate.notBlank(dbConfigurationEds.getEdsServiceIdentifier(), "dbConfigurationEds.edsServiceIdentifier is blank");
+        Validate.notBlank(dbConfigurationEds.getEdsUrl(), "dbConfigurationEds.edsUrl is blank");
+        Validate.notBlank(dbConfigurationEds.getSoftwareName(), "dbConfigurationEds.softwareName is blank");
+        Validate.notBlank(dbConfigurationEds.getSoftwareVersion(), "dbConfigurationEds.softwareVersion is blank");
 
         String edsEnvelope = Resources.toString(Resources.getResource(EDS_ENVELOPE_TEMPLATE_FILENAME), Charsets.UTF_8);
 
         Map<String, String> test = new HashMap<String, String>()
         {
             {
-                put("{{message-id}}", envelope.getMessageId().toString());
-                put("{{timestamp}}", envelope.getTimestamp().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-                put("{{source-name}}", envelope.getSourceName());
-                put("{{source-software}}", envelope.getSourceName());
-                put("{{source-endpoint}}", envelope.getSourceEndpoint());
+                put("{{message-id}}", messageId.toString());
+                put("{{timestamp}}", timestamp.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+                put("{{source-name}}", dbConfigurationEds.getEdsServiceIdentifier());
+                put("{{source-software}}", dbConfigurationEds.getSoftwareName());
+                put("{{source-version}}", dbConfigurationEds.getSoftwareVersion());
+                put("{{source-endpoint}}", "");
                 put("{{payload-id}}", UUID.randomUUID().toString());
-                put("{{payload-type}}", envelope.getPayloadType());
-                put("{{payload-base64}}", Base64.getEncoder().encodeToString(envelope.getPayload().getBytes()));
+                put("{{payload-type}}", dbConfigurationEds.getEnvelopeContentType());
+                put("{{payload-base64}}", Base64.getEncoder().encodeToString(payload.getBytes()));
             }
         };
 
         for (String replacement : test.keySet())
-            edsEnvelope = edsEnvelope.replaceAll(replacement, test.get(replacement));
+            edsEnvelope = edsEnvelope.replace(replacement, test.get(replacement));
 
         return edsEnvelope;
     }

@@ -2,10 +2,7 @@ package org.endeavourhealth.sftpreader;
 
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
-import org.endeavourhealth.sftpreader.implementations.ImplementationActivator;
-import org.endeavourhealth.sftpreader.implementations.SftpBatchSequencer;
-import org.endeavourhealth.sftpreader.implementations.SftpBatchValidator;
-import org.endeavourhealth.sftpreader.implementations.SftpFilenameParser;
+import org.endeavourhealth.sftpreader.implementations.*;
 import org.endeavourhealth.sftpreader.model.db.AddFileResult;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.db.Batch;
@@ -25,10 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class SftpTask extends TimerTask
@@ -259,19 +253,48 @@ public class SftpTask extends TimerTask
         List<Batch> incompleteBatches = db.getIncompleteBatches(dbConfiguration.getInstanceId());
         Batch lastCompleteBatch = db.getLastCompleteBatch(dbConfiguration.getInstanceId());
 
-        SftpBatchValidator sftpBatchValidator = ImplementationActivator.createSftpBatchValidator();
-        sftpBatchValidator.validateBatches(incompleteBatches, lastCompleteBatch, dbConfiguration);
+        validateBatches(incompleteBatches, lastCompleteBatch);
 
-        SftpBatchSequencer sftpBatchSequencer = ImplementationActivator.createSftpBatchSequencer();
-        Map<Batch, Integer> batchSequence = sftpBatchSequencer.determineBatchSequenceNumbers(incompleteBatches, lastCompleteBatch);
-
-        Map<Batch, Integer> sortedBatchSequence = StreamExtension.sortByValue(batchSequence);
+        Map<Batch, Integer> sortedBatchSequence = sequenceBatches(incompleteBatches, lastCompleteBatch);
 
         for (Batch batch : sortedBatchSequence.keySet())
             db.completeBatch(batch, sortedBatchSequence.get(batch));
     }
 
-    private void notifyOnwardPipeline() throws PgStoredProcException
+    private void validateBatches(List<Batch> incompleteBatches, Batch lastCompleteBatch) throws SftpValidationException
+    {
+        SftpBatchValidator sftpBatchValidator = ImplementationActivator.createSftpBatchValidator();
+        sftpBatchValidator.validateBatches(incompleteBatches, lastCompleteBatch, dbConfiguration);
+    }
+
+    private Map<Batch, Integer> sequenceBatches(List<Batch> incompleteBatches, Batch lastCompleteBatch) throws SftpValidationException, SftpFilenameParseException
+    {
+        int nextSequenceNumber = getNextSequenceNumber(lastCompleteBatch);
+
+        SftpBatchSequencer sftpBatchSequencer = ImplementationActivator.createSftpBatchSequencer();
+        Map<Batch, Integer> batchSequence = sftpBatchSequencer.determineBatchSequenceNumbers(incompleteBatches, nextSequenceNumber, lastCompleteBatch);
+
+        Map<Batch, Integer> sortedBatchSequence = StreamExtension.sortByValue(batchSequence);
+
+        if (!new HashSet(incompleteBatches).equals(sortedBatchSequence.keySet()))
+            throw new SftpValidationException("Batch sequence does not contain all unsequenced batches");
+
+        for (Batch batch : sortedBatchSequence.keySet())
+            if (sortedBatchSequence.get(batch).intValue() != nextSequenceNumber++)
+                throw new SftpValidationException("Unexpected batch sequence number");
+
+        return sortedBatchSequence;
+    }
+
+    private static int getNextSequenceNumber(Batch lastCompleteBatch)
+    {
+        if (lastCompleteBatch == null)
+            return 1;
+
+        return lastCompleteBatch.getSequenceNumber() + 1;
+    }
+
+    private void notifyOnwardPipeline() throws PgStoredProcException, IOException
     {
         List<Batch> unnotifiedBatches = db.getUnnotifiedBatches(dbConfiguration.getInstanceId());
 
@@ -284,8 +307,13 @@ public class SftpTask extends TimerTask
             notify(unnotifiedBatch);
     }
 
-    private void notify(Batch unnotifiedBatch)
+    private void notify(Batch unnotifiedBatch) throws IOException
     {
-        // do notifiy
+        SftpNotificationCreator sftpNotificationCreator = ImplementationActivator.createSftpNotificationCreator();
+
+        String message = sftpNotificationCreator.createNotificationMessage(dbConfiguration, unnotifiedBatch);
+
+        EdsNotifier edsNotifier = new EdsNotifier(dbConfiguration.getDbConfigurationEds(), message);
+        edsNotifier.notifyEds();
     }
 }

@@ -14,20 +14,18 @@ import java.util.Map;
 public class EmisSftpBatchSequencer extends SftpBatchSequencer
 {
     @Override
-    public Map<Batch, Integer> determineBatchSequenceNumbers(List<Batch> incompleteBatches, Batch lastCompleteBatch) throws SftpValidationException, SftpFilenameParseException
+    public Map<Batch, Integer> determineBatchSequenceNumbers(List<Batch> incompleteBatches, int nextSequenceNumber, Batch lastCompleteBatch) throws SftpValidationException, SftpFilenameParseException
     {
         Map<Batch, Integer> result = new HashMap<>();
 
         if (incompleteBatches.size() == 0)
             return result;
 
-        Integer nextSequenceNumber = 1;
         Integer nextProcessingIdStart = null;
 
         // if there was a previous complete batch
         if (lastCompleteBatch != null)
         {
-            nextSequenceNumber = getNextSequenceNumber(lastCompleteBatch);
             nextProcessingIdStart = getNextProcessingIdStart(lastCompleteBatch);
         }
         else
@@ -63,14 +61,6 @@ public class EmisSftpBatchSequencer extends SftpBatchSequencer
         }
 
         return result;
-    }
-
-    private static Integer getNextSequenceNumber(Batch lastCompleteBatch) throws SftpValidationException
-    {
-        if (lastCompleteBatch.getSequenceNumber() == null)
-            throw new SftpValidationException("lastCompleteBatch.sequenceNumber is null");
-
-        return lastCompleteBatch.getSequenceNumber() + 1;
     }
 
     private static Integer getNextProcessingIdStart(Batch lastCompleteBatch) throws SftpFilenameParseException

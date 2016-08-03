@@ -3,6 +3,7 @@ package org.endeavourhealth.sftpreader.implementations;
 import org.endeavourhealth.sftpreader.implementations.emis.EmisSftpBatchSequencer;
 import org.endeavourhealth.sftpreader.implementations.emis.EmisSftpBatchValidator;
 import org.endeavourhealth.sftpreader.implementations.emis.EmisSftpFilenameParser;
+import org.endeavourhealth.sftpreader.implementations.emis.EmisSftpNotificationCreator;
 
 import java.util.List;
 
@@ -24,4 +25,6 @@ public class ImplementationActivator
     {
         return new EmisSftpBatchSequencer();
     }
+
+    public static SftpNotificationCreator createSftpNotificationCreator() { return new EmisSftpNotificationCreator(); }
 }

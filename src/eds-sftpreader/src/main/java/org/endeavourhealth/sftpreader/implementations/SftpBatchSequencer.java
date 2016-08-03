@@ -9,5 +9,5 @@ import java.util.Map;
 
 public abstract class SftpBatchSequencer
 {
-    public abstract Map<Batch, Integer> determineBatchSequenceNumbers(List<Batch> incompleteBatches, Batch lastCompleteBatch) throws SftpValidationException, SftpFilenameParseException;
+    public abstract Map<Batch, Integer> determineBatchSequenceNumbers(List<Batch> incompleteBatches, int nextSequenceNumber, Batch lastCompleteBatch) throws SftpValidationException, SftpFilenameParseException;
 }
