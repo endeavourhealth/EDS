@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 public class DataLayer
 {
@@ -58,9 +59,21 @@ public class DataLayer
                             .setSoftwareVersion(resultSet.getString("software_version"))
                             .setEnvelopeContentType(resultSet.getString("envelope_content_type"))));
 
+        dbConfiguration.setDbConfigurationKvp(getConfigurationKvp(instanceId));
         dbConfiguration.setInterfaceFileTypes(getInterfaceFileTypes(instanceId));
 
         return dbConfiguration;
+    }
+
+    private List<DbConfigurationKvp> getConfigurationKvp(String instanceId) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.get_configuration_kvp")
+                .addParameter("_instance_id", instanceId);
+
+        return pgStoredProc.executeQuery((resultSet) -> new DbConfigurationKvp()
+                        .setKey(resultSet.getString("key"))
+                        .setValue(resultSet.getString("value")));
     }
 
     public List<String> getInterfaceFileTypes(String instanceId) throws PgStoredProcException
@@ -157,6 +170,20 @@ public class DataLayer
                 .addParameter("_instance_id", instanceId);
 
         return populateBatch(pgStoredProc);
+    }
+
+    public List<UnknownFile> getUnknownFiles(String instanceId) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.get_unknown_files")
+                .addParameter("_instance_id", instanceId);
+
+        return pgStoredProc.executeQuery(resultSet -> new UnknownFile()
+                .setUnknownFileId(resultSet.getInt("unknown_file_id"))
+                .setFilename(resultSet.getString("filename"))
+                .setInsertDate(PgResultSet.getLocalDateTime(resultSet, "insert_date"))
+                .setRemoteCreatedDate(PgResultSet.getLocalDateTime(resultSet, "remote_created_date"))
+                .setRemoteSizeBytes(resultSet.getLong("remote_size_bytes")));
     }
 
     private static List<Batch> populateBatch(PgStoredProc pgStoredProc) throws PgStoredProcException

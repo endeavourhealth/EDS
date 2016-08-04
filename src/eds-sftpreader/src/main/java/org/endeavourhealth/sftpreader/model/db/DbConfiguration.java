@@ -12,6 +12,7 @@ public class DbConfiguration
     private DbConfigurationSftp dbConfigurationSftp;
     private DbConfigurationPgp dbConfigurationPgp;
     private DbConfigurationEds dbConfigurationEds;
+    private List<DbConfigurationKvp> dbConfigurationKvp;
     private List<String> interfaceFileTypes;
 
     public String getInstanceId()
@@ -112,6 +113,17 @@ public class DbConfiguration
     public DbConfiguration setDbConfigurationEds(DbConfigurationEds dbConfigurationEds)
     {
         this.dbConfigurationEds = dbConfigurationEds;
+        return this;
+    }
+
+    public List<DbConfigurationKvp> getDbConfigurationKvp()
+    {
+        return this.dbConfigurationKvp;
+    }
+
+    public DbConfiguration setDbConfigurationKvp(List<DbConfigurationKvp> dbConfigurationKvp)
+    {
+        this.dbConfigurationKvp = dbConfigurationKvp;
         return this;
     }
 }

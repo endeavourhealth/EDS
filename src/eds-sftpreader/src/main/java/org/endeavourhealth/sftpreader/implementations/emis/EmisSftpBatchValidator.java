@@ -27,11 +27,9 @@ public class EmisSftpBatchValidator extends SftpBatchValidator
 
             // further checks to complete
             //
-            // check sharing agreement guid is the same across all batches
             // check there are no overlapping sequence numbers
             // check that remote bytes == downloaded bytes
             // check all file attributes are complete
-            // check unknown files list
         }
     }
 
@@ -43,7 +41,6 @@ public class EmisSftpBatchValidator extends SftpBatchValidator
         Integer processingIdStart = null;
         Integer processingIdEnd = null;
         LocalDateTime extractDateTime = null;
-        UUID sharingAgreementGuid = null;
 
         if (incompleteBatches.getBatchFiles().size() == 0)
             throw new SftpValidationException("No batch files in batch");
@@ -52,16 +49,13 @@ public class EmisSftpBatchValidator extends SftpBatchValidator
 
         for (BatchFile incompleteBatchFile : incompleteBatches.getBatchFiles())
         {
-            EmisSftpFilenameParser emisSftpFilenameParser = new EmisSftpFilenameParser(incompleteBatchFile.getFilename(),
-                    dbConfiguration.getPgpFileExtensionFilter(),
-                    dbConfiguration.getInterfaceFileTypes());
+            EmisSftpFilenameParser emisSftpFilenameParser = new EmisSftpFilenameParser(incompleteBatchFile.getFilename(), dbConfiguration);
 
             if (first)
             {
                 processingIdStart = emisSftpFilenameParser.getProcessingIds().getProcessingIdStart();
                 processingIdEnd = emisSftpFilenameParser.getProcessingIds().getProcessingIdEnd();
                 extractDateTime = emisSftpFilenameParser.getExtractDateTime();
-                sharingAgreementGuid = emisSftpFilenameParser.getSharingAgreementUuid();
 
                 first = false;
             }
@@ -75,9 +69,6 @@ public class EmisSftpBatchValidator extends SftpBatchValidator
 
                 if (!emisSftpFilenameParser.getExtractDateTime().equals(extractDateTime))
                     throw new SftpValidationException("Emis extract date time does not match the rest in the batch.  Filename = " + incompleteBatchFile.getFilename());
-
-                if (!emisSftpFilenameParser.getSharingAgreementUuid().equals(sharingAgreementGuid))
-                    throw new SftpValidationException("Sharing agreement guid does not match the rest in the batch.  Filename = " + incompleteBatchFile.getFilename());
             }
         }
     }

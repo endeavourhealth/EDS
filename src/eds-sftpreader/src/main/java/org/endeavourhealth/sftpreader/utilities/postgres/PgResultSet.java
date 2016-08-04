@@ -2,6 +2,9 @@ package org.endeavourhealth.sftpreader.utilities.postgres;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 
 public class PgResultSet
 {
@@ -14,5 +17,11 @@ public class PgResultSet
             return null;
 
         return result;
+    }
+
+    public static LocalDateTime getLocalDateTime(ResultSet resultSet, String columnName) throws SQLException
+    {
+        Date date = new Date(resultSet.getDate(columnName).getTime());
+        return LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
     }
 }

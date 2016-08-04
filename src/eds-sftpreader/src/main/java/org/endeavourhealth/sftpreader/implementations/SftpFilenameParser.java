@@ -1,5 +1,7 @@
 package org.endeavourhealth.sftpreader.implementations;
 
+import org.apache.commons.lang3.Validate;
+import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpFilenameParseException;
 import org.slf4j.LoggerFactory;
 
@@ -10,17 +12,20 @@ public abstract class SftpFilenameParser
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(SftpFilenameParser.class);
 
     private boolean isFilenameValid = false;
+    protected DbConfiguration dbConfiguration;
     private String pgpFileExtensionFilter;
 
-    public SftpFilenameParser(String filename, String pgpFileExtensionFilter, List<String> validFileTypeIdentifiers)
+    public SftpFilenameParser(String filename, DbConfiguration dbConfiguration)
     {
-        this.pgpFileExtensionFilter = pgpFileExtensionFilter;
+        Validate.notNull(dbConfiguration, "dbConfiguration is null");
+
+        this.dbConfiguration = dbConfiguration;
 
         try
         {
-            parseFilename(filename, pgpFileExtensionFilter);
+            parseFilename(filename, dbConfiguration.getPgpFileExtensionFilter());
 
-            if (!validFileTypeIdentifiers.contains(generateFileTypeIdentifier()))
+            if (!dbConfiguration.getInterfaceFileTypes().contains(generateFileTypeIdentifier()))
                 throw new SftpFilenameParseException("File type " + generateFileTypeIdentifier() + " not recognised");
 
             isFilenameValid = true;
@@ -28,7 +33,7 @@ public abstract class SftpFilenameParser
         catch (Exception e)
         {
             isFilenameValid = false;
-            LOG.error("Error parsing filename " + filename, e);
+            LOG.error("Error parsing filename " + filename);
         }
     }
 

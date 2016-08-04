@@ -1,26 +1,33 @@
 package org.endeavourhealth.sftpreader.implementations.emis;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.sftpreader.implementations.SftpFilenameParser;
+import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
+import org.endeavourhealth.sftpreader.model.db.DbConfigurationKvp;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpFilenameParseException;
+import org.endeavourhealth.sftpreader.utilities.StreamExtension;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class EmisSftpFilenameParser extends SftpFilenameParser
 {
+    private static final String SHARING_AGREEMENT_UUID_KEY = "SharingAgreementGuid";
+
     private ProcessingIdSet processingIds;
     private String schemaName;
     private String tableName;
     private LocalDateTime extractDateTime;
     private UUID sharingAgreementUuid;
 
-    public EmisSftpFilenameParser(String filename, String pgpFileExtensionFilter, List<String> validFileTypeIdentifiers)
+    public EmisSftpFilenameParser(String filename, DbConfiguration dbConfiguration)
     {
-        super(filename, pgpFileExtensionFilter, validFileTypeIdentifiers);
+        super(filename, dbConfiguration);
     }
 
     @Override
@@ -76,6 +83,18 @@ public class EmisSftpFilenameParser extends SftpFilenameParser
             throw new SftpFilenameParseException("Sharing agreement UUID is empty");
 
         this.sharingAgreementUuid = UUID.fromString(sharingAgreementGuid);
+
+        if (!sharingAgreementUuid.equals(getSharingAgreementUuidFromConfiguration()))
+            throw new SftpFilenameParseException("Sharing agreement UUID does not match that in configuration key value pair");
+    }
+
+    private UUID getSharingAgreementUuidFromConfiguration() throws SftpFilenameParseException
+    {
+        for (DbConfigurationKvp dbConfigurationKvp : dbConfiguration.getDbConfigurationKvp())
+            if (dbConfigurationKvp.getKey().equals(SHARING_AGREEMENT_UUID_KEY))
+                return UUID.fromString(dbConfigurationKvp.getValue());
+
+        throw new SftpFilenameParseException(SHARING_AGREEMENT_UUID_KEY + " has not been configured in configuration key value pair");
     }
 
     public ProcessingIdSet getProcessingIds()

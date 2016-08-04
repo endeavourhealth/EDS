@@ -4,16 +4,15 @@ import org.endeavourhealth.sftpreader.implementations.emis.EmisSftpBatchSequence
 import org.endeavourhealth.sftpreader.implementations.emis.EmisSftpBatchValidator;
 import org.endeavourhealth.sftpreader.implementations.emis.EmisSftpFilenameParser;
 import org.endeavourhealth.sftpreader.implementations.emis.EmisSftpNotificationCreator;
-
-import java.util.List;
+import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 
 public class ImplementationActivator
 {
     // do this properly - instatiate dynamically based on configuration against interface type
 
-    public static SftpFilenameParser createFilenameParser(String filename, String pgpFileExtensionFilter, List<String> interfaceFileTypes)
+    public static SftpFilenameParser createFilenameParser(String filename, DbConfiguration dbConfiguration)
     {
-        return new EmisSftpFilenameParser(filename, pgpFileExtensionFilter, interfaceFileTypes);
+        return new EmisSftpFilenameParser(filename, dbConfiguration);
     }
 
     public static SftpBatchValidator createSftpBatchValidator()

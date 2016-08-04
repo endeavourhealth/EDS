@@ -145,6 +145,17 @@ create table sftpreader.configuration_eds
 	constraint sftpreader_configurationeds_envelopecontenttype_ck check (char_length(trim(envelope_content_type)) > 0)
 );	
 
+create table sftpreader.configuration_kvp
+(
+	instance_id varchar(100) not null,
+	key varchar(100) not null,
+	value varchar(1000) not null,
+
+	constraint sftpreader_configuration_instanceid_key_pk primary key (instance_id, key),
+	constraint sftpreader_configuration_instanceid_fk foreign key (instance_id) references sftpreader.configuration (instance_id),
+	constraint sftpreader_configuration_key_ck check (char_length(trim(key)) > 0)
+);
+
 create table sftpreader.batch
 (
 	batch_id serial not null,

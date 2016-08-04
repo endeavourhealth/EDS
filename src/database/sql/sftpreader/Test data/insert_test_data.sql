@@ -47,6 +47,19 @@ values
 	'EMISCSV'
 );
 
+insert into sftpreader.configuration_kvp
+(
+	instance_id,
+	key,
+	value
+)
+values
+(
+	'EMIS001',
+	'SharingAgreementGuid',
+	'45E7CD20-EE37-41AB-90D6-DC9D4B03D102'
+);
+
 insert into sftpreader.configuration_sftp
 (
 	instance_id,

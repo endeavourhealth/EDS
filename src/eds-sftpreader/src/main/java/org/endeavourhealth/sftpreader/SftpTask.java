@@ -3,10 +3,7 @@ package org.endeavourhealth.sftpreader;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import org.endeavourhealth.sftpreader.implementations.*;
-import org.endeavourhealth.sftpreader.model.db.AddFileResult;
-import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
-import org.endeavourhealth.sftpreader.model.db.Batch;
-import org.endeavourhealth.sftpreader.model.db.DbConfigurationSftp;
+import org.endeavourhealth.sftpreader.model.db.*;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpFilenameParseException;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpReaderException;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpValidationException;
@@ -53,8 +50,8 @@ public class SftpTask extends TimerTask
             LOG.info(">>>Validating and sequencing batches");
             validateAndSequenceBatches();
 
-            LOG.info(">>>Notifying onward actors");
-            notifyOnwardPipeline();
+            LOG.info(">>>Notifying EDS");
+            notifyEds();
 
             LOG.info(">>>Completed SftpTask run");
         }
@@ -76,15 +73,12 @@ public class SftpTask extends TimerTask
 
         try
         {
-            // open connection
             sftpConnection = openSftpConnection(dbConfiguration.getDbConfigurationSftp());
 
-            // get file list
             String remotePath = dbConfiguration.getDbConfigurationSftp().getRemotePath();
 
             List<SftpRemoteFile> sftpRemoteFiles = getFileList(sftpConnection, remotePath);
 
-            // process batch
             for (SftpRemoteFile sftpRemoteFile : sftpRemoteFiles)
             {
                 LOG.info("Found file " + sftpRemoteFile.getFilename());
@@ -201,9 +195,7 @@ public class SftpTask extends TimerTask
 
     private SftpFile instantiateSftpBatchFile(SftpRemoteFile sftpRemoteFile)
     {
-        SftpFilenameParser emisSftpFilenameParser = ImplementationActivator.createFilenameParser(sftpRemoteFile.getFilename(),
-                        dbConfiguration.getPgpFileExtensionFilter(),
-                        dbConfiguration.getInterfaceFileTypes());
+        SftpFilenameParser emisSftpFilenameParser = ImplementationActivator.createFilenameParser(sftpRemoteFile.getFilename(), dbConfiguration);
 
         return new SftpFile(sftpRemoteFile,
                 emisSftpFilenameParser,
@@ -251,15 +243,35 @@ public class SftpTask extends TimerTask
 
     private void validateAndSequenceBatches() throws PgStoredProcException, SftpValidationException, SftpFilenameParseException
     {
-        List<Batch> incompleteBatches = db.getIncompleteBatches(dbConfiguration.getInstanceId());
-        Batch lastCompleteBatch = db.getLastCompleteBatch(dbConfiguration.getInstanceId());
+        try
+        {
+            List<UnknownFile> unknownFiles = db.getUnknownFiles(dbConfiguration.getInstanceId());
 
-        validateBatches(incompleteBatches, lastCompleteBatch);
 
-        Map<Batch, Integer> sortedBatchSequence = sequenceBatches(incompleteBatches, lastCompleteBatch);
+            if (unknownFiles.size() > 0)
+                throw new SftpValidationException("There are unknown files present - cannot continue with validation of batches");
 
-        for (Batch batch : sortedBatchSequence.keySet())
-            db.setBatchAsComplete(batch, sortedBatchSequence.get(batch));
+            List<Batch> incompleteBatches = db.getIncompleteBatches(dbConfiguration.getInstanceId());
+
+            if (incompleteBatches.size() == 0)
+            {
+                LOG.info("There are no incomplete batches - nothing to validate");
+                return;
+            }
+
+            Batch lastCompleteBatch = db.getLastCompleteBatch(dbConfiguration.getInstanceId());
+
+            validateBatches(incompleteBatches, lastCompleteBatch);
+
+            Map<Batch, Integer> sortedBatchSequence = sequenceBatches(incompleteBatches, lastCompleteBatch);
+
+            for (Batch batch : sortedBatchSequence.keySet())
+                db.setBatchAsComplete(batch, sortedBatchSequence.get(batch));
+        }
+        catch (Exception e)
+        {
+            LOG.error("Error occurred during validation and sequencing", e);
+        }
     }
 
     private void validateBatches(List<Batch> incompleteBatches, Batch lastCompleteBatch) throws SftpValidationException
@@ -295,17 +307,24 @@ public class SftpTask extends TimerTask
         return lastCompleteBatch.getSequenceNumber() + 1;
     }
 
-    private void notifyOnwardPipeline() throws PgStoredProcException, SftpReaderException
+    private void notifyEds() throws PgStoredProcException, SftpReaderException
     {
-        List<Batch> unnotifiedBatches = db.getUnnotifiedBatches(dbConfiguration.getInstanceId());
+        try
+        {
+            List<Batch> unnotifiedBatches = db.getUnnotifiedBatches(dbConfiguration.getInstanceId());
 
-        unnotifiedBatches = unnotifiedBatches
-                .stream()
-                .sorted(Comparator.comparing(t -> t.getSequenceNumber()))
-                .collect(Collectors.toList());
+            unnotifiedBatches = unnotifiedBatches
+                    .stream()
+                    .sorted(Comparator.comparing(t -> t.getSequenceNumber()))
+                    .collect(Collectors.toList());
 
-        for (Batch unnotifiedBatch : unnotifiedBatches)
-            notify(unnotifiedBatch);
+            for (Batch unnotifiedBatch : unnotifiedBatches)
+                notify(unnotifiedBatch);
+        }
+        catch (Exception e)
+        {
+            LOG.error("Error occurred notifying EDS", e);
+        }
     }
 
     private void notify(Batch unnotifiedBatch) throws SftpReaderException, PgStoredProcException
