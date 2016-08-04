@@ -2,6 +2,7 @@ package org.endeavourhealth.sftpreader;
 
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
+import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.sftpreader.implementations.*;
 import org.endeavourhealth.sftpreader.model.db.*;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpFilenameParseException;
@@ -14,6 +15,7 @@ import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnection;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionDetails;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionException;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
+import org.keycloak.representations.AccessTokenResponse;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -79,15 +81,17 @@ public class SftpTask extends TimerTask
 
             List<SftpRemoteFile> sftpRemoteFiles = getFileList(sftpConnection, remotePath);
 
+            LOG.info( " Found " + Integer.toString(sftpRemoteFiles.size()) + " files");
+
             for (SftpRemoteFile sftpRemoteFile : sftpRemoteFiles)
             {
-                LOG.info("Found file " + sftpRemoteFile.getFilename());
+                LOG.info("  Processing remote file: " + sftpRemoteFile.getFilename());
 
                 SftpFile batchFile = instantiateSftpBatchFile(sftpRemoteFile);
 
                 if (!batchFile.isFilenameValid())
                 {
-                    LOG.info("Invalid filename or batch file type identifier " + batchFile.getFilename() + ", skipping");
+                    LOG.info("   Invalid filename, skipping: " + batchFile.getFilename());
                     db.addUnknownFile(dbConfiguration.getInstanceId(), batchFile);
                     continue;
                 }
@@ -96,7 +100,7 @@ public class SftpTask extends TimerTask
 
                 if (addFileResult.isFileAlreadyProcessed())
                 {
-                    LOG.info("Skipping file as already processed " + batchFile.getFilename());
+                    LOG.info("   Already processed, skipping: " + batchFile.getFilename());
                     continue;
                 }
 
@@ -108,9 +112,9 @@ public class SftpTask extends TimerTask
 
                 if (batchFile.doesFileNeedDecrypting())
                     decryptFile(batchFile);
-
-                LOG.info("End processing file " + batchFile.getFilename());
             }
+
+            LOG.info(" Completed processing " + Integer.toString(sftpRemoteFiles.size()) + " files");
         }
         catch (Exception e)
         {
@@ -130,7 +134,7 @@ public class SftpTask extends TimerTask
         String port = Integer.toString(sftpConnection.getConnectionDetails().getPort());
         String username = sftpConnection.getConnectionDetails().getUsername();
 
-        LOG.info("Opening SFTP connection to " + hostname + " on port " + port + " with user " + username);
+        LOG.info(" Opening SFTP connection to " + hostname + " on port " + port + " with user " + username);
 
         sftpConnection.open();
 
@@ -157,13 +161,9 @@ public class SftpTask extends TimerTask
 
     private static List<SftpRemoteFile> getFileList(SftpConnection sftpConnection, String remotePath) throws SftpException
     {
-        LOG.info("Get file list at " + remotePath);
+        LOG.info( " Get remote file list at: " + remotePath);
 
-        List<SftpRemoteFile> fileList = sftpConnection.getFileList(remotePath);
-
-        LOG.info("Found " + Integer.toString(fileList.size()) + " files");
-
-        return fileList;
+        return sftpConnection.getFileList(remotePath);
     }
 
     private void downloadFile(SftpConnection sftpConnection, SftpFile batchFile) throws Exception
@@ -177,7 +177,7 @@ public class SftpTask extends TimerTask
 
     private static void downloadFile(SftpConnection sftpConnection, String remoteFilePath, String localFilePath) throws SftpException, IOException
     {
-        LOG.info("Downloading file");
+        LOG.info("   Downloading file to: " + localFilePath);
 
         File temporaryDownloadFile = new File(localFilePath + ".download");
 
@@ -226,7 +226,7 @@ public class SftpTask extends TimerTask
         String recipientPrivateKey = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPrivateKey();
         String recipientPrivateKeyPassword = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPrivateKeyPassword();
 
-        LOG.info("Decrypting file " + localFilePath + " to " + decryptedLocalFilePath);
+        LOG.info("   Decrypting file to: " + decryptedLocalFilePath);
 
         PgpUtil.decryptAndVerify(localFilePath, senderPublicKey, recipientPrivateKey, recipientPrivateKeyPassword, decryptedLocalFilePath);
 
@@ -245,28 +245,21 @@ public class SftpTask extends TimerTask
     {
         try
         {
-            List<UnknownFile> unknownFiles = db.getUnknownFiles(dbConfiguration.getInstanceId());
-
+            List<UnknownFile> unknownFiles = getUnknownFiles();
 
             if (unknownFiles.size() > 0)
-                throw new SftpValidationException("There are unknown files present - cannot continue with validation of batches");
+                return;
 
-            List<Batch> incompleteBatches = db.getIncompleteBatches(dbConfiguration.getInstanceId());
+            List<Batch> incompleteBatches = getIncompleteBatches();
 
             if (incompleteBatches.size() == 0)
-            {
-                LOG.info("There are no incomplete batches - nothing to validate");
                 return;
-            }
 
             Batch lastCompleteBatch = db.getLastCompleteBatch(dbConfiguration.getInstanceId());
 
             validateBatches(incompleteBatches, lastCompleteBatch);
 
-            Map<Batch, Integer> sortedBatchSequence = sequenceBatches(incompleteBatches, lastCompleteBatch);
-
-            for (Batch batch : sortedBatchSequence.keySet())
-                db.setBatchAsComplete(batch, sortedBatchSequence.get(batch));
+            sequenceBatches(incompleteBatches, lastCompleteBatch);
         }
         catch (Exception e)
         {
@@ -274,14 +267,47 @@ public class SftpTask extends TimerTask
         }
     }
 
-    private void validateBatches(List<Batch> incompleteBatches, Batch lastCompleteBatch) throws SftpValidationException
+    private List<UnknownFile> getUnknownFiles() throws PgStoredProcException
     {
-        SftpBatchValidator sftpBatchValidator = ImplementationActivator.createSftpBatchValidator();
-        sftpBatchValidator.validateBatches(incompleteBatches, lastCompleteBatch, dbConfiguration);
+        LOG.info(" Checking for unknown files");
+
+        List<UnknownFile> unknownFiles = db.getUnknownFiles(dbConfiguration.getInstanceId());
+
+        LOG.info(" There are " + Integer.toString(unknownFiles.size()) + " unknown files");
+
+        return unknownFiles;
     }
 
-    private Map<Batch, Integer> sequenceBatches(List<Batch> incompleteBatches, Batch lastCompleteBatch) throws SftpValidationException, SftpFilenameParseException
+    private List<Batch> getIncompleteBatches() throws PgStoredProcException
     {
+        LOG.info(" Getting batches ready for validation and sequencing");
+
+        List<Batch> incompleteBatches = db.getIncompleteBatches(dbConfiguration.getInstanceId());
+
+        LOG.info(" There are " + Integer.toString(incompleteBatches.size()) + " batches ready for validation and sequencing");
+
+        return incompleteBatches;
+    }
+
+    private void validateBatches(List<Batch> incompleteBatches, Batch lastCompleteBatch) throws SftpValidationException
+    {
+        String batchIdentifiers = StringUtils.join(incompleteBatches
+                .stream()
+                .map(t -> t.getBatchIdentifier())
+                .collect(Collectors.toList()), ", ");
+
+        LOG.info(" Validating batches: " + batchIdentifiers);
+
+        SftpBatchValidator sftpBatchValidator = ImplementationActivator.createSftpBatchValidator();
+        sftpBatchValidator.validateBatches(incompleteBatches, lastCompleteBatch, dbConfiguration);
+
+        LOG.info(" Completed batch validation");
+    }
+
+    private void sequenceBatches(List<Batch> incompleteBatches, Batch lastCompleteBatch) throws SftpValidationException, SftpFilenameParseException, PgStoredProcException
+    {
+        LOG.info(" Sequencing batches");
+
         int nextSequenceNumber = getNextSequenceNumber(lastCompleteBatch);
 
         SftpBatchSequencer sftpBatchSequencer = ImplementationActivator.createSftpBatchSequencer();
@@ -296,7 +322,13 @@ public class SftpTask extends TimerTask
             if (sortedBatchSequence.get(batch).intValue() != nextSequenceNumber++)
                 throw new SftpValidationException("Unexpected batch sequence number");
 
-        return sortedBatchSequence;
+        for (Batch batch : sortedBatchSequence.keySet())
+        {
+            LOG.info("  Batch " + batch.getBatchIdentifier() + " sequenced as " + sortedBatchSequence.get(batch).toString());
+            db.setBatchAsComplete(batch, sortedBatchSequence.get(batch));
+        }
+
+        LOG.info(" Completed batch sequencing");
     }
 
     private static int getNextSequenceNumber(Batch lastCompleteBatch)
@@ -311,7 +343,11 @@ public class SftpTask extends TimerTask
     {
         try
         {
+            LOG.info(" Getting complete batches for notification");
+
             List<Batch> unnotifiedBatches = db.getUnnotifiedBatches(dbConfiguration.getInstanceId());
+
+            LOG.info(" There are " + Integer.toString(unnotifiedBatches.size()) + " complete batches for notification");
 
             unnotifiedBatches = unnotifiedBatches
                     .stream()
@@ -319,11 +355,14 @@ public class SftpTask extends TimerTask
                     .collect(Collectors.toList());
 
             for (Batch unnotifiedBatch : unnotifiedBatches)
+            {
+                LOG.info(" Notifying EDS for batch: " + unnotifiedBatch.getBatchIdentifier());
                 notify(unnotifiedBatch);
+            }
         }
         catch (Exception e)
         {
-            LOG.error("Error occurred notifying EDS", e);
+            LOG.error(" Error occurred notifying EDS", e);
         }
     }
 

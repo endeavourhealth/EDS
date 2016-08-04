@@ -20,6 +20,7 @@ public abstract class SftpFilenameParser
         Validate.notNull(dbConfiguration, "dbConfiguration is null");
 
         this.dbConfiguration = dbConfiguration;
+        this.pgpFileExtensionFilter = dbConfiguration.getPgpFileExtensionFilter();
 
         try
         {
@@ -33,7 +34,7 @@ public abstract class SftpFilenameParser
         catch (Exception e)
         {
             isFilenameValid = false;
-            LOG.error("Error parsing filename " + filename);
+            LOG.error("Error '" + e.getMessage() + "' parsing filename: " + filename);
         }
     }
 
