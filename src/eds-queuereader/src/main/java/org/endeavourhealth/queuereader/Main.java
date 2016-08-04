@@ -37,14 +37,5 @@ public class Main {
 		LOG.info("Starting message consumption");
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
-
-		LOG.info("Press any key to exit...");
-		System.in.read();
-
-		// Shutdown
-		LOG.info("Shutting down rabbit handler...");
-		rabbitHandler.stop();
-
-		LOG.info("Waiting for Async logger to shutdown...");
 	}
 }

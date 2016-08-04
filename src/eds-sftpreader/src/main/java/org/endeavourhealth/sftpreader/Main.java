@@ -45,22 +45,8 @@ public class Main
 	{
 		SftpTask sftpTask = new SftpTask(configuration);
 
-		Timer timer = new Timer(true);
+		Timer timer = new Timer();
 
-		try
-		{
-			timer.scheduleAtFixedRate(sftpTask, 0, configuration.getDbConfiguration().getPollFrequencySeconds() * 1000);
-
-			LOG.info("");
-			LOG.info("Press any key to exit...");
-
-			System.in.read();
-
-			LOG.info("Stopping...");
-		}
-		finally
-		{
-			timer.cancel();
-		}
-	}
+		timer.scheduleAtFixedRate(sftpTask, 0, configuration.getDbConfiguration().getPollFrequencySeconds() * 1000);
+  }
 }
