@@ -4,8 +4,11 @@ import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.mapping.Mapper;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.admin.accessors.OrganisationAccessor;
-import org.endeavourhealth.core.data.admin.models.*;
+import org.endeavourhealth.core.data.admin.models.Organisation;
+import org.endeavourhealth.core.data.admin.models.OrganisationEndUserLink;
+import org.endeavourhealth.core.data.admin.models.Service;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -56,6 +59,14 @@ public class OrganisationRepository extends Repository {
 		return organisation.getId();
 	}
 
+	public Set<Organisation> getByUds(Set<UUID> ids) {
+		Set<Organisation> orgs = new HashSet<>();
+		for (UUID id: ids) {
+			Organisation org = getById(id);
+			orgs.add(org);
+		}
+		return orgs;
+	}
 
 	public Organisation getById(UUID id) {
 		Mapper<Organisation> mapper = getMappingManager().mapper(Organisation.class);

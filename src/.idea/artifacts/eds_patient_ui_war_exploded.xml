@@ -82,6 +82,7 @@
           <element id="archive" name="eds-core-1.0-SNAPSHOT.jar">
             <element id="module-output" name="eds-core" />
           </element>
+          <element id="library" level="project" name="Maven: org.postgresql:postgresql:9.4.1208" />
         </element>
       </element>
       <element id="directory" name="META-INF">

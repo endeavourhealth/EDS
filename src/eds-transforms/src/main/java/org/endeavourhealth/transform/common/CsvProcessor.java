@@ -119,6 +119,7 @@ public class CsvProcessor {
         try {
             LOG.trace("Waiting for thread pool to complete");
             threadPool.awaitTermination(24, TimeUnit.HOURS);
+
         } catch (InterruptedException ex) {
             LOG.error("Error waiting for pool to finish", ex);
         }

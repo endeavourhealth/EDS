@@ -38,14 +38,13 @@ public class IdHelper {
         return serviceId + "/" + systemId + "/" + resourceType + "/" + sourceId;
     }
 
-    public static String getEdsResourceIdString(UUID serviceId, UUID systemId, ResourceType resourceType, String sourceId) {
-        return getEdsResourceId(serviceId, systemId, resourceType, sourceId).toString();
+    public static String getOrCreateEdsResourceIdString(UUID serviceId, UUID systemId, ResourceType resourceType, String sourceId) {
+        return getOrCreateEdsResourceId(serviceId, systemId, resourceType, sourceId).toString();
     }
 
-    public static UUID getEdsResourceId(UUID serviceId, UUID systemId, ResourceType resourceType, String sourceId) {
+    public static UUID getOrCreateEdsResourceId(UUID serviceId, UUID systemId, ResourceType resourceType, String sourceId) {
         String key = createCacheKey(serviceId, systemId, resourceType, sourceId);
 
-        //UUID edsId = null;
         UUID edsId = (UUID)cache.get(key);
         if (edsId == null) {
             ResourceIdMap mapping = repository.getResourceIdMap(serviceId, systemId, resourceType.toString(), sourceId);
@@ -69,19 +68,25 @@ public class IdHelper {
         return edsId;
     }
 
-    /*public static void mapIds(UUID serviceId, UUID systemId, List<Resource> resources) {
+    public static UUID getEdsResourceId(UUID serviceId, UUID systemId, ResourceType resourceType, String sourceId) {
+        String key = createCacheKey(serviceId, systemId, resourceType, sourceId);
 
-        long millis = System.currentTimeMillis();
-        LOG.trace("Mapping IDs of " + resources.size() + " resources");
+        UUID edsId = (UUID)cache.get(key);
+        if (edsId == null) {
+            ResourceIdMap mapping = repository.getResourceIdMap(serviceId, systemId, resourceType.toString(), sourceId);
+            if (mapping == null) {
+                return null;
+            }
 
-        //use a parallel stream to get best throughput on lots of cores
-        resources
-                .parallelStream()
-                .forEach((resource) -> { mapIds(serviceId, systemId, resource); });
-
-        LOG.trace("Completed ID mapping in " + (System.currentTimeMillis() - millis) + "ms");
-
-    }*/
+            edsId = mapping.getEdsId();
+            try {
+                cache.put(key, edsId);
+            } catch (Exception ex) {
+                LOG.error("Error adding key [" + key + "] value [" + edsId + "] to ID map cache", ex);
+            }
+        }
+        return edsId;
+    }
 
     public static void mapIds(UUID serviceId, UUID systemId, Resource resource) {
 

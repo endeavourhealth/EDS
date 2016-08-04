@@ -4,12 +4,16 @@ import com.google.common.io.Files;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvSplitter;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.HashSet;
 import java.util.Set;
 
 public class EmisCsvFileSplitter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(EmisCsvFileSplitter.class);
 
     private static final String SPLIT_COLUMN = "OrganisationGuid";
     private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
@@ -38,11 +42,13 @@ public class EmisCsvFileSplitter {
         FILES_TO_SPLIT.add("Prescribing_IssueRecord");
     }
 
-    public static void split(String srcDir, String dstDir) throws Exception {
-        split(new File(srcDir), new File(dstDir));
+    public static void splitFiles(String srcDir, String dstDir) throws Exception {
+        splitFiles(new File(srcDir), new File(dstDir));
     }
 
-    public static void split(File srcDir, File dstDir) throws Exception {
+    public static void splitFiles(File srcDir, File dstDir) throws Exception {
+
+        LOG.trace("Splitting CSV files in " + srcDir);
 
         if (!srcDir.exists()) {
             throw new FileNotFoundException("Source directory " + srcDir + " doesn't exist");
@@ -56,11 +62,13 @@ public class EmisCsvFileSplitter {
 
         //simply copy the files we don't want to split
         for (String fileName: FILES_TO_COPY) {
+            LOG.trace("Copying " + fileName);
             copyFile(fileName, srcDir, dstDir);
         }
 
         //split the files we know should be split
         for (String fileName: FILES_TO_SPLIT) {
+            LOG.trace("Splitting " + fileName);
             splitFile(fileName, srcDir, dstDir, CSV_FORMAT);
         }
 
@@ -83,6 +91,8 @@ public class EmisCsvFileSplitter {
                 }
             }
         }
+
+        LOG.trace("Completed CSV file splitting from " + srcDir + " to " + dstDir);
     }
 
     private static void createMissingFiles(String partialFileName, File srcDir, File dstDir) throws Exception {

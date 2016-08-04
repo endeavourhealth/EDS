@@ -2,10 +2,18 @@ package org.endeavourhealth.transform.emis;
 
 import com.google.common.io.Files;
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.core.data.admin.OrganisationRepository;
+import org.endeavourhealth.core.data.admin.models.Organisation;
+import org.endeavourhealth.core.data.ehr.ResourceRepository;
+import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.FileFormatException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.common.exceptions.UnexpectedOrganisationException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvFileSplitter;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.Admin_Organisation;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.LocationTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.OrganisationTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.PatientTransformer;
@@ -17,6 +25,11 @@ import org.endeavourhealth.transform.emis.csv.transforms.coding.ClinicalCodeTran
 import org.endeavourhealth.transform.emis.csv.transforms.coding.DrugCodeTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.prescribing.DrugRecordTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.prescribing.IssueRecordTransformer;
+import org.endeavourhealth.transform.fhir.FhirUri;
+import org.hl7.fhir.instance.formats.JsonParser;
+import org.hl7.fhir.instance.model.Identifier;
+import org.hl7.fhir.instance.model.Organization;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +40,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public abstract class EmisCsvTransformer {
 
@@ -41,11 +55,15 @@ public abstract class EmisCsvTransformer {
     }
     public static void transform(String folderPath, CsvProcessor csvProcessor) throws Exception {
 
+        LOG.trace("Transforming EMIS CSV content in " + folderPath);
+
         EmisCsvHelper csvHelper = new EmisCsvHelper();
 
         transformCodes(folderPath, csvProcessor, csvHelper);
         transformAdminData(folderPath, csvProcessor, csvHelper);
         transformPatientData(folderPath, csvProcessor, csvHelper);
+
+        LOG.trace("Completed EMIS CSV transform in " + folderPath);
     }
 
     private static void transformCodes(String folderPath, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
@@ -112,7 +130,13 @@ public abstract class EmisCsvTransformer {
         csvHelper.processRemainingProblemRelationships(csvProcessor);
     }
 
-    public static List<UUID> splitAndTransform(String[] files, UUID exchangeId, UUID serviceId, UUID systemId) throws Exception {
+    public static List<UUID> splitAndTransform(String[] files,
+                                               UUID exchangeId,
+                                               UUID serviceId,
+                                               UUID systemId,
+                                               Set<UUID> orgIds) throws Exception {
+
+        LOG.info("Invoking EMIS CSV transformer for " + files.length + " files");
 
         //validate that all the files are in the same directory
         File commonDir = validateCommonDirectory(files);
@@ -126,7 +150,10 @@ public abstract class EmisCsvTransformer {
         //split the source files by Organisation GUID
         File srcDir = commonDir;
         File dstDir = new File(srcDir, "Split");
-        EmisCsvFileSplitter.split(srcDir, dstDir);
+        EmisCsvFileSplitter.splitFiles(srcDir, dstDir);
+
+        //the sub-directories will be named by the org GUID, so validate we've only got orgs we expect
+        validateOrganisations(serviceId, systemId, dstDir, orgIds);
 
         final List<UUID> batchIds = Collections.synchronizedList(new ArrayList<>());
 
@@ -160,9 +187,81 @@ public abstract class EmisCsvTransformer {
         //having successfully processed all the split files, delete the split content (if any exceptions were raised, this won't happen)
         dstDir.delete();
 
+        LOG.info("Returning from EMIS CSV transformer for " + files.length + " files");
+
         return batchIds;
     }
 
+    private static void validateOrganisations(UUID serviceId, UUID systemId, File folder, Set<UUID> orgIds) throws Exception {
+
+        //retrieve the Organisations from the org repository, and extract their ODS codes
+        Set<Organisation> orgs = new OrganisationRepository().getByUds(orgIds);
+        Set<String> orgOdsCodes = orgs
+                                    .stream()
+                                    .map(t -> t.getNationalId())
+                                    .collect(Collectors.toSet());
+
+        for (File f: folder.listFiles()) {
+            if (!f.isDirectory()) {
+                continue;
+            }
+
+            String orgGuid = f.getName();
+            String odsCode = null;
+
+            //first, use the ID helper to find the EDS ID for an organisation resource with the local orgGUID
+            UUID edsOrgId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Organization, orgGuid);
+            if (edsOrgId != null) {
+                //retrieve from EHR
+                odsCode = findOrganisationOdsFromEhrRepository(edsOrgId);
+            }
+
+            if (odsCode == null) {
+                //if there's no EDS org ID it means we've never encountered this organisation before, in which case we need
+                odsCode = findOrganisationOdsFromCsvFile(orgGuid, folder);
+            }
+
+            if (odsCode == null
+                    || !orgOdsCodes.contains(odsCode)) {
+                throw new UnexpectedOrganisationException(orgGuid, odsCode);
+            }
+        }
+    }
+
+    private static String findOrganisationOdsFromCsvFile(String orgGuid, File folder) throws Exception {
+
+        Admin_Organisation parser = new Admin_Organisation(folder.getAbsolutePath(), CSV_FORMAT);
+        try {
+            while (parser.nextRecord()) {
+                String csvOrgGuid = parser.getOrganisationGuid();
+                if (csvOrgGuid.equalsIgnoreCase(orgGuid)) {
+                    return parser.getODScode();
+                }
+            }
+        } catch (Exception ex) {
+            throw new TransformException(parser.getErrorLine(), ex);
+        } finally {
+            parser.close();
+        }
+
+        return null;
+    }
+
+    private static String findOrganisationOdsFromEhrRepository(UUID edsOrgId) throws Exception {
+        ResourceHistory resourceHistory = new ResourceRepository().getCurrentVersion(ResourceType.Organization.toString(), edsOrgId);
+        if (resourceHistory == null) {
+            return null;
+        }
+
+        Organization fhirOrganisation = (Organization)new JsonParser().parse(resourceHistory.getResourceData());
+        for (Identifier fhirIdentifier: fhirOrganisation.getIdentifier()) {
+            if (fhirIdentifier.getSystem().equalsIgnoreCase(FhirUri.IDENTIFIER_SYSTEM_ODS_CODE)) {
+                return fhirIdentifier.getValue();
+            }
+        }
+
+        return null;
+    }
 
     /**
      * validates that all the files in the array are in the same common directory

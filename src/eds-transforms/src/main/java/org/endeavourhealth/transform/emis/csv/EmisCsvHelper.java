@@ -256,7 +256,7 @@ public class EmisCsvHelper {
 
     private Resource retrieveResource(String locallyUniqueId, ResourceType resourceType, CsvProcessor csvProcessor) throws Exception {
 
-        UUID globallyUniqueId = IdHelper.getEdsResourceId(csvProcessor.getServiceId(),
+        UUID globallyUniqueId = IdHelper.getOrCreateEdsResourceId(csvProcessor.getServiceId(),
                                                         csvProcessor.getSystemId(),
                                                         resourceType,
                                                         locallyUniqueId);
@@ -299,7 +299,7 @@ public class EmisCsvHelper {
             //so we need to convert the local ID to the globally unique ID we'll have used before
             String locallyUniqueObservationId = createUniqueId(childResourceRelationship.getPatientGuid(), childResourceRelationship.getDependentResourceGuid());
 
-            String globallyUniqueObservationId = IdHelper.getEdsResourceIdString(csvProcessor.getServiceId(),
+            String globallyUniqueObservationId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
                                                                             csvProcessor.getSystemId(),
                                                                             childResourceRelationship.getDependentResourceType(),
                                                                             locallyUniqueObservationId);
@@ -405,7 +405,7 @@ public class EmisCsvHelper {
 
             String locallyUniqueId = createUniqueId(childResourceRelationship.getPatientGuid(), childResourceRelationship.getDependentResourceGuid());
 
-            String globallyUniqueId = IdHelper.getEdsResourceIdString(csvProcessor.getServiceId(),
+            String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
                     csvProcessor.getSystemId(),
                     ResourceType.Observation,
                     locallyUniqueId);

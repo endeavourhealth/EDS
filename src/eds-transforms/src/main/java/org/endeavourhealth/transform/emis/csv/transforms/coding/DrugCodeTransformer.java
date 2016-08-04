@@ -39,6 +39,7 @@ public class DrugCodeTransformer {
 
         CodeableConcept fhirConcept = null;
         if (dmdId == null) {
+            //if there's no DM+D ID, create a textual codeable concept for the term
             fhirConcept = CodeableConceptHelper.createCodeableConcept(term);
         } else {
             fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_SNOMED_CT, term, dmdId.toString());

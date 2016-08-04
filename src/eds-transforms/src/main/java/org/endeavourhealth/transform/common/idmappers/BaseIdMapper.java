@@ -15,7 +15,7 @@ public abstract class BaseIdMapper {
      */
     protected void mapResourceId(Resource resource, UUID serviceId, UUID systemId) {
 
-        String newId = IdHelper.getEdsResourceIdString(serviceId, systemId, resource.getResourceType(), resource.getId());
+        String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, resource.getResourceType(), resource.getId());
         resource.setId(newId);
     }
 
@@ -55,7 +55,7 @@ public abstract class BaseIdMapper {
         }
 
         ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
-        String newId = IdHelper.getEdsResourceIdString(serviceId, systemId, comps.getResourceType(), comps.getId());
+        String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, comps.getResourceType(), comps.getId());
         reference.setReference(ReferenceHelper.createResourceReference(comps.getResourceType(), newId));
     }
 

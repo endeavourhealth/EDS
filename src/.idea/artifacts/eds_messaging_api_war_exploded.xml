@@ -16,6 +16,7 @@
           <element id="library" level="project" name="Maven: ch.qos.logback:logback-classic:1.1.3" />
           <element id="library" level="project" name="Maven: ch.qos.logback:logback-core:1.1.3" />
           <element id="library" level="project" name="Maven: org.slf4j:slf4j-api:1.7.7" />
+          <element id="library" level="project" name="Maven: org.postgresql:postgresql:9.4.1208" />
           <element id="library" level="project" name="Maven: com.datastax.cassandra:cassandra-driver-core:3.0.1" />
           <element id="library" level="project" name="Maven: io.netty:netty-handler:4.0.33.Final" />
           <element id="library" level="project" name="Maven: io.netty:netty-buffer:4.0.33.Final" />

@@ -65,13 +65,13 @@ public class PatientTransformer {
 
         String nhsNumber = patientParser.getNhsNumber();
         if (!Strings.isNullOrEmpty(nhsNumber)) {
-            fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nhsNumber, FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER));
+            fhirPatient.addIdentifier(IdentifierHelper.createNhsNumberIdentifier(nhsNumber));
         }
 
         //store the patient GUID and patient number to the patient resource
         int patientNumber = patientParser.getPatientNumber();
-        fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, patientGuid, FhirUri.IDENTIFIER_SYSTEM_EMIS_PATIENT_GUID));
-        fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, "" + patientNumber, FhirUri.IDENTIFIER_SYSTEM_EMIS_PATIENT_NUMBER));
+        fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, FhirUri.IDENTIFIER_SYSTEM_EMIS_PATIENT_GUID, patientGuid));
+        fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, FhirUri.IDENTIFIER_SYSTEM_EMIS_PATIENT_NUMBER, "" + patientNumber));
 
         Date dob = patientParser.getDateOfBirth();
         fhirPatient.setBirthDate(dob);
