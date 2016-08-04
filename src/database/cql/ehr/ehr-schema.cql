@@ -133,18 +133,23 @@ CREATE TABLE patient_identifier (
 	patient_id UUID,
 	timestamp TIMESTAMP,
 	version TIMEUUID,
-	PRIMARY KEY ((service_id), system_id, patient_id, version))
-	WITH CLUSTERING ORDER BY (system_id ASC, patient_id ASC, version DESC);
+	local_id TEXT,
+	local_id_system TEXT,
+	PRIMARY KEY ((service_id), system_id, patient_id, local_id_system, version))
+	WITH CLUSTERING ORDER BY (system_id ASC, patient_id ASC, local_id_system ASC, version DESC);
+	
 	
 CREATE MATERIALIZED VIEW patient_identifier_by_nhs_number AS  
-	SELECT service_id, system_id, nhs_number, patient_id, timestamp, version 
+	SELECT service_id, system_id, local_id_system, nhs_number, patient_id, timestamp, version 
 	FROM patient_identifier  
 	WHERE nhs_number IS NOT NULL  
 	AND service_id IS NOT NULL 
 	AND system_id IS NOT NULL 
+	and local_id_system is not NULL
 	AND timestamp IS NOT NULL 
 	AND patient_id IS NOT NULL 
 	AND version IS NOT null
-	PRIMARY KEY(nhs_number, service_id, system_id, patient_id, version)
+	PRIMARY KEY(nhs_number, service_id, system_id, local_id_system, patient_id, version)
 	WITH CLUSTERING ORDER BY (service_id ASC, system_id ASC, patient_id ASC, version DESC);
+
 

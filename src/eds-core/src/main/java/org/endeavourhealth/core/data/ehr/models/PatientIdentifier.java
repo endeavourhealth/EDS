@@ -34,9 +34,14 @@ public class PatientIdentifier {
     private UUID patientId = null;
     @Column(name = "timestamp")
     private Date timestamp = null;
-    @ClusteringColumn(3)
+    @ClusteringColumn(4)
     @Column(name = "version")
     private UUID version = null;
+    @Column(name = "local_id")
+    private String localId = null;
+    @ClusteringColumn(3)
+    @Column(name = "local_id_system")
+    private String localIdSystem = null;
 
     public UUID getServiceId() {
         return serviceId;
@@ -124,5 +129,21 @@ public class PatientIdentifier {
 
     public void setVersion(UUID version) {
         this.version = version;
+    }
+
+    public String getLocalId() {
+        return localId;
+    }
+
+    public void setLocalId(String localId) {
+        this.localId = localId;
+    }
+
+    public String getLocalIdSystem() {
+        return localIdSystem;
+    }
+
+    public void setLocalIdSystem(String localIdSystem) {
+        this.localIdSystem = localIdSystem;
     }
 }

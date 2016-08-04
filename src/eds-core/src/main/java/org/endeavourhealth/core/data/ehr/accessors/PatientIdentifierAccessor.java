@@ -11,9 +11,10 @@ import java.util.UUID;
 @Accessor
 public interface PatientIdentifierAccessor {
 
-    @Query("SELECT * FROM ehr.patient_identifier WHERE service_id = :service_id AND system_id = :system_id AND patient_id = :patient_id LIMIT 1")
+    @Query("SELECT * FROM ehr.patient_identifier WHERE service_id = :service_id AND system_id = :system_id AND patient_id = :patient_id AND local_id_system = :local_id_system LIMIT 1")
     Result<PatientIdentifier> getMostRecent(@Param("service_id") UUID serviceId,
                                             @Param("system_id") UUID systemId,
-                                            @Param("patient_id") UUID patientId);
+                                            @Param("patient_id") UUID patientId,
+                                            @Param("local_id_system") String localIdSystem);
 
 }

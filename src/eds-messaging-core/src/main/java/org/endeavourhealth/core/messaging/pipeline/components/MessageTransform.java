@@ -77,7 +77,7 @@ public class MessageTransform extends PipelineComponent {
 			String batchIdString = convertUUidsToStrings(batchIds);
 			exchange.setHeader(HeaderKeys.BatchIds, batchIdString);
 
-			LOG.debug("Message transformed");
+			LOG.trace("Message transformed");
 
 		} catch (Exception e) {
 			exchange.setException(e);
