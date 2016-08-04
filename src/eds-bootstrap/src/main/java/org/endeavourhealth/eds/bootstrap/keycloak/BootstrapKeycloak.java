@@ -6,7 +6,9 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.endeavourhealth.eds.bootstrap.Bootstrap;
 import org.keycloak.OAuth2Constants;
@@ -30,10 +32,10 @@ public class BootstrapKeycloak implements Bootstrap {
 
     public static AccessTokenResponse getToken() throws IOException {
 
-        HttpClient client = new DefaultHttpClient();
+        CloseableHttpClient client = HttpClients.createDefault();
 
         try {
-            HttpPost post = new HttpPost(KeycloakUriBuilder.fromUri("https://keycloak.eds.c.healthforge.io/auth")
+            HttpPost post = new HttpPost(KeycloakUriBuilder.fromUri("https://keycloak.eds.c.healthforge.io/auth/")
                     .path(ServiceUrlConstants.TOKEN_PATH).build("sftptest"));
             List<NameValuePair> formparams = new ArrayList<NameValuePair>();
             formparams.add(new BasicNameValuePair("username", "admin"));
@@ -56,7 +58,7 @@ public class BootstrapKeycloak implements Bootstrap {
             String json = getContent(entity);
             return JsonSerialization.readValue(json, AccessTokenResponse.class);
         } finally {
-            client.getConnectionManager().shutdown();
+            client.close();
         }
     }
 
