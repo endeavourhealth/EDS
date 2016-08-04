@@ -10,7 +10,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.endeavourhealth.sftpreader.model.db.DbConfigurationEds;
@@ -122,22 +121,22 @@ public class EdsNotifier
         return this.inboundMessage;
     }
 
-    public static AccessTokenResponse getToken() throws IOException
+    public AccessTokenResponse getToken() throws IOException
     {
-        HttpClient client = new DefaultHttpClient();
+        HttpClient client = HttpClientBuilder.create().build();
 
         try
         {
             HttpPost post = new HttpPost(KeycloakUriBuilder
-                    .fromUri("https://keycloak.eds.c.healthforge.io/auth")
+                    .fromUri(dbConfigurationEds.getKeycloakTokenUri())
                     .path(ServiceUrlConstants.TOKEN_PATH)
-                    .build("sftptest"));
+                    .build(dbConfigurationEds.getKeycloakRealm()));
 
             List<NameValuePair> formparams = new ArrayList<>();
-            formparams.add(new BasicNameValuePair("username", "admin"));
-            formparams.add(new BasicNameValuePair("password", "password"));
+            formparams.add(new BasicNameValuePair("username", dbConfigurationEds.getKeycloakUsername()));
+            formparams.add(new BasicNameValuePair("password", dbConfigurationEds.getKeycloakPassword()));
             formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "password"));
-            formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "eds-sftp"));
+            formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, dbConfigurationEds.getKeycloakClientId()));
             UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
             post.setEntity(form);
 

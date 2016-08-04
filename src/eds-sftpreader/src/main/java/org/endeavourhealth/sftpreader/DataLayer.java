@@ -57,7 +57,12 @@ public class DataLayer
                             .setEdsServiceIdentifier(resultSet.getString("eds_service_identifier"))
                             .setSoftwareName(resultSet.getString("software_name"))
                             .setSoftwareVersion(resultSet.getString("software_version"))
-                            .setEnvelopeContentType(resultSet.getString("envelope_content_type"))));
+                            .setEnvelopeContentType(resultSet.getString("envelope_content_type"))
+                            .setUseKeycloak(resultSet.getBoolean("use_keycloak"))
+                            .setKeycloakRealm(resultSet.getString("keycloak_realm"))
+                            .setKeycloakUsername(resultSet.getString("keycloak_username"))
+                            .setKeycloakPassword(resultSet.getString("keycloak_password"))
+                            .setKeycloakClientId(resultSet.getString("keycloak_clientid"))));
 
         dbConfiguration.setDbConfigurationKvp(getConfigurationKvp(instanceId));
         dbConfiguration.setInterfaceFileTypes(getInterfaceFileTypes(instanceId));

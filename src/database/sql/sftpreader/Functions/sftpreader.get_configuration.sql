@@ -26,7 +26,13 @@ returns table
 	eds_service_identifier varchar,
 	software_name varchar,
 	software_version varchar,
-	envelope_content_type varchar
+	envelope_content_type varchar,
+	use_keycloak boolean,
+	keycloak_token_uri varchar,
+	keycloak_realm varchar,
+	keycloak_username varchar,
+	keycloak_password varchar,
+	keycloak_clientid varchar
 )
 as $$
 
@@ -52,7 +58,13 @@ as $$
 		ce.eds_service_identifier,
 		ce.software_name,
 		ce.software_version,
-		ce.envelope_content_type
+		ce.envelope_content_type,
+		ce.use_keycloak,
+		ce.keycloak_token_uri,
+		ce.keycloak_realm,
+		ce.keycloak_username,
+		ce.keycloak_password,
+		ce.keycloak_clientid
 	from sftpreader.instance i
 	inner join sftpreader.configuration c on i.instance_id = c.instance_id
 	inner join sftpreader.interface_type it on c.interface_type_id = it.interface_type_id

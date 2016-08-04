@@ -35,7 +35,13 @@ insert into sftpreader.configuration_eds
 	eds_service_identifier,
 	software_name,
 	software_version,
-	envelope_content_type
+	envelope_content_type,
+	use_keycloak,
+	keycloak_token_uri,
+	keycloak_realm,
+	keycloak_username,
+	keycloak_password,
+	keycloak_clientid
 )
 values
 (
@@ -44,7 +50,13 @@ values
 	'EMIS001',
 	'EmisExtractService',
 	'5.1',
-	'EMISCSV'
+	'EMISCSV',
+	false,
+	'https://keycloak.eds.c.healthforge.io/auth',
+	'sftptest',
+	'sftpuser',
+	'sftppassword',
+	'sftptest'
 );
 
 insert into sftpreader.configuration_kvp

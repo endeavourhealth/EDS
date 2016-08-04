@@ -134,6 +134,12 @@ create table sftpreader.configuration_eds
 	software_name varchar(100) not null,
 	software_version varchar(100) not null,
 	envelope_content_type varchar(100) not null,
+	use_keycloak boolean not null,
+	keycloak_token_uri varchar(500) null,
+	keycloak_realm varchar(100) null,
+	keycloak_username varchar(100) null,
+	keycloak_password varchar(100) null,
+	keycloak_clientid varchar(100) null,
 
 	constraint sftpreader_configurationeds_instanceid_pk primary key (instance_id),
 	constraint sftpreader_configurationeds_instanceid_fk foreign key (instance_id) references sftpreader.configuration (instance_id),
@@ -142,7 +148,13 @@ create table sftpreader.configuration_eds
 	constraint sftpreader_configurationeds_edsserviceidentifier_ck check (char_length(trim(eds_service_identifier)) > 0),
 	constraint sftpreader_configurationeds_softwarename_ck check (char_length(trim(software_name)) > 0),
 	constraint sftpreader_configurationeds_softwareversion_ck check (char_length(trim(software_version)) > 0),
-	constraint sftpreader_configurationeds_envelopecontenttype_ck check (char_length(trim(envelope_content_type)) > 0)
+	constraint sftpreader_configurationeds_envelopecontenttype_ck check (char_length(trim(envelope_content_type)) > 0),
+	constraint sftpreader_configurationeds_usekeycloak_keycloaktokenuri_keycloakrealm_keycloakusername_keycloakpassword_keycloakclientid_ck check ((not use_keycloak) or (keycloak_token_uri is not null and keycloak_realm is not null and keycloak_username is not null and keycloak_password is not null and keycloak_clientid is not null)),
+	constraint sftpreader_configurationeds_keycloaktokenuri_ck check (keycloak_token_uri is null or (char_length(trim(keycloak_token_uri)) > 0)),
+	constraint sftpreader_configurationeds_keycloakrealm_ck check (keycloak_realm is null or (char_length(trim(keycloak_realm)) > 0)),
+	constraint sftpreader_configurationeds_keycloakusername_ck check (keycloak_username is null or (char_length(trim(keycloak_username)) > 0)),
+	constraint sftpreader_configurationeds_keycloakpassword_ck check (keycloak_password is null or (char_length(trim(keycloak_password)) > 0)),
+	constraint sftpreader_configurationeds_keycloakclientid_ck check (keycloak_clientid is null or (char_length(trim(keycloak_clientid)) > 0))
 );	
 
 create table sftpreader.configuration_kvp
