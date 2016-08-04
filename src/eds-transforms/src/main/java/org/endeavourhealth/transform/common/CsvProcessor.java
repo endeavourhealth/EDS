@@ -14,6 +14,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class CsvProcessor {
 
@@ -33,7 +34,10 @@ public class CsvProcessor {
     private Map<String, UUID> patientBatchIdMap = new HashMap<>();
     private UUID adminBatchId = null;
     private ExecutorService threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+    private AtomicInteger threadPoolQueueSize = new AtomicInteger();
     private ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+    private int resourcesSaved = 0;
+    private int resourcesDeleted = 0;
 
     public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId) {
         this.exchangeId = exchangeId;
@@ -81,6 +85,13 @@ public class CsvProcessor {
             throw new PatientResourceException(resource.getResourceType(), expectingPatientResource);
         }
 
+        if (toDelete) {
+            resourcesDeleted ++;
+        } else {
+            resourcesSaved ++;
+        }
+
+        threadPoolQueueSize.incrementAndGet();
         threadPool.submit(new WorkerCallable(resource, batchId, toDelete, mapIds));
     }
 
@@ -109,23 +120,24 @@ public class CsvProcessor {
         exchangeBatchRepository.save(exchangeBatch);
     }
 
-
+    /**
+     * called after all content has been processed. It blocks until all operations have
+     * been completed in the thread pool, then returns the distinct batch IDs created
+     */
     public List<UUID> getBatchIdsCreated() {
-
-        LOG.trace("Processing completion starting");
 
         //shutdown the threadpool and wait for all runnables to complete
         threadPool.shutdown();
         try {
-            LOG.trace("Waiting for thread pool to complete");
-            threadPool.awaitTermination(24, TimeUnit.HOURS);
+            while (!threadPool.awaitTermination(1, TimeUnit.MINUTES)) {
+                LOG.trace("Waiting for thread pool to complete {} tasks", threadPoolQueueSize.get());
+            }
 
         } catch (InterruptedException ex) {
             LOG.error("Error waiting for pool to finish", ex);
         }
 
-        LOG.trace("Processing fully completed");
-
+        LOG.info("CSV processing completed, saving {} resources, deleting {} for {} distinct patients", resourcesSaved, resourcesDeleted, patientBatchIdMap.size());
 
         List<UUID> batchIds = new ArrayList<>();
         if (adminBatchId != null) {
@@ -212,6 +224,7 @@ public class CsvProcessor {
                 storageService.exchangeBatchUpdate(exchangeId, batchUuid, list);
             }
 
+            threadPoolQueueSize.decrementAndGet();
             return null;
         }
     }

@@ -18,6 +18,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class ClinicalCodeTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(ClinicalCodeTransformer.class);
@@ -29,12 +30,13 @@ public abstract class ClinicalCodeTransformer {
 
         //because we have to hit a third party web resource, we use a thread pool to support
         //threading these calls to improve performance
-        ExecutorService threadPool = Executors.newFixedThreadPool(15);
+        ExecutorService threadPool = Executors.newFixedThreadPool(15); //seems suitable for concurrent hits against a web service
+        AtomicInteger threadPoolQueueSize = new AtomicInteger();
 
         Coding_ClinicalCode parser = new Coding_ClinicalCode(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                transform(parser, csvProcessor, csvHelper, threadPool);
+                transform(parser, csvProcessor, csvHelper, threadPool, threadPoolQueueSize);
             }
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
@@ -45,7 +47,11 @@ public abstract class ClinicalCodeTransformer {
         //close and let our thread pool finish
         threadPool.shutdown();
         try {
-            threadPool.awaitTermination(24, TimeUnit.HOURS);
+
+            while (!threadPool.awaitTermination(1, TimeUnit.MINUTES)) {
+                LOG.trace("Waiting for {} clinical codes to be looked up", threadPoolQueueSize.get());
+            }
+
         } catch (InterruptedException ex) {
             LOG.error("Thread interrupted", ex);
         }
@@ -54,7 +60,8 @@ public abstract class ClinicalCodeTransformer {
     private static void transform(Coding_ClinicalCode codeParser,
                                   CsvProcessor csvProcessor,
                                   EmisCsvHelper csvHelper,
-                                  ExecutorService threadPool) throws Exception {
+                                  ExecutorService threadPool,
+                                  AtomicInteger threadPoolQueueSize) throws Exception {
 
         Long codeId = codeParser.getCodeId();
 
@@ -74,8 +81,9 @@ public abstract class ClinicalCodeTransformer {
             fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, emisTerm, emisCode);
         }
 
+        threadPoolQueueSize.incrementAndGet();
         threadPool.submit(new WebServiceLookup(codeId, fhirConcept, codeType, snomedConceptId,
-                                                snomedDescriptionId, csvProcessor, csvHelper));
+                                                snomedDescriptionId, csvProcessor, csvHelper, threadPoolQueueSize));
     }
 
     static class WebServiceLookup implements Callable {
@@ -87,6 +95,7 @@ public abstract class ClinicalCodeTransformer {
         private Long snomedDescriptionId = null;
         private CsvProcessor csvProcessor = null;
         private EmisCsvHelper csvHelper = null;
+        private AtomicInteger threadPoolQueueSize = null;
 
         public WebServiceLookup(Long codeId,
                                 CodeableConcept fhirConcept,
@@ -94,7 +103,8 @@ public abstract class ClinicalCodeTransformer {
                                 Long snomedConceptId,
                                 Long snomedDescriptionId,
                                 CsvProcessor csvProcessor,
-                                EmisCsvHelper csvHelper) {
+                                EmisCsvHelper csvHelper,
+                                AtomicInteger threadPoolQueueSize) {
 
             this.codeId = codeId;
             this.fhirConcept = fhirConcept;
@@ -103,12 +113,12 @@ public abstract class ClinicalCodeTransformer {
             this.snomedDescriptionId = snomedDescriptionId;
             this.csvProcessor = csvProcessor;
             this.csvHelper = csvHelper;
+            this.threadPoolQueueSize = threadPoolQueueSize;
         }
 
         @Override
         public Object call() throws Exception {
 
-            //LOG.trace("Looking up for " + snomedConceptId);
             try {
                 String snomedTerm = Snomed.getTerm(snomedConceptId.longValue(), snomedDescriptionId.longValue());
                 fhirConcept.addCoding(CodingHelper.createCoding(FhirUri.CODE_SYSTEM_SNOMED_CT, snomedTerm, snomedConceptId.toString()));
@@ -118,7 +128,8 @@ public abstract class ClinicalCodeTransformer {
             }
 
             csvHelper.addClinicalCode(codeId, fhirConcept, codeType, csvProcessor);
-            //LOG.trace("    Finished up for " + snomedConceptId);
+
+            threadPoolQueueSize.decrementAndGet();
             return null;
         }
     }

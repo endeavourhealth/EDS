@@ -55,7 +55,7 @@ public abstract class EmisCsvTransformer {
     }
     public static void transform(String folderPath, CsvProcessor csvProcessor) throws Exception {
 
-        LOG.trace("Transforming EMIS CSV content in " + folderPath);
+        LOG.trace("Transforming EMIS CSV content in {}", folderPath);
 
         EmisCsvHelper csvHelper = new EmisCsvHelper();
 
@@ -63,7 +63,7 @@ public abstract class EmisCsvTransformer {
         transformAdminData(folderPath, csvProcessor, csvHelper);
         transformPatientData(folderPath, csvProcessor, csvHelper);
 
-        LOG.trace("Completed EMIS CSV transform in " + folderPath);
+        LOG.trace("Completed EMIS CSV transform in {}", folderPath);
     }
 
     private static void transformCodes(String folderPath, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
@@ -136,7 +136,7 @@ public abstract class EmisCsvTransformer {
                                                UUID systemId,
                                                Set<UUID> orgIds) throws Exception {
 
-        LOG.info("Invoking EMIS CSV transformer for " + files.length + " files");
+        LOG.info("Invoking EMIS CSV transformer for {} files", files.length);
 
         //validate that all the files are in the same directory
         File commonDir = validateCommonDirectory(files);
@@ -187,7 +187,7 @@ public abstract class EmisCsvTransformer {
         //having successfully processed all the split files, delete the split content (if any exceptions were raised, this won't happen)
         dstDir.delete();
 
-        LOG.info("Returning from EMIS CSV transformer for " + files.length + " files");
+        LOG.info("Returning from EMIS CSV transformer for {} files", files.length);
 
         return batchIds;
     }

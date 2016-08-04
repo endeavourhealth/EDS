@@ -48,7 +48,7 @@ public class EmisCsvFileSplitter {
 
     public static void splitFiles(File srcDir, File dstDir) throws Exception {
 
-        LOG.trace("Splitting CSV files in " + srcDir);
+        LOG.trace("Splitting CSV files in {}", srcDir);
 
         if (!srcDir.exists()) {
             throw new FileNotFoundException("Source directory " + srcDir + " doesn't exist");
@@ -62,13 +62,13 @@ public class EmisCsvFileSplitter {
 
         //simply copy the files we don't want to split
         for (String fileName: FILES_TO_COPY) {
-            LOG.trace("Copying " + fileName);
+            LOG.trace("Copying {}", fileName);
             copyFile(fileName, srcDir, dstDir);
         }
 
         //split the files we know should be split
         for (String fileName: FILES_TO_SPLIT) {
-            LOG.trace("Splitting " + fileName);
+            LOG.trace("Splitting {}", fileName);
             splitFile(fileName, srcDir, dstDir, CSV_FORMAT);
         }
 
@@ -92,7 +92,7 @@ public class EmisCsvFileSplitter {
             }
         }
 
-        LOG.trace("Completed CSV file splitting from " + srcDir + " to " + dstDir);
+        LOG.trace("Completed CSV file splitting from {} to {}", srcDir, dstDir);
     }
 
     private static void createMissingFiles(String partialFileName, File srcDir, File dstDir) throws Exception {
