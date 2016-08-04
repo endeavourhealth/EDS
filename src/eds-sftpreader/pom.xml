@@ -74,6 +74,13 @@
             <version>16.0.1</version>
         </dependency>
 
+        <!--keycloak-->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+            <version>2.0.0.Final</version>
+        </dependency>
+
     </dependencies>
 
     <build>
