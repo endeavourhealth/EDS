@@ -33,7 +33,7 @@ public final class UserEndpoint extends AbstractEndpoint {
     @Path("/account")
     public Response userAccount(@Context SecurityContext sc) throws Exception {
 
-        String url = String.format(ConfigService.instance().getAuthConfig().getAuthServerUrl() + "realms/%s/account",
+        String url = String.format(ConfigService.instance().getAuthConfig().getAuthServerUrl() + "/realms/%s/account",
                 SecurityUtils.getKeycloakSecurityContext(sc).getRealm());
 
         return Response
@@ -49,7 +49,7 @@ public final class UserEndpoint extends AbstractEndpoint {
 
         String redirectUrl = URLEncoder.encode(ConfigService.instance().getAppConfig().getAppUrl() + "/api/user/details", "UTF-8");
 
-        String url = String.format(ConfigService.instance().getAuthConfig().getAuthServerUrl() + "realms/%s/protocol/openid-connect/logout?redirect_uri=%s",
+        String url = String.format(ConfigService.instance().getAuthConfig().getAuthServerUrl() + "/realms/%s/protocol/openid-connect/logout?redirect_uri=%s",
                 SecurityUtils.getKeycloakSecurityContext(sc).getRealm(), redirectUrl);
 
         return Response

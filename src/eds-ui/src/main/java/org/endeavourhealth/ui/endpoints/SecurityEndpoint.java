@@ -164,7 +164,7 @@ public final class SecurityEndpoint extends AbstractEndpoint {
 
         String redirectUrl = URLEncoder.encode(ConfigService.instance().getAppConfig().getAppUrl() + "/api/user/details", "UTF-8");
 
-        String url = String.format(ConfigService.instance().getAuthConfig().getAuthServerUrl() + "realms/%s/protocol/openid-connect/logout?redirect_uri=%s",
+        String url = String.format(ConfigService.instance().getAuthConfig().getAuthServerUrl() + "/realms/%s/protocol/openid-connect/logout?redirect_uri=%s",
                 SecurityUtils.getKeycloakSecurityContext(sc).getRealm(), redirectUrl);
 
         clearLogbackMarkers();
