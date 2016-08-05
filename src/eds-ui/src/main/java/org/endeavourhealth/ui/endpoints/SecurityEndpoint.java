@@ -11,6 +11,7 @@ import org.endeavourhealth.ui.database.DbAbstractTable;
 import org.endeavourhealth.ui.database.administration.DbEndUser;
 import org.endeavourhealth.ui.database.administration.DbEndUserEmailInvite;
 import org.endeavourhealth.ui.database.administration.DbOrganisationEndUserLink;
+import org.endeavourhealth.ui.framework.config.ConfigService;
 import org.endeavourhealth.ui.json.*;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.slf4j.Logger;
@@ -18,6 +19,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+import java.net.URI;
+import java.net.URLEncoder;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -159,12 +162,15 @@ public final class SecurityEndpoint extends AbstractEndpoint {
 
         LOG.trace("Logoff");
 
-        // TODO: logoff
+        String redirectUrl = URLEncoder.encode(ConfigService.instance().getAppConfig().getAppUrl() + "/api/user/details", "UTF-8");
+
+        String url = String.format(ConfigService.instance().getAuthConfig().getAuthServerUrl() + "realms/%s/protocol/openid-connect/logout?redirect_uri=%s",
+                SecurityUtils.getKeycloakSecurityContext(sc).getRealm(), redirectUrl);
 
         clearLogbackMarkers();
 
         return Response
-                .ok()
+                .seeOther(new URI(url))
                 .build();
     }
 

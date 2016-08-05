@@ -1,4 +1,4 @@
-package org.endeavourhealth.ui.endpoints_public.models;
+package org.endeavourhealth.ui.framework.config.models;
 
 public class AuthConfig {
 

@@ -13,6 +13,7 @@ public class ConfigurationRepository extends Repository {
     public static final UUID ROUTE_GROUPS = UUID.fromString("b9b14e26-5a52-4f36-ad89-f01e465c1361");
 
     public static final UUID KEYCLOAK_CONFIG = UUID.fromString("c865eb28-58dd-4ec4-9ca9-fda1273566bf");
+    public static final UUID KEYCLOAK_CONFIG_SFTP_READER = UUID.fromString("f48c8bf3-a03d-411e-baf1-8712569ed67f");
 
     public void insert(ConfigurationResource configurationResource){
         if (configurationResource == null)
