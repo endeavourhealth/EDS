@@ -1,0 +1,18 @@
+{
+  "cassandra" : {
+    "url" : "cassandra.eds.c.healthforge.io",
+    "port" : 9042,
+    "username" : "",
+    "password" : ""
+  },
+  "keycloak" : {
+    "server" : {
+      "serverUrl":"http://127.0.0.1:9080/auth",
+      "realm":"master",
+      "username":"admin",
+      "password":"admin",
+      "clientId":"admin-cli"
+    },
+    "realm" : "e2"
+  }
+}

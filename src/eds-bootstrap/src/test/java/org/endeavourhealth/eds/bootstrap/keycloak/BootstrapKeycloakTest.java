@@ -10,7 +10,7 @@ public class BootstrapKeycloakTest {
     @org.junit.Test
     @org.junit.Ignore
     public void keycloakClientAuthRefreshAndAccountInfo() throws Exception {
-        KeycloakClient.init("https://keycloak.eds.c.healthforge.io/auth/", "sftptest", "sftpuser", "sftppassword","eds-sftp");
+        KeycloakClient.init("http://localhost:9080/auth", "demo", "admin", "admin","admin-client");
 
         System.out.println("Token:");
         System.out.println();
