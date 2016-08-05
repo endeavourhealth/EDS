@@ -23,6 +23,7 @@ angular.module('app', [
 
 		'app.dialogs',
 		'app.dashboard',
+		'app.logging',
 		'app.library',
 		'app.protocol',
 		'app.system',
