@@ -11,4 +11,11 @@ public class AppConfig {
     public void setAppUrl(String appUrl) {
         this.appUrl = appUrl;
     }
+
+    public AppConfig() {
+    }
+
+    public AppConfig(String appUrl) {
+        this.appUrl = appUrl;
+    }
 }
