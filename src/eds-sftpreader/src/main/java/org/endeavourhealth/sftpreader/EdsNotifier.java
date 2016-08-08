@@ -10,6 +10,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.endeavourhealth.sftpreader.model.db.DbConfigurationEds;
@@ -123,9 +124,7 @@ public class EdsNotifier
 
     public AccessTokenResponse getToken() throws IOException
     {
-        HttpClient client = HttpClientBuilder.create().build();
-
-        try
+        try (CloseableHttpClient client = HttpClientBuilder.create().build())
         {
             HttpPost post = new HttpPost(KeycloakUriBuilder
                     .fromUri(dbConfigurationEds.getKeycloakTokenUri())
@@ -155,10 +154,6 @@ public class EdsNotifier
 
             String json = getContent(entity);
             return JsonSerialization.readValue(json, AccessTokenResponse.class);
-        }
-        finally
-        {
-            client.getConnectionManager().shutdown();
         }
     }
 
