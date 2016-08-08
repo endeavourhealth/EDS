@@ -1,8 +1,8 @@
 {
-  "realm": "Endeavour",
-  "realm-public-key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAssVIvhexb8weQ2rIgWfQbTJ/qxmAQTlQbE1W5+GGhLVS8ERDXSKsG7u+iJvFL28OOmM9MF59SbpuhGzPfCwI3LCnc1CH7FXnvdhB8xKV9t5GY5vVTF2emSFKuqNxLmz9EO2FS6oEJ4oRn9sflz+Q6S/sdiSpxJQ4Mw4wA2IU5oA2ramuhxh123ONMvRsAnjFzFA1f9M3DANmhZzSYleqU604bRniJVe6thG3HKwErgFsCdafgwHtsKGQwCy8vg7cAg1uINv6uVgrqCytwNS5LrBDgfEyWnocthZ5jdPzzxIcDM38YLB+HeoI0fsasCuu0Wc9aIvmQH7gmZm4mzubPwIDAQAB",
-  "auth-server-url": "http://localhost:9080/auth",
-  "ssl-required": "external",
-  "resource": "example-app",
-  "public-client": true
+  "realm" : "endeavour",
+  "realm-public-key" : "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlnMTOPmUhfZVgd/qCV1svJe0AWFTm6hs3zaas2HNNHhR1rIGH02YBXeDazrbMHvJz1Q/weXn1j0tyfTNf53cwH4KQy3+OXjnh1vXOlR26XzmjdkvG+Hoy5L3+JbpIV5ktflFRxstml1CU3p8jZSXMyjLcCn1I1IbCWG/YsO1ST34ZOSI0K+11Y3N/fYZnsZW7OIPTc6zTpUIq0/jOySgSD1xwOS9q/MPJ6gq8B2LyDDYDR+pJPzlxQ3JPk2gbvqYYTSQcpwZwNZiyVhatiX4lxutDXzZd0FFMF2WVv9uFUcQkt1GkKxs9mN9u5EdbaWTb2noznBvBvdvbdePuSJdpQIDAQAB",
+  "auth-server-url" : "https://keycloak.eds.c.healthforge.io/auth",
+  "ssl-required" : "external",
+  "resource" : "eds-ui",
+  "public-client" : true
 }

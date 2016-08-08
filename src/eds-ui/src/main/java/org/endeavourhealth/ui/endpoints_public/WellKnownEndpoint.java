@@ -1,6 +1,6 @@
 package org.endeavourhealth.ui.endpoints_public;
 
-import org.endeavourhealth.ui.endpoints_public.models.AuthConfig;
+import org.endeavourhealth.ui.framework.config.ConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,14 +19,6 @@ public final class WellKnownEndpoint {
     @Path("/authconfig")
     public Response authconfig() {
 
-        // TODO: read this config from the database
-        AuthConfig config = new AuthConfig(
-                "Endeavour",
-                "http://localhost:9080/auth",
-                "example-app",
-                "http://localhost:8080"
-        );
-
         // IMPORTANT: Do NOT put anything sensitive in this config return,
         //            it is intended to be used to configure the front-end
         //            app by passing configuration stored on disk or in
@@ -34,7 +26,7 @@ public final class WellKnownEndpoint {
 
         return Response
                 .ok()
-                .entity(config)
+                .entity(ConfigService.instance().getAuthConfig())
                 .build();
     }
 }

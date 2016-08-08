@@ -1,6 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
 import org.endeavourhealth.core.security.SecurityUtils;
+import org.endeavourhealth.ui.framework.config.ConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +33,7 @@ public final class UserEndpoint extends AbstractEndpoint {
     @Path("/account")
     public Response userAccount(@Context SecurityContext sc) throws Exception {
 
-        String url = String.format("http://localhost:9080/auth/realms/%s/account",      // TODO: make auth server URL config
+        String url = String.format(ConfigService.instance().getAuthConfig().getAuthServerUrl() + "/realms/%s/account",
                 SecurityUtils.getKeycloakSecurityContext(sc).getRealm());
 
         return Response
@@ -46,12 +47,10 @@ public final class UserEndpoint extends AbstractEndpoint {
 
         LOG.info("Logout: {}", SecurityUtils.getCurrentUser(sc));
 
-        String redirectUrl = URLEncoder.encode("http://localhost:8080/api/user/details", "UTF-8");                  // TODO: make url config
+        String redirectUrl = URLEncoder.encode(ConfigService.instance().getAppConfig().getAppUrl() + "/api/user/details", "UTF-8");
 
-        String url = String.format("http://localhost:9080/auth/realms/%s/protocol/openid-connect/logout?redirect_uri=%s",      // TODO: make auth server URL config
+        String url = String.format(ConfigService.instance().getAuthConfig().getAuthServerUrl() + "/realms/%s/protocol/openid-connect/logout?redirect_uri=%s",
                 SecurityUtils.getKeycloakSecurityContext(sc).getRealm(), redirectUrl);
-
-        LOG.debug("url: {}", url);
 
         return Response
                 .seeOther(new URI(url))
