@@ -3,6 +3,12 @@ package org.endeavourhealth.sftpreader;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.endeavourhealth.sftpreader.implementations.*;
 import org.endeavourhealth.sftpreader.model.db.*;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpFilenameParseException;
@@ -16,7 +22,6 @@ import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnection;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionDetails;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionException;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
-import org.keycloak.representations.AccessTokenResponse;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -355,11 +360,20 @@ public class SftpTask extends TimerTask
                     .sorted(Comparator.comparing(t -> t.getSequenceNumber()))
                     .collect(Collectors.toList());
 
-            KeycloakClient.init(dbConfiguration.getDbConfigurationEds().getKeycloakTokenUri(),
-                    dbConfiguration.getDbConfigurationEds().getKeycloakRealm(),
-                    dbConfiguration.getDbConfigurationEds().getKeycloakUsername(),
-                    dbConfiguration.getDbConfigurationEds().getKeycloakPassword(),
-                    dbConfiguration.getDbConfigurationEds().getKeycloakClientId());
+            if (dbConfiguration.getDbConfigurationEds().isUseKeycloak())
+            {
+                LOG.info(" Initialising keycloak at: " + dbConfiguration.getDbConfigurationEds().getKeycloakTokenUri());
+
+                KeycloakClient.init(dbConfiguration.getDbConfigurationEds().getKeycloakTokenUri(),
+                        dbConfiguration.getDbConfigurationEds().getKeycloakRealm(),
+                        dbConfiguration.getDbConfigurationEds().getKeycloakUsername(),
+                        dbConfiguration.getDbConfigurationEds().getKeycloakPassword(),
+                        dbConfiguration.getDbConfigurationEds().getKeycloakClientId());
+            }
+            else
+            {
+                LOG.info(" Keycloak is not enabled");
+            }
 
             for (Batch unnotifiedBatch : unnotifiedBatches)
             {
@@ -373,34 +387,67 @@ public class SftpTask extends TimerTask
         }
     }
 
-    private void notify(Batch unnotifiedBatch) throws SftpReaderException, PgStoredProcException
+    private void notify(Batch unnotifiedBatch) throws SftpReaderException, PgStoredProcException, IOException
     {
         SftpNotificationCreator sftpNotificationCreator = ImplementationActivator.createSftpNotificationCreator();
 
-        String message = sftpNotificationCreator.createNotificationMessage(dbConfiguration, unnotifiedBatch);
-
-        EdsNotifier edsNotifier = new EdsNotifier(dbConfiguration.getDbConfigurationEds(), message);
-
-        boolean wasError = false;
-        String errorMessage = null;
-        Exception exception = null;
+        String messagePayload = sftpNotificationCreator.createNotificationMessage(dbConfiguration, unnotifiedBatch);
+        EdsEnvelopeBuilder edsEnvelopeBuilder = new EdsEnvelopeBuilder(dbConfiguration.getDbConfigurationEds());
+        UUID messageId = UUID.randomUUID();
+        String outboundMessage = edsEnvelopeBuilder.buildEnvelope(messageId, messagePayload);
+        String inboundMessage = null;
 
         try
         {
-            edsNotifier.notifyEds();
+            inboundMessage = notifyEds(outboundMessage);
+
+            db.addBatchNotification(unnotifiedBatch.getBatchId(),
+                    dbConfiguration.getInstanceId(),
+                    messageId,
+                    outboundMessage,
+                    inboundMessage,
+                    true,
+                    null);
         }
         catch (Exception e)
         {
-            wasError = true;
-            errorMessage = e.getMessage();
-            exception = e;
-
             LOG.error("Error notifying EDS for batch " + unnotifiedBatch.getBatchIdentifier(), e);
+
+            db.addBatchNotification(unnotifiedBatch.getBatchId(),
+                    dbConfiguration.getInstanceId(),
+                    messageId,
+                    outboundMessage,
+                    inboundMessage,
+                    false,
+                    e.getClass().getName() + " | " + e.getMessage());
+
+            throw new SftpReaderException("Error notifying EDS for batch " + unnotifiedBatch.getBatchIdentifier(), e);
+        }
+    }
+
+    private String notifyEds(String outboundMessage) throws IOException
+    {
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build())
+        {
+            HttpPost httpPost = new HttpPost(dbConfiguration.getDbConfigurationEds().getEdsUrl());
+
+            if (dbConfiguration.getDbConfigurationEds().isUseKeycloak())
+                httpPost.addHeader(KeycloakClient.instance().getAuthorizationHeader());
+            
+            httpPost.setEntity(new ByteArrayEntity(outboundMessage.getBytes()));
+
+            HttpResponse response = httpClient.execute(httpPost);
+            HttpEntity entity = response.getEntity();
+
+            if (entity != null)
+            {
+                try (InputStream instream = entity.getContent())
+                {
+                    return "";
+                }
+            }
         }
 
-        db.addBatchNotification(unnotifiedBatch.getBatchId(), dbConfiguration.getInstanceId(), edsNotifier, (!wasError), errorMessage);
-
-        if (exception != null)
-            throw new SftpReaderException("Error notifying EDS for batch " + unnotifiedBatch.getBatchIdentifier(), exception);
+        return null;
     }
 }

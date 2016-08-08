@@ -7,10 +7,8 @@ import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProc;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 
 import javax.sql.DataSource;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
 public class DataLayer
 {
@@ -235,15 +233,15 @@ public class DataLayer
         pgStoredProc.execute();
     }
 
-    public void addBatchNotification(int batchId, String instanceId, EdsNotifier edsNotifier, boolean wasSuccess, String errorText) throws PgStoredProcException
+    public void addBatchNotification(int batchId, String instanceId, UUID messageId, String outboundMessage, String inboundMessage, boolean wasSuccess, String errorText) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.add_batch_notification")
                 .addParameter("_batch_id", batchId)
                 .addParameter("_instance_id", instanceId)
-                .addParameter("_message_uuid", edsNotifier.getMessageId())
-                .addParameter("_outbound_message", edsNotifier.getOutboundMessage())
-                .addParameter("_inbound_message", edsNotifier.getInboundMessage())
+                .addParameter("_message_uuid", messageId)
+                .addParameter("_outbound_message", outboundMessage)
+                .addParameter("_inbound_message", inboundMessage)
                 .addParameter("_was_success", wasSuccess)
                 .addParameter("_error_text", errorText);
 

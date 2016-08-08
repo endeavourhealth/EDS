@@ -51,7 +51,7 @@ values
 	'EmisExtractService',
 	'5.1',
 	'EMISCSV',
-	false,
+	true,
 	'https://keycloak.eds.c.healthforge.io/auth',
 	'endeavour',
 	'sftpuser',
