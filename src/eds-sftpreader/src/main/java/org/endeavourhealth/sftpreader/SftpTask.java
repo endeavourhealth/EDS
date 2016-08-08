@@ -8,6 +8,7 @@ import org.endeavourhealth.sftpreader.model.db.*;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpFilenameParseException;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpReaderException;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpValidationException;
+import org.endeavourhealth.sftpreader.utilities.KeycloakClient;
 import org.endeavourhealth.sftpreader.utilities.PgpUtil;
 import org.endeavourhealth.sftpreader.utilities.StreamExtension;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
@@ -354,6 +355,12 @@ public class SftpTask extends TimerTask
                     .sorted(Comparator.comparing(t -> t.getSequenceNumber()))
                     .collect(Collectors.toList());
 
+            KeycloakClient.init(dbConfiguration.getDbConfigurationEds().getKeycloakTokenUri(),
+                    dbConfiguration.getDbConfigurationEds().getKeycloakRealm(),
+                    dbConfiguration.getDbConfigurationEds().getKeycloakUsername(),
+                    dbConfiguration.getDbConfigurationEds().getKeycloakPassword(),
+                    dbConfiguration.getDbConfigurationEds().getKeycloakClientId());
+
             for (Batch unnotifiedBatch : unnotifiedBatches)
             {
                 LOG.info(" Notifying EDS for batch: " + unnotifiedBatch.getBatchIdentifier());
@@ -381,7 +388,6 @@ public class SftpTask extends TimerTask
         try
         {
             edsNotifier.notifyEds();
-
         }
         catch (Exception e)
         {

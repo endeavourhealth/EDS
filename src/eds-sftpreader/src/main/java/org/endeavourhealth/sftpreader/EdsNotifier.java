@@ -14,11 +14,13 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.endeavourhealth.sftpreader.model.db.DbConfigurationEds;
+import org.endeavourhealth.sftpreader.utilities.KeycloakClient;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,6 +31,7 @@ import java.util.*;
 
 public class EdsNotifier
 {
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(EdsNotifier.class);
     private static final String EDS_ENVELOPE_TEMPLATE_FILENAME = "EdsEnvelopeTemplate.xml";
 
     private DbConfigurationEds dbConfigurationEds;
@@ -53,25 +56,27 @@ public class EdsNotifier
     {
         outboundMessage = buildEnvelope();
 
-        HttpClient httpClient = HttpClientBuilder.create().build();
-
-        HttpPost httpPost = new HttpPost(dbConfigurationEds.getEdsUrl());
-        httpPost.setEntity(new ByteArrayEntity(outboundMessage.getBytes()));
-
-        HttpResponse response = httpClient.execute(httpPost);
-        HttpEntity entity = response.getEntity();
-
-        if (entity != null)
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build())
         {
-            InputStream instream = entity.getContent();
+            HttpPost httpPost = new HttpPost(dbConfigurationEds.getEdsUrl());
+            httpPost.addHeader(KeycloakClient.instance().getAuthorizationHeader());
+            httpPost.setEntity(new ByteArrayEntity(outboundMessage.getBytes()));
 
-            try
+            HttpResponse response = httpClient.execute(httpPost);
+            HttpEntity entity = response.getEntity();
+
+            if (entity != null)
             {
-                // do something useful
-            }
-            finally
-            {
-                instream.close();
+                InputStream instream = entity.getContent();
+
+                try
+                {
+                    // do something useful
+                }
+                finally
+                {
+                    instream.close();
+                }
             }
         }
     }
@@ -121,75 +126,4 @@ public class EdsNotifier
     {
         return this.inboundMessage;
     }
-
-    public AccessTokenResponse getToken() throws IOException
-    {
-        try (CloseableHttpClient client = HttpClientBuilder.create().build())
-        {
-            HttpPost post = new HttpPost(KeycloakUriBuilder
-                    .fromUri(dbConfigurationEds.getKeycloakTokenUri())
-                    .path(ServiceUrlConstants.TOKEN_PATH)
-                    .build(dbConfigurationEds.getKeycloakRealm()));
-
-            List<NameValuePair> formparams = new ArrayList<>();
-            formparams.add(new BasicNameValuePair("username", dbConfigurationEds.getKeycloakUsername()));
-            formparams.add(new BasicNameValuePair("password", dbConfigurationEds.getKeycloakPassword()));
-            formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "password"));
-            formparams.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, dbConfigurationEds.getKeycloakClientId()));
-            UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
-            post.setEntity(form);
-
-            HttpResponse response = client.execute(post);
-            int status = response.getStatusLine().getStatusCode();
-            HttpEntity entity = response.getEntity();
-
-            if (status != 200)
-            {
-                String json = getContent(entity);
-                throw new IOException("Bad status: " + status + " response: " + json);
-            }
-
-            if (entity == null)
-                throw new IOException("No Entity");
-
-            String json = getContent(entity);
-            return JsonSerialization.readValue(json, AccessTokenResponse.class);
-        }
-    }
-
-    public static String getContent(HttpEntity entity) throws IOException
-    {
-        if (entity == null)
-            return null;
-
-        InputStream is = entity.getContent();
-
-        try
-        {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-
-            int c;
-
-            while ((c = is.read()) != -1)
-                os.write(c);
-
-            byte[] bytes = os.toByteArray();
-            String data = new String(bytes);
-            return data;
-
-        }
-        finally
-        {
-            try
-            {
-                is.close();
-            }
-            catch (IOException ignored)
-            {
-
-            }
-        }
-
-    }
-
 }

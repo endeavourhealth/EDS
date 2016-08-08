@@ -27,7 +27,6 @@ public class EmisSftpBatchValidator extends SftpBatchValidator
 
             // further checks to complete
             //
-            // check there are no overlapping sequence numbers
             // check that remote bytes == downloaded bytes
             // check all file attributes are complete
         }

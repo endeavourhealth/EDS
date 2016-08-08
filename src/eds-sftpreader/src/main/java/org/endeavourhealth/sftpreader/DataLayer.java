@@ -59,6 +59,7 @@ public class DataLayer
                             .setSoftwareVersion(resultSet.getString("software_version"))
                             .setEnvelopeContentType(resultSet.getString("envelope_content_type"))
                             .setUseKeycloak(resultSet.getBoolean("use_keycloak"))
+                            .setKeycloakTokenUri(resultSet.getString("keycloak_token_uri"))
                             .setKeycloakRealm(resultSet.getString("keycloak_realm"))
                             .setKeycloakUsername(resultSet.getString("keycloak_username"))
                             .setKeycloakPassword(resultSet.getString("keycloak_password"))

@@ -53,10 +53,10 @@ values
 	'EMISCSV',
 	false,
 	'https://keycloak.eds.c.healthforge.io/auth',
-	'sftptest',
+	'endeavour',
 	'sftpuser',
 	'sftppassword',
-	'sftptest'
+	'eds-sftpreader'
 );
 
 insert into sftpreader.configuration_kvp
