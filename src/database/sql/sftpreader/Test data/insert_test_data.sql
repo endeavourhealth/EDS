@@ -46,7 +46,7 @@ insert into sftpreader.configuration_eds
 values
 (
 	'EMIS001',
-	'http://localhost:8080/api/PostAsync',
+	'http://localhost:8080/api/PostMessageAsync',
 	'EMIS001',
 	'EmisExtractService',
 	'5.1',

@@ -24,9 +24,7 @@ import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionException;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -433,16 +431,31 @@ public class SftpTask extends TimerTask
 
             if (dbConfiguration.getDbConfigurationEds().isUseKeycloak())
                 httpPost.addHeader(KeycloakClient.instance().getAuthorizationHeader());
+
+            //the bundle is being sent as XML, so we need to declare this
+            httpPost.addHeader("Content-Type", "text/xml");
             
             httpPost.setEntity(new ByteArrayEntity(outboundMessage.getBytes()));
 
             HttpResponse response = httpClient.execute(httpPost);
+
+            //TODO - handle HTTP status code???
+            //response.getStatusLine().getStatusCode();
+
             HttpEntity entity = response.getEntity();
 
             if (entity != null)
             {
                 try (InputStream instream = entity.getContent())
                 {
+                    //TODO - handle error response (sample code for reading input stream as text below)
+                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(instream, "UTF-8"));
+                    String line = bufferedReader.readLine();
+                    while (line != null){
+                        LOG.info(line);
+                        line = bufferedReader.readLine();
+                    }
+
                     return "";
                 }
             }
