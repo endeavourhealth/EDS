@@ -11,9 +11,9 @@
   <appender name="db" class="ch.qos.logback.classic.db.DBAppender">
     <connectionSource class="ch.qos.logback.core.db.DriverManagerConnectionSource">
       <driverClass>org.postgresql.Driver</driverClass>
-      <url>jdbc:postgresql://localhost:5432/logback</url>
-      <user>postgres</user>
-      <password></password>
+      <url>${LOGBACK_JDBC_URL:-jdbc:postgresql://localhost:5432/logback}</url>
+      <user>${LOGBACK_JDBC_USERNAME:-postgres}</user>
+      <password>${LOGBACK_JDBC_PASSWORD}</password>
     </connectionSource>
   </appender>
 
