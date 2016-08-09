@@ -5,7 +5,6 @@ import org.endeavourhealth.ui.database.PersistenceManager;
 import org.endeavourhealth.ui.email.EmailProvider;
 import org.endeavourhealth.ui.framework.config.ConfigSerializer;
 import org.endeavourhealth.ui.framework.config.models.*;
-import org.endeavourhealth.ui.framework.security.SecurityConfig;
 import org.endeavourhealth.ui.utility.MessagingQueueProvider;
 
 import javax.servlet.ServletContextEvent;
@@ -26,9 +25,6 @@ public final class Startup implements ServletContextListener {
 
         //domain for our cookies
         WebServer ws = config.getWebServer();
-        String cookieDomain = ws.getCookieDomain();
-        SecurityConfig.AUTH_COOKIE_VALID_DOMAIN = cookieDomain;
-
     }
 
     public void contextDestroyed(ServletContextEvent contextEvent) {
