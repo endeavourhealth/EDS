@@ -6,7 +6,6 @@
 
 module app.core {
 	import IPromise = angular.IPromise;
-	import LoginResponse = app.models.LoginResponse;
 	import UserList = app.models.UserList;
 	import User = app.models.User;
 	'use strict';

@@ -16,7 +16,6 @@ module app.core {
 			KeepaliveProvider:IKeepAliveProvider) {
 			$httpProvider.defaults.headers.post['Accept'] = 'application/json';
 			$httpProvider.defaults.headers.post['Content-Type'] = 'application/json; charset=utf-8';
-			$httpProvider.defaults.withCredentials = true;
 
 			toastr.options.timeOut = 4000;
 			toastr.options.positionClass = 'toast-bottom-right';
