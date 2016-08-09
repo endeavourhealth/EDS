@@ -113,7 +113,7 @@ public abstract class ClinicalCodeTransformer {
                     future.get();
                     futures.remove(i);
                 } catch (Exception ex) {
-                    throw ex;
+                    throw (Exception)ex.getCause();
                 }
             }
         }

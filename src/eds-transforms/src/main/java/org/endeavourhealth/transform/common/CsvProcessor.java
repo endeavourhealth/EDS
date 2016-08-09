@@ -5,6 +5,7 @@ import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,14 +29,21 @@ public class CsvProcessor {
     private final FhirStorageService storageService;
     private final ExchangeBatchRepository exchangeBatchRepository;
 
-    private ReentrantLock lock = new ReentrantLock();
+    //batch IDs
+    private ReentrantLock batchIdLock = new ReentrantLock();
     private Map<String, UUID> patientBatchIdMap = new ConcurrentHashMap<>();
     private UUID adminBatchId = null;
+
+    //threading
     private ExecutorService threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-    private AtomicInteger threadPoolQueueSize = new AtomicInteger();
+    private AtomicInteger threadPoolQueueSize = new AtomicInteger(); //executorService doesn't provide visibility of this, so keep separate
+    private ReentrantLock futuresLock = new ReentrantLock();
+    private Map<Future, Future> futures = new ConcurrentHashMap<>(); //need concurrency support, so can't use a set
+
+    //counts
     private Map<UUID, AtomicInteger> countResourcesSaved = new ConcurrentHashMap<>();
     private Map<UUID, AtomicInteger> countResourcesDeleted = new ConcurrentHashMap<>();
-    private Map<Future, ?> futures = new ConcurrentHashMap<>();
+
 
     public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId) {
         this.exchangeId = exchangeId;
@@ -92,18 +100,58 @@ public class CsvProcessor {
             countResourcesSaved.get(batchId).incrementAndGet();
         }
 
+
+        //new WorkerCallable(resource, batchId, toDelete, mapIds).call();
+
         threadPoolQueueSize.incrementAndGet();
-        Future future = threadPool.submit(new WorkerCallable(resource, batchId, toDelete, mapIds));
-        //futures.put(future, null);
+        Future future = threadPool.submit(new MapAndSaveResourceTask(resource, batchId, toDelete, mapIds));
+        futures.put(future, future);
+
+        //every so often, check any previously submitted tasks to see if they're complete or in error
+        if (futures.size() % 1000 == 0) {
+            checkFutures(false);
+        }
     }
 
-    private void checkFutures() {
+    private void checkFutures(boolean forceLock) throws Exception {
 
-/*        Lists.n
+        try {
 
-        //check and remoev
-        Collections.newSetFromMap()
-        futures.keySet();*/
+            //when finishing processing, we want to guarantee a lock, but when doing an interim check,
+            //we just try to get the lock and backoff if we can't
+            if (forceLock) {
+                futuresLock.lock();
+            } else {
+                if (!futuresLock.tryLock()) {
+                    return;
+                }
+            }
+
+            //check all the futures to see if any raised an error. Also, remove any futures that
+            //we know have completed without error.
+            List<Future> futuresCompleted = new ArrayList<>();
+            Iterator<Future> it = futures.keySet().iterator();
+            while (it.hasNext()) {
+                Future future = it.next();
+                if (future.isDone()) {
+                    try {
+                        //just calling get on the future will cause any exception to be raised in this thread
+                        future.get();
+                        futuresCompleted.add(future);
+                    } catch (Exception ex) {
+                        throw (Exception)ex.getCause();
+                    }
+                }
+            }
+
+            //remove any we know have completed
+            for (Future future: futuresCompleted) {
+                futures.remove(future);
+            }
+
+        } finally {
+            futuresLock.unlock();
+        }
     }
 
 
@@ -111,9 +159,9 @@ public class CsvProcessor {
         if (adminBatchId == null) {
 
             try {
-                lock.lock();
+                batchIdLock.lock();
 
-                //make sure to check if it's still null, as another thread may have created the ID while we were waiting to lock
+                //make sure to check if it's still null, as another thread may have created the ID while we were waiting to batchIdLock
                 if (adminBatchId == null) {
                     adminBatchId = UUIDs.timeBased();
                     saveExchangeBatch(adminBatchId);
@@ -122,7 +170,7 @@ public class CsvProcessor {
                     countResourcesSaved.put(adminBatchId, new AtomicInteger());
                 }
             } finally {
-                lock.unlock();
+                batchIdLock.unlock();
             }
         }
         return adminBatchId;
@@ -132,9 +180,9 @@ public class CsvProcessor {
         if (patientBatchId == null) {
 
             try {
-                lock.lock();
+                batchIdLock.lock();
 
-                //make sure to check if it's still null, as another thread may have created the ID while we were waiting to lock
+                //make sure to check if it's still null, as another thread may have created the ID while we were waiting to batchIdLock
                 patientBatchId = patientBatchIdMap.get(patientId);
                 if (patientBatchId == null) {
                     patientBatchId = UUIDs.timeBased();
@@ -145,7 +193,7 @@ public class CsvProcessor {
                     countResourcesSaved.put(patientBatchId, new AtomicInteger());
                 }
             } finally {
-                lock.unlock();
+                batchIdLock.unlock();
             }
         }
         return patientBatchId;
@@ -171,7 +219,7 @@ public class CsvProcessor {
         }
 
         //check any remaining futures, to see if any exceptions were raised
-        checkFutures();
+        checkFutures(true);
 
         logResults();
 
@@ -187,7 +235,7 @@ public class CsvProcessor {
 
         int saved = countResourcesSaved.get(adminBatchId).get();
         int deleted = countResourcesDeleted.get(adminBatchId).get();
-        LOG.info("Saved {} and deleted {} admin resources", saved, deleted);
+        LOG.info("Saved {} and deleted {} non-patient resources", saved, deleted);
         totalSaved += saved;
         totalDeleted += deleted;
 
@@ -198,7 +246,7 @@ public class CsvProcessor {
 
             saved = countResourcesSaved.get(batchId).get();
             deleted = countResourcesDeleted.get(batchId).get();
-            LOG.info("Saved {} and deleted {} admin resources for patient {}", saved, deleted, patientId);
+            LOG.info("Saved {} and deleted {} resources for patient {}", saved, deleted, patientId);
             totalSaved += saved;
             totalDeleted += deleted;
         }
@@ -262,14 +310,14 @@ public class CsvProcessor {
         return systemId;
     }
 
-    class WorkerCallable implements Callable {
+    class MapAndSaveResourceTask implements Callable {
 
         private Resource resource = null;
         private UUID batchUuid = null;
         private boolean isDelete = false;
         private boolean mapIds = false;
 
-        public WorkerCallable(Resource resource, UUID batchUuid, boolean isDelete, boolean mapIds) {
+        public MapAndSaveResourceTask(Resource resource, UUID batchUuid, boolean isDelete, boolean mapIds) {
             this.resource = resource;
             this.batchUuid = batchUuid;
             this.isDelete = isDelete;
@@ -279,20 +327,26 @@ public class CsvProcessor {
         @Override
         public Object call() throws Exception {
 
-            if (mapIds) {
-                IdHelper.mapIds(serviceId, systemId, resource);
+            try {
+                if (mapIds) {
+                    IdHelper.mapIds(serviceId, systemId, resource);
+                }
+
+                List<Resource> list = new ArrayList<>();
+                list.add(resource);
+
+                if (isDelete) {
+                    storageService.exchangeBatchDelete(exchangeId, batchUuid, list);
+                } else {
+                    storageService.exchangeBatchUpdate(exchangeId, batchUuid, list);
+                }
+
+                threadPoolQueueSize.decrementAndGet();
+
+            } catch (Exception ex) {
+                throw new TransformException("Exception mapping or storing " + resource.getResourceType() + " " + resource.getId(), ex);
             }
 
-            List<Resource> list = new ArrayList<>();
-            list.add(resource);
-
-            if (isDelete) {
-                storageService.exchangeBatchDelete(exchangeId, batchUuid, list);
-            } else {
-                storageService.exchangeBatchUpdate(exchangeId, batchUuid, list);
-            }
-
-            threadPoolQueueSize.decrementAndGet();
             return null;
         }
     }
