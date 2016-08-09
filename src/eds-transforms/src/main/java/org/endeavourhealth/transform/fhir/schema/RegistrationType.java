@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.fhir.schema;
 
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.FhirValueSetUri;
 
 public enum RegistrationType {
 
@@ -24,7 +24,7 @@ public enum RegistrationType {
     }
 
     public String getSystem() {
-        return FhirUri.VALUE_SET_REGISTRATION_TYPE;
+        return FhirValueSetUri.VALUE_SET_REGISTRATION_TYPE;
     }
 
     RegistrationType(String code, String description) {

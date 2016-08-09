@@ -70,7 +70,7 @@ public final class MedicationOrderTransformer
                 .setValue(BigDecimal.valueOf(issueType.getQuantity()))
                 .setUnit(issueType.getQuantityUnits())
                 .addExtension(new Extension()
-                        .setUrl(FhirExtensionUri.MEDICATION_QUANTITY_TEXT)
+                        .setUrl(FhirExtensionUri.QUANTITY_FREE_TEXT)
                         .setValue(new StringType(issueType.getQuantityRepresentation())));
 
         return new MedicationOrder.MedicationOrderDispenseRequestComponent()

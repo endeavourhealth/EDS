@@ -15,7 +15,8 @@ public class EmisCsvFileSplitter {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmisCsvFileSplitter.class);
 
-    private static final String SPLIT_COLUMN = "OrganisationGuid";
+    private static final String SPLIT_COLUMN_ORG = "OrganisationGuid";
+    private static final String SPLIT_COLUMN_PROCESSING_ID = "ProcessingId";
     private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
     private static final Set<String> FILES_TO_COPY = new HashSet<>();
     private static final Set<String> FILES_TO_SPLIT = new HashSet<>();
@@ -97,17 +98,27 @@ public class EmisCsvFileSplitter {
 
     private static void createMissingFiles(String partialFileName, File srcDir, File dstDir) throws Exception {
 
-        File srcFile = EmisCsvTransformer.getFileByPartialName(partialFileName, srcDir);
+        String[] arr = partialFileName.split("_");
+        String domain = arr[0];
+        String name = arr[1];
+
+        File srcFile = EmisCsvTransformer.getFileByPartialName(domain, name, srcDir);
         String fileName = srcFile.getName();
 
         //read in the first line of the source file, as we use that as the content for the empty files
         String headers = readFileHeaders(srcFile);
 
+        //create the missing file in the top-level folder
         createMissingFile(fileName, headers, dstDir);
 
-        for (File child: dstDir.listFiles()) {
-            if (child.isDirectory()) {
-                createMissingFile(fileName, headers, child);
+        //iterate through any directories, creating any missing files in their sub-directories
+        for (File orgLevelChild: dstDir.listFiles()) {
+            if (orgLevelChild.isDirectory()) {
+                for (File processingIdLevelChild: orgLevelChild.listFiles()) {
+                    if (processingIdLevelChild.isDirectory()) {
+                        createMissingFile(fileName, headers, processingIdLevelChild);
+                    }
+                }
             }
         }
     }
@@ -151,15 +162,23 @@ public class EmisCsvFileSplitter {
 
     private static void splitFile(String partialFileName, File srcDir, File dstDir, CSVFormat csvFormat) throws Exception {
 
-        File srcFile = EmisCsvTransformer.getFileByPartialName(partialFileName, srcDir);
+        String[] arr = partialFileName.split("_");
+        String domain = arr[0];
+        String name = arr[1];
 
-        CsvSplitter csvSplitter = new CsvSplitter(srcFile, dstDir, csvFormat, SPLIT_COLUMN);
+        File srcFile = EmisCsvTransformer.getFileByPartialName(domain, name, srcDir);
+
+        CsvSplitter csvSplitter = new CsvSplitter(srcFile, dstDir, csvFormat, SPLIT_COLUMN_ORG, SPLIT_COLUMN_PROCESSING_ID);
         csvSplitter.go();
     }
 
     private static void copyFile(String partialFileName, File srcDir, File dstDir) throws Exception {
 
-        File srcFile = EmisCsvTransformer.getFileByPartialName(partialFileName, srcDir);
+        String[] arr = partialFileName.split("_");
+        String domain = arr[0];
+        String name = arr[1];
+
+        File srcFile = EmisCsvTransformer.getFileByPartialName(domain, name, srcDir);
         File dstFile = new File(dstDir, srcFile.getName());
 
         //this uses a 4k buffer for copying. This may prove too slow, and need re-implementing to use a larger buffer

@@ -5,12 +5,10 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.Admin_Location;
+import org.endeavourhealth.transform.emis.csv.schema.admin.Location;
 import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.hl7.fhir.instance.model.*;
 
-import java.io.FileNotFoundException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +24,7 @@ public class LocationTransformer {
         //to get a map of which organisations each location belongs to
         HashMap<String, List<String>> hmLocationToOrganisation = OrganisationLocationTransformer.transform(folderPath, csvFormat);
 
-        Admin_Location parser = new Admin_Location(folderPath, csvFormat);
+        Location parser = new Location(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createLocation(parser, csvProcessor, csvHelper, hmLocationToOrganisation);
@@ -38,12 +36,12 @@ public class LocationTransformer {
         }
     }
 
-    private static void createLocation(Admin_Location locationParser,
+    private static void createLocation(Location locationParser,
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper,
                                        HashMap<String, List<String>> hmLocationToOrganisation) throws Exception {
 
-        Location fhirLocation = new Location();
+        org.hl7.fhir.instance.model.Location fhirLocation = new org.hl7.fhir.instance.model.Location();
         fhirLocation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_LOCATION));
 
         String locationGuid = locationParser.getLocationGuid();
@@ -87,11 +85,16 @@ public class LocationTransformer {
         boolean deleted = locationParser.getDeleted();
         Period fhirPeriod = PeriodHelper.createPeriod(openDate, closeDate);
         if (PeriodHelper.isActive(fhirPeriod) && !deleted) {
-            fhirLocation.setStatus(Location.LocationStatus.ACTIVE);
+            fhirLocation.setStatus(org.hl7.fhir.instance.model.Location.LocationStatus.ACTIVE);
         } else {
-            fhirLocation.setStatus(Location.LocationStatus.INACTIVE);
+            fhirLocation.setStatus(org.hl7.fhir.instance.model.Location.LocationStatus.INACTIVE);
         }
-        fhirLocation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.LOCATION_ACTIVE_PERIOD, fhirPeriod));
+        fhirLocation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ACTIVE_PERIOD, fhirPeriod));
+
+        String mainContactName = locationParser.getMainContactName();
+        if (!Strings.isNullOrEmpty(mainContactName)) {
+            fhirLocation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.LOCATION_MAIN_CONTACT, new StringType(mainContactName)));
+        }
 
         String name = locationParser.getLocationName();
         fhirLocation.setName(name);

@@ -1,15 +1,16 @@
-package org.endeavourhealth.transform.emis.csv.schema;
+package org.endeavourhealth.transform.emis.csv.schema.careRecord;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 
 import java.util.Date;
 
-public class CareRecord_Consultation extends AbstractCsvTransformer {
+public class Consultation extends AbstractCsvTransformer {
 
-    public CareRecord_Consultation(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
+    public Consultation(String folderPath, CSVFormat csvFormat) throws Exception {
+        super(folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
     }
 
     @Override

@@ -1,15 +1,16 @@
-package org.endeavourhealth.transform.emis.csv.schema;
+package org.endeavourhealth.transform.emis.csv.schema.appointment;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 
 import java.util.Date;
 
-public class Appointment_Slot extends AbstractCsvTransformer {
+public class Slot extends AbstractCsvTransformer {
 
-    public Appointment_Slot(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
+    public Slot(String folderPath, CSVFormat csvFormat) throws Exception {
+        super(folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
     }
 
     @Override

@@ -4,14 +4,17 @@ import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
-import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Diary;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary;
 import org.endeavourhealth.transform.fhir.AnnotationHelper;
+import org.endeavourhealth.transform.fhir.ExtensionConverter;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.ProcedureRequest;
+import org.hl7.fhir.instance.model.StringType;
 
 import java.util.Date;
 
@@ -22,7 +25,7 @@ public class DiaryTransformer {
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        CareRecord_Diary parser = new CareRecord_Diary(folderPath, csvFormat);
+        Diary parser = new Diary(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createProcedureRequest(parser, csvProcessor, csvHelper);
@@ -34,7 +37,7 @@ public class DiaryTransformer {
         }
     }
 
-    private static void createProcedureRequest(CareRecord_Diary diaryParser,
+    private static void createProcedureRequest(Diary diaryParser,
                                                CsvProcessor csvProcessor,
                                                EmisCsvHelper csvHelper) throws Exception {
 
@@ -43,7 +46,6 @@ public class DiaryTransformer {
 
         String diaryGuid = diaryParser.getDiaryGuid();
         String patientGuid = diaryParser.getPatientGuid();
-        String organisationGuid = diaryParser.getOrganisationGuid();
 
         EmisCsvHelper.setUniqueId(fhirRequest, patientGuid, diaryGuid);
 
@@ -68,11 +70,11 @@ public class DiaryTransformer {
         if (effectiveDate != null) {
             String effectiveDatePrecision = diaryParser.getEffectiveDatePrecision();
             fhirRequest.setScheduled(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
-        } else {
-            String freeTextDuration = diaryParser.getDurationTerm();
-            if (!Strings.isNullOrEmpty(freeTextDuration)) {
-                //TODO - need somewhere to store Diary DurationTerm in ProcedureRequest resource (asking EMIS for advice)
-            }
+        }
+
+        String freeTextDuration = diaryParser.getDurationTerm();
+        if (!Strings.isNullOrEmpty(freeTextDuration)) {
+            fhirRequest.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROCEDURE_REQUEST_SCHEDULE_TEXT, new StringType(freeTextDuration)));
         }
 
         String clinicianGuid = diaryParser.getClinicianUserInRoleGuid();
@@ -84,7 +86,9 @@ public class DiaryTransformer {
         fhirRequest.addNotes(AnnotationHelper.createAnnotation(associatedText));
 
         String locationTypeDescription = diaryParser.getLocationTypeDescription();
-        fhirRequest.addNotes(AnnotationHelper.createAnnotation(locationTypeDescription));
+        if (!Strings.isNullOrEmpty(locationTypeDescription)) {
+            fhirRequest.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROCEDURE_REQUEST_LOCATION_DESCRIPTION, new StringType(locationTypeDescription)));
+        }
 
         Date entererdDateTime = diaryParser.getEnteredDateTime();
         if (entererdDateTime != null) {

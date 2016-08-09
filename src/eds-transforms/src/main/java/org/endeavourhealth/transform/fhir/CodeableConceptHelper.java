@@ -40,6 +40,12 @@ public class CodeableConceptHelper {
         return new CodeableConcept().addCoding(CodingHelper.createCoding(participantType));
     }
 
+    public static CodeableConcept createCodeableConcept(NhsNumberVerificationStatus nhsNumberVerificationStatus) {
+        return new CodeableConcept().addCoding(CodingHelper.createCoding(nhsNumberVerificationStatus));
+    }
+
+
+
     public static CodeableConcept createCodeableConcept(String text) {
         return new CodeableConcept().setText(text);
     }

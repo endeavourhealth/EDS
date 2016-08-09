@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.schema.Appointment_SessionUser;
+import org.endeavourhealth.transform.emis.csv.schema.appointment.SessionUser;
 
 import java.util.*;
 
@@ -15,7 +15,7 @@ public class SessionUserTransformer {
         //storage object to persist the processingId, which is then used to sort the records before returning.
         Map<String, List<UUIDAndProcessingOrder>> sessionToUserMap = new HashMap<>();
 
-        Appointment_SessionUser parser = new Appointment_SessionUser(folderPath, csvFormat);
+        SessionUser parser = new SessionUser(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createSessionUserMapping(parser, sessionToUserMap);
@@ -48,7 +48,7 @@ public class SessionUserTransformer {
         return ret;
     }
 
-    private static void createSessionUserMapping(Appointment_SessionUser sessionUserParser, Map<String, List<UUIDAndProcessingOrder>> sessionToUserMap) throws Exception {
+    private static void createSessionUserMapping(SessionUser sessionUserParser, Map<String, List<UUIDAndProcessingOrder>> sessionToUserMap) throws Exception {
 
         //ignore deleted records
         if (sessionUserParser.getdDeleted()) {

@@ -5,7 +5,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.Admin_Organisation;
+import org.endeavourhealth.transform.emis.csv.schema.admin.Organisation;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.OrganisationType;
 import org.hl7.fhir.instance.model.*;
@@ -19,7 +19,7 @@ public class OrganisationTransformer {
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Admin_Organisation parser = new Admin_Organisation(folderPath, csvFormat);
+        Organisation parser = new Organisation(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createOrganisation(parser, csvProcessor, csvHelper);
@@ -31,7 +31,7 @@ public class OrganisationTransformer {
         }
     }
 
-    private static void createOrganisation(Admin_Organisation organisationParser,
+    private static void createOrganisation(Organisation organisationParser,
                                            CsvProcessor csvProcessor,
                                            EmisCsvHelper csvHelper) throws Exception {
 
@@ -52,7 +52,7 @@ public class OrganisationTransformer {
         Date closeDate = organisationParser.getCloseDate();
         Period fhirPeriod = PeriodHelper.createPeriod(openDate, closeDate);
         fhirOrganisation.setActive(PeriodHelper.isActive(fhirPeriod));
-        fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ORGANISATION_ACTIVE_PERIOD, fhirPeriod));
+        fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ACTIVE_PERIOD, fhirPeriod));
 
         String parentOrganisationGuid = organisationParser.getParentOrganisationGuid();
         if (!Strings.isNullOrEmpty(parentOrganisationGuid)) {
@@ -75,7 +75,7 @@ public class OrganisationTransformer {
 
         String mainLocationGuid = organisationParser.getMainLocationGuid();
         Reference fhirReference = csvHelper.createLocationReference(mainLocationGuid);
-        fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.LOCATION, fhirReference));
+        fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ORGANISATION_MAIN_LOCATION, fhirReference));
 
         csvProcessor.saveAdminResource(fhirOrganisation);
     }

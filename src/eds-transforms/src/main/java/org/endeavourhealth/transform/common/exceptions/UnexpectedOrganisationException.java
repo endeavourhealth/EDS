@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.common.exceptions;
 
-public class UnexpectedOrganisationException extends Exception {
+public class UnexpectedOrganisationException extends TransformException {
 
     private String localOrgId = null;
     private String odsCode = null;

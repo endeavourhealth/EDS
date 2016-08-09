@@ -1,4 +1,4 @@
-package org.endeavourhealth.transform.emis.csv.schema;
+package org.endeavourhealth.transform.emis.csv.schema.coding;
 
 public enum ClinicalCodeType {
 

@@ -11,7 +11,7 @@ import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.ClinicalCodeNotFoundException;
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
 import org.endeavourhealth.transform.common.exceptions.ResourceNotFoundException;
-import org.endeavourhealth.transform.emis.csv.schema.ClinicalCodeType;
+import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
@@ -72,6 +72,8 @@ public class EmisCsvHelper {
 
     public void addMedication(Long codeId,
                               CodeableConcept codeableConcept,
+                              Long snomedConceptId,
+                              String snomedTerm,
                               CsvProcessor csvProcessor) throws Exception {
         medication.put(codeId, codeableConcept);
 
@@ -86,12 +88,22 @@ public class EmisCsvHelper {
         mapping.setTimeUuid(UUIDs.timeBased());
         mapping.setCodeType(null);
         mapping.setCodeableConcept(json);
+        mapping.setSnomedConceptId(snomedConceptId);
+        mapping.setSnomedTerm(snomedTerm);
 
         mappingRepository.save(mapping);
     }
     public void addClinicalCode(Long codeId,
                                 CodeableConcept codeableConcept,
                                 ClinicalCodeType type,
+                                String readTerm,
+                                String readCode,
+                                Long snomedConceptId,
+                                Long snomedDescriptionId,
+                                String snomedTerm,
+                                String nationalCode,
+                                String nationalCodeCategory,
+                                String nationalCodeDescription,
                                 CsvProcessor csvProcessor) throws Exception {
         clinicalCodes.put(codeId, codeableConcept);
         clinicalCodeTypes.put(codeId, type);
@@ -107,6 +119,14 @@ public class EmisCsvHelper {
         mapping.setTimeUuid(UUIDs.timeBased());
         mapping.setCodeType(type.getValue());
         mapping.setCodeableConcept(json);
+        mapping.setReadTerm(readTerm);
+        mapping.setReadCode(readCode);
+        mapping.setSnomedConceptId(snomedConceptId);
+        mapping.setSnomedDescriptionId(snomedDescriptionId);
+        mapping.setSnomedTerm(snomedTerm);
+        mapping.setNationalCode(nationalCode);
+        mapping.setNationalCodeCategory(nationalCodeCategory);
+        mapping.setNationalCodeDescription(nationalCodeDescription);
 
         mappingRepository.save(mapping);
     }

@@ -1,21 +1,22 @@
-package org.endeavourhealth.transform.emis.csv.schema;
+package org.endeavourhealth.transform.emis.csv.schema.careRecord;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 
 import java.util.Date;
 
-public class CareRecord_Observation extends AbstractCsvTransformer {
+public class Diary extends AbstractCsvTransformer {
 
-    public CareRecord_Observation(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
+    public Diary(String folderPath, CSVFormat csvFormat) throws Exception {
+        super(folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
     }
 
     @Override
     protected String[] getCsvHeaders() {
         return new String[]{
-                "ObservationGuid",
+                "DiaryGuid",
                 "PatientGuid",
                 "OrganisationGuid",
                 "EffectiveDate",
@@ -24,26 +25,23 @@ public class CareRecord_Observation extends AbstractCsvTransformer {
                 "EnteredTime",
                 "ClinicianUserInRoleGuid",
                 "EnteredByUserInRoleGuid",
-                "ParentObservationGuid",
                 "CodeId",
-                "ProblemGuid",
+                "OriginalTerm",
                 "AssociatedText",
-                "ConsultationGuid",
-                "Value",
-                "NumericUnit",
-                "ObservationType",
-                "NumericRangeLow",
-                "NumericRangeHigh",
-                "DocumentGuid",
+                "DurationTerm",
+                "LocationTypeDescription",
                 "Deleted",
                 "IsConfidential",
+                "IsActive",
+                "IsComplete",
+                "ConsultationGuid",
                 "ProcessingId"
 
         };
     }
 
-    public String getObservationGuid() {
-        return super.getString("ObservationGuid");
+    public String getDiaryGuid() {
+        return super.getString("DiaryGuid");
     }
     public String getPatientGuid() {
         return super.getString("PatientGuid");
@@ -66,46 +64,38 @@ public class CareRecord_Observation extends AbstractCsvTransformer {
     public String getEnteredByUserInRoleGuid() {
         return super.getString("EnteredByUserInRoleGuid");
     }
-    public String getParentObservationGuid() {
-        return super.getString("ParentObservationGuid");
-    }
     public Long getCodeId() {
         return super.getLong("CodeId");
     }
-    public String getProblemUGuid() {
-        return super.getString("ProblemGuid");
+    public String getOriginalTerm() {
+        return super.getString("OriginalTerm");
     }
     public String getAssociatedText() {
         return super.getString("AssociatedText");
     }
+    public String getDurationTerm() {
+        return super.getString("DurationTerm");
+    }
+    public String getLocationTypeDescription() {
+        return super.getString("LocationTypeDescription");
+    }
     public String getConsultationGuid() {
         return super.getString("ConsultationGuid");
-    }
-    public Double getValue() {
-        return super.getDouble("Value");
-    }
-    public String getNumericUnit() {
-        return super.getString("NumericUnit");
-    }
-    public String getObservationType() {
-        return super.getString("ObservationType");
-    }
-    public Double getNumericRangeLow() {
-        return super.getDouble("NumericRangeLow");
-    }
-    public Double getNumericRangeHigh() {
-        return super.getDouble("NumericRangeHigh");
-    }
-    public String getDocumentGuid() {
-        return super.getString("DocumentGuid");
-    }
-    public boolean getDeleted() {
-        return super.getBoolean("Deleted");
     }
     public boolean getIsConfidential() {
         return super.getBoolean("IsConfidential");
     }
+    public boolean getIsActive() {
+        return super.getBoolean("IsActive");
+    }
+    public boolean getIsComplete() {
+        return super.getBoolean("IsComplete");
+    }
+    public boolean getDeleted() {
+        return super.getBoolean("Deleted");
+    }
     public Integer getProcessingId() {
         return super.getInt("ProcessingId");
     }
+
 }

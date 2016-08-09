@@ -5,8 +5,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Observation;
-import org.hl7.fhir.instance.model.ResourceType;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation;
 
 public class ObservationPreTransformer {
 
@@ -16,21 +15,17 @@ public class ObservationPreTransformer {
                                  EmisCsvHelper csvHelper) throws Exception {
 
 
-        CareRecord_Observation parser = new CareRecord_Observation(folderPath, csvFormat);
+        Observation parser = new Observation(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
 
-                Long codeId = parser.getCodeId();
-                ResourceType resourceType = ObservationTransformer.getTargetResourceType(parser, csvProcessor, csvHelper);
-                if (resourceType == ResourceType.Observation) {
+                String parentGuid = parser.getParentObservationGuid();
+                if (!Strings.isNullOrEmpty(parentGuid)) {
 
-                    String parentGuid = parser.getParentObservationGuid();
-                    if (!Strings.isNullOrEmpty(parentGuid)) {
-                        String patientGuid = parser.getPatientGuid();
-                        String observationGuid = parser.getObservationGuid();
+                    String observationGuid = parser.getObservationGuid();
+                    String patientGuid = parser.getPatientGuid();
 
-                        csvHelper.cacheObservationParentRelationship(parentGuid, patientGuid, observationGuid);
-                    }
+                    csvHelper.cacheObservationParentRelationship(parentGuid, patientGuid, observationGuid);
                 }
             }
         } catch (Exception ex) {

@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.fhir.schema;
 
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.FhirValueSetUri;
 
 public enum ProblemSignificance {
 
@@ -20,7 +20,7 @@ public enum ProblemSignificance {
     }
 
     public String getSystem() {
-        return FhirUri.VALUE_SET_PROBLEM_SIGNIFICANCE;
+        return FhirValueSetUri.VALUE_SET_PROBLEM_SIGNIFICANCE;
     }
 
     ProblemSignificance(String code, String description) {

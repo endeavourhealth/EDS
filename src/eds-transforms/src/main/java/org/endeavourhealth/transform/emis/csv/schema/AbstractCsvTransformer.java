@@ -33,7 +33,11 @@ public abstract class AbstractCsvTransformer {
 
     public AbstractCsvTransformer(String folderPath, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
 
-        this.file = EmisCsvTransformer.getFileByPartialName(getClass().getSimpleName(), new File(folderPath));
+        Package p = getClass().getPackage();
+        String[] packages = p.getName().split("\\.");
+        String domain = packages[packages.length-1];
+        String name = getClass().getSimpleName();
+        this.file = EmisCsvTransformer.getFileByPartialName(domain, name, new File(folderPath));
 
         //calling withHeader() on the format, forces it to read in the first row as the headers, which we can then validate against
         this.csvReader = CSVParser.parse(file, Charset.defaultCharset(), csvFormat.withHeader());
@@ -71,13 +75,13 @@ public abstract class AbstractCsvTransformer {
             this.csvRecord = csvIterator.next();
 
             if (csvReader.getCurrentLineNumber() % 10000 == 0) {
-                LOG.trace("Starting line {} of {}", csvReader.getCurrentLineNumber(), getClass().getSimpleName());
+                LOG.trace("Starting line {} of {}", csvReader.getCurrentLineNumber(), file.getAbsolutePath());
             }
 
             return true;
         } else {
             this.csvRecord = null;
-            LOG.trace("Completed {}", getClass().getSimpleName());
+            LOG.trace("Completed {}", file.getAbsolutePath());
             return false;
         }
     }

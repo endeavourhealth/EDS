@@ -11,6 +11,7 @@ public class FhirUri
     public final static String IDENTIFIER_SYSTEM_UBRN = "http://endeavourhealth.org/fhir/Identifier/ubrn";
     public final static String IDENTIFIER_SYSTEM_EMIS_PATIENT_GUID = "http://emishealth.com/identifier/patient-guid"; //placeholder
     public final static String IDENTIFIER_SYSTEM_EMIS_PATIENT_NUMBER = "http://emishealth.com/identifier/patient-number"; //placeholder
+    public final static String IDENTIFIER_SYSTEM_EMIS_DOCUMENT_GUID = "http://emishealth.com/identifier/document-guid"; //placeholder
     public final static String IDENTIFIER_SYSTEM_TPP_PATIENT_ID = "http://tpp-uk.com/identifier/patient-id"; //placeholder
 
     public final static String CODE_SYSTEM_READ2 = "http://endeavourhealth.org/fhir/read2";
@@ -19,15 +20,6 @@ public class FhirUri
     public final static String CODE_SYSTEM_EMISSNOMED = "http://www.endeavourhealth.org/fhir/emis-snomed";
     public final static String CODE_SYSTEM_EMISPREPARATION = "http://www.endeavourhealth.org/fhir/emis-prepration";
 
-    public final static String VALUE_SET_REGISTRATION_TYPE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-patient-registration-type";
-    public final static String VALUE_SET_ORGANISATION_TYPE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-organization-type";
-    public final static String VALUE_SET_CONTACT_RELATIONSHIP = "http://hl7.org/fhir/ValueSet/patient-contact-relationship";
-    public final static String VALUE_SET_PROBLEM_SIGNIFICANCE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-problem-significance";
-    public final static String VALUE_SET_PROBLEM_RELATIONSHIP_TYPE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-problem-relationshiptype";
-    public final static String VALUE_SET_IMMUNIZATION_STATUS = "http://hl7.org/fhir/ValueSet/medication-admin-status";
-    public final static String VALUE_SET_FAMILY_MEMBER = "http://hl7.org/fhir/ValueSet/v3-FamilyMember";
-    public final static String VALUE_SET_JOB_ROLE_CODES = "http://fhir.nhs.net/ValueSet/sds-job-role-name-1-0";
-    public final static String VALUE_SET_ENCOUNTER_PARTICIPANT_TYPE = "http://hl7.org/fhir/ValueSet/encounter-participant-type";
 
     public final static String PROFILE_URI_ORGANIZATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-organization";
     public final static String PROFILE_URI_LOCATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-location";

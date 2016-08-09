@@ -3,11 +3,12 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.FieldNotEmptyException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
-import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Observation;
-import org.endeavourhealth.transform.emis.csv.schema.ObservationType;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.ObservationType;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.FamilyMember;
 import org.endeavourhealth.transform.fhir.schema.ImmunizationStatus;
@@ -25,7 +26,7 @@ public class ObservationTransformer {
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        CareRecord_Observation parser = new CareRecord_Observation(folderPath, csvFormat);
+        Observation parser = new Observation(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createResource(parser, csvProcessor, csvHelper);
@@ -38,7 +39,8 @@ public class ObservationTransformer {
 
     }
 
-    private static void createResource(CareRecord_Observation observationParser,
+
+    private static void createResource(Observation observationParser,
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 
@@ -95,7 +97,7 @@ public class ObservationTransformer {
      * the FHIR resource type is roughly derived from the ObservationType, although the Value and ReadCode
      * are also used as it's not a perfect match.
      */
-    public static ResourceType getTargetResourceType(CareRecord_Observation parser, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
+    public static ResourceType getTargetResourceType(Observation parser, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
 
         String observationTypeString = parser.getObservationType();
         ObservationType observationType = ObservationType.fromValue(observationTypeString);
@@ -132,106 +134,40 @@ public class ObservationTransformer {
         }
     }
 
-    /*public static ResourceType getTargetResourceType(CareRecord_Observation parser, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
 
-        Long codeId = parser.getCodeId();
-        ClinicalCodeType codeType = csvHelper.findClinicalCodeType(codeId, csvProcessor);
-
-        switch (codeType) {
-            case Conditions_Operations_Procedures:
-
-                if (isProcedure(codeId, csvProcessor, csvHelper)) {
-                    return ResourceType.Procedure;
-                } else {
-                    return ResourceType.Condition;
-                }
-            case Dental_Disorder:
-            case Symptoms_Findings:
-                return ResourceType.Condition;
-            case Dental_Procedure:
-            case Procedure:
-                return ResourceType.Procedure;
-            case Adminisation_Documents_Attachments:
-            case Biochemistry:
-            case Biological_Values:
-            case Body_Structure:
-            case Care_Episode_Outcome:
-            case Cyology_Histology:
-            case Dental_Finding:
-            case Discharged_From_Service:
-            case EMIS_Qualifier:
-            case Ethnicity:
-            case Haematology:
-            case Health_Management:
-            case HMP:
-            case Intervention_Category:
-            case Intervention_Target:
-            case Immunology:
-            case KC60:
-            case Marital_Status:
-            case Microbiology:
-            case Nationality:
-            case Nursing_Problem:
-            case Nursing_Problem_Domain:
-            case Obsteterics_Birth:
-            case Person_Health_Social:
-            case Planned_Dental:
-            case Problem_Rating_Scale:
-            case Radiology:
-            case Reason_For_Care:
-            case Referral:
-            case Referral_Activity:
-            case Referral_Rejected:
-            case Referral_Withdrawn:
-            case Regiment:
-            case Religion:
-            case Trade_Branch:
-            case Unset:
-                return ResourceType.Observation;
-            case Allergy_Adverse_Drug_Reations:
-            case Allergy_Adverse_Reations:
-                return ResourceType.AllergyIntolerance;
-            case Family_History:
-                return ResourceType.FamilyMemberHistory;
-            case Immunisations:
-                return ResourceType.Immunization;
-            case Diagnostics:
-            case Investigation_Requests:
-                return ResourceType.DiagnosticOrder;
-            case Pathology_Specimen:
-                return ResourceType.Specimen;
-            default:
-                throw new IllegalArgumentException("Unhandled observationType " + codeType);
-        }
-    }*/
-
-
-    private static void completeProblem(CareRecord_Observation observationParser,
+    private static void completeProblem(Observation parser,
                                          Condition fhirProblem,
                                          CsvProcessor csvProcessor,
                                          EmisCsvHelper csvHelper) throws Exception {
 
-        String patientGuid = observationParser.getPatientGuid();
+        String patientGuid = parser.getPatientGuid();
 
-        if (observationParser.getDeleted()) {
+        if (parser.getDeleted() || parser.getIsConfidential()) {
             csvProcessor.deletePatientResource(fhirProblem, patientGuid);
             return;
         }
 
-        Date effectiveDate = observationParser.getEffectiveDate();
-        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
-        fhirProblem.setDateRecordedElement(EmisDateTimeHelper.createDateType(effectiveDate, effectiveDatePrecision));
+        Date effectiveDate = parser.getEffectiveDate();
+        String effectiveDatePrecision = parser.getEffectiveDatePrecision();
+        fhirProblem.setOnset(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
-        String consultationGuid = observationParser.getConsultationGuid();
+        //the entered date and person is stored in an extension
+        createRecordedByExtension(fhirProblem, parser, csvHelper);
+        createRecordedDateExtension(fhirProblem, parser);
+
+        String consultationGuid = parser.getConsultationGuid();
         fhirProblem.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
 
-        Long codeId = observationParser.getCodeId();
+        Long codeId = parser.getCodeId();
         fhirProblem.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
 
-        String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
+        String clinicianGuid = parser.getClinicianUserInRoleGuid();
         fhirProblem.setAsserter(csvHelper.createPractitionerReference(clinicianGuid));
 
-        //problems are added to the processor after all files are finished, so it doesn't need saving here
+        String associatedText = parser.getAssociatedText();
+        fhirProblem.setNotes(associatedText);
+
+        //problems are added to the processor for saving after all files are finished, so it doesn't need saving here
     }
 
 
@@ -379,14 +315,14 @@ public class ObservationTransformer {
         csvHelper.cacheDiagnosticReport(fhirReport);
     }*/
 
-    private static void createReferralRequest(CareRecord_Observation observationParser,
+    private static void createReferralRequest(Observation parser,
                                          CsvProcessor csvProcessor,
                                          EmisCsvHelper csvHelper) throws Exception {
 
         //we have already parsed the ObservationReferral file, and will have created ReferralRequest
         //resources for all records in that file. So, first find any pre-created ReferralRequest for our record
-        String observationGuid = observationParser.getObservationGuid();
-        String patientGuid = observationParser.getPatientGuid();
+        String observationGuid = parser.getObservationGuid();
+        String patientGuid = parser.getPatientGuid();
 
         //as well as processing the Observation row into a FHIR resource, we
         //may also have a row in the Referral file that we've previously processed into
@@ -403,298 +339,355 @@ public class ObservationTransformer {
             fhirReferral.setPatient(csvHelper.createPatientReference(patientGuid));
         }
 
-        if (observationParser.getDeleted()) {
+        if (parser.getDeleted() || parser.getIsConfidential()) {
             csvProcessor.deletePatientResource(fhirReferral, patientGuid);
             return;
         }
 
-        Date effectiveDate = observationParser.getEffectiveDate();
-        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
+        Date effectiveDate = parser.getEffectiveDate();
+        String effectiveDatePrecision = parser.getEffectiveDatePrecision();
         fhirReferral.setDateElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
-        String consultationGuid = observationParser.getConsultationGuid();
+        String consultationGuid = parser.getConsultationGuid();
         fhirReferral.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
 
-        Long codeId = observationParser.getCodeId();
+        Long codeId = parser.getCodeId();
         fhirReferral.setReason(csvHelper.findClinicalCode(codeId, csvProcessor));
 
-        String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
+        String clinicianGuid = parser.getClinicianUserInRoleGuid();
         fhirReferral.setRequester(csvHelper.createPractitionerReference(clinicianGuid));
+
+        String associatedText = parser.getAssociatedText();
+        fhirReferral.setDescription(associatedText);
+
+        //the entered date and person are stored in extensions
+        createRecordedByExtension(fhirReferral, parser, csvHelper);
+        createRecordedDateExtension(fhirReferral, parser);
+        createDocumentExtension(fhirReferral, parser);
+
+        //assert that these fields are empty, as we don't stored them in this resource type,
+        assertValueEmpty(fhirReferral, parser);
+        assertNumericUnitEmpty(fhirReferral, parser);
+        assertNumericRangeLowEmpty(fhirReferral, parser);
+        assertNumericRangeHighEmpty(fhirReferral, parser);
+
+
+        //if this record is linked to a problem, store this relationship in the helper
+        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
+                                            patientGuid,
+                                            parser.getObservationGuid(),
+                                            fhirReferral.getResourceType());
 
         csvProcessor.savePatientResource(fhirReferral, patientGuid);
 
-        //if this record is linked to a problem, store this relationship in the helper
-        csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
-                                            patientGuid,
-                                            observationParser.getObservationGuid(),
-                                            fhirReferral.getResourceType());
     }
 
 
-    private static void createDiagnosticOrder(CareRecord_Observation observationParser,
+    private static void createDiagnosticOrder(Observation parser,
                                               CsvProcessor csvProcessor,
                                               EmisCsvHelper csvHelper) throws Exception {
         DiagnosticOrder fhirOrder = new DiagnosticOrder();
         fhirOrder.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_DIAGNOSTIC_ORDER));
 
-        String observationGuid = observationParser.getObservationGuid();
-        String patientGuid = observationParser.getPatientGuid();
-        String organisationGuid = observationParser.getOrganisationGuid();
+        String observationGuid = parser.getObservationGuid();
+        String patientGuid = parser.getPatientGuid();
 
         EmisCsvHelper.setUniqueId(fhirOrder, patientGuid, observationGuid);
 
         fhirOrder.setSubject(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
+        if (parser.getDeleted() || parser.getIsConfidential()) {
             csvProcessor.deletePatientResource(fhirOrder, patientGuid);
             return;
         }
 
-        String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
+        String clinicianGuid = parser.getClinicianUserInRoleGuid();
         fhirOrder.setOrderer(csvHelper.createPractitionerReference(clinicianGuid));
 
-        String consultationGuid = observationParser.getConsultationGuid();
+        String consultationGuid = parser.getConsultationGuid();
         if (!Strings.isNullOrEmpty(consultationGuid)) {
             fhirOrder.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
 
-        Long codeId = observationParser.getCodeId();
+        Long codeId = parser.getCodeId();
         DiagnosticOrder.DiagnosticOrderItemComponent diagnosticOrderItemComponent = fhirOrder.addItem();
         diagnosticOrderItemComponent.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
 
-        String associatedText = observationParser.getAssociatedText();
+        String associatedText = parser.getAssociatedText();
         fhirOrder.addNote(AnnotationHelper.createAnnotation(associatedText));
 
         DiagnosticOrder.DiagnosticOrderEventComponent diagnosticOrderEventComponent = fhirOrder.addEvent();
         diagnosticOrderEventComponent.setStatus(DiagnosticOrder.DiagnosticOrderStatus.REQUESTED);
 
-        Date effectiveDate = observationParser.getEffectiveDate();
-        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
+        Date effectiveDate = parser.getEffectiveDate();
+        String effectiveDatePrecision = parser.getEffectiveDatePrecision();
         diagnosticOrderEventComponent.setDateTimeElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
-        csvProcessor.savePatientResource(fhirOrder, patientGuid);
+        //the entered date and person are stored in extensions
+        createRecordedByExtension(fhirOrder, parser, csvHelper);
+        createRecordedDateExtension(fhirOrder, parser);
+        createDocumentExtension(fhirOrder, parser);
+
+        //assert that these cells are empty, as we don't stored them in this resource type
+        assertValueEmpty(fhirOrder, parser);
+        assertNumericUnitEmpty(fhirOrder, parser);
+        assertNumericRangeLowEmpty(fhirOrder, parser);
+        assertNumericRangeHighEmpty(fhirOrder, parser);
 
         //if this record is linked to a problem, store this relationship in the helper
-        csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
+        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
                 patientGuid,
                 observationGuid,
                 fhirOrder.getResourceType());
+
+        csvProcessor.savePatientResource(fhirOrder, patientGuid);
+
     }
 
-    private static void createAllergy(CareRecord_Observation observationParser,
+    private static void createAllergy(Observation parser,
                                       CsvProcessor csvProcessor,
                                       EmisCsvHelper csvHelper) throws Exception {
 
         AllergyIntolerance fhirAllergy = new AllergyIntolerance();
         fhirAllergy.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ALLERGY_INTOLERANCE));
 
-        String observationGuid = observationParser.getObservationGuid();
-        String patientGuid = observationParser.getPatientGuid();
-        String organisationGuid = observationParser.getOrganisationGuid();
+        String observationGuid = parser.getObservationGuid();
+        String patientGuid = parser.getPatientGuid();
 
         EmisCsvHelper.setUniqueId(fhirAllergy, patientGuid, observationGuid);
 
         fhirAllergy.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
+        if (parser.getDeleted() || parser.getIsConfidential()) {
             csvProcessor.deletePatientResource(fhirAllergy, patientGuid);
             return;
         }
 
-        String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
+        String clinicianGuid = parser.getClinicianUserInRoleGuid();
         fhirAllergy.setRecorder(csvHelper.createPractitionerReference(clinicianGuid));
 
-        Date enteredDate = observationParser.getEnteredDateTime();
+        Date enteredDate = parser.getEnteredDateTime();
         fhirAllergy.setRecordedDate(enteredDate);
 
-        Long codeId = observationParser.getCodeId();
+        createRecordedByExtension(fhirAllergy, parser, csvHelper);
+        createDocumentExtension(fhirAllergy, parser);
+
+        Long codeId = parser.getCodeId();
         fhirAllergy.setSubstance(csvHelper.findClinicalCode(codeId, csvProcessor));
 
-        Date effectiveDate = observationParser.getEffectiveDate();
-        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
+        Date effectiveDate = parser.getEffectiveDate();
+        String effectiveDatePrecision = parser.getEffectiveDatePrecision();
         fhirAllergy.setOnsetElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
-        String associatedText = observationParser.getAssociatedText();
+        String associatedText = parser.getAssociatedText();
         fhirAllergy.setNote(AnnotationHelper.createAnnotation(associatedText));
 
-        String consultationGuid = observationParser.getConsultationGuid();
+        String consultationGuid = parser.getConsultationGuid();
         if (consultationGuid != null) {
             Reference reference = csvHelper.createEncounterReference(consultationGuid, patientGuid);
             fhirAllergy.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, reference));
         }
 
-        csvProcessor.savePatientResource(fhirAllergy, patientGuid);
+        assertValueEmpty(fhirAllergy, parser);
+        assertNumericUnitEmpty(fhirAllergy, parser);
+        assertNumericRangeLowEmpty(fhirAllergy, parser);
+        assertNumericRangeHighEmpty(fhirAllergy, parser);
 
         //if this record is linked to a problem, store this relationship in the helper
-        csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
+        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
                 patientGuid,
                 observationGuid,
                 fhirAllergy.getResourceType());
+
+        csvProcessor.savePatientResource(fhirAllergy, patientGuid);
+
     }
 
-    private static void createProcedure(CareRecord_Observation observationParser,
+    private static void createProcedure(Observation parser,
                                         CsvProcessor csvProcessor,
                                         EmisCsvHelper csvHelper) throws Exception {
 
         Procedure fhirProcedure = new Procedure();
         fhirProcedure.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROCEDURE));
 
-        String observationGuid = observationParser.getObservationGuid();
-        String patientGuid = observationParser.getPatientGuid();
-        String organisationGuid = observationParser.getOrganisationGuid();
+        String observationGuid = parser.getObservationGuid();
+        String patientGuid = parser.getPatientGuid();
 
         EmisCsvHelper.setUniqueId(fhirProcedure, patientGuid, observationGuid);
 
         fhirProcedure.setSubject(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
+        if (parser.getDeleted() || parser.getIsConfidential()) {
             csvProcessor.deletePatientResource(fhirProcedure, patientGuid);
             return;
         }
 
         fhirProcedure.setStatus(Procedure.ProcedureStatus.COMPLETED);
 
-        Date enteredDate = observationParser.getEnteredDateTime();
-        fhirProcedure.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROCEDURED_RECORDED, new DateTimeType(enteredDate)));
+        Date enteredDate = parser.getEnteredDateTime();
+        fhirProcedure.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(enteredDate)));
 
-        Long codeId = observationParser.getCodeId();
+        Long codeId = parser.getCodeId();
         fhirProcedure.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
 
-        Date effectiveDate = observationParser.getEffectiveDate();
-        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
+        Date effectiveDate = parser.getEffectiveDate();
+        String effectiveDatePrecision = parser.getEffectiveDatePrecision();
         fhirProcedure.setPerformed(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
-        String associatedText = observationParser.getAssociatedText();
+        String clinicianGuid = parser.getClinicianUserInRoleGuid();
+        Procedure.ProcedurePerformerComponent fhirPerformer = fhirProcedure.addPerformer();
+        fhirPerformer.setActor(csvHelper.createPractitionerReference(clinicianGuid));
+
+        String associatedText = parser.getAssociatedText();
         fhirProcedure.addNotes(AnnotationHelper.createAnnotation(associatedText));
 
-        String consultationGuid = observationParser.getConsultationGuid();
+        String consultationGuid = parser.getConsultationGuid();
         if (consultationGuid != null) {
             fhirProcedure.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
 
-        csvProcessor.savePatientResource(fhirProcedure, patientGuid);
+        //the entered date and person are stored in extensions
+        createRecordedByExtension(fhirProcedure, parser, csvHelper);
+        createRecordedDateExtension(fhirProcedure, parser);
+        createDocumentExtension(fhirProcedure, parser);
+
+        //assert that these cells are empty, as we don't stored them in this resource type
+        assertValueEmpty(fhirProcedure, parser);
+        assertNumericUnitEmpty(fhirProcedure, parser);
+        assertNumericRangeLowEmpty(fhirProcedure, parser);
+        assertNumericRangeHighEmpty(fhirProcedure, parser);
 
         //if this record is linked to a problem, store this relationship in the helper
-        csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
+        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
                 patientGuid,
                 observationGuid,
                 fhirProcedure.getResourceType());
+
+        csvProcessor.savePatientResource(fhirProcedure, patientGuid);
     }
 
 
-    private static void createCondition(CareRecord_Observation observationParser,
+    private static void createCondition(Observation parser,
                                         CsvProcessor csvProcessor,
                                         EmisCsvHelper csvHelper) throws Exception {
 
         Condition fhirCondition = new Condition();
         fhirCondition.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_CONDITION));
 
-        String observationGuid = observationParser.getObservationGuid();
-        String patientGuid = observationParser.getPatientGuid();
-        String organisationGuid = observationParser.getOrganisationGuid();
+        String observationGuid = parser.getObservationGuid();
+        String patientGuid = parser.getPatientGuid();
 
         EmisCsvHelper.setUniqueId(fhirCondition, patientGuid, observationGuid);
 
         fhirCondition.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
+        if (parser.getDeleted() || parser.getIsConfidential()) {
             csvProcessor.deletePatientResource(fhirCondition, patientGuid);
             return;
         }
 
-        String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
+        String clinicianGuid = parser.getClinicianUserInRoleGuid();
         fhirCondition.setAsserter(csvHelper.createPractitionerReference(clinicianGuid));
 
-        Date enteredDate = observationParser.getEnteredDateTime();
+        Date enteredDate = parser.getEnteredDateTime();
         fhirCondition.setDateRecorded(enteredDate);
 
-        Long codeId = observationParser.getCodeId();
+        //the entered by is stored in an extension
+        createRecordedByExtension(fhirCondition, parser, csvHelper);
+        createDocumentExtension(fhirCondition, parser);
+
+        Long codeId = parser.getCodeId();
         fhirCondition.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
 
         fhirCondition.setClinicalStatus("active"); //if we have a Problem record for this condition, this status may be changed
 
         fhirCondition.setVerificationStatus(Condition.ConditionVerificationStatus.CONFIRMED);
 
-        Date effectiveDate = observationParser.getEffectiveDate();
-        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
+        Date effectiveDate = parser.getEffectiveDate();
+        String effectiveDatePrecision = parser.getEffectiveDatePrecision();
         fhirCondition.setOnset(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
-        String associatedText = observationParser.getAssociatedText();
+        String associatedText = parser.getAssociatedText();
         fhirCondition.setNotes(associatedText);
 
-        String consultationGuid = observationParser.getConsultationGuid();
+        String consultationGuid = parser.getConsultationGuid();
         if (consultationGuid != null) {
             fhirCondition.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
 
-        String problemGuid = observationParser.getProblemUGuid();
+        String problemGuid = parser.getProblemUGuid();
         if (!Strings.isNullOrEmpty(problemGuid)) {
             Reference problemReference = csvHelper.createProblemReference(problemGuid, patientGuid);
             fhirCondition.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.CONDITION_PART_OF_PROBLEM, problemReference));
         }
 
-        csvProcessor.savePatientResource(fhirCondition, patientGuid);
+        //assert that these cells are empty, as we don't stored them in this resource type
+        assertValueEmpty(fhirCondition, parser);
+        assertNumericUnitEmpty(fhirCondition, parser);
+        assertNumericRangeLowEmpty(fhirCondition, parser);
+        assertNumericRangeHighEmpty(fhirCondition, parser);
 
         //if this record is linked to a problem, store this relationship in the helper
-        csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
+        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
                 patientGuid,
                 observationGuid,
                 fhirCondition.getResourceType());
+
+        csvProcessor.savePatientResource(fhirCondition, patientGuid);
     }
 
-    private static void createObservation(CareRecord_Observation observationParser,
+    private static void createObservation(Observation parser,
                                           CsvProcessor csvProcessor,
                                           EmisCsvHelper csvHelper) throws Exception {
 
-        Observation fhirObservation = new Observation();
+        org.hl7.fhir.instance.model.Observation fhirObservation = new org.hl7.fhir.instance.model.Observation();
         fhirObservation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_OBSERVATION));
 
-        String observationGuid = observationParser.getObservationGuid();
-        String patientGuid = observationParser.getPatientGuid();
-        String organisationGuid = observationParser.getOrganisationGuid();
+        String observationGuid = parser.getObservationGuid();
+        String patientGuid = parser.getPatientGuid();
 
         EmisCsvHelper.setUniqueId(fhirObservation, patientGuid, observationGuid);
 
         fhirObservation.setSubject(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
+        if (parser.getDeleted() || parser.getIsConfidential()) {
             csvProcessor.deletePatientResource(fhirObservation, patientGuid);
             return;
         }
 
-        fhirObservation.setStatus(Observation.ObservationStatus.UNKNOWN);
+        fhirObservation.setStatus(org.hl7.fhir.instance.model.Observation.ObservationStatus.UNKNOWN);
 
-        Date effectiveDate = observationParser.getEffectiveDate();
-        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
+        Date effectiveDate = parser.getEffectiveDate();
+        String effectiveDatePrecision = parser.getEffectiveDatePrecision();
         fhirObservation.setEffective(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
-        Date enteredDate = observationParser.getEnteredDateTime();
+        Date enteredDate = parser.getEnteredDateTime();
         fhirObservation.setIssued(enteredDate);
 
-        Long codeId = observationParser.getCodeId();
+        Long codeId = parser.getCodeId();
         fhirObservation.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
 
-        String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
+        String clinicianGuid = parser.getClinicianUserInRoleGuid();
         fhirObservation.addPerformer(csvHelper.createPractitionerReference(clinicianGuid));
 
-        String orgGuid = observationParser.getOrganisationGuid();
+        String orgGuid = parser.getOrganisationGuid();
         fhirObservation.addPerformer(csvHelper.createOrganisationReference(orgGuid));
 
-        Double value = observationParser.getValue();
-        String units = observationParser.getNumericUnit();
+        Double value = parser.getValue();
+        String units = parser.getNumericUnit();
         fhirObservation.setValue(QuantityHelper.createQuantity(value, units));
 
-        Double low = observationParser.getNumericRangeLow();
-        Double high = observationParser.getNumericRangeHigh();
+        Double low = parser.getNumericRangeLow();
+        Double high = parser.getNumericRangeHigh();
 
         if (low != null || high != null) {
 
-            Observation.ObservationReferenceRangeComponent fhirRange = fhirObservation.addReferenceRange();
+            org.hl7.fhir.instance.model.Observation.ObservationReferenceRangeComponent fhirRange = fhirObservation.addReferenceRange();
             if (low != null && high != null) {
                 fhirRange.setLow(QuantityHelper.createSimpleQuantity(low, units, Quantity.QuantityComparator.GREATER_OR_EQUAL));
                 fhirRange.setHigh(QuantityHelper.createSimpleQuantity(high, units, Quantity.QuantityComparator.LESS_OR_EQUAL));
@@ -705,10 +698,10 @@ public class ObservationTransformer {
             }
         }
 
-        String associatedText = observationParser.getAssociatedText();
+        String associatedText = parser.getAssociatedText();
         fhirObservation.setComments(associatedText);
 
-        String consultationGuid = observationParser.getConsultationGuid();
+        String consultationGuid = parser.getConsultationGuid();
         if (consultationGuid != null) {
             fhirObservation.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
@@ -716,16 +709,21 @@ public class ObservationTransformer {
         List<EmisCsvHelper.ResourceRelationship> childObservationIds = csvHelper.getAndRemoveObservationParentRelationships(observationGuid, patientGuid);
         linkChildObservations(csvHelper, fhirObservation, patientGuid, childObservationIds);
 
-        csvProcessor.savePatientResource(fhirObservation, patientGuid);
+        //the entered date and person are stored in extensions
+        createRecordedByExtension(fhirObservation, parser, csvHelper);
+        createRecordedDateExtension(fhirObservation, parser);
+        createDocumentExtension(fhirObservation, parser);
 
         //if this record is linked to a problem, store this relationship in the helper
-        csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
+        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
                 patientGuid,
                 observationGuid,
                 fhirObservation.getResourceType());
+
+        csvProcessor.savePatientResource(fhirObservation, patientGuid);
     }
     private static void linkChildObservations(EmisCsvHelper csvHelper,
-                                              Observation fhirObservation,
+                                              org.hl7.fhir.instance.model.Observation fhirObservation,
                                               String patientGuid,
                                               List<EmisCsvHelper.ResourceRelationship> resourceRelationships) throws Exception {
         if (resourceRelationships == null) {
@@ -738,8 +736,8 @@ public class ObservationTransformer {
 
             //check if the parent observation doesn't already have our ob linked to it
             boolean alreadyLinked = false;
-            for (Observation.ObservationRelatedComponent related: fhirObservation.getRelated()) {
-                if (related.getType() == Observation.ObservationRelationshipType.HASMEMBER
+            for (org.hl7.fhir.instance.model.Observation.ObservationRelatedComponent related: fhirObservation.getRelated()) {
+                if (related.getType() == org.hl7.fhir.instance.model.Observation.ObservationRelationshipType.HASMEMBER
                         && related.getTarget().equalsShallow(reference)) {
                     alreadyLinked = true;
                     break;
@@ -747,37 +745,36 @@ public class ObservationTransformer {
             }
 
             if (!alreadyLinked) {
-                Observation.ObservationRelatedComponent fhirRelation = fhirObservation.addRelated();
-                fhirRelation.setType(Observation.ObservationRelationshipType.HASMEMBER);
+                org.hl7.fhir.instance.model.Observation.ObservationRelatedComponent fhirRelation = fhirObservation.addRelated();
+                fhirRelation.setType(org.hl7.fhir.instance.model.Observation.ObservationRelationshipType.HASMEMBER);
                 fhirRelation.setTarget(reference);
             }
         }
 
     }
 
-    private static void createFamilyMemberHistory(CareRecord_Observation observationParser,
+    private static void createFamilyMemberHistory(Observation parser,
                                                   CsvProcessor csvProcessor,
                                                   EmisCsvHelper csvHelper) throws Exception {
 
         FamilyMemberHistory fhirFamilyHistory = new FamilyMemberHistory();
         fhirFamilyHistory.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_FAMILY_MEMBER_HISTORY));
 
-        String observationGuid = observationParser.getObservationGuid();
-        String patientGuid = observationParser.getPatientGuid();
-        String organisationGuid = observationParser.getOrganisationGuid();
+        String observationGuid = parser.getObservationGuid();
+        String patientGuid = parser.getPatientGuid();
 
         EmisCsvHelper.setUniqueId(fhirFamilyHistory, patientGuid, observationGuid);
 
         fhirFamilyHistory.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
+        if (parser.getDeleted() || parser.getIsConfidential()) {
             csvProcessor.deletePatientResource(fhirFamilyHistory, patientGuid);
             return;
         }
 
-        Date effectiveDate = observationParser.getEffectiveDate();
-        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
+        Date effectiveDate = parser.getEffectiveDate();
+        String effectiveDatePrecision = parser.getEffectiveDatePrecision();
         fhirFamilyHistory.setDateElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         fhirFamilyHistory.setStatus(FamilyMemberHistory.FamilyHistoryStatus.HEALTHUNKNOWN);
@@ -788,48 +785,58 @@ public class ObservationTransformer {
 
         FamilyMemberHistory.FamilyMemberHistoryConditionComponent fhirCondition = fhirFamilyHistory.addCondition();
 
-        Long codeId = observationParser.getCodeId();
+        Long codeId = parser.getCodeId();
         fhirCondition.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
 
-        String associatedText = observationParser.getAssociatedText();
+        String associatedText = parser.getAssociatedText();
         fhirCondition.setNote(AnnotationHelper.createAnnotation(associatedText));
 
-        String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
+        String clinicianGuid = parser.getClinicianUserInRoleGuid();
         Reference reference = csvHelper.createPractitionerReference(clinicianGuid);
-        fhirFamilyHistory.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.FAMILY_MEMBER_HISTORY_RECORDER, reference));
+        fhirFamilyHistory.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
 
-        String consultationGuid = observationParser.getConsultationGuid();
+        String consultationGuid = parser.getConsultationGuid();
         if (consultationGuid != null) {
             reference = csvHelper.createEncounterReference(consultationGuid, patientGuid);
             fhirFamilyHistory.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, reference));
         }
 
-        csvProcessor.savePatientResource(fhirFamilyHistory, patientGuid);
+        //the entered date and person are stored in extensions
+        createRecordedByExtension(fhirFamilyHistory, parser, csvHelper);
+        createRecordedDateExtension(fhirFamilyHistory, parser);
+        createDocumentExtension(fhirFamilyHistory, parser);
+
+        //assert that these cells are empty, as we don't stored them in this resource type
+        assertValueEmpty(fhirFamilyHistory, parser);
+        assertNumericUnitEmpty(fhirFamilyHistory, parser);
+        assertNumericRangeLowEmpty(fhirFamilyHistory, parser);
+        assertNumericRangeHighEmpty(fhirFamilyHistory, parser);
 
         //if this record is linked to a problem, store this relationship in the helper
-        csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
+        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
                 patientGuid,
                 observationGuid,
                 fhirFamilyHistory.getResourceType());
+
+        csvProcessor.savePatientResource(fhirFamilyHistory, patientGuid);
     }
 
-    private static void createImmunization(CareRecord_Observation observationParser,
+    private static void createImmunization(Observation parser,
                                            CsvProcessor csvProcessor,
                                            EmisCsvHelper csvHelper) throws Exception {
 
         Immunization fhirImmunisation = new Immunization();
         fhirImmunisation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_IMMUNIZATION));
 
-        String observationGuid = observationParser.getObservationGuid();
-        String patientGuid = observationParser.getPatientGuid();
-        String organisationGuid = observationParser.getOrganisationGuid();
+        String observationGuid = parser.getObservationGuid();
+        String patientGuid = parser.getPatientGuid();
 
         EmisCsvHelper.setUniqueId(fhirImmunisation, patientGuid, observationGuid);
 
         fhirImmunisation.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
+        if (parser.getDeleted() || parser.getIsConfidential()) {
             csvProcessor.deletePatientResource(fhirImmunisation, patientGuid);
             return;
         }
@@ -838,33 +845,117 @@ public class ObservationTransformer {
         fhirImmunisation.setWasNotGiven(false);
         fhirImmunisation.setReported(false);
 
-        Date effectiveDate = observationParser.getEffectiveDate();
-        String effectiveDatePrecision = observationParser.getEffectiveDatePrecision();
+        Date effectiveDate = parser.getEffectiveDate();
+        String effectiveDatePrecision = parser.getEffectiveDatePrecision();
         fhirImmunisation.setDateElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
-        Long codeId = observationParser.getCodeId();
+        Long codeId = parser.getCodeId();
         fhirImmunisation.setVaccineCode(csvHelper.findClinicalCode(codeId, csvProcessor));
 
-        String clinicianGuid = observationParser.getClinicianUserInRoleGuid();
+        String clinicianGuid = parser.getClinicianUserInRoleGuid();
         Reference reference = csvHelper.createPractitionerReference(clinicianGuid);
         fhirImmunisation.setPerformer(reference);
 
-        String consultationGuid = observationParser.getConsultationGuid();
+        String consultationGuid = parser.getConsultationGuid();
         if (consultationGuid != null) {
             reference = csvHelper.createEncounterReference(consultationGuid, patientGuid);
             fhirImmunisation.setEncounter(reference);
         }
 
-        String associatedText = observationParser.getAssociatedText();
+        String associatedText = parser.getAssociatedText();
         fhirImmunisation.addNote(AnnotationHelper.createAnnotation(associatedText));
 
-        csvProcessor.savePatientResource(fhirImmunisation, patientGuid);
+        //the entered date and person are stored in extensions
+        createRecordedByExtension(fhirImmunisation, parser, csvHelper);
+        createRecordedDateExtension(fhirImmunisation, parser);
+        createDocumentExtension(fhirImmunisation, parser);
+
+        //assert that these cells are empty, as we don't stored them in this resource type
+        assertValueEmpty(fhirImmunisation, parser);
+        assertNumericUnitEmpty(fhirImmunisation, parser);
+        assertNumericRangeLowEmpty(fhirImmunisation, parser);
+        assertNumericRangeHighEmpty(fhirImmunisation, parser);
 
         //if this record is linked to a problem, store this relationship in the helper
-        csvHelper.cacheProblemRelationship(observationParser.getProblemUGuid(),
+        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
                 patientGuid,
                 observationGuid,
                 fhirImmunisation.getResourceType());
+
+        csvProcessor.savePatientResource(fhirImmunisation, patientGuid);
     }
 
+    private static void createDocumentExtension(DomainResource resource, Observation parser) {
+
+        String documentGuid = parser.getDocumentGuid();
+        if (Strings.isNullOrEmpty(documentGuid)) {
+            return;
+        }
+
+        Identifier fhirIdentifier = IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, FhirUri.IDENTIFIER_SYSTEM_EMIS_DOCUMENT_GUID, documentGuid);
+        resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.EXTERNAL_DOCUMENT, fhirIdentifier));
+    }
+
+    private static void createRecordedByExtension(DomainResource resource, Observation parser, EmisCsvHelper emisCsvHelper) throws Exception {
+        String enteredByGuid = parser.getEnteredByUserInRoleGuid();
+        if (Strings.isNullOrEmpty(enteredByGuid)) {
+            return;
+        }
+
+        Reference reference = emisCsvHelper.createPractitionerReference(enteredByGuid);
+        resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
+    }
+
+    private static void createRecordedDateExtension(DomainResource resource, Observation parser) throws Exception {
+        Date enteredDateTime = parser.getEnteredDateTime();
+        if (enteredDateTime == null) {
+            return;
+        }
+
+        resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(enteredDateTime)));
+    }
+
+    private static void assertValueEmpty(Resource destinationResource, Observation parser) throws Exception {
+        if (parser.getValue() != null) {
+            throw new FieldNotEmptyException("Value", destinationResource);
+        }
+    }
+    private static void assertNumericRangeLowEmpty(Resource destinationResource, Observation parser) throws Exception {
+        if (parser.getNumericRangeLow() != null) {
+            throw new FieldNotEmptyException("NumericRangeLow", destinationResource);
+        }
+    }
+    private static void assertNumericRangeHighEmpty(Resource destinationResource, Observation parser) throws Exception {
+        if (parser.getNumericRangeHigh() != null) {
+            throw new FieldNotEmptyException("NumericRangeHigh", destinationResource);
+        }
+    }
+    private static void assertNumericUnitEmpty(Resource destinationResource, Observation parser) throws Exception {
+        if (!Strings.isNullOrEmpty(parser.getNumericUnit())) {
+            throw new FieldNotEmptyException("NumericUnit", destinationResource);
+        }
+    }
+
+
+    /**
+     "EffectiveDate",
+     "EffectiveDatePrecision",
+     "EnteredDate",
+     "EnteredTime",
+     "ClinicianUserInRoleGuid",
+     "EnteredByUserInRoleGuid",
+     "ParentObservationGuid",
+     "CodeId",
+     "ProblemGuid",
+     "AssociatedText",
+     "ConsultationGuid",
+            "Value",
+            "NumericUnit",
+            "ObservationType",
+            "      NumericRangeLow",
+            "NumericRangeHigh",
+             "DocumentGuid",
+            "Deleted",
+                "IsConfidential",
+     */
 }

@@ -75,7 +75,7 @@ public final class MedicationStatementTransformer
                 .setValue(BigDecimal.valueOf(medicationType.getQuantity()))
                 .setUnit(medicationType.getQuantityUnits())
                 .addExtension(new Extension()
-                        .setUrl(FhirExtensionUri.MEDICATION_QUANTITY_TEXT)
+                        .setUrl(FhirExtensionUri.QUANTITY_FREE_TEXT)
                         .setValue(new StringType(medicationType.getQuantityRepresentation())));
 
         return new Extension()

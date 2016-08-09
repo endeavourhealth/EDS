@@ -4,12 +4,17 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.Appointment_Session;
+import org.endeavourhealth.transform.emis.csv.schema.appointment.Session;
 import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Meta;
+import org.hl7.fhir.instance.model.Period;
+import org.hl7.fhir.instance.model.Reference;
+import org.hl7.fhir.instance.model.Schedule;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SessionTransformer {
 
@@ -23,7 +28,7 @@ public class SessionTransformer {
 
         Map<String, Schedule> fhirSessions = new HashMap<>();
 
-        Appointment_Session parser = new Appointment_Session(folderPath, csvFormat);
+        Session parser = new Session(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createSchedule(parser, csvProcessor, csvHelper, sessionToStaffMap);
@@ -35,7 +40,7 @@ public class SessionTransformer {
         }
     }
 
-    private static void createSchedule(Appointment_Session sessionParser,
+    private static void createSchedule(Session sessionParser,
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper,
                                        Map<String, List<String>> sessionToStaffMap) throws Exception {
@@ -53,7 +58,7 @@ public class SessionTransformer {
 
         String locationGuid = sessionParser.getLocationGuid();
         Reference fhirReference = csvHelper.createLocationReference(locationGuid);
-        fhirSchedule.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.LOCATION, fhirReference));
+        fhirSchedule.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.SCHEDULE_LOCATION, fhirReference));
 
         Date start = sessionParser.getStartDateTime();
         Date end = sessionParser.getEndDateTime();
@@ -79,7 +84,7 @@ public class SessionTransformer {
 
             for (String staffGuid: staffGuids) {
                 Reference fhirStaffReference = csvHelper.createPractitionerReference(staffGuid);
-                fhirSchedule.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ADDITIONAL_ACTOR, fhirStaffReference));
+                fhirSchedule.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.SCHEDULE_ADDITIONAL_ACTOR, fhirStaffReference));
             }
         }
 

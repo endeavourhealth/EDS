@@ -5,7 +5,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.CareRecord_ObservationReferral;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.ObservationReferral;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.IdentifierHelper;
@@ -20,7 +20,7 @@ public class ObservationReferralTransformer {
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        CareRecord_ObservationReferral parser = new CareRecord_ObservationReferral(folderPath, csvFormat);
+        ObservationReferral parser = new ObservationReferral(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createResource(parser, csvProcessor, csvHelper);
@@ -32,7 +32,7 @@ public class ObservationReferralTransformer {
         }
     }
 
-    private static void createResource(CareRecord_ObservationReferral observationParser,
+    private static void createResource(ObservationReferral observationParser,
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 

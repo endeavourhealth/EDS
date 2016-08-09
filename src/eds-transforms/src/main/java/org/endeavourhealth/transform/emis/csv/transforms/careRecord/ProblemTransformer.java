@@ -4,10 +4,13 @@ import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
-import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Problem;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.transform.fhir.ExtensionConverter;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.schema.ProblemRelationshipType;
 import org.endeavourhealth.transform.fhir.schema.ProblemSignificance;
 import org.hl7.fhir.instance.model.*;
@@ -18,7 +21,7 @@ public class ProblemTransformer {
 
     public static void transform(String folderPath, CSVFormat csvFormat, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
 
-        CareRecord_Problem parser = new CareRecord_Problem(folderPath, csvFormat);
+        Problem parser = new Problem(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createProblem(parser, csvProcessor, csvHelper);
@@ -30,7 +33,7 @@ public class ProblemTransformer {
         }
     }
 
-    private static void createProblem(CareRecord_Problem problemParser, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
+    private static void createProblem(Problem problemParser, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
 
         Condition fhirProblem = new Condition();
         fhirProblem.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROBLEM));
@@ -70,8 +73,20 @@ public class ProblemTransformer {
         Date lastReviewDate = problemParser.getLastReviewDate();
         String lastReviewPrecision = problemParser.getLastReviewDatePrecision();
         DateType lastReviewDateType = EmisDateTimeHelper.createDateType(lastReviewDate, lastReviewPrecision);
-        if (lastReviewDateType != null) {
-            fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_LAST_REVIEW_DATE, lastReviewDateType));
+        String lastReviewedByGuid = problemParser.getLastReviewUserInRoleGuid();
+        if (lastReviewDateType != null
+                || !Strings.isNullOrEmpty(lastReviewedByGuid)) {
+
+            //the review extension is a compound extension, containing who and when
+            Extension fhirExtension = ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_LAST_REVIEWED);
+
+            if (lastReviewDateType != null) {
+                fhirExtension.addExtension(ExtensionConverter.createExtension("date", lastReviewDateType));
+            }
+            if (!Strings.isNullOrEmpty(lastReviewedByGuid)) {
+                fhirExtension.addExtension(ExtensionConverter.createExtension("performer", csvHelper.createPractitionerReference(lastReviewedByGuid)));
+            }
+            fhirProblem.addExtension(fhirExtension);
         }
 
         ProblemSignificance fhirSignificance = convertSignificance(problemParser.getSignificanceDescription());

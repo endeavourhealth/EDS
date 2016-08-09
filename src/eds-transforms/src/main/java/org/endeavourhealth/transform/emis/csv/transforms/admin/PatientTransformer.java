@@ -5,11 +5,12 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.Admin_Patient;
+import org.endeavourhealth.transform.emis.csv.schema.admin.Patient;
 import org.endeavourhealth.transform.emis.openhr.schema.VocSex;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.SexConverter;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.ContactRelationship;
+import org.endeavourhealth.transform.fhir.schema.NhsNumberVerificationStatus;
 import org.endeavourhealth.transform.fhir.schema.RegistrationType;
 import org.hl7.fhir.instance.model.*;
 
@@ -23,7 +24,7 @@ public class PatientTransformer {
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Admin_Patient parser = new Admin_Patient(folderPath, csvFormat);
+        Patient parser = new Patient(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createPatient(parser, csvProcessor, csvHelper);
@@ -35,12 +36,12 @@ public class PatientTransformer {
         }
     }
 
-    private static void createPatient(Admin_Patient patientParser,
+    private static void createPatient(Patient patientParser,
                                       CsvProcessor csvProcessor,
                                       EmisCsvHelper csvHelper) throws Exception {
 
         //create Patient Resource
-        Patient fhirPatient = new Patient();
+        org.hl7.fhir.instance.model.Patient fhirPatient = new org.hl7.fhir.instance.model.Patient();
         fhirPatient.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PATIENT));
 
         String patientGuid = patientParser.getPatientGuid();
@@ -114,6 +115,20 @@ public class PatientTransformer {
         Address fhirAddress = AddressConverter.createAddress(Address.AddressUse.HOME, houseNameFlat, numberAndStreet, village, town, county, postcode);
         fhirPatient.addAddress(fhirAddress);
 
+        String residentialInstituteCode = patientParser.getResidentialInstituteCode();
+        if (!Strings.isNullOrEmpty(residentialInstituteCode)) {
+            fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_RESIDENTIAL_INSTITUTE_CODE, new StringType(residentialInstituteCode)));
+        }
+
+        String nhsNumberStatus = patientParser.getNHSNumberStatus();
+        if (!Strings.isNullOrEmpty(nhsNumberStatus)) {
+            NhsNumberVerificationStatus verificationStatus = convertNhsNumberVeriticationStatus(nhsNumberStatus);
+            if (verificationStatus != null) {
+                CodeableConcept fhirCodeableConcept = CodeableConceptHelper.createCodeableConcept(verificationStatus);
+                fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_NHS_NUMBER_VERIFICATION_STATUS, fhirCodeableConcept));
+            }
+        }
+
         String homePhone = patientParser.getHomePhone();
         if (!Strings.isNullOrEmpty(homePhone)) {
             ContactPoint fhirContact = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.HOME, homePhone);
@@ -138,7 +153,7 @@ public class PatientTransformer {
         String carerRelationship = patientParser.getCarerRelation();
         if (!Strings.isNullOrEmpty(carerName)) {
 
-            Patient.ContactComponent fhirContact = new Patient.ContactComponent();
+            org.hl7.fhir.instance.model.Patient.ContactComponent fhirContact = new org.hl7.fhir.instance.model.Patient.ContactComponent();
             fhirContact.setName(NameConverter.convert(carerName));
 
             if (!Strings.isNullOrEmpty(carerRelationship)) {
@@ -155,8 +170,13 @@ public class PatientTransformer {
             fhirPatient.addContact(fhirContact);
         }
 
+        boolean spineSensitive = patientParser.getSpineSensitive();
+        if (spineSensitive) {
+            fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_SPINE_SENSITIVE, new BooleanType(spineSensitive)));
+        }
+
         RegistrationType registrationType = convertRegistrationType(patientParser.getPatientTypedescription(), patientParser.getDummyType());
-        fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.REGISTRATION_TYPE, CodingHelper.createCoding(registrationType)));
+        fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_REGISTRATION_TYPE, CodingHelper.createCoding(registrationType)));
 
         String usualGpGuid = patientParser.getUsualGpUserInRoleGuid();
         if (!Strings.isNullOrEmpty(usualGpGuid)) {
@@ -197,6 +217,18 @@ public class PatientTransformer {
 
         csvProcessor.savePatientResource(fhirPatient, patientGuid);
         csvProcessor.savePatientResource(fhirEpisode, patientGuid);
+    }
+
+    /**
+     * converts free-text NHS number status to one of the official NHS statuses
+     */
+    private static NhsNumberVerificationStatus convertNhsNumberVeriticationStatus(String nhsNumberStatus) {
+        //TODO - not sure what the actual EMIS values will be for NHS number status, until we get real data
+        if (nhsNumberStatus.equalsIgnoreCase("Verified")) {
+            return NhsNumberVerificationStatus.PRESENT_AND_VERIFIED;
+        } else {
+            return null;
+        }
     }
 
     /**

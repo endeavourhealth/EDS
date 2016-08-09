@@ -1,24 +1,23 @@
-package org.endeavourhealth.transform.emis.csv.schema;
+package org.endeavourhealth.transform.emis.csv.schema.prescribing;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 
 import java.util.Date;
 
-public class Prescribing_IssueRecord extends AbstractCsvTransformer {
-
-    public Prescribing_IssueRecord(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
+public class DrugRecord extends AbstractCsvTransformer {
+    public DrugRecord(String folderPath, CSVFormat csvFormat) throws Exception {
+        super(folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
     }
 
     @Override
     protected String[] getCsvHeaders() {
         return new String[]{
-                "IssueRecordGuid",
+                "DrugRecordGuid",
                 "PatientGuid",
                 "OrganisationGuid",
-                "DrugRecordGuid",
                 "EffectiveDate",
                 "EffectiveDatePrecision",
                 "EnteredDate",
@@ -30,16 +29,19 @@ public class Prescribing_IssueRecord extends AbstractCsvTransformer {
                 "Quantity",
                 "QuantityUnit",
                 "ProblemObservationGuid",
-                "CourseDurationInDays",
-                "EstimatedNhsCost",
+                "PrescriptionType",
+                "IsActive",
+                "CancellationDate",
+                "NumberOfIssues",
+                "NumberOfIssuesAuthorised",
                 "IsConfidential",
                 "Deleted",
                 "ProcessingId"
         };
     }
 
-    public String getIssueRecordGuid() {
-        return super.getString("IssueRecordGuid");
+    public String getDrugRecordGuid() {
+        return super.getString("DrugRecordGuid");
     }
     public String getPatientGuid() {
         return super.getString("PatientGuid");
@@ -65,26 +67,32 @@ public class Prescribing_IssueRecord extends AbstractCsvTransformer {
     public Long getCodeId() {
         return super.getLong("CodeId");
     }
-    public Double getQuantity() {
-        return super.getDouble("Quantity");
-    }
-    public Integer getCourseDurationInDays() {
-        return super.getInt("CourseDurationInDays");
-    }
-    public Double getEstimatedNhsCost() {
-        return super.getDouble("EstimatedNhsCost");
-    }
-    public String getProblemObservationGuid() {
-        return super.getString("ProblemObservationGuid");
-    }
     public String getDosage() {
         return super.getString("Dosage");
+    }
+    public Double getQuantity() {
+        return super.getDouble("Quantity");
     }
     public String getQuantityUnit() {
         return super.getString("QuantityUnit");
     }
-    public String getDrugRecordGuid() {
-        return super.getString("DrugRecordGuid");
+    public String getProblemObservationGuid() {
+        return super.getString("ProblemObservationGuid");
+    }
+    public String getPrescriptionType() {
+        return super.getString("PrescriptionType");
+    }
+    public boolean getIsActive() {
+        return super.getBoolean("IsActive");
+    }
+    public Date getCancellationDate() throws TransformException {
+        return super.getDate("CancellationDate");
+    }
+    public Integer getNumberOfIssues() {
+        return super.getInt("NumberOfIssues");
+    }
+    public Integer getNumberOfIssuesAuthorised() {
+        return super.getInt("NumberOfIssuesAuthorised");
     }
     public boolean getDeleted() {
         return super.getBoolean("Deleted");

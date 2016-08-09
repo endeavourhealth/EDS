@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.fhir.schema;
 
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.FhirValueSetUri;
 
 public enum OrganisationType {
 
@@ -68,7 +68,7 @@ public enum OrganisationType {
     }
 
     public String getSystem() {
-        return FhirUri.VALUE_SET_ORGANISATION_TYPE;
+        return FhirValueSetUri.VALUE_SET_ORGANISATION_TYPE;
     }
 
     OrganisationType(String code, String description) {
