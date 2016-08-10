@@ -2,10 +2,8 @@ package org.endeavourhealth.transform.fhir;
 
 import org.endeavourhealth.transform.fhir.schema.*;
 import org.endeavourhealth.transform.terminology.SnomedCode;
-import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.Coding;
 import org.hl7.fhir.instance.model.DiagnosticOrder;
-import org.hl7.fhir.instance.model.valuesets.RelationshipEnumFactory;
 
 
 public class CodingHelper {
@@ -65,6 +63,21 @@ public class CodingHelper {
                 .setDisplay(participantType.getDescription())
                 .setCode(participantType.getCode());
     }
+
+    public static Coding createCoding(NhsNumberVerificationStatus nhsNumberVerificationStatus) {
+        return new Coding()
+                .setSystem(nhsNumberVerificationStatus.getSystem())
+                .setDisplay(nhsNumberVerificationStatus.getDescription())
+                .setCode(nhsNumberVerificationStatus.getCode());
+    }
+
+    public static Coding createCoding(MedicationAuthorisationType medicationAuthorisationType) {
+        return new Coding()
+                .setSystem(medicationAuthorisationType.getSystem())
+                .setDisplay(medicationAuthorisationType.getDescription())
+                .setCode(medicationAuthorisationType.getCode());
+    }
+
 
     public static Coding createCoding(String system, String term, String code) {
         return new Coding()

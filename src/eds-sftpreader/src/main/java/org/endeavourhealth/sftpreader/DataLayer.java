@@ -1,15 +1,14 @@
 package org.endeavourhealth.sftpreader;
 
-import org.endeavourhealth.core.utility.StreamExtension;
-import org.endeavourhealth.sftpreader.batchFileImplementations.BatchFile;
+import org.endeavourhealth.sftpreader.utilities.StreamExtension;
 import org.endeavourhealth.sftpreader.model.db.*;
+import org.endeavourhealth.sftpreader.utilities.postgres.PgResultSet;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProc;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
 
 import javax.sql.DataSource;
-import java.sql.ResultSet;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 public class DataLayer
 {
@@ -31,8 +30,7 @@ public class DataLayer
 
                         .setInstanceId(resultSet.getString("instance_id"))
                         .setInstanceDescription(resultSet.getString("instance_description"))
-                        .setInterfaceTypeId(resultSet.getInt("interface_type_id"))
-                        .setInterfaceTypeDescription(resultSet.getString("interface_type_description"))
+                        .setInterfaceTypeName(resultSet.getString("interface_type_name"))
                         .setPollFrequencySeconds(resultSet.getInt("poll_frequency_seconds"))
                         .setLocalRootPath(resultSet.getString("local_root_path"))
 
@@ -50,11 +48,36 @@ public class DataLayer
                             .setPgpSenderPublicKey(resultSet.getString("pgp_sender_public_key"))
                             .setPgpRecipientPublicKey(resultSet.getString("pgp_recipient_public_key"))
                             .setPgpRecipientPrivateKey(resultSet.getString("pgp_recipient_private_key"))
-                            .setPgpRecipientPrivateKeyPassword(resultSet.getString("pgp_recipient_private_key_password"))));
+                            .setPgpRecipientPrivateKeyPassword(resultSet.getString("pgp_recipient_private_key_password")))
 
+                        .setDbConfigurationEds(new DbConfigurationEds()
+                            .setEdsUrl(resultSet.getString("eds_url"))
+                            .setEdsServiceIdentifier(resultSet.getString("eds_service_identifier"))
+                            .setSoftwareName(resultSet.getString("software_name"))
+                            .setSoftwareVersion(resultSet.getString("software_version"))
+                            .setEnvelopeContentType(resultSet.getString("envelope_content_type"))
+                            .setUseKeycloak(resultSet.getBoolean("use_keycloak"))
+                            .setKeycloakTokenUri(resultSet.getString("keycloak_token_uri"))
+                            .setKeycloakRealm(resultSet.getString("keycloak_realm"))
+                            .setKeycloakUsername(resultSet.getString("keycloak_username"))
+                            .setKeycloakPassword(resultSet.getString("keycloak_password"))
+                            .setKeycloakClientId(resultSet.getString("keycloak_clientid"))));
+
+        dbConfiguration.setDbConfigurationKvp(getConfigurationKvp(instanceId));
         dbConfiguration.setInterfaceFileTypes(getInterfaceFileTypes(instanceId));
 
         return dbConfiguration;
+    }
+
+    private List<DbConfigurationKvp> getConfigurationKvp(String instanceId) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.get_configuration_kvp")
+                .addParameter("_instance_id", instanceId);
+
+        return pgStoredProc.executeQuery((resultSet) -> new DbConfigurationKvp()
+                        .setKey(resultSet.getString("key"))
+                        .setValue(resultSet.getString("value")));
     }
 
     public List<String> getInterfaceFileTypes(String instanceId) throws PgStoredProcException
@@ -66,7 +89,7 @@ public class DataLayer
         return pgStoredProc.executeQuery(resultSet -> resultSet.getString("file_type_identifier"));
     }
 
-    public AddFileResult addFile(String instanceId, BatchFile batchFile) throws PgStoredProcException
+    public AddFileResult addFile(String instanceId, SftpFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.add_file")
@@ -85,7 +108,7 @@ public class DataLayer
                     .setBatchFileId(resultSet.getInt("batch_file_id")));
     }
 
-    public void setFileAsDownloaded(BatchFile batchFile) throws PgStoredProcException
+    public void setFileAsDownloaded(SftpFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.set_file_as_downloaded")
@@ -95,7 +118,7 @@ public class DataLayer
         pgStoredProc.execute();
     }
 
-    public void setFileAsDecrypted(BatchFile batchFile) throws PgStoredProcException
+    public void setFileAsDecrypted(SftpFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.set_file_as_decrypted")
@@ -106,7 +129,7 @@ public class DataLayer
         pgStoredProc.execute();
     }
 
-    public void addUnknownFile(String instanceId, BatchFile batchFile) throws PgStoredProcException
+    public void addUnknownFile(String instanceId, SftpFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.add_unknown_file")
@@ -118,20 +141,66 @@ public class DataLayer
         pgStoredProc.execute();
     }
 
-    public List<IncompleteBatch> getIncompleteBatches(String instanceId) throws PgStoredProcException
+    public List<Batch> getIncompleteBatches(String instanceId) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.get_incomplete_batches")
                 .addParameter("_instance_id", instanceId);
 
-        List<IncompleteBatch> incompleteBatches = pgStoredProc.executeMultiQuery(resultSet ->
-                new IncompleteBatch()
+        return populateBatch(pgStoredProc);
+    }
+
+    public Batch getLastCompleteBatch(String instanceId) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.get_last_complete_batch")
+                .addParameter("_instance_id", instanceId);
+
+        List<Batch> batches = populateBatch(pgStoredProc);
+
+        if (batches.size() > 1)
+            throw new PgStoredProcException("More than one last complete batch returned");
+
+        if (batches.size() == 0)
+            return null;
+
+        return batches.get(0);
+    }
+
+    public List<Batch> getUnnotifiedBatches(String instanceId) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.get_unnotified_batches")
+                .addParameter("_instance_id", instanceId);
+
+        return populateBatch(pgStoredProc);
+    }
+
+    public List<UnknownFile> getUnknownFiles(String instanceId) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.get_unknown_files")
+                .addParameter("_instance_id", instanceId);
+
+        return pgStoredProc.executeQuery(resultSet -> new UnknownFile()
+                .setUnknownFileId(resultSet.getInt("unknown_file_id"))
+                .setFilename(resultSet.getString("filename"))
+                .setInsertDate(PgResultSet.getLocalDateTime(resultSet, "insert_date"))
+                .setRemoteCreatedDate(PgResultSet.getLocalDateTime(resultSet, "remote_created_date"))
+                .setRemoteSizeBytes(resultSet.getLong("remote_size_bytes")));
+    }
+
+    private static List<Batch> populateBatch(PgStoredProc pgStoredProc) throws PgStoredProcException
+    {
+        List<Batch> batches = pgStoredProc.executeMultiQuery(resultSet ->
+                new Batch()
                         .setBatchId(resultSet.getInt("batch_id"))
                         .setBatchIdentifier(resultSet.getString("batch_identifier"))
-                        .setLocalRelativePath(resultSet.getString("local_relative_path")));
+                        .setLocalRelativePath(resultSet.getString("local_relative_path"))
+                        .setSequenceNumber(PgResultSet.getInteger(resultSet, "sequence_number")));
 
-        List<IncompleteBatchFile> incompleteBatchFiles = pgStoredProc.nextMultiQuery(resultSet ->
-                new IncompleteBatchFile()
+        List<BatchFile> batchFiles = pgStoredProc.nextMultiQuery(resultSet ->
+                new BatchFile()
                         .setBatchId(resultSet.getInt("batch_id"))
                         .setBatchFileId(resultSet.getInt("batch_file_id"))
                         .setFileTypeIdentifier(resultSet.getString("file_type_identifier"))
@@ -144,13 +213,38 @@ public class DataLayer
                         .setDecryptedFilename(resultSet.getString("decrypted_filename"))
                         .setDecryptedSizeBytes(resultSet.getLong("decrypted_size_bytes")));
 
-        incompleteBatchFiles.forEach(t ->
-                incompleteBatches
+        batchFiles.forEach(t ->
+                batches
                         .stream()
                         .filter(s -> s.getBatchId() == t.getBatchId())
                         .collect(StreamExtension.singleCollector())
-                        .addIncompleteBatchFile(t));
+                        .addBatchFile(t));
 
-        return incompleteBatches;
+        return batches;
+    }
+
+    public void setBatchAsComplete(Batch batch, int sequenceNumber) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.set_batch_as_complete")
+                .addParameter("_batch_id", batch.getBatchId())
+                .addParameter("_sequence_number", Integer.toString(sequenceNumber));
+
+        pgStoredProc.execute();
+    }
+
+    public void addBatchNotification(int batchId, String instanceId, UUID messageId, String outboundMessage, String inboundMessage, boolean wasSuccess, String errorText) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.add_batch_notification")
+                .addParameter("_batch_id", batchId)
+                .addParameter("_instance_id", instanceId)
+                .addParameter("_message_uuid", messageId)
+                .addParameter("_outbound_message", outboundMessage)
+                .addParameter("_inbound_message", inboundMessage)
+                .addParameter("_was_success", wasSuccess)
+                .addParameter("_error_text", errorText);
+
+        pgStoredProc.execute();
     }
 }

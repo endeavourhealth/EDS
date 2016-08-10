@@ -2,7 +2,6 @@ package org.endeavourhealth.ui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.core.data.admin.models.EndUser;
-import org.endeavourhealth.ui.database.administration.DbEndUser;
 
 import java.util.ArrayList;
 import java.util.List;

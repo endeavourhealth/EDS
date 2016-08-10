@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.fhir.schema;
 
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.FhirValueSetUri;
 
 public enum FamilyMember {
 
@@ -121,7 +121,7 @@ public enum FamilyMember {
         return description;
     }
     public String getSystem() {
-        return FhirUri.VALUE_SET_FAMILY_MEMBER;
+        return FhirValueSetUri.VALUE_SET_FAMILY_MEMBER;
     }
 
     FamilyMember(String code, String description) {

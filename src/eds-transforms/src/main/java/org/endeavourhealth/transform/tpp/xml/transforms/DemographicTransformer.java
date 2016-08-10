@@ -3,9 +3,8 @@ package org.endeavourhealth.transform.tpp.xml.transforms;
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
-import org.endeavourhealth.transform.tpp.xml.schema.*;
 import org.endeavourhealth.transform.tpp.xml.schema.Address;
+import org.endeavourhealth.transform.tpp.xml.schema.*;
 import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.Patient;
 
@@ -50,7 +49,7 @@ public class DemographicTransformer {
         //TODO - need to get proper object type for registrationType
         String registrationType = tppDemographics.getRegistrationType();
 
-        Extension ext = ExtensionConverter.createExtension(FhirExtensionUri.REGISTRATION_TYPE, new StringType(registrationType));
+        Extension ext = ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_REGISTRATION_TYPE, new StringType(registrationType));
         fhirPatient.addExtension(ext);
     }
 
@@ -242,7 +241,7 @@ public class DemographicTransformer {
         //NHS number OR psudeo number will be provided
         String nhsNumber = tppId.getNHSNumber();
         if (nhsNumber != null) {
-            Identifier fhirIdentifier = IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nhsNumber, FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER);
+            Identifier fhirIdentifier = IdentifierHelper.createNhsNumberIdentifier(nhsNumber);
             fhirPatient.addIdentifier(fhirIdentifier);
         } else {
             //the pseudo number is unique to TPP only, so no point adding to FHIR
@@ -250,8 +249,7 @@ public class DemographicTransformer {
         }
 
         //add the local identifier as well (which we don't have a system for)
-        //TODO - define system for TPP local identifier
-        fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, patientUid, ""));
+        fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, FhirUri.IDENTIFIER_SYSTEM_TPP_PATIENT_ID, patientUid));
 
     }
 }

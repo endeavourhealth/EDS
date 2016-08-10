@@ -33,6 +33,7 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(name = "config", propOrder = {
     "database",
     "webServer",
+    "rabbitmqManagement",
     "messagingQueue",
     "email"
 })
@@ -42,6 +43,8 @@ public class Config {
     protected Database database;
     @XmlElement(required = true)
     protected WebServer webServer;
+    @XmlElement(required = true)
+    protected RabbitmqManagement rabbitmqManagement;
     protected MessagingQueue messagingQueue;
     protected Email email;
 
@@ -91,6 +94,30 @@ public class Config {
      */
     public void setWebServer(WebServer value) {
         this.webServer = value;
+    }
+
+    /**
+     * Gets the value of the rabbitmqManagement property.
+     *
+     * @return
+     *     possible object is
+     *     {@link RabbitmqManagement }
+     *
+     */
+    public RabbitmqManagement getRabbitmqManagement() {
+        return rabbitmqManagement;
+    }
+
+    /**
+     * Sets the value of the rabbitmqManagement property.
+     *
+     * @param value
+     *     allowed object is
+     *     {@link RabbitmqManagement }
+     *
+     */
+    public void setRabbitmqManagement(RabbitmqManagement value) {
+        this.rabbitmqManagement = value;
     }
 
     /**

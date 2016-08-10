@@ -9,7 +9,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
-import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.HashMap;
@@ -21,16 +20,16 @@ public class CsvSplitter {
     private File srcFile = null;
     private File dstDir = null;
     private CSVFormat csvFormat = null;
-    private String splitColumn = null;
+    private String[] splitColumns = null;
     private String[] columnHeaders = null;
     private Map<String, CSVPrinter> csvPrinterMap = new HashMap<>();
 
-    public CsvSplitter(File srcFile, File dstDir, CSVFormat csvFormat, String splitColumn) {
+    public CsvSplitter(File srcFile, File dstDir, CSVFormat csvFormat, String... splitColumns) {
 
         this.srcFile = srcFile;
         this.dstDir = dstDir;
         this.csvFormat = csvFormat;
-        this.splitColumn = splitColumn;
+        this.splitColumns = splitColumns;
     }
 
     public void go() throws Exception {
@@ -41,13 +40,19 @@ public class CsvSplitter {
 
         try
         {
-            //validate the split column is present
+            //validate the split columns are present
             Map<String, Integer> headerMap = csvParser.getHeaderMap();
-            Integer columnIndex = headerMap.get(splitColumn);
-            if (columnIndex == null) {
-                throw new IllegalArgumentException("No column [" + splitColumn + "] in " + srcFile);
+            int[] splitIndexes = new int[splitColumns.length];
+
+            for (int i=0; i<splitColumns.length; i++) {
+                String splitColumn = splitColumns[i];
+
+                Integer columnIndex = headerMap.get(splitColumn);
+                if (columnIndex == null) {
+                    throw new IllegalArgumentException("No column [" + splitColumn + "] in " + srcFile);
+                }
+                splitIndexes[i] = columnIndex.intValue();
             }
-            int splitIndex = columnIndex.intValue();
 
             //convert the map into an ordered String array, so we can populate the column headers on new CSV files
             columnHeaders = new String[headerMap.size()];
@@ -62,7 +67,7 @@ public class CsvSplitter {
             Iterator<CSVRecord> csvIterator = csvParser.iterator();
             while (csvIterator.hasNext()) {
                 CSVRecord csvRecord = csvIterator.next();
-                splitRecord(csvRecord, splitIndex);
+                splitRecord(csvRecord, splitIndexes);
             }
 
             //close all the csv printers created
@@ -78,25 +83,35 @@ public class CsvSplitter {
 
     }
 
-    private void splitRecord(CSVRecord csvRecord, int index) throws Exception {
+    private void splitRecord(CSVRecord csvRecord, int[] columnIndexes) throws Exception {
 
-        String value = csvRecord.get(index);
-        CSVPrinter csvPrinter = findCsvPrinter(value);
+        String[] values = new String[columnIndexes.length];
+        for (int i=0; i<values.length; i++) {
+            values[i] = csvRecord.get(columnIndexes[i]);
+        }
+
+        CSVPrinter csvPrinter = findCsvPrinter(values);
         csvPrinter.printRecord(csvRecord);
     }
 
-    private CSVPrinter findCsvPrinter(String value) throws Exception {
+    private CSVPrinter findCsvPrinter(String[] values) throws Exception {
 
-        //the value is used as the child folder name, so replace any non-valid chars
-        value = value.replaceAll("[:\\\\/*\"?|<>']", " ");
+        String mapKey = String.join("_", values);
 
-        CSVPrinter csvPrinter = csvPrinterMap.get(value);
+        CSVPrinter csvPrinter = csvPrinterMap.get(mapKey);
         if (csvPrinter == null) {
 
-            File folder = new File(dstDir, value);
-            if (!folder.exists()
-                && !folder.mkdirs()) {
-                throw new FileNotFoundException("Couldn't create folder " + folder);
+            File folder = new File(dstDir.getAbsolutePath());
+            for (String value: values) {
+
+                //ensure it can be used as a valid folder name
+                value = value.replaceAll("[:\\\\/*\"?|<>']", " ");
+                folder = new File(folder, value);
+
+                if (!folder.exists()
+                        && !folder.mkdirs()) {
+                    throw new FileNotFoundException("Couldn't create folder " + folder);
+                }
             }
 
             String fileName = srcFile.getName();
@@ -115,7 +130,7 @@ public class CsvSplitter {
             }
             csvPrinter.println();
 
-            csvPrinterMap.put(value, csvPrinter);
+            csvPrinterMap.put(mapKey, csvPrinter);
         }
         return csvPrinter;
     }

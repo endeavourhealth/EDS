@@ -1,6 +1,6 @@
 package org.endeavourhealth.sftpreader;
 
-import org.endeavourhealth.core.utility.XmlSerializer;
+import org.endeavourhealth.sftpreader.utilities.XmlSerializer;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.xml.DatabaseConnection;
 import org.endeavourhealth.sftpreader.model.xml.SftpReaderConfiguration;
@@ -41,8 +41,18 @@ public final class Configuration
 
     private void loadLocalConfiguration() throws Exception
     {
-        LOG.info("Loading local configuration file from resource " + CONFIG_RESOURCE);
-        localConfiguration = XmlSerializer.deserializeFromResource(SftpReaderConfiguration.class, CONFIG_RESOURCE, CONFIG_XSD);
+        String path = System.getProperty("sftpreader.configurationFile");
+
+        if (path != null)
+        {
+            LOG.info("Loading local configuration file from path " + path);
+            localConfiguration = XmlSerializer.deserializeFromFile(SftpReaderConfiguration.class, path, CONFIG_XSD);
+        }
+        else
+        {
+            LOG.info("Loading local configuration file from resource " + CONFIG_RESOURCE);
+            localConfiguration = XmlSerializer.deserializeFromResource(SftpReaderConfiguration.class, CONFIG_RESOURCE, CONFIG_XSD);
+        }
     }
 
     private void loadDbConfiguration() throws PgStoredProcException, SQLException

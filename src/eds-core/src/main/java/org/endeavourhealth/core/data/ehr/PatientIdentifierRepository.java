@@ -17,9 +17,22 @@ public class PatientIdentifierRepository extends Repository {
                                     UUID serviceId,
                                     UUID systemId) {
 
+        for (Identifier fhirIdentifier: fhirPatient.getIdentifier()) {
+
+            if (!fhirIdentifier.getSystem().equalsIgnoreCase(IDENTIFIER_SYSTEM_NHSNUMBER)) {
+                savePatientIdentity(fhirPatient, serviceId, systemId, fhirIdentifier.getSystem(), fhirIdentifier.getValue());
+            }
+        }
+    }
+    public void savePatientIdentity(Patient fhirPatient,
+                                    UUID serviceId,
+                                    UUID systemId,
+                                    String localIdSystem,
+                                    String localId) {
+
         UUID patientId = UUID.fromString(fhirPatient.getId());
 
-        PatientIdentifier patientIdentifier = getMostRecent(serviceId, systemId, patientId);
+        PatientIdentifier patientIdentifier = getMostRecent(serviceId, systemId, patientId, localIdSystem);
 
         //if we've never encountered this patient before, create a new personIdentifier record
         if (patientIdentifier == null) {
@@ -27,6 +40,7 @@ public class PatientIdentifierRepository extends Repository {
             patientIdentifier.setServiceId(serviceId);
             patientIdentifier.setSystemId(systemId);
             patientIdentifier.setPatientId(patientId);
+            patientIdentifier.setLocalIdSystem(localIdSystem);
         }
 
         //whether we've encountered this patient before or not, refresh the record with the latest demographics
@@ -36,6 +50,7 @@ public class PatientIdentifierRepository extends Repository {
         String postcode = findPostcode(fhirPatient);
         Enumerations.AdministrativeGender gender = fhirPatient.getGender();
 
+        patientIdentifier.setLocalId(localId);
         patientIdentifier.setForenames(forenames);
         patientIdentifier.setSurname(surname);
         patientIdentifier.setNhsNumber(nhsNumber);
@@ -119,10 +134,10 @@ public class PatientIdentifierRepository extends Repository {
         mapper.save(patientIdentifier);
     }
 
-    public PatientIdentifier getMostRecent(UUID serviceId, UUID systemId, UUID patientId) {
+    public PatientIdentifier getMostRecent(UUID serviceId, UUID systemId, UUID patientId, String localIdSystem) {
 
         PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
-        Iterator<PatientIdentifier> iterator = accessor.getMostRecent(serviceId, systemId, patientId).iterator();
+        Iterator<PatientIdentifier> iterator = accessor.getMostRecent(serviceId, systemId, patientId, localIdSystem).iterator();
         if (iterator.hasNext()) {
             return iterator.next();
         } else {

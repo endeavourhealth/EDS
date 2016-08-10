@@ -5,7 +5,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.CareRecord_Consultation;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
@@ -22,7 +22,7 @@ public class ConsultationTransformer {
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        CareRecord_Consultation parser = new CareRecord_Consultation(folderPath, csvFormat);
+        Consultation parser = new Consultation(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createEncounter(parser, csvProcessor, csvHelper);
@@ -34,7 +34,7 @@ public class ConsultationTransformer {
         }
     }
 
-    private static void createEncounter(CareRecord_Consultation consultationParser,
+    private static void createEncounter(Consultation consultationParser,
                                         CsvProcessor csvProcessor,
                                         EmisCsvHelper csvHelper) throws Exception {
 

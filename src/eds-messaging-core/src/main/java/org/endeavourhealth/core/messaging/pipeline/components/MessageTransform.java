@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -46,8 +47,11 @@ public class MessageTransform extends PipelineComponent {
 			Service service = serviceRepository.getById(serviceId);
 			List<JsonServiceInterfaceEndpoint> endpoints = new ObjectMapper().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
 
-			//TODO - need proper way of getting system ID from service ID and software and version
+			//TODO - need correct way of finding systemID from serviceID and exchange headers
 			UUID systemId = endpoints.stream().map(JsonServiceInterfaceEndpoint::getSystemUuid).findFirst().get();
+
+			//find the organisation UUIDs covered by the service
+			Set<UUID> orgIds = service.getOrganisations().keySet();
 
 			List<UUID> batchIds = null;
 
@@ -55,19 +59,19 @@ public class MessageTransform extends PipelineComponent {
 				if (!version.equalsIgnoreCase("5.1")) {
 					throw new VersionNotSupportedException(software, version);
 				}
-				batchIds = processEmisCsvTransform(exchange, serviceId, systemId, version);
+				batchIds = processEmisCsvTransform(exchange, serviceId, systemId, version, orgIds);
 
 			} else if (software.equalsIgnoreCase("EmisOpen")) {
 				//TODO - validate version for EmisOpen
-				batchIds = processEmisOpenTransform(exchange, serviceId, systemId, version);
+				batchIds = processEmisOpenTransform(exchange, serviceId, systemId, version, orgIds);
 
 			} else if (software.equalsIgnoreCase("OpenHR")) {
 				//TODO - validate version for EmisOpen
-				batchIds = processEmisOpenHrTransform(exchange, serviceId, systemId, version);
+				batchIds = processEmisOpenHrTransform(exchange, serviceId, systemId, version, orgIds);
 
 			} else if (software.equalsIgnoreCase("TPPExtractService")) {
 				//TODO - validate version for TPPExtractService
-				batchIds = processTppXmlTransform(exchange, serviceId, systemId, version);
+				batchIds = processTppXmlTransform(exchange, serviceId, systemId, version, orgIds);
 
 			} else {
 				throw new SoftwareNotSupportedException(software, version);
@@ -77,7 +81,7 @@ public class MessageTransform extends PipelineComponent {
 			String batchIdString = convertUUidsToStrings(batchIds);
 			exchange.setHeader(HeaderKeys.BatchIds, batchIdString);
 
-			LOG.debug("Message transformed");
+			LOG.trace("Message transformed");
 
 		} catch (Exception e) {
 			exchange.setException(e);
@@ -93,27 +97,27 @@ public class MessageTransform extends PipelineComponent {
 		return String.join(";", batchIdStrings);
 	}
 
-	private List<UUID> processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version) throws Exception {
+	private List<UUID> processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, Set<UUID> orgIds) throws Exception {
 
 		//for EMIS CSV, the exchange body will be a list of files received
 		String base64 = exchange.getBody();
 		String decodedFileString = Base64.decodeAsString(base64);
 		String[] decodedFiles = decodedFileString.split("\n");
 
-		return EmisCsvTransformer.splitAndTransform(decodedFiles, exchange.getExchangeId(), serviceId, systemId);
+		return EmisCsvTransformer.splitAndTransform(decodedFiles, exchange.getExchangeId(), serviceId, systemId, orgIds);
 	}
 
-	private List<UUID> processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version) throws Exception {
+	private List<UUID> processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, Set<UUID> orgIds) throws Exception {
 		//TODO - plug in TPP XML transform
 		return null;
 	}
 
-	private List<UUID> processEmisOpenTransform(Exchange exchange, UUID serviceId, UUID systemId, String version) throws Exception {
+	private List<UUID> processEmisOpenTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, Set<UUID> orgIds) throws Exception {
 		//TODO - plug in EMIS OPEN transform
 		return null;
 	}
 
-	private List<UUID> processEmisOpenHrTransform(Exchange exchange, UUID serviceId, UUID systemId, String version) throws Exception {
+	private List<UUID> processEmisOpenHrTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, Set<UUID> orgIds) throws Exception {
 		//TODO - plug in OpenHR transform
 		return null;
 	}

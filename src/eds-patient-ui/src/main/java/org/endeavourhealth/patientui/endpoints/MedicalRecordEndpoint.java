@@ -2,15 +2,8 @@ package org.endeavourhealth.patientui.endpoints;
 
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
-<<<<<<< HEAD
 import org.endeavourhealth.core.data.ehr.PatientIdentifierByNhsNumberRepository;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByNhsNumber;
-=======
-import org.endeavourhealth.core.data.ehr.PersonIdentifierByNhsNumberRepository;
-import org.endeavourhealth.core.data.ehr.PersonResourceRepository;
-import org.endeavourhealth.core.data.ehr.models.PersonIdentifierByNhsNumber;
-import org.endeavourhealth.core.data.ehr.models.PersonResource;
->>>>>>> 7303933063cedf37a81a23fb9500aede7e2d1e0c
 import org.endeavourhealth.patientui.json.JsonService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

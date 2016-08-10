@@ -5,9 +5,11 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.Admin_UserInRole;
+import org.endeavourhealth.transform.emis.csv.schema.admin.UserInRole;
 import org.endeavourhealth.transform.fhir.*;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Meta;
+import org.hl7.fhir.instance.model.Period;
+import org.hl7.fhir.instance.model.Practitioner;
 
 import java.util.Date;
 
@@ -18,7 +20,7 @@ public class UserInRoleTransformer {
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Admin_UserInRole parser = new Admin_UserInRole(folderPath, csvFormat);
+        UserInRole parser = new UserInRole(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createPractitioner(parser, csvProcessor, csvHelper);
@@ -30,7 +32,7 @@ public class UserInRoleTransformer {
         }
     }
 
-    private static void createPractitioner(Admin_UserInRole userInRoleParser,
+    private static void createPractitioner(UserInRole userInRoleParser,
                                            CsvProcessor csvProcessor,
                                            EmisCsvHelper csvHelper) throws Exception {
 
@@ -69,7 +71,7 @@ public class UserInRoleTransformer {
 
         String roleName = userInRoleParser.getJobCategoryName();
         String roleCode = userInRoleParser.getJobCategoryCode();
-        fhirRole.setRole(CodeableConceptHelper.createCodeableConcept(FhirUri.VALUE_SET_JOB_ROLE_CODES, roleName, roleCode));
+        fhirRole.setRole(CodeableConceptHelper.createCodeableConcept(FhirValueSetUri.VALUE_SET_JOB_ROLE_CODES, roleName, roleCode));
 
         csvProcessor.saveAdminResource(fhirPractitioner);
     }

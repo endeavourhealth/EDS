@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.fhir.schema;
 
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.FhirValueSetUri;
 
 public enum EncounterParticipantType {
 
@@ -28,7 +28,7 @@ public enum EncounterParticipantType {
         return description;
     }
     public String getSystem() {
-        return FhirUri.VALUE_SET_ENCOUNTER_PARTICIPANT_TYPE;
+        return FhirValueSetUri.VALUE_SET_ENCOUNTER_PARTICIPANT_TYPE;
     }
 
     EncounterParticipantType(String code, String description) {

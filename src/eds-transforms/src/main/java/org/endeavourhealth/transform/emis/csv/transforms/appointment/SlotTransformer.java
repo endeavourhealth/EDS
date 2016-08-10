@@ -5,11 +5,9 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.Appointment_Slot;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.hl7.fhir.instance.model.Appointment;
-import org.hl7.fhir.instance.model.Meta;
-import org.hl7.fhir.instance.model.Slot;
+import org.endeavourhealth.transform.emis.csv.schema.appointment.Slot;
+import org.endeavourhealth.transform.fhir.*;
+import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
 
@@ -20,7 +18,7 @@ public class SlotTransformer {
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Appointment_Slot parser = new Appointment_Slot(folderPath, csvFormat);
+        Slot parser = new Slot(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createSlotAndAppointment(parser, csvProcessor, csvHelper);
@@ -32,7 +30,7 @@ public class SlotTransformer {
         }
     }
 
-    private static void createSlotAndAppointment(Appointment_Slot slotParser,
+    private static void createSlotAndAppointment(Slot slotParser,
                                                  CsvProcessor csvProcessor,
                                                  EmisCsvHelper csvHelper) throws Exception {
 
@@ -45,7 +43,7 @@ public class SlotTransformer {
 
         String organisationGuid = slotParser.getOrganisationGuid();
 
-        Slot fhirSlot = new Slot();
+        org.hl7.fhir.instance.model.Slot fhirSlot = new org.hl7.fhir.instance.model.Slot();
         fhirSlot.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SLOT));
 
         String slotGuid = slotParser.getSlotGuid();
@@ -67,7 +65,7 @@ public class SlotTransformer {
         String sessionGuid = slotParser.getSessionGuid();
         fhirSlot.setSchedule(csvHelper.createScheduleReference(sessionGuid));
 
-        fhirSlot.setFreeBusyType(Slot.SlotStatus.BUSY);
+        fhirSlot.setFreeBusyType(org.hl7.fhir.instance.model.Slot.SlotStatus.BUSY);
 
         Date startDate = slotParser.getAppointmentStartDateTime();
 
@@ -100,6 +98,34 @@ public class SlotTransformer {
             fhirAppointment.setStatus(Appointment.AppointmentStatus.ARRIVED);
         } else {
             fhirAppointment.setStatus(Appointment.AppointmentStatus.BOOKED);
+        }
+
+        Integer patientWaitMins = slotParser.getPatientWaitInMin();
+        if (patientWaitMins != null) {
+            Duration fhirDuration = QuantityHelper.createDuration(patientWaitMins, "minutes");
+            fhirAppointment.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.APPOINTMENT_PATIENT_WAIT, fhirDuration));
+        }
+
+        Integer patientDelayMins = slotParser.getAppointmentDelayInMin();
+        if (patientDelayMins != null) {
+            Duration fhirDuration = QuantityHelper.createDuration(patientDelayMins, "minutes");
+            fhirAppointment.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.APPOINTMENT_PATIENT_DELAY, fhirDuration));
+        }
+
+        Long dnaReasonCode = slotParser.getDnaReasonCodeId();
+        if (dnaReasonCode != null) {
+            CodeableConcept fhirCodeableConcept = CodeableConceptHelper.createCodeableConcept(FhirValueSetUri.VALUE_SET_EMIS_DNA_REASON_CODE, "", dnaReasonCode.toString());
+            fhirAppointment.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.APPOINTMENT_DNA_REASON_CODE, fhirCodeableConcept));
+        }
+
+        Date sentInTime = slotParser.getSendInDateTime();
+        if (sentInTime != null) {
+            fhirAppointment.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.APPOINTMENT_SENT_IN, new DateTimeType(sentInTime)));
+        }
+
+        Date leftTime = slotParser.getLeftDateTime();
+        if (leftTime != null) {
+            fhirAppointment.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.APPOINTMENT_LEFT, new DateTimeType(leftTime)));
         }
 
         csvProcessor.savePatientResource(fhirSlot, patientGuid);

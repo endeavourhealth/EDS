@@ -34,7 +34,7 @@ final class FamilyHistoryTransformer
     private static Extension getFamilyMemberHistoryRecorderExtension(AuthorType authorType) throws TransformException
     {
         return new Extension()
-                .setUrl(FhirExtensionUri.FAMILY_MEMBER_HISTORY_RECORDER)
+                .setUrl(FhirExtensionUri.RECORDED_BY)
                 .setValue(ReferenceHelper.createReference(ResourceType.Practitioner, authorType.getUser().getGUID()));
     }
 

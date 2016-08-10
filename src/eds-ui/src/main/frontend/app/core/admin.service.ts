@@ -32,7 +32,8 @@ module app.core {
 				{caption: 'Services', state: 'app.service', icon: 'fa fa-building-o'},
 				{caption: 'Queueing', state: 'app.routeGroup', icon: 'fa fa-tasks'},
 				{caption: 'Administration', state: 'app.admin', icon: 'fa fa-users'},
-				{caption: 'Audit', state: 'app.audit', icon: 'fa fa-archive'}
+				{caption: 'Logging', state: 'app.logging', icon: 'fa fa-list-alt'}
+
 			];
 		}
 

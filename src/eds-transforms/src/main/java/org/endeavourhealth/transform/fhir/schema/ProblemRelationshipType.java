@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.fhir.schema;
 
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.FhirValueSetUri;
 
 public enum ProblemRelationshipType {
 
@@ -19,7 +19,7 @@ public enum ProblemRelationshipType {
         return description;
     }
     public String getSystem() {
-        return FhirUri.VALUE_SET_PROBLEM_RELATIONSHIP_TYPE;
+        return FhirValueSetUri.VALUE_SET_PROBLEM_RELATIONSHIP_TYPE;
     }
 
 

@@ -9,10 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PgStoredProc
 {
@@ -187,19 +184,23 @@ public class PgStoredProc
         if (StringUtils.isEmpty(storedProcedureName))
             throw new IllegalArgumentException("storedProcedureName is empty");
 
-        return "select * from " + storedProcedureName
+        String sql = "select * from " + storedProcedureName
                 + "("
                 + getFormattedParameters()
                 + ");";
+
+        return sql;
     }
 
     private String getFormattedParameters()
     {
-        return StringUtils.join(parameters
-                .keySet()
-                .stream()
-                .map(t -> t + " := " + getFormattedParameterValue(parameters.get(t).toString()))
-                .toArray(), ',');
+        List<String> formattedParameters = new ArrayList<>();
+
+        for (String parameterName : parameters.keySet())
+            formattedParameters.add(parameterName + " := " + getFormattedParameterValue(parameters.get(parameterName)));
+
+        return StringUtils.join(formattedParameters, ", ");
+
     }
 
     private static String getFormattedParameterValue(Object value)
@@ -211,7 +212,13 @@ public class PgStoredProc
         else if ((value instanceof Boolean))
             return value.toString();
         else if (value instanceof java.time.LocalDate)
-            return "'" + ((java.time.LocalDate)value).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + "'";
+            return "'" + ((java.time.LocalDate)value).format(DateTimeFormatter.ISO_DATE) + "'";
+        else if (value instanceof java.time.LocalDateTime)
+            return "'" + ((java.time.LocalDateTime)value).format(DateTimeFormatter.ISO_DATE_TIME) + "'";
+        else if (value instanceof java.util.UUID)
+            return "'" + value.toString() + "'::uuid";
+        else if (value == null)
+            return "null";
 
         throw new NotImplementedException("Parameter type not supported");
     }

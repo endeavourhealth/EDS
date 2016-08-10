@@ -4,19 +4,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
-import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
+import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 

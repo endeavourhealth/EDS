@@ -9,7 +9,6 @@
                     <name value="{{source-name}}"/>
                     <software value="{{source-software}}"/>
                     <version value="{{source-version}}"/>
-                    <endpoint value="{{source-endpoint}}"/>
                 </source>
                 <data>
                     <reference value="Binary/{{payload-id}}"/>

@@ -2,7 +2,7 @@ package org.endeavourhealth.ui.email;
 
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.ui.framework.config.models.Template;
-import org.endeavourhealth.ui.database.administration.DbEndUser;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,39 +105,5 @@ public final class EmailProvider {
         }
     }
 
-    private HashMap<EmailTemplateParameter, String> buildEmailParameters(DbEndUser user, Organisation org, String token) {
-
-        String email = user.getEmail();
-        String title = user.getTitle();
-        String forename = user.getForename();
-        String surname = user.getSurname();
-        String orgName = org.getName();
-        String orgId = org.getNationalId();
-
-        HashMap<EmailTemplateParameter, String> ret = new HashMap<>();
-        ret.put(EmailTemplateParameter.EMAIL_TO, email);
-        ret.put(EmailTemplateParameter.TOKEN, token);
-        ret.put(EmailTemplateParameter.TITLE, title);
-        ret.put(EmailTemplateParameter.FORENAME, forename);
-        ret.put(EmailTemplateParameter.SURNAME, surname);
-        ret.put(EmailTemplateParameter.ORGANISATION_NAME, orgName);
-        ret.put(EmailTemplateParameter.ORGANISATION_ID, orgId);
-
-        return ret;
-    }
-
-
-    public boolean sendInviteEmail(DbEndUser user, Organisation org, String token) {
-        HashMap<EmailTemplateParameter, String> parameters = buildEmailParameters(user, org, token);
-        return sendEmail(EmailTemplateUse.INVITATION, parameters);
-    }
-    public boolean sendPasswordResetEmail(DbEndUser user, Organisation org, String token) {
-        HashMap<EmailTemplateParameter, String> parameters = buildEmailParameters(user, org, token);
-        return sendEmail(EmailTemplateUse.PASSWORD_RESET, parameters);
-    }
-    public boolean sendNewAccessGrantedEmail(DbEndUser user, Organisation org) {
-        HashMap<EmailTemplateParameter, String> parameters = buildEmailParameters(user, org, "");
-        return sendEmail(EmailTemplateUse.NEW_ORGANISATION, parameters);
-    }
 
 }

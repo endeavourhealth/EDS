@@ -18,17 +18,17 @@ create table sftpreader.instance
 create table sftpreader.interface_type
 (
 	interface_type_id integer not null,
-	description varchar(1000) not null,
+	interface_type_name varchar(1000) not null,
 
 	constraint sftpreader_interfacetype_interfacetypeid_pk primary key (interface_type_id),
-	constraint sftpreader_interfacetype_description_uq unique (description),
-	constraint sftpreader_interfacetype_description_ck check (char_length(trim(description)) > 0)
+	constraint sftpreader_interfacetype_interfacetypename_uq unique (interface_type_name),
+	constraint sftpreader_interfacetype_interfacetypename_ck check (char_length(trim(interface_type_name)) > 0)
 );
 
 insert into sftpreader.interface_type
 (
 	interface_type_id,
-	description
+	interface_type_name
 )
 values
 (
@@ -61,8 +61,12 @@ values
 (1, 'Appointment_Session'),
 (1, 'Appointment_SessionUser'),
 (1, 'Appointment_Slot'),
-(1, 'Audit_RegistrationAudit'),
-(1, 'Audit_PatientAudit'),
+--
+-- temporarily remove as test pack does not contain these files
+--
+--(1, 'Audit_RegistrationAudit'),
+--(1, 'Audit_PatientAudit'),
+--
 (1, 'CareRecord_Consultation'),
 (1, 'CareRecord_Diary'),
 (1, 'CareRecord_Observation'),
@@ -122,6 +126,48 @@ create table sftpreader.configuration_pgp
 	constraint sftpreader_configurationpgp_instanceid_fk foreign key (instance_id) references sftpreader.configuration (instance_id)
 );
 
+create table sftpreader.configuration_eds
+(
+	instance_id varchar(100) not null,
+	eds_url varchar(1000) not null,
+	eds_service_identifier varchar(100) not null,
+	software_name varchar(100) not null,
+	software_version varchar(100) not null,
+	envelope_content_type varchar(100) not null,
+	use_keycloak boolean not null,
+	keycloak_token_uri varchar(500) null,
+	keycloak_realm varchar(100) null,
+	keycloak_username varchar(100) null,
+	keycloak_password varchar(100) null,
+	keycloak_clientid varchar(100) null,
+
+	constraint sftpreader_configurationeds_instanceid_pk primary key (instance_id),
+	constraint sftpreader_configurationeds_instanceid_fk foreign key (instance_id) references sftpreader.configuration (instance_id),
+	constraint sftpreader_configurationeds_edsurl_ck check (char_length(trim(eds_url)) > 0),
+	constraint sftpreader_configurationeds_edsserviceidentifier_uq unique (eds_service_identifier),
+	constraint sftpreader_configurationeds_edsserviceidentifier_ck check (char_length(trim(eds_service_identifier)) > 0),
+	constraint sftpreader_configurationeds_softwarename_ck check (char_length(trim(software_name)) > 0),
+	constraint sftpreader_configurationeds_softwareversion_ck check (char_length(trim(software_version)) > 0),
+	constraint sftpreader_configurationeds_envelopecontenttype_ck check (char_length(trim(envelope_content_type)) > 0),
+	constraint sftpreader_configurationeds_usekeycloak_keycloaktokenuri_keycloakrealm_keycloakusername_keycloakpassword_keycloakclientid_ck check ((not use_keycloak) or (keycloak_token_uri is not null and keycloak_realm is not null and keycloak_username is not null and keycloak_password is not null and keycloak_clientid is not null)),
+	constraint sftpreader_configurationeds_keycloaktokenuri_ck check (keycloak_token_uri is null or (char_length(trim(keycloak_token_uri)) > 0)),
+	constraint sftpreader_configurationeds_keycloakrealm_ck check (keycloak_realm is null or (char_length(trim(keycloak_realm)) > 0)),
+	constraint sftpreader_configurationeds_keycloakusername_ck check (keycloak_username is null or (char_length(trim(keycloak_username)) > 0)),
+	constraint sftpreader_configurationeds_keycloakpassword_ck check (keycloak_password is null or (char_length(trim(keycloak_password)) > 0)),
+	constraint sftpreader_configurationeds_keycloakclientid_ck check (keycloak_clientid is null or (char_length(trim(keycloak_clientid)) > 0))
+);	
+
+create table sftpreader.configuration_kvp
+(
+	instance_id varchar(100) not null,
+	key varchar(100) not null,
+	value varchar(1000) not null,
+
+	constraint sftpreader_configuration_instanceid_key_pk primary key (instance_id, key),
+	constraint sftpreader_configuration_instanceid_fk foreign key (instance_id) references sftpreader.configuration (instance_id),
+	constraint sftpreader_configuration_key_ck check (char_length(trim(key)) > 0)
+);
+
 create table sftpreader.batch
 (
 	batch_id serial not null,
@@ -145,7 +191,7 @@ create table sftpreader.batch
 	constraint sftpreader_batch_sequencenumber_ck check (sequence_number is null or (sequence_number > 0)),
 	constraint sftpreader_batch_instanceid_sequencenumber_uq unique (instance_id, sequence_number),
 	constraint sftpreader_batch_completedate_notificationdate_ck check ((complete_date is null or notification_date is null) or (complete_date <= notification_date)),
-	constraint sftpreader_batch_iscomplete_completedate_sequencenumber_ck check ((is_complete and complete_date is not null and sequence_number is not null) or ((not is_complete) and complete_date is null)),
+	constraint sftpreader_batch_iscomplete_completedate_sequencenumber_ck check ((is_complete and complete_date is not null and sequence_number is not null) or ((not is_complete) and complete_date is null and sequence_number is null)),
 	constraint sftpreader_batch_havenotified_notificationdate_ck check ((have_notified and notification_date is not null) or ((not have_notified) and notification_date is null)),
 	constraint sftpreader_batch_iscomplete_havenotified_ck check (is_complete or (not have_notified))
 );
@@ -202,3 +248,24 @@ create table sftpreader.unknown_file
 	constraint sftpreader_unknownfile_filename_ck check (char_length(trim(filename)) > 0),
 	constraint sftpreader_unknownfile_remotesizebytes_ck check (remote_size_bytes >= 0)
 );
+
+create table sftpreader.notification_message
+(
+	notification_message_id serial not null,
+	batch_id integer not null,
+	instance_id varchar(100) not null,
+	message_uuid uuid not null, 
+	timestamp timestamp not null,
+	outbound varchar(20000) not null,
+	inbound varchar(20000) null,
+	was_success boolean not null,
+	error_text varchar(1000) null,
+
+	constraint sftpreader_notificationmessage_notificationmessageid_pk primary key (notification_message_id),
+	constraint sftpreader_notificationmessage_batchid_instanceid_fk foreign key (batch_id, instance_id) references sftpreader.batch (batch_id, instance_id),
+	constraint sftpreader_notificationmessage_messageuuid_uq unique (message_uuid),
+	constraint sftpreader_notificationmessage_outbound_ck check (char_length(trim(outbound)) > 0),
+	constraint sftpreader_notificationmessage_inbound_wassuccess_ck check (inbound is not null or (not was_success)),
+	constraint sftpreader_notificationmessage_wassuccess_errortext_ck check ((was_success and error_text is null) or ((not was_success) and error_text is not null))
+);
+

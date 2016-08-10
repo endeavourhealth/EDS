@@ -1,26 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
-	<!--AZURE settings-->
 	<database>
-		<url>jdbc:jtds:sqlserver://mpydpvsu61.database.windows.net:1433/Endeavour_Enterprise</url>
-		<username>devuser@mpydpvsu61</username>
-		<password>7oaG7FVsvK08sE9T5NEe</password>
+		<url></url>
+		<username></username>
+		<password></password>
 	</database>
-
-	<!--AIMES SQL Settings-->
-	<!--<database>
-		<url>jdbc:jtds:sqlserver://10.11.87.68/Endeavour_Enterprise</url>
-		<username>Endeavour_Enterprise_ApplicationUser</username>
-		<password>TheQuickBrownFox1234%^&amp;*</password>
-	</database>-->
-
-	<!--local SQL Express settings-->
-	<!--<database>
-		<url>jdbc:jtds:sqlserver://127.0.0.1:1433/Endeavour_Enterprise;instance=SQLEXPRESS</url>
-		<username>Endeavour_Enterprise_ApplicationUser</username>
-		<password>TheQuickBrownFox1234%^&amp;*</password>
-	</database>-->
 
 	<webServer>
 		<!--local host cookie-->
@@ -28,110 +13,12 @@
 
 		<!--AIMES cookie-->
 		<!--<cookieDomain>37.48.245.69</cookieDomain>-->
-</webServer>
+	</webServer>
 
-<!--GMail settings-->
-	<email>
-		<url>smtp.gmail.com</url>
-		<username>endeavourhealthenterprise@gmail.com</username>
-		<password>ItZ8Nht1rsFKQF</password>
-		<template>
-			<use>invitation</use>
-			<sendFrom></sendFrom>
-			<subject>Enterprise Invitation</subject>
-			<htmlBody>
-				<![CDATA[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-        "http://www.w3.org/TR/html4/loose.dtd">
-<html>
-<body>
-<p>
-    Dear [Title] [Forename] [Surname],
-</p>
-<p>
-    An Enterprise account has been set up for you at <b>[OrganisationName]</b> ([OrganisationId])
-</p>
-<p>
-    To complete the registration process, you will need to click the below link, which will
-    take you to the Enterprise site and allow you to set your password.
-</p>
-<p>
-    <a href="http://37.48.245.69/SetPassword.html?Token=[Token]">Click here</a>
-</p>
-<p>
-    Kind regards,
-    Enterprise Admin
-</p>
-</body>
-</html>
-]]>
-			</htmlBody>
-		</template>
-		<template>
-			<use>passwordReset</use>
-			<sendFrom></sendFrom>
-			<subject>Enterprise Password Reset</subject>
-			<htmlBody>
-				<![CDATA[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-        "http://www.w3.org/TR/html4/loose.dtd">
-<html>
-<body>
-<p>
-    Dear [Title] [Forename] [Surname],
-</p>
-<p>
-    This email was sent because you clicked the Forgotten Your Password link in Enterprise.
-</p>
-<p>
-    To set a new password, you will need to click the below link, which will
-    take you to the Enterprise site and allow you to set your password.
-</p>
-<p>
-    <a href="http://37.48.245.69/SetPassword.html?Token=[Token]">Click here</a>
-</p>
-<p>
-    Kind regards,
-    Enterprise Admin
-</p>
-</body>
-</html>
-]]>
-			</htmlBody>
-		</template>
-		<template>
-			<use>newOrganisation</use>
-			<sendFrom></sendFrom>
-			<subject>Enterprise Access Granted</subject>
-			<htmlBody>
-				<![CDATA[
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-        "http://www.w3.org/TR/html4/loose.dtd">
-<html>
-<body>
-<p>
-    Dear [Title] [Forename] [Surname],
-</p>
-<p>
-    Your Enterprise account has been updated and you now have access to <b>[OrganisationName]</b> ([OrganisationId])
-</p>
-<p>
-	Your existing username and password do not need to be changed and you can access the new
-    To complete the registration process, you will need to click the below link, which will
-    take you to the Enterprise site and allow you to set your password.
-</p>
-<p>
-    <a href="http://37.48.245.69/SetPassword.html?Token=[Token]">Click here</a>
-</p>
-<p>
-    Kind regards,
-    Enterprise Admin
-</p>
-</body>
-</html>
-]]>
-			</htmlBody>
-		</template>
-	</email>
+	<rabbitmqManagement>
+		<username>guest</username>
+		<password>guest</password>
+	</rabbitmqManagement>
+
 
 </config>

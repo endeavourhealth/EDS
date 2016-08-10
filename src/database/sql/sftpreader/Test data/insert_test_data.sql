@@ -24,8 +24,52 @@ values
 (
 	'EMIS001',
 	1,
-	'/Users/jonny/Code/Local/sftp',
+	'/Users/jonny/Code/Local/sftp/EMIS001',
 	60
+);
+
+insert into sftpreader.configuration_eds
+(
+	instance_id,
+	eds_url,
+	eds_service_identifier,
+	software_name,
+	software_version,
+	envelope_content_type,
+	use_keycloak,
+	keycloak_token_uri,
+	keycloak_realm,
+	keycloak_username,
+	keycloak_password,
+	keycloak_clientid
+)
+values
+(
+	'EMIS001',
+	'http://localhost:8080/api/PostAsync',
+	'EMIS001',
+	'EmisExtractService',
+	'5.1',
+	'EMISCSV',
+	true,
+	'https://keycloak.eds.c.healthforge.io/auth',
+	'endeavour',
+	'sftpuser',
+	'sftppassword',
+	'eds-sftpreader'
+);
+
+insert into sftpreader.configuration_kvp
+(
+	instance_id,
+	key,
+	value
+)
+values
+(
+	'EMIS001',
+	'SharingAgreementGuid',
+	'45E7CD20-EE37-41AB-90D6-DC9D4B03D102'
 );
 
 insert into sftpreader.configuration_sftp
@@ -47,7 +91,7 @@ values
 	22,
 	'/gpg',
 	'test-endeavour',
-	'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCuDY1+QzYDnQntzLbL0JGhtzNhwAf02duBy+slowxMPVz36ehC6bhESGoJptdkoP+jiSnN2sv7wicGnv6HpY21lbQeK2NI12iRCWe/8dx9SELXD5yrhqeA3FyTqKXFsqBOtbORASgXAOM93kRCmIpeRMatCQcpnn4hicYhkMPGVvbbaL7lxbyOBIZRcFSWEuxqVzSZ5ee/sMLDEYHBycGEM5xzvXkS9hjsb3A6/q0vpTEHXg/WrePvzrm2Bw0xYwoB2/y0EdjYFu4BINutcqE5TdJTH/95oaEclADkHTF3e0E2cjIh9AE2JwHArnCO/NzcBhwzdLT1Vs57N9+Xe0rrt1Jka6jaknuhDsGvPyOaE6o4IXF01n9pYlPBAhBzjHvu7cYqgyR9i9sZ2+KDjUnczUuJPoEG4gGQstv2vwZRnWRXScR2wgNUv2TsERDeC/jU4ouCP2oUunzRJziAcK8AElo1f6FjY1Q9DqhibZdNw7G67MQNMd9XpjO4zDRCfY8=',
+    'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCv4E/Y93z9rpT59joKKMBZH5Sd1uvTdot/I/KjiV3RvDrgtnhbTKPHHH5mfZy07msWW5r0uv95j0u6tuhNunqttdPx11Z8yGJoJL5q6Wn5kcbObjDEsOe9nqMdnwMbk/Let3U/FvfKmL4TGYCvQKkgBvuBUtSDxljeH2tbXpI9gRVqrpj0QiNHTFyXAja0+Y8wb+RWLLl+aqOiRRVIBvSR41wBI7MHijEKbRyETWPmEU9j4K1vdNfLOq14982OO6RfRhxL8iUu46cQ1KBLDd1wDx5WAWkOj2bIqPBPN4d7giRjStXNk2VNns1pqbuuQKPfh1APEdPd2Vm7yjbQcHCJ test-endeavour',
 	'-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEAr+BP2Pd8/a6U+fY6CijAWR+Undbr03aLfyPyo4ld0bw64LZ4
 W0yjxxx+Zn2ctO5rFlua9Lr/eY9LurboTbp6rbXT8ddWfMhiaCS+aulp+ZHGzm4w

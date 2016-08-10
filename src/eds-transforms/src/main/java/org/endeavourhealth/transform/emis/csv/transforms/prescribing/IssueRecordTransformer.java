@@ -1,18 +1,19 @@
 package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
+import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
-import org.endeavourhealth.transform.emis.csv.schema.Prescribing_IssueRecord;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
+import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.QuantityHelper;
 import org.hl7.fhir.instance.model.*;
 
-import java.util.*;
+import java.util.Date;
 
 public class IssueRecordTransformer {
 
@@ -21,7 +22,7 @@ public class IssueRecordTransformer {
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Prescribing_IssueRecord parser = new Prescribing_IssueRecord(folderPath, csvFormat);
+        IssueRecord parser = new IssueRecord(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createResource(parser, csvProcessor, csvHelper);
@@ -33,64 +34,75 @@ public class IssueRecordTransformer {
         }
     }
 
-    private static void createResource(Prescribing_IssueRecord issueParser,
+    private static void createResource(IssueRecord parser,
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 
         MedicationOrder fhirMedication = new MedicationOrder();
         fhirMedication.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_ORDER));
 
-        String issueRecordGuid = issueParser.getIssueRecordGuid();
-        String patientGuid = issueParser.getPatientGuid();
+        String issueRecordGuid = parser.getIssueRecordGuid();
+        String patientGuid = parser.getPatientGuid();
 
         EmisCsvHelper.setUniqueId(fhirMedication, patientGuid, issueRecordGuid);
 
         fhirMedication.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (issueParser.getDeleted() || issueParser.getIsConfidential()) {
+        if (parser.getDeleted() || parser.getIsConfidential()) {
             csvProcessor.deletePatientResource(fhirMedication, patientGuid);
             return;
         }
 
-        Date effectiveDate = issueParser.getEffectiveDate();
-        String effectiveDatePrecision = issueParser.getEffectiveDatePrecision();
+        Date effectiveDate = parser.getEffectiveDate();
+        String effectiveDatePrecision = parser.getEffectiveDatePrecision();
         DateTimeType dateTime = EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision);
         fhirMedication.setDateWrittenElement(dateTime);
 
         //cache the date against the drug record GUID, so we can pick it up when processing the DrugRecord CSV
-        String drugRecordGuid = issueParser.getDrugRecordGuid();
+        String drugRecordGuid = parser.getDrugRecordGuid();
         csvHelper.cacheDrugRecordDate(drugRecordGuid, patientGuid, dateTime);
 
-        String prescriberGuid = issueParser.getClinicianUserInRoleGuid();
+        String prescriberGuid = parser.getClinicianUserInRoleGuid();
         fhirMedication.setPrescriber(csvHelper.createPractitionerReference(prescriberGuid));
 
-        Long codeId = issueParser.getCodeId();
+        Long codeId = parser.getCodeId();
         fhirMedication.setMedication(csvHelper.findMedication(codeId, csvProcessor));
 
-        String dose = issueParser.getDosage();
+        String dose = parser.getDosage();
         MedicationOrder.MedicationOrderDosageInstructionComponent fhirDose = fhirMedication.addDosageInstruction();
         fhirDose.setText(dose);
 
-        Double cost = issueParser.getEstimatedNhsCost();
+        Double cost = parser.getEstimatedNhsCost();
         fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_ORDER_ESTIMATED_COST, new DecimalType(cost)));
 
-        Double quantity = issueParser.getQuantity();
-        String quantityUnit = issueParser.getQuantityUnit();
-        Integer courseDuration = issueParser.getCourseDurationInDays();
+        Double quantity = parser.getQuantity();
+        String quantityUnit = parser.getQuantityUnit();
+        Integer courseDuration = parser.getCourseDurationInDays();
         MedicationOrder.MedicationOrderDispenseRequestComponent fhirDispenseRequest = new MedicationOrder.MedicationOrderDispenseRequestComponent();
         fhirDispenseRequest.setQuantity(QuantityHelper.createSimpleQuantity(quantity, quantityUnit));
         fhirDispenseRequest.setExpectedSupplyDuration(QuantityHelper.createDuration(courseDuration, "days"));
         fhirMedication.setDispenseRequest(fhirDispenseRequest);
 
         //if the Medication is linked to a Problem, then use the problem's Observation as the Medication reason
-        String problemObservationGuid = issueParser.getProblemObservationGuid();
+        String problemObservationGuid = parser.getProblemObservationGuid();
         if (problemObservationGuid != null) {
             fhirMedication.setReason(csvHelper.createObservationReference(problemObservationGuid, patientGuid));
         }
 
         Reference authorisationReference = csvHelper.createMedicationStatementReference(drugRecordGuid, patientGuid);
         fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_ORDER_AUTHORISATION, authorisationReference));
+
+        String enteredByGuid = parser.getEnteredByUserInRoleGuid();
+        if (!Strings.isNullOrEmpty(enteredByGuid)) {
+            Reference reference = csvHelper.createPractitionerReference(enteredByGuid);
+            fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
+        }
+
+        Date enteredDateTime = parser.getEnteredDateTime();
+        if (enteredDateTime != null) {
+            fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(enteredDateTime)));
+        }
 
         csvProcessor.savePatientResource(fhirMedication, patientGuid);
 

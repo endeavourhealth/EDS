@@ -2,9 +2,11 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.schema.Admin_OrganisationLocation;
+import org.endeavourhealth.transform.emis.csv.schema.admin.OrganisationLocation;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class OrganisationLocationTransformer {
 
@@ -12,7 +14,7 @@ public class OrganisationLocationTransformer {
 
         HashMap<String, List<String>> hmLocationToOrganisation = new HashMap<>();
 
-        Admin_OrganisationLocation parser = new Admin_OrganisationLocation(folderPath, csvFormat);
+        OrganisationLocation parser = new OrganisationLocation(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createLocationOrgansationMapping(parser, hmLocationToOrganisation);
@@ -26,7 +28,7 @@ public class OrganisationLocationTransformer {
         return hmLocationToOrganisation;
     }
 
-    private static void createLocationOrgansationMapping(Admin_OrganisationLocation organisationLocationParser,
+    private static void createLocationOrgansationMapping(OrganisationLocation organisationLocationParser,
                                                          HashMap<String, List<String>> hmLocationToOrganisation) throws Exception {
 
         //if an org-location link has been deleted, then either a) the location has been deleted

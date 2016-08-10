@@ -4,7 +4,6 @@ import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.ObjectFactory;
 import org.endeavourhealth.core.xml.QueryDocument.QueryDocument;
 import org.endeavourhealth.ui.XmlSerializer;
-import org.endeavourhealth.ui.database.definition.DbItem;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBElement;
@@ -17,12 +16,6 @@ public abstract class QueryDocumentSerializer {
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
     private static final String XSD = "QueryDocument.xsd";
 
-    public static LibraryItem readLibraryItemFromItem(DbItem item) throws ParserConfigurationException, JAXBException, IOException, SAXException {
-        return XmlSerializer.deserializeFromString(LibraryItem.class, item.getXmlContent(), XSD);
-    }
-    public static QueryDocument readQueryDocumentFromItem(DbItem item) throws ParserConfigurationException, JAXBException, IOException, SAXException {
-        return XmlSerializer.deserializeFromString(QueryDocument.class, item.getXmlContent(), XSD);
-    }
     public static LibraryItem readLibraryItemFromXml(String xml) throws ParserConfigurationException, JAXBException, IOException, SAXException {
         return XmlSerializer.deserializeFromString(LibraryItem.class, xml, XSD);
     }
