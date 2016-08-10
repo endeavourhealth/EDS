@@ -4,6 +4,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.ThreadPool;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCode;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
@@ -12,10 +13,7 @@ import org.hl7.fhir.instance.model.CodeableConcept;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Callable;
 
 public abstract class ClinicalCodeTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(ClinicalCodeTransformer.class);
@@ -27,44 +25,25 @@ public abstract class ClinicalCodeTransformer {
 
         //because we have to hit a third party web resource, we use a thread pool to support
         //threading these calls to improve performance
-        ExecutorService threadPool = Executors.newFixedThreadPool(15); //seems suitable for concurrent hits against a web service
-        AtomicInteger threadPoolQueueSize = new AtomicInteger();
-        List<Future> futures = new ArrayList<>();
+        ThreadPool threadPool = new ThreadPool(15); //15 threads seems reasonable for hits against a web service
 
         ClinicalCode parser = new ClinicalCode(folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                transform(parser, csvProcessor, csvHelper, threadPool, threadPoolQueueSize, futures);
+                transform(parser, csvProcessor, csvHelper, threadPool);
             }
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {
             parser.close();
+            threadPool.waitAndStop();
         }
-
-        //close and let our thread pool finish
-        threadPool.shutdown();
-        try {
-
-            while (!threadPool.awaitTermination(1, TimeUnit.MINUTES)) {
-                LOG.trace("Waiting for {} clinical codes to be looked up", threadPoolQueueSize.get());
-            }
-
-        } catch (InterruptedException ex) {
-            LOG.error("Thread interrupted", ex);
-        }
-
-        //check the futures to see if any exceptions were raised
-        checkFutures(futures);
-
     }
 
     private static void transform(ClinicalCode parser,
                                   CsvProcessor csvProcessor,
                                   EmisCsvHelper csvHelper,
-                                  ExecutorService threadPool,
-                                  AtomicInteger threadPoolQueueSize,
-                                  List<Future> futures) throws Exception {
+                                  ThreadPool threadPool) throws Exception {
 
         Long codeId = parser.getCodeId();
         String emisTerm = parser.getTerm();
@@ -87,37 +66,12 @@ public abstract class ClinicalCodeTransformer {
             fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, emisTerm, emisCode);
         }
 
-        threadPoolQueueSize.incrementAndGet();
-        Future<?> future = threadPool.submit(new WebServiceLookup(codeId, fhirConcept, codeType, emisTerm,
-                                            emisCode, snomedConceptId, snomedDescriptionId,
-                                            nationalCode, nationalCodeCategory, nationalCodeDescription,
-                                            csvProcessor, csvHelper, threadPoolQueueSize));
-        futures.add(future);
-
-        //every time we've added a number of futures, just have a check to see if any are outstanding, which will also raise
-        //any exceptions generated from the callables
-        if (futures.size() % 1000 == 0) {
-            checkFutures(futures);
-        }
-
+        threadPool.submit(new WebServiceLookup(codeId, fhirConcept, codeType, emisTerm,
+                emisCode, snomedConceptId, snomedDescriptionId,
+                nationalCode, nationalCodeCategory, nationalCodeDescription,
+                csvProcessor, csvHelper));
     }
 
-    private static void checkFutures(List<Future> futures) throws Exception {
-
-        //iterate in reverse, so we are safe to remove
-        for (int i=futures.size()-1; i>=0; i--) {
-            Future<?> future = futures.get(i);
-            if (future.isDone()) {
-                try {
-                    //just calling get on the future will cause any exception to be raised in this thread
-                    future.get();
-                    futures.remove(i);
-                } catch (Exception ex) {
-                    throw (Exception)ex.getCause();
-                }
-            }
-        }
-    }
 
     static class WebServiceLookup implements Callable {
 
@@ -133,7 +87,6 @@ public abstract class ClinicalCodeTransformer {
         private String nationalCodeDescription = null;
         private CsvProcessor csvProcessor = null;
         private EmisCsvHelper csvHelper = null;
-        private AtomicInteger threadPoolQueueSize = null;
 
         public WebServiceLookup(Long codeId,
                                 CodeableConcept fhirConcept,
@@ -146,8 +99,7 @@ public abstract class ClinicalCodeTransformer {
                                 String nationalCodeCategory,
                                 String nationalCodeDescription,
                                 CsvProcessor csvProcessor,
-                                EmisCsvHelper csvHelper,
-                                AtomicInteger threadPoolQueueSize) {
+                                EmisCsvHelper csvHelper) {
 
             this.codeId = codeId;
             this.fhirConcept = fhirConcept;
@@ -161,7 +113,6 @@ public abstract class ClinicalCodeTransformer {
             this.nationalCodeDescription = nationalCodeDescription;
             this.csvProcessor = csvProcessor;
             this.csvHelper = csvHelper;
-            this.threadPoolQueueSize = threadPoolQueueSize;
         }
 
         @Override
@@ -182,7 +133,6 @@ public abstract class ClinicalCodeTransformer {
                     readCode, snomedConceptId, snomedDescriptionId, snomedTerm,
                     nationalCode, nationalCodeCategory, nationalCodeDescription, csvProcessor);
 
-            threadPoolQueueSize.decrementAndGet();
             return null;
         }
     }

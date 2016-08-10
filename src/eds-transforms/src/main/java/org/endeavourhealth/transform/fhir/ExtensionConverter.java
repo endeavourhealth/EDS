@@ -11,7 +11,7 @@ public class ExtensionConverter {
                 .setValue(value);
     }
 
-    public static Extension createExtension(String uri, Extension... subExtensions) {
+    public static Extension createCompoundExtension(String uri, Extension... subExtensions) {
         Extension e = new Extension()
                 .setUrl(uri);
 

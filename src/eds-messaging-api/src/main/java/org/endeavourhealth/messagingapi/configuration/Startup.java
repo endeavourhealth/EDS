@@ -25,7 +25,7 @@ public final class Startup implements ServletContextListener {
             LOG.error("Error leading engine configuration", e);
         }
 
-        LOG.error("EDS API WebServer Startup Complete");
+        LOG.info("EDS API WebServer Startup Complete");
 
     }
 

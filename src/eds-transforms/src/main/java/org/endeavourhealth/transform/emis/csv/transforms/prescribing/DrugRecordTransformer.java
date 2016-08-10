@@ -103,7 +103,7 @@ public class DrugRecordTransformer {
         if (cancellationDate != null) {
             //the cancellation extension is a compound extension, so we have one extension inside another
             Extension extension = ExtensionConverter.createExtension("performer", new DateType(cancellationDate));
-            fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_CANCELLATION, extension));
+            fhirMedication.addExtension(ExtensionConverter.createCompoundExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_CANCELLATION, extension));
         }
 
         DateTimeType mostRecentDate = csvHelper.getDrugRecordDate(drugRecordGuid, patientGuid);

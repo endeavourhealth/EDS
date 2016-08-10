@@ -78,7 +78,7 @@ public class ProblemTransformer {
                 || !Strings.isNullOrEmpty(lastReviewedByGuid)) {
 
             //the review extension is a compound extension, containing who and when
-            Extension fhirExtension = ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_LAST_REVIEWED);
+            Extension fhirExtension = ExtensionConverter.createCompoundExtension(FhirExtensionUri.PROBLEM_LAST_REVIEWED);
 
             if (lastReviewDateType != null) {
                 fhirExtension.addExtension(ExtensionConverter.createExtension("date", lastReviewDateType));
@@ -101,7 +101,7 @@ public class ProblemTransformer {
             //this extension is composed of two separate extensions
             Extension typeExtension = ExtensionConverter.createExtension("type", new StringType(fhirRelationshipType.getCode()));
             Extension referenceExtension = ExtensionConverter.createExtension("target", csvHelper.createProblemReference(parentProblemGuid, patientGuid));
-            fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_RELATED, typeExtension, referenceExtension));
+            fhirProblem.addExtension(ExtensionConverter.createCompoundExtension(FhirExtensionUri.PROBLEM_RELATED, typeExtension, referenceExtension));
         }
 
         //until the Observation, DrugIssue and DrugRecord files are completed, we can't
