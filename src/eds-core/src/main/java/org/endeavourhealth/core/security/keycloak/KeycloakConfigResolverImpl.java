@@ -23,24 +23,33 @@ public class KeycloakConfigResolverImpl implements KeycloakConfigResolver {
 
     private static final Logger LOG = LoggerFactory.getLogger(KeycloakConfigResolverImpl.class);
 
+    private static KeycloakDeployment keycloakDeployment = null;
+
     @Override
     public KeycloakDeployment resolve(OIDCHttpFacade.Request request) {
 
-        ConfigurationResource keycloakConfig = null;
+        if(keycloakDeployment == null) {
 
-        try {
-            keycloakConfig = new ConfigurationRepository().getByKey(ConfigurationRepository.KEYCLOAK_CONFIG);
-        } catch(Exception e) {
-            LOG.error("Configuration Repository error: {}", e.getMessage());
+            ConfigurationResource keycloakConfig = null;
+
+            try {
+                keycloakConfig = new ConfigurationRepository().getByKey(ConfigurationRepository.KEYCLOAK_CONFIG);
+            } catch (Exception e) {
+                LOG.error("Configuration Repository error: {}", e.getMessage());
+            }
+
+            if (keycloakConfig != null && StringUtils.isNotEmpty(keycloakConfig.getConfigurationData())) {
+                InputStream stream = new ByteArrayInputStream(keycloakConfig.getConfigurationData().getBytes(StandardCharsets.UTF_8));
+                keycloakDeployment = KeycloakDeploymentBuilder.build(stream);
+            }
+
+            if(keycloakDeployment == null) {
+                LOG.warn("Cannot get Keycloak config from configuration repository, falling back to fixed internal configuration.");
+                keycloakDeployment = KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/keycloak.json"));
+            }
         }
 
-        if(keycloakConfig != null && StringUtils.isNotEmpty(keycloakConfig.getConfigurationData())) {
-            InputStream stream = new ByteArrayInputStream(keycloakConfig.getConfigurationData().getBytes(StandardCharsets.UTF_8));
-            return KeycloakDeploymentBuilder.build(stream);
-        }
-
-        LOG.warn("Cannot get Keycloak config from configuration repository, falling back to fixed internal configuration.");
-        return KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/keycloak.json"));
+        return keycloakDeployment;
     }
 
 }

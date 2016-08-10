@@ -82,7 +82,7 @@ public class ConfigService {
                 LOG.warn("Falling back to default AuthConfig properties...");
                 authConfig = new AuthConfig(
                         "endeavour",
-                        "http://localhost:9080/auth",
+                        "https://keycloak.eds.c.healthforge.io/auth",
                         "eds-ui",
                         "http://localhost:8080"
                 );
