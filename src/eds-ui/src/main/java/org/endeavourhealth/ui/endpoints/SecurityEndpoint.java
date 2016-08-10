@@ -3,23 +3,24 @@ package org.endeavourhealth.ui.endpoints;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.UserRepository;
 import org.endeavourhealth.core.data.admin.models.EndUser;
-import org.endeavourhealth.core.data.admin.models.EndUserPwd;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.OrganisationEndUserLink;
-import org.endeavourhealth.ui.email.EmailProvider;
-import org.endeavourhealth.ui.framework.security.PasswordHash;
-import org.endeavourhealth.ui.framework.security.SecurityConfig;
-import org.endeavourhealth.ui.framework.security.TokenHelper;
-import org.endeavourhealth.ui.framework.security.Unsecured;
+import org.endeavourhealth.core.security.RoleUtils;
+import org.endeavourhealth.ui.framework.config.ConfigService;
 import org.endeavourhealth.ui.json.*;
-import org.endeavourhealth.ui.database.*;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+import java.net.URI;
+import java.net.URLEncoder;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.UUID;
 
 @Path("/security")
 public final class SecurityEndpoint extends AbstractEndpoint {
@@ -28,127 +29,11 @@ public final class SecurityEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/login")
-    @Unsecured
-    public Response login(@Context SecurityContext sc, JsonEndUser personParameters) throws Exception {
-        super.setLogbackMarkers(sc);
-
-        String email = personParameters.getUsername();
-        String password = personParameters.getPassword();
-
-        LOG.trace("Login for {}", email);
-
-        if (email == null
-                || email.length() == 0
-                || password == null
-                || password.length() == 0) {
-            throw new BadRequestException("Missing username or password in request");
-        }
-
-        UserRepository userRepository = new UserRepository();
-
-        EndUser user = userRepository.getEndUserByEmail(email);
-
-        if (user == null) {
-            throw new NotAuthorizedException("No user found for email");
-        }
-
-        //retrieve the most recent password for the person
-        UUID uuid = user.getId();
-        EndUserPwd pwd = userRepository.getEndUserPwdById(uuid); // TODO: Check for password expired
-
-        if (pwd == null) {
-            throw new NotAuthorizedException("No active password for email");
-        }
-
-        //validate the password
-        String hash = pwd.getPwdHash();
-        if (!PasswordHash.validatePassword(password, hash)) {
-
-            int failedAttempts = pwd.getFailedAttempts();
-            failedAttempts ++;
-            pwd.setFailedAttempts(failedAttempts);
-            if (failedAttempts >= SecurityConfig.MAX_FAILED_PASSWORD_ATTEMPTS) {
-                pwd.setDtExpired(new Date());
-            }
-
-            userRepository.updateEndUserPwd(pwd);
-
-            throw new NotAuthorizedException("Invalid password");
-        }
-
-        Boolean mustChangePassword = null;
-        if (pwd.getIsOneTimeUse()) {
-            pwd.setDtExpired(new Date());
-            mustChangePassword = Boolean.TRUE;
-        }
-
-        pwd.setFailedAttempts(0);
-
-        userRepository.updateEndUserPwd(pwd);
-
-        JsonOrganisationList ret = ret = new JsonOrganisationList();
-        Organisation orgToAutoSelect = null;
-        Boolean isAdminForAutoSelect = null;
-
-        //now see what organisations the person can access
-        //if the person is a superUser, then we want to now prompt them to log on to ANY organisation
-        OrganisationRepository organisationRepository = new OrganisationRepository();
-
-        if (user.getIsSuperUser()) {
-
-            Iterable<Organisation> orgs = organisationRepository.getAll();
-
-            for (Organisation o : orgs) {
-                //super-users are assumed to be admins at every organisation
-                ret.add(o, new Boolean(true));
-
-                //if there's only one organisation, automatically select it
-                orgToAutoSelect = o;
-                isAdminForAutoSelect = new Boolean(true);
-            }
-        }
-        //if the person ISN'T a superUser, then we look at the person/org link, so see where they can log on to
-        else {
-            Iterable<OrganisationEndUserLink> orgLinks = organisationRepository.getByUserId(uuid);
-            if (!orgLinks.iterator().hasNext()) {
-                throw new NotAuthorizedException("No organisations to log on to");
-            }
-
-            for (OrganisationEndUserLink orgLink : orgLinks) {
-                UUID orgUuid = orgLink.getOrganisationId();
-                Organisation o = organisationRepository.getById(orgUuid);
-                Boolean isAdmin = new Boolean(orgLink.getIsAdmin());
-                ret.add(o, isAdmin);
-
-                //if there's only one organisation, automatically select it
-                orgToAutoSelect = o;
-                isAdminForAutoSelect = new Boolean(isAdmin);
-            }
-        }
-
-        //set the user details in the return object as well
-        ret.setUser(new JsonEndUser(user, null, mustChangePassword));
-
-        NewCookie cookie = TokenHelper.createTokenAsCookie(user, orgToAutoSelect, isAdminForAutoSelect);
-
-        clearLogbackMarkers();
-
-        return Response
-                .ok()
-                .entity(ret)
-                .cookie(cookie)
-                .build();
-    }
-
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
     @Path("/selectOrganisation")
     public Response selectOrganisation(@Context SecurityContext sc, JsonOrganisation orgParameters) throws Exception {
         super.setLogbackMarkers(sc);
 
-        UUID uuid = getEndUserUuidFromToken(sc);
+        UUID uuid = SecurityUtils.getCurrentUserId(sc);
         UserRepository userRepository = new UserRepository();
 
         EndUser endUser = userRepository.getById(uuid);
@@ -191,9 +76,6 @@ public final class SecurityEndpoint extends AbstractEndpoint {
             isAdmin = link.getIsAdmin();
         }
 
-        //issue a new cookie, with the newly selected organisation
-        NewCookie cookie = TokenHelper.createTokenAsCookie(endUser, org, isAdmin);
-
         //return the full org details and the user's role at this place
         JsonOrganisation ret = new JsonOrganisation(org, isAdmin);
 
@@ -202,7 +84,6 @@ public final class SecurityEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .entity(ret)
-                .cookie(cookie)
                 .build();
     }
 
@@ -210,23 +91,20 @@ public final class SecurityEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/logoff")
-    @Unsecured
     public Response logoff(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
 
         LOG.trace("Logoff");
 
-        //replace the cookie on the client with an empty one
-        NewCookie cookie = TokenHelper.createTokenAsCookie(null, null, false);
+        String redirectUrl = URLEncoder.encode(ConfigService.instance().getAppConfig().getAppUrl() + "/api/user/details", "UTF-8");
+
+        String url = String.format(ConfigService.instance().getAuthConfig().getAuthServerUrl() + "/realms/%s/protocol/openid-connect/logout?redirect_uri=%s",
+                SecurityUtils.getKeycloakSecurityContext(sc).getRealm(), redirectUrl);
 
         clearLogbackMarkers();
 
         return Response
-                .ok()
-                .cookie(cookie)
+                .seeOther(new URI(url))
                 .build();
     }
-
-
-
 }

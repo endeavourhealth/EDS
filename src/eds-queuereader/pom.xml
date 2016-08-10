@@ -8,25 +8,32 @@
     <artifactId>eds-queuereader</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <parent>
+        <groupId>org.endeavourhealth</groupId>
+        <artifactId>eds</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../../</relativePath>
+    </parent>
+
     <dependencies>
 
         <!-- dependent on EDS-core and EDS-messaging-core -->
         <dependency>
             <groupId>org.endeavourhealth</groupId>
             <artifactId>eds-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.endeavourhealth</groupId>
             <artifactId>eds-messaging-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- rabbit MQ -->
         <dependency>
             <groupId>com.rabbitmq</groupId>
             <artifactId>amqp-client</artifactId>
-            <version>3.5.5</version>
+            <version>${amqp-client.version}</version>
         </dependency>
 
     </dependencies>
@@ -38,8 +45,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
             <plugin>

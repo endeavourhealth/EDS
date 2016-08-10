@@ -6,6 +6,7 @@ import IRootScopeService = angular.IRootScopeService;
 import IAdminService = app.core.IAdminService;
 import IModalService = angular.ui.bootstrap.IModalService;
 import ISecurityService = app.core.ISecurityService;
+import Auth = app.appstartup.Auth;
 
 angular.module('app', [
 		'ui.bootstrap',
@@ -14,12 +15,13 @@ angular.module('app', [
 		'ngDragDrop',
 		'angular-uuid-generator',
 
+        'app.appstartup',
+
+        'app.models',
 		'app.core',
 		'app.config',
 		'app.blocks',
-		'app.models',
 		'app.layout',
-		'app.login',
 
 		'app.dialogs',
 		'app.dashboard',
@@ -46,12 +48,18 @@ angular.module('app', [
 							adminService:IAdminService,
 							securityService:ISecurityService,
 							logger:ILoggerService,
-							$modal : IModalService) {
-			$rootScope.$on('$stateChangeStart', function (event, toState, toParams, fromState, fromParams) {
+							$modal:IModalService) {
+
+
+	        $rootScope.$on('$stateChangeStart', function (event, toState, toParams, fromState, fromParams) {
 				if (toState.unsecured !== true && !securityService.isAuthenticated()) {
-					logger.error('You are not logged in');
+				    var data = {
+				      isAuth : securityService.isAuthenticated(),
+				      toState : toState
+                    };
+					logger.log('You are not logged in', data);
 					event.preventDefault();
-					$state.transitionTo('login');
+					//$state.transitionTo('app.register');		// TODO: create registration controller
 				}
 				if (adminService.getPendingChanges()) {
 					event.preventDefault();
@@ -76,8 +84,11 @@ angular.module('app', [
 						});
 				}
 			});
-			$state.go('login', {}, {reload: true});
+
+            logger.log('Starting app...', securityService.getCurrentUser());
+            $state.go('app.dashboard', {}, {});
 		}]
 	);
+
 
 

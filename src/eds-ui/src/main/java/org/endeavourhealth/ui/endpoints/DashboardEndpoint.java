@@ -8,9 +8,9 @@ import org.endeavourhealth.core.data.admin.models.Audit;
 import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.config.ConfigurationRepository;
 import org.endeavourhealth.core.data.config.models.ConfigurationResource;
-import org.endeavourhealth.ui.framework.config.ConfigSerializer;
-import org.endeavourhealth.ui.framework.config.models.RabbitmqManagement;
+import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.ui.json.*;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +36,7 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	public Response getRecentDocuments(@Context SecurityContext sc, @QueryParam("count") int count) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		UUID userUuid = getEndUserUuidFromToken(sc);
+		UUID userUuid = SecurityUtils.getCurrentUserId(sc);
 		UUID orgUuid = getOrganisationUuidFromToken(sc);
 
 		LOG.trace("getRecentDocuments {}", count);
@@ -95,8 +95,7 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	public Response pingRabbitNode(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		RabbitmqManagement authConfig = ConfigSerializer.getConfig().getRabbitmqManagement();
-		HttpAuthenticationFeature rabbitAuth = HttpAuthenticationFeature.basic(authConfig.getUsername(), authConfig.getPassword());
+		HttpAuthenticationFeature rabbitAuth = HttpAuthenticationFeature.basic("guest", "guest");
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 
@@ -212,6 +211,7 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/rabbitNode/synchronize")
+	@RequiresAdmin
 	public Response synchronizeRabbit(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		String[] pipelines = {"EdsInbound", "EdsProtocol", "EdsTransform", "EdsResponse", "EdsSubscriber"};
 
