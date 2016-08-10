@@ -25,12 +25,6 @@
         </dependency>
         <!-- End JAX-RS -->
 
-        <dependency>
-            <groupId>org.endeavourhealth</groupId>
-            <artifactId>eds-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
         <!-- SFTP library -->
         <dependency>
             <groupId>com.jcraft</groupId>

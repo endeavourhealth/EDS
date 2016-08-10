@@ -17,9 +17,18 @@
     </connectionSource>
   </appender>
 
+  <!-- only want ERRORs from these packages -->
+  <logger name="ch.qos.logback" level="ERROR"/>
+  <logger name="com.mchange" level="ERROR"/>
+
+  <!-- add both appenders with TRACE logging level -->
   <root level="TRACE">
     <appender-ref ref="stdout" />
     <appender-ref ref="db" />
   </root>
+
+  <!-- specofy a shutdown hook for logging, so all loggers are flushed before app exit -->
+  <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+
 
 </configuration>
