@@ -60,7 +60,7 @@ module app.core {
 		}
 
         openUserAccountTab() {
-            window.open('/api/user/account', '_blank');
+            window.open(Auth.factory().getAccountUrl(), '_blank');
         }
 
         onAuthReady(callback:any) {

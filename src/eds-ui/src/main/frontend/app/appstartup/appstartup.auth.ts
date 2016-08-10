@@ -23,6 +23,7 @@ module app.appstartup {
         }
 
         private authz:any;
+        private accountUrl:string;
         private logoutUrl:string;
         private redirectUrl:string;
 
@@ -42,6 +43,7 @@ module app.appstartup {
                 clientId: authConfig.authClientId
             });
 
+            this.accountUrl = authConfig.authServerUrl + '/realms/' + authConfig.realm + '/account';
             this.redirectUrl = window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/';
             this.logoutUrl = authConfig.authServerUrl + '/realms/' + authConfig.realm + '/protocol/openid-connect/logout?redirect_uri=' + this.redirectUrl;
 
@@ -81,6 +83,10 @@ module app.appstartup {
 
         getLogoutUrl() : string {
             return this.logoutUrl;
+        }
+
+        getAccountUrl() : string {
+            return this.accountUrl;
         }
 
         getRedirectUrl() : string {
