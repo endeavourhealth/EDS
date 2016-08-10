@@ -81,7 +81,7 @@ public abstract class AbstractCsvTransformer {
             return true;
         } else {
             this.csvRecord = null;
-            LOG.trace("Completed {}", file.getAbsolutePath());
+            LOG.trace("Completed file {}", file.getAbsolutePath());
             return false;
         }
     }

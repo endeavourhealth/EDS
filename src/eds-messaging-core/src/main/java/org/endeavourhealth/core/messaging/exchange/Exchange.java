@@ -1,6 +1,8 @@
 package org.endeavourhealth.core.messaging.exchange;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class Exchange {
 	private Exception exception;
@@ -9,17 +11,9 @@ public class Exchange {
 	private UUID exchangeId = null;
 	private String body;
 
-	public Exchange() {
+	public Exchange(UUID exchangeId, String body) {
+		this.exchangeId = exchangeId;
 		this.headers = new HashMap<>();
-	}
-
-	public Exchange(String body) {
-		this.headers = new HashMap<>();
-		this.body = body;
-	}
-
-	public Exchange(Map<String, String> headers, String body) {
-		this.headers = headers;
 		this.body = body;
 	}
 

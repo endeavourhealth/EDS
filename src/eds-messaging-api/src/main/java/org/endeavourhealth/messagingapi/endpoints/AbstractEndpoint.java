@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import java.util.UUID;
 
 public abstract class AbstractEndpoint {
 
@@ -16,7 +17,7 @@ public abstract class AbstractEndpoint {
 
 	protected Response Process(HttpHeaders headers, String body, Pipeline pipeline) {
 
-		Exchange exchange = new Exchange(body);
+		Exchange exchange = new Exchange(UUID.randomUUID(), body);
 
 		for (String key : headers.getRequestHeaders().keySet())
 			exchange.setHeader(key, headers.getHeaderString(key));

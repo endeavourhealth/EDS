@@ -23,10 +23,9 @@ public final class AuditWriter {
         ExchangeEvent eventToSave = null;
 
         UUID uuid = ex.getExchangeId();
-        //if the UUID is null, the assign a new ID and save the Exchange itself
-        if (uuid == null) {
-            uuid = UUID.randomUUID();
-            ex.setExchangeId(uuid);
+        //if logging the receive of an exchange, log the exchange itself
+        if (event == AuditEvent.RECEIVE) {
+
             String body = ex.getBody();
 
             //use jackson to write the headers to JSON

@@ -1,6 +1,8 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -31,7 +33,7 @@ public class PostMessageToExchange extends PipelineComponent {
 		String routingKey = getRoutingKey(exchange);
 
 		// Generate message identifier and store message in db
-		UUID messageUuid = UUID.randomUUID();
+		UUID messageUuid = exchange.getExchangeId();
 		new QueuedMessageRepository().save(messageUuid, exchange.getBody());
 
 		Connection connection = getConnection();

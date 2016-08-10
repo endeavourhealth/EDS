@@ -12,7 +12,6 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.transform.common.exceptions.SoftwareNotSupportedException;
 import org.endeavourhealth.transform.common.exceptions.VersionNotSupportedException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
-import org.glassfish.jersey.internal.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,8 +99,7 @@ public class MessageTransform extends PipelineComponent {
 	private List<UUID> processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, Set<UUID> orgIds) throws Exception {
 
 		//for EMIS CSV, the exchange body will be a list of files received
-		String base64 = exchange.getBody();
-		String decodedFileString = Base64.decodeAsString(base64);
+		String decodedFileString = exchange.getBody();
 		String[] decodedFiles = decodedFileString.split("\n");
 
 		return EmisCsvTransformer.splitAndTransform(decodedFiles, exchange.getExchangeId(), serviceId, systemId, orgIds);

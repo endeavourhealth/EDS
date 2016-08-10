@@ -4,12 +4,11 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
+import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.data.admin.models.QueuedMessage;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
-import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 
 import java.io.IOException;
 import java.util.Map;
@@ -32,7 +31,7 @@ public class RabbitConsumer extends DefaultConsumer {
 		// Get the message from the db
 		QueuedMessage queuedMessage = new QueuedMessageRepository().getById(messageUuid);
 
-		Exchange exchange = new Exchange(queuedMessage.getMessageBody());
+		Exchange exchange = new Exchange(messageUuid, queuedMessage.getMessageBody());
 		Map<String, Object> headers = properties.getHeaders();
 		if (headers != null) {
 			headers.keySet().stream()

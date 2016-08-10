@@ -70,15 +70,16 @@ public class CsvSplitter {
                 splitRecord(csvRecord, splitIndexes);
             }
 
+
+        } finally {
+            csvParser.close();
+
             //close all the csv printers created
             Iterator<CSVPrinter> printerIterator = csvPrinterMap.values().iterator();
             while (printerIterator.hasNext()) {
                 CSVPrinter csvPrinter = printerIterator.next();
                 csvPrinter.close();
             }
-
-        } finally {
-            csvParser.close();
         }
 
     }
