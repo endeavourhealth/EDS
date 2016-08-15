@@ -440,12 +440,12 @@ public class SftpTask extends TimerTask
             if (dbConfiguration.getDbConfigurationEds().isUseKeycloak())
                 httpPost.addHeader(KeycloakClient.instance().getAuthorizationHeader());
 
-            if (LOG.isTraceEnabled()) {
+            /*if (LOG.isTraceEnabled()) {
                 LOG.trace(dbConfiguration.getDbConfigurationEds().getEdsUrl());
                 LOG.trace("Authorization : Bearer " + KeycloakClient.instance().getToken().getToken());
                 LOG.trace("Content-Type : text/xml");
                 LOG.trace(outboundMessage);
-            }
+            }*/
 
             //the bundle is being sent as XML, so we need to declare this
             httpPost.addHeader("Content-Type", "text/xml");

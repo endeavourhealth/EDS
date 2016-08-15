@@ -50,7 +50,9 @@ public abstract class AbstractEndpoint {
 
     protected UUID getOrganisationUuidFromToken(SecurityContext sc) throws Exception {
         //an authenticated user MUST have a EndUser UUID, but they may not have an organisation selected yet
-        UUID orgUuid = null;    // TODO: store in session??
+        //TODO - need to work out ORG UUID using keycloak??
+        UUID orgUuid = UUID.fromString("EE83768D-448F-4264-8BB3-D0EDFFF74BD5");;    // TODO: store in session??
+
         if (orgUuid == null) {
             throw new BadRequestException("Organisation must be selected before performing any actions");
         }

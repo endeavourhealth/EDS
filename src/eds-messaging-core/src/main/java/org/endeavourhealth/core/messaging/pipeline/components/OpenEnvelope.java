@@ -90,7 +90,7 @@ public class OpenEnvelope extends PipelineComponent {
 		Iterable<Service> services = serviceRepository.getByLocalIdentifier(senderId);
 
 		if (!services.iterator().hasNext())
-			throw new PipelineException("No service found for local identifier");
+			throw new PipelineException("No service found for local identifier " + senderId);
 
 		Service service = services.iterator().next();
 		exchange.setHeader(HeaderKeys.SenderUuid, service.getId().toString());
