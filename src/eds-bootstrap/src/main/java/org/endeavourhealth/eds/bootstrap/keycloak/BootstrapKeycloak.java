@@ -135,6 +135,7 @@ public class BootstrapKeycloak implements Bootstrap {
         client.realm(newRealm).roles().create(new RoleRepresentation("eds_messaging_get", "EDS Messaging API GET", false));
         client.realm(newRealm).roles().create(new RoleRepresentation("eds_messaging_post", "EDS Messaging API POST", false));
         client.realm(newRealm).roles().create(new RoleRepresentation("eds_user_professional", "EDS Professional User", false));
+        client.realm(newRealm).roles().create(new RoleRepresentation("eds_service", "EDS machine service user", false));
 
         //
         // Add users
@@ -148,7 +149,7 @@ public class BootstrapKeycloak implements Bootstrap {
         addUser(client.realm(newRealm), "messaging", "Test1234", "Messaging", "User", "messaging@example.com",Lists.newArrayList("eds_messaging_get", "eds_messaging_post"));
         addUser(client.realm(newRealm), "professional", "Test1234", "Professional", "User", "professional@example.com",Lists.newArrayList("eds_user_professional"));
 
-        addUser(client.realm(newRealm), "sftpuser", "sftppassword", "SFTP", "User", "sftpuser@example.com",Lists.newArrayList("eds_messaging_post"));
+        addUser(client.realm(newRealm), "sftpuser", "sftppassword", "SFTP", "User", "sftpuser@example.com",Lists.newArrayList("eds_service", "eds_messaging_post"));
 
         cassandraClient.close(); // TODO: handle graceful close on exceptions
     }
