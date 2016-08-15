@@ -457,6 +457,7 @@ public class SftpTask extends TimerTask
             LOG.debug("Received HTTP code {}: {}", statusCode, response.getStatusLine());
 
             List<String> lines = new ArrayList<>();
+            lines.add(response.getStatusLine().toString());
 
             HttpEntity entity = response.getEntity();
             if (entity != null)
@@ -465,7 +466,7 @@ public class SftpTask extends TimerTask
                     BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(instream, "UTF-8"));
                     String line = bufferedReader.readLine();
                     while (line != null){
-                        LOG.error(line);
+                        LOG.debug(line);
                         line = bufferedReader.readLine();
                         lines.add(line);
                     }

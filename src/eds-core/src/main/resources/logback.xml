@@ -3,7 +3,7 @@
 
   <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{5} - %msg%n
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{10}:%-3line - %msg%n
       </pattern>
     </encoder>
   </appender>
@@ -17,6 +17,13 @@
     </connectionSource>
   </appender>
 
+  <!-- wrap the DB appender in an async one, that means it won't block when logging to the DB -->
+  <appender name="db_async" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="db" />
+    <discardingThreshold>0</discardingThreshold>
+    <includeCallerData>true</includeCallerData>
+  </appender>
+
   <!-- only want ERRORs from these packages -->
   <logger name="ch.qos.logback" level="ERROR"/>
   <logger name="com.mchange" level="ERROR"/>
@@ -28,7 +35,7 @@
   <!-- add both appenders with INFO logging level -->
   <root level="INFO">
     <appender-ref ref="stdout" />
-    <appender-ref ref="db" />
+    <appender-ref ref="db_async" />
   </root>
 
   <!-- specofy a shutdown hook for logging, so all loggers are flushed before app exit -->
