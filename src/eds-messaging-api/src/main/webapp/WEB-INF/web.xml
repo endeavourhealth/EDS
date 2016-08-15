@@ -12,7 +12,7 @@
         </init-param>
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
-            <param-value>org.glassfish.jersey.jackson.JacksonFeature</param-value>
+            <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.core.security.CustomRolesAllowedFeature</param-value>
         </init-param>
 
         <!-- enable directory listings -->
@@ -46,25 +46,14 @@
         <param-value>org.endeavourhealth.core.security.keycloak.KeycloakConfigResolverImpl</param-value>
     </context-param>
 
-    <!-- GetData -->
+    <!-- API is private and requires the user to authenticate and be an EDS service machine user -->
     <security-constraint>
         <web-resource-collection>
-            <web-resource-name>GetData</web-resource-name>
-            <url-pattern>/api/GetData*</url-pattern>
+            <web-resource-name>api</web-resource-name>
+            <url-pattern>/api/*</url-pattern>
         </web-resource-collection>
         <auth-constraint>
-            <role-name>eds_messaging_get</role-name>
-        </auth-constraint>
-    </security-constraint>
-
-    <!-- PostMessage -->
-    <security-constraint>
-        <web-resource-collection>
-            <web-resource-name>PostMessage</web-resource-name>
-            <url-pattern>/api/PostMessage*</url-pattern>
-        </web-resource-collection>
-        <auth-constraint>
-            <role-name>eds_messaging_post</role-name>
+            <role-name>eds_service</role-name>
         </auth-constraint>
     </security-constraint>
 
@@ -76,19 +65,7 @@
 
     <!-- all roles in the system MUST be specified here -->
     <security-role>
-        <role-name>eds_user</role-name>
-    </security-role>
-    <security-role>
-        <role-name>eds_admin</role-name>
-    </security-role>
-    <security-role>
-        <role-name>eds_superuser</role-name>
-    </security-role>
-    <security-role>
-        <role-name>eds_messaging_get</role-name>
-    </security-role>
-    <security-role>
-        <role-name>eds_messaging_post</role-name>
+        <role-name>eds_service</role-name>
     </security-role>
 
 </web-app>
