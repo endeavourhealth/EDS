@@ -6,12 +6,14 @@ import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.csv.ThreadPool;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -35,10 +37,7 @@ public class CsvProcessor {
     private UUID adminBatchId = null;
 
     //threading
-    private ExecutorService threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-    private AtomicInteger threadPoolQueueSize = new AtomicInteger(); //executorService doesn't provide visibility of this, so keep separate
-    private ReentrantLock futuresLock = new ReentrantLock();
-    private Map<Future, Future> futures = new ConcurrentHashMap<>(); //need concurrency support, so can't use a set
+    private ThreadPool threadPool = new ThreadPool(THREAD_POOL_SIZE);
 
     //counts
     private Map<UUID, AtomicInteger> countResourcesSaved = new ConcurrentHashMap<>();
@@ -101,59 +100,8 @@ public class CsvProcessor {
         }
 
 
-        //new WorkerCallable(resource, batchId, toDelete, mapIds).call();
-
-        threadPoolQueueSize.incrementAndGet();
-        Future future = threadPool.submit(new MapAndSaveResourceTask(resource, batchId, toDelete, mapIds));
-        futures.put(future, future);
-
-        //every so often, check any previously submitted tasks to see if they're complete or in error
-        if (futures.size() % 1000 == 0) {
-            checkFutures(false);
-        }
+        threadPool.submit(new MapAndSaveResourceTask(resource, batchId, toDelete, mapIds));
     }
-
-    private void checkFutures(boolean forceLock) throws Exception {
-
-        try {
-
-            //when finishing processing, we want to guarantee a lock, but when doing an interim check,
-            //we just try to get the lock and backoff if we can't
-            if (forceLock) {
-                futuresLock.lock();
-            } else {
-                if (!futuresLock.tryLock()) {
-                    return;
-                }
-            }
-
-            //check all the futures to see if any raised an error. Also, remove any futures that
-            //we know have completed without error.
-            List<Future> futuresCompleted = new ArrayList<>();
-            Iterator<Future> it = futures.keySet().iterator();
-            while (it.hasNext()) {
-                Future future = it.next();
-                if (future.isDone()) {
-                    try {
-                        //just calling get on the future will cause any exception to be raised in this thread
-                        future.get();
-                        futuresCompleted.add(future);
-                    } catch (Exception ex) {
-                        throw (Exception)ex.getCause();
-                    }
-                }
-            }
-
-            //remove any we know have completed
-            for (Future future: futuresCompleted) {
-                futures.remove(future);
-            }
-
-        } finally {
-            futuresLock.unlock();
-        }
-    }
-
 
     private UUID getAdminBatchId() {
         if (adminBatchId == null) {
@@ -212,15 +160,10 @@ public class CsvProcessor {
      */
     public List<UUID> getBatchIdsCreated() throws Exception {
 
-        //shutdown the threadpool and wait for all runnables to complete
-        threadPool.shutdown();
-        while (!threadPool.awaitTermination(1, TimeUnit.MINUTES)) {
-            LOG.trace("Waiting for thread pool to complete {} tasks", threadPoolQueueSize.get());
-        }
+        //wait for all tasks to be completed
+        threadPool.waitAndStop();
 
-        //check any remaining futures, to see if any exceptions were raised
-        checkFutures(true);
-
+        //log out counts of what we processed
         logResults();
 
         return getAllBatchIds();
@@ -340,8 +283,6 @@ public class CsvProcessor {
                 } else {
                     storageService.exchangeBatchUpdate(exchangeId, batchUuid, list);
                 }
-
-                threadPoolQueueSize.decrementAndGet();
 
             } catch (Exception ex) {
                 throw new TransformException("Exception mapping or storing " + resource.getResourceType() + " " + resource.getId(), ex);

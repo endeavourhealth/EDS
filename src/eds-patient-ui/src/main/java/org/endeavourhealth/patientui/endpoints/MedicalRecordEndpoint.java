@@ -2,7 +2,7 @@ package org.endeavourhealth.patientui.endpoints;
 
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
-import org.endeavourhealth.core.data.ehr.PatientIdentifierByNhsNumberRepository;
+import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByNhsNumber;
 import org.endeavourhealth.patientui.json.JsonService;
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ public class MedicalRecordEndpoint extends AbstractEndpoint {
 
     private static final Logger LOG = LoggerFactory.getLogger(MedicalRecordEndpoint.class);
 
-    private static PatientIdentifierByNhsNumberRepository identifierRepository = new PatientIdentifierByNhsNumberRepository();
+    private static PatientIdentifierRepository identifierRepository = new PatientIdentifierRepository();
     //private static ServiceRepository serviceRepository = new ServiceRepository();
     private static OrganisationRepository organisationRepository = new OrganisationRepository();
 

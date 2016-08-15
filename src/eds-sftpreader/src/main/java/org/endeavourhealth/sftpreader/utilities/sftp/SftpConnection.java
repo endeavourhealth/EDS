@@ -1,7 +1,6 @@
 package org.endeavourhealth.sftpreader.utilities.sftp;
 
 import com.jcraft.jsch.*;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.LoggerFactory;
 
@@ -76,6 +75,10 @@ public class SftpConnection
     public void deleteFile(String remotePath) throws SftpException
     {
         channel.rm(remotePath);
+    }
+
+    public void cd(String remotePath) throws SftpException {
+        channel.cd(remotePath);
     }
 
     public void close()

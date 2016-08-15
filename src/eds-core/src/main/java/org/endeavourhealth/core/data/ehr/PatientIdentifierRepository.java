@@ -2,9 +2,12 @@ package org.endeavourhealth.core.data.ehr;
 
 import com.datastax.driver.core.utils.UUIDs;
 import com.datastax.driver.mapping.Mapper;
+import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.PatientIdentifierAccessor;
+import org.endeavourhealth.core.data.ehr.accessors.PatientIdentifierByNhsNumberAccessor;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifier;
+import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByNhsNumber;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.*;
@@ -145,5 +148,11 @@ public class PatientIdentifierRepository extends Repository {
         }
     }
 
+
+    public List<PatientIdentifierByNhsNumber> getForNhsNumber(String nhsNumber) {
+
+        PatientIdentifierByNhsNumberAccessor accessor = getMappingManager().createAccessor(PatientIdentifierByNhsNumberAccessor.class);
+        return Lists.newArrayList(accessor.getForNhsNumber(nhsNumber));
+    }
 
 }

@@ -11,6 +11,7 @@ import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.common.exceptions.UnexpectedOrganisationException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvFileSplitter;
 import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
+import org.endeavourhealth.transform.emis.csv.ThreadPool;
 import org.endeavourhealth.transform.emis.csv.schema.admin.Organisation;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.formats.JsonParser;
@@ -23,7 +24,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public abstract class EmisCsvTransformer {
@@ -67,47 +69,24 @@ public abstract class EmisCsvTransformer {
         new TransformOrganisation(adminDir, processor).call();
 
         //having done the non-organisation data, we can do the organisation files in parallel
-        ExecutorService pool = Executors.newFixedThreadPool(5); //arbitrarily chosen five threads
+        ThreadPool pool = new ThreadPool(5); //arbitrarily chosen five threads
 
-        List<Future> futures = new ArrayList<>();
         for (File orgDir: dstDir.listFiles()) {
-            if (orgDir.isDirectory()) {
+            if (orgDir.isDirectory()
+                    && !orgDir.getName().equals(EmisCsvFileSplitter.ADMIN_FOLDER_NAME)) {
 
-                new TransformOrganisation(orgDir, processor).call();
-                /*Future<List> future = pool.submit(new TransformOrganisation(orgDir, processor));
-                futures.add(future);*/
+                pool.submit(new TransformOrganisation(orgDir, processor));
             }
         }
 
         //close the pool and wait for all pools to complete
         LOG.trace("All transforms submitted - waiting for them to finish");
-        pool.shutdown();
-        while (!pool.awaitTermination(1, TimeUnit.HOURS)) {
-
-            //log out how many we're waiting for
-            int countOutstanding = 0;
-            for (Future future: futures) {
-                if (!future.isDone()) {
-                    countOutstanding ++;
-                }
-            }
-            LOG.trace("Waiting for {} transforms to complete", countOutstanding);
-        }
-
-        //check if there were any errors in any of the tasks
-        for (Future future: futures) {
-            try {
-                future.get();
-            } catch (Exception ex) {
-                throw (Exception)ex.getCause();
-            }
-        }
-
-        LOG.trace("All transforms completed");
+        pool.waitAndStop(1, TimeUnit.HOURS);
 
         //having successfully processed all the split files, delete the split content (if any exceptions were raised, this won't happen)
         //dstDir.delete();
 
+        LOG.trace("All transforms completed - waiting for resources to commit to DB");
         return processor.getBatchIdsCreated();
     }
 
@@ -126,12 +105,20 @@ public abstract class EmisCsvTransformer {
 
             LOG.trace("Starting transfom for organisation {}", orgDirectory.getName());
 
-            //our org directory will contain a sub-directory for each processing ID, which must be processed in order
-            File[] children = orgDirectory.listFiles();
-            Arrays.sort(children);
+            //the directory will contain a sub-directory for each processing ID, which must be processed in order
+            List<Integer> processingIds = new ArrayList<>();
+            Map<Integer, File> hmFiles = new HashMap<>();
+            for (File file: orgDirectory.listFiles()) {
+                Integer processingId = Integer.valueOf(file.getName());
+                processingIds.add(processingId);
+                hmFiles.put(processingId, file);
+            }
 
-            for (File child: children) {
-                EmisCsvTransformerWorker.transform(child, processor);
+            Collections.sort(processingIds);
+
+            for (Integer processingId: processingIds) {
+                File file = hmFiles.get(processingId);
+                EmisCsvTransformerWorker.transform(file, processor);
             }
 
             LOG.trace("Completed transfom for organisation {}", orgDirectory.getName());

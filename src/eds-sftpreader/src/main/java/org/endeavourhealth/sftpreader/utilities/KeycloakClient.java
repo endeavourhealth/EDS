@@ -85,7 +85,7 @@ public class KeycloakClient {
         try {
             HttpPost post = new HttpPost(KeycloakUriBuilder.fromUri(baseUrl)
                     .path(ServiceUrlConstants.TOKEN_PATH).build(realm));
-            List<NameValuePair> formparams = new ArrayList<NameValuePair>();
+            List<NameValuePair> formparams = new ArrayList<>();
             formparams.add(new BasicNameValuePair("username", username));
             formparams.add(new BasicNameValuePair("password", password));
             formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "password"));

@@ -5,6 +5,7 @@ import com.jcraft.jsch.SftpException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -47,19 +48,19 @@ public class SftpTask extends TimerTask
     {
         try
         {
-            LOG.info(">>>Starting scheduled SftpTask run, initialising");
+            LOG.trace(">>>Starting scheduled SftpTask run, initialising");
             initialise();
 
-            LOG.info(">>>Downloading and decrypting files");
+            LOG.trace(">>>Downloading and decrypting files");
             downloadAndProcessFiles();
 
-            LOG.info(">>>Validating and sequencing batches");
+            LOG.trace(">>>Validating and sequencing batches");
             validateAndSequenceBatches();
 
-            LOG.info(">>>Notifying EDS");
+            LOG.trace(">>>Notifying EDS");
             notifyEds();
 
-            LOG.info(">>>Completed SftpTask run");
+            LOG.trace(">>>Completed SftpTask run");
         }
         catch (Exception e)
         {
@@ -73,6 +74,7 @@ public class SftpTask extends TimerTask
         this.db = new DataLayer(configuration.getDatabaseConnection());
     }
 
+
     private void downloadAndProcessFiles()
     {
         SftpConnection sftpConnection = null;
@@ -83,19 +85,22 @@ public class SftpTask extends TimerTask
 
             String remotePath = dbConfiguration.getDbConfigurationSftp().getRemotePath();
 
-            List<SftpRemoteFile> sftpRemoteFiles = getFileList(sftpConnection, remotePath);
+            //rather than list the files in the remote directory, change to it and list from there
+            sftpConnection.cd(remotePath);
+            List<SftpRemoteFile> sftpRemoteFiles = getFileList(sftpConnection, "\\");
+            //List<SftpRemoteFile> sftpRemoteFiles = getFileList(sftpConnection, remotePath);
 
-            LOG.info( " Found " + Integer.toString(sftpRemoteFiles.size()) + " files");
+            LOG.trace("Found " + Integer.toString(sftpRemoteFiles.size()) + " files");
 
             for (SftpRemoteFile sftpRemoteFile : sftpRemoteFiles)
             {
-                LOG.info("  Processing remote file: " + sftpRemoteFile.getFilename());
+                LOG.trace("  Processing remote file: {}", sftpRemoteFile.getFilename());
 
                 SftpFile batchFile = instantiateSftpBatchFile(sftpRemoteFile);
 
                 if (!batchFile.isFilenameValid())
                 {
-                    LOG.info("   Invalid filename, skipping: " + batchFile.getFilename());
+                    LOG.error("   Invalid filename, skipping: " + batchFile.getFilename());
                     db.addUnknownFile(dbConfiguration.getInstanceId(), batchFile);
                     continue;
                 }
@@ -104,7 +109,7 @@ public class SftpTask extends TimerTask
 
                 if (addFileResult.isFileAlreadyProcessed())
                 {
-                    LOG.info("   Already processed, skipping: " + batchFile.getFilename());
+                    LOG.trace("   Already processed, skipping: " + batchFile.getFilename());
                     continue;
                 }
 
@@ -118,7 +123,7 @@ public class SftpTask extends TimerTask
                     decryptFile(batchFile);
             }
 
-            LOG.info(" Completed processing " + Integer.toString(sftpRemoteFiles.size()) + " files");
+            LOG.info(" Completed processing {} files", Integer.toString(sftpRemoteFiles.size()));
         }
         catch (Exception e)
         {
@@ -158,21 +163,23 @@ public class SftpTask extends TimerTask
 
     private static void closeConnection(SftpConnection sftpConnection)
     {
-        LOG.info("Closing SFTP connection");
+        LOG.trace("Closing SFTP connection");
 
         sftpConnection.close();
     }
 
     private static List<SftpRemoteFile> getFileList(SftpConnection sftpConnection, String remotePath) throws SftpException
     {
-        LOG.info( " Get remote file list at: " + remotePath);
+        LOG.trace("Get remote file list at: {}", remotePath);
 
         return sftpConnection.getFileList(remotePath);
     }
 
     private void downloadFile(SftpConnection sftpConnection, SftpFile batchFile) throws Exception
     {
-        downloadFile(sftpConnection, batchFile.getRemoteFilePath(), batchFile.getLocalFilePath());
+        //the connection has already changed to the remote directory, so download using just the filename, not the full path
+        downloadFile(sftpConnection, batchFile.getFilename(), batchFile.getLocalFilePath());
+        //downloadFile(sftpConnection, batchFile.getRemoteFilePath(), batchFile.getLocalFilePath());
 
         batchFile.setLocalFileSizeBytes(getFileSizeBytes(batchFile.getLocalFilePath()));
 
@@ -273,22 +280,22 @@ public class SftpTask extends TimerTask
 
     private List<UnknownFile> getUnknownFiles() throws PgStoredProcException
     {
-        LOG.info(" Checking for unknown files");
+        LOG.trace(" Checking for unknown files");
 
         List<UnknownFile> unknownFiles = db.getUnknownFiles(dbConfiguration.getInstanceId());
 
-        LOG.info(" There are " + Integer.toString(unknownFiles.size()) + " unknown files");
+        LOG.error(" There are " + Integer.toString(unknownFiles.size()) + " unknown files");
 
         return unknownFiles;
     }
 
     private List<Batch> getIncompleteBatches() throws PgStoredProcException
     {
-        LOG.info(" Getting batches ready for validation and sequencing");
+        LOG.trace(" Getting batches ready for validation and sequencing");
 
         List<Batch> incompleteBatches = db.getIncompleteBatches(dbConfiguration.getInstanceId());
 
-        LOG.info(" There are " + Integer.toString(incompleteBatches.size()) + " batches ready for validation and sequencing");
+        LOG.trace(" There are {} batches ready for validation and sequencing", Integer.toString(incompleteBatches.size()));
 
         return incompleteBatches;
     }
@@ -300,17 +307,17 @@ public class SftpTask extends TimerTask
                 .map(t -> t.getBatchIdentifier())
                 .collect(Collectors.toList()), ", ");
 
-        LOG.info(" Validating batches: " + batchIdentifiers);
+        LOG.trace(" Validating batches: " + batchIdentifiers);
 
         SftpBatchValidator sftpBatchValidator = ImplementationActivator.createSftpBatchValidator();
         sftpBatchValidator.validateBatches(incompleteBatches, lastCompleteBatch, dbConfiguration);
 
-        LOG.info(" Completed batch validation");
+        LOG.trace(" Completed batch validation");
     }
 
     private void sequenceBatches(List<Batch> incompleteBatches, Batch lastCompleteBatch) throws SftpValidationException, SftpFilenameParseException, PgStoredProcException
     {
-        LOG.info(" Sequencing batches");
+        LOG.trace(" Sequencing batches");
 
         int nextSequenceNumber = getNextSequenceNumber(lastCompleteBatch);
 
@@ -328,11 +335,11 @@ public class SftpTask extends TimerTask
 
         for (Batch batch : sortedBatchSequence.keySet())
         {
-            LOG.info("  Batch " + batch.getBatchIdentifier() + " sequenced as " + sortedBatchSequence.get(batch).toString());
+            LOG.debug("  Batch " + batch.getBatchIdentifier() + " sequenced as " + sortedBatchSequence.get(batch).toString());
             db.setBatchAsComplete(batch, sortedBatchSequence.get(batch));
         }
 
-        LOG.info(" Completed batch sequencing");
+        LOG.trace(" Completed batch sequencing");
     }
 
     private static int getNextSequenceNumber(Batch lastCompleteBatch)
@@ -347,11 +354,11 @@ public class SftpTask extends TimerTask
     {
         try
         {
-            LOG.info(" Getting complete batches for notification");
+            LOG.trace("Getting complete batches for notification");
 
             List<Batch> unnotifiedBatches = db.getUnnotifiedBatches(dbConfiguration.getInstanceId());
 
-            LOG.info(" There are " + Integer.toString(unnotifiedBatches.size()) + " complete batches for notification");
+            LOG.debug("There are {} complete batches for notification", Integer.toString(unnotifiedBatches.size()));
 
             unnotifiedBatches = unnotifiedBatches
                     .stream()
@@ -360,7 +367,7 @@ public class SftpTask extends TimerTask
 
             if (dbConfiguration.getDbConfigurationEds().isUseKeycloak())
             {
-                LOG.info(" Initialising keycloak at: " + dbConfiguration.getDbConfigurationEds().getKeycloakTokenUri());
+                LOG.trace("Initialising keycloak at: {}", dbConfiguration.getDbConfigurationEds().getKeycloakTokenUri());
 
                 KeycloakClient.init(dbConfiguration.getDbConfigurationEds().getKeycloakTokenUri(),
                         dbConfiguration.getDbConfigurationEds().getKeycloakRealm(),
@@ -370,18 +377,18 @@ public class SftpTask extends TimerTask
             }
             else
             {
-                LOG.info(" Keycloak is not enabled");
+                LOG.trace("Keycloak is not enabled");
             }
 
             for (Batch unnotifiedBatch : unnotifiedBatches)
             {
-                LOG.info(" Notifying EDS for batch: " + unnotifiedBatch.getBatchIdentifier());
+                LOG.trace("Notifying EDS for batch: {}", unnotifiedBatch.getBatchIdentifier());
                 notify(unnotifiedBatch);
             }
         }
         catch (Exception e)
         {
-            LOG.error(" Error occurred notifying EDS", e);
+            LOG.error("Error occurred notifying EDS", e);
         }
     }
 
@@ -393,11 +400,10 @@ public class SftpTask extends TimerTask
         EdsEnvelopeBuilder edsEnvelopeBuilder = new EdsEnvelopeBuilder(dbConfiguration.getDbConfigurationEds());
         UUID messageId = UUID.randomUUID();
         String outboundMessage = edsEnvelopeBuilder.buildEnvelope(messageId, messagePayload);
-        String inboundMessage = null;
 
         try
         {
-            inboundMessage = notifyEds(outboundMessage);
+            String inboundMessage = notifyEds(outboundMessage);
 
             db.addBatchNotification(unnotifiedBatch.getBatchId(),
                     dbConfiguration.getInstanceId(),
@@ -410,6 +416,8 @@ public class SftpTask extends TimerTask
         catch (Exception e)
         {
             LOG.error("Error notifying EDS for batch " + unnotifiedBatch.getBatchIdentifier(), e);
+
+            String inboundMessage = e.getMessage();
 
             db.addBatchNotification(unnotifiedBatch.getBatchId(),
                     dbConfiguration.getInstanceId(),
@@ -432,35 +440,44 @@ public class SftpTask extends TimerTask
             if (dbConfiguration.getDbConfigurationEds().isUseKeycloak())
                 httpPost.addHeader(KeycloakClient.instance().getAuthorizationHeader());
 
+            if (LOG.isTraceEnabled()) {
+                LOG.trace(dbConfiguration.getDbConfigurationEds().getEdsUrl());
+                LOG.trace("Authorization : Bearer " + KeycloakClient.instance().getToken().getToken());
+                LOG.trace("Content-Type : text/xml");
+                LOG.trace(outboundMessage);
+            }
+
             //the bundle is being sent as XML, so we need to declare this
             httpPost.addHeader("Content-Type", "text/xml");
-            
             httpPost.setEntity(new ByteArrayEntity(outboundMessage.getBytes()));
 
             HttpResponse response = httpClient.execute(httpPost);
 
-            //TODO - handle HTTP status code???
-            //response.getStatusLine().getStatusCode();
+            int statusCode = response.getStatusLine().getStatusCode();
+            LOG.debug("Received HTTP code {}: {}", statusCode, response.getStatusLine());
+
+            List<String> lines = new ArrayList<>();
 
             HttpEntity entity = response.getEntity();
-
             if (entity != null)
             {
-                try (InputStream instream = entity.getContent())
-                {
-                    //TODO - handle error response (sample code for reading input stream as text below)
+                try (InputStream instream = entity.getContent()) {
                     BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(instream, "UTF-8"));
                     String line = bufferedReader.readLine();
                     while (line != null){
-                        LOG.info(line);
+                        LOG.error(line);
                         line = bufferedReader.readLine();
+                        lines.add(line);
                     }
-
-                    return "";
                 }
             }
-        }
 
-        return null;
+            String responseString = String.join("/n/", lines);
+            if (statusCode == HttpStatus.SC_OK) {
+                return responseString;
+            } else {
+                throw new IOException(responseString);
+            }
+        }
     }
 }
