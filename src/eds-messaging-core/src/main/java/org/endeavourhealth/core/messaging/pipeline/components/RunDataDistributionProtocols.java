@@ -67,14 +67,14 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		try {
 			libraryItemList = mapper.readValue(protocolJson, new TypeReference<List<LibraryItem>>(){});
 		} catch (IOException e) {
-			throw new PipelineException(e.getMessage());
+			throw new PipelineException(e.getMessage(), e);
 		}
 
 		// Fetch by ID
 		return libraryItemList.stream()
 				.filter(libraryItem -> libraryItem.getUuid().equals(protocolId))
 				.findFirst()
-				.orElseThrow(() -> new PipelineException("Unknown protocol id"));
+				.orElseThrow(() -> new PipelineException("Unknown protocol id " + protocolId));
 	}
 
 	private void setProtocolData(Exchange exchange, LibraryItem protocol) throws PipelineException {
@@ -83,7 +83,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			exchange.setHeader(HeaderKeys.ProtocolData, protocolData);
 		} catch (JsonProcessingException e) {
 			LOG.error("Unable to serialize protocol");
-			throw new PipelineException(e.getMessage());
+			throw new PipelineException(e.getMessage(), e);
 		}
 
 	}

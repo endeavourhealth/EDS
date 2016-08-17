@@ -81,6 +81,10 @@ public class SftpConnection
         channel.cd(remotePath);
     }
 
+    public void put(String localPath, String destinationPath) throws SftpException {
+        channel.put(localPath, destinationPath);
+    }
+
     public void close()
     {
         if (channel != null && channel.isConnected())

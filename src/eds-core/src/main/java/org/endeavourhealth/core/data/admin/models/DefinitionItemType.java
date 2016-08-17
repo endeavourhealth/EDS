@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.data.admin.models;
 
 public enum DefinitionItemType {
-    ReportFolder(0),
+    //ReportFolder(0),
     Report(1),
     Query(2),
     Test(3),

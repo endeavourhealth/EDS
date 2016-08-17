@@ -100,7 +100,7 @@ public class MessageTransform extends PipelineComponent {
 
 		//for EMIS CSV, the exchange body will be a list of files received
 		String decodedFileString = exchange.getBody();
-		String[] decodedFiles = decodedFileString.split("\n");
+		String[] decodedFiles = decodedFileString.split("\r\n");
 
 		return EmisCsvTransformer.splitAndTransform(decodedFiles, exchange.getExchangeId(), serviceId, systemId, orgIds);
 	}

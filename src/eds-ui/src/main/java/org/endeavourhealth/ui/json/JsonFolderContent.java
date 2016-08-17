@@ -3,8 +3,8 @@ package org.endeavourhealth.ui.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.Audit;
-import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.admin.models.DefinitionItemType;
+import org.endeavourhealth.core.data.admin.models.Item;
 
 import java.util.Date;
 import java.util.UUID;
@@ -26,7 +26,7 @@ public final class JsonFolderContent implements Comparable {
 
     public JsonFolderContent(ActiveItem activeItem, Item item, Audit audit) {
         this(item, audit);
-        setTypeEnum(DefinitionItemType.values()[activeItem.getItemTypeId()]);
+        setTypeEnum(DefinitionItemType.get(activeItem.getItemTypeId()));
     }
 
     public JsonFolderContent(Item item, Audit audit) {

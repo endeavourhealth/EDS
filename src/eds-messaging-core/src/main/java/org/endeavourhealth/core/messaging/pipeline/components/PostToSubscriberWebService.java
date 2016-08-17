@@ -10,7 +10,9 @@ import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.xml.QueryDocument.*;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +41,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 			protocol = new ObjectMapper().readValue(protocolData, LibraryItem.class);
 		} catch (IOException e) {
 			LOG.error("Unable to deserialize protocol");
-			throw new PipelineException(e.getMessage());
+			throw new PipelineException(e.getMessage(), e);
 		}
 
 		// Find subscriber service contracts that require this technical interface
@@ -63,7 +65,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 				endpoints.add(endpoint);
 			}
 		} catch (IOException e) {
-			throw new PipelineException(e.getMessage());
+			throw new PipelineException(e.getMessage(), e);
 		}
 
 		// Determine which protocol subscribers want this transform format

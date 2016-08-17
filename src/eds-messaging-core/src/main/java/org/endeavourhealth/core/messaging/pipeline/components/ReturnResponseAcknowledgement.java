@@ -37,7 +37,7 @@ public class ReturnResponseAcknowledgement extends PipelineComponent {
 			String message = parser.composeString(messageHeader);
 			exchange.setBody(message);
 		} catch (Exception e) {
-			throw new PipelineException("Unable to serialize message header");
+			throw new PipelineException("Unable to serialize message header", e);
 		}
 		LOG.debug("Business acknowledgement sent");
 	}

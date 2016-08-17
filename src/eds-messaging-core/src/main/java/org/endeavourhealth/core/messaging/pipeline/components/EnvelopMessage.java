@@ -40,7 +40,7 @@ public class EnvelopMessage extends PipelineComponent {
 			String bundleXml = parser.composeString(bundle);
 			exchange.setBody(bundleXml);
 		} catch (Exception e) {
-			throw new PipelineException("Unable to serialize message bundle");
+			throw new PipelineException("Unable to serialize message bundle", e);
 		}
 
 

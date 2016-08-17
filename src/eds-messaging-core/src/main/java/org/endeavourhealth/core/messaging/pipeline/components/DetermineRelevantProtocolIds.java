@@ -4,12 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.configuration.DetermineRelevantProtocolIdsConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		// Determine relevant publisher protocols
 		List<LibraryItem> protocols = getProtocolsForPublisherService(serviceUuid);
 		if (protocols.size() == 0)
-			throw new PipelineException("No publisher protocols found for service");
+			throw new PipelineException("No publisher protocols found for service " + serviceUuid);
 
 		ObjectMapper mapper = new ObjectMapper();
 		try {
@@ -40,7 +40,7 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 			exchange.setHeader(HeaderKeys.ProtocolData, protocolsJson);
 		} catch (JsonProcessingException e) {
 			LOG.error("Unable to serialize protocols to JSON");
-			throw new PipelineException(e.getMessage());
+			throw new PipelineException(e.getMessage(), e);
 		}
 
 		List<String> protocolIds = protocols.stream().map(LibraryItem::getUuid).collect(Collectors.toList());
@@ -56,7 +56,7 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		try {
 			libraryItemList = LibraryRepositoryHelper.getProtocolsByServiceId(serviceUuid);
 		} catch (Exception e) {
-			throw new PipelineException(e.getMessage());
+			throw new PipelineException(e.getMessage(), e);
 		}
 
 		// Get protocols where service is publisher

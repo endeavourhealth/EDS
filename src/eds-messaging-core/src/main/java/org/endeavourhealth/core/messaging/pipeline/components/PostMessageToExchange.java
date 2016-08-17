@@ -99,7 +99,7 @@ public class PostMessageToExchange extends PipelineComponent {
 					messageUuid.toString().getBytes());
 		} catch (IOException e) {
 			LOG.error("Unable to publish message");
-			throw new PipelineException("Unable to publish message: " + e.getMessage());
+			throw new PipelineException("Unable to publish message: " + e.getMessage(), e);
 		}
 	}
 
@@ -110,7 +110,7 @@ public class PostMessageToExchange extends PipelineComponent {
 			channel.confirmSelect();
 		} catch (IOException e) {
 			LOG.error("Unable to get publish channel");
-			throw new PipelineException("Unable to get publish channel: " + e.getMessage());
+			throw new PipelineException("Unable to get publish channel: " + e.getMessage(), e);
 		}
 		return channel;
 	}
@@ -124,10 +124,10 @@ public class PostMessageToExchange extends PipelineComponent {
 					);
 		} catch (IOException e) {
 			LOG.error("Unable to connect to rabbit");
-			throw new PipelineException("Unable to connect to Rabbit : " + e.getMessage());
+			throw new PipelineException("Unable to connect to Rabbit : " + e.getMessage(), e);
 		} catch (TimeoutException e) {
 			LOG.error("Connection to Rabbit timed out");
-			throw new PipelineException("Connection to rabbit timed out : " + e.getMessage());
+			throw new PipelineException("Connection to rabbit timed out : " + e.getMessage(), e);
 		}
 	}
 

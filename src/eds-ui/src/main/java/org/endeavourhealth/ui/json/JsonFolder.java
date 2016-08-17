@@ -12,7 +12,7 @@ import java.util.UUID;
 public final class JsonFolder implements Comparable {
 
     public static final int FOLDER_TYPE_LIBRARY = 1;
-    public static final int FOLDER_TYPE_REPORTS = 2;
+    //public static final int FOLDER_TYPE_REPORTS = 2;
 
     private UUID uuid = null;
     private String folderName = null;

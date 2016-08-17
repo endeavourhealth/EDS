@@ -66,6 +66,7 @@ values
 --
 --(1, 'Audit_RegistrationAudit'),
 --(1, 'Audit_PatientAudit'),
+--(1, 'PatientAdmin_ListEntry'),
 --
 (1, 'CareRecord_Consultation'),
 (1, 'CareRecord_Diary'),
@@ -74,7 +75,7 @@ values
 (1, 'CareRecord_Problem'),
 (1, 'Coding_ClinicalCode'),
 (1, 'Coding_DrugCode'),
-(1, 'PatientAdmin_ListEntry'),
+
 (1, 'Prescribing_DrugRecord'),
 (1, 'Prescribing_IssueRecord');
 

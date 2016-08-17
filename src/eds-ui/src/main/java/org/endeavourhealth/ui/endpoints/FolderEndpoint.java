@@ -1,16 +1,11 @@
 package org.endeavourhealth.ui.endpoints;
 
 import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.Audit;
-import org.endeavourhealth.core.data.admin.models.Item;
-import org.endeavourhealth.core.data.admin.models.ItemDependency;
-import org.endeavourhealth.core.security.annotations.RequiresAdmin;
-import org.endeavourhealth.ui.json.*;
-import org.endeavourhealth.core.data.admin.models.DefinitionItemType;
-import org.endeavourhealth.ui.DependencyType;
-
+import org.endeavourhealth.core.data.admin.models.*;
 import org.endeavourhealth.core.security.SecurityUtils;
+import org.endeavourhealth.core.security.annotations.RequiresAdmin;
+import org.endeavourhealth.ui.DependencyType;
+import org.endeavourhealth.ui.json.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,8 +49,8 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
         if (folderType != null) {
             if (folderType == JsonFolder.FOLDER_TYPE_LIBRARY) {
                 itemType = DefinitionItemType.LibraryFolder;
-            } else if (folderType == JsonFolder.FOLDER_TYPE_REPORTS) {
-                itemType = DefinitionItemType.ReportFolder;
+            /*} else if (folderType == JsonFolder.FOLDER_TYPE_REPORTS) {
+                itemType = DefinitionItemType.ReportFolder;*/
             } else {
                 throw new BadRequestException("Invalid folder type " + folderType);
             }
@@ -64,12 +59,12 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
         //if we're amending an existing folder, we can use its item type
         else if (folderUuid != null) {
             ActiveItem activeItem = repository.getActiveItemByItemId(folderUuid);
-            itemType = DefinitionItemType.values()[activeItem.getItemTypeId()];
+            itemType = DefinitionItemType.get(activeItem.getItemTypeId());
         }
         //if we're creating a new folder, we can get the item type from our parent
         else if (parentUuid != null) {
             ActiveItem parentActiveItem = repository.getActiveItemByItemId(parentUuid);
-            itemType = DefinitionItemType.values()[parentActiveItem.getItemTypeId()];
+            itemType = DefinitionItemType.get(parentActiveItem.getItemTypeId());
         } else {
             throw new BadRequestException("Must specify folder type");
         }
@@ -135,9 +130,10 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
 
         //to delete it, we need to find out the item type
         ActiveItem activeItem = repository.getActiveItemByItemId(folderUuid);
-        DefinitionItemType itemType = DefinitionItemType.values()[activeItem.getItemTypeId()];
-        if (itemType != DefinitionItemType.LibraryFolder
-                && itemType != DefinitionItemType.ReportFolder) {
+        DefinitionItemType itemType = DefinitionItemType.get(activeItem.getItemTypeId());
+        if (itemType != DefinitionItemType.LibraryFolder) {
+//        if (itemType != DefinitionItemType.LibraryFolder
+//                && itemType != DefinitionItemType.ReportFolder) {
             throw new BadRequestException("UUID is a " + itemType + " not a folder");
         }
 
@@ -335,7 +331,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
             ActiveItem activeItem = childActiveItems.get(i);
             Item item = hmItemsByItemUuid.get(activeItem.getItemId());
 
-            DefinitionItemType itemType = DefinitionItemType.values()[activeItem.getItemTypeId()];
+            DefinitionItemType itemType = DefinitionItemType.get(activeItem.getItemTypeId());
             Audit audit = hmAuditsByAuditUuid.get(item.getAuditId());
 
             JsonFolderContent c = new JsonFolderContent(activeItem, item, audit);

@@ -60,7 +60,7 @@ public class OpenEnvelope extends PipelineComponent {
 			processBody(exchange, binary);
 
 		} catch (Exception e) {
-			throw new PipelineException(e.getMessage());
+			throw new PipelineException(e.getMessage(), e);
 		}
 
 		LOG.debug("Message envelope processed");

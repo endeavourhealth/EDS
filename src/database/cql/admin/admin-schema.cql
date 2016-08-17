@@ -273,12 +273,7 @@ INSERT INTO dependency_type
 (id, description)
 VALUES 
 (2, 'Uses');
-	
-INSERT INTO item_type
-(id, description)
-VALUES 
-(0, 'ReportFolder');
-	
+		
 INSERT INTO item_type
 (id, description)
 VALUES 
@@ -430,4 +425,171 @@ VALUES(8fcf222f-d648-4a76-b509-12f3ba7d8c1e, 32b609bd-03c8-44d6-9f31-9c2219a14c9
 INSERT INTO admin.item_dependency
 (item_id, audit_id, dependent_item_id, dependency_type_id)
 VALUES(76ce138a-1e61-4cf4-9340-faff5cb0c8c2, 5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, 96448ff1-903b-4b1c-b306-4c04c7b3e0bc, 0);
+
+//THE BELOW INSERTS CREATES A PROTOCOL FOR THE EMIS CSV TEST DATA
+
+INSERT INTO organisation (
+	id,
+	name,
+	national_id,
+	services
+) VALUES (
+	C82FAFC8-BDC3-4C40-8790-00035DB994D7,
+	'GPES Org 20077',
+	'EMIS99',
+	{62742de1-776e-495c-9483-45e51ac1b392 : 'EMIS Test Service'}
+);
+
+INSERT INTO organisation (
+	id,
+	name,
+	national_id,
+	services
+) VALUES (
+	7FDF2033-2812-4026-A725-FEC5FDAF224D,
+	'SCR Surgery (82027)',
+	'D82027',
+	{62742de1-776e-495c-9483-45e51ac1b392 : 'EMIS Test Service'}
+);
+
+INSERT INTO service (
+	id,
+	endpoints,
+	local_identifier,
+	name,
+	organisations
+) VALUES (
+	62742de1-776e-495c-9483-45e51ac1b392,
+	'[{"systemUuid":"de2d3954-480f-4b18-a3f6-21fab5222690","technicalInterfaceUuid":"fdf8be64-442d-419a-9848-90286fa04ae5","endpoint":"http://"}]',
+	'EMIS001',
+	'EMIS Test Service',
+	{
+		C82FAFC8-BDC3-4C40-8790-00035DB994D7 : 'GPES Org 20077',
+		7FDF2033-2812-4026-A725-FEC5FDAF224D : 'SCR Surgery (82027)'
+	}
+);
+
+INSERT INTO Audit (
+	id,
+	organisation_id,
+	time_stamp,
+	audit_version,
+	end_user_id
+) VALUES (
+	6CF324E6-8C05-4693-8792-505F4451B79D,
+	b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,
+	dateof(now()),
+	0,
+	6CF324E6-8C05-4693-8792-505F4451B79D
+);
+
+//SYSTEM
+
+INSERT INTO item (id,audit_id,description,is_deleted,title,xml_content) 
+VALUES (
+	17bf256d-49a1-403f-83ef-35c74a463fe7,
+	6CF324E6-8C05-4693-8792-505F4451B79D,
+	'',
+	false,
+	'Emis Test System',
+	'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<libraryItem>
+    <uuid>17bf256d-49a1-403f-83ef-35c74a463fe7</uuid>
+    <name>Emis Test System</name>
+    <description></description>
+    <folderUuid>82c7e37a-2d8d-4132-aca3-b25f3b497191</folderUuid>
+    <system>
+        <uuid>17bf256d-49a1-403f-83ef-35c74a463fe7</uuid>
+        <name>Emis Test System</name>
+        <technicalInterface>
+            <uuid>55dcc12d-3710-4cde-8acb-6f3f873c3dc1</uuid>
+            <name>EmisExtractService</name>
+            <frequency>Daily</frequency>
+            <messageType>Patient Record</messageType>
+            <messageFormat>EMISCSV</messageFormat>
+            <messageFormatVersion>5.1</messageFormatVersion>
+        </technicalInterface>
+    </system>
+</libraryItem>
+');
+
+
+
+INSERT INTO active_item (id,organisation_id,item_type_id,audit_id,is_deleted,item_id) 
+VALUES (
+	7c98e493-a68f-4956-a808-9cfe33246ece,
+	b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,
+	9,
+	6CF324E6-8C05-4693-8792-505F4451B79D,
+	false,
+	17bf256d-49a1-403f-83ef-35c74a463fe7
+);
+
+INSERT INTO item_dependency (item_id,audit_id,dependent_item_id,dependency_type_id) 
+VALUES (
+	17bf256d-49a1-403f-83ef-35c74a463fe7,
+	6CF324E6-8C05-4693-8792-505F4451B79D,
+	82c7e37a-2d8d-4132-aca3-b25f3b497191,
+	1
+);
+
+//PROTOCOL
+INSERT INTO item (id,audit_id,description,is_deleted,title,xml_content) 
+VALUES (
+	a48b4624-adad-4146-8887-21d857c56062,
+	6CF324E6-8C05-4693-8792-505F4451B79D,
+	'',
+	false,
+	'Emis test protocol',
+	'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<libraryItem>
+    <uuid>a48b4624-adad-4146-8887-21d857c56062</uuid>
+    <name>Emis test protocol</name>
+    <description></description>
+    <folderUuid>76ce138a-1e61-4cf4-9340-faff5cb0c8c2</folderUuid>
+    <protocol>
+        <enabled>TRUE</enabled>
+        <patientConsent>OPT-IN</patientConsent>
+        <cohort>0</cohort>
+        <dataSet>0</dataSet>
+        <serviceContract>
+            <type>PUBLISHER</type>
+            <service>
+                <uuid>62742de1-776e-495c-9483-45e51ac1b392</uuid>
+                <name>EMIS Test Service</name>
+            </service>
+            <system>
+                <uuid>17bf256d-49a1-403f-83ef-35c74a463fe7</uuid>
+                <name>Emis Test System</name>
+            </system>
+            <technicalInterface>
+                <uuid>55dcc12d-3710-4cde-8acb-6f3f873c3dc1</uuid>
+                <name>EmisExtractService</name>
+            </technicalInterface>
+            <active>TRUE</active>
+        </serviceContract>
+    </protocol>
+</libraryItem>
+');
+
+
+
+INSERT INTO active_item (id,organisation_id,item_type_id,audit_id,is_deleted,item_id) 
+VALUES (
+	482dd4d7-ecfc-4462-9699-b3cdcdf09f9a,
+	b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,
+	8,
+	6CF324E6-8C05-4693-8792-505F4451B79D,
+	false,
+	a48b4624-adad-4146-8887-21d857c56062
+);
+
+INSERT INTO item_dependency (item_id,audit_id,dependent_item_id,dependency_type_id) 
+VALUES (
+	a48b4624-adad-4146-8887-21d857c56062,
+	6CF324E6-8C05-4693-8792-505F4451B79D,
+	76ce138a-1e61-4cf4-9340-faff5cb0c8c2,
+	1
+);
+
 

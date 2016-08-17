@@ -20,8 +20,6 @@ public class Main
             loadConfiguration();
 
 			runSftpHandlerAndWaitForInput();
-
-			writeHeaderLogLine(PROGRAM_DISPLAY_NAME + " stopped");
 		}
 		catch (Exception e)
 		{
@@ -48,5 +46,8 @@ public class Main
 		Timer timer = new Timer();
 
 		timer.scheduleAtFixedRate(sftpTask, 0, configuration.getDbConfiguration().getPollFrequencySeconds() * 1000);
-  }
+  	}
+
+
 }
+

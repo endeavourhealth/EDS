@@ -2,14 +2,17 @@ package org.endeavourhealth.ui.endpoints;
 
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.data.admin.models.*;
+import org.endeavourhealth.core.data.admin.models.ActiveItem;
+import org.endeavourhealth.core.data.admin.models.DefinitionItemType;
+import org.endeavourhealth.core.data.admin.models.Item;
+import org.endeavourhealth.core.data.admin.models.ItemDependency;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.QueryDocument.System;
-import org.endeavourhealth.ui.json.*;
 import org.endeavourhealth.ui.DependencyType;
+import org.endeavourhealth.ui.json.*;
 import org.endeavourhealth.ui.querydocument.QueryDocumentSerializer;
-import org.endeavourhealth.core.security.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -118,7 +121,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
             }
 
             ActiveItem activeItem = repository.getActiveItemByItemId(libraryItemUuid);
-            type = DefinitionItemType.values()[activeItem.getItemTypeId()];
+            type = DefinitionItemType.get(activeItem.getItemTypeId());
             doc = null; //clear this, because we don't want to overwrite what's on the DB with an empty query doc
         }
 
