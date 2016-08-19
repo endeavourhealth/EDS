@@ -257,8 +257,8 @@ public abstract class EmisCsvTransformer {
         list.add(getFileByPartialName("Appointment", "Session", dir));
         list.add(getFileByPartialName("Appointment", "SessionUser", dir));
         list.add(getFileByPartialName("Appointment", "Slot", dir));
-        list.add(getFileByPartialName("Audit", "PatientAudit", dir));
-        list.add(getFileByPartialName("Audit", "RegistrationAudit", dir));
+        //list.add(getFileByPartialName("Audit", "PatientAudit", dir)); //not present in EMIS test data
+        //list.add(getFileByPartialName("Audit", "RegistrationAudit", dir)); //not present in EMIS test data
         list.add(getFileByPartialName("CareRecord", "Consultation", dir));
         list.add(getFileByPartialName("CareRecord", "Diary", dir));
         list.add(getFileByPartialName("CareRecord", "Observation", dir));

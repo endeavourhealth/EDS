@@ -1,6 +1,10 @@
 package org.endeavourhealth.ui.endpoints;
 
+import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
+import org.endeavourhealth.core.data.admin.models.ActiveItem;
+import org.endeavourhealth.core.data.admin.models.Item;
+import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByNhsNumber;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
@@ -26,6 +30,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
     private final PatientIdentifierRepository repository = new PatientIdentifierRepository();
     private final ServiceRepository serviceRepository = new ServiceRepository();
+    private final LibraryRepository libraryRepository = new LibraryRepository();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -40,37 +45,31 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
         for (PatientIdentifierByNhsNumber identifier: identifiers) {
 
             UUID serviceId = identifier.getServiceId();
-/*            UUID systemId = identifier.getSystemId();
+            UUID systemId = identifier.getSystemId();
 
+            Service service = serviceRepository.getById(serviceId);
+            String serviceName = service.getName();
 
-            JsonPatientIdentifier json = new JsonPatientIdentifier();
+            ActiveItem activeItem = libraryRepository.getActiveItemByItemId(serviceId);
+            Item item = libraryRepository.getItemByKey(serviceId, activeItem.getAuditId());
+            String systemName = item.getTitle();
+
+/*            JsonPatientIdentifier json = new JsonPatientIdentifier();
             json.setServiceId(serviceId);
-            json.setServiceName();
+            json.setServiceName(serviceName);
             json.setSystemId(systemId);
             json.setSystemName();
             json.setNhsNumber(identifier.getNhsNumber());
-            json.setForenames(identifier.getForenames);
-            json.setSurname();
-            json.setDateOfBirth();
-            json.setPostcode();
-            json.setGender();
-            json.setPatientId();
-            json.setLocalId();
-            json.setLocalIdSystem();
+            json.setForenames(identifier.getForenames());
+            json.setSurname(identifier.getSurname());
+            json.setDateOfBirth(identifier.getDateOfBirth());
+            json.setPostcode(identifier.getPostcode());
+            json.setGender(identifier.getGender());
+            json.setPatientId(identifier.getPatientId());
+            json.setLocalId(identifier.getLocalId());
+            json.setLocalIdSystem(identifier.getLocalIdSystem());
 
-            ret.add(json);
-
-
-            private String nhsNumber = null;
-            private String forenames = null;
-            private String surname = null;
-            private Date dateOfBirth = null;
-            private String postcode = null;
-            private String gender = null;
-            private UUID patientId = null;
-            private Date timestamp = null;
-            private String localId = null;
-            private String localIdSystem = null;*/
+            ret.add(json);*/
 
         }
 

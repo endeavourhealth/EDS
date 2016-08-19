@@ -30,6 +30,20 @@ public class PatientIdentifierByNhsNumber {
     @Column(name = "version")
     private UUID version = null;
 
+
+/*
+
+    json.setForenames(identifier.getForenames());
+    json.setSurname(identifier.getSurname());
+    json.setDateOfBirth(identifier.getDateOfBirth());
+    json.setPostcode(identifier.getPostcode());
+    json.setGender(identifier.getGender());
+    json.setLocalIdSystem(identifier.getLocalIdSystem());
+
+*/
+
+
+
     public UUID getServiceId() {
         return serviceId;
     }
@@ -38,11 +52,11 @@ public class PatientIdentifierByNhsNumber {
         this.serviceId = serviceId;
     }
 
-    public UUID getInstanceId() {
+    public UUID getSystemId() {
         return systemId;
     }
 
-    public void setInstanceId(UUID systemId) {
+    public void setSystemId(UUID systemId) {
         this.systemId = systemId;
     }
 
