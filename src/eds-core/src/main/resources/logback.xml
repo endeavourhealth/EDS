@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration>
+<configuration scan="true" scanPeriod="30 seconds">
 
   <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
@@ -24,22 +24,11 @@
     <includeCallerData>true</includeCallerData>
   </appender>
 
-  <!-- only want ERRORs from these packages -->
-  <logger name="ch.qos.logback" level="ERROR"/>
-  <logger name="com.mchange" level="ERROR"/>
-  <logger name="com.datastax" level="ERROR"/>
+  <!-- use the environment variable LOGBACK_CONFIG_FILE to set an external log file,
+       fallback to resource file logback-development.xml if not set -->
+  <include file="${LOGBACK_CONFIG_FILE:-logback-development.xml}" />
 
-  <!-- enable TRACE logging for Endeavour code -->
-  <logger name="org.endeavourhealth" level="TRACE"/>
-
-  <!-- add both appenders with INFO logging level -->
-  <root level="INFO">
-    <appender-ref ref="stdout" />
-    <appender-ref ref="db_async" />
-  </root>
-
-  <!-- specofy a shutdown hook for logging, so all loggers are flushed before app exit -->
+  <!-- specify a shutdown hook for logging, so all loggers are flushed before app exit -->
   <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
-
 
 </configuration>
