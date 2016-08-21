@@ -19,7 +19,7 @@ public class App {
         LOG.info("           EDS Bootstrapper");
         LOG.info("------------------------------------------");
 
-        LOG.info("{}", args);
+        LOG.info("{}", (Object[])args);
 
         if(args.length != 1) {
             LOG.info("Please pass the config file path as the first argument and try again...");

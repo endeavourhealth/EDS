@@ -86,15 +86,18 @@ public class SftpTask extends TimerTask
             String remotePath = dbConfiguration.getDbConfigurationSftp().getRemotePath();
 
             //rather than list the files in the remote directory, change to it and list from there
+            //as downloading the files without changing to the folder seems to fail sometimes
             sftpConnection.cd(remotePath);
             List<SftpRemoteFile> sftpRemoteFiles = getFileList(sftpConnection, "\\");
             //List<SftpRemoteFile> sftpRemoteFiles = getFileList(sftpConnection, remotePath);
 
-            LOG.trace("Found " + Integer.toString(sftpRemoteFiles.size()) + " files");
+            int countAlreadyProcessed = 0;
+
+            LOG.trace("Found {} files in {}", new Integer(sftpRemoteFiles.size()), remotePath);
 
             for (SftpRemoteFile sftpRemoteFile : sftpRemoteFiles)
             {
-                LOG.trace("  Processing remote file: {}", sftpRemoteFile.getFilename());
+                //LOG.trace("  Processing remote file: {}", sftpRemoteFile.getFilename());
 
                 SftpFile batchFile = instantiateSftpBatchFile(sftpRemoteFile);
 
@@ -109,7 +112,8 @@ public class SftpTask extends TimerTask
 
                 if (addFileResult.isFileAlreadyProcessed())
                 {
-                    LOG.trace("   Already processed, skipping: " + batchFile.getFilename());
+                    countAlreadyProcessed ++;
+                    //LOG.trace("   Already processed, skipping: " + batchFile.getFilename());
                     continue;
                 }
 
@@ -121,6 +125,11 @@ public class SftpTask extends TimerTask
 
                 if (batchFile.doesFileNeedDecrypting())
                     decryptFile(batchFile);
+            }
+
+            //logging out a count of how many were already processed, as we've got 400,000 lines of logging on AWS
+            if (countAlreadyProcessed > 0) {
+                LOG.trace("Skipped {} files as already processed them", new Integer(countAlreadyProcessed));
             }
 
             LOG.info(" Completed processing {} files", Integer.toString(sftpRemoteFiles.size()));
@@ -170,8 +179,6 @@ public class SftpTask extends TimerTask
 
     private static List<SftpRemoteFile> getFileList(SftpConnection sftpConnection, String remotePath) throws SftpException
     {
-        LOG.trace("Get remote file list at: {}", remotePath);
-
         return sftpConnection.getFileList(remotePath);
     }
 

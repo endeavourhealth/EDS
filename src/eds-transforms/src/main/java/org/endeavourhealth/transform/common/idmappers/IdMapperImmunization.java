@@ -1,6 +1,5 @@
 package org.endeavourhealth.transform.common.idmappers;
 
-import org.hl7.fhir.instance.model.DiagnosticReport;
 import org.hl7.fhir.instance.model.Immunization;
 import org.hl7.fhir.instance.model.Resource;
 
@@ -15,37 +14,37 @@ public class IdMapperImmunization extends BaseIdMapper {
         super.mapExtensions(immunization, serviceId, systemId);
 
         if (immunization.hasIdentifier()) {
-            super.mapIdentifiers(immunization.getIdentifier(), serviceId, systemId);
+            super.mapIdentifiers(immunization.getIdentifier(), resource, serviceId, systemId);
         }
         if (immunization.hasPatient()) {
-            super.mapReference(immunization.getPatient(), serviceId, systemId);
+            super.mapReference(immunization.getPatient(), resource, serviceId, systemId);
         }
         if (immunization.hasPerformer()) {
-            super.mapReference(immunization.getPerformer(), serviceId, systemId);
+            super.mapReference(immunization.getPerformer(), resource, serviceId, systemId);
         }
         if (immunization.hasRequester()) {
-            super.mapReference(immunization.getRequester(), serviceId, systemId);
+            super.mapReference(immunization.getRequester(), resource, serviceId, systemId);
         }
         if (immunization.hasEncounter()) {
-            super.mapReference(immunization.getEncounter(), serviceId, systemId);
+            super.mapReference(immunization.getEncounter(), resource, serviceId, systemId);
         }
         if (immunization.hasManufacturer()) {
-            super.mapReference(immunization.getManufacturer(), serviceId, systemId);
+            super.mapReference(immunization.getManufacturer(), resource, serviceId, systemId);
         }
         if (immunization.hasLocation()) {
-            super.mapReference(immunization.getLocation(), serviceId, systemId);
+            super.mapReference(immunization.getLocation(), resource, serviceId, systemId);
         }
         if (immunization.hasReaction()) {
             for (Immunization.ImmunizationReactionComponent reaction: immunization.getReaction()) {
                 if (reaction.hasDetail()) {
-                    super.mapReference(reaction.getDetail(), serviceId, systemId);
+                    super.mapReference(reaction.getDetail(), resource, serviceId, systemId);
                 }
             }
         }
         if (immunization.hasVaccinationProtocol()) {
             for (Immunization.ImmunizationVaccinationProtocolComponent protocol: immunization.getVaccinationProtocol()) {
                 if (protocol.hasAuthority()) {
-                    super.mapReference(protocol.getAuthority(), serviceId, systemId);
+                    super.mapReference(protocol.getAuthority(), resource, serviceId, systemId);
                 }
             }
         }

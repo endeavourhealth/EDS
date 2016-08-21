@@ -16,6 +16,7 @@
   <!-- only log to stdout with INFO level -->
   <root level="INFO">
     <appender-ref ref="stdout" />
+    <appender-ref ref="db_async" />
   </root>
 
 </included>

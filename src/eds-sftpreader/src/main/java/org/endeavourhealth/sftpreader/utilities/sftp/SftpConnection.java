@@ -45,8 +45,6 @@ public class SftpConnection
 
         this.channel = (ChannelSftp)session.openChannel("sftp");
         this.channel.connect();
-
-        LOG.info("Connection opened");
     }
 
     @SuppressWarnings("unchecked")
@@ -83,6 +81,10 @@ public class SftpConnection
 
     public void put(String localPath, String destinationPath) throws SftpException {
         channel.put(localPath, destinationPath);
+    }
+
+    public void mkDir(String path) throws SftpException {
+        channel.mkdir(path);
     }
 
     public void close()

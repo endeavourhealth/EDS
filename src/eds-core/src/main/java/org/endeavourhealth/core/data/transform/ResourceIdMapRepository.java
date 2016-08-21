@@ -1,11 +1,14 @@
 package org.endeavourhealth.core.data.transform;
 
 import com.datastax.driver.mapping.Mapper;
+import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.transform.accessors.ResourceIdMapAccessor;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
+import org.endeavourhealth.core.data.transform.models.ResourceIdMapByEdsId;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 
 public class ResourceIdMapRepository extends Repository {
@@ -28,5 +31,11 @@ public class ResourceIdMapRepository extends Repository {
         } else {
             return null;
         }
+    }
+
+    public List<ResourceIdMapByEdsId> getResourceIdMapByEdsId(String resourceType, UUID edsId) {
+
+        ResourceIdMapAccessor accessor = getMappingManager().createAccessor(ResourceIdMapAccessor.class);
+        return Lists.newArrayList(accessor.getResourceIdMapByEdsId(resourceType, edsId));
     }
 }

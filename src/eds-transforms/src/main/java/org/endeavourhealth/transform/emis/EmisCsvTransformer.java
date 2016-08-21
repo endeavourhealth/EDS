@@ -32,7 +32,11 @@ public abstract class EmisCsvTransformer {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmisCsvTransformer.class);
 
-    public static List<UUID> splitAndTransform(String[] files,
+    public static final String VERSION_5 = "5.0";
+    public static final String VERSION_5_1 = "5.1";
+
+    public static List<UUID> splitAndTransform(String version,
+                                               String[] files,
                                                UUID exchangeId,
                                                UUID serviceId,
                                                UUID systemId,
@@ -46,7 +50,7 @@ public abstract class EmisCsvTransformer {
 
         //validate that we've got all the files we expect
         LOG.trace("Validating all files are present");
-        List<File> expectedFiles = validateExpectedFiles(commonDir);
+        List<File> expectedFiles = validateExpectedFiles(commonDir, version);
 
         //validate there's no additional files in the common directory
         LOG.trace("Validating no additional files");
@@ -55,6 +59,9 @@ public abstract class EmisCsvTransformer {
         //split the source files by Organisation GUID
         File srcDir = commonDir;
         File dstDir = new File(srcDir, "Split");
+        if (dstDir.exists()) {
+            deleteDirectory(dstDir);
+        }
         EmisCsvFileSplitter.splitFiles(srcDir, dstDir);
 
         //the sub-directories will be named by the org GUID, so validate we've only got orgs we expect
@@ -88,6 +95,23 @@ public abstract class EmisCsvTransformer {
 
         LOG.trace("All transforms completed - waiting for resources to commit to DB");
         return processor.getBatchIdsCreated();
+    }
+
+    /**
+     * recursively empties the directory struture then deletes the directories
+     * Java can delete directories, but the files have to be manually deleted first
+     */
+    private static void deleteDirectory(File root) {
+
+        for (File f: root.listFiles()) {
+            if (f.isFile()) {
+                f.delete();
+            } else {
+                deleteDirectory(f);
+            }
+        }
+
+        root.delete();
     }
 
     static class TransformOrganisation implements Callable {
@@ -159,7 +183,16 @@ public abstract class EmisCsvTransformer {
 
             if (odsCode == null) {
                 //if there's no EDS org ID it means we've never encountered this organisation before, in which case we need
-                odsCode = findOrganisationOdsFromCsvFile(orgGuid, folder);
+                //to look in the Admin_Organisation file we're received, to find the ODS code for that organisation
+                File adminFolder = new File(folder, EmisCsvFileSplitter.ADMIN_FOLDER_NAME);
+                for (File adminBatchFolder: adminFolder.listFiles()) {
+
+                    odsCode = findOrganisationOdsFromCsvFile(orgGuid, adminBatchFolder);
+                    if (odsCode != null) {
+                        break;
+                    }
+                }
+
             }
 
             if (odsCode == null
@@ -245,7 +278,7 @@ public abstract class EmisCsvTransformer {
     /**
      * validates that all expected files can be found in the folder
      */
-    private static List<File> validateExpectedFiles(File dir) throws FileNotFoundException {
+    private static List<File> validateExpectedFiles(File dir, String version) throws FileNotFoundException {
 
         List<File> list = new ArrayList<>();
         list.add(getFileByPartialName("Admin", "Location", dir));
@@ -257,8 +290,6 @@ public abstract class EmisCsvTransformer {
         list.add(getFileByPartialName("Appointment", "Session", dir));
         list.add(getFileByPartialName("Appointment", "SessionUser", dir));
         list.add(getFileByPartialName("Appointment", "Slot", dir));
-        //list.add(getFileByPartialName("Audit", "PatientAudit", dir)); //not present in EMIS test data
-        //list.add(getFileByPartialName("Audit", "RegistrationAudit", dir)); //not present in EMIS test data
         list.add(getFileByPartialName("CareRecord", "Consultation", dir));
         list.add(getFileByPartialName("CareRecord", "Diary", dir));
         list.add(getFileByPartialName("CareRecord", "Observation", dir));
@@ -268,6 +299,11 @@ public abstract class EmisCsvTransformer {
         list.add(getFileByPartialName("Coding", "DrugCode", dir));
         list.add(getFileByPartialName("Prescribing", "DrugRecord", dir));
         list.add(getFileByPartialName("Prescribing", "IssueRecord", dir));
+
+        if (version.equals(VERSION_5_1)) {
+            list.add(getFileByPartialName("Audit", "PatientAudit", dir)); //not present in EMIS test data
+            list.add(getFileByPartialName("Audit", "RegistrationAudit", dir)); //not present in EMIS test data
+        }
         return list;
     }
 
@@ -295,6 +331,6 @@ public abstract class EmisCsvTransformer {
             return f;
         }
 
-        throw new FileNotFoundException("Failed to find CSV file for " + domain + "_" + name);
+        throw new FileNotFoundException("Failed to find CSV file for " + domain + "_" + name + " in " + dir);
     }
 }

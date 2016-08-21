@@ -33,7 +33,7 @@ public abstract class BaseIdMapper {
         for (Extension extension: resource.getExtension()) {
             if (extension.hasValue()
                 && extension.getValue() instanceof Reference) {
-                mapReference((Reference)extension.getValue(), serviceId, systemId);
+                mapReference((Reference)extension.getValue(), resource, serviceId, systemId);
             }
         }
     }
@@ -41,10 +41,10 @@ public abstract class BaseIdMapper {
     /**
      * maps the IDs in any identifiers of a resource
      */
-    protected void mapIdentifiers(List<Identifier> identifiers, UUID serviceId, UUID systemId) {
+    protected void mapIdentifiers(List<Identifier> identifiers, Resource resource, UUID serviceId, UUID systemId) {
         for (Identifier identifier: identifiers) {
             if (identifier.hasAssigner()) {
-                mapReference(identifier.getAssigner(), serviceId, systemId);
+                mapReference(identifier.getAssigner(), resource, serviceId, systemId);
             }
         }
     }
@@ -52,7 +52,7 @@ public abstract class BaseIdMapper {
     /**
      * maps the ID within any reference
      */
-    protected void mapReference(Reference reference, UUID serviceId, UUID systemId) {
+    protected void mapReference(Reference reference, Resource resource, UUID serviceId, UUID systemId) {
         if (reference == null) {
             return;
         }
@@ -64,7 +64,12 @@ public abstract class BaseIdMapper {
         if (comps.getResourceType() == ResourceType.Patient) {
             UUID patientEdsId = IdHelper.getEdsResourceId(serviceId, systemId, comps.getResourceType(), comps.getId());
             if (patientEdsId == null) {
-                LOG.error("Reference to unrecognised patient {} from {}", comps.getId(), getClass().getSimpleName());
+                LOG.error("Reference to unrecognised patient {} in {} {} for service {} and system {}",
+                        comps.getId(),
+                        resource.getResourceType(),
+                        resource.getId(),
+                        serviceId,
+                        systemId);
             }
         }
 
@@ -75,14 +80,14 @@ public abstract class BaseIdMapper {
     /**
      * maps the ID within any reference
      */
-    protected void mapReferences(List<Reference> references, UUID serviceId, UUID systemId) {
+    protected void mapReferences(List<Reference> references, Resource resource, UUID serviceId, UUID systemId) {
         if (references == null
                 || references.isEmpty()) {
             return;
         }
 
         for (Reference reference: references) {
-            mapReference(reference, serviceId, systemId);
+            mapReference(reference, resource, serviceId, systemId);
         }
     }
 

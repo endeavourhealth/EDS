@@ -2,14 +2,15 @@ package org.endeavourhealth.core.data.ehr.models;
 
 import com.datastax.driver.mapping.annotations.ClusteringColumn;
 import com.datastax.driver.mapping.annotations.Column;
+import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Table;
 import org.hl7.fhir.instance.model.Enumerations;
 
 import java.util.Date;
 import java.util.UUID;
 
-@Table(keyspace = "ehr", name = "patient_identifier")
-public class PatientIdentifier {
+@Table(keyspace = "ehr", name = "patient_identifier_by_patient_id")
+public class PatientIdentifierByPatientId {
 
     @ClusteringColumn(0)
     @Column(name = "service_id")
@@ -29,7 +30,7 @@ public class PatientIdentifier {
     private String postcode = null;
     @Column(name = "gender")
     private Enumerations.AdministrativeGender gender = null;
-    @ClusteringColumn(2)
+    @PartitionKey
     @Column(name = "patient_id")
     private UUID patientId = null;
     @Column(name = "timestamp")
@@ -37,11 +38,13 @@ public class PatientIdentifier {
     @ClusteringColumn(4)
     @Column(name = "version")
     private UUID version = null;
+    @ClusteringColumn(2)
     @Column(name = "local_id")
     private String localId = null;
     @ClusteringColumn(3)
     @Column(name = "local_id_system")
     private String localIdSystem = null;
+
 
     public UUID getServiceId() {
         return serviceId;
@@ -146,4 +149,5 @@ public class PatientIdentifier {
     public void setLocalIdSystem(String localIdSystem) {
         this.localIdSystem = localIdSystem;
     }
+
 }

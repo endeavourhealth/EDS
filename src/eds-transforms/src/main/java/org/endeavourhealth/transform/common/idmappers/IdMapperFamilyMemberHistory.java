@@ -1,6 +1,5 @@
 package org.endeavourhealth.transform.common.idmappers;
 
-import org.hl7.fhir.instance.model.DiagnosticReport;
 import org.hl7.fhir.instance.model.FamilyMemberHistory;
 import org.hl7.fhir.instance.model.Resource;
 
@@ -15,10 +14,10 @@ public class IdMapperFamilyMemberHistory extends BaseIdMapper {
         super.mapExtensions(familyHistory, serviceId, systemId);
 
         if (familyHistory.hasIdentifier()) {
-            super.mapIdentifiers(familyHistory.getIdentifier(), serviceId, systemId);
+            super.mapIdentifiers(familyHistory.getIdentifier(), resource, serviceId, systemId);
         }
         if (familyHistory.hasPatient()) {
-            super.mapReference(familyHistory.getPatient(), serviceId, systemId);
+            super.mapReference(familyHistory.getPatient(), resource, serviceId, systemId);
         }
     }
 }

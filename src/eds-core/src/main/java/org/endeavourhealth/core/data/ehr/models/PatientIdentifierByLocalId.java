@@ -9,16 +9,15 @@ import org.hl7.fhir.instance.model.Enumerations;
 import java.util.Date;
 import java.util.UUID;
 
-@Table(keyspace = "ehr", name = "patient_identifier_by_nhs_number")
-public class PatientIdentifierByNhsNumber {
+@Table(keyspace = "ehr", name = "patient_identifier_by_local_id")
+public class PatientIdentifierByLocalId {
 
-    @ClusteringColumn(0)
+    @PartitionKey
     @Column(name = "service_id")
     private UUID serviceId = null;
-    @ClusteringColumn(1)
+    @ClusteringColumn(0)
     @Column(name = "system_id")
     private UUID systemId = null;
-    @PartitionKey
     @Column(name = "nhs_number")
     private String nhsNumber = null;
     @Column(name = "forenames")
@@ -35,16 +34,15 @@ public class PatientIdentifierByNhsNumber {
     private UUID patientId = null;
     @Column(name = "timestamp")
     private Date timestamp = null;
-    @ClusteringColumn(4)
+    @ClusteringColumn(3)
     @Column(name = "version")
     private UUID version = null;
-    @ClusteringColumn(2)
+    @ClusteringColumn(1)
     @Column(name = "local_id")
     private String localId = null;
-    @ClusteringColumn(3)
+    @ClusteringColumn(2)
     @Column(name = "local_id_system")
     private String localIdSystem = null;
-
 
     public UUID getServiceId() {
         return serviceId;

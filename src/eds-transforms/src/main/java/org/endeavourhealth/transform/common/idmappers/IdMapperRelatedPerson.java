@@ -1,6 +1,5 @@
 package org.endeavourhealth.transform.common.idmappers;
 
-import org.hl7.fhir.instance.model.AllergyIntolerance;
 import org.hl7.fhir.instance.model.RelatedPerson;
 import org.hl7.fhir.instance.model.Resource;
 
@@ -15,10 +14,10 @@ public class IdMapperRelatedPerson extends BaseIdMapper {
         super.mapExtensions(relatedPerson, serviceId, systemId);
 
         if (relatedPerson.hasIdentifier()) {
-            super.mapIdentifiers(relatedPerson.getIdentifier(), serviceId, systemId);
+            super.mapIdentifiers(relatedPerson.getIdentifier(), resource, serviceId, systemId);
         }
         if (relatedPerson.hasPatient()) {
-            super.mapReference(relatedPerson.getPatient(), serviceId, systemId);
+            super.mapReference(relatedPerson.getPatient(), resource, serviceId, systemId);
         }
     }
 }

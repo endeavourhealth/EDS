@@ -55,22 +55,16 @@ public class MessageTransform extends PipelineComponent {
 			List<UUID> batchIds = null;
 
 			if (software.equalsIgnoreCase("EmisExtractService")) {
-				if (!version.equalsIgnoreCase("5.1")) {
-					throw new VersionNotSupportedException(software, version);
-				}
-				batchIds = processEmisCsvTransform(exchange, serviceId, systemId, version, orgIds);
+				batchIds = processEmisCsvTransform(exchange, serviceId, systemId, version, software, orgIds);
 
 			} else if (software.equalsIgnoreCase("EmisOpen")) {
-				//TODO - validate version for EmisOpen
-				batchIds = processEmisOpenTransform(exchange, serviceId, systemId, version, orgIds);
+				batchIds = processEmisOpenTransform(exchange, serviceId, systemId, version, software, orgIds);
 
 			} else if (software.equalsIgnoreCase("OpenHR")) {
-				//TODO - validate version for EmisOpen
-				batchIds = processEmisOpenHrTransform(exchange, serviceId, systemId, version, orgIds);
+				batchIds = processEmisOpenHrTransform(exchange, serviceId, systemId, version, software, orgIds);
 
 			} else if (software.equalsIgnoreCase("TPPExtractService")) {
-				//TODO - validate version for TPPExtractService
-				batchIds = processTppXmlTransform(exchange, serviceId, systemId, version, orgIds);
+				batchIds = processTppXmlTransform(exchange, serviceId, systemId, version, software, orgIds);
 
 			} else {
 				throw new SoftwareNotSupportedException(software, version);
@@ -96,26 +90,35 @@ public class MessageTransform extends PipelineComponent {
 		return String.join(";", batchIdStrings);
 	}
 
-	private List<UUID> processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, Set<UUID> orgIds) throws Exception {
+	private List<UUID> processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software, Set<UUID> orgIds) throws Exception {
+
+		//validate the version
+		if (!version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5)
+				&& version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_1)) {
+			throw new VersionNotSupportedException(software, version);
+		}
 
 		//for EMIS CSV, the exchange body will be a list of files received
 		String decodedFileString = exchange.getBody();
 		String[] decodedFiles = decodedFileString.split("\r\n");
 
-		return EmisCsvTransformer.splitAndTransform(decodedFiles, exchange.getExchangeId(), serviceId, systemId, orgIds);
+		return EmisCsvTransformer.splitAndTransform(version, decodedFiles, exchange.getExchangeId(), serviceId, systemId, orgIds);
 	}
 
-	private List<UUID> processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, Set<UUID> orgIds) throws Exception {
+	private List<UUID> processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software, Set<UUID> orgIds) throws Exception {
+		//TODO - validate version for TPP XML
 		//TODO - plug in TPP XML transform
 		return null;
 	}
 
-	private List<UUID> processEmisOpenTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, Set<UUID> orgIds) throws Exception {
+	private List<UUID> processEmisOpenTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software, Set<UUID> orgIds) throws Exception {
+		//TODO - validate version for EMIS Open
 		//TODO - plug in EMIS OPEN transform
 		return null;
 	}
 
-	private List<UUID> processEmisOpenHrTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, Set<UUID> orgIds) throws Exception {
+	private List<UUID> processEmisOpenHrTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software, Set<UUID> orgIds) throws Exception {
+		//TODO - validate version for Open HR
 		//TODO - plug in OpenHR transform
 		return null;
 	}

@@ -34,5 +34,17 @@ CREATE TABLE resource_id_map (
 	resource_type text, 
 	source_id text, 
 	eds_id UUID, 
-	PRIMARY KEY ((service_id), system_id, resource_type, source_id));
+PRIMARY KEY ((service_id), system_id, resource_type, source_id));
 	  
+
+CREATE MATERIALIZED VIEW resource_id_map_by_eds_id AS
+SELECT service_id, system_id, resource_type, source_id, eds_id
+FROM resource_id_map
+WHERE service_id IS NOT NULL
+  AND system_id IS NOT NULL
+  AND resource_type IS NOT NULL
+  AND source_id IS NOT NULL
+  AND eds_id IS NOT NULL
+PRIMARY KEY((resource_type, eds_id), service_id, system_id, source_id);
+
+	

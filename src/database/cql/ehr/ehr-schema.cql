@@ -18,7 +18,10 @@ DROP TABLE IF EXISTS person_consent_protocol;
 DROP TABLE IF EXISTS person_consent_organisation;
 
 DROP MATERIALIZED VIEW IF EXISTS patient_identifier_by_nhs_number;
-DROP TABLE IF EXISTS patient_identifier;
+DROP MATERIALIZED VIEW IF EXISTS patient_identifier_by_patient_id;
+DROP TABLE IF EXISTS patient_identifier_by_local_id;
+DROP TABLE IF EXISTS patient_identifier; --old table name
+
 
 // 1. Get Resource based on ID and Type				= resource_history
 // 2. Get Resource History						= resource_history
@@ -121,7 +124,7 @@ CREATE TABLE person_consent_organisation (
 	
 
 
-CREATE TABLE patient_identifier (
+CREATE TABLE patient_identifier_by_local_id (
 	service_id UUID,
 	system_id UUID,
 	nhs_number text,
@@ -135,21 +138,47 @@ CREATE TABLE patient_identifier (
 	version TIMEUUID,
 	local_id TEXT,
 	local_id_system TEXT,
-	PRIMARY KEY ((service_id), system_id, patient_id, local_id_system, version))
-	WITH CLUSTERING ORDER BY (system_id ASC, patient_id ASC, local_id_system ASC, version DESC);
-	
+	PRIMARY KEY ((service_id), system_id, local_id, local_id_system, version))
+	WITH CLUSTERING ORDER BY (system_id ASC, local_id ASC, local_id_system ASC, version DESC);
 	
 CREATE MATERIALIZED VIEW patient_identifier_by_nhs_number AS  
-	SELECT service_id, system_id, local_id_system, nhs_number, patient_id, timestamp, version 
-	FROM patient_identifier  
-	WHERE nhs_number IS NOT NULL  
-	AND service_id IS NOT NULL 
-	AND system_id IS NOT NULL 
-	and local_id_system is not NULL
-	AND timestamp IS NOT NULL 
-	AND patient_id IS NOT NULL 
-	AND version IS NOT null
-	PRIMARY KEY(nhs_number, service_id, system_id, local_id_system, patient_id, version)
-	WITH CLUSTERING ORDER BY (service_id ASC, system_id ASC, patient_id ASC, version DESC);
-
-
+	SELECT service_id, system_id, nhs_number, forenames, surname, date_of_birth, postcode, gender,
+			patient_id, timestamp, version, local_id, local_id_system
+	FROM patient_identifier_by_local_id  
+	WHERE service_id IS NOT NULL  
+	AND system_id IS NOT NULL  
+	AND nhs_number IS NOT NULL  
+	AND forenames IS NOT NULL  
+	AND surname IS NOT NULL  
+	AND date_of_birth IS NOT NULL  
+	AND postcode IS NOT NULL  
+	AND gender IS NOT NULL  
+	AND patient_id IS NOT NULL  
+	AND timestamp IS NOT NULL  
+	AND version IS NOT NULL  
+	AND local_id IS NOT NULL  
+	AND local_id_system IS NOT NULL  
+	PRIMARY KEY ((nhs_number), service_id, system_id, local_id, local_id_system, version);
+	
+	
+CREATE MATERIALIZED VIEW patient_identifier_by_patient_id AS  
+	SELECT service_id, system_id, nhs_number, forenames, surname, date_of_birth, postcode, gender,
+			patient_id, timestamp, version, local_id, local_id_system
+	FROM patient_identifier_by_local_id  
+	WHERE service_id IS NOT NULL  
+	AND system_id IS NOT NULL  
+	AND nhs_number IS NOT NULL  
+	AND forenames IS NOT NULL  
+	AND surname IS NOT NULL  
+	AND date_of_birth IS NOT NULL  
+	AND postcode IS NOT NULL  
+	AND gender IS NOT NULL  
+	AND patient_id IS NOT NULL  
+	AND timestamp IS NOT NULL  
+	AND version IS NOT NULL  
+	AND local_id IS NOT NULL  
+	AND local_id_system IS NOT NULL  
+	PRIMARY KEY ((patient_id), service_id, system_id, local_id, local_id_system, version)
+	WITH CLUSTERING ORDER BY (service_id ASC, system_id ASC, local_id ASC, local_id_system ASC, version DESC);
+	
+	

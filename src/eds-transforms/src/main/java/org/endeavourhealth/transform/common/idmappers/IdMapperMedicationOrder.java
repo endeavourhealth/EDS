@@ -14,27 +14,27 @@ public class IdMapperMedicationOrder extends BaseIdMapper {
         super.mapExtensions(medicationOrder, serviceId, systemId);
 
         if (medicationOrder.hasIdentifier()) {
-            super.mapIdentifiers(medicationOrder.getIdentifier(), serviceId, systemId);
+            super.mapIdentifiers(medicationOrder.getIdentifier(), resource, serviceId, systemId);
         }
         if (medicationOrder.hasPatient()) {
-            super.mapReference(medicationOrder.getPatient(), serviceId, systemId);
+            super.mapReference(medicationOrder.getPatient(), resource, serviceId, systemId);
         }
         if (medicationOrder.hasPrescriber()) {
-            super.mapReference(medicationOrder.getPrescriber(), serviceId, systemId);
+            super.mapReference(medicationOrder.getPrescriber(), resource, serviceId, systemId);
         }
         if (medicationOrder.hasEncounter()) {
-            super.mapReference(medicationOrder.getEncounter(), serviceId, systemId);
+            super.mapReference(medicationOrder.getEncounter(), resource, serviceId, systemId);
         }
         if (medicationOrder.hasReason()) {
             try {
-                super.mapReference(medicationOrder.getReasonReference(), serviceId, systemId);
+                super.mapReference(medicationOrder.getReasonReference(), resource, serviceId, systemId);
             } catch (Exception ex) {
                 //do nothing if not a reference
             }
         }
         if (medicationOrder.hasMedication()) {
             try {
-                super.mapReference(medicationOrder.getMedicationReference(), serviceId, systemId);
+                super.mapReference(medicationOrder.getMedicationReference(), resource, serviceId, systemId);
             } catch (Exception ex) {
                 //do nothing if not a reference
             }
@@ -43,7 +43,7 @@ public class IdMapperMedicationOrder extends BaseIdMapper {
             for (MedicationOrder.MedicationOrderDosageInstructionComponent dosage: medicationOrder.getDosageInstruction()) {
                 if (dosage.hasSite()) {
                     try {
-                        super.mapReference(dosage.getSiteReference(), serviceId, systemId);
+                        super.mapReference(dosage.getSiteReference(), resource, serviceId, systemId);
                     } catch (Exception ex) {
                         //do nothing if not a reference
                     }
@@ -52,13 +52,13 @@ public class IdMapperMedicationOrder extends BaseIdMapper {
         }
         if (medicationOrder.hasDispenseRequest()) {
             try {
-                super.mapReference(medicationOrder.getDispenseRequest().getMedicationReference(), serviceId, systemId);
+                super.mapReference(medicationOrder.getDispenseRequest().getMedicationReference(), resource, serviceId, systemId);
             } catch (Exception ex) {
                 //do nothing if not a reference
             }
         }
         if (medicationOrder.hasPriorPrescription()) {
-            super.mapReference(medicationOrder.getPriorPrescription(), serviceId, systemId);
+            super.mapReference(medicationOrder.getPriorPrescription(), resource, serviceId, systemId);
         }
     }
 }

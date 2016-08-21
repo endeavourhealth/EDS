@@ -5,6 +5,7 @@ import com.datastax.driver.mapping.annotations.Accessor;
 import com.datastax.driver.mapping.annotations.Param;
 import com.datastax.driver.mapping.annotations.Query;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
+import org.endeavourhealth.core.data.transform.models.ResourceIdMapByEdsId;
 
 import java.util.UUID;
 
@@ -16,5 +17,9 @@ public interface ResourceIdMapAccessor {
                                            @Param("system_id") UUID systemId,
                                            @Param("resource_type") String resourceType,
                                            @Param("source_id") String sourceId);
+
+    @Query("SELECT * FROM transform.resource_id_map_by_eds_id WHERE resource_type = :resource_type AND eds_id = :eds_id")
+    Result<ResourceIdMapByEdsId> getResourceIdMapByEdsId(@Param("resource_type") String resourceType,
+                                                         @Param("eds_id") UUID edsId);
 
 }

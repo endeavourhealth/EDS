@@ -14,23 +14,23 @@ public class IdMapperProcedure extends BaseIdMapper {
         super.mapExtensions(procedure, serviceId, systemId);
 
         if (procedure.hasIdentifier()) {
-            super.mapIdentifiers(procedure.getIdentifier(), serviceId, systemId);
+            super.mapIdentifiers(procedure.getIdentifier(), resource, serviceId, systemId);
         }
         if (procedure.hasSubject()) {
-            super.mapReference(procedure.getSubject(), serviceId, systemId);
+            super.mapReference(procedure.getSubject(), resource, serviceId, systemId);
         }
         if (procedure.hasPerformer()) {
             for (Procedure.ProcedurePerformerComponent performer: procedure.getPerformer()) {
                 if (performer.hasActor()) {
-                    super.mapReference(performer.getActor(), serviceId, systemId);
+                    super.mapReference(performer.getActor(), resource, serviceId, systemId);
                 }
             }
         }
         if (procedure.hasEncounter()) {
-            super.mapReference(procedure.getEncounter(), serviceId, systemId);
+            super.mapReference(procedure.getEncounter(), resource, serviceId, systemId);
         }
         if (procedure.hasLocation()) {
-            super.mapReference(procedure.getLocation(), serviceId, systemId);
+            super.mapReference(procedure.getLocation(), resource, serviceId, systemId);
         }
 
     }

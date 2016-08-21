@@ -3,6 +3,8 @@ package org.endeavourhealth.transform.common;
 import com.datastax.driver.core.utils.UUIDs;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
+import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
+import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
@@ -169,7 +171,7 @@ public class CsvProcessor {
         return getAllBatchIds();
     }
 
-    private void logResults() {
+    private void logResults() throws Exception {
 
         int totalSaved = 0;
         int totalDeleted = 0;
@@ -182,14 +184,23 @@ public class CsvProcessor {
         totalSaved += saved;
         totalDeleted += deleted;
 
+        ResourceIdMapRepository idRepository = new ResourceIdMapRepository();
+
         Iterator<String> it = patientBatchIdMap.keySet().iterator();
         while (it.hasNext()) {
             String patientId = it.next();
             UUID batchId = patientBatchIdMap.get(patientId);
 
+            //look up the EDS ID for the patient, so we can log that too
+            ResourceIdMap resourceMapping = idRepository.getResourceIdMap(serviceId, systemId, ResourceType.Patient.toString(), patientId);
+            if (resourceMapping == null) {
+                throw new TransformException("Failed to find EDS ID for patient " + patientId + ", service " + serviceId + " and system " + systemId);
+            }
+            UUID edsPatientId = resourceMapping.getEdsId();
+
             saved = countResourcesSaved.get(batchId).get();
             deleted = countResourcesDeleted.get(batchId).get();
-            LOG.info("Saved {} and deleted {} resources for patient {}", saved, deleted, patientId);
+            LOG.info("Saved {} and deleted {} resources for patient {}", saved, deleted, edsPatientId);
             totalSaved += saved;
             totalDeleted += deleted;
         }
