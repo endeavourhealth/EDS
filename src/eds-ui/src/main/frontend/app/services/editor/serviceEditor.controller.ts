@@ -73,6 +73,14 @@ module app.service {
 
 		save(close : boolean) {
 			var vm = this;
+
+			// Populate service organisations before save
+			vm.service.organisations = {};
+			for (var idx in this.organisations) {
+				var organisation : Organisation = this.organisations[idx];
+				this.service.organisations[organisation.uuid] = organisation.name;
+			}
+
 			vm.serviceService.save(vm.service)
 				.then(function(saved : Service) {
 					vm.service.uuid = saved.uuid;
