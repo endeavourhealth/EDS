@@ -1,4 +1,4 @@
-/// <reference path="../../../typings/index.d.ts" />
+/// <reference path="../../typings/index.d.ts" />
 
 module app.organisation {
 	'use strict';
@@ -22,6 +22,15 @@ module app.organisation {
 						url: '/organisation',
 						templateUrl: 'app/organisations/list/organisationList.html',
 						controller: 'OrganisationListController',
+						controllerAs: 'ctrl'
+					}
+				},
+				{
+					state: 'app.organisationAction',
+					config: {
+						url: '/organisation/:itemUuid/:itemAction',
+						templateUrl: 'app/organisations/editor/organisationEditor.html',
+						controller: 'OrganisationEditorController',
 						controllerAs: 'ctrl'
 					}
 				}

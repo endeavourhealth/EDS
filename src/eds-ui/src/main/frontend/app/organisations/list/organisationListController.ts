@@ -10,11 +10,12 @@ module app.organisation {
 	export class OrganisationListController {
 		organisations : Organisation[];
 
-		static $inject = ['$uibModal', 'OrganisationService', 'LoggerService'];
+		static $inject = ['$uibModal', 'OrganisationService', 'LoggerService','$state'];
 
 		constructor(private $modal : IModalService,
 								private organisationService : IOrganisationService,
-								private log : ILoggerService) {
+								private log : ILoggerService,
+								protected $state : IStateService) {
 			this.getOrganisations();
 		}
 
@@ -30,16 +31,11 @@ module app.organisation {
 		}
 
 		add() {
-			var newOrganisation : Organisation = new Organisation();
-			this.edit(newOrganisation);
+			this.$state.go('app.organisationAction', {itemUuid: null, itemAction: 'add'});
 		}
 
 		edit(item : Organisation) {
-			var vm = this;
-			OrganisationEditorController.open(vm.$modal, item)
-				.result.then(function(result : Organisation) {
-				vm.save(item, result);
-			});
+			this.$state.go('app.organisationAction', {itemUuid: item.uuid, itemAction: 'edit'});
 		}
 
 		save(original : Organisation, edited : Organisation) {
