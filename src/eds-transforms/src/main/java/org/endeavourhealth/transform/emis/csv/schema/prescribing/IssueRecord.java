@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv.schema.prescribing;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 
@@ -9,34 +10,61 @@ import java.util.Date;
 
 public class IssueRecord extends AbstractCsvTransformer {
 
-    public IssueRecord(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
+    public IssueRecord(String version, String folderPath, CSVFormat csvFormat) throws Exception {
+        super(version, folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
     }
 
     @Override
-    protected String[] getCsvHeaders() {
-        return new String[]{
-                "IssueRecordGuid",
-                "PatientGuid",
-                "OrganisationGuid",
-                "DrugRecordGuid",
-                "EffectiveDate",
-                "EffectiveDatePrecision",
-                "EnteredDate",
-                "EnteredTime",
-                "ClinicianUserInRoleGuid",
-                "EnteredByUserInRoleGuid",
-                "CodeId",
-                "Dosage",
-                "Quantity",
-                "QuantityUnit",
-                "ProblemObservationGuid",
-                "CourseDurationInDays",
-                "EstimatedNhsCost",
-                "IsConfidential",
-                "Deleted",
-                "ProcessingId"
-        };
+    protected String[] getCsvHeaders(String version) {
+
+        //have to handle mis-spelt column name in EMIS test pack
+        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+            return new String[]{
+                    "IssueRecordGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "DrugRecordGuid",
+                    "EffectiveDate",
+                    "EffectiveDatePrecision",
+                    "EnteredDate",
+                    "EnteredTime",
+                    "ClinicanUserInRoleGuid",
+                    "EnteredByUserInRoleGuid",
+                    "CodeId",
+                    "Dosage",
+                    "Quantity",
+                    "QuantityUnit",
+                    "ProblemObservationGuid",
+                    "CourseDurationInDays",
+                    "EstimatedNhsCost",
+                    "IsConfidential",
+                    "Deleted",
+                    "ProcessingId"
+            };
+        } else {
+            return new String[]{
+                    "IssueRecordGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "DrugRecordGuid",
+                    "EffectiveDate",
+                    "EffectiveDatePrecision",
+                    "EnteredDate",
+                    "EnteredTime",
+                    "ClinicianUserInRoleGuid",
+                    "EnteredByUserInRoleGuid",
+                    "CodeId",
+                    "Dosage",
+                    "Quantity",
+                    "QuantityUnit",
+                    "ProblemObservationGuid",
+                    "CourseDurationInDays",
+                    "EstimatedNhsCost",
+                    "IsConfidential",
+                    "Deleted",
+                    "ProcessingId"
+            };
+        }
     }
 
     public String getIssueRecordGuid() {
@@ -95,5 +123,12 @@ public class IssueRecord extends AbstractCsvTransformer {
     }
     public boolean getIsConfidential() {
         return super.getBoolean("IsConfidential");
+    }
+
+    /**
+     * special function for handling mis-spelt column in EMIS test pack
+     */
+    public String getClinicanUserInRoleGuid() {
+        return super.getString("ClinicanUserInRoleGuid");
     }
 }

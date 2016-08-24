@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv.schema.admin;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 
@@ -9,51 +10,96 @@ import java.util.Date;
 
 public class Patient extends AbstractCsvTransformer {
 
-    public Patient(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
+    public Patient(String version, String folderPath, CSVFormat csvFormat) throws Exception {
+        super(version, folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
     }
 
     @Override
-    protected String[] getCsvHeaders() {
-        return new String[] {
-                "PatientGuid",
-                "OrganisationGuid",
-                "UsualGpUserInRoleGuid",
-                "Sex",
-                "DateOfBirth",
-                "DateOfDeath",
-                "Title",
-                "GivenName",
-                "MiddleNames",
-                "Surname",
-                "DateOfRegistration",
-                "NhsNumber",
-                "PatientNumber",
-                "PatientTypeDescription",
-                "DummyType",
-                "HouseNameFlatNumber",
-                "NumberAndStreet",
-                "Village",
-                "Town",
-                "County",
-                "Postcode",
-                "ResidentialInstituteCode",
-                "NHSNumberStatus",
-                "CarerName",
-                "CarerRelation",
-                "PersonGuid",
-                "DateOfDeactivation",
-                "Deleted",
-                "SpineSensitive",
-                "IsConfidential",
-                "EmailAddress",
-                "HomePhone",
-                "MobilePhone",
-                "ExternalUsualGPGuid",
-                "ExternalUsualGP",
-                "ExternalUsualGPOrganisation",
-                "ProcessingId"
-        };
+    protected String[] getCsvHeaders(String version) {
+
+        //EMIS test packs spell two of the columns with "Ususal" rather than "Usual", so handling that variation
+        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+            return new String[] {
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "UsualGpUserInRoleGuid",
+                    "Sex",
+                    "DateOfBirth",
+                    "DateOfDeath",
+                    "Title",
+                    "GivenName",
+                    "MiddleNames",
+                    "Surname",
+                    "DateOfRegistration",
+                    "NhsNumber",
+                    "PatientNumber",
+                    "PatientTypeDescription",
+                    "DummyType",
+                    "HouseNameFlatNumber",
+                    "NumberAndStreet",
+                    "Village",
+                    "Town",
+                    "County",
+                    "Postcode",
+                    "ResidentialInstituteCode",
+                    "NHSNumberStatus",
+                    "CarerName",
+                    "CarerRelation",
+                    "PersonGuid",
+                    "DateOfDeactivation",
+                    "Deleted",
+                    "SpineSensitive",
+                    "IsConfidential",
+                    "EmailAddress",
+                    "HomePhone",
+                    "MobilePhone",
+                    "ExternalUsualGPGuid",
+                    "ExternalUsusalGP",
+                    "ExternalUsusalGPOrganisation",
+                    "ProcessingId"
+            };
+        } else {
+            return new String[] {
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "UsualGpUserInRoleGuid",
+                    "Sex",
+                    "DateOfBirth",
+                    "DateOfDeath",
+                    "Title",
+                    "GivenName",
+                    "MiddleNames",
+                    "Surname",
+                    "DateOfRegistration",
+                    "NhsNumber",
+                    "PatientNumber",
+                    "PatientTypeDescription",
+                    "DummyType",
+                    "HouseNameFlatNumber",
+                    "NumberAndStreet",
+                    "Village",
+                    "Town",
+                    "County",
+                    "Postcode",
+                    "ResidentialInstituteCode",
+                    "NHSNumberStatus",
+                    "CarerName",
+                    "CarerRelation",
+                    "PersonGuid",
+                    "DateOfDeactivation",
+                    "Deleted",
+                    "SpineSensitive",
+                    "IsConfidential",
+                    "EmailAddress",
+                    "HomePhone",
+                    "MobilePhone",
+                    "ExternalUsualGPGuid",
+                    "ExternalUsualGP",
+                    "ExternalUsualGPOrganisation",
+                    "ProcessingId"
+            };
+        }
+
     }
 
     public String getPatientGuid() {
@@ -168,6 +214,14 @@ public class Patient extends AbstractCsvTransformer {
         return super.getInt("ProcessingId");
     }
 
-
+    /**
+     * special function to handle mis-named columns in test pack
+     */
+    public String getExternalUsusalGP() {
+        return super.getString("ExternalUsusalGP");
+    }
+    public String getExternalUsusalGPOrganisation() {
+        return super.getString("ExternalUsusalGPOrganisation");
+    }
 
 }

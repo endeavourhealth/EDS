@@ -1,7 +1,7 @@
 package org.endeavourhealth.ui.queuing.controller;
 
 import com.rabbitmq.client.AMQP;
-import org.endeavourhealth.ui.JsonSerializer;
+import org.endeavourhealth.core.utility.JsonSerializer;
 import org.endeavourhealth.ui.queuing.Message;
 
 import java.util.UUID;

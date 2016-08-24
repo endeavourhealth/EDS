@@ -1,13 +1,13 @@
 package org.endeavourhealth.core.data.ehr;
 
 import com.datastax.driver.core.BatchStatement;
-import com.datastax.driver.core.utils.UUIDs;
 import com.datastax.driver.mapping.Mapper;
+import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.ResourceHistoryAccessor;
 import org.endeavourhealth.core.data.ehr.models.*;
 
-import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 public class ResourceRepository extends Repository {
@@ -130,6 +130,15 @@ public class ResourceRepository extends Repository {
         getSession().execute(batch);
     }
 
+    public void save(ResourceTypesUsed resourceTypesUsed) {
+        if (resourceTypesUsed == null) {
+            throw new IllegalArgumentException("resourceTypesUsed is null");
+        }
+
+        Mapper<ResourceTypesUsed> mapper = getMappingManager().mapper(ResourceTypesUsed.class);
+        mapper.save(resourceTypesUsed);
+    }
+
     public ResourceHistory getByKey(String resourceType, UUID resourceId, UUID version) {
         Mapper<ResourceHistory> mapperResourceStore = getMappingManager().mapper(ResourceHistory.class);
         return mapperResourceStore.get(resourceType, resourceId, version);
@@ -140,8 +149,24 @@ public class ResourceRepository extends Repository {
         return accessor.getCurrentVersion(resourceType, resourceId);
     }
 
-    public Iterable<ResourceHistory> getResourceHistory(String resourceType, UUID resourceId) {
+    public List<ResourceHistory> getResourceHistory(String resourceType, UUID resourceId) {
         ResourceHistoryAccessor accessor = getMappingManager().createAccessor(ResourceHistoryAccessor.class);
-        return accessor.getResourceHistory(resourceType, resourceId);
+        return Lists.newArrayList(accessor.getResourceHistory(resourceType, resourceId));
     }
+
+    public List<ResourceByPatient> getResourcesByPatient(UUID serviceId, UUID systemId, UUID patientId) {
+        ResourceHistoryAccessor accessor = getMappingManager().createAccessor(ResourceHistoryAccessor.class);
+        return Lists.newArrayList(accessor.getResourcesByPatient(serviceId, systemId, patientId));
+    }
+
+    public List<ResourceByPatient> getResourcesByPatient(UUID serviceId, UUID systemId, UUID patientId, String resourceType) {
+        ResourceHistoryAccessor accessor = getMappingManager().createAccessor(ResourceHistoryAccessor.class);
+        return Lists.newArrayList(accessor.getResourcesByPatient(serviceId, systemId, patientId, resourceType));
+    }
+
+    public List<ResourceTypesUsed> getResourcesTypesUsed(UUID serviceId, UUID systemId) {
+        ResourceHistoryAccessor accessor = getMappingManager().createAccessor(ResourceHistoryAccessor.class);
+        return Lists.newArrayList(accessor.getResourceTypesUsed(serviceId, systemId));
+    }
+
 }

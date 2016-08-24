@@ -3,7 +3,9 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.admin.Patient;
 import org.endeavourhealth.transform.emis.openhr.schema.VocSex;
@@ -19,16 +21,19 @@ import java.util.List;
 
 public class PatientTransformer {
 
-    public static void transform(String folderPath,
+    public static void transform(String version,
+                                 String folderPath,
                                  CSVFormat csvFormat,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Patient parser = new Patient(folderPath, csvFormat);
+        Patient parser = new Patient(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createPatient(parser, csvProcessor, csvHelper);
+                createPatient(version, parser, csvProcessor, csvHelper);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {
@@ -36,7 +41,8 @@ public class PatientTransformer {
         }
     }
 
-    private static void createPatient(Patient patientParser,
+    private static void createPatient(String version,
+                                      Patient patientParser,
                                       CsvProcessor csvProcessor,
                                       EmisCsvHelper csvHelper) throws Exception {
 
@@ -188,7 +194,16 @@ public class PatientTransformer {
                 fhirPatient.addCareProvider(csvHelper.createPractitionerReference(externalGpGuid));
 
             } else {
-                String externalOrgGuid = patientParser.getExternalUsualGPOrganisation();
+
+                //have to handle the mis-spelling of the column name in EMIS test pack
+                //String externalOrgGuid = patientParser.getExternalUsualGPOrganisation();
+                String externalOrgGuid = null;
+                if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+                    externalOrgGuid = patientParser.getExternalUsusalGPOrganisation();
+                } else {
+                    externalOrgGuid = patientParser.getExternalUsualGPOrganisation();
+                }
+
                 if (!Strings.isNullOrEmpty(externalOrgGuid)) {
                     fhirPatient.addCareProvider(csvHelper.createOrganisationReference(externalOrgGuid));
                 }

@@ -64,11 +64,23 @@ public class CsvSplitter {
             }
 
             //go through the content of the source file
+            //changing to also drop duplicated lines. The EMIS test pack has huge duplication of lines (see Admin_Orgamisation)
+            //and when the exact same resource is inserted into Resource_History etc. in rapid succession, we get a failure
+            //so just drop any lines that are exactly the same as the previous one
             Iterator<CSVRecord> csvIterator = csvParser.iterator();
+            CSVRecord previousLine = null;
+            while (csvIterator.hasNext()) {
+                CSVRecord csvRecord = csvIterator.next();
+                if (!isSame(csvRecord, previousLine)) {
+                    splitRecord(csvRecord, splitIndexes);
+                    previousLine = csvRecord;
+                }
+            }
+            /*Iterator<CSVRecord> csvIterator = csvParser.iterator();
             while (csvIterator.hasNext()) {
                 CSVRecord csvRecord = csvIterator.next();
                 splitRecord(csvRecord, splitIndexes);
-            }
+            }*/
 
 
         } finally {
@@ -82,6 +94,22 @@ public class CsvSplitter {
             }
         }
 
+    }
+
+    private static boolean isSame(CSVRecord one, CSVRecord two) {
+        if (one == null
+                || two == null
+                || one.size() != two.size()) {
+            return false;
+        }
+
+        for (int i=0; i<one.size(); i++) {
+            if (!one.get(i).equals(two.get(i))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void splitRecord(CSVRecord csvRecord, int[] columnIndexes) throws Exception {

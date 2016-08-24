@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.admin.Organisation;
@@ -14,16 +15,19 @@ import java.util.Date;
 
 public class OrganisationTransformer {
 
-    public static void transform(String folderPath,
+    public static void transform(String version,
+                                 String folderPath,
                                  CSVFormat csvFormat,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Organisation parser = new Organisation(folderPath, csvFormat);
+        Organisation parser = new Organisation(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createOrganisation(parser, csvProcessor, csvHelper);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {

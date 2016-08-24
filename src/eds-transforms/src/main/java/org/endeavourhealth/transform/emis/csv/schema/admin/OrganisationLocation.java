@@ -6,12 +6,12 @@ import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 
 public class OrganisationLocation extends AbstractCsvTransformer {
 
-    public OrganisationLocation(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
+    public OrganisationLocation(String version, String folderPath, CSVFormat csvFormat) throws Exception {
+        super(version, folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
     }
 
     @Override
-    protected String[] getCsvHeaders() {
+    protected String[] getCsvHeaders(String version) {
         return new String[]{
                 "OrganisationGuid",
                 "LocationGuid",

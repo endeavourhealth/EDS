@@ -10,7 +10,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -130,4 +133,6 @@ public abstract class XmlSerializer {
 
         return sw.toString();
     }
+
+
 }

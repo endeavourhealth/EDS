@@ -2,42 +2,72 @@ package org.endeavourhealth.transform.emis.csv.schema.prescribing;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 
 import java.util.Date;
 
 public class DrugRecord extends AbstractCsvTransformer {
-    public DrugRecord(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
+    public DrugRecord(String version, String folderPath, CSVFormat csvFormat) throws Exception {
+        super(version, folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
     }
 
     @Override
-    protected String[] getCsvHeaders() {
-        return new String[]{
-                "DrugRecordGuid",
-                "PatientGuid",
-                "OrganisationGuid",
-                "EffectiveDate",
-                "EffectiveDatePrecision",
-                "EnteredDate",
-                "EnteredTime",
-                "ClinicianUserInRoleGuid",
-                "EnteredByUserInRoleGuid",
-                "CodeId",
-                "Dosage",
-                "Quantity",
-                "QuantityUnit",
-                "ProblemObservationGuid",
-                "PrescriptionType",
-                "IsActive",
-                "CancellationDate",
-                "NumberOfIssues",
-                "NumberOfIssuesAuthorised",
-                "IsConfidential",
-                "Deleted",
-                "ProcessingId"
-        };
+    protected String[] getCsvHeaders(String version) {
+
+        //have to handle a mis-spelt column name in the EMIS test pack
+        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+            return new String[]{
+                    "DrugRecordGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "EffectiveDate",
+                    "EffectiveDatePrecision",
+                    "EnteredDate",
+                    "EnteredTime",
+                    "ClinicanUserInRoleGuid",
+                    "EnteredByUserInRoleGuid",
+                    "CodeId",
+                    "Dosage",
+                    "Quantity",
+                    "QuantityUnit",
+                    "ProblemObservationGuid",
+                    "PrescriptionType",
+                    "IsActive",
+                    "CancellationDate",
+                    "NumberOfIssues",
+                    "NumberOfIssuesAuthorised",
+                    "IsConfidential",
+                    "Deleted",
+                    "ProcessingId"
+            };
+        } else {
+            return new String[]{
+                    "DrugRecordGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "EffectiveDate",
+                    "EffectiveDatePrecision",
+                    "EnteredDate",
+                    "EnteredTime",
+                    "ClinicianUserInRoleGuid",
+                    "EnteredByUserInRoleGuid",
+                    "CodeId",
+                    "Dosage",
+                    "Quantity",
+                    "QuantityUnit",
+                    "ProblemObservationGuid",
+                    "PrescriptionType",
+                    "IsActive",
+                    "CancellationDate",
+                    "NumberOfIssues",
+                    "NumberOfIssuesAuthorised",
+                    "IsConfidential",
+                    "Deleted",
+                    "ProcessingId"
+            };
+        }
     }
 
     public String getDrugRecordGuid() {
@@ -102,5 +132,12 @@ public class DrugRecord extends AbstractCsvTransformer {
     }
     public boolean getIsConfidential() {
         return super.getBoolean("IsConfidential");
+    }
+
+    /**
+     * special function to handle mis-spelt column name in EMIS test pack
+     */
+    public String getClinicanUserInRoleGuid() {
+        return super.getString("ClinicanUserInRoleGuid");
     }
 }

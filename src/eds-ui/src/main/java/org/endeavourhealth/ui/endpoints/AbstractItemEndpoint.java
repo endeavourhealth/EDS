@@ -3,11 +3,11 @@ package org.endeavourhealth.ui.endpoints;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.models.*;
 import org.endeavourhealth.core.xml.QueryDocument.QueryDocument;
+import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.ui.DependencyType;
 import org.endeavourhealth.ui.json.JsonDeleteResponse;
 import org.endeavourhealth.ui.json.JsonMoveItem;
 import org.endeavourhealth.ui.json.JsonMoveItems;
-import org.endeavourhealth.ui.querydocument.QueryDocumentSerializer;
 import org.endeavourhealth.ui.utility.QueryDocumentReaderFindDependentUuids;
 
 import javax.ws.rs.BadRequestException;

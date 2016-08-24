@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.admin.OrganisationLocation;
 
@@ -10,15 +11,17 @@ import java.util.List;
 
 public class OrganisationLocationTransformer {
 
-    public static HashMap<String, List<String>> transform(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static HashMap<String, List<String>> transform(String version, String folderPath, CSVFormat csvFormat) throws Exception {
 
         HashMap<String, List<String>> hmLocationToOrganisation = new HashMap<>();
 
-        OrganisationLocation parser = new OrganisationLocation(folderPath, csvFormat);
+        OrganisationLocation parser = new OrganisationLocation(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createLocationOrgansationMapping(parser, hmLocationToOrganisation);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {

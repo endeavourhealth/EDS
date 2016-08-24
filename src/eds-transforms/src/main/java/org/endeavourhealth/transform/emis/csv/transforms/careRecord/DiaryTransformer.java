@@ -3,7 +3,9 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary;
@@ -20,16 +22,19 @@ import java.util.Date;
 
 public class DiaryTransformer {
 
-    public static void transform(String folderPath,
+    public static void transform(String version,
+                                 String folderPath,
                                  CSVFormat csvFormat,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Diary parser = new Diary(folderPath, csvFormat);
+        Diary parser = new Diary(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createProcedureRequest(parser, csvProcessor, csvHelper);
+                createProcedureRequest(version, parser, csvProcessor, csvHelper);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {
@@ -37,7 +42,8 @@ public class DiaryTransformer {
         }
     }
 
-    private static void createProcedureRequest(Diary diaryParser,
+    private static void createProcedureRequest(String version,
+                                               Diary diaryParser,
                                                CsvProcessor csvProcessor,
                                                EmisCsvHelper csvHelper) throws Exception {
 
@@ -77,7 +83,15 @@ public class DiaryTransformer {
             fhirRequest.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROCEDURE_REQUEST_SCHEDULE_TEXT, new StringType(freeTextDuration)));
         }
 
-        String clinicianGuid = diaryParser.getClinicianUserInRoleGuid();
+        //handle mis-spelt column in EMIS test pack
+        //String clinicianGuid = diaryParser.getClinicianUserInRoleGuid();
+        String clinicianGuid = null;
+        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+            clinicianGuid = diaryParser.getClinicanUserInRoleGuid();
+        } else {
+            clinicianGuid = diaryParser.getClinicianUserInRoleGuid();
+        }
+
         if (clinicianGuid != null) {
             fhirRequest.setPerformer(csvHelper.createPractitionerReference(clinicianGuid));
         }

@@ -37,6 +37,8 @@ angular.module('app', [
 		'app.admin',
 		'app.query',
 		'app.routeGroup',
+		'app.patientIdentity',
+		'app.resources',
 		'flowChart',
 		'dragging',
 		'mouseCapture'

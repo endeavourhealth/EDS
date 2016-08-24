@@ -1,4 +1,4 @@
-package org.endeavourhealth.ui;
+package org.endeavourhealth.core.utility;
 
 import com.google.gson.Gson;
 

@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.emis.csv;
 
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,12 +19,16 @@ public class ThreadPool {
     private AtomicInteger threadPoolQueueSize;
     private ReentrantLock futuresLock;
     private Map<Future, Future> futures; //need concurrency support, so can't use a set
+    private AtomicInteger futureCheckCounter;
+    private int maxQueuedBeforeBlocking;
 
-    public ThreadPool(int threads) {
-        threadPool = Executors.newFixedThreadPool(threads);
-        threadPoolQueueSize = new AtomicInteger();
-        futuresLock = new ReentrantLock();
-        futures = new ConcurrentHashMap<>();
+    public ThreadPool(int threads, int maxQueuedBeforeBlocking) {
+        this.threadPool = Executors.newFixedThreadPool(threads);
+        this.threadPoolQueueSize = new AtomicInteger();
+        this.futuresLock = new ReentrantLock();
+        this.futures = new ConcurrentHashMap<>();
+        this.futureCheckCounter = new AtomicInteger();
+        this.maxQueuedBeforeBlocking = maxQueuedBeforeBlocking;
     }
 
     public void submit(Callable callable) throws Exception {
@@ -31,8 +36,18 @@ public class ThreadPool {
         Future future = threadPool.submit(new CallableWrapper(callable));
         futures.put(future, future);
 
-        //check the futures every so often
-        if (futures.size() % 10000 == 0) {
+        //if our queue is now at our limit, then block the current thread before the queue is smaller
+        while (threadPoolQueueSize.get() >= maxQueuedBeforeBlocking) {
+            Thread.sleep(100);
+        }
+
+        //check the futures every so often to see if any are done or any exceptions were raised
+        int counter = futureCheckCounter.incrementAndGet();
+        if (counter % 10000 == 0) {
+            futureCheckCounter.set(0);
+
+            LOG.trace("Checking {} futures with {} items in pool", futures.size(), threadPoolQueueSize);
+            //LOG.trace("Free mem {} ", Runtime.getRuntime().freeMemory());
             checkFutures(false);
         }
     }
@@ -60,7 +75,7 @@ public class ThreadPool {
         try {
 
             //when finishing processing, we want to guarantee a lock, but when doing an interim check,
-            //we just try to get the lock and backoff if we can't
+            //we just try to get the lock and back off if we can't
             if (forceLock) {
                 futuresLock.lock();
             } else {
@@ -81,7 +96,8 @@ public class ThreadPool {
                         future.get();
                         futuresCompleted.add(future);
                     } catch (Exception ex) {
-                        throw (Exception)ex.getCause();
+                        //the true exception will be inside an ExecutionException, so get it out and wrap in our own exception
+                        throw new FutureException((Exception)ex.getCause());
                     }
                 }
             }

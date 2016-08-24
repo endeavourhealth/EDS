@@ -9,13 +9,14 @@ import org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation;
 
 public class ObservationPreTransformer {
 
-    public static void transform(String folderPath,
+    public static void transform(String version,
+                                 String folderPath,
                                  CSVFormat csvFormat,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
 
-        Observation parser = new Observation(folderPath, csvFormat);
+        Observation parser = new Observation(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
 

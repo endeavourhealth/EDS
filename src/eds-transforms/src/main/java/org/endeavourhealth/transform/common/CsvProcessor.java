@@ -2,7 +2,9 @@ package org.endeavourhealth.transform.common;
 
 import com.datastax.driver.core.utils.UUIDs;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
+import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
+import org.endeavourhealth.core.data.ehr.models.ResourceTypesUsed;
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
@@ -23,8 +25,6 @@ public class CsvProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(CsvProcessor.class);
 
-    private static final int THREAD_POOL_SIZE = 10; //arbitrary choice
-
     private static Set<Class> patientResourceClasses = null;
 
     private final UUID exchangeId;
@@ -32,6 +32,7 @@ public class CsvProcessor {
     private final UUID systemId;
     private final FhirStorageService storageService;
     private final ExchangeBatchRepository exchangeBatchRepository;
+    private final Map<String, String> resourceTypes; //although a set would be idea, a map allows safe multi-thread access
 
     //batch IDs
     private ReentrantLock batchIdLock = new ReentrantLock();
@@ -39,7 +40,7 @@ public class CsvProcessor {
     private UUID adminBatchId = null;
 
     //threading
-    private ThreadPool threadPool = new ThreadPool(THREAD_POOL_SIZE);
+    private ThreadPool threadPool = new ThreadPool(10, 200000); //allow 10 threads for saving, but limit to allowing 200,000 things to be queued
 
     //counts
     private Map<UUID, AtomicInteger> countResourcesSaved = new ConcurrentHashMap<>();
@@ -52,6 +53,7 @@ public class CsvProcessor {
         this.systemId = systemId;
         this.storageService = new FhirStorageService(serviceId, systemId);
         this.exchangeBatchRepository = new ExchangeBatchRepository();
+        this.resourceTypes = new ConcurrentHashMap<>();
     }
 
 
@@ -94,13 +96,15 @@ public class CsvProcessor {
             throw new PatientResourceException(resource.getResourceType(), expectingPatientResource);
         }
 
+        String resourceType = resource.getResourceType().toString();
+        resourceTypes.put(resourceType, resourceType);
+
         //increment our counters for auditing
         if (toDelete) {
             countResourcesDeleted.get(batchId).incrementAndGet();
         } else {
             countResourcesSaved.get(batchId).incrementAndGet();
         }
-
 
         threadPool.submit(new MapAndSaveResourceTask(resource, batchId, toDelete, mapIds));
     }
@@ -165,11 +169,31 @@ public class CsvProcessor {
         //wait for all tasks to be completed
         threadPool.waitAndStop();
 
+        //update the resource types used
+        saveResourceTypesUsed();
+
         //log out counts of what we processed
         logResults();
 
         return getAllBatchIds();
     }
+
+    private void saveResourceTypesUsed() {
+
+        ResourceRepository resourceRepository = new ResourceRepository();
+
+        Iterator<String> it = resourceTypes.keySet().iterator();
+        while (it.hasNext()) {
+            String resourceType = it.next();
+            ResourceTypesUsed resourceTypesUsed = new ResourceTypesUsed();
+            resourceTypesUsed.setServiceId(serviceId);
+            resourceTypesUsed.setSystemId(systemId);
+            resourceTypesUsed.setResourceType(resourceType);
+
+            resourceRepository.save(resourceTypesUsed);
+        }
+    }
+
 
     private void logResults() throws Exception {
 
@@ -194,7 +218,7 @@ public class CsvProcessor {
             //look up the EDS ID for the patient, so we can log that too
             ResourceIdMap resourceMapping = idRepository.getResourceIdMap(serviceId, systemId, ResourceType.Patient.toString(), patientId);
             if (resourceMapping == null) {
-                throw new TransformException("Failed to find EDS ID for patient " + patientId + ", service " + serviceId + " and system " + systemId);
+                throw new TransformException("Failed to find EDS ID for patient " + patientId + ", service " + serviceId + " and system " + systemId + " for batch ID " + batchId);
             }
             UUID edsPatientId = resourceMapping.getEdsId();
 

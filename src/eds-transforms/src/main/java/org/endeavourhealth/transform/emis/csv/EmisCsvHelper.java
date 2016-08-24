@@ -19,6 +19,7 @@ import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class EmisCsvHelper {
 
@@ -26,9 +27,9 @@ public class EmisCsvHelper {
     private static final String ID_DELIMITER = "//";
 
     //metadata, not relating to patients
-    private Map<Long, CodeableConcept> clinicalCodes = new HashMap<>();
-    private Map<Long, ClinicalCodeType> clinicalCodeTypes = new HashMap<>();
-    private Map<Long, CodeableConcept> medication = new HashMap<>();
+    private Map<Long, CodeableConcept> clinicalCodes = new ConcurrentHashMap<>();
+    private Map<Long, ClinicalCodeType> clinicalCodeTypes = new ConcurrentHashMap<>();
+    private Map<Long, CodeableConcept> medication = new ConcurrentHashMap<>();
     private EmisCsvCodeMapRepository mappingRepository = new EmisCsvCodeMapRepository();
     private ResourceRepository resourceRepository = new ResourceRepository();
 

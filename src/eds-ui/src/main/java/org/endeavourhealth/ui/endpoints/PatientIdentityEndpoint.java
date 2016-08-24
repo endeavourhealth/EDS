@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@Path("/tracePatient")
+@Path("/patientIdentity")
 public final class PatientIdentityEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(PatientIdentityEndpoint.class);
 
@@ -35,25 +35,24 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/ByLocalIdentifier")
+    @Path("/byLocalIdentifier")
     public Response byLocalIdentifier(@Context SecurityContext sc,
                          @QueryParam("serviceId") String serviceIdStr,
                          @QueryParam("systemId") String systemIdStr,
-                         @QueryParam("localId") String localId,
-                         @QueryParam("localIdSystem") String localIdSystem) throws Exception {
+                         @QueryParam("localId") String localId) throws Exception {
 
         super.setLogbackMarkers(sc);
 
         UUID serviceId = UUID.fromString(serviceIdStr);
         UUID systemId = UUID.fromString(systemIdStr);
 
+        String serviceName = getServiceNameForId(serviceId);
+        String systemName = getSystemNameForId(systemId);
+
         List<JsonPatientIdentifier> ret = new ArrayList<>();
 
-        PatientIdentifierByLocalId identifier = identifierRepository.getMostRecentByLocalId(serviceId, systemId, localId, localIdSystem);
-        if (identifier != null) {
-
-            String serviceName = getServiceNameForId(serviceId);
-            String systemName = getSystemNameForId(systemId);
+        List<PatientIdentifierByLocalId> identifiers = identifierRepository.getForLocalId(serviceId, systemId, localId);
+        for (PatientIdentifierByLocalId identifier: identifiers) {
 
             JsonPatientIdentifier json = new JsonPatientIdentifier();
             json.setServiceId(serviceId);
@@ -83,7 +82,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/ByNhsNumber")
+    @Path("/byNhsNumber")
     public Response byNhsNumber(@Context SecurityContext sc, @QueryParam("nhsNumber") String nhsNumber) throws Exception {
         super.setLogbackMarkers(sc);
 
@@ -127,7 +126,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/ByPatientId")
+    @Path("/byPatientId")
     public Response byPatientId(@Context SecurityContext sc, @QueryParam("patientId") String patientIdStr) throws Exception {
         super.setLogbackMarkers(sc);
 

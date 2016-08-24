@@ -172,7 +172,7 @@ public class SftpTask extends TimerTask
 
     private static void closeConnection(SftpConnection sftpConnection)
     {
-        LOG.trace("Closing SFTP connection");
+        //LOG.trace("Closing SFTP connection");
 
         sftpConnection.close();
     }

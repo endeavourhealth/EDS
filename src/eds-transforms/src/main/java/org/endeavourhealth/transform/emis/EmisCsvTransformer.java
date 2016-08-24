@@ -11,8 +11,15 @@ import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.common.exceptions.UnexpectedOrganisationException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvFileSplitter;
 import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
-import org.endeavourhealth.transform.emis.csv.ThreadPool;
-import org.endeavourhealth.transform.emis.csv.schema.admin.Organisation;
+import org.endeavourhealth.transform.emis.csv.schema.admin.*;
+import org.endeavourhealth.transform.emis.csv.schema.appointment.Session;
+import org.endeavourhealth.transform.emis.csv.schema.appointment.SessionUser;
+import org.endeavourhealth.transform.emis.csv.schema.appointment.Slot;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.*;
+import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCode;
+import org.endeavourhealth.transform.emis.csv.schema.coding.DrugCode;
+import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
+import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.Identifier;
@@ -25,15 +32,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public abstract class EmisCsvTransformer {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmisCsvTransformer.class);
 
-    public static final String VERSION_5 = "5.0";
     public static final String VERSION_5_1 = "5.1";
+    public static final String VERSION_TEST_PACK = "TestPack";
 
     public static List<UUID> splitAndTransform(String version,
                                                String[] files,
@@ -56,6 +62,9 @@ public abstract class EmisCsvTransformer {
         LOG.trace("Validating no additional files");
         validateNoExtraFiles(commonDir, expectedFiles);
 
+        //validate the column names match what we expect
+        validateColumnNames(commonDir, version);
+
         //split the source files by Organisation GUID
         File srcDir = commonDir;
         File dstDir = new File(srcDir, "Split");
@@ -66,29 +75,37 @@ public abstract class EmisCsvTransformer {
 
         //the sub-directories will be named by the org GUID, so validate we've only got orgs we expect
         LOG.trace("Validating no unexpected organisations");
-        validateOrganisations(serviceId, systemId, dstDir, orgIds);
+        validateOrganisations(version, dstDir, serviceId, systemId, orgIds);
 
-        //the processor is reponsible for saving FHIR resources
+        //the processor is responsible for saving FHIR resources
         CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId);
 
         //process the non-organisation files on their own, before anything else
         File adminDir = new File(dstDir, EmisCsvFileSplitter.ADMIN_FOLDER_NAME);
-        new TransformOrganisation(adminDir, processor).call();
+        new TransformOrganisation(version, adminDir, processor).call();
 
+        //taking out threading for now, as the bottle-neck isn't this
+        for (File orgDir: dstDir.listFiles()) {
+            if (orgDir.isDirectory()
+                    && !orgDir.getName().equals(EmisCsvFileSplitter.ADMIN_FOLDER_NAME)) {
+
+                new TransformOrganisation(version, orgDir, processor).call();
+            }
+        }
         //having done the non-organisation data, we can do the organisation files in parallel
-        ThreadPool pool = new ThreadPool(5); //arbitrarily chosen five threads
+        /*ThreadPool pool = new ThreadPool(5, Integer.MAX_VALUE); //arbitrarily chosen five threads
 
         for (File orgDir: dstDir.listFiles()) {
             if (orgDir.isDirectory()
                     && !orgDir.getName().equals(EmisCsvFileSplitter.ADMIN_FOLDER_NAME)) {
 
-                pool.submit(new TransformOrganisation(orgDir, processor));
+                pool.submit(new TransformOrganisation(version, orgDir, processor));
             }
         }
 
         //close the pool and wait for all pools to complete
         LOG.trace("All transforms submitted - waiting for them to finish");
-        pool.waitAndStop(1, TimeUnit.HOURS);
+        pool.waitAndStop(1, TimeUnit.HOURS);*/
 
         //having successfully processed all the split files, delete the split content (if any exceptions were raised, this won't happen)
         //dstDir.delete();
@@ -116,10 +133,12 @@ public abstract class EmisCsvTransformer {
 
     static class TransformOrganisation implements Callable {
 
+        private String version = null;
         private File orgDirectory = null;
         private CsvProcessor processor = null;
 
-        public TransformOrganisation(File orgDirectory, CsvProcessor processor) {
+        public TransformOrganisation(String version, File orgDirectory, CsvProcessor processor) {
+            this.version = version;
             this.orgDirectory = orgDirectory;
             this.processor = processor;
         }
@@ -142,7 +161,7 @@ public abstract class EmisCsvTransformer {
 
             for (Integer processingId: processingIds) {
                 File file = hmFiles.get(processingId);
-                EmisCsvTransformerWorker.transform(file, processor);
+                EmisCsvTransformerWorker.transform(version, file, processor);
             }
 
             LOG.trace("Completed transfom for organisation {}", orgDirectory.getName());
@@ -151,7 +170,7 @@ public abstract class EmisCsvTransformer {
         }
     }
 
-    private static void validateOrganisations(UUID serviceId, UUID systemId, File folder, Set<UUID> orgIds) throws Exception {
+    private static void validateOrganisations(String version, File folder, UUID serviceId, UUID systemId, Set<UUID> orgIds) throws Exception {
 
         //retrieve the Organisations from the org repository, and extract their ODS codes
         Set<org.endeavourhealth.core.data.admin.models.Organisation> orgs = new OrganisationRepository().getByUds(orgIds);
@@ -187,7 +206,7 @@ public abstract class EmisCsvTransformer {
                 File adminFolder = new File(folder, EmisCsvFileSplitter.ADMIN_FOLDER_NAME);
                 for (File adminBatchFolder: adminFolder.listFiles()) {
 
-                    odsCode = findOrganisationOdsFromCsvFile(orgGuid, adminBatchFolder);
+                    odsCode = findOrganisationOdsFromCsvFile(version, orgGuid, adminBatchFolder);
                     if (odsCode != null) {
                         break;
                     }
@@ -202,9 +221,9 @@ public abstract class EmisCsvTransformer {
         }
     }
 
-    private static String findOrganisationOdsFromCsvFile(String orgGuid, File folder) throws Exception {
+    private static String findOrganisationOdsFromCsvFile(String version, String orgGuid, File folder) throws Exception {
 
-        Organisation parser = new Organisation(folder.getAbsolutePath(), EmisCsvTransformerWorker.CSV_FORMAT);
+        Organisation parser = new Organisation(version, folder.getAbsolutePath(), EmisCsvTransformerWorker.CSV_FORMAT);
         try {
             while (parser.nextRecord()) {
                 String csvOrgGuid = parser.getOrganisationGuid();
@@ -256,6 +275,29 @@ public abstract class EmisCsvTransformer {
             }
         }
         return new File(commonDir);
+    }
+
+    private static void validateColumnNames(File commonDir, String version) throws Exception {
+        String folderPath = commonDir.getAbsolutePath();
+
+        //the column validation is performed in the constructor of each file parser, so just create and immediately close
+        new Location(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Organisation(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new OrganisationLocation(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Patient(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new UserInRole(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Session(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new SessionUser(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Slot(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Consultation(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Diary(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Observation(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new ObservationReferral(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Problem(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new ClinicalCode(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new DrugCode(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new DrugRecord(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new IssueRecord(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
     }
 
     /**

@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation;
@@ -17,16 +18,19 @@ import java.util.Date;
 
 public class ConsultationTransformer {
 
-    public static void transform(String folderPath,
+    public static void transform(String version,
+                                 String folderPath,
                                  CSVFormat csvFormat,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Consultation parser = new Consultation(folderPath, csvFormat);
+        Consultation parser = new Consultation(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createEncounter(parser, csvProcessor, csvHelper);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {

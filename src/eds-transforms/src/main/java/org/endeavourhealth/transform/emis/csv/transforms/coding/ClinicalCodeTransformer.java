@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.ThreadPool;
@@ -18,20 +19,23 @@ import java.util.concurrent.Callable;
 public abstract class ClinicalCodeTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(ClinicalCodeTransformer.class);
 
-    public static void transform(String folderPath,
+    public static void transform(String version,
+                                 String folderPath,
                                CSVFormat csvFormat,
                                CsvProcessor csvProcessor,
                                EmisCsvHelper csvHelper) throws Exception {
 
         //because we have to hit a third party web resource, we use a thread pool to support
         //threading these calls to improve performance
-        ThreadPool threadPool = new ThreadPool(15); //15 threads seems reasonable for hits against a web service
+        ThreadPool threadPool = new ThreadPool(15, 50000); //15 threads seems reasonable for hits against a web service
 
-        ClinicalCode parser = new ClinicalCode(folderPath, csvFormat);
+        ClinicalCode parser = new ClinicalCode(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 transform(parser, csvProcessor, csvHelper, threadPool);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {

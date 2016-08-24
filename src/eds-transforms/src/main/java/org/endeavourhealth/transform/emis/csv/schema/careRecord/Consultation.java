@@ -9,12 +9,12 @@ import java.util.Date;
 
 public class Consultation extends AbstractCsvTransformer {
 
-    public Consultation(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
+    public Consultation(String version, String folderPath, CSVFormat csvFormat) throws Exception {
+        super(version, folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
     }
 
     @Override
-    protected String[] getCsvHeaders() {
+    protected String[] getCsvHeaders(String version) {
         return new String[]{
                 "ConsultationGuid",
                 "PatientGuid",

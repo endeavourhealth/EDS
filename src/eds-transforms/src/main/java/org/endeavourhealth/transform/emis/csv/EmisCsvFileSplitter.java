@@ -1,6 +1,5 @@
 package org.endeavourhealth.transform.emis.csv;
 
-import com.google.common.io.Files;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvSplitter;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
@@ -167,7 +166,7 @@ public class EmisCsvFileSplitter {
         csvSplitter.go();
     }
 
-    private static void copyFile(String partialFileName, File srcDir, File dstDir) throws Exception {
+    /*private static void copyFile(String partialFileName, File srcDir, File dstDir) throws Exception {
 
         String[] arr = partialFileName.split("_");
         String domain = arr[0];
@@ -178,6 +177,6 @@ public class EmisCsvFileSplitter {
 
         //this uses a 4k buffer for copying. This may prove too slow, and need re-implementing to use a larger buffer
         Files.copy(srcFile, dstFile);
-    }
+    }*/
 
 }

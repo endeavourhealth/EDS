@@ -103,7 +103,8 @@ public class PgpUtil
 
         if (onePassSignatureList == null || signatureList == null)
         {
-            throw new PGPException("Poor PGP. Signatures not found.");
+            //EMIS PGP data is encrypted but not signed, so don't throw this
+            //throw new PGPException("Poor PGP. Signatures not found.");
         }
         else
         {
@@ -134,16 +135,25 @@ public class PgpUtil
                     }
                 }
             }
+
+            //moved here, from below, so we only check for the signing key if it was signed
+            if (publicKey == null)
+            {
+                throw new SignatureException("Signature not found");
+            }
         }
 
-        if (pgpPublicKeyEncryptedData.isIntegrityProtected() && !pgpPublicKeyEncryptedData.verify())
+        //verify() actually calls isIntegrityProtected(), so extra call is redundant
+        //if (pgpPublicKeyEncryptedData.isIntegrityProtected() && !pgpPublicKeyEncryptedData.verify())
+        if (!pgpPublicKeyEncryptedData.verify())
         {
             throw new PGPException("Data is integrity protected but integrity is lost.");
         }
-        else if (publicKey == null)
+        //moving to apply this check only if the file was signed
+        /*else if (publicKey == null)
         {
             throw new SignatureException("Signature not found");
-        }
+        }*/
         else
         {
             fileOut.write(output);

@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv.schema.careRecord;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 
@@ -9,35 +10,60 @@ import java.util.Date;
 
 public class Diary extends AbstractCsvTransformer {
 
-    public Diary(String folderPath, CSVFormat csvFormat) throws Exception {
-        super(folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
+    public Diary(String version, String folderPath, CSVFormat csvFormat) throws Exception {
+        super(version, folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
     }
 
     @Override
-    protected String[] getCsvHeaders() {
-        return new String[]{
-                "DiaryGuid",
-                "PatientGuid",
-                "OrganisationGuid",
-                "EffectiveDate",
-                "EffectiveDatePrecision",
-                "EnteredDate",
-                "EnteredTime",
-                "ClinicianUserInRoleGuid",
-                "EnteredByUserInRoleGuid",
-                "CodeId",
-                "OriginalTerm",
-                "AssociatedText",
-                "DurationTerm",
-                "LocationTypeDescription",
-                "Deleted",
-                "IsConfidential",
-                "IsActive",
-                "IsComplete",
-                "ConsultationGuid",
-                "ProcessingId"
+    protected String[] getCsvHeaders(String version) {
 
-        };
+        //the EMIS test pack has mis-spellings of column names, so having to handle this here
+        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+            return new String[]{
+                    "DiaryGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "EffectiveDate",
+                    "EffectiveDatePrecision",
+                    "EnteredDate",
+                    "EnteredTime",
+                    "ClinicanUserInRoleGuid",
+                    "EnteredByUserInRoleGuid",
+                    "CodeId",
+                    "OriginalTerm",
+                    "AssociatedText",
+                    "DurationTerm",
+                    "LocationTypeDescription",
+                    "Deleted",
+                    "IsConfidential",
+                    "IsActive",
+                    "IsComplete",
+                    "ConsultationGuid",
+                    "ProcessingId"};
+        } else {
+            return new String[]{
+                    "DiaryGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "EffectiveDate",
+                    "EffectiveDatePrecision",
+                    "EnteredDate",
+                    "EnteredTime",
+                    "ClinicianUserInRoleGuid",
+                    "EnteredByUserInRoleGuid",
+                    "CodeId",
+                    "OriginalTerm",
+                    "AssociatedText",
+                    "DurationTerm",
+                    "LocationTypeDescription",
+                    "Deleted",
+                    "IsConfidential",
+                    "IsActive",
+                    "IsComplete",
+                    "ConsultationGuid",
+                    "ProcessingId"};
+        }
+
     }
 
     public String getDiaryGuid() {
@@ -96,6 +122,13 @@ public class Diary extends AbstractCsvTransformer {
     }
     public Integer getProcessingId() {
         return super.getInt("ProcessingId");
+    }
+
+    /**
+     * special function for mis-spelt column name in EMIS test pack
+     */
+    public String getClinicanUserInRoleGuid() {
+        return super.getString("ClinicanUserInRoleGuid");
     }
 
 }

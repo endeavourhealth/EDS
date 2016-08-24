@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.appointment.Session;
@@ -18,21 +19,24 @@ import java.util.Map;
 
 public class SessionTransformer {
 
-    public static void transform(String folderPath,
+    public static void transform(String version,
+                                 String folderPath,
                                  CSVFormat csvFormat,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
         //first, process the CSV mapping staff to sessions
-        Map<String, List<String>> sessionToStaffMap = SessionUserTransformer.transform(folderPath, csvFormat);
+        Map<String, List<String>> sessionToStaffMap = SessionUserTransformer.transform(version, folderPath, csvFormat);
 
         Map<String, Schedule> fhirSessions = new HashMap<>();
 
-        Session parser = new Session(folderPath, csvFormat);
+        Session parser = new Session(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createSchedule(parser, csvProcessor, csvHelper, sessionToStaffMap);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {

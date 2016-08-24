@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.admin.UserInRole;
@@ -15,16 +16,19 @@ import java.util.Date;
 
 public class UserInRoleTransformer {
 
-    public static void transform(String folderPath,
+    public static void transform(String version,
+                                 String folderPath,
                                  CSVFormat csvFormat,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        UserInRole parser = new UserInRole(folderPath, csvFormat);
+        UserInRole parser = new UserInRole(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createPractitioner(parser, csvProcessor, csvHelper);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {
@@ -51,6 +55,11 @@ public class UserInRoleTransformer {
         if (Strings.isNullOrEmpty(surname)) {
             surname = givenName;
             givenName = "";
+        }
+
+        //in the EMIS test pack, we have at least one record with no name details at all, so need to handle it
+        if (Strings.isNullOrEmpty(surname)) {
+            surname = "<unknown>";
         }
 
         fhirPractitioner.setName(NameConverter.convert(givenName, surname, title));

@@ -31,6 +31,10 @@ module app.core {
 				{caption: 'Organisations', state: 'app.organisation', icon: 'fa fa-hospital-o'},
 				{caption: 'Services', state: 'app.service', icon: 'fa fa-building-o'},
 				{caption: 'Queueing', state: 'app.routeGroup', icon: 'fa fa-tasks'},
+
+				{caption: 'Patient', state: 'app.patientIdentity', icon: 'fa fa-tag'},
+				{caption: 'Resources', state: 'app.resources', icon: 'fa fa-fire'},
+
 				{caption: 'Administration', state: 'app.admin', icon: 'fa fa-users'},
 				{caption: 'Logging', state: 'app.logging', icon: 'fa fa-list-alt'}
 

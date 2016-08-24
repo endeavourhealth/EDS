@@ -4,7 +4,9 @@ import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.FieldNotEmptyException;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation;
@@ -21,16 +23,19 @@ import java.util.List;
 public class ObservationTransformer {
 
 
-    public static void transform(String folderPath,
+    public static void transform(String version,
+                                 String folderPath,
                                  CSVFormat csvFormat,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Observation parser = new Observation(folderPath, csvFormat);
+        Observation parser = new Observation(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createResource(parser, csvProcessor, csvHelper);
+                createResource(version, parser, csvProcessor, csvHelper);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {
@@ -40,36 +45,43 @@ public class ObservationTransformer {
     }
 
 
-    private static void createResource(Observation observationParser,
+    private static void createResource(String version,
+                                       Observation parser,
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 
+        //the EMIS test pack has observation records that are completely invalid, missing almost every mandatory value,
+        //so detect that and skip the rows
+        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)
+                && parser.getCodeId() == null) {
+            return;
+        }
 
-        ResourceType resourceType = getTargetResourceType(observationParser, csvProcessor, csvHelper);
+        ResourceType resourceType = getTargetResourceType(parser, csvProcessor, csvHelper);
         switch (resourceType) {
             case Observation:
-                createObservation(observationParser, csvProcessor, csvHelper);
+                createObservation(parser, csvProcessor, csvHelper);
                 break;
             case Condition:
-                createCondition(observationParser, csvProcessor, csvHelper);
+                createCondition(parser, csvProcessor, csvHelper);
                 break;
             case Procedure:
-                createProcedure(observationParser, csvProcessor, csvHelper);
+                createProcedure(parser, csvProcessor, csvHelper);
                 break;
             case AllergyIntolerance:
-                createAllergy(observationParser, csvProcessor, csvHelper);
+                createAllergy(parser, csvProcessor, csvHelper);
                 break;
             case FamilyMemberHistory:
-                createFamilyMemberHistory(observationParser, csvProcessor, csvHelper);
+                createFamilyMemberHistory(parser, csvProcessor, csvHelper);
                 break;
             case Immunization:
-                createImmunization(observationParser, csvProcessor, csvHelper);
+                createImmunization(parser, csvProcessor, csvHelper);
                 break;
             case DiagnosticOrder:
-                createDiagnosticOrder(observationParser, csvProcessor, csvHelper);
+                createDiagnosticOrder(parser, csvProcessor, csvHelper);
                 break;
             case ReferralRequest:
-                createReferralRequest(observationParser, csvProcessor, csvHelper);
+                createReferralRequest(parser, csvProcessor, csvHelper);
                 break;
 /*            case Specimen:
                 createSpecimen(observationParser, csvProcessor, csvHelper);
@@ -78,14 +90,14 @@ public class ObservationTransformer {
                 throw new IllegalArgumentException("Unsupported resource type: " + resourceType);
         }
 
-        String observationGuid = observationParser.getObservationGuid();
-        String patientGuid = observationParser.getPatientGuid();
+        String observationGuid = parser.getObservationGuid();
+        String patientGuid = parser.getPatientGuid();
 
         //the observation row may also be referenced by a row in the Problems file, which
         //we've already processed. Check this, and complete processing if required.
         Condition fhirProblem = csvHelper.findProblem(observationGuid, patientGuid);
         if (fhirProblem != null) {
-            completeProblem(observationParser, fhirProblem, csvProcessor, csvHelper);
+            completeProblem(parser, fhirProblem, csvProcessor, csvHelper);
         }
 
         //remove any cached links of child observations that link to the row we just processed. If the row used

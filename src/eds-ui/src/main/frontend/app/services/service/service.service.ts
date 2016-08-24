@@ -4,6 +4,7 @@ module app.service {
 	import BaseHttpService = app.core.BaseHttpService;
 	import Service = app.models.Service;
 	import Organisation = app.models.Organisation;
+	import System = app.models.System;
 	'use strict';
 
 	export interface IServiceService {
@@ -13,6 +14,7 @@ module app.service {
 		delete(uuid : string) : any;
 		search(searchData : string) : ng.IPromise<Service[]>;
 		getServiceOrganisations(uuid : string) : ng.IPromise<Organisation[]>;
+		getSystemsForService(uuid : string) : ng.IPromise<System[]>;
 	}
 
 	export class ServiceService extends BaseHttpService implements IServiceService {
@@ -62,6 +64,14 @@ module app.service {
 			return this.httpGet('api/service/organisations', request);
 		}
 
+		getSystemsForService(serviceId : string) : ng.IPromise<System[]> {
+			var request = {
+				params: {
+					'serviceId': serviceId
+				}
+			};
+			return this.httpGet('api/service/systemsForService', request);
+		}
 	}
 
 	angular

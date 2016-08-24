@@ -3,12 +3,20 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.configuration.MessageTransformConfig;
+import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
+import org.endeavourhealth.core.data.admin.models.ActiveItem;
+import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
+import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.System;
+import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
+import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.transform.common.exceptions.SoftwareNotSupportedException;
 import org.endeavourhealth.transform.common.exceptions.VersionNotSupportedException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
@@ -23,10 +31,43 @@ import java.util.stream.Collectors;
 public class MessageTransform extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(MessageTransform.class);
 
+	private static final ServiceRepository serviceRepository = new ServiceRepository();
+	private static final LibraryRepository libraryRepository = new LibraryRepository();
+
 	private MessageTransformConfig config;
 
 	public MessageTransform(MessageTransformConfig config) {
 		this.config = config;
+	}
+
+	private UUID findSystemId(Service service, String messageFormat, String messageVersion, UUID exchangeId) throws Exception {
+
+
+		List<JsonServiceInterfaceEndpoint> endpoints = new ObjectMapper().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+		for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
+
+			UUID endpointSystemId = endpoint.getSystemUuid();
+			String endpointInterfaceId = endpoint.getTechnicalInterfaceUuid().toString();
+
+			ActiveItem activeItem = libraryRepository.getActiveItemByItemId(endpointSystemId);
+			Item item = libraryRepository.getItemByKey(endpointSystemId, activeItem.getAuditId());
+			LibraryItem libraryItem = QueryDocumentSerializer.readLibraryItemFromXml(item.getXmlContent());
+			System system = libraryItem.getSystem();
+			for (TechnicalInterface technicalInterface: system.getTechnicalInterface()) {
+
+				if (endpointInterfaceId.equals(technicalInterface.getUuid())
+						&& technicalInterface.getMessageFormat().equalsIgnoreCase(messageFormat)
+						&& technicalInterface.getMessageFormatVersion().equalsIgnoreCase(messageVersion)) {
+
+					return endpointSystemId;
+				}
+			}
+
+		}
+
+		throw new PipelineException("Failed to find SystemId for service " + service.getId() + ", message format "
+				+ messageFormat + " and version " + messageVersion
+				+ " when processing exchange " + exchangeId);
 	}
 
 	@Override
@@ -36,38 +77,32 @@ public class MessageTransform extends PipelineComponent {
 
 			UUID serviceId = UUID.fromString(exchange.getHeader(HeaderKeys.SenderUuid));
 			String software = exchange.getHeader(HeaderKeys.SourceSystem);
-
-			//find technical interface for software name
-
-			String version = exchange.getHeader(HeaderKeys.SystemVersion);
-
-			//find the system ID by using values from the message header
-			ServiceRepository serviceRepository = new ServiceRepository();
-			Service service = serviceRepository.getById(serviceId);
-			List<JsonServiceInterfaceEndpoint> endpoints = new ObjectMapper().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
-
-			//TODO - need correct way of finding systemID from serviceID and exchange headers
-			UUID systemId = endpoints.stream().map(JsonServiceInterfaceEndpoint::getSystemUuid).findFirst().get();
+			String messageFormat = exchange.getHeader(HeaderKeys.MessageFormat);
+			String messageVersion = exchange.getHeader(HeaderKeys.SystemVersion);
 
 			//find the organisation UUIDs covered by the service
+			Service service = serviceRepository.getById(serviceId);
 			Set<UUID> orgIds = service.getOrganisations().keySet();
+
+			//find the system ID by using values from the message header
+			UUID systemId = findSystemId(service, messageFormat, messageVersion, exchange.getExchangeId());
 
 			List<UUID> batchIds = null;
 
 			if (software.equalsIgnoreCase("EmisExtractService")) {
-				batchIds = processEmisCsvTransform(exchange, serviceId, systemId, version, software, orgIds);
+				batchIds = processEmisCsvTransform(exchange, serviceId, systemId, messageVersion, software, orgIds);
 
 			} else if (software.equalsIgnoreCase("EmisOpen")) {
-				batchIds = processEmisOpenTransform(exchange, serviceId, systemId, version, software, orgIds);
+				batchIds = processEmisOpenTransform(exchange, serviceId, systemId, messageVersion, software, orgIds);
 
 			} else if (software.equalsIgnoreCase("OpenHR")) {
-				batchIds = processEmisOpenHrTransform(exchange, serviceId, systemId, version, software, orgIds);
+				batchIds = processEmisOpenHrTransform(exchange, serviceId, systemId, messageVersion, software, orgIds);
 
 			} else if (software.equalsIgnoreCase("TPPExtractService")) {
-				batchIds = processTppXmlTransform(exchange, serviceId, systemId, version, software, orgIds);
+				batchIds = processTppXmlTransform(exchange, serviceId, systemId, messageVersion, software, orgIds);
 
 			} else {
-				throw new SoftwareNotSupportedException(software, version);
+				throw new SoftwareNotSupportedException(software, messageVersion);
 			}
 
 			//update the Exchange with the batch IDs, for the next step in the pipeline
@@ -93,8 +128,8 @@ public class MessageTransform extends PipelineComponent {
 	private List<UUID> processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software, Set<UUID> orgIds) throws Exception {
 
 		//validate the version
-		if (!version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5)
-				&& version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_1)) {
+		if (!version.equalsIgnoreCase(EmisCsvTransformer.VERSION_TEST_PACK)
+				&& !version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_1)) {
 			throw new VersionNotSupportedException(software, version);
 		}
 

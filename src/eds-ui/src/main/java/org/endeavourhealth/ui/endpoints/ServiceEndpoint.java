@@ -1,11 +1,19 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
+import org.endeavourhealth.core.data.admin.models.ActiveItem;
+import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
+import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.System;
+import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.ui.json.JsonOrganisation;
 import org.endeavourhealth.ui.json.JsonService;
 import org.slf4j.Logger;
@@ -160,4 +168,40 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 				.entity(ret)
 				.build();
 	}
+
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/systemsForService")
+	public Response getSystemsForService(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr) throws Exception {
+		super.setLogbackMarkers(sc);
+
+		UUID serviceId = UUID.fromString(serviceIdStr);
+		org.endeavourhealth.core.data.admin.models.Service service = new ServiceRepository().getById(serviceId);
+
+		LibraryRepository libraryRepository = new LibraryRepository();
+
+		List<System> ret = new ArrayList<>();
+
+		List<JsonServiceInterfaceEndpoint> endpoints = new ObjectMapper().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+		for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
+
+			UUID endpointSystemId = endpoint.getSystemUuid();
+
+			ActiveItem activeItem = libraryRepository.getActiveItemByItemId(endpointSystemId);
+			Item item = libraryRepository.getItemByKey(endpointSystemId, activeItem.getAuditId());
+			LibraryItem libraryItem = QueryDocumentSerializer.readLibraryItemFromXml(item.getXmlContent());
+			System system = libraryItem.getSystem();
+			ret.add(system);
+		}
+
+		clearLogbackMarkers();
+
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
+
 }

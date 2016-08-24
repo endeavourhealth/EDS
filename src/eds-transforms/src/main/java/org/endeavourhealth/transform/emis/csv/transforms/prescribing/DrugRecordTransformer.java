@@ -3,7 +3,9 @@ package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
@@ -19,16 +21,19 @@ import java.util.Date;
 
 public class DrugRecordTransformer {
 
-    public static void transform(String folderPath,
+    public static void transform(String version,
+                                 String folderPath,
                                  CSVFormat csvFormat,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        DrugRecord parser = new DrugRecord(folderPath, csvFormat);
+        DrugRecord parser = new DrugRecord(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createResource(parser, csvProcessor, csvHelper);
+                createResource(version, parser, csvProcessor, csvHelper);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {
@@ -36,7 +41,8 @@ public class DrugRecordTransformer {
         }
     }
 
-    private static void createResource(DrugRecord parser,
+    private static void createResource(String version,
+                                       DrugRecord parser,
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 
@@ -56,7 +62,15 @@ public class DrugRecordTransformer {
             return;
         }
 
-        String clinicianGuid = parser.getClinicianUserInRoleGuid();
+        //need to handle mis-spelt column name in EMIS test pack
+        //String clinicianGuid = parser.getClinicianUserInRoleGuid();
+        String clinicianGuid = null;
+        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+            clinicianGuid = parser.getClinicanUserInRoleGuid();
+        } else {
+            clinicianGuid = parser.getClinicianUserInRoleGuid();
+        }
+
         fhirMedication.setInformationSource(csvHelper.createPractitionerReference(clinicianGuid));
 
         Date effectiveDate = parser.getEffectiveDate();

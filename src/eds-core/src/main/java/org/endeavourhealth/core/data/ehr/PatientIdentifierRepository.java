@@ -137,6 +137,13 @@ public class PatientIdentifierRepository extends Repository {
         }
     }
 
+    public List<PatientIdentifierByLocalId> getForLocalId(UUID serviceId, UUID systemId, String localId) {
+
+        PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
+        return Lists.newArrayList(accessor.getForLocalId(serviceId, systemId, localId));
+    }
+
+
     public List<PatientIdentifierByNhsNumber> getForNhsNumber(String nhsNumber) {
 
         PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);

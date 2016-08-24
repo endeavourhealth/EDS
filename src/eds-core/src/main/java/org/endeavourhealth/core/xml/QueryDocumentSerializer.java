@@ -1,9 +1,9 @@
-package org.endeavourhealth.ui.querydocument;
+package org.endeavourhealth.core.xml;
 
+import org.endeavourhealth.core.utility.XmlSerializer;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.ObjectFactory;
 import org.endeavourhealth.core.xml.QueryDocument.QueryDocument;
-import org.endeavourhealth.ui.XmlSerializer;
 import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBElement;

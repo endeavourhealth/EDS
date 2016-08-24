@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
@@ -19,13 +20,15 @@ import java.util.Date;
 
 public class ProblemTransformer {
 
-    public static void transform(String folderPath, CSVFormat csvFormat, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
+    public static void transform(String version, String folderPath, CSVFormat csvFormat, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
 
-        Problem parser = new Problem(folderPath, csvFormat);
+        Problem parser = new Problem(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createProblem(parser, csvProcessor, csvHelper);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {
@@ -106,7 +109,7 @@ public class ProblemTransformer {
 
         //until the Observation, DrugIssue and DrugRecord files are completed, we can't
         //save the problem, so cache it in the helper to finish later
-        csvHelper.cacheProblem(patientGuid, observationGuid, fhirProblem);
+        csvHelper.cacheProblem(observationGuid, patientGuid, fhirProblem);
     }
 
     private static ProblemRelationshipType convertRelationshipType(String relationshipType) throws Exception {

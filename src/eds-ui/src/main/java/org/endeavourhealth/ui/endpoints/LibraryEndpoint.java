@@ -10,9 +10,9 @@ import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.QueryDocument.System;
+import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.ui.DependencyType;
 import org.endeavourhealth.ui.json.*;
-import org.endeavourhealth.ui.querydocument.QueryDocumentSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -322,6 +322,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
                 .entity(ret)
                 .build();
     }
+
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

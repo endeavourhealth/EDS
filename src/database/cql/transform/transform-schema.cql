@@ -6,6 +6,7 @@ USE transform;
  
 DROP TABLE IF EXISTS emis_csv_code_map;
 
+DROP MATERIALIZED VIEW IF EXISTS resource_id_map_by_eds_id;
 DROP TABLE IF EXISTS resource_id_map;
 
   

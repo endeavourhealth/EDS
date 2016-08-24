@@ -19,6 +19,12 @@ public interface PatientIdentifierAccessor {
                                                      @Param("local_id") String localId,
                                                      @Param("local_id_system") String localIdSystem);
 
+    @Query("SELECT * FROM ehr.patient_identifier_by_local_id WHERE service_id = :service_id AND system_id = :system_id AND local_id = :local_id")
+    Result<PatientIdentifierByLocalId> getForLocalId(@Param("service_id") UUID serviceId,
+                                                               @Param("system_id") UUID systemId,
+                                                               @Param("local_id") String localId);
+
+
     @Query("SELECT * FROM ehr.patient_identifier_by_nhs_number WHERE nhs_number = :nhs_number")
     Result<PatientIdentifierByNhsNumber> getForNhsNumber(@Param("nhs_number") String nhsNumber);
 
