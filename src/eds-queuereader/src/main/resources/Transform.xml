@@ -20,6 +20,7 @@
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsSubscriber</Exchange>
             <RoutingHeader>Subscribers</RoutingHeader>
+            <MulticastHeader>TransformTo</MulticastHeader>
         </PostMessageToExchange>
     </Pipeline>
 </QueueReaderConfiguration>

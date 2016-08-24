@@ -25,7 +25,7 @@
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsProtocol</Exchange>
             <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
-            <MulticastHeader>ProtocolIds</MulticastHeader>
+            <MulticastHeader>BatchIds</MulticastHeader>
         </PostMessageToExchange>
     </Pipeline>
 </QueueReaderConfiguration>

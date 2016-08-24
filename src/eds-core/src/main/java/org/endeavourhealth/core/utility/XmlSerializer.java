@@ -15,6 +15,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 
 public abstract class XmlSerializer {
 
@@ -74,10 +75,14 @@ public abstract class XmlSerializer {
 //        return deserializeFromXmlDocument(cls, document, xsdName);
 //    }
 
+    private static final HashMap<Class, Unmarshaller> unmarshallerCache = new HashMap<>();
     private static <T> T deserializeFromXmlDocument(Class cls, Document doc, String xsdName) throws ParserConfigurationException, JAXBException, IOException, SAXException {
-
-        JAXBContext context = JAXBContext.newInstance(cls);
-        Unmarshaller unmarshaller = context.createUnmarshaller();
+        Unmarshaller unmarshaller = unmarshallerCache.get(cls);
+        if (unmarshaller == null) {
+            JAXBContext context = JAXBContext.newInstance(cls);
+            unmarshaller = context.createUnmarshaller();
+            unmarshallerCache.put(cls, unmarshaller);
+        }
 
         //if a schema was provided, set it in the unmarshaller
         if (xsdName != null) {
@@ -85,6 +90,8 @@ public abstract class XmlSerializer {
             URL url = Resources.getResourceAsURLObject(xsdName);
             Schema schema = sf.newSchema(url);
             unmarshaller.setSchema(schema);
+        } else {
+            unmarshaller.setSchema(null);
         }
 
         @SuppressWarnings("unchecked")
@@ -92,20 +99,27 @@ public abstract class XmlSerializer {
         return loader.getValue();
     }
 
+    private static final HashMap<Class, Marshaller> marshallerCache = new HashMap<>();
     public static String serializeToString(JAXBElement element, String xsdName) {
         StringWriter sw = new StringWriter();
         Class cls = element.getValue().getClass();
 
         try {
-            JAXBContext context = JAXBContext.newInstance(cls);
-            Marshaller marshaller = context.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE); //just makes output easier to read
+            Marshaller marshaller = marshallerCache.get(cls);
+            if (marshaller == null) {
+                JAXBContext context = JAXBContext.newInstance(cls);
+                marshaller = context.createMarshaller();
+                marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE); //just makes output easier to read
+                marshallerCache.put(cls, marshaller);
+            }
 
             if (xsdName != null) {
                 SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
                 URL url = Resources.getResourceAsURLObject(xsdName);
                 Schema schema = sf.newSchema(url);
                 marshaller.setSchema(schema);
+            } else {
+                marshaller.setSchema(null);
             }
 
             marshaller.marshal(element, sw);

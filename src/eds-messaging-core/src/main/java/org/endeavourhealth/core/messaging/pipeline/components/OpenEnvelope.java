@@ -1,5 +1,6 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import org.endeavourhealth.core.cache.ParserPool;
 import org.endeavourhealth.core.configuration.OpenEnvelopeConfig;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
@@ -33,10 +34,9 @@ public class OpenEnvelope extends PipelineComponent {
 		String body = exchange.getBody();
 
 		String contentType = exchange.getHeader(HeaderKeys.ContentType);
-		IParser parser = getParser(contentType);
 
 		try {
-			Bundle bundle = (Bundle)parser.parse(body);
+			Bundle bundle = (Bundle)new ParserPool().parse(contentType, body);
 			List<Bundle.BundleEntryComponent> components = bundle.getEntry();
 
 			// find header and payload in bundle
