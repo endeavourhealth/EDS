@@ -1,10 +1,11 @@
 package org.endeavourhealth.core.cache;
 
-import org.hl7.fhir.instance.formats.IParser;
-import org.hl7.fhir.instance.formats.JsonParser;
-import org.hl7.fhir.instance.formats.XmlParser;
-import org.hl7.fhir.instance.model.Resource;
+import org.w3c.dom.Document;
 
+import javax.xml.bind.*;
+import javax.xml.validation.Schema;
+import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.Stack;
 
 public class MarshallerPool implements ICacheable {
@@ -18,61 +19,80 @@ public class MarshallerPool implements ICacheable {
 		return instance;
 	}
 
-	private final Stack<IParser> jsonPool = new Stack<>();
-	private final Stack<IParser> xmlPool = new Stack<>();
+	private final HashMap<Class,Stack<Marshaller>> marshallerPool = new HashMap<>();
+	private final HashMap<Class,Stack<Unmarshaller>> unmarshallerPool = new HashMap<>();
+
+
+	public void marshal(Class cls, JAXBElement element, Schema schema, StringWriter sw) throws JAXBException {
+		Marshaller marshaller = marshallerPop(cls);
+		marshaller.setSchema(schema);
+
+		marshaller.marshal(element, sw);
+		push(cls, marshaller);
+	}
+
+	public <T> JAXBElement<T> unmarshal(Class cls, Document doc, Schema schema) throws JAXBException {
+		Unmarshaller unmarshaller = unmarshallerPop(cls);
+		unmarshaller.setSchema(schema);
+
+		JAXBElement<T> result = unmarshaller.unmarshal(doc, cls);
+		push(cls, unmarshaller);
+		return result;
+	}
 
 	@Override
 	public synchronized void clearCache() {
-		jsonPool.clear();
-		xmlPool.clear();
+		marshallerPool.values().forEach(Stack<Marshaller>::clear);
+		marshallerPool.clear();
+		unmarshallerPool.values().forEach(Stack<Unmarshaller>::clear);
+		unmarshallerPool.clear();
 	}
 
-	public String composeString(String contentType, Resource resource) throws Exception {
-		IParser parser = pop(contentType);
-		try {
-			return parser.composeString(resource);
-		} finally {
-			push(parser);
+	private synchronized Stack<Marshaller> marshallerStack(Class cls) {
+		Stack<Marshaller> stack = marshallerPool.get(cls);
+		if (stack == null) {
+			stack = new Stack<>();
+			marshallerPool.put(cls, stack);
+		}
+		return stack;
+	}
+
+	private synchronized Marshaller marshallerPop(Class cls) throws JAXBException {
+		Stack<Marshaller> stack = marshallerStack(cls);
+		if (stack.size() > 0)
+			return stack.pop();
+		else {
+			JAXBContext context = JAXBContext.newInstance(cls);
+			Marshaller marshaller = context.createMarshaller();
+			marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE); //just makes output easier to read
+			return marshaller;
 		}
 	}
 
-	public Resource parse(String contentType, String data) throws Exception {
-		IParser parser = pop(contentType);
-		try {
-			return parser.parse(data);
-		} finally {
-			push(parser);
+	private synchronized void push(Class cls, Marshaller marshaller) {
+		marshallerStack(cls).push(marshaller);
+	}
+
+	private synchronized Stack<Unmarshaller> unmarshallerStack(Class cls) {
+		Stack<Unmarshaller> stack = unmarshallerPool.get(cls);
+		if (stack == null) {
+			stack = new Stack<>();
+			unmarshallerPool.put(cls, stack);
 		}
+		return stack;
 	}
 
-	private IParser pop(String contentType) {
-		if (contentType == null || contentType.isEmpty())
-			return jsonPop();
-
-		if ("text/xml".equals(contentType) || "application/xml".equals(contentType))
-			return xmlPop();
-
-		return jsonPop();
+	private synchronized void push(Class cls, Unmarshaller unmarshaller) {
+		unmarshallerStack(cls).push(unmarshaller);
 	}
 
-	private synchronized void push(IParser parser) {
-		if (parser instanceof JsonParser)
-			jsonPool.push(parser);
-		else
-			xmlPool.push(parser);
-	}
-
-	private synchronized IParser jsonPop() {
-		if (jsonPool.size() > 0)
-			return jsonPool.pop();
-		else
-			return new JsonParser();
-	}
-
-	private synchronized IParser xmlPop() {
-		if (xmlPool.size() > 0)
-			return xmlPool.pop();
-		else
-			return new XmlParser();
+	private synchronized Unmarshaller unmarshallerPop(Class cls) throws JAXBException {
+		Stack<Unmarshaller> stack = unmarshallerStack(cls);
+		if (stack.size() > 0)
+			return stack.pop();
+		else {
+			JAXBContext context = JAXBContext.newInstance(cls);
+			return context.createUnmarshaller();
+		}
 	}
 }

@@ -1,5 +1,6 @@
 package org.endeavourhealth.core.utility;
 
+import org.endeavourhealth.core.cache.MarshallerPool;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -18,7 +19,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 
 public abstract class XmlSerializer {
 
@@ -78,54 +78,32 @@ public abstract class XmlSerializer {
 //        return deserializeFromXmlDocument(cls, document, xsdName);
 //    }
 
-    private static final HashMap<Class, Unmarshaller> unmarshallerCache = new HashMap<>();
     private static <T> T deserializeFromXmlDocument(Class cls, Document doc, String xsdName) throws ParserConfigurationException, JAXBException, IOException, SAXException {
-        Unmarshaller unmarshaller = unmarshallerCache.get(cls);
-        if (unmarshaller == null) {
-            JAXBContext context = JAXBContext.newInstance(cls);
-            unmarshaller = context.createUnmarshaller();
-            unmarshallerCache.put(cls, unmarshaller);
-        }
-
-        //if a schema was provided, set it in the unmarshaller
+        Schema schema = null;
         if (xsdName != null) {
             SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
             URL url = Resources.getResourceAsURLObject(xsdName);
-            Schema schema = sf.newSchema(url);
-            unmarshaller.setSchema(schema);
-        } else {
-            unmarshaller.setSchema(null);
+            schema = sf.newSchema(url);
         }
 
         @SuppressWarnings("unchecked")
-        JAXBElement<T> loader = unmarshaller.unmarshal(doc, cls);
+        JAXBElement<T> loader = MarshallerPool.getInstance().unmarshal(cls, doc, schema);
         return loader.getValue();
     }
 
-    private static final HashMap<Class, Marshaller> marshallerCache = new HashMap<>();
     public static String serializeToString(JAXBElement element, String xsdName) {
         StringWriter sw = new StringWriter();
         Class cls = element.getValue().getClass();
 
         try {
-            Marshaller marshaller = marshallerCache.get(cls);
-            if (marshaller == null) {
-                JAXBContext context = JAXBContext.newInstance(cls);
-                marshaller = context.createMarshaller();
-                marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE); //just makes output easier to read
-                marshallerCache.put(cls, marshaller);
-            }
-
+            Schema schema = null;
             if (xsdName != null) {
                 SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
                 URL url = Resources.getResourceAsURLObject(xsdName);
-                Schema schema = sf.newSchema(url);
-                marshaller.setSchema(schema);
-            } else {
-                marshaller.setSchema(null);
+                schema = sf.newSchema(url);
             }
 
-            marshaller.marshal(element, sw);
+            MarshallerPool.getInstance().marshal(cls, element, schema, sw);
 
         } catch (JAXBException | SAXException | IOException e) {
             throw new RuntimeException(e);
