@@ -2,6 +2,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.ValidateMessageTypeConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
@@ -37,10 +38,9 @@ public class ValidateMessageType extends PipelineComponent {
 
 		// Get the (publisher) protocols
 		String protocolJson = exchange.getHeader(HeaderKeys.Protocols);
-		ObjectMapper mapper = new ObjectMapper();
 		LibraryItem[] libraryItemList;
 		try {
-			libraryItemList = mapper.readValue(protocolJson, LibraryItem[].class);
+			libraryItemList = ObjectMapperPool.getInstance().readValue(protocolJson, LibraryItem[].class);
 
 			// Ensure at least one of the publisher protocols is for this system/format
 			Boolean senderIsValid = Arrays.stream(libraryItemList)

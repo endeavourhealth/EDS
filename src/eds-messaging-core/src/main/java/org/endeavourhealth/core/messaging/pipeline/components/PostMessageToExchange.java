@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -56,12 +57,11 @@ public class PostMessageToExchange extends PipelineComponent {
 			publishMessage(routingKey, messageUuid, channel, properties);
 		} else {
 			String multicastData = exchange.getHeader(multicastHeader);
-			ObjectMapper objectMapper = new ObjectMapper();
 			try {
-				Object[] multicastItems = objectMapper.readValue(multicastData, Object[].class);
+				Object[] multicastItems = ObjectMapperPool.getInstance().readValue(multicastData, Object[].class);
 
 				for (Object multicastItem : multicastItems) {
-					String itemData = objectMapper.writeValueAsString(multicastItem);
+					String itemData = ObjectMapperPool.getInstance().writeValueAsString(multicastItem);
 					// Replace header list with individual value
 					headers.put(multicastHeader, itemData);
 					properties = properties.builder().headers(headers).build();

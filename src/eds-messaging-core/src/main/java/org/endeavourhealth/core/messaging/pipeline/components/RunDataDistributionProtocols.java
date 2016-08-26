@@ -3,6 +3,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
@@ -42,10 +43,9 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	private LibraryItem[] getProtocols(Exchange exchange) throws PipelineException {
 		// Get the protocols
 		String protocolJson = exchange.getHeader(HeaderKeys.Protocols);
-		ObjectMapper mapper = new ObjectMapper();
 		LibraryItem[] libraryItemList;
 		try {
-			libraryItemList = mapper.readValue(protocolJson, LibraryItem[].class);
+			libraryItemList = ObjectMapperPool.getInstance().readValue(protocolJson, LibraryItem[].class);
 		} catch (IOException e) {
 			throw new PipelineException(e.getMessage(), e);
 		}

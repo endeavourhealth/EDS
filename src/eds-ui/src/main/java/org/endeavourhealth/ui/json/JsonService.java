@@ -3,6 +3,7 @@ package org.endeavourhealth.ui.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
 
@@ -31,7 +32,7 @@ public final class JsonService {
 
         String endpointJson = service.getEndpoints();
         if (endpointJson != null && !endpointJson.isEmpty()) {
-            this.endpoints = new ObjectMapper().readValue(endpointJson, new TypeReference<List<JsonServiceInterfaceEndpoint>>(){});
+            this.endpoints = ObjectMapperPool.getInstance().readValue(endpointJson, new TypeReference<List<JsonServiceInterfaceEndpoint>>(){});
         } else {
             this.endpoints = new ArrayList<>();
         }

@@ -3,6 +3,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.MessageTransformConfig;
 import org.endeavourhealth.core.configuration.Pipeline;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
@@ -45,7 +46,7 @@ public class MessageTransform extends PipelineComponent {
 	private UUID findSystemId(Service service, String messageFormat, String messageVersion, UUID exchangeId) throws Exception {
 
 
-		List<JsonServiceInterfaceEndpoint> endpoints = new ObjectMapper().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+		List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
 		for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
 
 			UUID endpointSystemId = endpoint.getSystemUuid();
@@ -120,9 +121,8 @@ public class MessageTransform extends PipelineComponent {
 	}
 
 	private static String convertUUidsToStrings(List<UUID> uuids) throws PipelineException {
-		ObjectMapper objectMapper = new ObjectMapper();
 		try {
-			return objectMapper.writeValueAsString(uuids.toArray());
+			return ObjectMapperPool.getInstance().writeValueAsString(uuids.toArray());
 		} catch (JsonProcessingException e) {
 			throw new PipelineException("Could not serialize batch id list", e);
 		}

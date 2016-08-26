@@ -2,6 +2,7 @@ package org.endeavourhealth.ui.framework.config;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.config.ConfigurationRepository;
 import org.endeavourhealth.core.data.config.models.ConfigurationResource;
 import org.endeavourhealth.ui.framework.config.models.AppConfig;
@@ -34,8 +35,7 @@ public class ConfigService {
         if(appConfig == null) {
             try {
                 ConfigurationResource configurationResource = new ConfigurationRepository().getByKey(UUID.fromString(ConfigService.EDS_APP_CONFIG));
-                ObjectMapper objectMapper = new ObjectMapper();
-                appConfig = objectMapper.readValue(configurationResource.getConfigurationData(), AppConfig.class);
+                appConfig = ObjectMapperPool.getInstance().readValue(configurationResource.getConfigurationData(), AppConfig.class);
 
             } catch (Exception e) {
                 LOG.error("Configuration Repository error: {}", e.getMessage());
@@ -62,8 +62,7 @@ public class ConfigService {
             try {
                 keycloakConfig = new ConfigurationRepository().getByKey(ConfigurationRepository.KEYCLOAK_CONFIG);
 
-                ObjectMapper objectMapper = new ObjectMapper();
-                JsonNode json = objectMapper.readTree(keycloakConfig.getConfigurationData());
+                JsonNode json = ObjectMapperPool.getInstance().readTree(keycloakConfig.getConfigurationData());
 
                 authConfig = new AuthConfig(
                         json.get("realm").asText(),

@@ -2,6 +2,7 @@ package org.endeavourhealth.core.audit;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.models.ExchangeEvent;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -30,8 +31,7 @@ public final class AuditWriter {
 
             //use jackson to write the headers to JSON
             Map<String, String> headers = ex.getHeaders();
-            ObjectMapper mapper = new ObjectMapper();
-            String headersJson = mapper.writeValueAsString(headers);
+            String headersJson = ObjectMapperPool.getInstance().writeValueAsString(headers);
 
             exchangeToSave = new org.endeavourhealth.core.data.audit.models.Exchange();
             exchangeToSave.setTimestamp(new Date());

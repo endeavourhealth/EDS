@@ -2,6 +2,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.DetermineRelevantProtocolIdsConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -34,9 +35,8 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		if (protocols.size() == 0)
 			throw new PipelineException("No publisher protocols found for service " + serviceUuid);
 
-		ObjectMapper mapper = new ObjectMapper();
 		try {
-			String protocolsJson = mapper.writeValueAsString(protocols.toArray());
+			String protocolsJson = ObjectMapperPool.getInstance().writeValueAsString(protocols.toArray());
 			exchange.setHeader(HeaderKeys.Protocols, protocolsJson);
 		} catch (JsonProcessingException e) {
 			LOG.error("Unable to serialize protocols to JSON");

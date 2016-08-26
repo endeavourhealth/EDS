@@ -2,6 +2,7 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
@@ -48,7 +49,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 		dbService.setLocalIdentifier(service.getLocalIdentifier());
 		dbService.setOrganisations(service.getOrganisations());
 
-		String endpointsJson = new ObjectMapper().writeValueAsString(service.getEndpoints());
+		String endpointsJson = ObjectMapperPool.getInstance().writeValueAsString(service.getEndpoints());
 		dbService.setEndpoints(endpointsJson);
 
 		UUID serviceId = repository.save(dbService);
@@ -184,7 +185,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
 		List<System> ret = new ArrayList<>();
 
-		List<JsonServiceInterfaceEndpoint> endpoints = new ObjectMapper().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+		List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
 		for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
 
 			UUID endpointSystemId = endpoint.getSystemUuid();

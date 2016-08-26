@@ -3,6 +3,7 @@ package org.endeavourhealth.core.queueing;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.cache.CacheManager;
 import org.endeavourhealth.core.cache.ICacheable;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.config.ConfigKeys;
 import org.endeavourhealth.core.data.config.ConfigurationRepository;
 import org.endeavourhealth.core.data.config.models.ConfigurationResource;
@@ -48,7 +49,7 @@ public class RoutingManager implements ICacheable {
 			ConfigurationResource routingConfig = new ConfigurationRepository().getByKey(ConfigKeys.RouteGroupings);
 
 			try {
-				routingMap = new ObjectMapper().readValue(routingConfig.getConfigurationData(), RouteGroup[].class);
+				routingMap = ObjectMapperPool.getInstance().readValue(routingConfig.getConfigurationData(), RouteGroup[].class);
 				LOG.debug("Routing table loaded : " + routingConfig.getConfigurationData());
 			}
 			catch (Exception e) {

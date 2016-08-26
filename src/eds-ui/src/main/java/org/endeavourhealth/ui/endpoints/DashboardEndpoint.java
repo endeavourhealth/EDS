@@ -2,6 +2,7 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.Audit;
@@ -289,7 +290,7 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 		List<JsonRabbitBinding> bindings = new ArrayList<>();
 		String json = getRabbitBindingsJson(address);
 		if (json != null) {
-			bindings = new ObjectMapper().readValue(json, new TypeReference<List<JsonRabbitBinding>>(){});
+			bindings = ObjectMapperPool.getInstance().readValue(json, new TypeReference<List<JsonRabbitBinding>>(){});
 		}
 		return bindings;
 	}
@@ -298,7 +299,7 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 		List<JsonRouteGroup> bindings = new ArrayList<>();
 		ConfigurationResource configurationResource = new ConfigurationRepository().getByKey(UUID.fromString("b9b14e26-5a52-4f36-ad89-f01e465c1361"));
 		if (configurationResource != null) {
-			bindings = new ObjectMapper().readValue(configurationResource.getConfigurationData(), new TypeReference<List<JsonRouteGroup>>(){});
+			bindings = ObjectMapperPool.getInstance().readValue(configurationResource.getConfigurationData(), new TypeReference<List<JsonRouteGroup>>(){});
 		}
 
 		return bindings;

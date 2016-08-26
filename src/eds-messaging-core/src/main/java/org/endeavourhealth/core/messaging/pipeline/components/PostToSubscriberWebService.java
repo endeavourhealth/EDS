@@ -2,6 +2,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.PostToSubscriberWebServiceConfig;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
@@ -38,7 +39,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 
 		LibraryItem protocol;
 		try {
-			protocol = new ObjectMapper().readValue(protocols, LibraryItem.class);
+			protocol = ObjectMapperPool.getInstance().readValue(protocols, LibraryItem.class);
 		} catch (IOException e) {
 			LOG.error("Unable to deserialize protocol");
 			throw new PipelineException(e.getMessage(), e);
@@ -56,7 +57,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 			ServiceRepository serviceRepository = new ServiceRepository();
 			for (ServiceContract contract : subscriberContracts) {
 				Service service = serviceRepository.getById(UUID.fromString(contract.getService().getUuid()));
-				List<JsonServiceInterfaceEndpoint> serviceEndpoints = new ObjectMapper().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+				List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
 				String endpoint = serviceEndpoints.stream()
 						.filter(ep -> ep.getTechnicalInterfaceUuid().toString().equals(contract.getTechnicalInterface().getUuid()))
 						.map(JsonServiceInterfaceEndpoint::getEndpoint)
