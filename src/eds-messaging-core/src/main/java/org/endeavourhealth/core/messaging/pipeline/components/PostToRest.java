@@ -34,15 +34,7 @@ public class PostToRest extends PipelineComponent {
 			return;
 		}
 
-		Client client = ClientBuilder.newClient( new ClientConfig().register( LoggingFilter.class ) );
-		WebTarget webTarget = client.target(responseAddress);
-
-		String contentType = exchange.getHeader(HeaderKeys.ContentType);
-
-		if (contentType == null)
-			contentType = "text/json";
-
-		Invocation.Builder invocationBuilder =  webTarget.request(contentType);
+		String[] addressList = responseAddress.split(",", -1);
 
 		// Is there a restricted header list?
 		String[] headersToSend;
@@ -52,23 +44,35 @@ public class PostToRest extends PipelineComponent {
 		} else
 			headersToSend = config.getSendHeaders().split(",", -1);
 
-		for (String key : headersToSend) {
-			String headerValue = exchange.getHeader(key);
-			if (headerValue != null)
-				invocationBuilder.header(key, headerValue);
-		}
+		for (String address : addressList) {
+			Client client = ClientBuilder.newClient(new ClientConfig().register(LoggingFilter.class));
+			WebTarget webTarget = client.target(address);
 
-		Entity entity = Entity.entity(exchange.getBody(), contentType);
+			String contentType = exchange.getHeader(HeaderKeys.ContentType);
 
-		Response response = invocationBuilder.post(entity);
+			if (contentType == null)
+				contentType = "text/json";
 
-		exchange.setBody(response.readEntity(String.class));
+			Invocation.Builder invocationBuilder = webTarget.request(contentType);
 
-		if (response.getStatus() == HttpStatus.SC_OK)
-			LOG.debug("Message posted to REST endpoint");
-		else {
-			LOG.error("Error posting to REST endpoint");
-			throw new PipelineException(exchange.getBody());
+			for (String key : headersToSend) {
+				String headerValue = exchange.getHeader(key);
+				if (headerValue != null)
+					invocationBuilder.header(key, headerValue);
+			}
+
+			Entity entity = Entity.entity(exchange.getBody(), contentType);
+
+			Response response = invocationBuilder.post(entity);
+
+			exchange.setBody(response.readEntity(String.class));
+
+			if (response.getStatus() == HttpStatus.SC_OK)
+				LOG.debug("Message posted to REST endpoint");
+			else {
+				LOG.error("Error posting to REST endpoint");
+				throw new PipelineException(exchange.getBody());
+			}
 		}
 	}
 }

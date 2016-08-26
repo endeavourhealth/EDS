@@ -69,7 +69,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 		}
 
 		// Determine which protocol subscribers want this transform format
-		exchange.setHeader(HeaderKeys.Subscribers, String.join(",", endpoints));
+		exchange.setHeader(HeaderKeys.DestinationAddress, String.join(",", endpoints));
 
 	}
 }

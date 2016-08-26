@@ -6,6 +6,7 @@
   <component name="FrameworkDetectionExcludesConfiguration">
     <file type="web" url="file://$PROJECT_DIR$/eds-messaging-api" />
     <file type="web" url="file://$PROJECT_DIR$/eds-patient-ui" />
+    <file type="web" url="file://$PROJECT_DIR$/eds-subscriber" />
     <file type="web" url="file://$PROJECT_DIR$/eds-ui" />
   </component>
   <component name="MavenProjectsManager">
@@ -22,6 +23,7 @@
         <option value="$PROJECT_DIR$/eds-clinical/pom.xml" />
         <option value="$PROJECT_DIR$/eds-patient-ui/pom.xml" />
         <option value="$PROJECT_DIR$/../pom.xml" />
+        <option value="$PROJECT_DIR$/eds-subscriber/pom.xml" />
       </list>
     </option>
   </component>
