@@ -8,8 +8,8 @@
                 <event/>
                 <source>
                     <name value="GP01"/>
-                    <software value="ClientAPI"/>
-                    <version value="1.0"/>
+                    <software value="EmisExtractService"/>
+                    <version value="5.1"/>
                     <endpoint value="http://source.uri.com"/>
                 </source>
                 <destination>

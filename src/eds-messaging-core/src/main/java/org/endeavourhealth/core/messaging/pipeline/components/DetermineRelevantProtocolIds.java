@@ -36,15 +36,12 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 
 		ObjectMapper mapper = new ObjectMapper();
 		try {
-			String protocolsJson = mapper.writeValueAsString(protocols);
-			exchange.setHeader(HeaderKeys.ProtocolData, protocolsJson);
+			String protocolsJson = mapper.writeValueAsString(protocols.toArray());
+			exchange.setHeader(HeaderKeys.Protocols, protocolsJson);
 		} catch (JsonProcessingException e) {
 			LOG.error("Unable to serialize protocols to JSON");
 			throw new PipelineException(e.getMessage(), e);
 		}
-
-		List<String> protocolIds = protocols.stream().map(LibraryItem::getUuid).collect(Collectors.toList());
-		exchange.setHeader(HeaderKeys.ProtocolIds, String.join(",",protocolIds));
 
 		LOG.debug("Data distribution protocols identified");
 	}

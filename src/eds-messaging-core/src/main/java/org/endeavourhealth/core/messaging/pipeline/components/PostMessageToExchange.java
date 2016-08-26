@@ -1,5 +1,6 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -54,14 +55,22 @@ public class PostMessageToExchange extends PipelineComponent {
 		if (multicastHeader == null || multicastHeader.isEmpty() || exchange.getHeader(multicastHeader) == null) {
 			publishMessage(routingKey, messageUuid, channel, properties);
 		} else {
-			String[] multicastValues = exchange.getHeader(multicastHeader).split(",", -1);
+			String multicastData = exchange.getHeader(multicastHeader);
+			ObjectMapper objectMapper = new ObjectMapper();
+			try {
+				Object[] multicastItems = objectMapper.readValue(multicastData, Object[].class);
 
-			for (String multicastValue : multicastValues) {
-				// Replace header list with individual value
-				headers.put(multicastHeader, multicastValue);
-				properties = properties.builder().headers(headers).build();
-				publishMessage(routingKey, messageUuid, channel, properties);
+				for (Object multicastItem : multicastItems) {
+					String itemData = objectMapper.writeValueAsString(multicastItem);
+					// Replace header list with individual value
+					headers.put(multicastHeader, itemData);
+					properties = properties.builder().headers(headers).build();
+					publishMessage(routingKey, messageUuid, channel, properties);
+				}
+			} catch (IOException e) {
+				throw new PipelineException("Could not parse multicast data", e);
 			}
+
 		}
 
 		waitForConfirmations(channel);

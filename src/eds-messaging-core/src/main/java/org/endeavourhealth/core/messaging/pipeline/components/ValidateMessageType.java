@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -35,14 +36,14 @@ public class ValidateMessageType extends PipelineComponent {
 		String formatVersion = exchange.getHeader(HeaderKeys.SystemVersion);
 
 		// Get the (publisher) protocols
-		String protocolJson = exchange.getHeader(HeaderKeys.ProtocolData);
+		String protocolJson = exchange.getHeader(HeaderKeys.Protocols);
 		ObjectMapper mapper = new ObjectMapper();
-		List<LibraryItem> libraryItemList;
+		LibraryItem[] libraryItemList;
 		try {
-			libraryItemList = mapper.readValue(protocolJson, new TypeReference<List<LibraryItem>>(){});
+			libraryItemList = mapper.readValue(protocolJson, LibraryItem[].class);
 
 			// Ensure at least one of the publisher protocols is for this system/format
-			Boolean senderIsValid = libraryItemList.stream()
+			Boolean senderIsValid = Arrays.stream(libraryItemList)
 					.map(li -> li.getProtocol().getServiceContract())
 					.flatMap(Collection::stream)
 					.filter(serviceContract ->

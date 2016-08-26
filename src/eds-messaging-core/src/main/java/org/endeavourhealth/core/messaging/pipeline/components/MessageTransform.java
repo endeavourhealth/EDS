@@ -1,8 +1,10 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.configuration.MessageTransformConfig;
+import org.endeavourhealth.core.configuration.Pipeline;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
@@ -117,12 +119,13 @@ public class MessageTransform extends PipelineComponent {
 		}
 	}
 
-	private static String convertUUidsToStrings(List<UUID> uuids) {
-		List<String> batchIdStrings = uuids
-				.stream()
-				.map(t -> t.toString())
-				.collect(Collectors.toList());
-		return String.join(";", batchIdStrings);
+	private static String convertUUidsToStrings(List<UUID> uuids) throws PipelineException {
+		ObjectMapper objectMapper = new ObjectMapper();
+		try {
+			return objectMapper.writeValueAsString(uuids.toArray());
+		} catch (JsonProcessingException e) {
+			throw new PipelineException("Could not serialize batch id list", e);
+		}
 	}
 
 	private List<UUID> processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software, Set<UUID> orgIds) throws Exception {

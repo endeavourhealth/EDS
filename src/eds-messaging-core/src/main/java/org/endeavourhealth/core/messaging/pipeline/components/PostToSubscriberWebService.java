@@ -34,11 +34,11 @@ public class PostToSubscriberWebService extends PipelineComponent {
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
 		String technicalInterfaceId = exchange.getHeader(HeaderKeys.TransformTo);
-		String protocolData = exchange.getHeader(HeaderKeys.ProtocolData);
+		String protocols = exchange.getHeader(HeaderKeys.Protocols);
 
 		LibraryItem protocol;
 		try {
-			protocol = new ObjectMapper().readValue(protocolData, LibraryItem.class);
+			protocol = new ObjectMapper().readValue(protocols, LibraryItem.class);
 		} catch (IOException e) {
 			LOG.error("Unable to deserialize protocol");
 			throw new PipelineException(e.getMessage(), e);
