@@ -66,8 +66,10 @@ public class PipelineProcessor {
 				return new PostMessageToExchange((PostMessageToExchangeConfig) processConfig);
 			case "ReturnResponseAcknowledgementConfig":
 				return new ReturnResponseAcknowledgement((ReturnResponseAcknowledgementConfig) processConfig);
-			case "MessageTransformConfig":
-				return new MessageTransform((MessageTransformConfig) processConfig);
+			case "MessageTransformInboundConfig":
+				return new MessageTransformInbound((MessageTransformInboundConfig) processConfig);
+			case "MessageTransformOutboundConfig":
+				return new MessageTransformOutbound((MessageTransformOutboundConfig) processConfig);
 			case "PostToEventStoreConfig":
 				return new PostToEventStore((PostToEventStoreConfig) processConfig);
 			case "DetermineRelevantProtocolIdsConfig":

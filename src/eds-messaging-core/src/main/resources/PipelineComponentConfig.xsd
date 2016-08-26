@@ -64,7 +64,13 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:complexType name="MessageTransformConfig">
+    <xs:complexType name="MessageTransformInboundConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="MessageTransformOutboundConfig">
         <xs:complexContent>
             <xs:extension base="ComponentConfig"/>
         </xs:complexContent>

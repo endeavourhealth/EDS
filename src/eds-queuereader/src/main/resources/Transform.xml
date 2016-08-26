@@ -7,7 +7,7 @@
     <Nodes>localhost:5672</Nodes>
     <Queue>EdsTransform-A-M</Queue>
     <Pipeline>
-        <MessageTransform/>
+        <MessageTransformOutbound/>
         <PostToSubscriberWebService/>
         <PostMessageToLog>
             <EventType>Validate</EventType>

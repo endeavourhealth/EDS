@@ -2,10 +2,8 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
-import org.endeavourhealth.core.configuration.MessageTransformConfig;
-import org.endeavourhealth.core.configuration.Pipeline;
+import org.endeavourhealth.core.configuration.MessageTransformInboundConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
@@ -29,17 +27,16 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-public class MessageTransform extends PipelineComponent {
-	private static final Logger LOG = LoggerFactory.getLogger(MessageTransform.class);
+public class MessageTransformInbound extends PipelineComponent {
+	private static final Logger LOG = LoggerFactory.getLogger(MessageTransformInbound.class);
 
 	private static final ServiceRepository serviceRepository = new ServiceRepository();
 	private static final LibraryRepository libraryRepository = new LibraryRepository();
 
-	private MessageTransformConfig config;
+	private MessageTransformInboundConfig config;
 
-	public MessageTransform(MessageTransformConfig config) {
+	public MessageTransformInbound(MessageTransformInboundConfig config) {
 		this.config = config;
 	}
 
@@ -112,11 +109,12 @@ public class MessageTransform extends PipelineComponent {
 			String batchIdString = convertUUidsToStrings(batchIds);
 			exchange.setHeader(HeaderKeys.BatchIds, batchIdString);
 
-			LOG.trace("Message transformed");
+			LOG.trace("Message transformed (inbound)");
 
 		} catch (Exception e) {
 			exchange.setException(e);
 			LOG.error("Error", e);
+			// throw new PipelineException("Error performing inbound transform", e);
 		}
 	}
 

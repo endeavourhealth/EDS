@@ -7,12 +7,12 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for MessageTransformConfig complex type.
+ * <p>Java class for MessageTransformOutboundConfig complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="MessageTransformConfig">
+ * &lt;complexType name="MessageTransformOutboundConfig">
  *   &lt;complexContent>
  *     &lt;extension base="{}ComponentConfig">
  *     &lt;/extension>
@@ -23,8 +23,8 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "MessageTransformConfig")
-public class MessageTransformConfig
+@XmlType(name = "MessageTransformOutboundConfig")
+public class MessageTransformOutboundConfig
     extends ComponentConfig
 {
 

@@ -29,7 +29,8 @@ import javax.xml.bind.annotation.XmlType;
  *           &lt;element name="PostMessageToLog" type="{}PostMessageToLogConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostMessageToExchange" type="{}PostMessageToExchangeConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="ReturnResponseAcknowledgement" type="{}ReturnResponseAcknowledgementConfig" maxOccurs="unbounded" minOccurs="0"/>
- *           &lt;element name="MessageTransform" type="{}MessageTransformConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="MessageTransformInbound" type="{}MessageTransformInboundConfig" maxOccurs="unbounded" minOccurs="0"/>
+ *           &lt;element name="MessageTransformOutbound" type="{}MessageTransformOutboundConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="PostToEventStore" type="{}PostToEventStoreConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="DetermineRelevantProtocolIds" type="{}DetermineRelevantProtocolIdsConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="RunDataDistributionProtocols" type="{}RunDataDistributionProtocolsConfig" maxOccurs="unbounded" minOccurs="0"/>
@@ -60,7 +61,8 @@ public class Pipeline {
         @XmlElement(name = "PostMessageToLog", type = PostMessageToLogConfig.class),
         @XmlElement(name = "PostMessageToExchange", type = PostMessageToExchangeConfig.class),
         @XmlElement(name = "ReturnResponseAcknowledgement", type = ReturnResponseAcknowledgementConfig.class),
-        @XmlElement(name = "MessageTransform", type = MessageTransformConfig.class),
+        @XmlElement(name = "MessageTransformInbound", type = MessageTransformInboundConfig.class),
+        @XmlElement(name = "MessageTransformOutbound", type = MessageTransformOutboundConfig.class),
         @XmlElement(name = "PostToEventStore", type = PostToEventStoreConfig.class),
         @XmlElement(name = "DetermineRelevantProtocolIds", type = DetermineRelevantProtocolIdsConfig.class),
         @XmlElement(name = "RunDataDistributionProtocols", type = RunDataDistributionProtocolsConfig.class),
@@ -96,7 +98,8 @@ public class Pipeline {
      * {@link PostMessageToLogConfig }
      * {@link PostMessageToExchangeConfig }
      * {@link ReturnResponseAcknowledgementConfig }
-     * {@link MessageTransformConfig }
+     * {@link MessageTransformInboundConfig }
+     * {@link MessageTransformOutboundConfig }
      * {@link PostToEventStoreConfig }
      * {@link DetermineRelevantProtocolIdsConfig }
      * {@link RunDataDistributionProtocolsConfig }

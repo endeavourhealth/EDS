@@ -94,6 +94,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link MessageTransformInboundConfig }
+     * 
+     */
+    public MessageTransformInboundConfig createMessageTransformInboundConfig() {
+        return new MessageTransformInboundConfig();
+    }
+
+    /**
      * Create an instance of {@link PGPDecryptConfig }
      * 
      */
@@ -118,14 +126,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link MessageTransformConfig }
-     * 
-     */
-    public MessageTransformConfig createMessageTransformConfig() {
-        return new MessageTransformConfig();
-    }
-
-    /**
      * Create an instance of {@link DetermineRelevantProtocolIdsConfig }
      * 
      */
@@ -147,6 +147,14 @@ public class ObjectFactory {
      */
     public ComponentConfig createComponentConfig() {
         return new ComponentConfig();
+    }
+
+    /**
+     * Create an instance of {@link MessageTransformOutboundConfig }
+     * 
+     */
+    public MessageTransformOutboundConfig createMessageTransformOutboundConfig() {
+        return new MessageTransformOutboundConfig();
     }
 
     /**

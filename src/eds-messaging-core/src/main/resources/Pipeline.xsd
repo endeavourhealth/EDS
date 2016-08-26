@@ -20,7 +20,8 @@
                 <xs:element name="PostMessageToLog" type="PostMessageToLogConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="PostMessageToExchange" type="PostMessageToExchangeConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="ReturnResponseAcknowledgement" type="ReturnResponseAcknowledgementConfig" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="MessageTransform" type="MessageTransformConfig" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="MessageTransformInbound" type="MessageTransformInboundConfig" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="MessageTransformOutbound" type="MessageTransformOutboundConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="PostToEventStore" type="PostToEventStoreConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="DetermineRelevantProtocolIds" type="DetermineRelevantProtocolIdsConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="RunDataDistributionProtocols" type="RunDataDistributionProtocolsConfig" minOccurs="0" maxOccurs="unbounded"/>
