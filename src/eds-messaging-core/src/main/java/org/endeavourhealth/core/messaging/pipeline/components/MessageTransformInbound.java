@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 public class MessageTransformInbound extends PipelineComponent {
@@ -82,7 +81,7 @@ public class MessageTransformInbound extends PipelineComponent {
 
 			//find the organisation UUIDs covered by the service
 			Service service = serviceRepository.getById(serviceId);
-			Set<UUID> orgIds = service.getOrganisations().keySet();
+			//Set<UUID> orgIds = service.getOrganisations().keySet();
 
 			//find the system ID by using values from the message header
 			UUID systemId = findSystemId(service, messageFormat, messageVersion, exchange.getExchangeId());
@@ -90,16 +89,16 @@ public class MessageTransformInbound extends PipelineComponent {
 			List<UUID> batchIds = null;
 
 			if (software.equalsIgnoreCase("EmisExtractService")) {
-				batchIds = processEmisCsvTransform(exchange, serviceId, systemId, messageVersion, software, orgIds);
+				batchIds = processEmisCsvTransform(exchange, serviceId, systemId, messageVersion, software);
 
 			} else if (software.equalsIgnoreCase("EmisOpen")) {
-				batchIds = processEmisOpenTransform(exchange, serviceId, systemId, messageVersion, software, orgIds);
+				batchIds = processEmisOpenTransform(exchange, serviceId, systemId, messageVersion, software);
 
 			} else if (software.equalsIgnoreCase("OpenHR")) {
-				batchIds = processEmisOpenHrTransform(exchange, serviceId, systemId, messageVersion, software, orgIds);
+				batchIds = processEmisOpenHrTransform(exchange, serviceId, systemId, messageVersion, software);
 
 			} else if (software.equalsIgnoreCase("TPPExtractService")) {
-				batchIds = processTppXmlTransform(exchange, serviceId, systemId, messageVersion, software, orgIds);
+				batchIds = processTppXmlTransform(exchange, serviceId, systemId, messageVersion, software);
 
 			} else {
 				throw new SoftwareNotSupportedException(software, messageVersion);
@@ -126,7 +125,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		}
 	}
 
-	private List<UUID> processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software, Set<UUID> orgIds) throws Exception {
+	private List<UUID> processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software) throws Exception {
 
 		//validate the version
 		if (!version.equalsIgnoreCase(EmisCsvTransformer.VERSION_TEST_PACK)
@@ -138,22 +137,22 @@ public class MessageTransformInbound extends PipelineComponent {
 		String decodedFileString = exchange.getBody();
 		String[] decodedFiles = decodedFileString.split("\r\n");
 
-		return EmisCsvTransformer.splitAndTransform(version, decodedFiles, exchange.getExchangeId(), serviceId, systemId, orgIds);
+		return EmisCsvTransformer.transform(version, decodedFiles, exchange.getExchangeId(), serviceId, systemId);
 	}
 
-	private List<UUID> processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software, Set<UUID> orgIds) throws Exception {
+	private List<UUID> processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software) throws Exception {
 		//TODO - validate version for TPP XML
 		//TODO - plug in TPP XML transform
 		return null;
 	}
 
-	private List<UUID> processEmisOpenTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software, Set<UUID> orgIds) throws Exception {
+	private List<UUID> processEmisOpenTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software) throws Exception {
 		//TODO - validate version for EMIS Open
 		//TODO - plug in EMIS OPEN transform
 		return null;
 	}
 
-	private List<UUID> processEmisOpenHrTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software, Set<UUID> orgIds) throws Exception {
+	private List<UUID> processEmisOpenHrTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software) throws Exception {
 		//TODO - validate version for Open HR
 		//TODO - plug in OpenHR transform
 		return null;

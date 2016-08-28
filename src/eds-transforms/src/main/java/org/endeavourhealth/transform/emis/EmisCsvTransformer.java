@@ -1,15 +1,8 @@
 package org.endeavourhealth.transform.emis;
 
 import com.google.common.io.Files;
-import org.endeavourhealth.core.data.admin.OrganisationRepository;
-import org.endeavourhealth.core.data.ehr.ResourceRepository;
-import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.FileFormatException;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.common.exceptions.UnexpectedOrganisationException;
-import org.endeavourhealth.transform.emis.csv.EmisCsvFileSplitter;
 import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
 import org.endeavourhealth.transform.emis.csv.schema.admin.*;
 import org.endeavourhealth.transform.emis.csv.schema.appointment.Session;
@@ -20,19 +13,12 @@ import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCode;
 import org.endeavourhealth.transform.emis.csv.schema.coding.DrugCode;
 import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
 import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.hl7.fhir.instance.formats.JsonParser;
-import org.hl7.fhir.instance.model.Identifier;
-import org.hl7.fhir.instance.model.Organization;
-import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 public abstract class EmisCsvTransformer {
 
@@ -41,76 +27,57 @@ public abstract class EmisCsvTransformer {
     public static final String VERSION_5_1 = "5.1";
     public static final String VERSION_TEST_PACK = "TestPack";
 
-    public static List<UUID> splitAndTransform(String version,
-                                               String[] files,
-                                               UUID exchangeId,
-                                               UUID serviceId,
-                                               UUID systemId,
-                                               Set<UUID> orgIds) throws Exception {
+    public static List<UUID> transform(String version,
+                                       String[] files,
+                                       UUID exchangeId,
+                                       UUID serviceId,
+                                       UUID systemId) throws Exception {
 
         LOG.info("Invoking EMIS CSV transformer for {} files", files.length);
 
-        //validate that all the files are in the same directory
+        //the files should all be in a directory structure of org folder -> processing ID folder -> CSV files
         LOG.trace("Validating all files are in same directory");
-        File commonDir = validateCommonDirectory(files);
+        File orgDirectory = validateAndFindCommonDirectory(files);
 
-        //validate that we've got all the files we expect
-        LOG.trace("Validating all files are present");
-        List<File> expectedFiles = validateExpectedFiles(commonDir, version);
+        //under the org directory should be a directory for each processing ID
+        for (File processingIdDirectory: orgDirectory.listFiles()) {
 
-        //validate there's no additional files in the common directory
-        LOG.trace("Validating no additional files");
-        validateNoExtraFiles(commonDir, expectedFiles);
+            //validate that we've got all the files we expect
+            LOG.trace("Validating all files are present");
+            List<File> expectedFiles = validateExpectedFiles(processingIdDirectory, version);
 
-        //validate the column names match what we expect
-        validateColumnNames(commonDir, version);
+            //validate there's no additional files in the common directory
+            LOG.trace("Validating no additional files");
+            validateNoExtraFiles(processingIdDirectory, expectedFiles);
 
-        //split the source files by Organisation GUID
-        File srcDir = commonDir;
-        File dstDir = new File(srcDir, "Split");
-        if (dstDir.exists()) {
-            deleteDirectory(dstDir);
+            //validate the column names match what we expect (this is repeated when we actually perform
+            //the transform, but by doing it now, we fail earlier rather than later)
+            validateColumnNames(processingIdDirectory, version);
         }
-        EmisCsvFileSplitter.splitFiles(srcDir, dstDir);
 
-        //the sub-directories will be named by the org GUID, so validate we've only got orgs we expect
-        LOG.trace("Validating no unexpected organisations");
-        validateOrganisations(version, dstDir, serviceId, systemId, orgIds);
+        //the orgDirectory contains a sub-directory for each processing ID, which must be processed in order
+        List<Integer> processingIds = new ArrayList<>();
+        Map<Integer, File> hmFiles = new HashMap<>();
+        for (File file: orgDirectory.listFiles()) {
+            Integer processingId = Integer.valueOf(file.getName());
+            processingIds.add(processingId);
+            hmFiles.put(processingId, file);
+        }
+
+        Collections.sort(processingIds);
 
         //the processor is responsible for saving FHIR resources
         CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId);
 
-        //process the non-organisation files on their own, before anything else
-        File adminDir = new File(dstDir, EmisCsvFileSplitter.ADMIN_FOLDER_NAME);
-        new TransformOrganisation(version, adminDir, processor).call();
+        LOG.trace("Starting transform for organisation {}", orgDirectory.getName());
 
-        //taking out threading for now, as the bottle-neck isn't this
-        for (File orgDir: dstDir.listFiles()) {
-            if (orgDir.isDirectory()
-                    && !orgDir.getName().equals(EmisCsvFileSplitter.ADMIN_FOLDER_NAME)) {
-
-                new TransformOrganisation(version, orgDir, processor).call();
-            }
-        }
-        //having done the non-organisation data, we can do the organisation files in parallel
-        /*ThreadPool pool = new ThreadPool(5, Integer.MAX_VALUE); //arbitrarily chosen five threads
-
-        for (File orgDir: dstDir.listFiles()) {
-            if (orgDir.isDirectory()
-                    && !orgDir.getName().equals(EmisCsvFileSplitter.ADMIN_FOLDER_NAME)) {
-
-                pool.submit(new TransformOrganisation(version, orgDir, processor));
-            }
+        for (Integer processingId: processingIds) {
+            File file = hmFiles.get(processingId);
+            EmisCsvTransformerWorker.transform(version, file, processor);
         }
 
-        //close the pool and wait for all pools to complete
-        LOG.trace("All transforms submitted - waiting for them to finish");
-        pool.waitAndStop(1, TimeUnit.HOURS);*/
+        LOG.trace("Completed transfom for organisation {} - waiting for resources to commit to DB", orgDirectory.getName());
 
-        //having successfully processed all the split files, delete the split content (if any exceptions were raised, this won't happen)
-        //dstDir.delete();
-
-        LOG.trace("All transforms completed - waiting for resources to commit to DB");
         return processor.getBatchIdsCreated();
     }
 
@@ -131,7 +98,7 @@ public abstract class EmisCsvTransformer {
         root.delete();
     }
 
-    static class TransformOrganisation implements Callable {
+    /*static class TransformOrganisation implements Callable {
 
         private String version = null;
         private File orgDirectory = null;
@@ -168,9 +135,9 @@ public abstract class EmisCsvTransformer {
 
             return null;
         }
-    }
+    }*/
 
-    private static void validateOrganisations(String version, File folder, UUID serviceId, UUID systemId, Set<UUID> orgIds) throws Exception {
+    /*private static void validateOrganisations(String version, File folder, UUID serviceId, UUID systemId, Set<UUID> orgIds) throws Exception {
 
         //retrieve the Organisations from the org repository, and extract their ODS codes
         Set<org.endeavourhealth.core.data.admin.models.Organisation> orgs = new OrganisationRepository().getByUds(orgIds);
@@ -254,27 +221,38 @@ public abstract class EmisCsvTransformer {
         }
 
         return null;
-    }
+    }*/
 
     /**
-     * validates that all the files in the array are in the same common directory
+     * validates that all the files in the array are in the expected directory structure of org folder -> processing ID folder
      */
-    private static File validateCommonDirectory(String[] files) throws Exception {
-        String commonDir = null;
+    private static File validateAndFindCommonDirectory(String[] files) throws Exception {
+        String organisationDir = null;
+
         for (String file: files) {
             File f = new File(file);
             if (!f.exists()) {
                 throw new FileNotFoundException("" + f + " doesn't exist");
             }
-            if (commonDir == null) {
-                commonDir = f.getParent();
-            } else {
-                if (!commonDir.equalsIgnoreCase(f.getParent())) {
-                    throw new FileNotFoundException("" + f + " is not in expected directory " + commonDir);
+
+            try {
+                File processingIdDir = f.getParentFile();
+                File orgDir = processingIdDir.getParentFile();
+
+                if (organisationDir == null) {
+                    organisationDir = orgDir.getAbsolutePath();
+                } else {
+                    if (!organisationDir.equalsIgnoreCase(orgDir.getAbsolutePath())) {
+                        throw new Exception();
+                    }
                 }
+
+            } catch (Exception ex) {
+                throw new FileNotFoundException("" + f + " isn't in the expected directory structure within " + organisationDir);
             }
+
         }
-        return new File(commonDir);
+        return new File(organisationDir);
     }
 
     private static void validateColumnNames(File commonDir, String version) throws Exception {

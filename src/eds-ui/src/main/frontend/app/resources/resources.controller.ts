@@ -4,55 +4,77 @@
 
 module app.resources {
 	import IResourcesService = app.core.IResourcesService;
-	//import ResourcesEvent = app.models.ResourcesEvent;
-	//import Service = app.models.Service;
-	//import IServiceService = app.service.IServiceService;
+	import FhirResourceContainer = app.models.FhirResourceContainer;
+	import FhirResourceType = app.models.FhirResourceType;
 
 	'use strict';
 
 	export class ResourcesController {
-		//resources:[];
-		//services : Service[];
-		//serviceId : string;
+		resourceContainers : FhirResourceContainer[];
+		patientId : string;
+		patientResourceTypes : FhirResourceType[];
+		patientResourceTypeSelected : string;
+		resourceId : string;
+		allResourceTypes : FhirResourceType[];
+		resourceTypeSelected : string;
+
+
 
 		static $inject = ['ResourcesService', 'LoggerService', '$state'];
 
 		constructor(protected resourcesService:IResourcesService,
 					protected logger:ILoggerService,
 					protected $state : IStateService) {
-			//this.loadServices();
-			this.refresh();
+
+			this.getAllResourceTypes()
+
+			//this.refresh();
 		}
 
-		refresh() {
-			/*var vm = this;
-			var serviceName = $("#service>option:selected").html()
-			this.getResourcesEvents(vm.serviceId);*/
-		}
-
-		/*loadServices() {
+		getAllResourceTypes() {
 			var vm = this;
-			vm.serviceService.getAll()
+			vm.resourcesService.getAllResourceTypes()
 				.then(function(result) {
-					vm.services = result;
+					vm.allResourceTypes = result;
 				})
 				.catch(function (error) {
-					vm.logger.error('Failed to load services', error, 'Load services');
+					vm.logger.error('Failed to retrieve all resource types', error, 'Resource Types');
 				});
-		}*/
+		}
 
-		/*getResourcesEvents(serviceId : string) {
+		getResourceTypesForPatient() {
 			var vm = this;
-			vm.resourcesEvents = null;
-			vm.resourcesService.getResourcesEvents(serviceId)
-				.then(function (data:ResourcesEvent[]) {
-					vm.resourcesEvents = data;
+			vm.resourcesService.getResourceTypesForPatient(vm.patientId)
+				.then(function(result) {
+					vm.patientResourceTypes = result;
+				})
+				.catch(function (error) {
+					vm.logger.error('Failed to retrieve resource types for patient', error, 'Resource Types');
 				});
-		}*/
+		}
 
-		/*actionItem(event : ResourcesEvent, action : string) {
-			alert(action+" : "+event.loggerName);
-		}*/
+		getResourceForId() {
+			var vm = this;
+			vm.resourcesService.getResourceForId(vm.resourceTypeSelected, vm.resourceId)
+				.then(function(result) {
+					vm.resourceContainers = result;
+				})
+				.catch(function (error) {
+					vm.logger.error('Failed to retrieve resources for ID', error, 'Resource Types');
+				});
+		}
+
+		getResourcesForPatient() {
+			var vm = this;
+			vm.resourcesService.getResourcesForPatient(vm.patientResourceTypeSelected, vm.patientId)
+				.then(function(result) {
+					vm.resourceContainers = result;
+				})
+				.catch(function (error) {
+					vm.logger.error('Failed to retrieve resources for patient', error, 'Resource Types');
+				});
+		}
+
 	}
 
 	angular

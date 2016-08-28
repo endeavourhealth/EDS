@@ -82,6 +82,13 @@
             <version>${guava.version}</version>
         </dependency>
 
+        <!-- Apache CSV library -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>${commons-csv.version}</version>
+        </dependency>
+
         <!-- keycloak -->
         <dependency>
             <groupId>org.keycloak</groupId>

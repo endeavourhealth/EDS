@@ -8,6 +8,7 @@ import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.data.ehr.models.ResourceTypesUsed;
 import org.endeavourhealth.ui.json.JsonResourceContainer;
 import org.endeavourhealth.ui.json.JsonResourceType;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +30,59 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
     private static final ResourceRepository resourceRepository = new ResourceRepository();
     private static final PatientIdentifierRepository identifierRepository = new PatientIdentifierRepository();
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/resourceTypesForPatient")
+    public Response getResourceTypesUsed(@Context SecurityContext sc,
+                          @QueryParam("patientId") String patientIdStr) throws Exception {
+
+        super.setLogbackMarkers(sc);
+
+        UUID patientId = UUID.fromString(patientIdStr);
+
+        List<JsonResourceType> ret = new ArrayList<>();
+
+        ResourceHistory patientResource = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), patientId);
+        if (patientResource != null) {
+
+            UUID serviceId = patientResource.getServiceId();
+            UUID systemId = patientResource.getSystemId();
+
+            List<ResourceTypesUsed> resourcesTypesUsed = resourceRepository.getResourcesTypesUsed(serviceId, systemId);
+            for (ResourceTypesUsed r: resourcesTypesUsed) {
+                ret.add(new JsonResourceType(r.getResourceType()));
+            }
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/allResourceTypes")
+    public Response getAllResourceTypes(@Context SecurityContext sc) throws Exception {
+
+        super.setLogbackMarkers(sc);
+
+        List<JsonResourceType> ret = new ArrayList<>();
+
+        for (ResourceType r : ResourceType.class.getEnumConstants()) {
+            ret.add(new JsonResourceType(r.toString()));
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -83,8 +137,8 @@ public class ResourceEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/forPatient")
     public Response forPatient(@Context SecurityContext sc,
-                              @QueryParam("patientId") String patientIdStr,
-                              @QueryParam("resourceType") String resourceType) throws Exception {
+                               @QueryParam("resourceType") String resourceType,
+                               @QueryParam("patientId") String patientIdStr) throws Exception {
 
         super.setLogbackMarkers(sc);
 
@@ -113,30 +167,4 @@ public class ResourceEndpoint extends AbstractEndpoint {
     }
 
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/resourceTypesUsed")
-    public Response resourceTypesUsed(@Context SecurityContext sc,
-                                      @QueryParam("serviceId") String serviceIdStr,
-                                      @QueryParam("systemId") String systemIdStr) throws Exception {
-
-        super.setLogbackMarkers(sc);
-
-        UUID serviceId = UUID.fromString(serviceIdStr);
-        UUID systemId = UUID.fromString(systemIdStr);
-
-        List<JsonResourceType> ret = new ArrayList<>();
-
-        List<ResourceTypesUsed> resourceTypes = new ResourceRepository().getResourcesTypesUsed(serviceId, systemId);
-        for (ResourceTypesUsed resourceTypesUsed: resourceTypes) {
-            ret.add(new JsonResourceType(resourceTypesUsed.getResourceType()));
-        }
-
-        clearLogbackMarkers();
-
-        return Response
-                .ok()
-                .entity(ret)
-                .build();
-    }
 }

@@ -14,7 +14,7 @@
         </init-param>
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
-            <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.core.security.CustomRolesAllowedFeature</param-value>
+            <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.core.security.CustomRolesAllowedFeature,org.endeavourhealth.ui.framework.exceptions.BaseExceptionMapper</param-value>
         </init-param>
 
         <!-- enable directory listings -->
@@ -41,7 +41,7 @@
         </init-param>
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
-            <param-value>org.glassfish.jersey.jackson.JacksonFeature</param-value>
+            <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.ui.framework.exceptions.BaseExceptionMapper</param-value>
         </init-param>
 
         <load-on-startup>1</load-on-startup>

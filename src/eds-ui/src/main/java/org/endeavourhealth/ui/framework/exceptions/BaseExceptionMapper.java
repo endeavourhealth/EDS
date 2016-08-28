@@ -14,6 +14,11 @@ import javax.ws.rs.ext.Provider;
 public final class BaseExceptionMapper implements ExceptionMapper<Exception> {
     private static final Logger LOG = LoggerFactory.getLogger(BaseExceptionMapper.class);
 
+    public BaseExceptionMapper() {
+        LOG.debug("Exception mapper created");
+    }
+
+    @Override
     public Response toResponse(Exception exception) {
         Response.ResponseBuilder r = null;
 

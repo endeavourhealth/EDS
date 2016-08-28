@@ -65,6 +65,9 @@ module app.patientIdentity {
 			vm.patientIdentityService.getByPatientId(vm.patientId)
 				.then(function (data:PatientIdentity[]) {
 					vm.patientIdentities = data;
+					if (data.length == 0) {
+						vm.logger.error('No results found');
+					}
 				});
 		}
 
@@ -74,6 +77,9 @@ module app.patientIdentity {
 			vm.patientIdentityService.getByNhsNumber(vm.nhsNumber)
 				.then(function (data:PatientIdentity[]) {
 					vm.patientIdentities = data;
+					if (data.length == 0) {
+						vm.logger.error('No results found');
+					}
 				});
 		}
 
@@ -83,6 +89,9 @@ module app.patientIdentity {
 			vm.patientIdentityService.getByLocalIdentifier(vm.serviceId, vm.systemId, vm.localId)
 				.then(function (data:PatientIdentity[]) {
 					vm.patientIdentities = data;
+					if (data.length == 0) {
+						vm.logger.error('No results found');
+					}
 				});
 		}
 

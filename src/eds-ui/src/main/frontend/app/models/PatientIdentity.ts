@@ -9,7 +9,7 @@ module app.models {
 		nhsNumber: string;
 		forenames: string;
 		surname: string;
-		dateOfBirth: string;
+		dateOfBirth: Date;
 		postcode: string;
 		gender: string;
 		patientId: string;

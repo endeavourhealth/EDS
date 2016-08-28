@@ -2,14 +2,12 @@ package org.endeavourhealth.ui.framework;
 
 import org.endeavourhealth.core.engineConfiguration.EngineConfigurationSerializer;
 import org.endeavourhealth.ui.database.PersistenceManager;
-import org.endeavourhealth.ui.email.EmailProvider;
 import org.endeavourhealth.ui.framework.config.ConfigSerializer;
-import org.endeavourhealth.ui.framework.config.models.*;
-import org.endeavourhealth.ui.utility.MessagingQueueProvider;
+import org.endeavourhealth.ui.framework.config.models.Config;
+import org.endeavourhealth.ui.framework.config.models.WebServer;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import java.util.List;
 
 public final class Startup implements ServletContextListener {
 

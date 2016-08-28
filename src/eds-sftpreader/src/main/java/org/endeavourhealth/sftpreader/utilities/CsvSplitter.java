@@ -1,4 +1,4 @@
-package org.endeavourhealth.transform.common;
+package org.endeavourhealth.sftpreader.utilities;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;

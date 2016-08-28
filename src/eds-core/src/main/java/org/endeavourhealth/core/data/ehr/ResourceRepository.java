@@ -6,11 +6,16 @@ import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.ResourceHistoryAccessor;
 import org.endeavourhealth.core.data.ehr.models.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.UUID;
 
 public class ResourceRepository extends Repository {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ResourceRepository.class);
+
     public void save(ResourceEntry resourceEntry){
         save(resourceEntry, null, null);
     }

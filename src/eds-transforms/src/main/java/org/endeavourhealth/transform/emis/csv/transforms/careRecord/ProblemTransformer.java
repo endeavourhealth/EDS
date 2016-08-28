@@ -43,7 +43,6 @@ public class ProblemTransformer {
 
         String observationGuid = problemParser.getObservationGuid();
         String patientGuid = problemParser.getPatientGuid();
-        String organisationGuid = problemParser.getOrganisationGuid();
 
         EmisCsvHelper.setUniqueId(fhirProblem, patientGuid, observationGuid);
 

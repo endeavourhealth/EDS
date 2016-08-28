@@ -224,7 +224,7 @@ public class CsvProcessor {
 
             saved = countResourcesSaved.get(batchId).get();
             deleted = countResourcesDeleted.get(batchId).get();
-            LOG.info("Saved {} and deleted {} resources for patient {}", saved, deleted, edsPatientId);
+            //LOG.info("Saved {} and deleted {} resources for patient {}", saved, deleted, edsPatientId);
             totalSaved += saved;
             totalDeleted += deleted;
         }
@@ -320,7 +320,9 @@ public class CsvProcessor {
                 }
 
             } catch (Exception ex) {
-                throw new TransformException("Exception mapping or storing " + resource.getResourceType() + " " + resource.getId(), ex);
+                LOG.error("Error saving {} {} but continuing", resource.getResourceType(), resource.getId());
+                //TODO - restore exception throwing
+                //throw new TransformException("Exception mapping or storing " + resource.getResourceType() + " " + resource.getId(), ex);
             }
 
             return null;
