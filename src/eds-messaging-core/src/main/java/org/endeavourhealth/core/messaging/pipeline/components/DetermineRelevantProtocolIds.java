@@ -1,7 +1,6 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.DetermineRelevantProtocolIdsConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
@@ -28,7 +27,7 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
-		String serviceUuid = exchange.getHeader(HeaderKeys.SenderUuid);
+		String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
 
 		// Determine relevant publisher protocols
 		List<LibraryItem> protocols = getProtocolsForPublisherService(serviceUuid);

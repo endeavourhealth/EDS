@@ -110,14 +110,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link Pipeline }
-     * 
-     */
-    public Pipeline createPipeline() {
-        return new Pipeline();
-    }
-
-    /**
      * Create an instance of {@link PostMessageToLogConfig }
      * 
      */

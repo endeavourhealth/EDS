@@ -59,7 +59,7 @@ public class OrganisationRepository extends Repository {
 		return organisation.getId();
 	}
 
-	public Set<Organisation> getByUds(Set<UUID> ids) {
+	public Set<Organisation> getByIds(Set<UUID> ids) {
 		Set<Organisation> orgs = new HashSet<>();
 		for (UUID id: ids) {
 			Organisation org = getById(id);

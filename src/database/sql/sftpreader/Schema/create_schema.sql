@@ -180,8 +180,8 @@ create table sftpreader.batch
 	sequence_number integer null,
 	is_complete boolean not null default false,
 	complete_date timestamp null,
-	have_notified boolean not null default false,
-	notification_date timestamp null,
+	--have_notified boolean not null default false,
+	--notification_date timestamp null,
 
 	constraint sftpreader_batch_filesetid_pk primary key (batch_id),
 	constraint sftpreader_batch_instanceid_interfacetypeid_fk foreign key (instance_id, interface_type_id) references sftpreader.configuration (instance_id, interface_type_id),
@@ -191,10 +191,10 @@ create table sftpreader.batch
 	constraint sftpreader_batch_insertdate_completedate_ck check ((complete_date is null) or (insert_date <= complete_date)),
 	constraint sftpreader_batch_sequencenumber_ck check (sequence_number is null or (sequence_number > 0)),
 	constraint sftpreader_batch_instanceid_sequencenumber_uq unique (instance_id, sequence_number),
-	constraint sftpreader_batch_completedate_notificationdate_ck check ((complete_date is null or notification_date is null) or (complete_date <= notification_date)),
-	constraint sftpreader_batch_iscomplete_completedate_sequencenumber_ck check ((is_complete and complete_date is not null and sequence_number is not null) or ((not is_complete) and complete_date is null and sequence_number is null)),
-	constraint sftpreader_batch_havenotified_notificationdate_ck check ((have_notified and notification_date is not null) or ((not have_notified) and notification_date is null)),
-	constraint sftpreader_batch_iscomplete_havenotified_ck check (is_complete or (not have_notified))
+	--constraint sftpreader_batch_completedate_notificationdate_ck check ((complete_date is null or notification_date is null) or (complete_date <= notification_date)),
+	constraint sftpreader_batch_iscomplete_completedate_sequencenumber_ck check ((is_complete and complete_date is not null and sequence_number is not null) or ((not is_complete) and complete_date is null and sequence_number is null))
+	--constraint sftpreader_batch_havenotified_notificationdate_ck check ((have_notified and notification_date is not null) or ((not have_notified) and notification_date is null)),
+	--constraint sftpreader_batch_iscomplete_havenotified_ck check (is_complete or (not have_notified))
 );
 
 create table sftpreader.batch_file
@@ -235,6 +235,22 @@ create table sftpreader.batch_file
 	constraint sftpreader_batchfile_downloaddate_decryptdate_ck check ((download_date is null or decrypt_date is null) or (download_date <= decrypt_date))
 );
 
+create table sftpreader.batch_split
+(
+	batch_split_id serial not null,
+	batch_id serial not null,
+	instance_id varchar(100) not null,
+	local_relative_path varchar(1000) not null,
+	organisation_id varchar(100) not null,
+	have_notified boolean not null default false,
+	notification_date timestamp null,
+
+	constraint sftpreader_batch_split_batchsplitid_pk primary key (batch_split_id),
+	constraint sftpreader_batch_split_instanceid_interfacetypeid_fk foreign key (batch_id, instance_id) references sftpreader.batch (batch_id, instance_id),
+	constraint sftpreader_batch_split_instanceid_batchid_uq unique (instance_id, batch_id, batch_split_id)
+);
+
+
 create table sftpreader.unknown_file
 (
 	unknown_file_id serial not null, 
@@ -254,6 +270,7 @@ create table sftpreader.notification_message
 (
 	notification_message_id serial not null,
 	batch_id integer not null,
+	batch_split_id integer not null,
 	instance_id varchar(100) not null,
 	message_uuid uuid not null, 
 	timestamp timestamp not null,
@@ -263,7 +280,7 @@ create table sftpreader.notification_message
 	error_text varchar(1000) null,
 
 	constraint sftpreader_notificationmessage_notificationmessageid_pk primary key (notification_message_id),
-	constraint sftpreader_notificationmessage_batchid_instanceid_fk foreign key (batch_id, instance_id) references sftpreader.batch (batch_id, instance_id),
+	constraint sftpreader_notificationmessage_batchid_instanceid_fk foreign key (batch_id, batch_split_id, instance_id) references sftpreader.batch_split (batch_id, batch_split_id, instance_id),
 	constraint sftpreader_notificationmessage_messageuuid_uq unique (message_uuid),
 	constraint sftpreader_notificationmessage_outbound_ck check (char_length(trim(outbound)) > 0),
 	constraint sftpreader_notificationmessage_inbound_wassuccess_ck check (inbound is not null or (not was_success)),

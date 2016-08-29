@@ -4,6 +4,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,6 +18,8 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class CsvSplitter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CsvSplitter.class);
 
     private File srcFile = null;
     private File dstDir = null;
@@ -36,7 +40,7 @@ public class CsvSplitter {
 
         //adding .withHeader() to the csvFormat forces it to treat the first row as the column headers,
         //and read them in, instead of ignoring them
-        CSVParser csvParser = CSVParser.parse(srcFile, Charset.defaultCharset(), csvFormat.withHeader());
+        CSVParser csvParser = CSVParser.parse(srcFile, Charset.defaultCharset(), csvFormat);
 
         try
         {
@@ -148,7 +152,7 @@ public class CsvSplitter {
             if (f.exists()) {
                 throw new FileAlreadyExistsException(f.getAbsolutePath());
             }
-
+            //LOG.debug("Creating " + f);
             FileWriter fileWriter = new FileWriter(f);
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
             csvPrinter = new CSVPrinter(bufferedWriter, csvFormat);

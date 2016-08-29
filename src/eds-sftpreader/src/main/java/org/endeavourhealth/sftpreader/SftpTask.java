@@ -170,8 +170,12 @@ public class SftpTask extends TimerTask
                 .setHostPublicKey(configurationSftp.getHostPublicKey());
     }
 
-    private static void closeConnection(SftpConnection sftpConnection)
-    {
+    private static void closeConnection(SftpConnection sftpConnection) {
+
+        //only attempt to close it, if it was opened
+        if (sftpConnection == null) {
+            return;
+        }
         //LOG.trace("Closing SFTP connection");
 
         sftpConnection.close();
@@ -276,8 +280,9 @@ public class SftpTask extends TimerTask
             Batch lastCompleteBatch = db.getLastCompleteBatch(dbConfiguration.getInstanceId());
 
             validateBatches(incompleteBatches, lastCompleteBatch);
-
+            splitBatches(incompleteBatches);
             sequenceBatches(incompleteBatches, lastCompleteBatch);
+
         }
         catch (Exception e)
         {
@@ -349,6 +354,22 @@ public class SftpTask extends TimerTask
         LOG.trace(" Completed batch sequencing");
     }
 
+    private void splitBatches(List<Batch> batches) throws Exception {
+        LOG.trace("Splitting batches");
+
+        for (Batch batch: batches) {
+
+            SftpBatchSplitter sftpBatchSplitter = ImplementationActivator.createSftpBatchSplitter();
+            List<BatchSplit> splitBatches = sftpBatchSplitter.splitBatch(batch, db, dbConfiguration);
+
+            for (BatchSplit splitBatch: splitBatches) {
+                db.addBatchSplit(splitBatch, dbConfiguration.getInstanceId());
+            }
+        }
+
+        LOG.trace("Completed splitting");
+    }
+
     private static int getNextSequenceNumber(Batch lastCompleteBatch)
     {
         if (lastCompleteBatch == null)
@@ -357,62 +378,79 @@ public class SftpTask extends TimerTask
         return lastCompleteBatch.getSequenceNumber() + 1;
     }
 
-    private void notifyEds() throws PgStoredProcException, SftpReaderException
-    {
-        try
+    private void notifyEds() throws PgStoredProcException, SftpReaderException {
+
+        List<BatchSplit> unnotifiedBatchSplits = db.getUnnotifiedBatchSplits(dbConfiguration.getInstanceId());
+        LOG.debug("There are {} complete split batches for notification", unnotifiedBatchSplits.size());
+
+        if (dbConfiguration.getDbConfigurationEds().isUseKeycloak())
         {
-            LOG.trace("Getting complete batches for notification");
+            LOG.trace("Initialising keycloak at: {}", dbConfiguration.getDbConfigurationEds().getKeycloakTokenUri());
 
-            List<Batch> unnotifiedBatches = db.getUnnotifiedBatches(dbConfiguration.getInstanceId());
+            KeycloakClient.init(dbConfiguration.getDbConfigurationEds().getKeycloakTokenUri(),
+                    dbConfiguration.getDbConfigurationEds().getKeycloakRealm(),
+                    dbConfiguration.getDbConfigurationEds().getKeycloakUsername(),
+                    dbConfiguration.getDbConfigurationEds().getKeycloakPassword(),
+                    dbConfiguration.getDbConfigurationEds().getKeycloakClientId());
+        }
+        else
+        {
+            LOG.trace("Keycloak is not enabled");
+        }
 
-            LOG.debug("There are {} complete batches for notification", Integer.toString(unnotifiedBatches.size()));
-
-            unnotifiedBatches = unnotifiedBatches
-                    .stream()
-                    .sorted(Comparator.comparing(t -> t.getSequenceNumber()))
-                    .collect(Collectors.toList());
-
-            if (dbConfiguration.getDbConfigurationEds().isUseKeycloak())
-            {
-                LOG.trace("Initialising keycloak at: {}", dbConfiguration.getDbConfigurationEds().getKeycloakTokenUri());
-
-                KeycloakClient.init(dbConfiguration.getDbConfigurationEds().getKeycloakTokenUri(),
-                        dbConfiguration.getDbConfigurationEds().getKeycloakRealm(),
-                        dbConfiguration.getDbConfigurationEds().getKeycloakUsername(),
-                        dbConfiguration.getDbConfigurationEds().getKeycloakPassword(),
-                        dbConfiguration.getDbConfigurationEds().getKeycloakClientId());
+        //hash the split batches by organisation ID
+        HashMap<String, List<BatchSplit>> hmByOrg = new HashMap<>();
+        for (BatchSplit batchSplit: unnotifiedBatchSplits) {
+            List<BatchSplit> list = hmByOrg.get(batchSplit.getOrganisationId());
+            if (list == null) {
+                list = new ArrayList<>();
+                hmByOrg.put(batchSplit.getOrganisationId(), list);
             }
-            else
-            {
-                LOG.trace("Keycloak is not enabled");
-            }
+            list.add(batchSplit);
+        }
 
-            for (Batch unnotifiedBatch : unnotifiedBatches)
+        //then attempt to notify EDS for each organisation
+        for (String organisationId: hmByOrg.keySet()) {
+            List<BatchSplit> batchSplits = hmByOrg.get(organisationId);
+
+            try
             {
-                LOG.trace("Notifying EDS for batch: {}", unnotifiedBatch.getBatchIdentifier());
-                notify(unnotifiedBatch);
+                //sort by sequence ID
+                batchSplits = batchSplits
+                        .stream()
+                        .sorted(Comparator.comparing(t -> t.getBatch().getSequenceNumber()))
+                        .collect(Collectors.toList());
+
+
+                for (BatchSplit batchSplit: batchSplits) {
+
+                    LOG.trace("Notifying EDS for batch split: {}", batchSplit.getBatchSplitId());
+                    notify(batchSplit);
+                }
+            }
+            catch (Exception e) {
+                LOG.error("Error occurred notifying EDS for batch split", e);
             }
         }
-        catch (Exception e)
-        {
-            LOG.error("Error occurred notifying EDS", e);
-        }
+
     }
 
-    private void notify(Batch unnotifiedBatch) throws SftpReaderException, PgStoredProcException, IOException
+
+    private void notify(BatchSplit unnotifiedBatchSplit) throws SftpReaderException, PgStoredProcException, IOException
     {
         SftpNotificationCreator sftpNotificationCreator = ImplementationActivator.createSftpNotificationCreator();
 
-        String messagePayload = sftpNotificationCreator.createNotificationMessage(dbConfiguration, unnotifiedBatch);
+        String messagePayload = sftpNotificationCreator.createNotificationMessage(dbConfiguration, unnotifiedBatchSplit);
         EdsEnvelopeBuilder edsEnvelopeBuilder = new EdsEnvelopeBuilder(dbConfiguration.getDbConfigurationEds());
         UUID messageId = UUID.randomUUID();
-        String outboundMessage = edsEnvelopeBuilder.buildEnvelope(messageId, messagePayload);
+        String organisationId = unnotifiedBatchSplit.getOrganisationId();
+        String outboundMessage = edsEnvelopeBuilder.buildEnvelope(messageId, messagePayload, organisationId);
 
-        try
-        {
+        try {
             String inboundMessage = notifyEds(outboundMessage);
 
-            db.addBatchNotification(unnotifiedBatch.getBatchId(),
+            db.addBatchNotification(unnotifiedBatchSplit.getBatchId(),
+                    unnotifiedBatchSplit.getBatchSplitId(),
                     dbConfiguration.getInstanceId(),
                     messageId,
                     outboundMessage,
@@ -422,11 +460,12 @@ public class SftpTask extends TimerTask
         }
         catch (Exception e)
         {
-            LOG.error("Error notifying EDS for batch " + unnotifiedBatch.getBatchIdentifier(), e);
+            LOG.error("Error notifying EDS for batch split " + unnotifiedBatchSplit.getBatchSplitId(), e);
 
             String inboundMessage = e.getMessage();
 
-            db.addBatchNotification(unnotifiedBatch.getBatchId(),
+            db.addBatchNotification(unnotifiedBatchSplit.getBatchId(),
+                    unnotifiedBatchSplit.getBatchSplitId(),
                     dbConfiguration.getInstanceId(),
                     messageId,
                     outboundMessage,
@@ -434,7 +473,7 @@ public class SftpTask extends TimerTask
                     false,
                     e.getClass().getName() + " | " + e.getMessage());
 
-            throw new SftpReaderException("Error notifying EDS for batch " + unnotifiedBatch.getBatchIdentifier(), e);
+            throw new SftpReaderException("Error notifying EDS for batch split " + unnotifiedBatchSplit.getBatchSplitId(), e);
         }
     }
 
@@ -446,13 +485,6 @@ public class SftpTask extends TimerTask
 
             if (dbConfiguration.getDbConfigurationEds().isUseKeycloak())
                 httpPost.addHeader(KeycloakClient.instance().getAuthorizationHeader());
-
-            /*if (LOG.isTraceEnabled()) {
-                LOG.trace(dbConfiguration.getDbConfigurationEds().getEdsUrl());
-                LOG.trace("Authorization : Bearer " + KeycloakClient.instance().getToken().getToken());
-                LOG.trace("Content-Type : text/xml");
-                LOG.trace(outboundMessage);
-            }*/
 
             //the bundle is being sent as XML, so we need to declare this
             httpPost.addHeader("Content-Type", "text/xml");
@@ -488,4 +520,5 @@ public class SftpTask extends TimerTask
             }
         }
     }
+
 }

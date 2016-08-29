@@ -1,9 +1,6 @@
 package org.endeavourhealth.sftpreader.implementations;
 
-import org.endeavourhealth.sftpreader.implementations.emis.EmisSftpBatchSequencer;
-import org.endeavourhealth.sftpreader.implementations.emis.EmisSftpBatchValidator;
-import org.endeavourhealth.sftpreader.implementations.emis.EmisSftpFilenameParser;
-import org.endeavourhealth.sftpreader.implementations.emis.EmisSftpNotificationCreator;
+import org.endeavourhealth.sftpreader.implementations.emis.*;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 
 public class ImplementationActivator
@@ -25,5 +22,11 @@ public class ImplementationActivator
         return new EmisSftpBatchSequencer();
     }
 
-    public static SftpNotificationCreator createSftpNotificationCreator() { return new EmisSftpNotificationCreator(); }
+    public static SftpNotificationCreator createSftpNotificationCreator() {
+        return new EmisSftpNotificationCreator();
+    }
+
+    public static SftpBatchSplitter createSftpBatchSplitter() {
+        return new EmisSftpBatchSplitter();
+    }
 }

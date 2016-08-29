@@ -1,19 +1,14 @@
 package org.endeavourhealth.sftpreader.implementations.emis;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.sftpreader.implementations.SftpFilenameParser;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.db.DbConfigurationKvp;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpFilenameParseException;
-import org.endeavourhealth.sftpreader.utilities.StreamExtension;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class EmisSftpFilenameParser extends SftpFilenameParser
 {
@@ -24,6 +19,11 @@ public class EmisSftpFilenameParser extends SftpFilenameParser
     private String tableName;
     private LocalDateTime extractDateTime;
     private UUID sharingAgreementUuid;
+
+    public EmisSftpFilenameParser(String filename, DbConfiguration dbConfiguration, String fileExtension)
+    {
+        super(filename, dbConfiguration, fileExtension);
+    }
 
     public EmisSftpFilenameParser(String filename, DbConfiguration dbConfiguration)
     {

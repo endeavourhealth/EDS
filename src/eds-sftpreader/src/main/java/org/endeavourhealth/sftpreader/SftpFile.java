@@ -27,7 +27,7 @@ public class SftpFile
         this.sftpRemoteFile = sftpRemoteFile;
         this.sftpFilenameParser = sftpFilenameParser;
         this.localRootPath = localRootPath;
-        this.pgpFileExtensionFilter = sftpFilenameParser.getPgpFileExtensionFilter();
+        this.pgpFileExtensionFilter = sftpFilenameParser.getFileExtension();
     }
 
     public boolean isFilenameValid()

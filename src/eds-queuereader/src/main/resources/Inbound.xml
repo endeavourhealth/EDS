@@ -7,7 +7,9 @@
     <Nodes>localhost:5672</Nodes>
     <Queue>EdsInbound-A-M</Queue>
     <Pipeline>
-        <MessageTransformInbound/>
+        <MessageTransformInbound>
+            <SharedStoragePath>C:\Users\drewl\Desktop\EMIS CSV Sample\SFTP</SharedStoragePath>
+        </MessageTransformInbound>
         <PostMessageToExchange>
             <Credentials>
                 <Username>guest</Username>

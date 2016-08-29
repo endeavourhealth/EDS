@@ -28,6 +28,7 @@ public abstract class EmisCsvTransformer {
     public static final String VERSION_TEST_PACK = "TestPack";
 
     public static List<UUID> transform(String version,
+                                       String sharedStoragePath,
                                        String[] files,
                                        UUID exchangeId,
                                        UUID serviceId,
@@ -37,7 +38,7 @@ public abstract class EmisCsvTransformer {
 
         //the files should all be in a directory structure of org folder -> processing ID folder -> CSV files
         LOG.trace("Validating all files are in same directory");
-        File orgDirectory = validateAndFindCommonDirectory(files);
+        File orgDirectory = validateAndFindCommonDirectory(sharedStoragePath, files);
 
         //under the org directory should be a directory for each processing ID
         for (File processingIdDirectory: orgDirectory.listFiles()) {
@@ -226,11 +227,11 @@ public abstract class EmisCsvTransformer {
     /**
      * validates that all the files in the array are in the expected directory structure of org folder -> processing ID folder
      */
-    private static File validateAndFindCommonDirectory(String[] files) throws Exception {
+    private static File validateAndFindCommonDirectory(String sharedStoragePath, String[] files) throws Exception {
         String organisationDir = null;
 
         for (String file: files) {
-            File f = new File(file);
+            File f = new File(sharedStoragePath, file);
             if (!f.exists()) {
                 throw new FileNotFoundException("" + f + " doesn't exist");
             }

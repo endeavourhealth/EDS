@@ -7,7 +7,7 @@ import org.endeavourhealth.core.data.admin.accessors.ServiceAccessor;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
 
-import java.util.List;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -92,9 +92,14 @@ public class ServiceRepository extends Repository {
 		return accessor.search(searchData, rangeEnd);
 	}
 
-	public Iterable<Service> getByLocalIdentifier(String localIdentifier) {
+	public Service getByLocalIdentifier(String localIdentifier) {
 		ServiceAccessor accessor = getMappingManager().createAccessor(ServiceAccessor.class);
-		return accessor.getByLocalIdentifier(localIdentifier);
+		Iterator<Service> iterator = accessor.getByLocalIdentifier(localIdentifier).iterator();
+		if (iterator.hasNext()) {
+			return iterator.next();
+		} else {
+			return null;
+		}
 	}
 }
 

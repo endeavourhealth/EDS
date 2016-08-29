@@ -1,7 +1,7 @@
 package org.endeavourhealth.sftpreader;
 
-import org.endeavourhealth.sftpreader.utilities.StreamExtension;
 import org.endeavourhealth.sftpreader.model.db.*;
+import org.endeavourhealth.sftpreader.utilities.StreamExtension;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgResultSet;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProc;
 import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
@@ -147,7 +147,7 @@ public class DataLayer
                 .setName("sftpreader.get_incomplete_batches")
                 .addParameter("_instance_id", instanceId);
 
-        return populateBatch(pgStoredProc);
+        return populateBatches(pgStoredProc);
     }
 
     public Batch getLastCompleteBatch(String instanceId) throws PgStoredProcException
@@ -156,7 +156,7 @@ public class DataLayer
                 .setName("sftpreader.get_last_complete_batch")
                 .addParameter("_instance_id", instanceId);
 
-        List<Batch> batches = populateBatch(pgStoredProc);
+        List<Batch> batches = populateBatches(pgStoredProc);
 
         if (batches.size() > 1)
             throw new PgStoredProcException("More than one last complete batch returned");
@@ -167,14 +167,45 @@ public class DataLayer
         return batches.get(0);
     }
 
-    public List<Batch> getUnnotifiedBatches(String instanceId) throws PgStoredProcException
+    public List<BatchSplit> getUnnotifiedBatchSplits(String instanceId) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.get_unnotified_batch_splits")
+                .addParameter("_instance_id", instanceId);
+
+        return populateBatchSplits(pgStoredProc);
+    }
+
+    private static List<BatchSplit> populateBatchSplits(PgStoredProc pgStoredProc) throws PgStoredProcException
+    {
+        List<BatchSplit> batchSplits = pgStoredProc.executeMultiQuery(resultSet ->
+                new BatchSplit()
+                    .setBatchSplitId(resultSet.getInt("batch_split_id"))
+                    .setBatchId(resultSet.getInt("batch_id"))
+                    .setLocalRelativePath(resultSet.getString("local_relative_path"))
+                    .setOrganisationId(resultSet.getString("organisation_id")));
+
+        List<Batch> batches = populateBatches(pgStoredProc);
+
+        for (Batch batch: batches) {
+            for (BatchSplit batchSplit: batchSplits) {
+                if (batchSplit.getBatchId() == batch.getBatchId()) {
+                    batchSplit.setBatch(batch);
+                }
+            }
+        }
+
+        return batchSplits;
+    }
+
+    /*public List<Batch> getUnnotifiedBatches(String instanceId) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.get_unnotified_batches")
                 .addParameter("_instance_id", instanceId);
 
         return populateBatch(pgStoredProc);
-    }
+    }*/
 
     public List<UnknownFile> getUnknownFiles(String instanceId) throws PgStoredProcException
     {
@@ -190,7 +221,7 @@ public class DataLayer
                 .setRemoteSizeBytes(resultSet.getLong("remote_size_bytes")));
     }
 
-    private static List<Batch> populateBatch(PgStoredProc pgStoredProc) throws PgStoredProcException
+    private static List<Batch> populateBatches(PgStoredProc pgStoredProc) throws PgStoredProcException
     {
         List<Batch> batches = pgStoredProc.executeMultiQuery(resultSet ->
                 new Batch()
@@ -199,7 +230,7 @@ public class DataLayer
                         .setLocalRelativePath(resultSet.getString("local_relative_path"))
                         .setSequenceNumber(PgResultSet.getInteger(resultSet, "sequence_number")));
 
-        List<BatchFile> batchFiles = pgStoredProc.nextMultiQuery(resultSet ->
+        List<BatchFile> batchFiles = pgStoredProc.executeMultiQuery(resultSet ->
                 new BatchFile()
                         .setBatchId(resultSet.getInt("batch_id"))
                         .setBatchFileId(resultSet.getInt("batch_file_id"))
@@ -233,17 +264,45 @@ public class DataLayer
         pgStoredProc.execute();
     }
 
-    public void addBatchNotification(int batchId, String instanceId, UUID messageId, String outboundMessage, String inboundMessage, boolean wasSuccess, String errorText) throws PgStoredProcException
+    public void addBatchNotification(int batchId, int batchSplitId, String instanceId, UUID messageId, String outboundMessage, String inboundMessage, boolean wasSuccess, String errorText) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("sftpreader.add_batch_notification")
                 .addParameter("_batch_id", batchId)
+                .addParameter("_batch_split_id", batchSplitId)
                 .addParameter("_instance_id", instanceId)
                 .addParameter("_message_uuid", messageId)
                 .addParameter("_outbound_message", outboundMessage)
                 .addParameter("_inbound_message", inboundMessage)
                 .addParameter("_was_success", wasSuccess)
                 .addParameter("_error_text", errorText);
+
+        pgStoredProc.execute();
+    }
+
+    public void addBatchSplit(BatchSplit batchSplit, String instanceId) throws PgStoredProcException {
+
+        int batchId = batchSplit.getBatchId();
+        String localRelativePath = batchSplit.getLocalRelativePath();
+        String organisationId = batchSplit.getOrganisationId();
+
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.add_batch_split")
+                .addParameter("_batch_id", batchId)
+                .addParameter("_instance_id", instanceId)
+                .addParameter("_local_relative_path", localRelativePath)
+                .addParameter("_organisation_id", organisationId);
+
+        pgStoredProc.execute();
+    }
+
+    public void addConfigurationKvp(DbConfigurationKvp newKvp, String instanceId) throws PgStoredProcException {
+
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.add_configuration_kvp")
+                .addParameter("_instance_id", instanceId)
+                .addParameter("_key", newKvp.getKey())
+                .addParameter("_value", newKvp.getValue());
 
         pgStoredProc.execute();
     }

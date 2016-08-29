@@ -1,7 +1,5 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.ValidateMessageTypeConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -17,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 
 public class ValidateMessageType extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(ValidateMessageType.class);
@@ -30,7 +27,7 @@ public class ValidateMessageType extends PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
-		String serviceUuid = exchange.getHeader(HeaderKeys.SenderUuid);
+		String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
 		String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
 		// String messageType = exchange.getHeader(HeaderKeys.MessageEvent);
 		String messageFormat = exchange.getHeader(HeaderKeys.MessageFormat);

@@ -9,7 +9,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class PgStoredProc
 {
@@ -121,14 +124,15 @@ public class PgStoredProc
     {
         try
         {
-            this.multiResultSet = null;
-            this.multiConnection = this.dataSource.getConnection();
-            this.multiConnection.setAutoCommit(false);
-            this.multiStatement = this.multiConnection.createStatement();
-            this.multiResultSet = this.multiStatement.executeQuery(getFormattedQuery());
+            if (multiResultSet == null) {
+                this.multiConnection = this.dataSource.getConnection();
+                this.multiConnection.setAutoCommit(false);
+                this.multiStatement = this.multiConnection.createStatement();
+                this.multiResultSet = this.multiStatement.executeQuery(getFormattedQuery());
 
-            if (!this.multiResultSet.next())
-                throw new PgStoredProcException("No resultsets found");
+                if (!this.multiResultSet.next())
+                    throw new PgStoredProcException("No resultsets found");
+            }
 
             return populatePojoFromMultiResultSet(firstRowMapper);
         }
@@ -140,7 +144,7 @@ public class PgStoredProc
         }
     }
 
-    public <T extends Object> List<T> nextMultiQuery(IResultSetPopulator<T> nextRowMapper) throws PgStoredProcException
+    /*public <T extends Object> List<T> nextMultiQuery(IResultSetPopulator<T> nextRowMapper) throws PgStoredProcException
     {
         try
         {
@@ -152,7 +156,7 @@ public class PgStoredProc
 
             throw new PgStoredProcException("getNextMultiQuery error, see inner exception", e);
         }
-    }
+    }*/
 
     private static <T extends Object> List<T> populatePojo(ResultSet resultSet, IResultSetPopulator<T> rowMapper) throws SQLException
     {

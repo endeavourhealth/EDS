@@ -74,14 +74,13 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		try {
 
-			UUID serviceId = UUID.fromString(exchange.getHeader(HeaderKeys.SenderUuid));
+			UUID serviceId = UUID.fromString(exchange.getHeader(HeaderKeys.SenderServiceUuid));
 			String software = exchange.getHeader(HeaderKeys.SourceSystem);
 			String messageFormat = exchange.getHeader(HeaderKeys.MessageFormat);
 			String messageVersion = exchange.getHeader(HeaderKeys.SystemVersion);
 
 			//find the organisation UUIDs covered by the service
 			Service service = serviceRepository.getById(serviceId);
-			//Set<UUID> orgIds = service.getOrganisations().keySet();
 
 			//find the system ID by using values from the message header
 			UUID systemId = findSystemId(service, messageFormat, messageVersion, exchange.getExchangeId());
@@ -136,8 +135,9 @@ public class MessageTransformInbound extends PipelineComponent {
 		//for EMIS CSV, the exchange body will be a list of files received
 		String decodedFileString = exchange.getBody();
 		String[] decodedFiles = decodedFileString.split("\r\n");
+		String sharedStoragePath = config.getSharedStoragePath();
 
-		return EmisCsvTransformer.transform(version, decodedFiles, exchange.getExchangeId(), serviceId, systemId);
+		return EmisCsvTransformer.transform(version, sharedStoragePath, decodedFiles, exchange.getExchangeId(), serviceId, systemId);
 	}
 
 	private List<UUID> processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version, String software) throws Exception {

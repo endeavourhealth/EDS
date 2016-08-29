@@ -9,7 +9,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class EdsEnvelopeBuilder
 {
@@ -25,7 +28,7 @@ public class EdsEnvelopeBuilder
         this.dbConfigurationEds = dbConfigurationEds;
     }
 
-    public String buildEnvelope(UUID messageId, String messagePayload) throws IOException
+    public String buildEnvelope(UUID messageId, String messagePayload, String organisationId) throws IOException
     {
         Validate.notBlank(messagePayload, "messagePayload is blank");
         Validate.notNull(dbConfigurationEds, "dbConfigurationEds is null");
@@ -34,6 +37,8 @@ public class EdsEnvelopeBuilder
         Validate.notBlank(dbConfigurationEds.getSoftwareName(), "dbConfigurationEds.softwareName is blank");
         Validate.notBlank(dbConfigurationEds.getSoftwareVersion(), "dbConfigurationEds.softwareVersion is blank");
 
+        String sourceName = dbConfigurationEds.getEdsServiceIdentifier() + "//" + organisationId;
+
         String edsEnvelope = Resources.toString(Resources.getResource(EDS_ENVELOPE_TEMPLATE_FILENAME), Charsets.UTF_8);
 
         Map<String, String> test = new HashMap<String, String>()
@@ -41,7 +46,7 @@ public class EdsEnvelopeBuilder
             {
                 put("{{message-id}}", messageId.toString());
                 put("{{timestamp}}", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-                put("{{source-name}}", dbConfigurationEds.getEdsServiceIdentifier());
+                put("{{source-name}}", sourceName);
                 put("{{source-software}}", dbConfigurationEds.getSoftwareName());
                 put("{{source-version}}", dbConfigurationEds.getSoftwareVersion());
                 put("{{source-endpoint}}", "");

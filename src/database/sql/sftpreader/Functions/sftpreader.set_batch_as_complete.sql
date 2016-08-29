@@ -14,5 +14,5 @@ as $$
 		complete_date = date_trunc('second', now()::timestamp)
 	where batch_id = _batch_id
 	and is_complete = false;
-
+	
 $$ language sql;
