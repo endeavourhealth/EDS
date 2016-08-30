@@ -462,7 +462,7 @@ public class SftpTask extends TimerTask
         }
         catch (Exception e)
         {
-            LOG.error("Error notifying EDS for batch split " + unnotifiedBatchSplit.getBatchSplitId(), e);
+            //LOG.error("Error notifying EDS for batch split " + unnotifiedBatchSplit.getBatchSplitId(), e);
 
             String inboundMessage = e.getMessage();
 
@@ -514,7 +514,7 @@ public class SftpTask extends TimerTask
                 }
             }
 
-            String responseString = String.join("/n/", lines);
+            String responseString = String.join("/n", lines);
             if (statusCode == HttpStatus.SC_OK) {
                 return responseString;
             } else {

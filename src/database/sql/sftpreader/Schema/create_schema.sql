@@ -274,10 +274,10 @@ create table sftpreader.notification_message
 	instance_id varchar(100) not null,
 	message_uuid uuid not null, 
 	timestamp timestamp not null,
-	outbound varchar(20000) not null,
-	inbound varchar(20000) null,
+	outbound varchar not null,
+	inbound varchar null,
 	was_success boolean not null,
-	error_text varchar(1000) null,
+	error_text varchar null,
 
 	constraint sftpreader_notificationmessage_notificationmessageid_pk primary key (notification_message_id),
 	constraint sftpreader_notificationmessage_batchid_instanceid_fk foreign key (batch_id, batch_split_id, instance_id) references sftpreader.batch_split (batch_id, batch_split_id, instance_id),
