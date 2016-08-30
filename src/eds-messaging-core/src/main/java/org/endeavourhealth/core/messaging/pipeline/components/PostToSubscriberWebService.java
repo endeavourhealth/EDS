@@ -1,27 +1,17 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.PostToSubscriberWebServiceConfig;
-import org.endeavourhealth.core.data.admin.ServiceRepository;
-import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
+import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
+import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class PostToSubscriberWebService extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(PostToSubscriberWebService.class);
@@ -34,43 +24,26 @@ public class PostToSubscriberWebService extends PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
-		String technicalInterfaceId = exchange.getHeader(HeaderKeys.TransformTo);
-		String protocols = exchange.getHeader(HeaderKeys.Protocols);
-
-		LibraryItem protocol;
 		try {
-			protocol = ObjectMapperPool.getInstance().readValue(protocols, LibraryItem.class);
+			TransformBatch transformBatch = ObjectMapperPool.getInstance().readValue(exchange.getHeader(HeaderKeys.TransformBatch), TransformBatch.class);
+			SubscriberBatch subscriberBatch = ObjectMapperPool.getInstance().readValue(exchange.getHeader(HeaderKeys.SubscriberBatch), SubscriberBatch.class);
+			// Load transformed message from DB
+			exchange.setBody(
+					String.format(
+							"TRANSFORMED OUTPUT\nBatchId : %s\nProtocolId : %s\nFormat : %s\nVersion : %s\nEndpoints : %s",
+							transformBatch.getBatchId().toString(),
+							transformBatch.getProtocolId().toString(),
+							subscriberBatch.getTechnicalInterface().getMessageFormat(),
+							subscriberBatch.getTechnicalInterface().getMessageFormatVersion(),
+							String.join(",", subscriberBatch.getEndpoints())
+					)
+			);
+			// Set list of destinations
+			exchange.setHeader(HeaderKeys.DestinationAddress, String.join(",", subscriberBatch.getEndpoints()));
 		} catch (IOException e) {
-			LOG.error("Unable to deserialize protocol");
-			throw new PipelineException(e.getMessage(), e);
+			LOG.error("Error deserializing subscriber batch JSON");
+			throw new PipelineException("Error deserializing subscriber batch JSON", e);
 		}
-
-		// Find subscriber service contracts that require this technical interface
-		List<ServiceContract> subscriberContracts = protocol.getProtocol().getServiceContract().stream()
-				.filter(sc -> ServiceContractType.SUBSCRIBER.equals(sc.getType())
-						&& technicalInterfaceId.equals(sc.getTechnicalInterface().getUuid()))
-				.collect(Collectors.toList());
-
-		// Find the relevant endpoints for those subscribers/technical interface
-		List<String> endpoints = new ArrayList<>();
-		try {
-			ServiceRepository serviceRepository = new ServiceRepository();
-			for (ServiceContract contract : subscriberContracts) {
-				Service service = serviceRepository.getById(UUID.fromString(contract.getService().getUuid()));
-				List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
-				String endpoint = serviceEndpoints.stream()
-						.filter(ep -> ep.getTechnicalInterfaceUuid().toString().equals(contract.getTechnicalInterface().getUuid()))
-						.map(JsonServiceInterfaceEndpoint::getEndpoint)
-						.findFirst()
-						.get();
-				endpoints.add(endpoint);
-			}
-		} catch (IOException e) {
-			throw new PipelineException(e.getMessage(), e);
-		}
-
-		// Determine which protocol subscribers want this transform format
-		exchange.setHeader(HeaderKeys.DestinationAddress, String.join(",", endpoints));
-
+		LOG.trace("Message subscribers identified");
 	}
 }

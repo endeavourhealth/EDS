@@ -70,7 +70,7 @@ public class MessageTransformInbound extends PipelineComponent {
 	}
 
 	@Override
-	public void process(Exchange exchange) {
+	public void process(Exchange exchange) throws PipelineException {
 
 		try {
 
@@ -112,7 +112,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		} catch (Exception e) {
 			exchange.setException(e);
 			LOG.error("Error", e);
-			// throw new PipelineException("Error performing inbound transform", e);
+			throw new PipelineException("Error performing inbound transform", e);
 		}
 	}
 

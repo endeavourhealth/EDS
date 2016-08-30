@@ -26,6 +26,7 @@ public abstract class HeaderKeys {
 
 	// Pipeline
 	public static final String DestinationAddress = "DestinationAddress";
-	public static final String TransformTo = "TransformTo";
+	public static final String TransformBatch = "TransformBatch";
 	public static final String Protocols = "Protocols";
+	public static final String SubscriberBatch = "SubscriberBatch";
 }

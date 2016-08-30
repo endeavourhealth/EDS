@@ -16,7 +16,7 @@
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsTransform</Exchange>
             <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
-            <MulticastHeader>Protocols</MulticastHeader>
+            <MulticastHeader>TransformBatch</MulticastHeader>
         </PostMessageToExchange>
     </Pipeline>
 </QueueReaderConfiguration>

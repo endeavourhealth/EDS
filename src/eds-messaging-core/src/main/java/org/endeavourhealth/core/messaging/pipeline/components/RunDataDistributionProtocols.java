@@ -1,23 +1,22 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
-import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class RunDataDistributionProtocols extends PipelineComponent {
@@ -31,12 +30,37 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
+		// Get the batch Id and list of protocols to run on it
+		String batchId = exchange.getHeader(HeaderKeys.BatchIds);
+
 		LibraryItem[] protocolsToRun = getProtocols(exchange);
-		String batchIds = exchange.getHeader(HeaderKeys.BatchIds);
+		List<TransformBatch> transformBatches = new ArrayList<>();
 
-		// Run DDP
-		// new ProtocolRunner().execute(fhirMessage, protocolToRun);
+		// Run each protocol, creating a transformation batch for each
+		// (Contains list of relevant resources and subscriber service contracts)
+		for (LibraryItem protocol : protocolsToRun) {
+			TransformBatch transformBatch = new TransformBatch();
+			transformBatch.setBatchId(UUID.fromString(batchId));
+			transformBatch.setProtocolId(UUID.fromString(protocol.getUuid()));
+			transformBatch.getSubscribers().addAll(
+				protocol.getProtocol().getServiceContract().stream()
+					.filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
+					.collect(Collectors.toList())
+			);
+			// Run DDP
+			// Add relevant resources to transformBatch.getResourceIds()
 
+			transformBatches.add(transformBatch);
+		}
+
+		// Add transformation batch list to the exchange
+		try {
+			String transformBatchesJson = ObjectMapperPool.getInstance().writeValueAsString(transformBatches);
+			exchange.setHeader(HeaderKeys.TransformBatch, transformBatchesJson);
+		} catch (JsonProcessingException e) {
+			LOG.error("Error serializing transformation batches");
+			throw new PipelineException("Error serializing transformation batches", e);
+		}
 		LOG.debug("Data distribution protocols executed");
 	}
 
