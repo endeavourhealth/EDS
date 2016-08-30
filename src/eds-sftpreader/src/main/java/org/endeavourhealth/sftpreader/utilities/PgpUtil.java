@@ -4,7 +4,6 @@ import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.util.io.Streams;
 
@@ -21,10 +20,13 @@ public class PgpUtil
     {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
-        try (InputStream fileIn = new BufferedInputStream(new FileInputStream(inputFileName));
+        //use approx 10MB for buffered streams, as a fair balance between disk IO and memory
+        int bufferSize = 10000000;
+
+        try (InputStream fileIn = new BufferedInputStream(new FileInputStream(inputFileName), bufferSize);
              InputStream publicKeyIn = new BufferedInputStream(new ByteArrayInputStream(publicKey.getBytes()));
              InputStream secretKeyIn = new BufferedInputStream(new ByteArrayInputStream(secretKey.getBytes()));
-             OutputStream fileOut = new FileOutputStream(outputFileName);)
+             BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(outputFileName), bufferSize); )
         {
             decryptAndVerify(fileIn, fileOut, publicKeyIn, secretKeyIn, secretKeyPassword);
         }
@@ -72,7 +74,7 @@ public class PgpUtil
         PGPCompressedData compressedData;
 
         message = plainFact.nextObject();
-        ByteArrayOutputStream actualOutput = new ByteArrayOutputStream();
+        //ByteArrayOutputStream actualOutput = new ByteArrayOutputStream();
 
         while (message != null)
         {
@@ -84,7 +86,7 @@ public class PgpUtil
             }
 
             if (message instanceof PGPLiteralData)
-                Streams.pipeAll(((PGPLiteralData) message).getInputStream(), actualOutput);  // have to read it and keep it somewhere.
+                Streams.pipeAll(((PGPLiteralData) message).getInputStream(), fileOut);  // have to read it and keep it somewhere.
             else if (message instanceof PGPOnePassSignatureList)
                 onePassSignatureList = (PGPOnePassSignatureList) message;
             else if (message instanceof PGPSignatureList)
@@ -95,11 +97,11 @@ public class PgpUtil
             message = plainFact.nextObject();
         }
 
-        actualOutput.close();
+        //actualOutput.close();
 
         PGPPublicKey publicKey = null;
 
-        byte[] output = actualOutput.toByteArray();
+        //byte[] output = actualOutput.toByteArray();
 
         if (onePassSignatureList == null || signatureList == null)
         {
@@ -108,7 +110,8 @@ public class PgpUtil
         }
         else
         {
-            for (int i = 0; i < onePassSignatureList.size(); i++)
+            //TODO: restore decrypting with signatures!
+            /*for (int i = 0; i < onePassSignatureList.size(); i++)
             {
                 PGPOnePassSignature ops = onePassSignatureList.get(0);
                 PGPPublicKeyRingCollection pgpRing = new PGPPublicKeyRingCollection(PGPUtil.getDecoderStream(publicKeyIn), fingerCalc);
@@ -140,7 +143,7 @@ public class PgpUtil
             if (publicKey == null)
             {
                 throw new SignatureException("Signature not found");
-            }
+            }*/
         }
 
         //verify() actually calls isIntegrityProtected(), so extra call is redundant
@@ -156,7 +159,7 @@ public class PgpUtil
         }*/
         else
         {
-            fileOut.write(output);
+            //fileOut.write(output);
             fileOut.flush();
             fileOut.close();
         }

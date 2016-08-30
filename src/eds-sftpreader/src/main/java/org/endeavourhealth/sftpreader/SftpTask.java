@@ -296,7 +296,9 @@ public class SftpTask extends TimerTask
 
         List<UnknownFile> unknownFiles = db.getUnknownFiles(dbConfiguration.getInstanceId());
 
-        LOG.error(" There are " + Integer.toString(unknownFiles.size()) + " unknown files");
+        if (!unknownFiles.isEmpty()) {
+            LOG.error(" There are {} unknown files", unknownFiles.size());
+        }
 
         return unknownFiles;
     }

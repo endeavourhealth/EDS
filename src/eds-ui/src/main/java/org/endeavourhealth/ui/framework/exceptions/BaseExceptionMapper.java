@@ -15,7 +15,7 @@ public final class BaseExceptionMapper implements ExceptionMapper<Exception> {
     private static final Logger LOG = LoggerFactory.getLogger(BaseExceptionMapper.class);
 
     public BaseExceptionMapper() {
-        LOG.debug("Exception mapper created");
+        //LOG.debug("Exception mapper created");
     }
 
     @Override

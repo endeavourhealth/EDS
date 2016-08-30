@@ -9,6 +9,7 @@
         </descriptors>
         <webroots>
           <root url="file://$MODULE_DIR$/src/main/webapp" relative="/" />
+          <root url="file://$MODULE_DIR$/src/main/frontend" relative="/" />
         </webroots>
       </configuration>
     </facet>
