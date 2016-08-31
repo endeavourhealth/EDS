@@ -1,6 +1,8 @@
 package org.endeavourhealth.core.data;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.QueryOptions;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.MappingManager;
 import org.endeavourhealth.core.engineConfiguration.Cassandra;
@@ -23,6 +25,9 @@ public class CassandraConnector {
         for (String node: config.getNode()) {
             builder = builder.addContactPoint(node);
         }
+
+        //turn on Quorum consistency for everything by default
+        builder.withQueryOptions(new QueryOptions().setConsistencyLevel(ConsistencyLevel.QUORUM));
 
         cluster = builder.build();
         session = cluster.connect();
