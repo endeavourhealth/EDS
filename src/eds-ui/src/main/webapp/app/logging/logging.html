@@ -8,7 +8,9 @@
 			<div class="row">
 				<div class="col-md-12">
 					<div class="panel panel-primary">
-						<div class="panel-heading">Recent Logging Events <span class="fa fa-sm fa-refresh fa-refresh-animate" ng-hide="loggingCtrl.loggingEvents"></span></div>
+						<div class="panel-heading">Recent Logging Events
+							<span class="fa fa-sm fa-refresh fa-refresh-animate" ng-hide="loggingCtrl.loggingEvents"></span>
+						</div>
 						<div class="panel-body">
 							<div class="row">
 								<div class="form-group col-md-3">
@@ -62,6 +64,18 @@
 									</tbody>
 								</table>
 							</div>
+								</div>
+							</div>
+							<div class="row" ng-show="loggingCtrl.loggingEvents.length > 0">
+								<div class="col-md-12">
+									<nav aria-label="...">
+										<ul class="pagination">
+											<li ng-click="loggingCtrl.first()" ng-class="{'disabled' : loggingCtrl.page == 0}"><a href="#"><i class="fa fa-fast-backward fa-sm fa-fw"></i></a></li>
+											<li ng-click="loggingCtrl.previous()" ng-class="{'disabled' : loggingCtrl.page == 0}"><a href="#"><i class="fa fa-step-backward fa-sm fa-fw"></i></a></li>
+											<li class="disabled"><a href="#">Page {{loggingCtrl.page + 1}}</a></li>
+											<li ng-click="loggingCtrl.next()" ><a href="#"><i class="fa fa-step-forward fa-sm fa-fw"></i></a></li>
+										</ul>
+									</nav>
 								</div>
 							</div>
 						</div>

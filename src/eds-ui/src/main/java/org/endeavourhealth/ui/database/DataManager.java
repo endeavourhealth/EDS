@@ -11,8 +11,8 @@ import java.util.List;
  * Created by darren on 21/07/16.
  */
 public class DataManager {
-
-    public static List<LoggingEventEntity> getLoggingEvents(String serviceId, String level) throws Exception {
+    private static final int PAGESIZE = 15;
+    public static List<LoggingEventEntity> getLoggingEvents(int page, String serviceId, String level) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
         String sql = "select e" +
@@ -27,9 +27,10 @@ public class DataManager {
         if (level != null && !level.isEmpty())
             sql += "    and e.levelString = :level";
 
-
         Query query = entityManager.createQuery(sql, LoggingEventEntity.class)
-                .setParameter("serviceId", serviceId);
+                .setParameter("serviceId", serviceId)
+                .setFirstResult(page * PAGESIZE)
+                .setMaxResults(PAGESIZE);
 
         if (level != null && !level.isEmpty())
             query.setParameter("level", level);

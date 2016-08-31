@@ -5,17 +5,18 @@ module app.core {
 	'use strict';
 
 	export interface ILoggingService {
-		getLoggingEvents(serviceId : string, level : string):ng.IPromise<LoggingEvent[]>;
+		getLoggingEvents(serviceId : string, level : string, page : number):ng.IPromise<LoggingEvent[]>;
 		getStackTrace(eventId : string) : ng.IPromise<string>;
 	}
 
 	export class LoggingService extends BaseHttpService implements ILoggingService {
 
-		getLoggingEvents(serviceId : string, level : string):ng.IPromise<LoggingEvent[]> {
+		getLoggingEvents(serviceId : string, level : string, page : number):ng.IPromise<LoggingEvent[]> {
 			var request = {
 				params: {
 					'serviceId': serviceId,
-					'level': level
+					'level': level,
+					'page': page
 				}
 			};
 

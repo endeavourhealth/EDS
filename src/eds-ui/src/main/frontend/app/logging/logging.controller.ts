@@ -16,6 +16,7 @@ module app.logging {
 		services : Service[];
 		serviceId : string;
 		level : string;
+		page : number;
 
 		static $inject = ['LoggingService', 'LoggerService', 'ServiceService', '$uibModal'];
 
@@ -23,13 +24,14 @@ module app.logging {
 					protected logger:ILoggerService,
 					protected serviceService : IServiceService,
 					protected $modal : IModalService) {
+			this.page = 0;
 			this.loadServices();
 			this.refresh();
 		}
 
 		refresh() {
 			var vm = this;
-			this.getLoggingEvents(vm.serviceId, vm.level);
+			this.getLoggingEvents(vm.serviceId, vm.level, vm.page);
 		}
 
 		loadServices() {
@@ -43,13 +45,35 @@ module app.logging {
 				});
 		}
 
-		getLoggingEvents(serviceId : string, level : string) {
+		getLoggingEvents(serviceId : string, level : string, page : number) {
 			var vm = this;
 			vm.loggingEvents = null;
-			vm.loggingService.getLoggingEvents(serviceId, level)
+			vm.loggingService.getLoggingEvents(serviceId, level, page)
 				.then(function (data:LoggingEvent[]) {
 					vm.loggingEvents = data;
 				});
+		}
+
+		first() {
+			var vm = this;
+			if (vm.page > 0) {
+				vm.page = 0;
+				vm.getLoggingEvents(vm.serviceId, vm.level, vm.page);
+			}
+		}
+
+		previous() {
+			var vm = this;
+			if (vm.page > 0) {
+				vm.page--;
+				vm.getLoggingEvents(vm.serviceId, vm.level, vm.page);
+			}
+		}
+
+		next() {
+			var vm = this;
+			vm.page++;
+			vm.getLoggingEvents(vm.serviceId, vm.level, vm.page);
 		}
 
 		actionItem(event : LoggingEvent, action : string) {
