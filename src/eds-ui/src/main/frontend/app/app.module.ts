@@ -14,10 +14,8 @@ angular.module('app', [
 		'ui.tree',
 		'ngDragDrop',
 		'angular-uuid-generator',
-
-        'app.appstartup',
-
-        'app.models',
+		'app.appstartup',
+		'app.models',
 		'app.core',
 		'app.config',
 		'app.blocks',
@@ -40,6 +38,7 @@ angular.module('app', [
 		'app.routeGroup',
 		'app.patientIdentity',
 		'app.resources',
+		'app.audit',
 		'flowChart',
 		'dragging',
 		'mouseCapture'

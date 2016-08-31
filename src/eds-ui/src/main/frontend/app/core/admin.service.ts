@@ -37,8 +37,8 @@ module app.core {
 
 				{caption: 'Administration', state: 'app.admin', icon: 'fa fa-users'},
 				{caption: 'Monitoring', state: 'app.logging', icon: 'fa fa-list-alt'},
-				{caption: 'Statistics', state: 'app.stats', icon: 'fa fa-line-chart'}
-
+				{caption: 'Statistics', state: 'app.stats', icon: 'fa fa-line-chart'},
+				{caption: 'Audit', state: 'app.audit', icon: 'fa fa-list-ul'}
 			];
 		}
 

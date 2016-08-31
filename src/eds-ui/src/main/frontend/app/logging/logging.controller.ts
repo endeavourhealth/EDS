@@ -17,12 +17,11 @@ module app.logging {
 		serviceId : string;
 		level : string;
 
-		static $inject = ['LoggingService', 'LoggerService', 'ServiceService', '$state', '$uibModal'];
+		static $inject = ['LoggingService', 'LoggerService', 'ServiceService', '$uibModal'];
 
 		constructor(protected loggingService:ILoggingService,
 					protected logger:ILoggerService,
 					protected serviceService : IServiceService,
-					protected $state : IStateService,
 					protected $modal : IModalService) {
 			this.loadServices();
 			this.refresh();
