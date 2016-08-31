@@ -1,0 +1,139 @@
+<div class="module">
+	<div class="module-heading">
+		Data Service Statistics
+		<button class="btn btn-success btn-sm pull-right" ng-click="statsCtrl.refresh()">Refresh</button>
+	</div>
+	<div class="module-body">
+		<div class="container-fluid">
+			<div class='row'>
+				<div class="form-group col-md-6">
+					<label>Filter by Data Controller Organisation<i class="fa fa-filter fa-lg fa-fw"></i></label>
+					<div class="input-group">
+						<span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
+						<select id="service" class="form-control" ng-model="statsCtrl.serviceId" ng-change="statsCtrl.refresh()">
+							<option ng-repeat="item in statsCtrl.services" value="{{item.uuid}}">{{item.name}}</option>
+						</select>
+					</div>
+				</div>
+				<div class="col-xs-3">
+					<div class="form-group">
+						<label>Filter by Date Recorded From:</label>
+						<p class="input-group">
+							<input type="text" class="form-control" uib-datepicker-popup="dd-MMM-yyyy" is-open="dateEditorFromDatePicker" ng-model="statsCtrl.filterDateFrom" ng-blur="statsCtrl.filterDateFromChange(statsCtrl.filterDateFrom)" placeholder="Select date from">
+								<span class="input-group-btn">
+									<button type="button" class="btn btn-default" ng-click="dateEditorFromDatePicker = true"><i class="fa fa-calendar"></i></button>
+								</span>
+						</p>
+					</div>
+				</div>
+				<div class="col-xs-3">
+					<div class="form-group">
+						<label>Filter by Date Recorded To:</label>
+						<p class="input-group">
+							<input type="text" class="form-control" uib-datepicker-popup="dd-MMM-yyyy" is-open="dateEditorToDatePicker" ng-model="statsCtrl.filterDateTo" ng-blur="statsCtrl.filterDateToChange(statsCtrl.filterDateTo)" placeholder="Select date to">
+								<span class="input-group-btn">
+									<button type="button" class="btn btn-default" ng-click="dateEditorToDatePicker = true"><i class="fa fa-calendar"></i></button>
+								</span>
+						</p>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-12">
+					<div class="panel panel-primary">
+						<div class="panel-heading">Patients <i title="collapse" style="cursor:pointer" ng-class="statsCtrl.hidePatients ? 'fa fa-plus fa-lg fa-fw pull-right' : 'fa fa-minus fa-lg fa-fw pull-right'" ng-click="statsCtrl.togglePatientStats()"></i></div>
+						<div class="form-group col-md-6" ng-hide="statsCtrl.hidePatients">
+							<div class="table">
+								<br/>
+								<table class="highchart table table-striped table-condensed" data-graph-inverted="1" data-graph-container="#patients" data-graph-type="column">
+									<thead>
+									<tr>
+										<th>Organisation</th>
+										<th>Regular Patients</th>
+										<th data-graph-type="area">Left Patients</th>
+										<th data-graph-type="area">Dead Patients</th>
+									</tr>
+									</thead>
+									<tbody>
+									<tr ng-repeat="event in statsCtrl.statsPatients">
+										<td>
+											<a style="cursor:pointer" ng-click="statsCtrl.actionItem(event,'view')">{{event.organisation}}</a>
+										</td>
+										<td>
+											<a style="cursor:pointer" ng-click="statsCtrl.actionItem(event,'view')">{{event.regular}}</a>
+										</td>
+										<td>
+											<a style="cursor:pointer" ng-click="statsCtrl.actionItem(event,'view')">{{event.left}}</a>
+										</td>
+										<td>
+											<a style="cursor:pointer" ng-click="statsCtrl.actionItem(event,'view')">{{event.dead}}</a>
+										</td>
+									</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+						<div class="form-group col-md-6" ng-hide="statsCtrl.hidePatients">
+							<br/>
+							<div id="patients"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-12">
+					<div class="panel panel-primary">
+						<div class="panel-heading">Clinical Resources <i title="collapse" style="cursor:pointer" ng-class="statsCtrl.hideEvents ? 'fa fa-plus fa-lg fa-fw pull-right' : 'fa fa-minus fa-lg fa-fw pull-right'" ng-click="statsCtrl.toggleEventStats()"></i></div>
+						<div class="form-group col-md-6" ng-hide="statsCtrl.hideEvents">
+							<div class="table">
+								<br/>
+								<table class="highchart table table-striped table-condensed" data-graph-inverted="1" data-graph-container="#events" data-graph-type="column">
+									<thead>
+									<tr>
+										<th>Organisation</th>
+										<th>Observations</th>
+										<th>Medication Orders</th>
+										<th>Conditions</th>
+									</tr>
+									</thead>
+									<tbody>
+									<tr ng-repeat="event in statsCtrl.statsEvents">
+										<td>
+											<a style="cursor:pointer" ng-click="statsCtrl.actionItem(event,'view')">{{event.organisation}}</a>
+										</td>
+										<td>
+											<a style="cursor:pointer" ng-click="statsCtrl.actionItem(event,'view')">{{event.observation}}</a>
+										</td>
+										<td>
+											<a style="cursor:pointer" ng-click="statsCtrl.actionItem(event,'view')">{{event.medication}}</a>
+										</td>
+										<td>
+											<a style="cursor:pointer" ng-click="statsCtrl.actionItem(event,'view')">{{event.condition}}</a>
+										</td>
+									</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+						<div class="form-group col-md-6" ng-hide="statsCtrl.hideEvents">
+							<br/>
+							<div id="events"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+
+	setTimeout(function(){initGraph(); }, 500);
+
+	function initGraph() {
+		$('table.highchart').highchartTable();
+	}
+
+</script>
+
+

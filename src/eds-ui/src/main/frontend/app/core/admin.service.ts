@@ -36,7 +36,8 @@ module app.core {
 				{caption: 'Resources', state: 'app.resources', icon: 'fa fa-fire'},
 
 				{caption: 'Administration', state: 'app.admin', icon: 'fa fa-users'},
-				{caption: 'Logging', state: 'app.logging', icon: 'fa fa-list-alt'}
+				{caption: 'Monitoring', state: 'app.logging', icon: 'fa fa-list-alt'},
+				{caption: 'Statistics', state: 'app.stats', icon: 'fa fa-line-chart'}
 
 			];
 		}

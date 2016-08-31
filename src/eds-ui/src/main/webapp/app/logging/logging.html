@@ -1,6 +1,6 @@
 <div class="module">
 	<div class="module-heading">
-		Data Service Logging Events
+		Data Service Logging Monitor
 		<button class="btn btn-success btn-sm pull-right" ng-click="logging.refresh()">Refresh</button>
 	</div>
 	<div class="module-body">
@@ -8,12 +8,12 @@
 			<div class="row">
 				<div class="col-md-12">
 					<div class="panel panel-primary">
-						<div class="panel-heading">Recent Events <span class="fa fa-sm fa-refresh fa-refresh-animate" ng-hide="loggingCtrl.loggingEvents"></span></div>
+						<div class="panel-heading">Recent Logging Events <span class="fa fa-sm fa-refresh fa-refresh-animate" ng-hide="loggingCtrl.loggingEvents"></span></div>
 						<div class="form-group col-md-4">
 							<div class="row">
 								<div class="form-group col-md-12">
 									<br/>
-									<label>Service<i class="fa fa-filter fa-lg fa-fw"></i></label>
+									<label>Filter by Service<i class="fa fa-filter fa-lg fa-fw"></i></label>
 									<div class="input-group">
 										<span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
 										<select id="service" class="form-control" ng-model="loggingCtrl.serviceId" ng-change="loggingCtrl.refresh()">
