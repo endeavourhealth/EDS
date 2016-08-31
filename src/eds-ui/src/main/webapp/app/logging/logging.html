@@ -9,9 +9,9 @@
 				<div class="col-md-12">
 					<div class="panel panel-primary">
 						<div class="panel-heading">Recent Logging Events <span class="fa fa-sm fa-refresh fa-refresh-animate" ng-hide="loggingCtrl.loggingEvents"></span></div>
-						<div class="form-group col-md-4">
+						<div class="panel-body">
 							<div class="row">
-								<div class="form-group col-md-12">
+								<div class="form-group col-md-3">
 									<br/>
 									<label>Filter by Service<i class="fa fa-filter fa-lg fa-fw"></i></label>
 									<div class="input-group">
@@ -21,10 +21,26 @@
 										</select>
 									</div>
 								</div>
+								<div class="form-group col-md-3">
+									<br/>
+									<label>Filter by Event Type<i class="fa fa-filter fa-lg fa-fw"></i></label>
+									<div class="input-group">
+										<span class="input-group-addon"><i class="fa fa-warning fa-lg fa-fw"></i></span>
+										<select id="level" class="form-control" ng-model="loggingCtrl.level" ng-change="loggingCtrl.refresh()">
+											<option value="">All</option>
+											<option value="INFO">Information</option>
+											<option value="WARN">Warnings</option>
+											<option value="ERROR">Error</option>
+											<option value="FATAL">Fatal</option>
+											<option value="DEBUG">Debug</option>
+											<option value="TRACE">Trace</option>
+										</select>
+									</div>
+								</div>
 							</div>
-						</div>
-						<div class="panel-body">
-							<div class="table">
+							<div class="row">
+								<div class="col-md-12">
+									<div class="table">
 								<table class="table table-striped table-condensed">
 									<thead>
 										<tr>
@@ -45,6 +61,8 @@
 										</tr>
 									</tbody>
 								</table>
+							</div>
+								</div>
 							</div>
 						</div>
 					</div>

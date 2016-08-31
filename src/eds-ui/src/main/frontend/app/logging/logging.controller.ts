@@ -7,6 +7,7 @@ module app.logging {
 	import LoggingEvent = app.models.LoggingEvent;
 	import Service = app.models.Service;
 	import IServiceService = app.service.IServiceService;
+	import MessageBoxController = app.dialogs.MessageBoxController;
 
 	'use strict';
 
@@ -14,21 +15,22 @@ module app.logging {
 		loggingEvents:LoggingEvent[];
 		services : Service[];
 		serviceId : string;
+		level : string;
 
-		static $inject = ['LoggingService', 'LoggerService', 'ServiceService', '$state'];
+		static $inject = ['LoggingService', 'LoggerService', 'ServiceService', '$state', '$uibModal'];
 
 		constructor(protected loggingService:ILoggingService,
 					protected logger:ILoggerService,
 					protected serviceService : IServiceService,
-					protected $state : IStateService) {
+					protected $state : IStateService,
+					protected $modal : IModalService) {
 			this.loadServices();
 			this.refresh();
 		}
 
 		refresh() {
 			var vm = this;
-			var serviceName = $("#service>option:selected").html()
-			this.getLoggingEvents(vm.serviceId);
+			this.getLoggingEvents(vm.serviceId, vm.level);
 		}
 
 		loadServices() {
@@ -42,17 +44,32 @@ module app.logging {
 				});
 		}
 
-		getLoggingEvents(serviceId : string) {
+		getLoggingEvents(serviceId : string, level : string) {
 			var vm = this;
 			vm.loggingEvents = null;
-			vm.loggingService.getLoggingEvents(serviceId)
+			vm.loggingService.getLoggingEvents(serviceId, level)
 				.then(function (data:LoggingEvent[]) {
 					vm.loggingEvents = data;
 				});
 		}
 
 		actionItem(event : LoggingEvent, action : string) {
-			alert(action+" : "+event.loggerName);
+			var vm = this;
+			vm.loggingService.getStackTrace(event.eventId)
+				.then(function (data:string) {
+					vm.showStackTrace(event, data);
+				});
+		}
+
+		showStackTrace(event : LoggingEvent, stackTrace : string) {
+			var vm = this;
+			MessageBoxController.openLarge(
+				vm.$modal,
+				event.formattedMessage + ' in ' + event.callerMethod,
+				stackTrace,
+				null,
+				'Close'
+			);
 		}
 	}
 

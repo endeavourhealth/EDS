@@ -4,15 +4,15 @@ package org.endeavourhealth.ui.database;
 import org.endeavourhealth.ui.database.models.LoggingEventEntity;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Created by darren on 21/07/16.
  */
 public class DataManager {
 
-    public static List<LoggingEventEntity> getLoggingEvents(String serviceId) throws Exception {
+    public static List<LoggingEventEntity> getLoggingEvents(String serviceId, String level) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
         String sql = "select e" +
@@ -24,15 +24,39 @@ public class DataManager {
                     "    and p.mappedKey = 'ServiceId'" +
                     "    and p.mappedValue = :serviceId";
 
-        List<LoggingEventEntity> events = entityManager.createQuery(sql, LoggingEventEntity.class)
-                .setParameter("serviceId", serviceId)
-                .getResultList();
+        if (level != null && !level.isEmpty())
+            sql += "    and e.levelString = :level";
+
+
+        Query query = entityManager.createQuery(sql, LoggingEventEntity.class)
+                .setParameter("serviceId", serviceId);
+
+        if (level != null && !level.isEmpty())
+            query.setParameter("level", level);
+
+        List<LoggingEventEntity> events = query.getResultList();
 
         entityManager.close();
 
         return events;
     }
 
+    public static String getStackTrace(Long eventId) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
+        String sql = "select e.traceLine" +
+            " from " +
+            "    LoggingEventExceptionEntity e" +
+            " where" +
+            "    e.eventId = :eventId";
 
+        Query query = entityManager.createQuery(sql, String.class)
+            .setParameter("eventId", eventId);
+
+        List<String> stackTrace = query.getResultList();
+
+        entityManager.close();
+
+        return String.join(System.lineSeparator(), stackTrace);
+    }
 }

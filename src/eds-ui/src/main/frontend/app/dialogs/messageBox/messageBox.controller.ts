@@ -24,11 +24,29 @@ module app.dialogs {
 											 message : string,
 											 okText : string,
 											 cancelText : string) : IModalServiceInstance {
+			return MessageBoxController.openWithSize($modal, title, message, okText, cancelText, '')
+		}
+
+		public static openLarge($modal : IModalService,
+											 title : string,
+											 message : string,
+											 okText : string,
+											 cancelText : string) : IModalServiceInstance {
+			return MessageBoxController.openWithSize($modal, title, message, okText, cancelText, 'lg')
+		}
+
+		private static openWithSize($modal : IModalService,
+											 title : string,
+											 message : string,
+											 okText : string,
+											 cancelText : string,
+											 size : string) : IModalServiceInstance {
 			var options : IModalSettings = {
 				templateUrl:'app/dialogs/messageBox/messageBox.html',
 				controller:'MessageBoxController',
 				controllerAs:'ctrl',
 				backdrop:'static',
+				size:size,
 				resolve: {
 					title : () => title,
 					message : () => message,

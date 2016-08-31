@@ -25,11 +25,11 @@ public final class LoggingEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/getLoggingEvents")
-    public Response getLoggingEvents(@Context SecurityContext sc, @QueryParam("serviceId") String serviceId) throws Exception {
+    public Response getLoggingEvents(@Context SecurityContext sc, @QueryParam("serviceId") String serviceId, @QueryParam("level") String level) throws Exception {
 
         DataManager db = new DataManager();
 
-        List<LoggingEventEntity> events = db.getLoggingEvents(serviceId);
+        List<LoggingEventEntity> events = db.getLoggingEvents(serviceId, level);
 
         return Response
                 .ok()
@@ -37,5 +37,20 @@ public final class LoggingEndpoint {
                 .build();
     }
 
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/getStackTrace")
+    public Response getStackTrace(@Context SecurityContext sc, @QueryParam("eventId") Long eventId) throws Exception {
+
+        DataManager db = new DataManager();
+
+        String stackTrace = db.getStackTrace(eventId);
+
+        return Response
+            .ok()
+            .entity(stackTrace)
+            .build();
+    }
 
 }
