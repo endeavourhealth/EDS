@@ -56,7 +56,7 @@ public class IssueRecordTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirMedication, patientGuid);
+            csvProcessor.deletePatientResource(patientGuid, fhirMedication);
             return;
         }
 
@@ -118,7 +118,7 @@ public class IssueRecordTransformer {
             fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(enteredDateTime)));
         }
 
-        csvProcessor.savePatientResource(fhirMedication, patientGuid);
+        csvProcessor.savePatientResource(patientGuid, fhirMedication);
 
         //if this record is linked to a problem, store this relationship in the helper
         csvHelper.cacheProblemRelationship(problemObservationGuid,

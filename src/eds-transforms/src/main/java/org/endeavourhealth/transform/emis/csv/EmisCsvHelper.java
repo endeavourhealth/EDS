@@ -349,7 +349,7 @@ public class EmisCsvHelper {
 
         if (changed) {
             //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
-            csvProcessor.savePatientResource(fhirObservation, false, patientGuid);
+            csvProcessor.savePatientResource(false, patientGuid, fhirObservation);
         }
     }
 
@@ -398,7 +398,7 @@ public class EmisCsvHelper {
             Condition fhirProblem = problemMap.get(locallyUniqueId);
             String patientGuid = getPatientGuidFromUniqueId(locallyUniqueId);
 
-            csvProcessor.savePatientResource(fhirProblem, patientGuid);
+            csvProcessor.savePatientResource(patientGuid, fhirProblem);
         }
     }
 
@@ -451,7 +451,7 @@ public class EmisCsvHelper {
 
         if (changed) {
             //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
-            csvProcessor.savePatientResource(fhirCondition, false, patientGuid);
+            csvProcessor.savePatientResource(false, patientGuid, fhirCondition);
         }
     }
 

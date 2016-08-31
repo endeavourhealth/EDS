@@ -174,4 +174,8 @@ public class ResourceRepository extends Repository {
         return Lists.newArrayList(accessor.getResourceTypesUsed(serviceId, systemId));
     }
 
+    public List<ResourceByExchangeBatch> getResourcesForBatch(UUID batchId) {
+        ResourceHistoryAccessor accessor = getMappingManager().createAccessor(ResourceHistoryAccessor.class);
+        return Lists.newArrayList(accessor.getResourcesForBatch(batchId));
+    }
 }

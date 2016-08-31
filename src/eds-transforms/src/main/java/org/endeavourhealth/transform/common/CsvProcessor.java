@@ -57,56 +57,58 @@ public class CsvProcessor {
     }
 
 
-    public void saveAdminResource(Resource resource) throws Exception {
-        saveAdminResource(resource, true);
+    public void saveAdminResource(Resource... resources) throws Exception {
+        saveAdminResource(true, resources);
     }
-    public void saveAdminResource(Resource resource, boolean mapIds) throws Exception {
-        addResourceToQueue(resource, false, mapIds, getAdminBatchId(), false);
-    }
-
-    public void deleteAdminResource(Resource resource) throws Exception {
-        deleteAdminResource(resource, true);
-    }
-    public void deleteAdminResource(Resource resource, boolean mapIds) throws Exception {
-        addResourceToQueue(resource, false, mapIds, getAdminBatchId(), true);
+    public void saveAdminResource(boolean mapIds, Resource... resources) throws Exception {
+        addResourceToQueue(false, mapIds, getAdminBatchId(), false, resources);
     }
 
-    public void savePatientResource(Resource resource, String patientId) throws Exception {
-        savePatientResource(resource, true, patientId);
+    public void deleteAdminResource(Resource... resources) throws Exception {
+        deleteAdminResource(true, resources);
     }
-    public void savePatientResource(Resource resource, boolean mapIds, String patientId) throws Exception {
-        addResourceToQueue(resource, true, mapIds, getPatientBatchId(patientId), false);
-    }
-
-    public void deletePatientResource(Resource resource, String patientId) throws Exception {
-        deletePatientResource(resource, true, patientId);
-    }
-    public void deletePatientResource(Resource resource, boolean mapIds, String patientId) throws Exception {
-        addResourceToQueue(resource, true, mapIds, getPatientBatchId(patientId), true);
+    public void deleteAdminResource(boolean mapIds, Resource... resources) throws Exception {
+        addResourceToQueue(false, mapIds, getAdminBatchId(), true, resources);
     }
 
-    private void addResourceToQueue(Resource resource,
-                                    boolean expectingPatientResource,
+    public void savePatientResource(String patientId, Resource... resources) throws Exception {
+        savePatientResource(true, patientId, resources);
+    }
+    public void savePatientResource(boolean mapIds, String patientId, Resource... resources) throws Exception {
+        addResourceToQueue(true, mapIds, getPatientBatchId(patientId), false, resources);
+    }
+
+    public void deletePatientResource(String patientId, Resource... resources) throws Exception {
+        deletePatientResource(true, patientId, resources);
+    }
+    public void deletePatientResource(boolean mapIds, String patientId, Resource... resources) throws Exception {
+        addResourceToQueue(true, mapIds, getPatientBatchId(patientId), true, resources);
+    }
+
+    private void addResourceToQueue(boolean expectingPatientResource,
                                     boolean mapIds,
                                     UUID batchId,
-                                    boolean toDelete) throws Exception {
+                                    boolean toDelete,
+                                    Resource... resources) throws Exception {
 
-        //validate we're treating the resoure properly as admin / patient
-        if (isPatientResource(resource) != expectingPatientResource) {
-            throw new PatientResourceException(resource.getResourceType(), expectingPatientResource);
+        for (Resource resource: resources) {
+            //validate we're treating the resoure properly as admin / patient
+            if (isPatientResource(resource) != expectingPatientResource) {
+                throw new PatientResourceException(resource.getResourceType(), expectingPatientResource);
+            }
+
+            String resourceType = resource.getResourceType().toString();
+            resourceTypes.put(resourceType, resourceType);
+
+            //increment our counters for auditing
+            if (toDelete) {
+                countResourcesDeleted.get(batchId).incrementAndGet();
+            } else {
+                countResourcesSaved.get(batchId).incrementAndGet();
+            }
         }
 
-        String resourceType = resource.getResourceType().toString();
-        resourceTypes.put(resourceType, resourceType);
-
-        //increment our counters for auditing
-        if (toDelete) {
-            countResourcesDeleted.get(batchId).incrementAndGet();
-        } else {
-            countResourcesSaved.get(batchId).incrementAndGet();
-        }
-
-        threadPool.submit(new MapAndSaveResourceTask(resource, batchId, toDelete, mapIds));
+        threadPool.submit(new MapAndSaveResourceTask(batchId, toDelete, mapIds, resources));
     }
 
     private UUID getAdminBatchId() {
@@ -290,13 +292,13 @@ public class CsvProcessor {
 
     class MapAndSaveResourceTask implements Callable {
 
-        private Resource resource = null;
+        private Resource[] resources = null;
         private UUID batchUuid = null;
         private boolean isDelete = false;
         private boolean mapIds = false;
 
-        public MapAndSaveResourceTask(Resource resource, UUID batchUuid, boolean isDelete, boolean mapIds) {
-            this.resource = resource;
+        public MapAndSaveResourceTask(UUID batchUuid, boolean isDelete, boolean mapIds, Resource... resources) {
+            this.resources = resources;
             this.batchUuid = batchUuid;
             this.isDelete = isDelete;
             this.mapIds = mapIds;
@@ -305,24 +307,27 @@ public class CsvProcessor {
         @Override
         public Object call() throws Exception {
 
-            try {
-                if (mapIds) {
-                    IdHelper.mapIds(serviceId, systemId, resource);
+              for (Resource resource: resources) {
+
+                try {
+                    if (mapIds) {
+                        IdHelper.mapIds(serviceId, systemId, resource);
+                    }
+
+                    List<Resource> list = new ArrayList<>();
+                    list.add(resource);
+
+                    if (isDelete) {
+                        storageService.exchangeBatchDelete(exchangeId, batchUuid, list);
+                    } else {
+                        storageService.exchangeBatchUpdate(exchangeId, batchUuid, list);
+                    }
+
+                } catch (Exception ex) {
+                    LOG.error("Error saving {} {} but continuing", resource.getResourceType(), resource.getId());
+                    //TODO - restore exception throwing
+                    //throw new TransformException("Exception mapping or storing " + resource.getResourceType() + " " + resource.getId(), ex);
                 }
-
-                List<Resource> list = new ArrayList<>();
-                list.add(resource);
-
-                if (isDelete) {
-                    storageService.exchangeBatchDelete(exchangeId, batchUuid, list);
-                } else {
-                    storageService.exchangeBatchUpdate(exchangeId, batchUuid, list);
-                }
-
-            } catch (Exception ex) {
-                LOG.error("Error saving {} {} but continuing", resource.getResourceType(), resource.getId());
-                //TODO - restore exception throwing
-                //throw new TransformException("Exception mapping or storing " + resource.getResourceType() + " " + resource.getId(), ex);
             }
 
             return null;

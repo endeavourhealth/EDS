@@ -26,7 +26,7 @@ module app.core {
 				}
 			};
 
-			return this.httpGet('api/resources/resourceTypesForPatient');
+			return this.httpGet('api/resources/resourceTypesForPatient', request);
 		}
 
 		getResourceForId(resourceType : string, resourceId : string):ng.IPromise<FhirResourceContainer[]> {

@@ -10,15 +10,21 @@ module app.resources {
 	'use strict';
 
 	export class ResourcesController {
-		resourceContainers : FhirResourceContainer[];
+
+		//variables for patient ID searching
 		patientId : string;
 		patientResourceTypes : FhirResourceType[];
 		patientResourceTypeSelected : string;
+
+		//variables for single resource searching
 		resourceId : string;
 		allResourceTypes : FhirResourceType[];
 		resourceTypeSelected : string;
 
-
+		//search results
+		searchPerformed : boolean;
+		resourceContainers : FhirResourceContainer[];
+		resources : Object[];
 
 		static $inject = ['ResourcesService', 'LoggerService', '$state'];
 
@@ -27,8 +33,6 @@ module app.resources {
 					protected $state : IStateService) {
 
 			this.getAllResourceTypes()
-
-			//this.refresh();
 		}
 
 		getAllResourceTypes() {
@@ -58,6 +62,8 @@ module app.resources {
 			vm.resourcesService.getResourceForId(vm.resourceTypeSelected, vm.resourceId)
 				.then(function(result) {
 					vm.resourceContainers = result;
+					vm.parseResourceContainers();
+					console.log('Retrieved ' + vm.resourceContainers.length + ' resources for id');
 				})
 				.catch(function (error) {
 					vm.logger.error('Failed to retrieve resources for ID', error, 'Resource Types');
@@ -69,10 +75,25 @@ module app.resources {
 			vm.resourcesService.getResourcesForPatient(vm.patientResourceTypeSelected, vm.patientId)
 				.then(function(result) {
 					vm.resourceContainers = result;
+					vm.parseResourceContainers();
+					console.log('Retrieved ' + vm.resourceContainers.length + ' resources for patient');
 				})
 				.catch(function (error) {
 					vm.logger.error('Failed to retrieve resources for patient', error, 'Resource Types');
 				});
+		}
+
+		parseResourceContainers() {
+
+			var vm = this;
+			vm.resources = new Array<Object>();
+
+			for (var i=0; i<vm.resourceContainers.length; i++) {
+				var container = vm.resourceContainers[i];
+				var json = container.resourceJson;
+				var resource = JSON.parse(json);
+				vm.resources.push(resource);
+			}
 		}
 
 	}

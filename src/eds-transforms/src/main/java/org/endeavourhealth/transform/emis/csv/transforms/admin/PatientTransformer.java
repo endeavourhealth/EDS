@@ -65,8 +65,8 @@ public class PatientTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (patientParser.getDeleted() || patientParser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirPatient, patientGuid);
-            csvProcessor.deletePatientResource(fhirEpisode, patientGuid);
+            //save both resources together, so the patient is defintiely saved before the episode
+            csvProcessor.deletePatientResource(patientGuid, fhirPatient, fhirEpisode);
             return;
         }
 
@@ -230,8 +230,8 @@ public class PatientTransformer {
             fhirEpisode.setStatus(EpisodeOfCare.EpisodeOfCareStatus.FINISHED);
         }
 
-        csvProcessor.savePatientResource(fhirPatient, patientGuid);
-        csvProcessor.savePatientResource(fhirEpisode, patientGuid);
+        //save both resources together, so the patient is defintiely saved before the episode
+        csvProcessor.savePatientResource(patientGuid, fhirPatient, fhirEpisode);
     }
 
     /**

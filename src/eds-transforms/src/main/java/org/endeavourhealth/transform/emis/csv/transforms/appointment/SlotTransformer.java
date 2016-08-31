@@ -61,8 +61,7 @@ public class SlotTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (slotParser.getDeleted()) {
-            csvProcessor.deletePatientResource(fhirSlot, patientGuid);
-            csvProcessor.deletePatientResource(fhirAppointment, patientGuid);
+            csvProcessor.deletePatientResource(patientGuid, fhirSlot, fhirAppointment);
             return;
         }
 
@@ -132,7 +131,6 @@ public class SlotTransformer {
             fhirAppointment.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.APPOINTMENT_LEFT, new DateTimeType(leftTime)));
         }
 
-        csvProcessor.savePatientResource(fhirSlot, patientGuid);
-        csvProcessor.savePatientResource(fhirAppointment, patientGuid);
+        csvProcessor.savePatientResource(patientGuid, fhirSlot, fhirAppointment);
     }
 }

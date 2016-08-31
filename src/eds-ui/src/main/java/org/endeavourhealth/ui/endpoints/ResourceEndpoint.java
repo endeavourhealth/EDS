@@ -1,11 +1,12 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
-import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByPatientId;
 import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.data.ehr.models.ResourceTypesUsed;
+import org.endeavourhealth.ui.framework.exceptions.BadRequestException;
 import org.endeavourhealth.ui.json.JsonResourceContainer;
 import org.endeavourhealth.ui.json.JsonResourceType;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -39,19 +40,27 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
         super.setLogbackMarkers(sc);
 
-        UUID patientId = UUID.fromString(patientIdStr);
-
         List<JsonResourceType> ret = new ArrayList<>();
 
-        ResourceHistory patientResource = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), patientId);
-        if (patientResource != null) {
+        //if an empty or partial patient ID is passed up, just return an empty list, rather than failing with a bad request error,
+        //as it's easier than validating the patient ID on the client
+        if (!Strings.isNullOrEmpty(patientIdStr)) {
+            try {
+                UUID patientId = UUID.fromString(patientIdStr);
 
-            UUID serviceId = patientResource.getServiceId();
-            UUID systemId = patientResource.getSystemId();
+                ResourceHistory patientResource = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), patientId);
+                if (patientResource != null) {
 
-            List<ResourceTypesUsed> resourcesTypesUsed = resourceRepository.getResourcesTypesUsed(serviceId, systemId);
-            for (ResourceTypesUsed r: resourcesTypesUsed) {
-                ret.add(new JsonResourceType(r.getResourceType()));
+                    UUID serviceId = patientResource.getServiceId();
+                    UUID systemId = patientResource.getSystemId();
+
+                    List<ResourceTypesUsed> resourcesTypesUsed = resourceRepository.getResourcesTypesUsed(serviceId, systemId);
+                    for (ResourceTypesUsed r : resourcesTypesUsed) {
+                        ret.add(new JsonResourceType(r.getResourceType()));
+                    }
+                }
+            } catch (IllegalArgumentException ex) {
+                //do nothing if the string isn't a valid UUID
             }
         }
 
@@ -93,11 +102,18 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
         super.setLogbackMarkers(sc);
 
-        JsonResourceContainer ret = null;
+        if (Strings.isNullOrEmpty(resourceType)) {
+            throw new BadRequestException("Resource Type must be selected");
+        }
+        if (Strings.isNullOrEmpty(resourceId)) {
+            throw new BadRequestException("Resource ID must be entered");
+        }
+
+        List<JsonResourceContainer> ret = new ArrayList<>();
 
         ResourceHistory resourceHistory = resourceRepository.getCurrentVersion(resourceType, UUID.fromString(resourceId));
         if (resourceHistory != null) {
-            ret = new JsonResourceContainer(resourceHistory);
+            ret.add(new JsonResourceContainer(resourceHistory));
         }
 
         clearLogbackMarkers();
@@ -111,30 +127,6 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/resourceHistory")
-    public Response resourceHistory(@Context SecurityContext sc,
-                                      @QueryParam("resourceType") String resourceType,
-                                      @QueryParam("resourceId") String resourceId) throws Exception {
-
-        super.setLogbackMarkers(sc);
-
-        List<JsonResourceContainer> ret = new ArrayList<>();
-
-        List<ResourceHistory> resourceHistories = resourceRepository.getResourceHistory(resourceType, UUID.fromString(resourceId));
-        for (ResourceHistory resourceHistory: resourceHistories) {
-            ret.add(new JsonResourceContainer(resourceHistory));
-        }
-
-        clearLogbackMarkers();
-
-        return Response
-                .ok()
-                .entity(ret).type(MediaType.APPLICATION_JSON_TYPE)
-                .build();
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
     @Path("/forPatient")
     public Response forPatient(@Context SecurityContext sc,
                                @QueryParam("resourceType") String resourceType,
@@ -142,15 +134,22 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
         super.setLogbackMarkers(sc);
 
+        if (Strings.isNullOrEmpty(resourceType)) {
+            throw new BadRequestException("Resource Type must be selected");
+        }
+        if (Strings.isNullOrEmpty(patientIdStr)) {
+            throw new BadRequestException("Patient ID must be entered");
+        }
+
         UUID patientId = UUID.fromString(patientIdStr);
 
         List<JsonResourceContainer> ret = new ArrayList<>();
 
-        PatientIdentifierByPatientId identifier = identifierRepository.getMostRecentByPatientId(patientId);
-        if (identifier != null) {
+        ResourceHistory patientResource = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), patientId);
+        if (patientResource != null) {
 
-            UUID serviceId = identifier.getServiceId();
-            UUID systemId = identifier.getSystemId();
+            UUID serviceId = patientResource.getServiceId();
+            UUID systemId = patientResource.getSystemId();
 
             List<ResourceByPatient> resourceHistories = resourceRepository.getResourcesByPatient(serviceId, systemId, patientId, resourceType);
             for (ResourceByPatient resourceHistory: resourceHistories) {
@@ -166,5 +165,36 @@ public class ResourceEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/resourceHistory")
+    public Response resourceHistory(@Context SecurityContext sc,
+                                    @QueryParam("resourceType") String resourceType,
+                                    @QueryParam("resourceId") String resourceId) throws Exception {
+
+        super.setLogbackMarkers(sc);
+
+        if (Strings.isNullOrEmpty(resourceType)) {
+            throw new BadRequestException("Resource Type must be selected");
+        }
+        if (Strings.isNullOrEmpty(resourceId)) {
+            throw new BadRequestException("Resource ID must be entered");
+        }
+
+        List<JsonResourceContainer> ret = new ArrayList<>();
+
+        List<ResourceHistory> resourceHistories = resourceRepository.getResourceHistory(resourceType, UUID.fromString(resourceId));
+        for (ResourceHistory resourceHistory: resourceHistories) {
+            ret.add(new JsonResourceContainer(resourceHistory));
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret).type(MediaType.APPLICATION_JSON_TYPE)
+                .build();
+    }
 
 }

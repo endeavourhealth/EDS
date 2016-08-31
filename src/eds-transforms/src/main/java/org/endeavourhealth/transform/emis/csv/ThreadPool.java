@@ -46,7 +46,7 @@ public class ThreadPool {
         if (counter % 10000 == 0) {
             futureCheckCounter.set(0);
 
-            LOG.trace("Checking {} futures with {} items in pool", futures.size(), threadPoolQueueSize);
+            //LOG.trace("Checking {} futures with {} items in pool", futures.size(), threadPoolQueueSize);
             //LOG.trace("Free mem {} ", Runtime.getRuntime().freeMemory());
             checkFutures(false);
         }

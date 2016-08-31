@@ -15,12 +15,15 @@
                                 <div class="panel-heading">Trace Patient by NHS Number</div>
                                 <div class="panel-body">
 
-                                    <div class="form-group">
-                                        <label>NHS#</label>
-                                        <input type="text" class="form-control" ng-model="patientIdentityCtrl.nhsNumber">
-                                    </div>
+                                    <form name="nhsNumberForm">
+                                        <div class="form-group">
+                                            <label>NHS#</label>
+                                            <input name="nhsNumber" type="text" class="form-control" ng-model="patientIdentityCtrl.nhsNumber" required>
+                                        </div>
+                                        <button type="button" class="btn btn-default" ng-disabled="nhsNumberForm.$invalid" ng-click="patientIdentityCtrl.getPatientIdentitiedByNhsNumber()">Search</button>
+                                        <span ng-show="nhsNumberForm.nhsNumber.$touched && nhsNumberForm.nhsNumber.$invalid">You must enter an NHS number</span>
+                                    </form>
 
-                                    <button type="button" class="btn btn-default" ng-click="patientIdentityCtrl.getPatientIdentitiedByNhsNumber()">Search</button>
                                 </div>
                             </div>
 
@@ -31,12 +34,15 @@
                                 <div class="panel-heading">Trace Patient by EDS Patient ID</div>
                                 <div class="panel-body">
 
-                                    <div class="form-group">
-                                        <label>Patient ID</label>
-                                        <input type="text" class="form-control" ng-model="patientIdentityCtrl.patientId">
-                                    </div>
+                                    <form name="edsIdForm">
+                                        <div class="form-group">
+                                            <label>Patient ID</label>
+                                            <input name="patientId" type="text" class="form-control" ng-model="patientIdentityCtrl.patientId" required>
+                                        </div>
 
-                                    <button type="button" class="btn btn-default" ng-click="patientIdentityCtrl.getPatientIdentitiesByPatientId()">Search</button>
+                                        <button type="button" class="btn btn-default" ng-disabled="edsIdForm.$invalid" ng-click="patientIdentityCtrl.getPatientIdentitiesByPatientId()">Search</button>
+                                        <span ng-show="edsIdForm.patientId.$touched && edsIdForm.patientId.$invalid">You must enter an EDS Patient ID</span>
+                                    </form>
                                 </div>
                             </div>
 
@@ -47,32 +53,38 @@
                                 <div class="panel-heading">Trace Patient by Local System ID</div>
                                 <div class="panel-body">
 
-                                    <div class="form-group">
-                                        <label>Service</label>
-                                        <div class="input-group">
-                                            <span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
-                                            <select id="service" class="form-control" ng-model="patientIdentityCtrl.serviceId" ng-change="patientIdentityCtrl.loadSystems()">
-                                                <option ng-repeat="item in patientIdentityCtrl.services" value="{{item.uuid}}">{{item.name}}</option>
-                                            </select>
+                                    <form name="localIdForm">
+
+                                        <div class="form-group">
+                                            <label>Service</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
+                                                <select name="service" class="form-control" ng-model="patientIdentityCtrl.serviceId" ng-change="patientIdentityCtrl.loadSystems()" required>
+                                                    <option ng-repeat="item in patientIdentityCtrl.services" value="{{item.uuid}}">{{item.name}}</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div class="form-group">
-                                        <label>System</label>
-                                        <div class="input-group">
-                                            <span class="input-group-addon"><i class="fa fa-laptop fa-lg fa-fw"></i></span>
-                                            <select id="system" class="form-control" ng-model="patientIdentityCtrl.systemId">
-                                                <option ng-repeat="item in patientIdentityCtrl.systems" value="{{item.uuid}}">{{item.name}}</option>
-                                            </select>
+                                        <div class="form-group">
+                                            <label>System</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon"><i class="fa fa-laptop fa-lg fa-fw"></i></span>
+                                                <select name="system" class="form-control" ng-model="patientIdentityCtrl.systemId" required>
+                                                    <option ng-repeat="item in patientIdentityCtrl.systems" value="{{item.uuid}}">{{item.name}}</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div class="form-group">
-                                        <label>Local ID</label>
-                                        <input type="text" class="form-control" ng-model="patientIdentityCtrl.localId">
-                                    </div>
+                                        <div class="form-group">
+                                            <label>Local ID</label>
+                                            <input name="localId" type="text" class="form-control" ng-model="patientIdentityCtrl.localId" required>
+                                        </div>
 
-                                    <button type="button" class="btn btn-default" ng-click="patientIdentityCtrl.getPatientIdentitiesByLocalIdentifier()">Search</button>
+                                        <button type="button" class="btn btn-default" ng-disabled="localIdForm.$invalid" ng-click="patientIdentityCtrl.getPatientIdentitiesByLocalIdentifier()">Search</button>
+                                        <span ng-show="localIdForm.service.$touched && localIdForm.service.$invalid">You must select a service</span>
+                                        <span ng-show="localIdForm.system.$touched && localIdForm.system.$invalid">You must select a system</span>
+                                        <span ng-show="localIdForm.localId.$touched && localIdForm.localId.$invalid">You must enter a local ID</span>
+                                    </form>
                                 </div>
                             </div>
 
@@ -110,7 +122,7 @@
                                     <td>{{id.nhsNumber}}</td>
                                     <td>{{id.forenames}}</td>
                                     <td>{{id.surname}}</td>
-                                    <td>{{id.dateOfBirth}}</td>
+                                    <td>{{id.dateOfBirth | date:'dd-MMM-yyyy'}}</td>
                                     <td>{{id.postcode}}</td>
                                     <td>{{id.gender}}</td>
                                     <td>{{id.localId}}</td>

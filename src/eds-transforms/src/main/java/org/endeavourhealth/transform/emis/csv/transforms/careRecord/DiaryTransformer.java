@@ -59,7 +59,7 @@ public class DiaryTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (diaryParser.getDeleted() || diaryParser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirRequest, patientGuid);
+            csvProcessor.deletePatientResource(patientGuid, fhirRequest);
             return;
         }
 
@@ -127,6 +127,6 @@ public class DiaryTransformer {
             fhirRequest.setStatus(ProcedureRequest.ProcedureRequestStatus.SUSPENDED);
         }
 
-        csvProcessor.savePatientResource(fhirRequest, patientGuid);
+        csvProcessor.savePatientResource(patientGuid, fhirRequest);
     }
 }

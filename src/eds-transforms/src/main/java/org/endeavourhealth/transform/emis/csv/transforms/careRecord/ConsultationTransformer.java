@@ -54,7 +54,7 @@ public class ConsultationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (consultationParser.getDeleted() || consultationParser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirEncounter, patientGuid);
+            csvProcessor.deletePatientResource(patientGuid, fhirEncounter);
             return;
         }
 
@@ -102,7 +102,7 @@ public class ConsultationTransformer {
             fhirEncounter.addReason(fhirCode);
         }
 
-        csvProcessor.savePatientResource(fhirEncounter, patientGuid);
+        csvProcessor.savePatientResource(patientGuid, fhirEncounter);
     }
 
     private static Period createPeriod(Date date, String precision) throws Exception {

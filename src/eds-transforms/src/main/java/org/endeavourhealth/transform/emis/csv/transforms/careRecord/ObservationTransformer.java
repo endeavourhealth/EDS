@@ -155,7 +155,7 @@ public class ObservationTransformer {
         String patientGuid = parser.getPatientGuid();
 
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirProblem, patientGuid);
+            csvProcessor.deletePatientResource(patientGuid, fhirProblem);
             return;
         }
 
@@ -352,7 +352,7 @@ public class ObservationTransformer {
         }
 
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirReferral, patientGuid);
+            csvProcessor.deletePatientResource(patientGuid, fhirReferral);
             return;
         }
 
@@ -390,7 +390,7 @@ public class ObservationTransformer {
                                             parser.getObservationGuid(),
                                             fhirReferral.getResourceType());
 
-        csvProcessor.savePatientResource(fhirReferral, patientGuid);
+        csvProcessor.savePatientResource(patientGuid, fhirReferral);
 
     }
 
@@ -410,7 +410,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirOrder, patientGuid);
+            csvProcessor.deletePatientResource(patientGuid, fhirOrder);
             return;
         }
 
@@ -453,7 +453,7 @@ public class ObservationTransformer {
                 observationGuid,
                 fhirOrder.getResourceType());
 
-        csvProcessor.savePatientResource(fhirOrder, patientGuid);
+        csvProcessor.savePatientResource(patientGuid, fhirOrder);
 
     }
 
@@ -473,7 +473,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirAllergy, patientGuid);
+            csvProcessor.deletePatientResource(patientGuid, fhirAllergy);
             return;
         }
 
@@ -513,7 +513,7 @@ public class ObservationTransformer {
                 observationGuid,
                 fhirAllergy.getResourceType());
 
-        csvProcessor.savePatientResource(fhirAllergy, patientGuid);
+        csvProcessor.savePatientResource(patientGuid, fhirAllergy);
 
     }
 
@@ -533,7 +533,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirProcedure, patientGuid);
+            csvProcessor.deletePatientResource(patientGuid, fhirProcedure);
             return;
         }
 
@@ -578,7 +578,7 @@ public class ObservationTransformer {
                 observationGuid,
                 fhirProcedure.getResourceType());
 
-        csvProcessor.savePatientResource(fhirProcedure, patientGuid);
+        csvProcessor.savePatientResource(patientGuid, fhirProcedure);
     }
 
 
@@ -598,7 +598,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirCondition, patientGuid);
+            csvProcessor.deletePatientResource(patientGuid, fhirCondition);
             return;
         }
 
@@ -649,7 +649,7 @@ public class ObservationTransformer {
                 observationGuid,
                 fhirCondition.getResourceType());
 
-        csvProcessor.savePatientResource(fhirCondition, patientGuid);
+        csvProcessor.savePatientResource(patientGuid, fhirCondition);
     }
 
     private static void createObservation(Observation parser,
@@ -668,7 +668,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirObservation, patientGuid);
+            csvProcessor.deletePatientResource(patientGuid, fhirObservation);
             return;
         }
 
@@ -732,7 +732,7 @@ public class ObservationTransformer {
                 observationGuid,
                 fhirObservation.getResourceType());
 
-        csvProcessor.savePatientResource(fhirObservation, patientGuid);
+        csvProcessor.savePatientResource(patientGuid, fhirObservation);
     }
     private static void linkChildObservations(EmisCsvHelper csvHelper,
                                               org.hl7.fhir.instance.model.Observation fhirObservation,
@@ -781,7 +781,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirFamilyHistory, patientGuid);
+            csvProcessor.deletePatientResource(patientGuid, fhirFamilyHistory);
             return;
         }
 
@@ -830,7 +830,7 @@ public class ObservationTransformer {
                 observationGuid,
                 fhirFamilyHistory.getResourceType());
 
-        csvProcessor.savePatientResource(fhirFamilyHistory, patientGuid);
+        csvProcessor.savePatientResource(patientGuid, fhirFamilyHistory);
     }
 
     private static void createImmunization(Observation parser,
@@ -849,7 +849,7 @@ public class ObservationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirImmunisation, patientGuid);
+            csvProcessor.deletePatientResource(patientGuid, fhirImmunisation);
             return;
         }
 
@@ -894,7 +894,7 @@ public class ObservationTransformer {
                 observationGuid,
                 fhirImmunisation.getResourceType());
 
-        csvProcessor.savePatientResource(fhirImmunisation, patientGuid);
+        csvProcessor.savePatientResource(patientGuid, fhirImmunisation);
     }
 
     private static void createDocumentExtension(DomainResource resource, Observation parser) {

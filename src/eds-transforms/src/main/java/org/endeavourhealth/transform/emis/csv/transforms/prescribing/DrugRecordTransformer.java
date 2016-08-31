@@ -58,7 +58,7 @@ public class DrugRecordTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirMedication, patientGuid);
+            csvProcessor.deletePatientResource(patientGuid, fhirMedication);
             return;
         }
 
@@ -141,7 +141,7 @@ public class DrugRecordTransformer {
         Coding fhirCoding = CodingHelper.createCoding(fhirAuthorisationType);
         fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE, fhirCoding));
 
-        csvProcessor.savePatientResource(fhirMedication, patientGuid);
+        csvProcessor.savePatientResource(patientGuid, fhirMedication);
 
         //if this record is linked to a problem, store this relationship in the helper
         csvHelper.cacheProblemRelationship(problemObservationGuid,

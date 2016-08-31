@@ -20,21 +20,115 @@ public class Appointment {
     private String sessionLocation;
 
 
+    public long getServiceProviderId() {
+        return serviceProviderId;
+    }
 
-    /**
-    // * 	[SK_ServiceProviderID] [int] NOT NULL,
-    // [SK_PatientID] [int] NOT NULL,
-    // [AppointmentDate] [date] NOT NULL,
-     [AppointmentStartTime] [time](0) NOT NULL,
-     [AppointmentEndTime] [time](0) NOT NULL,
-     [IsCancelled] [bit] NOT NULL,
-     [CurrentStatus] [varchar](20) NOT NULL,
-     [ArrivalTime] [time](0) NULL,
-     [SeenTime] [time](0) NULL,
-     [DateAppointmentBooked] [date] NULL,
-     [TimeAppointmentBooked] [time](0) NULL,
-     [SessionHolder] [varchar](100) NULL,
-     [SessionType] [varchar](20) NULL,
-     [SessionLocation] [varchar](50) NULL
-     */
+    public void setServiceProviderId(long serviceProviderId) {
+        this.serviceProviderId = serviceProviderId;
+    }
+
+    public long getPatientId() {
+        return patientId;
+    }
+
+    public void setPatientId(long patientId) {
+        this.patientId = patientId;
+    }
+
+    public Date getAppointmentDate() {
+        return appointmentDate;
+    }
+
+    public void setAppointmentDate(Date appointmentDate) {
+        this.appointmentDate = appointmentDate;
+    }
+
+    public Date getAppointmentTime() {
+        return appointmentTime;
+    }
+
+    public void setAppointmentTime(Date appointmentTime) {
+        this.appointmentTime = appointmentTime;
+    }
+
+    public Date getAppointmentEndTime() {
+        return appointmentEndTime;
+    }
+
+    public void setAppointmentEndTime(Date appointmentEndTime) {
+        this.appointmentEndTime = appointmentEndTime;
+    }
+
+    public boolean isCancelled() {
+        return isCancelled;
+    }
+
+    public void setCancelled(boolean cancelled) {
+        isCancelled = cancelled;
+    }
+
+    public String getCurrentStatus() {
+        return currentStatus;
+    }
+
+    public void setCurrentStatus(String currentStatus) {
+        this.currentStatus = currentStatus;
+    }
+
+    public Date getArrivalTime() {
+        return arrivalTime;
+    }
+
+    public void setArrivalTime(Date arrivalTime) {
+        this.arrivalTime = arrivalTime;
+    }
+
+    public Date getSeenTime() {
+        return seenTime;
+    }
+
+    public void setSeenTime(Date seenTime) {
+        this.seenTime = seenTime;
+    }
+
+    public Date getDateAppointmentBooked() {
+        return dateAppointmentBooked;
+    }
+
+    public void setDateAppointmentBooked(Date dateAppointmentBooked) {
+        this.dateAppointmentBooked = dateAppointmentBooked;
+    }
+
+    public Date getTimeAppointmentBooked() {
+        return timeAppointmentBooked;
+    }
+
+    public void setTimeAppointmentBooked(Date timeAppointmentBooked) {
+        this.timeAppointmentBooked = timeAppointmentBooked;
+    }
+
+    public String getSessionHolder() {
+        return sessionHolder;
+    }
+
+    public void setSessionHolder(String sessionHolder) {
+        this.sessionHolder = sessionHolder;
+    }
+
+    public String getSessionType() {
+        return sessionType;
+    }
+
+    public void setSessionType(String sessionType) {
+        this.sessionType = sessionType;
+    }
+
+    public String getSessionLocation() {
+        return sessionLocation;
+    }
+
+    public void setSessionLocation(String sessionLocation) {
+        this.sessionLocation = sessionLocation;
+    }
 }
