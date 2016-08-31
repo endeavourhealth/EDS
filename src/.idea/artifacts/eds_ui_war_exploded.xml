@@ -5,6 +5,7 @@
       <element id="directory" name="WEB-INF">
         <element id="directory" name="classes">
           <element id="module-output" name="eds-ui" />
+          <element id="jpa-descriptors" facet="eds-ui/jpa/JPA" />
         </element>
         <element id="directory" name="lib">
           <element id="library" level="project" name="Maven: org.glassfish.jersey.core:jersey-server:2.22.1" />
