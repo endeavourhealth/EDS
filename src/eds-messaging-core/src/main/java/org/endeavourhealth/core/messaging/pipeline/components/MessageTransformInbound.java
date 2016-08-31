@@ -39,8 +39,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		this.config = config;
 	}
 
-	private UUID findSystemId(Service service, String messageFormat, String messageVersion, UUID exchangeId) throws Exception {
-
+	private UUID findSystemId(Service service, String software, String messageVersion, UUID exchangeId) throws Exception {
 
 		List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
 		for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
@@ -55,7 +54,7 @@ public class MessageTransformInbound extends PipelineComponent {
 			for (TechnicalInterface technicalInterface: system.getTechnicalInterface()) {
 
 				if (endpointInterfaceId.equals(technicalInterface.getUuid())
-						&& technicalInterface.getMessageFormat().equalsIgnoreCase(messageFormat)
+						&& technicalInterface.getMessageFormat().equalsIgnoreCase(software)
 						&& technicalInterface.getMessageFormatVersion().equalsIgnoreCase(messageVersion)) {
 
 					return endpointSystemId;
@@ -64,8 +63,8 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		}
 
-		throw new PipelineException("Failed to find SystemId for service " + service.getId() + ", message format "
-				+ messageFormat + " and version " + messageVersion
+		throw new PipelineException("Failed to find SystemId for service " + service.getId() + ", message "
+				+ software + " and version " + messageVersion
 				+ " when processing exchange " + exchangeId);
 	}
 
@@ -76,18 +75,17 @@ public class MessageTransformInbound extends PipelineComponent {
 
 			UUID serviceId = UUID.fromString(exchange.getHeader(HeaderKeys.SenderServiceUuid));
 			String software = exchange.getHeader(HeaderKeys.SourceSystem);
-			String messageFormat = exchange.getHeader(HeaderKeys.MessageFormat);
 			String messageVersion = exchange.getHeader(HeaderKeys.SystemVersion);
 
 			//find the organisation UUIDs covered by the service
 			Service service = serviceRepository.getById(serviceId);
 
 			//find the system ID by using values from the message header
-			UUID systemId = findSystemId(service, messageFormat, messageVersion, exchange.getExchangeId());
+			UUID systemId = findSystemId(service, software, messageVersion, exchange.getExchangeId());
 
 			List<UUID> batchIds = null;
 
-			if (software.equalsIgnoreCase("EmisExtractService")) {
+			if (software.equalsIgnoreCase("EMISCSV")) {
 				batchIds = processEmisCsvTransform(exchange, serviceId, systemId, messageVersion, software);
 
 			} else if (software.equalsIgnoreCase("EmisOpen")) {

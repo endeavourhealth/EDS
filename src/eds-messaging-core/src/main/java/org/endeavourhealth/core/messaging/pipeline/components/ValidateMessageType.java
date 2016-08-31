@@ -6,15 +6,12 @@ import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
+import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.List;
 
 public class ValidateMessageType extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(ValidateMessageType.class);
@@ -30,7 +27,7 @@ public class ValidateMessageType extends PipelineComponent {
 		String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
 		String sourceSystem = exchange.getHeader(HeaderKeys.SourceSystem);
 		// String messageType = exchange.getHeader(HeaderKeys.MessageEvent);
-		String messageFormat = exchange.getHeader(HeaderKeys.MessageFormat);
+		//String messageFormat = exchange.getHeader(HeaderKeys.MessageFormat);
 		String formatVersion = exchange.getHeader(HeaderKeys.SystemVersion);
 
 		// Get the (publisher) protocols
@@ -40,6 +37,36 @@ public class ValidateMessageType extends PipelineComponent {
 			libraryItemList = ObjectMapperPool.getInstance().readValue(protocolJson, LibraryItem[].class);
 
 			// Ensure at least one of the publisher protocols is for this system/format
+			boolean senderIsValid = false;
+			for (LibraryItem libraryItem: libraryItemList) {
+				Protocol protocol = libraryItem.getProtocol();
+				List<ServiceContract> serviceContracts = protocol.getServiceContract();
+
+				for (ServiceContract serviceContract: serviceContracts) {
+					if (!serviceContract.getType().equals(ServiceContractType.PUBLISHER)) {
+						continue;
+					}
+					if (!serviceContract.getService().getUuid().equals(serviceUuid)) {
+						continue;
+					}
+
+					TechnicalInterface technicalInterface = serviceContract.getTechnicalInterface();
+					if (!technicalInterface.getMessageFormat().equals(sourceSystem)) {
+						continue;
+					}
+					if (!technicalInterface.getMessageFormatVersion().equals(formatVersion)) {
+						continue;
+					}
+
+					senderIsValid = true;
+				}
+
+			}
+			if (!senderIsValid) {
+				throw new PipelineException("No valid publisher service contracts found");
+			}
+
+/*
 			Boolean senderIsValid = Arrays.stream(libraryItemList)
 					.map(li -> li.getProtocol().getServiceContract())
 					.flatMap(Collection::stream)
@@ -55,6 +82,7 @@ public class ValidateMessageType extends PipelineComponent {
 
 			if (senderIsValid == false)
 				throw new PipelineException("No valid publisher service contracts found");
+*/
 
 		} catch (IOException e) {
 			LOG.error("Error parsing protocol JSON");

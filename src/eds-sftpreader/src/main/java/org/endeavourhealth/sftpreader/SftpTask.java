@@ -485,22 +485,22 @@ public class SftpTask extends TimerTask
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build())
         {
             HttpPost httpPost = new HttpPost(dbConfiguration.getDbConfigurationEds().getEdsUrl());
-            LOG.info("Performing POST to {}", dbConfiguration.getDbConfigurationEds().getEdsUrl());
+            LOG.trace("Performing POST to {}", dbConfiguration.getDbConfigurationEds().getEdsUrl());
 
             if (dbConfiguration.getDbConfigurationEds().isUseKeycloak()) {
                 Header keycloakHeader = KeycloakClient.instance().getAuthorizationHeader();
                 httpPost.addHeader(keycloakHeader);
-                LOG.info("Added keycloak header {}={}", keycloakHeader.getName(), keycloakHeader.getValue());
+                LOG.trace("Added keycloak header {}={}", keycloakHeader.getName(), keycloakHeader.getValue());
             }
 
             //the bundle is being sent as XML, so we need to declare this
             httpPost.addHeader("Content-Type", "text/xml");
             httpPost.setEntity(new ByteArrayEntity(outboundMessage.getBytes()));
-            LOG.info("Set payload to {} bytes", outboundMessage.getBytes().length);
+            LOG.trace("Set payload to {} bytes", outboundMessage.getBytes().length);
             HttpResponse response = httpClient.execute(httpPost);
 
             int statusCode = response.getStatusLine().getStatusCode();
-            LOG.info("Received HTTP code {}: {}", statusCode, response.getStatusLine());
+            LOG.trace("Received HTTP code {}: {}", statusCode, response.getStatusLine());
 
             List<String> lines = new ArrayList<>();
             lines.add(response.getStatusLine().toString());
@@ -512,7 +512,7 @@ public class SftpTask extends TimerTask
                     BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(instream, "UTF-8"));
                     String line = bufferedReader.readLine();
                     while (line != null){
-                        LOG.info(line);
+                        LOG.trace(line);
                         line = bufferedReader.readLine();
                         lines.add(line);
                     }

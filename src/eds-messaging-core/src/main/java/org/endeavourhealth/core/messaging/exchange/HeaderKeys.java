@@ -7,7 +7,7 @@ public abstract class HeaderKeys {
 
 	// Message source
 	public static final String MessageId = "MessageId";
-	public static final String SenderLocalIdentifier = "SenderLocalIdentifier"; //two parts:  <service local ID>\\<org ODS>
+	public static final String SenderLocalIdentifier = "SenderLocalIdentifier"; //the ODS code
 	public static final String SourceSystem = "SourceSystem";
 	public static final String SystemVersion = "SystemVersion";
 	public static final String MessageEvent = "MessageEvent";

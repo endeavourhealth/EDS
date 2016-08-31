@@ -37,8 +37,6 @@ public class EdsEnvelopeBuilder
         Validate.notBlank(dbConfigurationEds.getSoftwareName(), "dbConfigurationEds.softwareName is blank");
         Validate.notBlank(dbConfigurationEds.getSoftwareVersion(), "dbConfigurationEds.softwareVersion is blank");
 
-        String sourceName = dbConfigurationEds.getEdsServiceIdentifier() + "//" + organisationId;
-
         String edsEnvelope = Resources.toString(Resources.getResource(EDS_ENVELOPE_TEMPLATE_FILENAME), Charsets.UTF_8);
 
         Map<String, String> test = new HashMap<String, String>()
@@ -46,12 +44,12 @@ public class EdsEnvelopeBuilder
             {
                 put("{{message-id}}", messageId.toString());
                 put("{{timestamp}}", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-                put("{{source-name}}", sourceName);
-                put("{{source-software}}", dbConfigurationEds.getSoftwareName());
+                put("{{source-name}}", organisationId);
+                put("{{source-software}}", dbConfigurationEds.getEnvelopeContentType());
                 put("{{source-version}}", dbConfigurationEds.getSoftwareVersion());
                 put("{{source-endpoint}}", "");
                 put("{{payload-id}}", UUID.randomUUID().toString());
-                put("{{payload-type}}", dbConfigurationEds.getEnvelopeContentType());
+                put("{{payload-type}}", "application/base64");
                 put("{{payload-base64}}", Base64.getEncoder().encodeToString(messagePayload.getBytes()));
             }
         };

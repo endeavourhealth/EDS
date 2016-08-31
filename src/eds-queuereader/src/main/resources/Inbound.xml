@@ -5,7 +5,8 @@
         <Password>guest</Password>
     </Credentials>
     <Nodes>localhost:5672</Nodes>
-    <Queue>EdsInbound-A-M</Queue>
+    <Queue>EdsInbound-GPs_Eng_Wls</Queue>
+    <!--<Queue>EdsInbound-A-M</Queue>-->
     <Pipeline>
         <MessageTransformInbound>
             <SharedStoragePath>C:\SFTPData</SharedStoragePath>

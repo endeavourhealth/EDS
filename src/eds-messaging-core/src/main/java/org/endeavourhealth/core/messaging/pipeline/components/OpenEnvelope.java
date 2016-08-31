@@ -10,7 +10,6 @@ import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.utility.StreamExtension;
 import org.hl7.fhir.instance.model.Binary;
 import org.hl7.fhir.instance.model.Bundle;
 import org.hl7.fhir.instance.model.MessageHeader;
@@ -20,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 public class OpenEnvelope extends PipelineComponent {
@@ -87,6 +85,33 @@ public class OpenEnvelope extends PipelineComponent {
 
 	private void getSenderUuid(Exchange exchange) throws PipelineException {
 
+		String organisationOds = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
+
+		//get the organisation
+		OrganisationRepository organisationRepository = new OrganisationRepository();
+		Organisation organisation = organisationRepository.getByNationalId(organisationOds);
+		if (organisation == null) {
+			throw new PipelineException("Organisation for national ID " + organisationOds + " could not be found");
+		}
+
+		//get the service
+		Service service = null;
+		//TODO - fix assumption that orgs can only have one service
+		ServiceRepository serviceRepository = new ServiceRepository();
+		for (UUID serviceId: organisation.getServices().keySet()) {
+			service = serviceRepository.getById(serviceId);
+		}
+
+		if (service == null) {
+			throw new PipelineException("No service found for organisation " + organisation.getId());
+		}
+
+		exchange.setHeader(HeaderKeys.SenderServiceUuid, service.getId().toString());
+		exchange.setHeader(HeaderKeys.SenderOrganisationUuid, organisation.getId().toString());
+
+	}
+	/*private void getSenderUuid(Exchange exchange) throws PipelineException {
+
 		// Get service id
 		String senderId = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
 
@@ -122,7 +147,7 @@ public class OpenEnvelope extends PipelineComponent {
 		exchange.setHeader(HeaderKeys.SenderServiceUuid, service.getId().toString());
 		exchange.setHeader(HeaderKeys.SenderOrganisationUuid, organisation.getId().toString());
 
-	}
+	}*/
 
 	private void processBody(Exchange exchange, Binary binary) {
 		exchange.setHeader(HeaderKeys.MessageFormat, binary.getContentType());
