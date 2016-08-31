@@ -227,7 +227,7 @@ CREATE TABLE organisation
     id UUID,
     name TEXT,
     national_id TEXT,
-		services map<UUID, TEXT>,
+	services map<UUID, TEXT>,
     PRIMARY KEY (id) 
   );
 
@@ -251,7 +251,17 @@ WHERE id IS NOT NULL
   AND dt_expired IS NOT NULL
 PRIMARY KEY((end_user_id), id)
 WITH CLUSTERING ORDER BY (end_user_id ASC);
-  
+
+CREATE MATERIALIZED VIEW organisation_by_national_id AS
+SELECT id, name, national_id, services
+FROM organisation
+WHERE id IS NOT NULL
+  AND name IS NOT NULL
+  AND national_id IS NOT NULL
+  AND services IS NOT NULL
+PRIMARY KEY((national_id), id)
+WITH CLUSTERING ORDER BY (national_id ASC);
+
 CREATE TABLE queuedMessage
 (
 	id UUID,

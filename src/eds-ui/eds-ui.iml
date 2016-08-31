@@ -9,7 +9,7 @@
         </descriptors>
         <webroots>
           <root url="file://$MODULE_DIR$/src/main/webapp" relative="/" />
-          <root url="file://$MODULE_DIR$/src/main/frontend" relative="/" />
+          <root url="file://$MODULE_DIR$/src/main/frontend" relative="/frontend" />
         </webroots>
       </configuration>
     </facet>
@@ -18,7 +18,7 @@
         <setting name="validation-enabled" value="true" />
         <setting name="provider-name" value="" />
         <datasource-mapping>
-          <factory-entry name="NewPersistenceUnit" value="569ec8fa-f18c-4c8d-8025-f6e55da01d6b" />
+          <factory-entry name="NewPersistenceUnit" value="19632f9d-118a-4b80-b96a-10a3e17d8518" />
         </datasource-mapping>
         <deploymentDescriptor name="persistence.xml" url="file://$MODULE_DIR$/src/main/java/META-INF/persistence.xml" />
       </configuration>

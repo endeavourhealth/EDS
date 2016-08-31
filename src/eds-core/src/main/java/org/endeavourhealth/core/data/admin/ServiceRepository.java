@@ -101,5 +101,20 @@ public class ServiceRepository extends Repository {
 			return null;
 		}
 	}
+
+	public Service getByOrganisationNationalId(String nationalId) {
+		OrganisationRepository organisationRepository = new OrganisationRepository();
+		Organisation organisation = organisationRepository.getByNationalId(nationalId);
+		if (organisation == null)
+			return null;
+
+		Iterator<UUID> iterator = organisation.getServices().keySet().iterator();
+		if (iterator.hasNext()) {
+			UUID serviceId = iterator.next();
+			return getById(serviceId);
+		} else {
+			return null;
+		}
+	}
 }
 

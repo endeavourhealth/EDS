@@ -20,4 +20,7 @@ public interface OrganisationAccessor {
 	@Query("SELECT * FROM admin.organisation WHERE name >= :searchData AND name < :rangeEnd allow filtering")
 	Result<Organisation> search(@Param("searchData") String searchData, @Param("rangeEnd") String rangeEnd);
 
+	@Query("SELECT * FROM admin.organisation_by_national_id WHERE national_id = :nationalId")
+	Result<Organisation> getByNationalId(@Param("nationalId") String nationalId);
+
 }
