@@ -63,6 +63,10 @@ public class ValidateMessageType extends PipelineComponent {
 
 			}
 			if (!senderIsValid) {
+				LOG.error("Failed to find publisher protocol for service {} software {} version {}", serviceUuid, sourceSystem, formatVersion);
+				LOG.error("Checked {} protocols", libraryItemList.length);
+				LOG.error(protocolJson);
+
 				throw new PipelineException("No valid publisher service contracts found");
 			}
 
