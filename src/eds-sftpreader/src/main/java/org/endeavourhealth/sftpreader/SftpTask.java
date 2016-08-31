@@ -133,7 +133,7 @@ public class SftpTask extends TimerTask
                 LOG.trace("Skipped {} files as already processed them", new Integer(countAlreadyProcessed));
             }
 
-            LOG.info(" Completed processing {} files", Integer.toString(sftpRemoteFiles.size()));
+            LOG.info("Completed processing {} files", Integer.toString(sftpRemoteFiles.size()));
         }
         catch (Exception e)
         {
@@ -386,6 +386,10 @@ public class SftpTask extends TimerTask
         List<BatchSplit> unnotifiedBatchSplits = db.getUnnotifiedBatchSplits(dbConfiguration.getInstanceId());
         LOG.debug("There are {} complete split batches for notification", unnotifiedBatchSplits.size());
 
+        if (unnotifiedBatchSplits.isEmpty()) {
+            return;
+        }
+
         if (dbConfiguration.getDbConfigurationEds().isUseKeycloak())
         {
             LOG.trace("Initialising keycloak at: {}", dbConfiguration.getDbConfigurationEds().getKeycloakTokenUri());
@@ -413,6 +417,9 @@ public class SftpTask extends TimerTask
         }
 
         //then attempt to notify EDS for each organisation
+        int countSuccess = 0;
+        int countFail = 0;
+
         for (String organisationId: hmByOrg.keySet()) {
             List<BatchSplit> batchSplits = hmByOrg.get(organisationId);
 
@@ -429,13 +436,16 @@ public class SftpTask extends TimerTask
 
                     LOG.trace("Notifying EDS for batch split: {}", batchSplit.getBatchSplitId());
                     notify(batchSplit);
+                    countSuccess ++;
                 }
             }
             catch (Exception e) {
+                countFail ++;
                 LOG.error("Error occurred notifying EDS for batch split", e);
             }
         }
 
+        LOG.info("Notified EDS successfully {} times and failed {}", countSuccess, countFail);
     }
 
 

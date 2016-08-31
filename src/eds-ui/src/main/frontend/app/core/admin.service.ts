@@ -32,7 +32,7 @@ module app.core {
 				{caption: 'Services', state: 'app.service', icon: 'fa fa-building-o'},
 				{caption: 'Queueing', state: 'app.routeGroup', icon: 'fa fa-tasks'},
 
-				{caption: 'Patient', state: 'app.patientIdentity', icon: 'fa fa-tag'},
+				{caption: 'Patients', state: 'app.patientIdentity', icon: 'fa fa-tag'},
 				{caption: 'Resources', state: 'app.resources', icon: 'fa fa-fire'},
 
 				{caption: 'Administration', state: 'app.admin', icon: 'fa fa-users'},

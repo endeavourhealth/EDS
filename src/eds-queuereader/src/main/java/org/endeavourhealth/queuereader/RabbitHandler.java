@@ -1,20 +1,27 @@
 package org.endeavourhealth.queuereader;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.Address;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
-import org.endeavourhealth.core.queueing.RabbitConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 public class RabbitHandler {
+	private static final Logger LOG = LoggerFactory.getLogger(RabbitHandler.class);
+
 	private QueueReaderConfiguration configuration;
 	private Connection connection;
 	private Channel channel;
 	private RabbitConsumer consumer;
 
 	public RabbitHandler(QueueReaderConfiguration configuration) throws Exception {
+		LOG.info("Connecting to Rabbit queue {} at {}", configuration.getQueue(), configuration.getNodes());
+
 		this.configuration = configuration;
 
 		// Connect to rabbit cluster
