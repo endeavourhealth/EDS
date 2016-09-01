@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.MessageTransformOutboundConfig;
+import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
@@ -65,17 +66,16 @@ public class MessageTransformOutbound extends PipelineComponent {
 				String orgNationalIdStr = exchange.getHeader(HeaderKeys.SenderOrganisationUuid);
 				UUID orgNationalId = UUID.fromString(orgNationalIdStr);
 				String outbound = CegFhirTransformer.transformFromFhir(serviceId, orgNationalId, transformBatch.getBatchId(), transformBatch.getResourceIds());
+				// Store transformed message
+				UUID messageUuid = UUID.randomUUID();
+				new QueuedMessageRepository().save(messageUuid, outbound);
+				subscriberBatch.setOutputMessageId(messageUuid);
+
+				subscriberBatches.add(subscriberBatch);
 			} catch (Exception ex) {
 				throw new PipelineException("Exception tranforming to CEG CSV", ex);
 			}
-
-			// Perform the actual transformation of the given resources into the specified technical interface & store
-			// subscriberBatch.setOutputMessageId(storedTransformedMessageId);
-			subscriberBatch.setOutputMessageId(UUID.randomUUID());
-
-			subscriberBatches.add(subscriberBatch);
 		}
-
 
 		String subscriberBatchesJson = null;
 		try {
