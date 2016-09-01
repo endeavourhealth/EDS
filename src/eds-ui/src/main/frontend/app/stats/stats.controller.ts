@@ -4,39 +4,55 @@
 
 module app.stats {
 	import IStatsService = app.core.IStatsService;
-	import StatsPatient = app.models.StatsPatient;
-	import StatsEvent = app.models.StatsEvent;
+	import StorageStatistics = app.models.StorageStatistics;
 	import Service = app.models.Service;
 	import IServiceService = app.service.IServiceService;
+	import IModalService = angular.ui.bootstrap.IModalService;
+	import ServicePickerController = app.service.ServicePickerController;
 
 	'use strict';
 
 	export class StatsController {
-		statsPatients:StatsPatient[];
-		statsEvents:StatsEvent[];
+		storageStatistics : StorageStatistics[];
 		services : Service[];
-		serviceId : string;
 		hidePatients : boolean;
 		hideEvents : boolean;
 		filterDateFrom : Date;
 		filterDateTo : Date;
 
-		static $inject = ['StatsService', 'LoggerService', 'ServiceService', '$state'];
+		static $inject = ['$uibModal','StatsService', 'LoggerService', 'ServiceService', '$state'];
 
-		constructor(protected statsService:IStatsService,
+		constructor(private $modal : IModalService,
+					protected statsService:IStatsService,
 					protected logger:ILoggerService,
 					protected serviceService : IServiceService,
 					protected $state : IStateService) {
-			this.loadServices();
-			this.refresh();
+
 			this.hidePatients = false;
+			this.hideEvents = false;
+
 		}
 
 		refresh() {
 			var vm = this;
-			var serviceName = $("#service>option:selected").html()
-			this.getStatsPatients(vm.serviceId);
-			this.getStatsEvents(vm.serviceId);
+			this.getStorageStatistics(vm.services);
+
+			this.initGraph();
+		}
+
+		initGraph() {
+			setTimeout(function(){
+				($('table.highchart') as any).highchartTable();
+			}, 500);
+		}
+
+		lookupServiceName(serviceId: string) {
+			var vm = this;
+			for (var i = 0; i < vm.services.length; ++i) {
+				if (vm.services[i].uuid==serviceId) {
+					return vm.services[i].name;
+				}
+			}
 		}
 
 		loadServices() {
@@ -50,21 +66,13 @@ module app.stats {
 				});
 		}
 
-		getStatsPatients(serviceId : string) {
+		getStorageStatistics(services : Service[]) {
 			var vm = this;
-			vm.statsPatients = null;
-			vm.statsService.getStatsPatients(serviceId)
-				.then(function (data:StatsPatient[]) {
-					vm.statsPatients = data;
-				});
-		}
-
-		getStatsEvents(serviceId : string) {
-			var vm = this;
-			vm.statsEvents = null;
-			vm.statsService.getStatsEvents(serviceId)
-				.then(function (data:StatsEvent[]) {
-					vm.statsEvents = data;
+			vm.storageStatistics = null;
+			vm.statsService.getStorageStatistics(services)
+				.then(function (data:StorageStatistics[]) {
+					vm.storageStatistics = data;
+					console.log(vm.storageStatistics);
 				});
 		}
 
@@ -78,8 +86,8 @@ module app.stats {
 			vm.hideEvents = !vm.hideEvents;
 		}
 
-		actionItem(event : StatsPatient, action : string) {
-			alert(action+" : "+event.organisation);
+		actionItem(stat : StorageStatistics, action : string) {
+			alert(action+" : "+stat.serviceId);
 		}
 
 		zeroFill( number : any, width : any ) {
@@ -117,6 +125,15 @@ module app.stats {
 				datestring = value.getFullYear()  + "-" + this.zeroFill((value.getMonth()+1),2) + "-" + this.zeroFill(value.getDate(),2);
 
 			vm.refresh();
+		}
+
+		private editServices() {
+			var vm = this;
+			ServicePickerController.open(vm.$modal, vm.services)
+				.result.then(function (result : Service[]) {
+				vm.services = result;
+				vm.refresh();
+			});
 		}
 
 	}
