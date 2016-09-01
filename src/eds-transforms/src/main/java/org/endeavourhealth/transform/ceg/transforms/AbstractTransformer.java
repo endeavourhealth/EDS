@@ -18,6 +18,9 @@ public class AbstractTransformer {
 
     protected static Long transformStaffId(Reference reference) {
         String id = ReferenceHelper.getReferenceId(reference);
+        return transformStaffId(id);
+    }
+    protected static Long transformStaffId(String id) {
 
         //TODO: convert string to long
 

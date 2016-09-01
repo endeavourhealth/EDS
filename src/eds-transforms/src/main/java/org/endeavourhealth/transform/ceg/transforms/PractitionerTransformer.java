@@ -2,6 +2,8 @@ package org.endeavourhealth.transform.ceg.transforms;
 
 import org.endeavourhealth.transform.ceg.models.AbstractModel;
 import org.endeavourhealth.transform.ceg.models.Staff;
+import org.hl7.fhir.instance.model.Coding;
+import org.hl7.fhir.instance.model.HumanName;
 import org.hl7.fhir.instance.model.Practitioner;
 
 import java.util.List;
@@ -12,20 +14,18 @@ public class PractitionerTransformer extends AbstractTransformer {
 
         Staff model = new Staff();
 
-        /*model.setPatientId(transformPatientId(fhir.getPatient()));
-        model.setEventDate(transformDate(fhir.getOnset()));*/
+        model.setStaffId(transformStaffId(fhir.getId()));
 
-//TODO - finish
-        /**
+        HumanName name = fhir.getName();
+        model.setAuthorisingUser(name.getText());
 
-         private String nativeClinicalCode;
-         private Long staffId;
-         private String consultationType;
-         private Integer consultationDuration;
-         private Integer problemId;
-         private Long snomedConceptCode;
-
-         */
+        if (fhir.hasPractitionerRole()) {
+            Practitioner.PractitionerPractitionerRoleComponent role = fhir.getPractitionerRole().get(0);
+            for (Coding coding: role.getRole().getCoding()) {
+                String roleDesc = coding.getDisplay();
+                model.setAuthorisingRole(roleDesc);
+            }
+        }
 
         models.add(model);
     }
