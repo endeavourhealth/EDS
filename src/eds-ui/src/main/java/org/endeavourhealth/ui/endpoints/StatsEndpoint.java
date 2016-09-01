@@ -26,12 +26,12 @@ public final class StatsEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/getStorageStatistics")
-    public Response getStorageStatistics(@Context SecurityContext sc, @QueryParam("serviceList") List<String> services) throws Exception {
+    public Response getStorageStatistics(@Context SecurityContext sc,
+                                         @QueryParam("serviceList") List<String> services,
+                                         @QueryParam("systemList") List<String> systems) throws Exception {
 
         UUID userUuid = SecurityUtils.getCurrentUserId(sc);
         UUID orgUuid = getOrganisationUuidFromToken(sc);
-
-        UUID systemId = UUID.fromString("0eda7854-ebdf-4a11-97a1-79c681968863");
 
         LOG.trace("getStorageStatistics {}", services);
 
@@ -52,7 +52,11 @@ public final class StatsEndpoint extends AbstractEndpoint {
         resourceNames.add("Appointment");
         resourceNames.add("Encounter");
 
+        Integer i = 0;
+
         for (String serviceId :services) {
+            UUID systemId = UUID.fromString(systems.get(i)); //TODO: pick first system registered against service for now - later offer choice
+
             patientStats = statisticsService.getPatientStatistics(UUID.fromString(serviceId), systemId);
             resourceStats = statisticsService.getResourceStatistics(UUID.fromString(serviceId), systemId, resourceNames);
             StorageStatistics storageStatistics = new StorageStatistics();
@@ -61,6 +65,8 @@ public final class StatsEndpoint extends AbstractEndpoint {
             storageStatistics.setPatientStatistics(patientStats);
             storageStatistics.setResourceStatistics(resourceStats);
             statsList.add(storageStatistics);
+
+            i++;
         }
 
         return Response

@@ -43,7 +43,7 @@ module app.stats {
 		initGraph() {
 			setTimeout(function(){
 				($('table.highchart') as any).highchartTable();
-			}, 500);
+			}, 3000);
 		}
 
 		lookupServiceName(serviceId: string) {
