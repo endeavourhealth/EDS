@@ -15,7 +15,7 @@ import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
 import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
-import org.omg.CORBA.Environment;
+import org.endeavourhealth.transform.ceg.CegFhirTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +57,17 @@ public class MessageTransformOutbound extends PipelineComponent {
 			subscriberBatch.setTechnicalInterface(technicalInterface);
 			List<String> endpoints = getSubscriberEndpoints(transformBatch);
 			subscriberBatch.getEndpoints().addAll(endpoints);
+
+			//TODO - plug byte array in
+			try {
+				String serviceIdStr = exchange.getHeader(HeaderKeys.SenderServiceUuid);
+				UUID serviceId = UUID.fromString(serviceIdStr);
+				String orgNationalIdStr = exchange.getHeader(HeaderKeys.SenderOrganisationUuid);
+				UUID orgNationalId = UUID.fromString(orgNationalIdStr);
+				String outbound = CegFhirTransformer.transformFromFhir(serviceId, orgNationalId, transformBatch.getBatchId(), transformBatch.getResourceIds());
+			} catch (Exception ex) {
+				throw new PipelineException("Exception tranforming to CEG CSV", ex);
+			}
 
 			// Perform the actual transformation of the given resources into the specified technical interface & store
 			// subscriberBatch.setOutputMessageId(storedTransformedMessageId);
