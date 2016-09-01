@@ -1,36 +1,34 @@
 /// <reference path="../../typings/index.d.ts" />
 
 module app.core {
-	import StatsPatient = app.models.StatsPatient;
-	import StatsEvent = app.models.StatsEvent;
+	import StorageStatistics = app.models.StorageStatistics;
+	import Service = app.models.Service;
+
 	'use strict';
 
 	export interface IStatsService {
-		getStatsPatients(serviceId : string):ng.IPromise<StatsPatient[]>;
-		getStatsEvents(serviceId : string):ng.IPromise<StatsEvent[]>;
+		getStorageStatistics(services : Service[]):ng.IPromise<StorageStatistics[]>;
 	}
 
 	export class StatsService extends BaseHttpService implements IStatsService {
 
-		getStatsPatients(serviceId : string):ng.IPromise<StatsPatient[]> {
+		getStorageStatistics(services : Service[]):ng.IPromise<StorageStatistics[]> {
+			var serviceList = new Array();
+			for (var i = 0; i < services.length; ++i) {
+				var serviceId = services[i].uuid;
+				serviceList.push(serviceId);
+			}
+
 			var request = {
 				params: {
-					'serviceId': serviceId
+					'serviceList': serviceList
 				}
 			};
 
-			return this.httpGet('api/stats/getStatsPatients', request);
+			return this.httpGet('api/stats/getStorageStatistics', request);
 		}
 
-		getStatsEvents(serviceId : string):ng.IPromise<StatsEvent[]> {
-			var request = {
-				params: {
-					'serviceId': serviceId
-				}
-			};
-
-			return this.httpGet('api/stats/getStatsEvents', request);
-		}
+		
 	}
 
 	angular
