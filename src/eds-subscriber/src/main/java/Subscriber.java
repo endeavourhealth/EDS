@@ -13,7 +13,9 @@ public class Subscriber {
 	private JPanel main;
 	private JList list1;
 	private JLabel lblStatus;
-	private DefaultListModel<String> listModel = new DefaultListModel<>();
+	protected JTextField unzipPath;
+	private JButton button1;
+	protected DefaultListModel<String> listModel = new DefaultListModel<>();
 
 	public static void main(String[] args) throws IOException {
 		app = new JFrame("Subscriber");
@@ -39,6 +41,23 @@ public class Subscriber {
 				}
 			}
 		});
+		button1.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				JFileChooser chooser = new JFileChooser();
+				chooser.setCurrentDirectory(new java.io.File(unzipPath.getText()));
+				chooser.setDialogTitle("Select unzip folder");
+				chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				//
+				// disable the "All files" option.
+				//
+				chooser.setAcceptAllFileFilterUsed(false);
+				//
+				if (chooser.showOpenDialog(app) == JFileChooser.APPROVE_OPTION) {
+					unzipPath.setText(chooser.getSelectedFile().toString());
+				}
+			}
+		});
 	}
 
 	private void displayMessage(int index) {
@@ -55,7 +74,7 @@ public class Subscriber {
 
 	private void initializeHttpListener() throws IOException {
 		HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
-		server.createContext("/notify", new NotificationHandler(listModel));
+		server.createContext("/notify", new NotificationHandler(this));
 		server.setExecutor(null);
 		server.start();
 	}

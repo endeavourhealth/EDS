@@ -5,16 +5,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
 public class NotificationHandler implements HttpHandler{
 	private static final Logger LOG = LoggerFactory.getLogger(NotificationHandler.class);
-	private DefaultListModel<String> _log;
+	private Subscriber subscriber;
 
-	public NotificationHandler(DefaultListModel<String> log) {
-		this._log = log;
+	public NotificationHandler(Subscriber subscriber) {
+		this.subscriber = subscriber;
 	}
 
 	@Override
@@ -22,8 +23,13 @@ public class NotificationHandler implements HttpHandler{
 		InputStream is = httpExchange.getRequestBody();
 		String requestBody = IOUtils.toString(is);
 
-		_log.addElement(requestBody);
-		LOG.trace(requestBody);
+		String messageId = httpExchange.getRequestHeaders().getFirst("MessageId");
+		subscriber.listModel.addElement("Message Received : Id ["+messageId+"]");
+		try {
+			CegUnzipper.unzip(requestBody, new File(subscriber.unzipPath.getText()));
+		} catch (Exception e) {
+			LOG.error("Error unzipping data : " + e.getMessage());
+		}
 
 		String response = "OK";
 		httpExchange.sendResponseHeaders(200,response.length());
