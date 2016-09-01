@@ -21,7 +21,9 @@ public class PipelineProcessor {
 			for (Object processConfig : pipeline.getPipelineComponents()) {
 				PopulateExchangeParameters(exchange, processConfig);
 				component = getComponent(processConfig);
+				LOG.info("Calling pipeline component {} for exchange {}", component.getClass().getSimpleName(), exchange.getExchangeId());
 				component.baseProcess(exchange);
+				LOG.info("Completed pipeline component {} for exchange {}", component.getClass().getSimpleName(), exchange.getExchangeId());
 			}
 			return true;
 		}

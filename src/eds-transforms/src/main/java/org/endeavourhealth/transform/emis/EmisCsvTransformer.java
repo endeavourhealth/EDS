@@ -236,7 +236,7 @@ public abstract class EmisCsvTransformer {
                 LOG.error("Failed to find file {} in shared storage {}", file, sharedStoragePath);
                 throw new FileNotFoundException("" + f + " doesn't exist");
             }
-            LOG.info("Successfully found file {} in shared storage {}", file, sharedStoragePath);
+            //LOG.info("Successfully found file {} in shared storage {}", file, sharedStoragePath);
 
             try {
                 File processingIdDir = f.getParentFile();
