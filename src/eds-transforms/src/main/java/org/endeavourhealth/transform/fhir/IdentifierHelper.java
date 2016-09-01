@@ -3,6 +3,8 @@ package org.endeavourhealth.transform.fhir;
 import com.google.common.base.Strings;
 import org.hl7.fhir.instance.model.Identifier;
 
+import java.util.List;
+
 public class IdentifierHelper {
 
     public static Identifier createNhsNumberIdentifier(String value) {
@@ -29,5 +31,15 @@ public class IdentifierHelper {
                 .setUse(use)
                 .setValue(value)
                 .setSystem(system);
+    }
+
+    public static String findIdentifierValue(List<Identifier> identifiers, String system) {
+        for (Identifier id: identifiers) {
+            if (id.getSystem().equals(system)) {
+                return id.getValue();
+            }
+        }
+
+        return null;
     }
 }

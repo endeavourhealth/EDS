@@ -1,38 +1,76 @@
 package org.endeavourhealth.transform.ceg.models;
 
+import org.apache.commons.csv.CSVPrinter;
+
 import java.util.Date;
 
 public class Appointment extends AbstractModel {
 
-    private long serviceProviderId;
-    private long patientId;
+    private Long serviceProviderId;
+    private Long patientId;
     private Date appointmentDate;
-    private Date appointmentTime;
     private Date appointmentEndTime;
-    private boolean isCancelled;
+    private Boolean isCancelled;
     private String currentStatus;
     private Date arrivalTime;
     private Date seenTime;
     private Date dateAppointmentBooked;
-    private Date timeAppointmentBooked;
     private String sessionHolder;
     private String sessionType;
     private String sessionLocation;
 
 
-    public long getServiceProviderId() {
+    @Override
+    public void writeHeaderToCsv(CSVPrinter csvPrinter) throws Exception {
+        printString("SK_ServiceProviderID", csvPrinter);
+        printString("SK_PatientID", csvPrinter);
+        printString("AppointmentDate", csvPrinter);
+        printString("AppointmentStartTime", csvPrinter);
+        printString("AppointmentEndTime", csvPrinter);
+        printString("IsCancelled", csvPrinter);
+        printString("CurrentStatus", csvPrinter);
+        printString("ArrivalTime", csvPrinter);
+        printString("SeenTime", csvPrinter);
+        printString("DateAppointmentBooked", csvPrinter);
+        printString("TimeAppointmentBooked", csvPrinter);
+        printString("SessionHolder", csvPrinter);
+        printString("SessionType", csvPrinter);
+        printString("SessionLocation", csvPrinter);
+    }
+
+    @Override
+    public void writeRecordToCsv(CSVPrinter csvPrinter) throws Exception {
+        
+        printLong(serviceProviderId, csvPrinter);
+        printLong(patientId, csvPrinter);
+        printDate(appointmentDate, csvPrinter);
+        printTime(appointmentDate, csvPrinter);
+        printTime(appointmentEndTime, csvPrinter);
+        printBoolean(isCancelled, csvPrinter);
+        printString(currentStatus, csvPrinter);
+        printTime(arrivalTime, csvPrinter);
+        printTime(seenTime, csvPrinter);
+        printDate(dateAppointmentBooked, csvPrinter);
+        printTime(dateAppointmentBooked, csvPrinter);
+        printString(sessionHolder, csvPrinter);
+        printString(sessionType, csvPrinter);
+        printString(sessionLocation, csvPrinter);
+    }
+
+    @Override
+    public Long getServiceProviderId() {
         return serviceProviderId;
     }
 
-    public void setServiceProviderId(long serviceProviderId) {
+    public void setServiceProviderId(Long serviceProviderId) {
         this.serviceProviderId = serviceProviderId;
     }
 
-    public long getPatientId() {
+    public Long getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(long patientId) {
+    public void setPatientId(Long patientId) {
         this.patientId = patientId;
     }
 
@@ -44,14 +82,6 @@ public class Appointment extends AbstractModel {
         this.appointmentDate = appointmentDate;
     }
 
-    public Date getAppointmentTime() {
-        return appointmentTime;
-    }
-
-    public void setAppointmentTime(Date appointmentTime) {
-        this.appointmentTime = appointmentTime;
-    }
-
     public Date getAppointmentEndTime() {
         return appointmentEndTime;
     }
@@ -60,11 +90,11 @@ public class Appointment extends AbstractModel {
         this.appointmentEndTime = appointmentEndTime;
     }
 
-    public boolean isCancelled() {
+    public Boolean getCancelled() {
         return isCancelled;
     }
 
-    public void setCancelled(boolean cancelled) {
+    public void setCancelled(Boolean cancelled) {
         isCancelled = cancelled;
     }
 
@@ -98,14 +128,6 @@ public class Appointment extends AbstractModel {
 
     public void setDateAppointmentBooked(Date dateAppointmentBooked) {
         this.dateAppointmentBooked = dateAppointmentBooked;
-    }
-
-    public Date getTimeAppointmentBooked() {
-        return timeAppointmentBooked;
-    }
-
-    public void setTimeAppointmentBooked(Date timeAppointmentBooked) {
-        this.timeAppointmentBooked = timeAppointmentBooked;
     }
 
     public String getSessionHolder() {

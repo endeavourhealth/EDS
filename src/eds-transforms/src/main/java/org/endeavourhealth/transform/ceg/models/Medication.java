@@ -1,36 +1,73 @@
 package org.endeavourhealth.transform.ceg.models;
 
+import org.apache.commons.csv.CSVPrinter;
+
 import java.util.Date;
 
 public class Medication extends AbstractModel {
 
-    private long serviceProviderId;
-    private long patientId;
+    private Long serviceProviderId;
+    private Long patientId;
     private Date issueDate;
-    private Date issueTime;
-    private long dmdCode;
+    private Long dmdCode;
     private String medicationTerm;
     private String bnfChapter;
-    private int issueCount;
-    private double quantity;
+    private Integer issueCount;
+    private Double quantity;
     private String unit;
-    private double cost;
-    private long staffId;
-    private int medicationIssueId;
+    private Double cost;
+    private Long staffId;
+    private Integer medicationIssueId;
 
-    public long getServiceProviderId() {
+    @Override
+    public void writeHeaderToCsv(CSVPrinter csvPrinter) throws Exception {
+        printString("SK_ServiceProviderID", csvPrinter);
+        printString("SK_PatientID", csvPrinter);
+        printString("IssueDate", csvPrinter);
+        printString("IssueTime", csvPrinter);
+        printString("DMDCode", csvPrinter);
+        printString("MedicationTerm", csvPrinter);
+        printString("BNFChapter", csvPrinter);
+        printString("IssueCount", csvPrinter);
+        printString("Quantity", csvPrinter);
+        printString("Unit", csvPrinter);
+        printString("Cost", csvPrinter);
+        printString("SK_StaffID", csvPrinter);
+        printString("SK_MedicationIssueID", csvPrinter);
+    }
+
+    @Override
+    public void writeRecordToCsv(CSVPrinter csvPrinter) throws Exception {
+        printLong(serviceProviderId, csvPrinter);
+        printLong(patientId, csvPrinter);
+        printDate(issueDate, csvPrinter);
+        printTime(issueDate, csvPrinter);
+        printLong(dmdCode, csvPrinter);
+        printString(medicationTerm, csvPrinter);
+        printString(bnfChapter, csvPrinter);
+        printInt(issueCount, csvPrinter);
+        printDouble(quantity, csvPrinter);
+        printString(unit, csvPrinter);
+        printDouble(cost, csvPrinter);
+        printLong(staffId, csvPrinter);
+        printInt(medicationIssueId, csvPrinter);
+    }
+
+    @Override
+    public Long getServiceProviderId() {
         return serviceProviderId;
     }
 
-    public void setServiceProviderId(long serviceProviderId) {
+    @Override
+    public void setServiceProviderId(Long serviceProviderId) {
         this.serviceProviderId = serviceProviderId;
     }
 
-    public long getPatientId() {
+    public Long getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(long patientId) {
+    public void setPatientId(Long patientId) {
         this.patientId = patientId;
     }
 
@@ -42,19 +79,11 @@ public class Medication extends AbstractModel {
         this.issueDate = issueDate;
     }
 
-    public Date getIssueTime() {
-        return issueTime;
-    }
-
-    public void setIssueTime(Date issueTime) {
-        this.issueTime = issueTime;
-    }
-
-    public long getDmdCode() {
+    public Long getDmdCode() {
         return dmdCode;
     }
 
-    public void setDmdCode(long dmdCode) {
+    public void setDmdCode(Long dmdCode) {
         this.dmdCode = dmdCode;
     }
 
@@ -74,19 +103,19 @@ public class Medication extends AbstractModel {
         this.bnfChapter = bnfChapter;
     }
 
-    public int getIssueCount() {
+    public Integer getIssueCount() {
         return issueCount;
     }
 
-    public void setIssueCount(int issueCount) {
+    public void setIssueCount(Integer issueCount) {
         this.issueCount = issueCount;
     }
 
-    public double getQuantity() {
+    public Double getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(double quantity) {
+    public void setQuantity(Double quantity) {
         this.quantity = quantity;
     }
 
@@ -98,27 +127,27 @@ public class Medication extends AbstractModel {
         this.unit = unit;
     }
 
-    public double getCost() {
+    public Double getCost() {
         return cost;
     }
 
-    public void setCost(double cost) {
+    public void setCost(Double cost) {
         this.cost = cost;
     }
 
-    public long getStaffId() {
+    public Long getStaffId() {
         return staffId;
     }
 
-    public void setStaffId(long staffId) {
+    public void setStaffId(Long staffId) {
         this.staffId = staffId;
     }
 
-    public int getMedicationIssueId() {
+    public Integer getMedicationIssueId() {
         return medicationIssueId;
     }
 
-    public void setMedicationIssueId(int medicationIssueId) {
+    public void setMedicationIssueId(Integer medicationIssueId) {
         this.medicationIssueId = medicationIssueId;
     }
 }

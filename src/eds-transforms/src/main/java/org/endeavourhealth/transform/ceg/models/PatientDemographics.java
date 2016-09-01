@@ -1,34 +1,58 @@
 package org.endeavourhealth.transform.ceg.models;
 
+import org.apache.commons.csv.CSVPrinter;
+
 import java.util.Date;
 
 public class PatientDemographics extends AbstractModel {
 
-    private long serviceProviderId;
-    private long patientId;
+    private Long serviceProviderId;
+    private Long patientId;
     private Date dateRegistered;
     private Date dateRegisteredEnd;
     private String patientStatus;
-    private int patientStatusCode;
+    private Integer patientStatusCode;
     private String gender;
     private String lsoaCode;
     private String ethnicityCode;
-    private int yearOfDeath;
+    private Integer yearOfDeath;
     private String usualGpName;
 
-    public long getServiceProviderId() {
+
+    @Override
+    public void writeHeaderToCsv(CSVPrinter csvPrinter) throws Exception {
+        printString("", csvPrinter);
+        printString("", csvPrinter);
+        printString("", csvPrinter);
+        printString("", csvPrinter);
+        printString("", csvPrinter);
+        printString("", csvPrinter);
+        printString("", csvPrinter);
+        printString("", csvPrinter);
+        printString("", csvPrinter);
+        printString("", csvPrinter);
+    }
+
+    @Override
+    public void writeRecordToCsv(CSVPrinter csvPrinter) throws Exception {
+
+    }
+
+    @Override
+    public Long getServiceProviderId() {
         return serviceProviderId;
     }
 
-    public void setServiceProviderId(long serviceProviderId) {
+    @Override
+    public void setServiceProviderId(Long serviceProviderId) {
         this.serviceProviderId = serviceProviderId;
     }
 
-    public long getPatientId() {
+    public Long getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(long patientId) {
+    public void setPatientId(Long patientId) {
         this.patientId = patientId;
     }
 
@@ -56,11 +80,11 @@ public class PatientDemographics extends AbstractModel {
         this.patientStatus = patientStatus;
     }
 
-    public int getPatientStatusCode() {
+    public Integer getPatientStatusCode() {
         return patientStatusCode;
     }
 
-    public void setPatientStatusCode(int patientStatusCode) {
+    public void setPatientStatusCode(Integer patientStatusCode) {
         this.patientStatusCode = patientStatusCode;
     }
 
@@ -88,11 +112,11 @@ public class PatientDemographics extends AbstractModel {
         this.ethnicityCode = ethnicityCode;
     }
 
-    public int getYearOfDeath() {
+    public Integer getYearOfDeath() {
         return yearOfDeath;
     }
 
-    public void setYearOfDeath(int yearOfDeath) {
+    public void setYearOfDeath(Integer yearOfDeath) {
         this.yearOfDeath = yearOfDeath;
     }
 

@@ -1,50 +1,84 @@
 package org.endeavourhealth.transform.ceg.models;
 
+import org.apache.commons.csv.CSVPrinter;
+
 import java.util.Date;
 
 public class Patient extends AbstractModel {
 
-    private long serviceProviderId;
-    private long serviceProviderIdPseudo;
-    private long patientId;
-    private long patientIdPseudo;
+    private Long serviceProviderId;
+    private Long serviceProviderIdPseudo;
+    private Long patientId;
+    private Long patientIdPseudo;
     private Date dateOfBirth;
-    private int yearOfDeath;
+    private Integer yearOfDeath;
     private String gender;
     private String lowerSuperOutputArea;
     private Date dateRegistered;
     private Date dateRegisteredEnd;
-    private int consentBitmask;
+    private Integer consentBitmask;
 
-    public long getServiceProviderId() {
+    @Override
+    public void writeHeaderToCsv(CSVPrinter csvPrinter) throws Exception {
+        printString("SK_ServiceProviderID", csvPrinter);
+        printString("SK_ServiceProviderID_Pseudo", csvPrinter);
+        printString("SK_PatientID", csvPrinter);
+        printString("SK_PatientID_Pseudo", csvPrinter);
+        printString("DateOfBirth", csvPrinter);
+        printString("YearOfDeath", csvPrinter);
+        printString("Gender", csvPrinter);
+        printString("LowerSuperOutputArea", csvPrinter);
+        printString("DateRegistered", csvPrinter);
+        printString("DateRegisteredEnd", csvPrinter);
+        printString("ConsentBitmask", csvPrinter);
+    }
+
+    @Override
+    public void writeRecordToCsv(CSVPrinter csvPrinter) throws Exception {
+        printLong(serviceProviderId, csvPrinter);
+        printLong(serviceProviderIdPseudo, csvPrinter);
+        printLong(patientId, csvPrinter);
+        printLong(patientIdPseudo, csvPrinter);
+        printDate(dateOfBirth, csvPrinter);
+        printInt(yearOfDeath, csvPrinter);
+        printString(gender, csvPrinter);
+        printString(lowerSuperOutputArea, csvPrinter);
+        printDate(dateRegistered, csvPrinter);
+        printDate(dateRegisteredEnd, csvPrinter);
+        printInt(consentBitmask, csvPrinter);
+    }
+
+    @Override
+    public Long getServiceProviderId() {
         return serviceProviderId;
     }
 
-    public void setServiceProviderId(long serviceProviderId) {
+    @Override
+    public void setServiceProviderId(Long serviceProviderId) {
         this.serviceProviderId = serviceProviderId;
     }
 
-    public long getServiceProviderIdPseudo() {
+    public Long getServiceProviderIdPseudo() {
         return serviceProviderIdPseudo;
     }
 
-    public void setServiceProviderIdPseudo(long serviceProviderIdPseudo) {
+    public void setServiceProviderIdPseudo(Long serviceProviderIdPseudo) {
         this.serviceProviderIdPseudo = serviceProviderIdPseudo;
     }
 
-    public long getPatientId() {
+    public Long getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(long patientId) {
+    public void setPatientId(Long patientId) {
         this.patientId = patientId;
     }
 
-    public long getPatientIdPseudo() {
+    public Long getPatientIdPseudo() {
         return patientIdPseudo;
     }
 
-    public void setPatientIdPseudo(long patientIdPseudo) {
+    public void setPatientIdPseudo(Long patientIdPseudo) {
         this.patientIdPseudo = patientIdPseudo;
     }
 
@@ -56,11 +90,11 @@ public class Patient extends AbstractModel {
         this.dateOfBirth = dateOfBirth;
     }
 
-    public int getYearOfDeath() {
+    public Integer getYearOfDeath() {
         return yearOfDeath;
     }
 
-    public void setYearOfDeath(int yearOfDeath) {
+    public void setYearOfDeath(Integer yearOfDeath) {
         this.yearOfDeath = yearOfDeath;
     }
 
@@ -96,11 +130,11 @@ public class Patient extends AbstractModel {
         this.dateRegisteredEnd = dateRegisteredEnd;
     }
 
-    public int getConsentBitmask() {
+    public Integer getConsentBitmask() {
         return consentBitmask;
     }
 
-    public void setConsentBitmask(int consentBitmask) {
+    public void setConsentBitmask(Integer consentBitmask) {
         this.consentBitmask = consentBitmask;
     }
 }

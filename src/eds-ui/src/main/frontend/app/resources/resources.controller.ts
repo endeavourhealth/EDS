@@ -14,7 +14,7 @@ module app.resources {
 
 		//variables for patient ID searching
 		patientId : string;
-		patientResourceTypes : FhirResourceType[];
+		//patientResourceTypes : FhirResourceType[];
 		patientResourceTypeSelected : string;
 
 		//variables for single resource searching
@@ -56,7 +56,7 @@ module app.resources {
 				});
 		}
 
-		getResourceTypesForPatient() {
+		/*getResourceTypesForPatient() {
 			var vm = this;
 			vm.resourcesService.getResourceTypesForPatient(vm.patientId)
 				.then(function(result) {
@@ -65,7 +65,7 @@ module app.resources {
 				.catch(function (error) {
 					vm.logger.error('Failed to retrieve resource types for patient', error, 'Resource Types');
 				});
-		}
+		}*/
 
 		getResourceForId() {
 			var vm = this;

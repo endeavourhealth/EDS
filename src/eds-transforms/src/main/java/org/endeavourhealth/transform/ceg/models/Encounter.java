@@ -1,38 +1,79 @@
 package org.endeavourhealth.transform.ceg.models;
 
+import org.apache.commons.csv.CSVPrinter;
+
 import java.util.Date;
 
 public class Encounter extends AbstractModel {
 
-    private long serviceProviderId;
-    private long patientId;
+    private Long serviceProviderId;
+    private Long patientId;
     private Date eventDate;
-    private Date eventTime;
     private String nativeClinicalCode;
-    private double value;
+    private Double value;
     private String units;
-    private int ageAtEvent;
-    private boolean isDiaryEvent;
-    private boolean isReferralEvent;
-    private long staffId;
+    private Integer ageAtEvent;
+    private Boolean isDiaryEvent;
+    private Boolean isReferralEvent;
+    private Long staffId;
     private String consultationType;
-    private int consultationDuration;
-    private int problemId;
-    private long snomedConceptCode;
+    private Integer consultationDuration;
+    private Integer problemId;
+    private Long snomedConceptCode;
 
-    public long getServiceProviderId() {
+
+    @Override
+    public void writeHeaderToCsv(CSVPrinter csvPrinter) throws Exception {
+        printString("SK_ServiceProviderID", csvPrinter);
+        printString("SK_PatientID", csvPrinter);
+        printString("EventDate", csvPrinter);
+        printString("EventTime", csvPrinter);
+        printString("NativeClinicalCode", csvPrinter);
+        printString("Value", csvPrinter);
+        printString("Units", csvPrinter);
+        printString("AgeAtEvent", csvPrinter);
+        printString("IsDiaryEvent", csvPrinter);
+        printString("IsReferralEvent", csvPrinter);
+        printString("SK_StaffID", csvPrinter);
+        printString("ConsultationType", csvPrinter);
+        printString("ConsultationDuration", csvPrinter);
+        printString("SK_ProblemID", csvPrinter);
+        printString("SnomedConceptCode", csvPrinter);
+    }
+
+    @Override
+    public void writeRecordToCsv(CSVPrinter csvPrinter) throws Exception {
+        printLong(serviceProviderId, csvPrinter);
+        printLong(patientId, csvPrinter);
+        printDate(eventDate, csvPrinter);
+        printString(nativeClinicalCode, csvPrinter);
+        printDouble(value, csvPrinter);
+        printString(units, csvPrinter);
+        printInt(ageAtEvent, csvPrinter);
+        printBoolean(isDiaryEvent, csvPrinter);
+        printBoolean(isReferralEvent, csvPrinter);
+        printLong(staffId, csvPrinter);
+        printString(consultationType, csvPrinter);
+        printInt(consultationDuration, csvPrinter);
+        printInt(problemId, csvPrinter);
+        printLong(snomedConceptCode, csvPrinter);
+    }
+
+    @Override
+    public Long getServiceProviderId() {
         return serviceProviderId;
     }
 
-    public void setServiceProviderId(long serviceProviderId) {
+    @Override
+    public void setServiceProviderId(Long serviceProviderId) {
         this.serviceProviderId = serviceProviderId;
     }
 
-    public long getPatientId() {
+    public Long getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(long patientId) {
+    public void setPatientId(Long patientId) {
         this.patientId = patientId;
     }
 
@@ -44,14 +85,6 @@ public class Encounter extends AbstractModel {
         this.eventDate = eventDate;
     }
 
-    public Date getEventTime() {
-        return eventTime;
-    }
-
-    public void setEventTime(Date eventTime) {
-        this.eventTime = eventTime;
-    }
-
     public String getNativeClinicalCode() {
         return nativeClinicalCode;
     }
@@ -60,11 +93,11 @@ public class Encounter extends AbstractModel {
         this.nativeClinicalCode = nativeClinicalCode;
     }
 
-    public double getValue() {
+    public Double getValue() {
         return value;
     }
 
-    public void setValue(double value) {
+    public void setValue(Double value) {
         this.value = value;
     }
 
@@ -76,35 +109,35 @@ public class Encounter extends AbstractModel {
         this.units = units;
     }
 
-    public int getAgeAtEvent() {
+    public Integer getAgeAtEvent() {
         return ageAtEvent;
     }
 
-    public void setAgeAtEvent(int ageAtEvent) {
+    public void setAgeAtEvent(Integer ageAtEvent) {
         this.ageAtEvent = ageAtEvent;
     }
 
-    public boolean isDiaryEvent() {
+    public Boolean getDiaryEvent() {
         return isDiaryEvent;
     }
 
-    public void setDiaryEvent(boolean diaryEvent) {
+    public void setDiaryEvent(Boolean diaryEvent) {
         isDiaryEvent = diaryEvent;
     }
 
-    public boolean isReferralEvent() {
+    public Boolean getReferralEvent() {
         return isReferralEvent;
     }
 
-    public void setReferralEvent(boolean referralEvent) {
+    public void setReferralEvent(Boolean referralEvent) {
         isReferralEvent = referralEvent;
     }
 
-    public long getStaffId() {
+    public Long getStaffId() {
         return staffId;
     }
 
-    public void setStaffId(long staffId) {
+    public void setStaffId(Long staffId) {
         this.staffId = staffId;
     }
 
@@ -116,27 +149,27 @@ public class Encounter extends AbstractModel {
         this.consultationType = consultationType;
     }
 
-    public int getConsultationDuration() {
+    public Integer getConsultationDuration() {
         return consultationDuration;
     }
 
-    public void setConsultationDuration(int consultationDuration) {
+    public void setConsultationDuration(Integer consultationDuration) {
         this.consultationDuration = consultationDuration;
     }
 
-    public int getProblemId() {
+    public Integer getProblemId() {
         return problemId;
     }
 
-    public void setProblemId(int problemId) {
+    public void setProblemId(Integer problemId) {
         this.problemId = problemId;
     }
 
-    public long getSnomedConceptCode() {
+    public Long getSnomedConceptCode() {
         return snomedConceptCode;
     }
 
-    public void setSnomedConceptCode(long snomedConceptCode) {
+    public void setSnomedConceptCode(Long snomedConceptCode) {
         this.snomedConceptCode = snomedConceptCode;
     }
 }

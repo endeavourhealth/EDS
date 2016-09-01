@@ -51,7 +51,7 @@
 
                                         <div class="form-group">
                                             <label>Patient ID</label>
-                                            <input name="patientId" type="text" class="form-control" ng-model="resourcesCtrl.patientId" ng-change="resourcesCtrl.getResourceTypesForPatient()">
+                                            <input name="patientId" type="text" class="form-control" ng-model="resourcesCtrl.patientId">
                                         </div>
 
                                         <div class="form-group">
@@ -59,7 +59,7 @@
                                             <div class="input-group">
                                                 <span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
                                                 <select name="patientResourceType" class="form-control" ng-model="resourcesCtrl.patientResourceTypeSelected">
-                                                    <option ng-repeat="item in resourcesCtrl.patientResourceTypes" value="{{item.resourceType}}">{{item.resourceType}}</option>
+                                                    <option ng-repeat="item in resourcesCtrl.allResourceTypes" value="{{item.resourceType}}">{{item.resourceType}}</option>
                                                 </select>
                                             </div>
                                         </div>

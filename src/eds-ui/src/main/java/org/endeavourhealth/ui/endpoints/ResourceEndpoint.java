@@ -5,7 +5,6 @@ import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
-import org.endeavourhealth.core.data.ehr.models.ResourceTypesUsed;
 import org.endeavourhealth.ui.framework.exceptions.BadRequestException;
 import org.endeavourhealth.ui.json.JsonResourceContainer;
 import org.endeavourhealth.ui.json.JsonResourceType;
@@ -32,7 +31,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
     private static final ResourceRepository resourceRepository = new ResourceRepository();
     private static final PatientIdentifierRepository identifierRepository = new PatientIdentifierRepository();
 
-    @GET
+    /*@GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/resourceTypesForPatient")
     public Response getResourceTypesUsed(@Context SecurityContext sc,
@@ -70,7 +69,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(ret)
                 .build();
-    }
+    }*/
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

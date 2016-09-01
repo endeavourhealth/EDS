@@ -233,6 +233,7 @@ public abstract class EmisCsvTransformer {
         for (String file: files) {
             File f = new File(sharedStoragePath, file);
             if (!f.exists()) {
+                LOG.error("Failed to find file {} in shared storage {}", file, sharedStoragePath);
                 throw new FileNotFoundException("" + f + " doesn't exist");
             }
 

@@ -9,6 +9,9 @@ import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.ResourceAccessor;
 import org.endeavourhealth.core.data.ehr.accessors.ResourceHistoryAccessor;
 import org.endeavourhealth.core.data.ehr.models.*;
+import org.hl7.fhir.instance.formats.JsonParser;
+import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -150,6 +153,18 @@ public class ResourceRepository extends Repository {
     public ResourceHistory getByKey(String resourceType, UUID resourceId, UUID version) {
         Mapper<ResourceHistory> mapperResourceStore = getMappingManager().mapper(ResourceHistory.class);
         return mapperResourceStore.get(resourceType, resourceId, version);
+    }
+
+    /**
+     * convenience fn to save repetitive code
+     */
+    public Resource getCurrentVersionAsResource(ResourceType resourceType, String resourceIdStr) throws Exception {
+        ResourceHistory resourceHistory = getCurrentVersion(resourceType.toString(), UUID.fromString(resourceIdStr));
+        if (resourceHistory == null) {
+            return null;
+        } else {
+            return new JsonParser().parse(resourceHistory.getResourceData());
+        }
     }
 
     public ResourceHistory getCurrentVersion(String resourceType, UUID resourceId) {

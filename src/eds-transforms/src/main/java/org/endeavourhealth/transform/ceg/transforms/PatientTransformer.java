@@ -5,10 +5,10 @@ import org.hl7.fhir.instance.model.Patient;
 
 import java.util.List;
 
-public class PatientTransformer {
+public class PatientTransformer extends AbstractTransformer {
 
-    public static void transformPatient(Patient patient, List<AbstractModel> models) {
+    public static void transform(Patient patient, List<AbstractModel> models) {
 
-
+//TODO - implement
     }
 }
