@@ -268,9 +268,8 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	private String getRabbitBindingsJson(String address) {
 		String json = null;
 
-		HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("guest", "guest");
 		Client client = ClientBuilder.newClient();
-		client.register(feature);
+		client.register(rabbitAuth);
 
 		WebTarget resource = client.target("http://"+address+"/api/bindings");
 		Invocation.Builder request = resource.request();
