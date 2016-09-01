@@ -2,9 +2,11 @@ package org.endeavourhealth.transform.ceg.models;
 
 import org.apache.commons.csv.CSVPrinter;
 
+import java.math.BigInteger;
+
 public class Staff extends AbstractModel {
 
-    private Long staffId;
+    private BigInteger staffId;
     private String authorisingUser;
     private String authorisingRole;
 
@@ -17,26 +19,26 @@ public class Staff extends AbstractModel {
 
     @Override
     public void writeRecordToCsv(CSVPrinter csvPrinter) throws Exception {
-        printLong(staffId, csvPrinter);
+        printBigInt(staffId, csvPrinter);
         printString(authorisingUser, csvPrinter);
         printString(authorisingRole, csvPrinter);
     }
 
     @Override
-    public Long getServiceProviderId() {
+    public BigInteger getServiceProviderId() {
         return null;
     }
 
     @Override
-    public void setServiceProviderId(Long serviceProviderId) {
+    public void setServiceProviderId(BigInteger serviceProviderId) {
         //do nothing, as this model doesn't use this
     }
 
-    public Long getStaffId() {
+    public BigInteger getStaffId() {
         return staffId;
     }
 
-    public void setStaffId(Long staffId) {
+    public void setStaffId(BigInteger staffId) {
         this.staffId = staffId;
     }
 

@@ -2,12 +2,13 @@ package org.endeavourhealth.transform.ceg.models;
 
 import org.apache.commons.csv.CSVPrinter;
 
+import java.math.BigInteger;
 import java.util.Date;
 
 public class Appointment extends AbstractModel {
 
-    private Long serviceProviderId;
-    private Long patientId;
+    private BigInteger serviceProviderId;
+    private BigInteger patientId;
     private Date appointmentDate;
     private Date appointmentEndTime;
     private Boolean isCancelled;
@@ -40,9 +41,9 @@ public class Appointment extends AbstractModel {
 
     @Override
     public void writeRecordToCsv(CSVPrinter csvPrinter) throws Exception {
-        
-        printLong(serviceProviderId, csvPrinter);
-        printLong(patientId, csvPrinter);
+
+        printBigInt(serviceProviderId, csvPrinter);
+        printBigInt(patientId, csvPrinter);
         printDate(appointmentDate, csvPrinter);
         printTime(appointmentDate, csvPrinter);
         printTime(appointmentEndTime, csvPrinter);
@@ -58,19 +59,19 @@ public class Appointment extends AbstractModel {
     }
 
     @Override
-    public Long getServiceProviderId() {
+    public BigInteger getServiceProviderId() {
         return serviceProviderId;
     }
 
-    public void setServiceProviderId(Long serviceProviderId) {
+    public void setServiceProviderId(BigInteger serviceProviderId) {
         this.serviceProviderId = serviceProviderId;
     }
 
-    public Long getPatientId() {
+    public BigInteger getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(Long patientId) {
+    public void setPatientId(BigInteger patientId) {
         this.patientId = patientId;
     }
 

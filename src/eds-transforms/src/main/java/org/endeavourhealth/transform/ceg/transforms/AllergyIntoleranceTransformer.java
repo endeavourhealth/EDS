@@ -2,36 +2,44 @@ package org.endeavourhealth.transform.ceg.transforms;
 
 import org.endeavourhealth.transform.ceg.models.AbstractModel;
 import org.endeavourhealth.transform.ceg.models.Encounter;
-import org.hl7.fhir.instance.model.Condition;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.hl7.fhir.instance.model.AllergyIntolerance;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.Resource;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-public class ConditionTransformer extends AbstractTransformer {
+public class AllergyIntoleranceTransformer extends AbstractTransformer {
 
-    public static void transform(Condition fhir,
+
+    public static void transform(AllergyIntolerance fhir,
                                  List<AbstractModel> models,
                                  Map<String, Resource> hsAllResources) throws Exception {
 
         Encounter model = new Encounter();
 
         model.setPatientId(transformPatientId(fhir.getPatient()));
-        model.setEventDate(transformDate(fhir.getOnset()));
 
-        findClinicalCodesForEncounter(fhir.getCode(), model);
-        findConsultationDetailsForEncounter(fhir.getEncounter(), hsAllResources, model);
+        Date date = fhir.getRecordedDate();
+        model.setEventDate(date);
 
-        Reference practitionerReference = fhir.getAsserter();
+        findClinicalCodesForEncounter(fhir.getSubstance(), model);
+
+        Reference encounterReference = (Reference)findExtension(fhir, FhirExtensionUri.ASSOCIATED_ENCOUNTER);
+        findConsultationDetailsForEncounter(encounterReference, hsAllResources, model);
+
+        Reference practitionerReference = fhir.getRecorder();
         model.setStaffId(transformStaffId(practitionerReference));
 
-//TODO - finish
+        //TODO - finish allergies
+
         /**
          private Integer problemId;
-
          */
 
         models.add(model);
+
     }
 }

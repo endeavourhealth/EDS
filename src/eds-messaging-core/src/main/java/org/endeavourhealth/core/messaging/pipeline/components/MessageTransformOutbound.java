@@ -59,7 +59,6 @@ public class MessageTransformOutbound extends PipelineComponent {
 			List<String> endpoints = getSubscriberEndpoints(transformBatch);
 			subscriberBatch.getEndpoints().addAll(endpoints);
 
-			//TODO - plug byte array in
 			try {
 				String serviceIdStr = exchange.getHeader(HeaderKeys.SenderServiceUuid);
 				UUID serviceId = UUID.fromString(serviceIdStr);

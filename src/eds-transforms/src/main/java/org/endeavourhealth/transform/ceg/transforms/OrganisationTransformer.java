@@ -27,11 +27,12 @@ public class OrganisationTransformer extends AbstractTransformer {
         if (fhir.hasPartOf()) {
             String id = ReferenceHelper.getReferenceId(fhir.getPartOf());
             Organization partOfOrg = (Organization)new ResourceRepository().getCurrentVersionAsResource(ResourceType.Organization, id);
+            if (partOfOrg != null) {
+                model.setCommissioner(partOfOrg.getName());
 
-            model.setCommissioner(partOfOrg.getName());
-
-            String ccgCode = IdentifierHelper.findIdentifierValue(fhir.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_ODS_CODE);
-            model.setCommissionerCode(ccgCode);
+                String ccgCode = IdentifierHelper.findIdentifierValue(fhir.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_ODS_CODE);
+                model.setCommissionerCode(ccgCode);
+            }
         }
 
         models.add(model);

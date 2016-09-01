@@ -141,14 +141,14 @@ public class ResourceRepository extends Repository {
         getSession().execute(batch);
     }
 
-    public void save(ResourceTypesUsed resourceTypesUsed) {
+    /*public void save(ResourceTypesUsed resourceTypesUsed) {
         if (resourceTypesUsed == null) {
             throw new IllegalArgumentException("resourceTypesUsed is null");
         }
 
         Mapper<ResourceTypesUsed> mapper = getMappingManager().mapper(ResourceTypesUsed.class);
         mapper.save(resourceTypesUsed);
-    }
+    }*/
 
     public ResourceHistory getByKey(String resourceType, UUID resourceId, UUID version) {
         Mapper<ResourceHistory> mapperResourceStore = getMappingManager().mapper(ResourceHistory.class);
@@ -187,10 +187,10 @@ public class ResourceRepository extends Repository {
         return Lists.newArrayList(accessor.getResourcesByPatient(serviceId, systemId, patientId, resourceType));
     }
 
-    public List<ResourceTypesUsed> getResourcesTypesUsed(UUID serviceId, UUID systemId) {
+    /*public List<ResourceTypesUsed> getResourcesTypesUsed(UUID serviceId, UUID systemId) {
         ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
         return Lists.newArrayList(accessor.getResourceTypesUsed(serviceId, systemId));
-    }
+    }*/
 
     public List<ResourceByExchangeBatch> getResourcesForBatch(UUID batchId) {
         ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);

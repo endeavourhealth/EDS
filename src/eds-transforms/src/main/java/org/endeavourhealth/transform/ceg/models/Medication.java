@@ -2,12 +2,13 @@ package org.endeavourhealth.transform.ceg.models;
 
 import org.apache.commons.csv.CSVPrinter;
 
+import java.math.BigInteger;
 import java.util.Date;
 
 public class Medication extends AbstractModel {
 
-    private Long serviceProviderId;
-    private Long patientId;
+    private BigInteger serviceProviderId;
+    private BigInteger patientId;
     private Date issueDate;
     private Long dmdCode;
     private String medicationTerm;
@@ -16,7 +17,7 @@ public class Medication extends AbstractModel {
     private Double quantity;
     private String unit;
     private Double cost;
-    private Long staffId;
+    private BigInteger staffId;
     private Integer medicationIssueId;
 
     @Override
@@ -38,8 +39,8 @@ public class Medication extends AbstractModel {
 
     @Override
     public void writeRecordToCsv(CSVPrinter csvPrinter) throws Exception {
-        printLong(serviceProviderId, csvPrinter);
-        printLong(patientId, csvPrinter);
+        printBigInt(serviceProviderId, csvPrinter);
+        printBigInt(patientId, csvPrinter);
         printDate(issueDate, csvPrinter);
         printTime(issueDate, csvPrinter);
         printLong(dmdCode, csvPrinter);
@@ -49,25 +50,25 @@ public class Medication extends AbstractModel {
         printDouble(quantity, csvPrinter);
         printString(unit, csvPrinter);
         printDouble(cost, csvPrinter);
-        printLong(staffId, csvPrinter);
+        printBigInt(staffId, csvPrinter);
         printInt(medicationIssueId, csvPrinter);
     }
 
     @Override
-    public Long getServiceProviderId() {
+    public BigInteger getServiceProviderId() {
         return serviceProviderId;
     }
 
     @Override
-    public void setServiceProviderId(Long serviceProviderId) {
+    public void setServiceProviderId(BigInteger serviceProviderId) {
         this.serviceProviderId = serviceProviderId;
     }
 
-    public Long getPatientId() {
+    public BigInteger getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(Long patientId) {
+    public void setPatientId(BigInteger patientId) {
         this.patientId = patientId;
     }
 
@@ -135,11 +136,11 @@ public class Medication extends AbstractModel {
         this.cost = cost;
     }
 
-    public Long getStaffId() {
+    public BigInteger getStaffId() {
         return staffId;
     }
 
-    public void setStaffId(Long staffId) {
+    public void setStaffId(BigInteger staffId) {
         this.staffId = staffId;
     }
 

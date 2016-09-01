@@ -2,12 +2,13 @@ package org.endeavourhealth.transform.ceg.models;
 
 import org.apache.commons.csv.CSVPrinter;
 
+import java.math.BigInteger;
 import java.util.Date;
 
 public class Encounter extends AbstractModel {
 
-    private Long serviceProviderId;
-    private Long patientId;
+    private BigInteger serviceProviderId;
+    private BigInteger patientId;
     private Date eventDate;
     private String nativeClinicalCode;
     private Double value;
@@ -15,7 +16,7 @@ public class Encounter extends AbstractModel {
     private Integer ageAtEvent;
     private Boolean isDiaryEvent;
     private Boolean isReferralEvent;
-    private Long staffId;
+    private BigInteger staffId;
     private String consultationType;
     private Integer consultationDuration;
     private Integer problemId;
@@ -43,8 +44,8 @@ public class Encounter extends AbstractModel {
 
     @Override
     public void writeRecordToCsv(CSVPrinter csvPrinter) throws Exception {
-        printLong(serviceProviderId, csvPrinter);
-        printLong(patientId, csvPrinter);
+        printBigInt(serviceProviderId, csvPrinter);
+        printBigInt(patientId, csvPrinter);
         printDate(eventDate, csvPrinter);
         printString(nativeClinicalCode, csvPrinter);
         printDouble(value, csvPrinter);
@@ -52,7 +53,7 @@ public class Encounter extends AbstractModel {
         printInt(ageAtEvent, csvPrinter);
         printBoolean(isDiaryEvent, csvPrinter);
         printBoolean(isReferralEvent, csvPrinter);
-        printLong(staffId, csvPrinter);
+        printBigInt(staffId, csvPrinter);
         printString(consultationType, csvPrinter);
         printInt(consultationDuration, csvPrinter);
         printInt(problemId, csvPrinter);
@@ -60,20 +61,20 @@ public class Encounter extends AbstractModel {
     }
 
     @Override
-    public Long getServiceProviderId() {
+    public BigInteger getServiceProviderId() {
         return serviceProviderId;
     }
 
     @Override
-    public void setServiceProviderId(Long serviceProviderId) {
+    public void setServiceProviderId(BigInteger serviceProviderId) {
         this.serviceProviderId = serviceProviderId;
     }
 
-    public Long getPatientId() {
+    public BigInteger getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(Long patientId) {
+    public void setPatientId(BigInteger patientId) {
         this.patientId = patientId;
     }
 
@@ -133,11 +134,11 @@ public class Encounter extends AbstractModel {
         isReferralEvent = referralEvent;
     }
 
-    public Long getStaffId() {
+    public BigInteger getStaffId() {
         return staffId;
     }
 
-    public void setStaffId(Long staffId) {
+    public void setStaffId(BigInteger staffId) {
         this.staffId = staffId;
     }
 

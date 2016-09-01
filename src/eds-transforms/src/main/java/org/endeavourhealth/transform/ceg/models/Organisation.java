@@ -2,9 +2,11 @@ package org.endeavourhealth.transform.ceg.models;
 
 import org.apache.commons.csv.CSVPrinter;
 
+import java.math.BigInteger;
+
 public class Organisation extends AbstractModel {
 
-    private Long serviceProviderId;
+    private BigInteger serviceProviderId;
     private String serviceProviderName;
     private String serviceProviderCode;
     private String providerGroup;
@@ -43,12 +45,12 @@ public class Organisation extends AbstractModel {
     }
 
     @Override
-    public Long getServiceProviderId() {
+    public BigInteger getServiceProviderId() {
         return serviceProviderId;
     }
 
     @Override
-    public void setServiceProviderId(Long serviceProviderId) {
+    public void setServiceProviderId(BigInteger serviceProviderId) {
         this.serviceProviderId = serviceProviderId;
     }
 

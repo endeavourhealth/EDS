@@ -2,32 +2,28 @@ package org.endeavourhealth.transform.ceg.transforms;
 
 import org.endeavourhealth.transform.ceg.models.AbstractModel;
 import org.endeavourhealth.transform.ceg.models.Encounter;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Observation;
+import org.hl7.fhir.instance.model.Quantity;
+import org.hl7.fhir.instance.model.Reference;
+import org.hl7.fhir.instance.model.Resource;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 public class ObservationTransformer extends AbstractTransformer {
 
-    public static void transform(Observation fhir, List<AbstractModel> models) throws Exception {
+    public static void transform(Observation fhir,
+                                 List<AbstractModel> models,
+                                 Map<String, Resource> hsAllResources) throws Exception {
 
         Encounter model = new Encounter();
-
 
         model.setPatientId(transformPatientId(fhir.getSubject()));
         model.setEventDate(transformDate(fhir.getEffective()));
 
-        CodeableConcept cc = fhir.getCode();
-        for (Coding coding: cc.getCoding()) {
-            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_SNOMED_CT)) {
-                String value = coding.getCode();
-                model.setSnomedConceptCode(Long.parseLong(value));
-            } else {
-                String value = coding.getCode();
-                model.setNativeClinicalCode(value);
-            }
-        }
+        findClinicalCodesForEncounter(fhir.getCode(), model);
+        findConsultationDetailsForEncounter(fhir.getEncounter(), hsAllResources, model);
 
         if (fhir.hasValue()) {
             Quantity value = fhir.getValueQuantity();
@@ -43,16 +39,8 @@ public class ObservationTransformer extends AbstractTransformer {
             }
         }
 
-
-
-//TODO - finish
+//TODO - finish observations
         /**
-
-         private Integer ageAtEvent;
-         private Boolean isDiaryEvent;
-         private Boolean isReferralEvent;
-         private String consultationType;
-         private Integer consultationDuration;
          private Integer problemId;
          */
 

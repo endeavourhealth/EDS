@@ -2,14 +2,15 @@ package org.endeavourhealth.transform.ceg.models;
 
 import org.apache.commons.csv.CSVPrinter;
 
+import java.math.BigInteger;
 import java.util.Date;
 
 public class Patient extends AbstractModel {
 
-    private Long serviceProviderId;
+    private BigInteger serviceProviderId;
     private Long serviceProviderIdPseudo;
-    private Long patientId;
-    private Long patientIdPseudo;
+    private BigInteger patientId;
+    private BigInteger patientIdPseudo;
     private Date dateOfBirth;
     private Integer yearOfDeath;
     private String gender;
@@ -35,10 +36,10 @@ public class Patient extends AbstractModel {
 
     @Override
     public void writeRecordToCsv(CSVPrinter csvPrinter) throws Exception {
-        printLong(serviceProviderId, csvPrinter);
+        printBigInt(serviceProviderId, csvPrinter);
         printLong(serviceProviderIdPseudo, csvPrinter);
-        printLong(patientId, csvPrinter);
-        printLong(patientIdPseudo, csvPrinter);
+        printBigInt(patientId, csvPrinter);
+        printBigInt(patientIdPseudo, csvPrinter);
         printDate(dateOfBirth, csvPrinter);
         printInt(yearOfDeath, csvPrinter);
         printString(gender, csvPrinter);
@@ -49,12 +50,12 @@ public class Patient extends AbstractModel {
     }
 
     @Override
-    public Long getServiceProviderId() {
+    public BigInteger getServiceProviderId() {
         return serviceProviderId;
     }
 
     @Override
-    public void setServiceProviderId(Long serviceProviderId) {
+    public void setServiceProviderId(BigInteger serviceProviderId) {
         this.serviceProviderId = serviceProviderId;
     }
 
@@ -66,19 +67,19 @@ public class Patient extends AbstractModel {
         this.serviceProviderIdPseudo = serviceProviderIdPseudo;
     }
 
-    public Long getPatientId() {
+    public BigInteger getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(Long patientId) {
+    public void setPatientId(BigInteger patientId) {
         this.patientId = patientId;
     }
 
-    public Long getPatientIdPseudo() {
+    public BigInteger getPatientIdPseudo() {
         return patientIdPseudo;
     }
 
-    public void setPatientIdPseudo(Long patientIdPseudo) {
+    public void setPatientIdPseudo(BigInteger patientIdPseudo) {
         this.patientIdPseudo = patientIdPseudo;
     }
 

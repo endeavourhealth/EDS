@@ -2,9 +2,7 @@ package org.endeavourhealth.transform.common;
 
 import com.datastax.driver.core.utils.UUIDs;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
-import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
-import org.endeavourhealth.core.data.ehr.models.ResourceTypesUsed;
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
@@ -32,7 +30,7 @@ public class CsvProcessor {
     private final UUID systemId;
     private final FhirStorageService storageService;
     private final ExchangeBatchRepository exchangeBatchRepository;
-    private final Map<String, String> resourceTypes; //although a set would be idea, a map allows safe multi-thread access
+    //private final Map<String, String> resourceTypes; //although a set would be idea, a map allows safe multi-thread access
 
     //batch IDs
     private ReentrantLock batchIdLock = new ReentrantLock();
@@ -53,7 +51,7 @@ public class CsvProcessor {
         this.systemId = systemId;
         this.storageService = new FhirStorageService(serviceId, systemId);
         this.exchangeBatchRepository = new ExchangeBatchRepository();
-        this.resourceTypes = new ConcurrentHashMap<>();
+        //this.resourceTypes = new ConcurrentHashMap<>();
     }
 
 
@@ -97,8 +95,8 @@ public class CsvProcessor {
                 throw new PatientResourceException(resource.getResourceType(), expectingPatientResource);
             }
 
-            String resourceType = resource.getResourceType().toString();
-            resourceTypes.put(resourceType, resourceType);
+            /*String resourceType = resource.getResourceType().toString();
+            resourceTypes.put(resourceType, resourceType);*/
 
             //increment our counters for auditing
             if (toDelete) {
@@ -172,7 +170,7 @@ public class CsvProcessor {
         threadPool.waitAndStop();
 
         //update the resource types used
-        saveResourceTypesUsed();
+        //saveResourceTypesUsed();
 
         //log out counts of what we processed
         logResults();
@@ -180,7 +178,7 @@ public class CsvProcessor {
         return getAllBatchIds();
     }
 
-    private void saveResourceTypesUsed() {
+    /*private void saveResourceTypesUsed() {
 
         ResourceRepository resourceRepository = new ResourceRepository();
 
@@ -194,7 +192,7 @@ public class CsvProcessor {
 
             resourceRepository.save(resourceTypesUsed);
         }
-    }
+    }*/
 
 
     private void logResults() throws Exception {

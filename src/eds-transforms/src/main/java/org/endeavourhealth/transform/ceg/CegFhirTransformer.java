@@ -7,33 +7,46 @@ import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.ceg.models.AbstractModel;
 import org.endeavourhealth.transform.ceg.transforms.*;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class CegFhirTransformer {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CegFhirTransformer.class);
+
     public static String transformFromFhir(UUID serviceId,
                                            UUID orgNationalId,
                                            UUID batchId,
                                            List<UUID> resourceIds) throws Exception {
 
-        List<AbstractModel> models = new ArrayList<>();
+        //retrieve our resources
+        List<Resource> allResources = retrieveAllResources(batchId);
+        List<Resource> filteredResources = filterResources(allResources, resourceIds);
+
+        Map<String, Resource> hsAllResources = hashResourcesByReference(allResources);
 
         //transform our resources
-        List<Resource> resources = retrieveResources(batchId, resourceIds);
-        for (Resource resource: resources) {
-            transformResource(resource, models);
+        List<AbstractModel> models = new ArrayList<>();
+        for (Resource resource: filteredResources) {
+            transformResource(resource, models, hsAllResources);
         }
 
         //set the service provider on all of them
-        //TODO - set serviceProviderId
+        BigInteger serviceProviderId = AbstractTransformer.transformId(serviceId.toString());
+        for (AbstractModel model: models) {
+            model.setServiceProviderId(serviceProviderId);
+        }
 
         //hash the models by their type
         Map<Class, List<AbstractModel>> hm = hashModels(models);
@@ -58,6 +71,19 @@ public class CegFhirTransformer {
         return Base64.getEncoder().encodeToString(bytes);
     }
 
+    private static Map<String, Resource> hashResourcesByReference(List<Resource> allResources) throws Exception {
+        Map<String, Resource> ret = new HashMap<>();
+
+        for (Resource resource: allResources) {
+
+            Reference reference = ReferenceHelper.createReference(resource);
+            String referenceStr = reference.getReference();
+            ret.put(referenceStr, resource);
+        }
+
+        return ret;
+    }
+
     private static byte[] writeToCsv(List<AbstractModel> models) throws Exception {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -80,8 +106,8 @@ public class CegFhirTransformer {
             if (csvPrinter != null) {
                 csvPrinter.close();
             }
-            bw.flush();
-            bw.close();
+            /*bw.flush();
+            bw.close();*/
         }
 
         return baos.toByteArray();
@@ -101,21 +127,21 @@ public class CegFhirTransformer {
         return hm;
     }
 
-    private static void transformResource(Resource resource, List<AbstractModel> models) throws Exception {
+    private static void transformResource(Resource resource, List<AbstractModel> models, Map<String, Resource> hsAllResources) throws Exception {
         if (resource instanceof Patient) {
-            PatientTransformer.transform((Patient)resource, models);
+            PatientTransformer.transform((Patient)resource, models, hsAllResources);
 
         } else if (resource instanceof Condition) {
-            ConditionTransformer.transform((Condition)resource, models);
+            ConditionTransformer.transform((Condition)resource, models, hsAllResources);
 
         } else if (resource instanceof Procedure) {
-            ProcedureTransformer.transform((Procedure)resource, models);
+            ProcedureTransformer.transform((Procedure)resource, models, hsAllResources);
 
         } else if (resource instanceof ReferralRequest) {
-            ReferralRequestTransformer.transform((ReferralRequest)resource, models);
+            ReferralRequestTransformer.transform((ReferralRequest)resource, models, hsAllResources);
 
         } else if (resource instanceof ProcedureRequest) {
-            ProcedureRequestTransformer.transform((ProcedureRequest)resource, models);
+            ProcedureRequestTransformer.transform((ProcedureRequest)resource, models, hsAllResources);
 
         } else if (resource instanceof Schedule) {
             //no transformer for this, as we handle these resources when doing Appointment resources
@@ -127,52 +153,80 @@ public class CegFhirTransformer {
             PractitionerTransformer.transform((Practitioner)resource, models);
 
         } else if (resource instanceof Observation) {
-            ObservationTransformer.transform((Observation)resource, models);
+            ObservationTransformer.transform((Observation)resource, models, hsAllResources);
 
         } else if (resource instanceof Organization) {
             OrganisationTransformer.transform((Organization)resource, models);
 
         } else if (resource instanceof MedicationStatement) {
-
+            //nowhere in CEG format for medication statement data
 
         } else if (resource instanceof MedicationOrder) {
+            MedicationOrderTransformer.transform((MedicationOrder)resource, models, hsAllResources);
 
         } else if (resource instanceof Location) {
-            //no fields in data for any of location data
+            //no transformer for this, as we handle these resources when doing other resources
 
         } else if (resource instanceof Immunization) {
+            ImmunisationTransformer.transform((Immunization)resource, models, hsAllResources);
 
         } else if (resource instanceof FamilyMemberHistory) {
+            FamilyMemberHistoryTransformer.transform((FamilyMemberHistory)resource, models, hsAllResources);
 
         } else if (resource instanceof EpisodeOfCare) {
+            //no transformer for this, as we handle these resources when doing Patient resources
 
         } else if (resource instanceof Encounter) {
+            //no transformer for this, as we handle these resources when doing other resources
 
         } else if (resource instanceof Appointment) {
-            AppointmentTransformer.transform((Appointment)resource, models);
+            AppointmentTransformer.transform((Appointment)resource, models, hsAllResources);
 
         } else if (resource instanceof AllergyIntolerance) {
+            AllergyIntoleranceTransformer.transform((AllergyIntolerance)resource, models, hsAllResources);
 
         } else {
             throw new TransformException("Unsupported FHIR resource type " + resource.getResourceType());
         }
     }
 
-    private static List<Resource> retrieveResources(UUID batchId, List<UUID> resourceIds) throws Exception {
+    private static List<Resource> retrieveAllResources(UUID batchId) throws Exception {
 
-        //retrieve the resources and strip out any that aren't in the list of resource IDs
         List<ResourceByExchangeBatch> resourcesByExchangeBatch = new ResourceRepository().getResourcesForBatch(batchId);
-        Set<UUID> hsResourcesToKeep = new HashSet<>(resourceIds);
+        LOG.info("Got {} resources for batch {}", resourcesByExchangeBatch.size(), batchId);
 
         List<Resource> ret = new ArrayList<>();
 
         for (ResourceByExchangeBatch resourceByExchangeBatch: resourcesByExchangeBatch) {
-            UUID resourceId = resourceByExchangeBatch.getResourceId();
-            if (hsResourcesToKeep.contains(resourceId)) {
-
-                String json = resourceByExchangeBatch.getResourceData();
+            String json = resourceByExchangeBatch.getResourceData();
+            try {
                 Resource r = new JsonParser().parse(json);
                 ret.add(r);
+            } catch (Exception ex) {
+                LOG.error(ex.getMessage());
+                LOG.error(json);
+            }
+        }
+
+        return ret;
+    }
+
+    private static List<Resource> filterResources(List<Resource> allResources, List<UUID> resourceIds) throws Exception {
+
+        //if we have a list of IDs to restrict on, use it
+        Set<UUID> hsResourcesToKeep = null;
+        if (resourceIds != null) {
+            hsResourcesToKeep = new HashSet<>(resourceIds);
+        }
+
+        List<Resource> ret = new ArrayList<>();
+
+        for (Resource resource: allResources) {
+            UUID resourceId = UUID.fromString(resource.getId());
+
+            if (hsResourcesToKeep == null
+                || hsResourcesToKeep.contains(resourceId)) {
+                ret.add(resource);
             }
         }
 

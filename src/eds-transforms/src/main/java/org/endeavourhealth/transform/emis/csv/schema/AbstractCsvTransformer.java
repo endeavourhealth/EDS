@@ -83,14 +83,14 @@ public abstract class AbstractCsvTransformer {
         if (csvIterator.hasNext()) {
             this.csvRecord = csvIterator.next();
 
-            if (csvReader.getCurrentLineNumber() % 10000 == 0) {
-                LOG.trace("Starting line {} of {}", csvReader.getCurrentLineNumber(), file.getAbsolutePath());
+            if (csvReader.getCurrentLineNumber() % 20000 == 0) {
+                LOG.info("Starting line {} of {}", csvReader.getCurrentLineNumber(), file.getAbsolutePath());
             }
 
             return true;
         } else {
             this.csvRecord = null;
-            LOG.trace("Completed file {}", file.getAbsolutePath());
+            LOG.info("Completed file {}", file.getAbsolutePath());
             return false;
         }
     }
