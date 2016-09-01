@@ -59,12 +59,7 @@ module app.core {
 		}
 
 		synchronize(address:string) : any {
-			var request = {
-				params: {
-					'address': address
-				}
-			};
-			return this.httpPost('api/dashboard/rabbitNode/synchronize', request);
+			return this.httpPost('api/dashboard/rabbitNode/synchronize', address);
 		}
 	}
 

@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
@@ -218,7 +217,7 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/rabbitNode/synchronize")
 	@RequiresAdmin
-	public Response synchronizeRabbit(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
+	public Response synchronizeRabbit(@Context SecurityContext sc, String address) throws Exception {
 		String[] pipelines = {"EdsInbound", "EdsProtocol", "EdsTransform", "EdsResponse", "EdsSubscriber"};
 
 		super.setLogbackMarkers(sc);
