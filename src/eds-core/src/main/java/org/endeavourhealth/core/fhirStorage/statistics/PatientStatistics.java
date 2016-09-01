@@ -1,31 +1,31 @@
 package org.endeavourhealth.core.fhirStorage.statistics;
 
 public class PatientStatistics {
-    private int totalCount;
-    private int activeCount;
-    private int deceasedCount;
+    private long totalCount;
+    private long activeCount;
+    private long deceasedCount;
 
-    public int getTotalCount() {
+    public long getTotalCount() {
         return totalCount;
     }
 
-    public void setTotalCount(int totalCount) {
+    public void setTotalCount(long totalCount) {
         this.totalCount = totalCount;
     }
 
-    public int getActiveCount() {
+    public long getActiveCount() {
         return activeCount;
     }
 
-    public void setActiveCount(int activeCount) {
+    public void setActiveCount(long activeCount) {
         this.activeCount = activeCount;
     }
 
-    public int getDeceasedCount() {
+    public long getDeceasedCount() {
         return deceasedCount;
     }
 
-    public void setDeceasedCount(int deceasedCount) {
+    public void setDeceasedCount(long deceasedCount) {
         this.deceasedCount = deceasedCount;
     }
 }

@@ -1,9 +1,12 @@
 package org.endeavourhealth.core.data.ehr;
 
 import com.datastax.driver.core.BatchStatement;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.mapping.Mapper;
 import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
+import org.endeavourhealth.core.data.ehr.accessors.ResourceAccessor;
 import org.endeavourhealth.core.data.ehr.accessors.ResourceHistoryAccessor;
 import org.endeavourhealth.core.data.ehr.models.*;
 import org.slf4j.Logger;
@@ -160,22 +163,29 @@ public class ResourceRepository extends Repository {
     }
 
     public List<ResourceByPatient> getResourcesByPatient(UUID serviceId, UUID systemId, UUID patientId) {
-        ResourceHistoryAccessor accessor = getMappingManager().createAccessor(ResourceHistoryAccessor.class);
+        ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
         return Lists.newArrayList(accessor.getResourcesByPatient(serviceId, systemId, patientId));
     }
 
     public List<ResourceByPatient> getResourcesByPatient(UUID serviceId, UUID systemId, UUID patientId, String resourceType) {
-        ResourceHistoryAccessor accessor = getMappingManager().createAccessor(ResourceHistoryAccessor.class);
+        ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
         return Lists.newArrayList(accessor.getResourcesByPatient(serviceId, systemId, patientId, resourceType));
     }
 
     public List<ResourceTypesUsed> getResourcesTypesUsed(UUID serviceId, UUID systemId) {
-        ResourceHistoryAccessor accessor = getMappingManager().createAccessor(ResourceHistoryAccessor.class);
+        ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
         return Lists.newArrayList(accessor.getResourceTypesUsed(serviceId, systemId));
     }
 
     public List<ResourceByExchangeBatch> getResourcesForBatch(UUID batchId) {
-        ResourceHistoryAccessor accessor = getMappingManager().createAccessor(ResourceHistoryAccessor.class);
+        ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
         return Lists.newArrayList(accessor.getResourcesForBatch(batchId));
+    }
+
+    public long getResourceCountByService(UUID serviceId, UUID systemId, String resourceType) {
+        ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
+        ResultSet result = accessor.getResourceCountByService(serviceId, systemId, resourceType);
+        Row row = result.one();
+        return row.getLong(0);
     }
 }
