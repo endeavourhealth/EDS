@@ -1,7 +1,16 @@
 <div class="module">
 	<div class="module-heading">
 		Data Service Statistics
-		<button class="btn btn-success btn-sm pull-right" ng-click="statsCtrl.refresh()">Refresh</button>
+		<button class="btn btn-success btn-sm pull-right"
+				ng-click="statsCtrl.showGraphs()"
+				title="Display the statistical graphs">
+			<i class="fa fa-bar-chart"></i> Show Graphs
+		</button>
+		<button class="btn btn-success btn-sm pull-right"
+				ng-click="statsCtrl.refresh"
+				title="Refresh these statistics">
+			<i class="fa fa-refresh"></i> Refresh
+		</button>
 	</div>
 	<div class="module-body">
 		<div class="container-fluid">
@@ -48,7 +57,11 @@
 			<div class="row">
 				<div class="col-md-12">
 					<div class="panel panel-primary">
-						<div class="panel-heading">Patients <i title="collapse" style="cursor:pointer" ng-class="statsCtrl.hidePatients ? 'fa fa-plus fa-lg fa-fw pull-right' : 'fa fa-minus fa-lg fa-fw pull-right'" ng-click="statsCtrl.togglePatientStats()"></i></div>
+						<div class="panel-heading">Patients
+							<i title="collapse" style="cursor:pointer" ng-class="statsCtrl.hidePatients ? 'fa fa-plus fa-lg fa-fw pull-right' : 'fa fa-minus fa-lg fa-fw pull-right'" ng-click="statsCtrl.togglePatientStats()"></i>
+							<i title="Display the statistical graphs" style="cursor:pointer" class="fa fa-bar-chart fa-lg fa-fw pull-right" ng-click="statsCtrl.showGraphs()"></i>
+							<i title="Refresh these statistics" style="cursor:pointer" class="fa fa-refresh fa-lg fa-fw pull-right" ng-click="statsCtrl.refresh()"></i>
+						</div>
 						<div class="form-group col-md-6" ng-hide="statsCtrl.hidePatients">
 							<div class="table">
 								<br/>
@@ -62,6 +75,9 @@
 									</tr>
 									</thead>
 									<tbody>
+									<tr ng-hide="statsCtrl.hideLoading">
+										<td style="color: red; text-decoration: blink">Loading statistics....</td>
+									</tr>
 									<tr ng-repeat="stats in statsCtrl.storageStatistics">
 										<td>
 											<a style="cursor:pointer" ng-click="statsCtrl.actionItem(stats,'view')">{{statsCtrl.lookupServiceName(stats.serviceId)}}</a>
@@ -82,7 +98,7 @@
 						</div>
 						<div class="form-group col-md-6" ng-hide="statsCtrl.hidePatients">
 							<br/>
-							<div id="patients"></div>
+							<div id="patients"><a style="cursor:pointer" ng-click="statsCtrl.showGraphs()">Show Graphs</a></div>
 						</div>
 					</div>
 				</div>
@@ -90,7 +106,11 @@
 			<div class="row">
 				<div class="col-md-12">
 					<div class="panel panel-primary">
-						<div class="panel-heading">Clinical Resources <i title="collapse" style="cursor:pointer" ng-class="statsCtrl.hideEvents ? 'fa fa-plus fa-lg fa-fw pull-right' : 'fa fa-minus fa-lg fa-fw pull-right'" ng-click="statsCtrl.toggleEventStats()"></i></div>
+						<div class="panel-heading">Clinical Resources
+							<i title="collapse" style="cursor:pointer" ng-class="statsCtrl.hideEvents ? 'fa fa-plus fa-lg fa-fw pull-right' : 'fa fa-minus fa-lg fa-fw pull-right'" ng-click="statsCtrl.toggleEventStats()"></i>
+							<i title="Display the statistical graphs" style="cursor:pointer" class="fa fa-bar-chart fa-lg fa-fw pull-right" ng-click="statsCtrl.showGraphs()"></i>
+							<i title="Refresh these statistics" style="cursor:pointer" class="fa fa-refresh fa-lg fa-fw pull-right" ng-click="statsCtrl.refresh()"></i>
+						</div>
 						<div class="form-group col-md-12" ng-hide="statsCtrl.hideEvents">
 							<div class="table">
 								<br/>
@@ -117,7 +137,7 @@
 						</div>
 						<div class="form-group col-md-12" ng-hide="statsCtrl.hideEvents">
 							<br/>
-							<div id="events"></div>
+							<div id="events"><a style="cursor:pointer" ng-click="statsCtrl.showGraphs()">Show Graphs</a></div>
 						</div>
 					</div>
 				</div>

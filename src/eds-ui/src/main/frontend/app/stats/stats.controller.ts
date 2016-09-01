@@ -17,6 +17,7 @@ module app.stats {
 		services : Service[];
 		hidePatients : boolean;
 		hideEvents : boolean;
+		hideLoading : boolean;
 		filterDateFrom : Date;
 		filterDateTo : Date;
 
@@ -30,20 +31,19 @@ module app.stats {
 
 			this.hidePatients = false;
 			this.hideEvents = false;
-
+			this.hideLoading = true;
 		}
 
 		refresh() {
 			var vm = this;
+			vm.hideLoading = false;
 			this.getStorageStatistics(vm.services);
-
-			this.initGraph();
 		}
 
-		initGraph() {
+		showGraphs() {
 			setTimeout(function(){
 				($('table.highchart') as any).highchartTable();
-			}, 3000);
+			}, 10);
 		}
 
 		lookupServiceName(serviceId: string) {
@@ -73,6 +73,8 @@ module app.stats {
 				.then(function (data:StorageStatistics[]) {
 					vm.storageStatistics = data;
 					console.log(vm.storageStatistics);
+					vm.hideLoading = true;
+
 				});
 		}
 
