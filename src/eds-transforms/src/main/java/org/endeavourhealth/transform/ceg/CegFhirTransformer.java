@@ -149,6 +149,7 @@ public class CegFhirTransformer {
         } else if (resource instanceof Encounter) {
 
         } else if (resource instanceof Appointment) {
+            AppointmentTransformer.transform((Appointment)resource, models);
 
         } else if (resource instanceof AllergyIntolerance) {
 

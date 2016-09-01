@@ -30,18 +30,18 @@ public class PipelineProcessor {
 		catch (PipelineException e) {
 			// Gracefully handle pipeline error and send response
 			if (component != null)
-				LOG.error("Pipeline exception (" + component.toString() + ") : " + e.getMessage());
+				LOG.error("Pipeline exception (" + component.toString() + ")", e);
 			else
-				LOG.error("Pipeline exception (null) : " + e.getMessage());
+				LOG.error("Pipeline exception (null)", e);
 			exchange.setException(e);
 			return false;
 		}
 		catch (Exception e) {
 			// Fatal error
 			if (component != null)
-				LOG.error("Fatal error (" + component.toString() + ") : " + e.getMessage());
+				LOG.error("Fatal error (" + component.toString() + ")", e);
 			else
-				LOG.error("Fatal error (null) : " + e.getMessage());
+				LOG.error("Fatal error (null)", e);
 
 			exchange.setException(e);
 			return false;
