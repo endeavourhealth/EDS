@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.ceg.models;
 
 import java.util.Date;
 
-public class Encounter {
+public class Encounter extends AbstractModel {
 
     private long serviceProviderId;
     private long patientId;

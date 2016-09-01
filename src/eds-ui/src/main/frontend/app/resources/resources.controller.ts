@@ -6,6 +6,7 @@ module app.resources {
 	import IResourcesService = app.core.IResourcesService;
 	import FhirResourceContainer = app.models.FhirResourceContainer;
 	import FhirResourceType = app.models.FhirResourceType;
+	import IScope = angular.IScope;
 
 	'use strict';
 
@@ -26,13 +27,22 @@ module app.resources {
 		resourceContainers : FhirResourceContainer[];
 		resources : Object[];
 
-		static $inject = ['ResourcesService', 'LoggerService', '$state'];
+
+		static $inject = ['ResourcesService', 'LoggerService', '$scope', '$state'];
+
+
 
 		constructor(protected resourcesService:IResourcesService,
 					protected logger:ILoggerService,
+					protected $scope : any,
 					protected $state : IStateService) {
 
-			this.getAllResourceTypes()
+			this.getAllResourceTypes();
+
+			//add these functions to the scope, so they can be used from within the HTML
+			$scope.isArray = angular.isArray;
+			$scope.isObject = angular.isObject;
+
 		}
 
 		getAllResourceTypes() {

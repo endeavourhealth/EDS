@@ -81,17 +81,25 @@
             <div class="row">
                 <div class="col-md-4">
 
-                    <div name="alert" id="alert" class="alert alert-info">
-                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                        The below table shows all the organisations that have stored medical data about you
-                    </div>
+
 
                     <div ng-if="resourcesCtrl.resources != undefined">
                         <div ng-if="resourcesCtrl.resources.length == 0">
-                            <div uib-alert ng-class="alert alert-danger">{{resourcesCtrl.resources.length}} Resources found</div>
+
+                            <div class="alert alert-danger">
+                                {{resourcesCtrl.resources.length}} Resources found
+                            </div>
+
+                            <!--<div uib-alert ng-class="alert alert-danger"></div>-->
                         </div>
                         <div ng-if="resourcesCtrl.resources.length > 0">
-                            <div uib-alert ng-class="alert alert-success">{{resourcesCtrl.resources.length}} Resources found</div>
+
+                            <div class="alert alert-success">
+                                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                                {{resourcesCtrl.resources.length}} Resources found
+                            </div>
+
+                            <!--<div uib-alert ng-class="alert alert-success"></div>-->
                         </div>
                     </div>
                 </div>
@@ -117,13 +125,13 @@
                                                 </div>
                                                 <div ng-switch-default>
 
-                                                    <div ng-if="isObject(value)">
+                                                    <div ng-if="isArray(value)">
                                                         <label>ARRAY</label>
                                                         <br/>
-
                                                     </div>
-                                                    <div ng-if="!isObject(value)">
-                                                        <label>{{key}}: {{ value }}</label>
+
+                                                    <div ng-if="isObject(value)">
+                                                        <label>OBJECT</label>
                                                         <br/>
 
                                                     </div>
