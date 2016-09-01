@@ -15,7 +15,10 @@ import java.util.zip.ZipOutputStream;
 
 public class CegFhirTransformer {
 
-    public static String transformFromFhir(UUID batchId, List<UUID> resourceIds) throws Exception {
+    public static String transformFromFhir(UUID serviceId,
+                                           UUID orgNationalId,
+                                           UUID batchId,
+                                           List<UUID> resourceIds) throws Exception {
 
         List<AbstractModel> models = new ArrayList<>();
 
