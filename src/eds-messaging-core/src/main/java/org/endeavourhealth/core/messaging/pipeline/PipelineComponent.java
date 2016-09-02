@@ -38,7 +38,7 @@ public abstract class PipelineComponent {
 		if (exchangeId != null) {
 			MDC.put(LOGGING_KEY_EXCHANGE, exchangeId.toString());
 		}
-		String serviceId = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
+		String serviceId = exchange.getHeader(HeaderKeys.SenderServiceUuid);
 		if (serviceId != null) {
 			MDC.put(LOGGING_KEY_SERVICE, serviceId);
 		}
