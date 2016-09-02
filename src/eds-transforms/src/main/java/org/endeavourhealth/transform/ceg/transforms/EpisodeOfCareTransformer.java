@@ -3,7 +3,6 @@ package org.endeavourhealth.transform.ceg.transforms;
 import org.endeavourhealth.transform.ceg.models.AbstractModel;
 import org.endeavourhealth.transform.ceg.models.PatientDemographics;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Calendar;
@@ -11,15 +10,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-public class PatientTransformer extends AbstractTransformer {
+public class EpisodeOfCareTransformer extends AbstractTransformer {
 
-    public static void transform(Patient fhirPatient,
+    public static void transform(EpisodeOfCare fhirEpisode,
                                  List<AbstractModel> models,
                                  Map<String, Resource> hsAllResources) throws Exception {
 
-        //we also need the episode of care
-        Reference episodeReference = ReferenceHelper.createReference(ResourceType.EpisodeOfCare, fhirPatient.getId());
-        EpisodeOfCare fhirEpisode = (EpisodeOfCare)findResource(episodeReference, hsAllResources);
+        //we also need the patient
+        Patient fhirPatient = (Patient)findResource(fhirEpisode.getPatient(), hsAllResources);
 
         createPatient(fhirPatient, fhirEpisode, models, hsAllResources);
         createPatientDemographics(fhirPatient, fhirEpisode, models, hsAllResources);

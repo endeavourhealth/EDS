@@ -95,7 +95,9 @@ public class AbstractTransformer {
 
             //if not in our map, then hit the DB
             ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
-            ret = new ResourceRepository().getCurrentVersionAsResource(comps.getResourceType(), comps.getId());
+            if (comps != null) {
+                ret = new ResourceRepository().getCurrentVersionAsResource(comps.getResourceType(), comps.getId());
+            }
         }
         return ret;
     }
@@ -136,6 +138,9 @@ public class AbstractTransformer {
 
     protected static BigInteger transformStaffId(Reference reference) {
         ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
+        if (comps == null) {
+            return null; //todo - investigate why a Condition has a null practitioner
+        }
         if (comps.getResourceType() == ResourceType.Practitioner) {
             String id = comps.getId();
             return transformStaffId(id);

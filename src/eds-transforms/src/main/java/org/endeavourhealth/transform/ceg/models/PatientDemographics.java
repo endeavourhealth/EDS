@@ -22,21 +22,32 @@ public class PatientDemographics extends AbstractModel {
 
     @Override
     public void writeHeaderToCsv(CSVPrinter csvPrinter) throws Exception {
-        printString("", csvPrinter);
-        printString("", csvPrinter);
-        printString("", csvPrinter);
-        printString("", csvPrinter);
-        printString("", csvPrinter);
-        printString("", csvPrinter);
-        printString("", csvPrinter);
-        printString("", csvPrinter);
-        printString("", csvPrinter);
-        printString("", csvPrinter);
+        printString("SK_ServiceProviderID", csvPrinter);
+        printString("SK_PatientID", csvPrinter);
+        printString("DateRegistered", csvPrinter);
+        printString("DateRegisteredEnd", csvPrinter);
+        printString("PatientStatus", csvPrinter);
+        printString("PatientStatusCode", csvPrinter);
+        printString("Gender", csvPrinter);
+        printString("LSOACode", csvPrinter);
+        printString("EthnicityCode", csvPrinter);
+        printString("YearOfDeath", csvPrinter);
+        printString("UsualGPName", csvPrinter);
     }
 
     @Override
     public void writeRecordToCsv(CSVPrinter csvPrinter) throws Exception {
-
+        printBigInt(serviceProviderId, csvPrinter);
+        printBigInt(patientId, csvPrinter);
+        printDate(dateRegistered, csvPrinter);
+        printDate(dateRegisteredEnd, csvPrinter);
+        printString(patientStatus, csvPrinter);
+        printInt(patientStatusCode, csvPrinter);
+        printString(gender, csvPrinter);
+        printString(lsoaCode, csvPrinter);
+        printString(ethnicityCode, csvPrinter);
+        printInt(yearOfDeath, csvPrinter);
+        printString(usualGpName, csvPrinter);
     }
 
     @Override

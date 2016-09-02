@@ -59,7 +59,7 @@ public class UserInRoleTransformer {
 
         //in the EMIS test pack, we have at least one record with no name details at all, so need to handle it
         if (Strings.isNullOrEmpty(surname)) {
-            surname = "<unknown>";
+            surname = "Unknown";
         }
 
         fhirPractitioner.setName(NameConverter.convert(givenName, surname, title));

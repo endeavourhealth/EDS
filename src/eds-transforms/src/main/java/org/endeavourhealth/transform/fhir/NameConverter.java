@@ -2,10 +2,11 @@ package org.endeavourhealth.transform.fhir;
 
 import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Person;
 import org.hl7.fhir.instance.model.HumanName;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class NameConverter
 {
@@ -152,6 +153,12 @@ public class NameConverter
         if (Strings.isNullOrEmpty(s)) {
             return null;
         }
+
+        //remove any double spaces
+        while (s.indexOf("  ") > -1) {
+            s = s.replaceAll("  ", " ");
+        }
+
         return Arrays.asList(s.split(" "));
     }
 

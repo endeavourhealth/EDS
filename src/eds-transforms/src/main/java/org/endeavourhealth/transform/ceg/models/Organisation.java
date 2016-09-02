@@ -41,7 +41,20 @@ public class Organisation extends AbstractModel {
 
     @Override
     public void writeRecordToCsv(CSVPrinter csvPrinter) throws Exception {
-
+        printBigInt(serviceProviderId, csvPrinter);
+        printString(serviceProviderName, csvPrinter);
+        printString(serviceProviderCode, csvPrinter);
+        printString(providerGroup, csvPrinter);
+        printInt(commissionerId, csvPrinter);
+        printString(commissioner, csvPrinter);
+        printString(commissionerCode, csvPrinter);
+        printString(pod, csvPrinter);
+        printString(commissioningRegionCode, csvPrinter);
+        printString(commissioningRegion, csvPrinter);
+        printString(localAreaTeamCode, csvPrinter);
+        printString(localAreaTeam, csvPrinter);
+        printString(commissioningCounty, csvPrinter);
+        printString(commissioningCountry, csvPrinter);
     }
 
     @Override

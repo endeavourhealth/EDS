@@ -38,7 +38,7 @@ public class CsvProcessor {
     private UUID adminBatchId = null;
 
     //threading
-    private ThreadPool threadPool = new ThreadPool(10, 200000); //allow 10 threads for saving, but limit to allowing 200,000 things to be queued
+    private ThreadPool threadPool = new ThreadPool(10, 100000); //allow 10 threads for saving, but limit to allowing 200,000 things to be queued
 
     //counts
     private Map<UUID, AtomicInteger> countResourcesSaved = new ConcurrentHashMap<>();

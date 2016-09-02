@@ -47,6 +47,7 @@ public class Encounter extends AbstractModel {
         printBigInt(serviceProviderId, csvPrinter);
         printBigInt(patientId, csvPrinter);
         printDate(eventDate, csvPrinter);
+        printTime(eventDate, csvPrinter);
         printString(nativeClinicalCode, csvPrinter);
         printDouble(value, csvPrinter);
         printString(units, csvPrinter);

@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.ceg;
 
+import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
@@ -63,7 +64,7 @@ public class CegFhirTransformer {
             zos.putNextEntry(new ZipEntry(fileName));
             zos.write(csvBytes);
         }
-
+        zos.flush();
         zos.close();
 
         //return as base64 encoded string
@@ -129,7 +130,7 @@ public class CegFhirTransformer {
 
     private static void transformResource(Resource resource, List<AbstractModel> models, Map<String, Resource> hsAllResources) throws Exception {
         if (resource instanceof Patient) {
-            PatientTransformer.transform((Patient)resource, models, hsAllResources);
+            //no transformer for this, as we handle these resources when doing EpisodeOfCare resources
 
         } else if (resource instanceof Condition) {
             ConditionTransformer.transform((Condition)resource, models, hsAllResources);
@@ -174,7 +175,7 @@ public class CegFhirTransformer {
             FamilyMemberHistoryTransformer.transform((FamilyMemberHistory)resource, models, hsAllResources);
 
         } else if (resource instanceof EpisodeOfCare) {
-            //no transformer for this, as we handle these resources when doing Patient resources
+            EpisodeOfCareTransformer.transform((EpisodeOfCare)resource, models, hsAllResources);
 
         } else if (resource instanceof Encounter) {
             //no transformer for this, as we handle these resources when doing other resources
@@ -199,13 +200,18 @@ public class CegFhirTransformer {
 
         for (ResourceByExchangeBatch resourceByExchangeBatch: resourcesByExchangeBatch) {
             String json = resourceByExchangeBatch.getResourceData();
-            try {
-                Resource r = new JsonParser().parse(json);
-                ret.add(r);
-            } catch (Exception ex) {
-                LOG.error(ex.getMessage());
-                LOG.error(json);
+            if (!Strings.isNullOrEmpty(json)) {
+                try {
+                    Resource r = new JsonParser().parse(json);
+                    ret.add(r);
+                    //LOG.info("Read " + r.getResourceType() + " ok");
+                } catch (Exception ex) {
+                    LOG.error(ex.getMessage());
+                    LOG.error(json);
+                    throw ex;
+                }
             }
+
         }
 
         return ret;

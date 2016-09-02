@@ -18,7 +18,7 @@ public class ProcedureTransformer extends AbstractTransformer {
         Encounter model = new Encounter();
 
         model.setPatientId(transformPatientId(fhir.getSubject()));
-        model.setEventDate(transformDate(fhir.getPerformedDateTimeType()));
+        model.setEventDate(transformDate(fhir.getPerformed()));
 
         findClinicalCodesForEncounter(fhir.getCode(), model);
         findConsultationDetailsForEncounter(fhir.getEncounter(), hsAllResources, model);

@@ -44,15 +44,16 @@ public abstract class EmisCsvTransformer {
         for (File processingIdDirectory: orgDirectory.listFiles()) {
 
             //validate that we've got all the files we expect
-            LOG.trace("Validating all files are present");
+            LOG.trace("Validating all files are present in {}", processingIdDirectory);
             List<File> expectedFiles = validateExpectedFiles(processingIdDirectory, version);
 
             //validate there's no additional files in the common directory
-            LOG.trace("Validating no additional files");
+            LOG.trace("Validating no additional files in {}", processingIdDirectory);
             validateNoExtraFiles(processingIdDirectory, expectedFiles);
 
             //validate the column names match what we expect (this is repeated when we actually perform
             //the transform, but by doing it now, we fail earlier rather than later)
+            LOG.trace("Validating CSV column names in {}", processingIdDirectory);
             validateColumnNames(processingIdDirectory, version);
         }
 
