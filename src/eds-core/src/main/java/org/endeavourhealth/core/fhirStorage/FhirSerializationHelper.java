@@ -4,7 +4,7 @@ import org.endeavourhealth.core.fhirStorage.exceptions.SerializationException;
 import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.Resource;
 
-public class JsonSerializationHelper {
+public class FhirSerializationHelper {
     public static String serializeResource(Resource resource) throws SerializationException {
         try {
             return new JsonParser().composeString(resource);

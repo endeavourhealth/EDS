@@ -33,6 +33,11 @@ public interface ResourceAccessor {
 
     @Query("SELECT count(*) FROM ehr.resource_by_service WHERE service_id = :service_id AND system_id = :system_id AND resource_type = :resource_type")
     ResultSet getResourceCountByService(@Param("service_id") UUID serviceId,
-                                            @Param("system_id") UUID systemId,
-                                            @Param("resource_type") String resourceType);
+                                        @Param("system_id") UUID systemId,
+                                        @Param("resource_type") String resourceType);
+
+    @Query("SELECT resource_metadata FROM ehr.resource_by_service WHERE service_id = :service_id AND system_id = :system_id AND resource_type = :resource_type")
+    ResultSet getMetadataByService(@Param("service_id") UUID serviceId,
+                                   @Param("system_id") UUID systemId,
+                                   @Param("resource_type") String resourceType);
 }

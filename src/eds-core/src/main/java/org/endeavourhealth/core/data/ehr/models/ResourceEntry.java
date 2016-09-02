@@ -12,6 +12,7 @@ public class ResourceEntry {
     private UUID systemId;
     private UUID patientId;
     private String schemaVersion;
+    private String resourceMetadata;
     private String resourceData;
 
     public UUID getResourceId() {
@@ -76,6 +77,14 @@ public class ResourceEntry {
 
     public void setSchemaVersion(String schemaVersion) {
         this.schemaVersion = schemaVersion;
+    }
+
+    public String getResourceMetadata() {
+        return resourceMetadata;
+    }
+
+    public void setResourceMetadata(String resourceMetadata) {
+        this.resourceMetadata = resourceMetadata;
     }
 
     public String getResourceData() {

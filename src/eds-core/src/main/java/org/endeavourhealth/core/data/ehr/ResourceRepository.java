@@ -9,6 +9,7 @@ import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.ResourceAccessor;
 import org.endeavourhealth.core.data.ehr.accessors.ResourceHistoryAccessor;
 import org.endeavourhealth.core.data.ehr.models.*;
+import org.endeavourhealth.core.fhirStorage.metadata.ResourceMetadata;
 import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -66,6 +67,7 @@ public class ResourceRepository extends Repository {
         resourceByService.setUpdatedAt(resourceEntry.getCreatedAt());
         resourceByService.setPatientId(resourceEntry.getPatientId());
         resourceByService.setSchemaVersion(resourceEntry.getSchemaVersion());
+        resourceByService.setResourceMetadata(resourceEntry.getResourceMetadata());
         resourceByService.setResourceData(resourceEntry.getResourceData());
         Mapper<ResourceByService> mapperResourceByService = getMappingManager().mapper(ResourceByService.class);
         batch.add(mapperResourceByService.saveQuery(resourceByService));
@@ -202,5 +204,11 @@ public class ResourceRepository extends Repository {
         ResultSet result = accessor.getResourceCountByService(serviceId, systemId, resourceType);
         Row row = result.one();
         return row.getLong(0);
+    }
+
+    public <T extends ResourceMetadata> ResourceMetadataIterator<T> getMetadataByService(UUID serviceId, UUID systemId, String resourceType, Class<T> classOfT) {
+        ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
+        ResultSet result = accessor.getMetadataByService(serviceId, systemId, resourceType);
+        return new ResourceMetadataIterator<>(result.iterator(), classOfT);
     }
 }

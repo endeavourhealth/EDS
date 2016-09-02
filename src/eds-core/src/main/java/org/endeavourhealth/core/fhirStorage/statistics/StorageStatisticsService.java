@@ -1,6 +1,8 @@
 package org.endeavourhealth.core.fhirStorage.statistics;
 
+import org.endeavourhealth.core.data.ehr.ResourceMetadataIterator;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
+import org.endeavourhealth.core.fhirStorage.metadata.PatientMetadata;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +32,31 @@ public class StorageStatisticsService {
     }
 
     private PatientStatistics createPatientStatistics(UUID serviceId, UUID systemId) {
+        long totalCount = 0;
+        long activeCount = 0;
+        long deceasedCount = 0;
+
+        ResourceMetadataIterator<PatientMetadata> patientMetadataIterator = repository.getMetadataByService(serviceId,
+                systemId,
+                PATIENT_RESOURCE_TYPE_NAME,
+                PatientMetadata.class);
+
+        while(patientMetadataIterator.hasNext()) {
+            PatientMetadata patientMetadata = patientMetadataIterator.next();
+
+            if (patientMetadata.isDeceased()) {
+                deceasedCount++;
+            }
+            else if (patientMetadata.isActive()) {
+                activeCount++;
+            }
+            totalCount++;
+        }
+
         PatientStatistics statistics = new PatientStatistics();
-        statistics.setTotalCount(repository.getResourceCountByService(serviceId, systemId, PATIENT_RESOURCE_TYPE_NAME));
+        statistics.setTotalCount(totalCount);
+        statistics.setActiveCount(activeCount);
+        statistics.setDeceasedCount(deceasedCount);
         return statistics;
     }
 

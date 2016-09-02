@@ -57,12 +57,13 @@ CREATE TABLE resource_by_service (
   updated_at timestamp,
   patient_id uuid,
   schema_version text,
+  resource_metadata text,
   resource_data text,
   PRIMARY KEY((service_id, system_id, resource_type), resource_id)
 );
 
 CREATE MATERIALIZED VIEW resource_by_patient AS
-SELECT service_id, system_id, patient_id, resource_type, resource_id, schema_version, resource_data
+SELECT service_id, system_id, patient_id, resource_type, resource_id, schema_version, resource_metadata, resource_data
 FROM resource_by_service
 WHERE service_id IS NOT NULL
   AND system_id IS NOT NULL
@@ -160,7 +161,7 @@ CREATE MATERIALIZED VIEW patient_identifier_by_nhs_number AS
 	AND local_id IS NOT NULL  
 	AND local_id_system IS NOT NULL  
 	PRIMARY KEY ((nhs_number), service_id, system_id, local_id, local_id_system, version);
-	
+
 	
 CREATE MATERIALIZED VIEW patient_identifier_by_patient_id AS  
 	SELECT service_id, system_id, nhs_number, forenames, surname, date_of_birth, postcode, gender,
