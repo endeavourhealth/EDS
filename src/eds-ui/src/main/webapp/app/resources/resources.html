@@ -81,8 +81,6 @@
             <div class="row">
                 <div class="col-md-4">
 
-
-
                     <div ng-if="resourcesCtrl.resources != undefined">
                         <div ng-if="resourcesCtrl.resources.length == 0">
 
@@ -114,107 +112,14 @@
                                     <div class="panel-heading">{{ resource.resourceType }}: {{ resource.id }}</div>
                                     <div class="panel-body">
 
-                                        <div ng-repeat="(key, value) in resource">
-
-                                            <div ng-switch on="key">
-                                                <div ng-switch-when="resourceType">
-                                                    <!-- skip resource type -->
-                                                </div>
-                                                <div ng-switch-when="id">
-                                                    <!-- skip resource ID -->
-                                                </div>
-                                                <div ng-switch-default>
-
-                                                    <div ng-if="isArray(value)">
-                                                        <label>ARRAY</label>
-                                                        <br/>
-                                                    </div>
-
-                                                    <div ng-if="isObject(value)">
-                                                        <label>OBJECT</label>
-                                                        <br/>
-
-                                                    </div>
-
-                                                    <label>{{key}}: {{ value }}</label>
-                                                    <br/>
-                                                    <!-- code to render the regular video block -->
-                                                </div>
-                                            </div>
-
-                                        </div>
+                                        <pre>{{resource | json}}</pre>
 
                                     </div>
                                 </div>
 
                             </div>
                         </div>
-
-
-
- <!--                       <div ng-repeat="(key, value) in resource">
-
-                            <label>{{key}}</label>
-                            <br/>
-                            <label>{{ value }}</label>
-
-                        </div>
-
-                        <label>{{ resourceContainer.resource }}</label>
-                        <br/>
-                        <label>{{ resourceContainer.resourceJson }}</label>-->
-
                     </div>
-
-
-
-
-
-<!--
-                    <div class="form-group" ng-repeat="resourceContainer in resourcesCtrl.resourceContainers">
-
-                        <label>{{ resourceContainer.resourceType }}</label>
-                        <br/>
-                        <label>{{ resourceContainer.resourceJson }}</label>
-                        <input type="text" class="form-control" name="email" ng-model="resourceContainer.resourceType" required>
-
-                    </div>-->
-
-                    <!--<div class="table">
-                        <table class="table table-striped table-condensed">
-                            <thead>
-                            <tr>
-                                <th>Patient ID</th>
-                                <th>Service</th>
-                                <th>System</th>
-                                <th>NHS#</th>
-                                <th>Forenames</th>
-                                <th>Surname</th>
-                                <th>DoB</th>
-                                <th>Postcode</th>
-                                <th>Gender</th>
-                                <th>Local ID</th>
-                                <th>Local ID System</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr ng-repeat="id in patientIdentityCtrl.patientIdentities">
-                                <td>{{id.patientId}}</td>
-                                <td>{{id.serviceName}}</td>
-                                <td>{{id.systemName}}</td>
-                                <td>{{id.nhsNumber}}</td>
-                                <td>{{id.forenames}}</td>
-                                <td>{{id.surname}}</td>
-                                <td>{{id.dateOfBirth}}</td>
-                                <td>{{id.postcode}}</td>
-                                <td>{{id.gender}}</td>
-                                <td>{{id.localId}}</td>
-                                <td>{{id.localIdSystem}}</td>
-                            </tr>
-
-                            </tbody>
-                        </table>
-                    </div>-->
 
                 </div>
             </div>
