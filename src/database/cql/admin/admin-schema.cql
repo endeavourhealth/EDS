@@ -369,6 +369,9 @@ INSERT INTO admin.item (id,audit_id,description,is_deleted,title,xml_content) VA
 221dd197-2649-49fa-923b-36276e2d92f0,eb6a6ee8-6eab-4fa6-8218-c6f83790ff48,'',false,'Data Sets','');
 INSERT INTO admin.item (id,audit_id,description,is_deleted,title,xml_content) VALUES (
 8fcf222f-d648-4a76-b509-12f3ba7d8c1e,32b609bd-03c8-44d6-9f31-9c2219a14c93,'',false,'Code Sets','');
+INSERT INTO admin.item
+(id, audit_id, description, is_deleted, title, xml_content)
+VALUES(76ce138a-1e61-4cf4-9340-faff5cb0c8c2, 5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52, '', false, 'Data Protocols', '');
 INSERT INTO admin.item (id,audit_id,description,is_deleted,title,xml_content) VALUES (
 db8fa60e-08ff-4b61-ba4c-6170e6cb8df7,d5ee1e7b-b6c3-4a10-bad5-aae24a732816,'EMIS Web Witness Test System',false,'EMIS Web Test','<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <libraryItem>
