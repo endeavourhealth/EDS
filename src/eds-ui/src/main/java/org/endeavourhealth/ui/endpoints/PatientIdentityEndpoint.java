@@ -24,6 +24,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -84,6 +85,8 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
             ret.add(json);
         }
 
+        removeDuplicates(ret);
+
         clearLogbackMarkers();
 
         return Response
@@ -130,6 +133,8 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
             ret.add(json);
         }
+
+        removeDuplicates(ret);
 
         clearLogbackMarkers();
 
@@ -186,9 +191,10 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
                 json.setLocalIdSystem(identifier.getLocalIdSystem());
 
                 ret.add(json);
-
             }
         }
+
+        removeDuplicates(ret);
 
         clearLogbackMarkers();
 
@@ -196,6 +202,74 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(ret)
                 .build();
+    }
+
+    /**
+     * because of the structure of the table in Cassandra, we may get duplicate rows, so just strip them out
+     */
+    private static void removeDuplicates(List<JsonPatientIdentifier> identifiers) {
+        for (int i=identifiers.size()-1; i>=0; i--) {
+            JsonPatientIdentifier identifier = identifiers.get(i);
+            boolean duplicate = false;
+            for (int j=i-1; j>=0; j--) {
+                JsonPatientIdentifier otherIdentifier = identifiers.get(i);
+                if (isSame(identifier, otherIdentifier)) {
+                    duplicate = true;
+                    break;
+                }
+            }
+
+            if (duplicate) {
+                identifiers.remove(i);
+            }
+        }
+    }
+    private static boolean isSame(JsonPatientIdentifier one, JsonPatientIdentifier two) {
+        return isSame(one.getServiceId(), two.getServiceId())
+                && isSame(one.getServiceName(), two.getServiceName())
+                && isSame(one.getSystemId(), two.getSystemId())
+                && isSame(one.getSystemName(), two.getSystemName())
+                && isSame(one.getNhsNumber(), two.getNhsNumber())
+                && isSame(one.getForenames(), two.getForenames())
+                && isSame(one.getSurname(), two.getSurname())
+                && isSame(one.getDateOfBirth(), two.getDateOfBirth())
+                && isSame(one.getPostcode(), two.getGender())
+                && isSame(one.getPatientId(), two.getPatientId())
+                && isSame(one.getLocalId(), two.getLocalId())
+                && isSame(one.getLocalIdSystem(), two.getLocalIdSystem());
+    }
+    private static boolean isSame(Date one, Date two) {
+        if (one == null && two == null) {
+            return true;
+        } else if (one != null
+                && two != null
+                && one.equals(two)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    private static boolean isSame(UUID one, UUID two) {
+        if (one == null && two == null) {
+            return true;
+        } else if (one != null
+                && two != null
+                && one.equals(two)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    private static boolean isSame(String one, String two) {
+        if (one == null && two == null) {
+            return true;
+        } else if (one != null
+                && two != null
+                && one.equals(two)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private static String getServiceNameForId(UUID serviceId) {

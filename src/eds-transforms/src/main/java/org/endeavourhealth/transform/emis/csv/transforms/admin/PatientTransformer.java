@@ -252,6 +252,9 @@ public class PatientTransformer {
      */
     private static RegistrationType convertRegistrationType(String csvRegType, boolean dummyRecord) {
 
+        //EMIS test data has leading spaces
+        csvRegType = csvRegType.trim();
+
         if (dummyRecord || csvRegType.equalsIgnoreCase("Dummy")) {
             return RegistrationType.DUMMY;
         } else if (csvRegType.equalsIgnoreCase("Emg")) {

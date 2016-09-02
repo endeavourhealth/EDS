@@ -7,19 +7,30 @@ import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class JsonResourceContainer {
 
+    private String resourceId = null;
     private String resourceType = null;
     private String resourceJson = null;
 
     public JsonResourceContainer() {}
 
     public JsonResourceContainer(ResourceHistory resourceHistory) {
+        this.resourceId = resourceHistory.getResourceId().toString();
         this.resourceType = resourceHistory.getResourceType();
         this.resourceJson = resourceHistory.getResourceData();
     }
 
     public JsonResourceContainer(ResourceByPatient resourceHistory) {
+        this.resourceId = resourceHistory.getResourceId().toString();
         this.resourceType = resourceHistory.getResourceType();
         this.resourceJson = resourceHistory.getResourceData();
+    }
+
+    public String getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(String resourceId) {
+        this.resourceId = resourceId;
     }
 
     public String getResourceType() {

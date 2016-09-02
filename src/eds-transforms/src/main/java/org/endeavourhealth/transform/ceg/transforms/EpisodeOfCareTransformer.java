@@ -5,10 +5,8 @@ import org.endeavourhealth.transform.ceg.models.PatientDemographics;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.*;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.math.BigInteger;
+import java.util.*;
 
 public class EpisodeOfCareTransformer extends AbstractTransformer {
 
@@ -31,8 +29,10 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
 
         org.endeavourhealth.transform.ceg.models.Patient model = new org.endeavourhealth.transform.ceg.models.Patient();
 
-
         model.setPatientId(transformPatientId(fhirPatient.getId()));
+
+        Random r = new Random();
+        model.setPatientIdPseudo(BigInteger.valueOf(r.nextLong()));
 
         Date dob = fhirPatient.getBirthDate();
         model.setDateOfBirth(dob);
@@ -90,6 +90,8 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
         if (regTypeCoding != null) {
             String regTypeDesc = regTypeCoding.getDisplay();
             model.setPatientStatus(regTypeDesc);
+            String regTypeCode = regTypeCoding.getCode();
+            model.setPatientStatus(regTypeCode);
         }
 
         if (fhirPatient.hasCareProvider()) {

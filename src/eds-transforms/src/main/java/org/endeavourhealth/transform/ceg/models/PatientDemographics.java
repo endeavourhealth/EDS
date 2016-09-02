@@ -12,7 +12,7 @@ public class PatientDemographics extends AbstractModel {
     private Date dateRegistered;
     private Date dateRegisteredEnd;
     private String patientStatus;
-    private Integer patientStatusCode;
+    private String patientStatusCode;
     private String gender;
     private String lsoaCode;
     private String ethnicityCode;
@@ -42,7 +42,7 @@ public class PatientDemographics extends AbstractModel {
         printDate(dateRegistered, csvPrinter);
         printDate(dateRegisteredEnd, csvPrinter);
         printString(patientStatus, csvPrinter);
-        printInt(patientStatusCode, csvPrinter);
+        printString(patientStatusCode, csvPrinter);
         printString(gender, csvPrinter);
         printString(lsoaCode, csvPrinter);
         printString(ethnicityCode, csvPrinter);
@@ -92,11 +92,11 @@ public class PatientDemographics extends AbstractModel {
         this.patientStatus = patientStatus;
     }
 
-    public Integer getPatientStatusCode() {
+    public String getPatientStatusCode() {
         return patientStatusCode;
     }
 
-    public void setPatientStatusCode(Integer patientStatusCode) {
+    public void setPatientStatusCode(String patientStatusCode) {
         this.patientStatusCode = patientStatusCode;
     }
 

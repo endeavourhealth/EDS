@@ -17,14 +17,23 @@ public class ConditionTransformer extends AbstractTransformer {
 
         Encounter model = new Encounter();
 
-        model.setPatientId(transformPatientId(fhir.getPatient()));
-        model.setEventDate(transformDate(fhir.getOnset()));
+        try {
 
-        findClinicalCodesForEncounter(fhir.getCode(), model);
-        findConsultationDetailsForEncounter(fhir.getEncounter(), hsAllResources, model);
 
-        Reference practitionerReference = fhir.getAsserter();
-        model.setStaffId(transformStaffId(practitionerReference));
+            model.setPatientId(transformPatientId(fhir.getPatient()));
+            model.setEventDate(transformDate(fhir.getOnset()));
+
+            findClinicalCodesForEncounter(fhir.getCode(), model);
+            findConsultationDetailsForEncounter(fhir.getEncounter(), hsAllResources, model);
+
+
+            Reference practitionerReference = fhir.getAsserter();
+            model.setStaffId(transformStaffId(practitionerReference));
+
+
+        } catch (Exception ex) {
+            System.out.print("ln");
+        }
 
 //TODO - finish
         /**

@@ -54,9 +54,9 @@ public class ReferenceHelper
     }
 
     public static ReferenceComponents getReferenceComponents(Reference reference) {
-        if (reference == null
-                || reference.getReference() == null) //todo - investigate why a null reference within a reference
+        if (reference == null) {
             return null;
+        }
 
         String[] parts = reference.getReference().split("\\/");
         String resourceTypeStr = parts[0];
