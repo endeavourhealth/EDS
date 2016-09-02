@@ -335,24 +335,24 @@ VALUES
 (A9B3F8BE-ADF8-4923-832C-BD0AB7E484DB, B5D86DA5-5E57-422E-B2C5-7E9C6F3DEA32, '1000:1d049ba2ce1cbc28d76fed47e9699b21885252496d58b58b:c4d1df46d3ba5867349bec73fafba63468803ba5fe0d8edd', null, 0, false);
 	
 INSERT INTO admin.organisation (id,name,national_id,services) VALUES (
-cafdfb56-f5b8-495e-bb35-0eb1ec3de4a0,'EMIS 50003','A00003',[a3f63eb0-8baf-42d1-89f8-70060de16e2c=EMIS 50003]);
+cafdfb56-f5b8-495e-bb35-0eb1ec3de4a0,'EMIS 50003','A00003',{a3f63eb0-8baf-42d1-89f8-70060de16e2c:'EMIS 50003'});
 INSERT INTO admin.organisation (id,name,national_id,services) VALUES (
-b6362185-98fe-4493-a27b-71227c8eab8d,'EMIS 50002','A00002',[70f931e8-366b-4128-8672-aa4ce28eee33=EMIS 50002]);
+b6362185-98fe-4493-a27b-71227c8eab8d,'EMIS 50002','A00002',{70f931e8-366b-4128-8672-aa4ce28eee33:'EMIS 50002'});
 INSERT INTO admin.organisation (id,name,national_id,services) VALUES (
-06e178b7-b599-4acf-b0f1-1c2aa728cedd,'EMIS 50004','A00004',[01e9a3f1-633e-40f5-9f1a-fdbd033ac04b=EMIS 50004]);
+06e178b7-b599-4acf-b0f1-1c2aa728cedd,'EMIS 50004','A00004',{01e9a3f1-633e-40f5-9f1a-fdbd033ac04b:'EMIS 50004'});
 INSERT INTO admin.organisation (id,name,national_id,services) VALUES (
-1986d191-5f3d-4c33-9c98-d88bd7816199,'EMIS 50005','A00005',[db7eba14-4a89-4090-abf8-af6c60742cb1=EMIS 50005]);
+1986d191-5f3d-4c33-9c98-d88bd7816199,'EMIS 50005','A00005',{db7eba14-4a89-4090-abf8-af6c60742cb1:'EMIS 50005'});
 INSERT INTO admin.organisation (id,name,national_id,services) VALUES (
-b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,'Test Organisation','12345',[]);
+b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,'Test Organisation','12345',{});
 	
 INSERT INTO admin.service (id,endpoints,local_identifier,name,organisations) VALUES (
-01e9a3f1-633e-40f5-9f1a-fdbd033ac04b,'[{"systemUuid":"db8fa60e-08ff-4b61-ba4c-6170e6cb8df7","technicalInterfaceUuid":"58701738-5cae-4aaf-a375-31d4f4fdede9","endpoint":"http://"}]','EMIS 50004','EMIS 50004',[06e178b7-b599-4acf-b0f1-1c2aa728cedd=EMIS 50004]);
+01e9a3f1-633e-40f5-9f1a-fdbd033ac04b,'[{"systemUuid":"db8fa60e-08ff-4b61-ba4c-6170e6cb8df7","technicalInterfaceUuid":"58701738-5cae-4aaf-a375-31d4f4fdede9","endpoint":"http://"}]','EMIS 50004','EMIS 50004',{06e178b7-b599-4acf-b0f1-1c2aa728cedd:'EMIS 50004'});
 INSERT INTO admin.service (id,endpoints,local_identifier,name,organisations) VALUES (
-70f931e8-366b-4128-8672-aa4ce28eee33,'[{"systemUuid":"db8fa60e-08ff-4b61-ba4c-6170e6cb8df7","technicalInterfaceUuid":"58701738-5cae-4aaf-a375-31d4f4fdede9","endpoint":"http://"}]','EMIS 50002','EMIS 50002',[b6362185-98fe-4493-a27b-71227c8eab8d=EMIS 50002]);
+70f931e8-366b-4128-8672-aa4ce28eee33,'[{"systemUuid":"db8fa60e-08ff-4b61-ba4c-6170e6cb8df7","technicalInterfaceUuid":"58701738-5cae-4aaf-a375-31d4f4fdede9","endpoint":"http://"}]','EMIS 50002','EMIS 50002',{b6362185-98fe-4493-a27b-71227c8eab8d:'EMIS 50002'});
 INSERT INTO admin.service (id,endpoints,local_identifier,name,organisations) VALUES (
-a3f63eb0-8baf-42d1-89f8-70060de16e2c,'[{"systemUuid":"db8fa60e-08ff-4b61-ba4c-6170e6cb8df7","technicalInterfaceUuid":"58701738-5cae-4aaf-a375-31d4f4fdede9","endpoint":"http://"}]','EMIS 50003','EMIS 50003',[cafdfb56-f5b8-495e-bb35-0eb1ec3de4a0=EMIS 50003]);
+a3f63eb0-8baf-42d1-89f8-70060de16e2c,'[{"systemUuid":"db8fa60e-08ff-4b61-ba4c-6170e6cb8df7","technicalInterfaceUuid":"58701738-5cae-4aaf-a375-31d4f4fdede9","endpoint":"http://"}]','EMIS 50003','EMIS 50003',{cafdfb56-f5b8-495e-bb35-0eb1ec3de4a0:'EMIS 50003'});
 INSERT INTO admin.service (id,endpoints,local_identifier,name,organisations) VALUES (
-db7eba14-4a89-4090-abf8-af6c60742cb1,'[{"systemUuid":"db8fa60e-08ff-4b61-ba4c-6170e6cb8df7","technicalInterfaceUuid":"58701738-5cae-4aaf-a375-31d4f4fdede9","endpoint":"http://"}]','EMIS 50005','EMIS 50005',[1986d191-5f3d-4c33-9c98-d88bd7816199=EMIS 50005]);
+db7eba14-4a89-4090-abf8-af6c60742cb1,'[{"systemUuid":"db8fa60e-08ff-4b61-ba4c-6170e6cb8df7","technicalInterfaceUuid":"58701738-5cae-4aaf-a375-31d4f4fdede9","endpoint":"http://"}]','EMIS 50005','EMIS 50005',{1986d191-5f3d-4c33-9c98-d88bd7816199:'EMIS 50005'});
 
 INSERT INTO organisation_end_user_link
 (id, organisation_id, end_user_id, is_admin, dt_expired)
@@ -488,21 +488,21 @@ INSERT INTO admin.active_item (id,organisation_id,item_type_id,audit_id,is_delet
 922bad5b-7f1a-4435-929c-729929e0f660,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,7,0291238c-aa5d-4cf0-85cc-58c451db2fae,false,96448ff1-903b-4b1c-b306-4c04c7b3e0bc);
 
 INSERT INTO admin.audit (id,organisation_id,time_stamp,audit_version,end_user_id) VALUES (
-69ab901e-30d9-4a8a-ab2f-af764946a7ea,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,2016-06-21 10:57:23,0,b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
+69ab901e-30d9-4a8a-ab2f-af764946a7ea,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,'2016-06-21 10:57:23',0,b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
 INSERT INTO admin.audit (id,organisation_id,time_stamp,audit_version,end_user_id) VALUES (
-f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,2016-04-04 21:37:43,1,b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
+f3c9183b-e9be-4ce5-b0ff-58e46bfd8da6,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,'2016-04-04 21:37:43',1,b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
 INSERT INTO admin.audit (id,organisation_id,time_stamp,audit_version,end_user_id) VALUES (
-6226dbb5-ea0f-4e3a-b7db-0e08a485c6e4,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,2016-09-02 10:38:22,0,fbb470ed-64fb-4c50-9564-b15065d462e7);
+6226dbb5-ea0f-4e3a-b7db-0e08a485c6e4,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,'2016-09-02 10:38:22',0,fbb470ed-64fb-4c50-9564-b15065d462e7);
 INSERT INTO admin.audit (id,organisation_id,time_stamp,audit_version,end_user_id) VALUES (
-5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,2016-04-04 21:37:43,1,b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
+5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,'2016-04-04 21:37:43',1,b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
 INSERT INTO admin.audit (id,organisation_id,time_stamp,audit_version,end_user_id) VALUES (
-0291238c-aa5d-4cf0-85cc-58c451db2fae,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,2016-04-04 21:37:43,1,b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
+0291238c-aa5d-4cf0-85cc-58c451db2fae,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,'2016-04-04 21:37:43',1,b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
 INSERT INTO admin.audit (id,organisation_id,time_stamp,audit_version,end_user_id) VALUES (
-d5ee1e7b-b6c3-4a10-bad5-aae24a732816,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,2016-09-02 10:33:14,0,fbb470ed-64fb-4c50-9564-b15065d462e7);
+d5ee1e7b-b6c3-4a10-bad5-aae24a732816,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,'2016-09-02 10:33:14',0,fbb470ed-64fb-4c50-9564-b15065d462e7);
 INSERT INTO admin.audit (id,organisation_id,time_stamp,audit_version,end_user_id) VALUES (
-eb6a6ee8-6eab-4fa6-8218-c6f83790ff48,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,2016-06-21 10:57:08,0,b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
+eb6a6ee8-6eab-4fa6-8218-c6f83790ff48,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,'2016-06-21 10:57:08',0,b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
 INSERT INTO admin.audit (id,organisation_id,time_stamp,audit_version,end_user_id) VALUES (
-32b609bd-03c8-44d6-9f31-9c2219a14c93,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,2016-06-21 10:57:54,0,b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
+32b609bd-03c8-44d6-9f31-9c2219a14c93,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,'2016-06-21 10:57:54',0,b5d86da5-5e57-422e-b2c5-7e9c6f3dea32);
 
 INSERT INTO admin.item_dependency (item_id,audit_id,dependent_item_id,dependency_type_id) VALUES (
 8aebd3b7-94de-4ab5-840b-5dbd3905a540,69ab901e-30d9-4a8a-ab2f-af764946a7ea,96448ff1-903b-4b1c-b306-4c04c7b3e0bc,0);
@@ -518,6 +518,3 @@ INSERT INTO admin.item_dependency (item_id,audit_id,dependent_item_id,dependency
 c3e5f788-b44a-4a2f-8a6f-80a5b2023693,6226dbb5-ea0f-4e3a-b7db-0e08a485c6e4,76ce138a-1e61-4cf4-9340-faff5cb0c8c2,1);
 INSERT INTO admin.item_dependency (item_id,audit_id,dependent_item_id,dependency_type_id) VALUES (
 76ce138a-1e61-4cf4-9340-faff5cb0c8c2,5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52,96448ff1-903b-4b1c-b306-4c04c7b3e0bc,0);
-
-
-
