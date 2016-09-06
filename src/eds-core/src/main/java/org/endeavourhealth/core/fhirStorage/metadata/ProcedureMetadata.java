@@ -27,7 +27,7 @@ public class ProcedureMetadata extends AbstractResourceMetadata implements Patie
     private void populateMetadataFromResource(Procedure resource) {
         patientId = UUID.fromString(ReferenceHelper.getReferenceId(resource.getSubject(), ResourceType.Patient));
         CodeableConcept codes = resource.getCode();
-        codeableConcept = null;
+        codeableConcept = new CodeableConcept();
         for (Coding coding : codes.getCoding()) {
             String system = coding.getSystem();
             String code = coding.getCode();

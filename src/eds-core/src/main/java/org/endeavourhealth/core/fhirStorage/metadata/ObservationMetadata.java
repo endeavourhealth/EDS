@@ -27,7 +27,7 @@ public class ObservationMetadata extends AbstractResourceMetadata implements Pat
     private void populateMetadataFromResource(Observation resource) {
         patientId = UUID.fromString(ReferenceHelper.getReferenceId(resource.getSubject(), ResourceType.Patient));
         CodeableConcept codes = resource.getCode();
-        codeableConcept = null;
+        codeableConcept = new CodeableConcept();
         for (Coding coding : codes.getCoding()) {
             String system = coding.getSystem();
             String code = coding.getCode();

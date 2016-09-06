@@ -26,7 +26,7 @@ public class AllergyIntoleranceMetadata extends AbstractResourceMetadata impleme
     private void populateMetadataFromResource(AllergyIntolerance resource) {
         patientId = UUID.fromString(ReferenceHelper.getReferenceId(resource.getPatient(), ResourceType.Patient));
         CodeableConcept codes = resource.getSubstance();
-        codeableConcept = null;
+        codeableConcept = new CodeableConcept();
         for (Coding coding : codes.getCoding()) {
             String system = coding.getSystem();
             String code = coding.getCode();

@@ -26,7 +26,7 @@ public class ConditionMetadata extends AbstractResourceMetadata implements Patie
     private void populateMetadataFromResource(Condition resource) {
         patientId = UUID.fromString(ReferenceHelper.getReferenceId(resource.getPatient(), ResourceType.Patient));
         CodeableConcept codes = resource.getCode();
-        codeableConcept = null;
+        codeableConcept = new CodeableConcept();
         for (Coding coding : codes.getCoding()) {
             String system = coding.getSystem();
             String code = coding.getCode();

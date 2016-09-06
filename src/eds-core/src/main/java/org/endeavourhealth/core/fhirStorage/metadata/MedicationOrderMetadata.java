@@ -28,7 +28,7 @@ public class MedicationOrderMetadata extends AbstractResourceMetadata implements
         try {
             patientId = UUID.fromString(ReferenceHelper.getReferenceId(resource.getPatient(), ResourceType.Patient));
             CodeableConcept codes = resource.getMedicationCodeableConcept();
-            codeableConcept = null;
+            codeableConcept = new CodeableConcept();
             for (Coding coding : codes.getCoding()) {
                 String system = coding.getSystem();
                 String code = coding.getCode();

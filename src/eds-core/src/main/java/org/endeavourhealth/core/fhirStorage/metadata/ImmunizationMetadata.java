@@ -28,7 +28,7 @@ public class ImmunizationMetadata extends AbstractResourceMetadata implements Pa
     private void populateMetadataFromResource(Immunization resource) {
         patientId = UUID.fromString(ReferenceHelper.getReferenceId(resource.getPatient(), ResourceType.Patient));
         CodeableConcept codes = resource.getVaccineCode();
-        codeableConcept = null;
+        codeableConcept = new CodeableConcept();
         for (Coding coding : codes.getCoding()) {
             String system = coding.getSystem();
             String code = coding.getCode();
