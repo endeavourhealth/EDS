@@ -5,19 +5,20 @@ import org.hl7.fhir.instance.model.Coding;
 import org.hl7.fhir.instance.model.MedicationOrder;
 import org.hl7.fhir.instance.model.ResourceType;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class MedicationOrderMetadata extends AbstractResourceMetadata implements PatientCompartment {
     private UUID patientId;
-    private CodeableConcept codeableConcept;
+    private List<Code> codes;
 
     @Override
     public UUID getPatientId() {
         return patientId;
     }
 
-    public CodeableConcept getCodeableConcept() { return codeableConcept; }
-
+    public List<Code> getCodes() { return codes; }
 
     public MedicationOrderMetadata(MedicationOrder resource) {
         super(resource);
@@ -27,18 +28,20 @@ public class MedicationOrderMetadata extends AbstractResourceMetadata implements
     private void populateMetadataFromResource(MedicationOrder resource) {
         try {
             patientId = UUID.fromString(ReferenceHelper.getReferenceId(resource.getPatient(), ResourceType.Patient));
-            CodeableConcept codes = resource.getMedicationCodeableConcept();
-            codeableConcept = new CodeableConcept();
-            for (Coding coding : codes.getCoding()) {
+            CodeableConcept codeableConcept = resource.getMedicationCodeableConcept();
+            codes = new ArrayList<>();
+
+            for (Coding coding : codeableConcept.getCoding()) {
                 String system = coding.getSystem();
                 String code = coding.getCode();
                 String display = coding.getDisplay();
-                Coding newCoding = new Coding();
-                newCoding.setSystem(system);
-                newCoding.setCode(code);
-                newCoding.setDisplay(display);
 
-                codeableConcept.addCoding(newCoding);
+                Code newCode = new Code();
+                newCode.setSystem(system);
+                newCode.setCode(code);
+                newCode.setDisplay(display);
+
+                codes.add(newCode);
             }
 
         }
