@@ -2,12 +2,15 @@ package org.endeavourhealth.core.fhirStorage.metadata;
 
 import org.hl7.fhir.instance.model.Patient;
 
+import java.util.Date;
 import java.util.UUID;
 
 public class PatientMetadata extends AbstractResourceMetadata implements PatientCompartment {
     private UUID patientId;
     private boolean active;
     private boolean deceased;
+    private Date dob;
+    private String gender;
 
     @Override
     public UUID getPatientId() {
@@ -22,6 +25,9 @@ public class PatientMetadata extends AbstractResourceMetadata implements Patient
         return deceased;
     }
 
+    public Date getDob() { return dob; }
+    public String getGender() { return gender; }
+
     public PatientMetadata(Patient resource) {
         super(resource);
         populateMetadataFromResource(resource);
@@ -31,5 +37,7 @@ public class PatientMetadata extends AbstractResourceMetadata implements Patient
         patientId = UUID.fromString(resource.getId());
         active = resource.getActive();
         deceased = resource.hasDeceased();
+        dob = resource.getBirthDate();
+        gender = resource.getGender().getDisplay();
     }
 }
