@@ -1,6 +1,7 @@
 package org.endeavourhealth.core.fhirStorage.metadata;
 
 import org.hl7.fhir.instance.model.CodeableConcept;
+import org.hl7.fhir.instance.model.Coding;
 import org.hl7.fhir.instance.model.MedicationOrder;
 import org.hl7.fhir.instance.model.ResourceType;
 
@@ -26,7 +27,20 @@ public class MedicationOrderMetadata extends AbstractResourceMetadata implements
     private void populateMetadataFromResource(MedicationOrder resource) {
         try {
             patientId = UUID.fromString(ReferenceHelper.getReferenceId(resource.getPatient(), ResourceType.Patient));
-            codeableConcept = resource.getMedicationCodeableConcept();
+            CodeableConcept codes = resource.getMedicationCodeableConcept();
+            codeableConcept = null;
+            for (Coding coding : codes.getCoding()) {
+                String system = coding.getSystem();
+                String code = coding.getCode();
+                String display = coding.getDisplay();
+                Coding newCoding = new Coding();
+                newCoding.setSystem(system);
+                newCoding.setCode(code);
+                newCoding.setDisplay(display);
+
+                codeableConcept.addCoding(newCoding);
+            }
+
         }
         catch (Exception e) {
         }

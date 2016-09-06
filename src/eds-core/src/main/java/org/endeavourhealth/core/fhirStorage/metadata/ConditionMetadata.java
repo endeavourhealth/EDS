@@ -1,6 +1,7 @@
 package org.endeavourhealth.core.fhirStorage.metadata;
 
 import org.hl7.fhir.instance.model.CodeableConcept;
+import org.hl7.fhir.instance.model.Coding;
 import org.hl7.fhir.instance.model.Condition;
 import org.hl7.fhir.instance.model.ResourceType;
 
@@ -24,6 +25,19 @@ public class ConditionMetadata extends AbstractResourceMetadata implements Patie
 
     private void populateMetadataFromResource(Condition resource) {
         patientId = UUID.fromString(ReferenceHelper.getReferenceId(resource.getPatient(), ResourceType.Patient));
-        codeableConcept = resource.getCode();
+        CodeableConcept codes = resource.getCode();
+        codeableConcept = null;
+        for (Coding coding : codes.getCoding()) {
+            String system = coding.getSystem();
+            String code = coding.getCode();
+            String display = coding.getDisplay();
+            Coding newCoding = new Coding();
+            newCoding.setSystem(system);
+            newCoding.setCode(code);
+            newCoding.setDisplay(display);
+
+            codeableConcept.addCoding(newCoding);
+        }
+
     }
 }

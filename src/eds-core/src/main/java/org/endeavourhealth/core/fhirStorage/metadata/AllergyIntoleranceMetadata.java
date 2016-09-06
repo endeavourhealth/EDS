@@ -2,6 +2,7 @@ package org.endeavourhealth.core.fhirStorage.metadata;
 
 import org.hl7.fhir.instance.model.AllergyIntolerance;
 import org.hl7.fhir.instance.model.CodeableConcept;
+import org.hl7.fhir.instance.model.Coding;
 import org.hl7.fhir.instance.model.ResourceType;
 
 import java.util.UUID;
@@ -24,6 +25,19 @@ public class AllergyIntoleranceMetadata extends AbstractResourceMetadata impleme
 
     private void populateMetadataFromResource(AllergyIntolerance resource) {
         patientId = UUID.fromString(ReferenceHelper.getReferenceId(resource.getPatient(), ResourceType.Patient));
-        codeableConcept = resource.getSubstance();
+        CodeableConcept codes = resource.getSubstance();
+        codeableConcept = null;
+        for (Coding coding : codes.getCoding()) {
+            String system = coding.getSystem();
+            String code = coding.getCode();
+            String display = coding.getDisplay();
+            Coding newCoding = new Coding();
+            newCoding.setSystem(system);
+            newCoding.setCode(code);
+            newCoding.setDisplay(display);
+
+            codeableConcept.addCoding(newCoding);
+        }
+
     }
 }
