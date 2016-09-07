@@ -185,6 +185,8 @@ public class CegFhirTransformer {
 
         } else if (resource instanceof AllergyIntolerance) {
             AllergyIntoleranceTransformer.transform((AllergyIntolerance)resource, models, hsAllResources);
+        } else if (resource instanceof DiagnosticOrder) {
+            //TODO - DiagnosticOrder
 
         } else {
             throw new TransformException("Unsupported FHIR resource type " + resource.getResourceType());
@@ -194,7 +196,7 @@ public class CegFhirTransformer {
     private static List<Resource> retrieveAllResources(UUID batchId) throws Exception {
 
         List<ResourceByExchangeBatch> resourcesByExchangeBatch = new ResourceRepository().getResourcesForBatch(batchId);
-        LOG.info("Got {} resources for batch {}", resourcesByExchangeBatch.size(), batchId);
+        //LOG.info("Got {} resources for batch {}", resourcesByExchangeBatch.size(), batchId);
 
         List<Resource> ret = new ArrayList<>();
 

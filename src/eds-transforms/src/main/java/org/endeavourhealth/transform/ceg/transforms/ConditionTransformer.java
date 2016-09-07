@@ -30,6 +30,7 @@ public class ConditionTransformer extends AbstractTransformer {
             Reference practitionerReference = fhir.getAsserter();
             model.setStaffId(transformStaffId(practitionerReference));
 
+            models.add(model);
 
         } catch (Exception ex) {
             System.out.print("ln");
@@ -41,6 +42,6 @@ public class ConditionTransformer extends AbstractTransformer {
 
          */
 
-        models.add(model);
+
     }
 }

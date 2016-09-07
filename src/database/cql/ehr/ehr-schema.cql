@@ -13,7 +13,7 @@ DROP TABLE IF EXISTS resource_by_service;
 DROP TABLE IF EXISTS resource_by_exchange_batch;
 DROP TABLE IF EXISTS exchange_batch;
 
-
+DROP TABLE IF EXISTS resource_types_used; //old table, not re-created
 
 // 1. Get Resource based on ID and Type				= resource_history
 // 2. Get Resource History						= resource_history
@@ -183,11 +183,6 @@ CREATE MATERIALIZED VIEW patient_identifier_by_patient_id AS
 	PRIMARY KEY ((patient_id), service_id, system_id, local_id, local_id_system, version)
 	WITH CLUSTERING ORDER BY (service_id ASC, system_id ASC, local_id ASC, local_id_system ASC, version DESC);
 	
-DROP TABLE IF EXISTS resource_types_used;
 
-CREATE TABLE resource_types_used (
-	service_id UUID,
-	system_id UUID,
-	resource_type text,
-	PRIMARY KEY ((service_id), system_id, resource_type));
-	
+
+
