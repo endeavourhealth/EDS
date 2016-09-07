@@ -1,6 +1,6 @@
 package org.endeavourhealth.ui.requestParameters;
 
-import org.endeavourhealth.ui.XmlSerializer;
+import org.endeavourhealth.core.utility.XmlSerializer;
 import org.endeavourhealth.ui.requestParameters.models.ObjectFactory;
 import org.endeavourhealth.ui.requestParameters.models.RequestParameters;
 import org.xml.sax.SAXException;

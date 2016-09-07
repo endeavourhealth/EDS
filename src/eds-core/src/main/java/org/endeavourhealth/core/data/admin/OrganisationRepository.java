@@ -2,13 +2,14 @@ package org.endeavourhealth.core.data.admin;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.mapping.Mapper;
+import com.sun.org.apache.xpath.internal.operations.Or;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.admin.accessors.OrganisationAccessor;
-import org.endeavourhealth.core.data.admin.models.*;
+import org.endeavourhealth.core.data.admin.models.Organisation;
+import org.endeavourhealth.core.data.admin.models.OrganisationEndUserLink;
+import org.endeavourhealth.core.data.admin.models.Service;
 
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.UUID;
+import java.util.*;
 
 public class OrganisationRepository extends Repository {
 	public UUID save(Organisation organisation) {
@@ -56,10 +57,28 @@ public class OrganisationRepository extends Repository {
 		return organisation.getId();
 	}
 
+	public Set<Organisation> getByIds(Set<UUID> ids) {
+		Set<Organisation> orgs = new HashSet<>();
+		for (UUID id: ids) {
+			Organisation org = getById(id);
+			orgs.add(org);
+		}
+		return orgs;
+	}
 
 	public Organisation getById(UUID id) {
 		Mapper<Organisation> mapper = getMappingManager().mapper(Organisation.class);
 		return mapper.get(id);
+	}
+
+	public Organisation getByNationalId(String nationalId) {
+		OrganisationAccessor accessor = getMappingManager().createAccessor(OrganisationAccessor.class);
+		Iterator<Organisation> iterator = accessor.getByNationalId(nationalId).iterator();
+		if (iterator.hasNext()) {
+			return iterator.next();
+		} else {
+			return null;
+		}
 	}
 
 	public void delete(Organisation organisation) {

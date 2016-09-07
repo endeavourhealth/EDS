@@ -1,13 +1,15 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import org.endeavourhealth.core.cache.ParserPool;
 import org.endeavourhealth.core.configuration.OpenEnvelopeConfig;
+import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
+import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.hl7.fhir.instance.formats.IParser;
 import org.hl7.fhir.instance.model.Binary;
 import org.hl7.fhir.instance.model.Bundle;
 import org.hl7.fhir.instance.model.MessageHeader;
@@ -17,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class OpenEnvelope extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(OpenEnvelope.class);
@@ -33,10 +36,9 @@ public class OpenEnvelope extends PipelineComponent {
 		String body = exchange.getBody();
 
 		String contentType = exchange.getHeader(HeaderKeys.ContentType);
-		IParser parser = getParser(contentType);
 
 		try {
-			Bundle bundle = (Bundle)parser.parse(body);
+			Bundle bundle = (Bundle)new ParserPool().parse(contentType, body);
 			List<Bundle.BundleEntryComponent> components = bundle.getEntry();
 
 			// find header and payload in bundle
@@ -60,7 +62,7 @@ public class OpenEnvelope extends PipelineComponent {
 			processBody(exchange, binary);
 
 		} catch (Exception e) {
-			throw new PipelineException(e.getMessage());
+			throw new PipelineException(e.getMessage(), e);
 		}
 
 		LOG.debug("Message envelope processed");
@@ -82,19 +84,70 @@ public class OpenEnvelope extends PipelineComponent {
 	}
 
 	private void getSenderUuid(Exchange exchange) throws PipelineException {
+
+		String organisationOds = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
+
+		//get the organisation
+		OrganisationRepository organisationRepository = new OrganisationRepository();
+		Organisation organisation = organisationRepository.getByNationalId(organisationOds);
+		if (organisation == null) {
+			throw new PipelineException("Organisation for national ID " + organisationOds + " could not be found");
+		}
+
+		//get the service
+		Service service = null;
+		//TODO - fix assumption that orgs can only have one service
+		ServiceRepository serviceRepository = new ServiceRepository();
+		for (UUID serviceId: organisation.getServices().keySet()) {
+			service = serviceRepository.getById(serviceId);
+		}
+
+		if (service == null) {
+			throw new PipelineException("No service found for organisation " + organisation.getId());
+		}
+
+		exchange.setHeader(HeaderKeys.SenderServiceUuid, service.getId().toString());
+		exchange.setHeader(HeaderKeys.SenderOrganisationUuid, organisation.getId().toString());
+
+	}
+	/*private void getSenderUuid(Exchange exchange) throws PipelineException {
+
 		// Get service id
 		String senderId = exchange.getHeader(HeaderKeys.SenderLocalIdentifier);
 
+		//the sender ID is composed of the service ID and the organisation ODS code
+		String[] tokens = senderId.split("//");
+		String serviceLocalIdentifier = tokens[0];
+		String organisationOds = tokens[1];
+
 		// Get service id from sender id
 		ServiceRepository serviceRepository = new ServiceRepository();
-		Iterable<Service> services = serviceRepository.getByLocalIdentifier(senderId);
+		Service service = serviceRepository.getByLocalIdentifier(serviceLocalIdentifier);
 
-		if (!services.iterator().hasNext())
-			throw new PipelineException("No service found for local identifier");
+		if (service == null) {
+			throw new PipelineException("No service found for local identifier " + senderId);
+		}
 
-		Service service = services.iterator().next();
-		exchange.setHeader(HeaderKeys.SenderUuid, service.getId().toString());
-	}
+		//the service retrieved by local identifier only contains the ID, so we need to re-retrieve using
+		//that ID to get the name, orgs etc.
+		service = serviceRepository.getById(service.getId());
+
+		//validate that the organisation is a member of the service
+		Set<UUID> orgIds = service.getOrganisations().keySet();
+		Set<Organisation> orgs = new OrganisationRepository().getByIds(orgIds);
+		Organisation organisation = orgs
+				.stream()
+				.filter(t -> t.getNationalId().equalsIgnoreCase(organisationOds))
+				.collect(StreamExtension.firstOrNullCollector());
+
+		if (organisation == null) {
+			throw new PipelineException("Organisation " + organisationOds + " is not a member of service " + service.getName());
+		}
+
+		exchange.setHeader(HeaderKeys.SenderServiceUuid, service.getId().toString());
+		exchange.setHeader(HeaderKeys.SenderOrganisationUuid, organisation.getId().toString());
+
+	}*/
 
 	private void processBody(Exchange exchange, Binary binary) {
 		exchange.setHeader(HeaderKeys.MessageFormat, binary.getContentType());

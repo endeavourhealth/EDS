@@ -1,11 +1,11 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import org.endeavourhealth.core.cache.ParserPool;
 import org.endeavourhealth.core.configuration.ReturnResponseAcknowledgementConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.hl7.fhir.instance.formats.IParser;
 import org.hl7.fhir.instance.model.Coding;
 import org.hl7.fhir.instance.model.MessageHeader;
 import org.slf4j.Logger;
@@ -32,12 +32,10 @@ public class ReturnResponseAcknowledgement extends PipelineComponent {
 		try {
 			String contentType = exchange.getHeader(HeaderKeys.ContentType);
 
-			IParser parser = getParser(contentType);
-
-			String message = parser.composeString(messageHeader);
+			String message = new ParserPool().composeString(contentType, messageHeader);
 			exchange.setBody(message);
 		} catch (Exception e) {
-			throw new PipelineException("Unable to serialize message header");
+			throw new PipelineException("Unable to serialize message header", e);
 		}
 		LOG.debug("Business acknowledgement sent");
 	}

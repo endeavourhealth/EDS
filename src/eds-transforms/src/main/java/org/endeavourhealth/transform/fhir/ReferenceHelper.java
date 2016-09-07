@@ -2,7 +2,9 @@ package org.endeavourhealth.transform.fhir;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Reference;
+import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.ResourceType;
 
 import java.util.List;
 
@@ -52,8 +54,9 @@ public class ReferenceHelper
     }
 
     public static ReferenceComponents getReferenceComponents(Reference reference) {
-        if (reference == null)
+        if (reference == null) {
             return null;
+        }
 
         String[] parts = reference.getReference().split("\\/");
         String resourceTypeStr = parts[0];

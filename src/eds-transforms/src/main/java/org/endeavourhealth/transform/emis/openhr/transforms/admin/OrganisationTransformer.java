@@ -1,13 +1,13 @@
 package org.endeavourhealth.transform.emis.openhr.transforms.admin;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Organisation;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.DateConverter;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.OpenHRHelper;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class OrganisationTransformer
             target.setPartOf(ReferenceHelper.createReference(ResourceType.Organization, source.getParentOrganisation()));
 
         if (!StringUtils.isBlank(source.getMainLocation()))
-            target.addExtension(new Extension().setUrl(FhirExtensionUri.MAIN_LOCATION).setValue(ReferenceHelper.createReference(ResourceType.Location, source.getMainLocation())));
+            target.addExtension(new Extension().setUrl(FhirExtensionUri.ORGANISATION_MAIN_LOCATION).setValue(ReferenceHelper.createReference(ResourceType.Location, source.getMainLocation())));
 
 		return target;
 	}

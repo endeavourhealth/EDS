@@ -3,13 +3,16 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.Admin_Patient;
+import org.endeavourhealth.transform.emis.csv.schema.admin.Patient;
 import org.endeavourhealth.transform.emis.openhr.schema.VocSex;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.SexConverter;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.ContactRelationship;
+import org.endeavourhealth.transform.fhir.schema.NhsNumberVerificationStatus;
 import org.endeavourhealth.transform.fhir.schema.RegistrationType;
 import org.hl7.fhir.instance.model.*;
 
@@ -18,16 +21,19 @@ import java.util.List;
 
 public class PatientTransformer {
 
-    public static void transform(String folderPath,
+    public static void transform(String version,
+                                 String folderPath,
                                  CSVFormat csvFormat,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Admin_Patient parser = new Admin_Patient(folderPath, csvFormat);
+        Patient parser = new Patient(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createPatient(parser, csvProcessor, csvHelper);
+                createPatient(version, parser, csvProcessor, csvHelper);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {
@@ -35,12 +41,13 @@ public class PatientTransformer {
         }
     }
 
-    private static void createPatient(Admin_Patient patientParser,
+    private static void createPatient(String version,
+                                      Patient patientParser,
                                       CsvProcessor csvProcessor,
                                       EmisCsvHelper csvHelper) throws Exception {
 
         //create Patient Resource
-        Patient fhirPatient = new Patient();
+        org.hl7.fhir.instance.model.Patient fhirPatient = new org.hl7.fhir.instance.model.Patient();
         fhirPatient.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PATIENT));
 
         String patientGuid = patientParser.getPatientGuid();
@@ -58,18 +65,20 @@ public class PatientTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (patientParser.getDeleted() || patientParser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(fhirPatient, patientGuid);
-            csvProcessor.deletePatientResource(fhirEpisode, patientGuid);
+            //save both resources together, so the patient is defintiely saved before the episode
+            csvProcessor.deletePatientResource(patientGuid, fhirPatient, fhirEpisode);
             return;
         }
 
         String nhsNumber = patientParser.getNhsNumber();
         if (!Strings.isNullOrEmpty(nhsNumber)) {
-            fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, nhsNumber, FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER));
+            fhirPatient.addIdentifier(IdentifierHelper.createNhsNumberIdentifier(nhsNumber));
         }
 
-        //store the local ID in the patient resource
-        //fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, patientGuid, ""));
+        //store the patient GUID and patient number to the patient resource
+        int patientNumber = patientParser.getPatientNumber();
+        fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, FhirUri.IDENTIFIER_SYSTEM_EMIS_PATIENT_GUID, patientGuid));
+        fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, FhirUri.IDENTIFIER_SYSTEM_EMIS_PATIENT_NUMBER, "" + patientNumber));
 
         Date dob = patientParser.getDateOfBirth();
         fhirPatient.setBirthDate(dob);
@@ -112,6 +121,20 @@ public class PatientTransformer {
         Address fhirAddress = AddressConverter.createAddress(Address.AddressUse.HOME, houseNameFlat, numberAndStreet, village, town, county, postcode);
         fhirPatient.addAddress(fhirAddress);
 
+        String residentialInstituteCode = patientParser.getResidentialInstituteCode();
+        if (!Strings.isNullOrEmpty(residentialInstituteCode)) {
+            fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_RESIDENTIAL_INSTITUTE_CODE, new StringType(residentialInstituteCode)));
+        }
+
+        String nhsNumberStatus = patientParser.getNHSNumberStatus();
+        if (!Strings.isNullOrEmpty(nhsNumberStatus)) {
+            NhsNumberVerificationStatus verificationStatus = convertNhsNumberVeriticationStatus(nhsNumberStatus);
+            if (verificationStatus != null) {
+                CodeableConcept fhirCodeableConcept = CodeableConceptHelper.createCodeableConcept(verificationStatus);
+                fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_NHS_NUMBER_VERIFICATION_STATUS, fhirCodeableConcept));
+            }
+        }
+
         String homePhone = patientParser.getHomePhone();
         if (!Strings.isNullOrEmpty(homePhone)) {
             ContactPoint fhirContact = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.HOME, homePhone);
@@ -136,7 +159,7 @@ public class PatientTransformer {
         String carerRelationship = patientParser.getCarerRelation();
         if (!Strings.isNullOrEmpty(carerName)) {
 
-            Patient.ContactComponent fhirContact = new Patient.ContactComponent();
+            org.hl7.fhir.instance.model.Patient.ContactComponent fhirContact = new org.hl7.fhir.instance.model.Patient.ContactComponent();
             fhirContact.setName(NameConverter.convert(carerName));
 
             if (!Strings.isNullOrEmpty(carerRelationship)) {
@@ -153,8 +176,13 @@ public class PatientTransformer {
             fhirPatient.addContact(fhirContact);
         }
 
+        boolean spineSensitive = patientParser.getSpineSensitive();
+        if (spineSensitive) {
+            fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_SPINE_SENSITIVE, new BooleanType(spineSensitive)));
+        }
+
         RegistrationType registrationType = convertRegistrationType(patientParser.getPatientTypedescription(), patientParser.getDummyType());
-        fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.REGISTRATION_TYPE, CodingHelper.createCoding(registrationType)));
+        fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_REGISTRATION_TYPE, CodingHelper.createCoding(registrationType)));
 
         String usualGpGuid = patientParser.getUsualGpUserInRoleGuid();
         if (!Strings.isNullOrEmpty(usualGpGuid)) {
@@ -166,7 +194,16 @@ public class PatientTransformer {
                 fhirPatient.addCareProvider(csvHelper.createPractitionerReference(externalGpGuid));
 
             } else {
-                String externalOrgGuid = patientParser.getExternalUsualGPOrganisation();
+
+                //have to handle the mis-spelling of the column name in EMIS test pack
+                //String externalOrgGuid = patientParser.getExternalUsualGPOrganisation();
+                String externalOrgGuid = null;
+                if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+                    externalOrgGuid = patientParser.getExternalUsusalGPOrganisation();
+                } else {
+                    externalOrgGuid = patientParser.getExternalUsualGPOrganisation();
+                }
+
                 if (!Strings.isNullOrEmpty(externalOrgGuid)) {
                     fhirPatient.addCareProvider(csvHelper.createOrganisationReference(externalOrgGuid));
                 }
@@ -193,8 +230,20 @@ public class PatientTransformer {
             fhirEpisode.setStatus(EpisodeOfCare.EpisodeOfCareStatus.FINISHED);
         }
 
-        csvProcessor.savePatientResource(fhirPatient, patientGuid);
-        csvProcessor.savePatientResource(fhirEpisode, patientGuid);
+        //save both resources together, so the patient is defintiely saved before the episode
+        csvProcessor.savePatientResource(patientGuid, fhirPatient, fhirEpisode);
+    }
+
+    /**
+     * converts free-text NHS number status to one of the official NHS statuses
+     */
+    private static NhsNumberVerificationStatus convertNhsNumberVeriticationStatus(String nhsNumberStatus) {
+        //TODO - not sure what the actual EMIS values will be for NHS number status, until we get real data
+        if (nhsNumberStatus.equalsIgnoreCase("Verified")) {
+            return NhsNumberVerificationStatus.PRESENT_AND_VERIFIED;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -202,6 +251,9 @@ public class PatientTransformer {
      * possible registration types based on the VocPatientType enum from EMIS Open
      */
     private static RegistrationType convertRegistrationType(String csvRegType, boolean dummyRecord) {
+
+        //EMIS test data has leading spaces
+        csvRegType = csvRegType.trim();
 
         if (dummyRecord || csvRegType.equalsIgnoreCase("Dummy")) {
             return RegistrationType.DUMMY;

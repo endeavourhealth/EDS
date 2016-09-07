@@ -3,9 +3,10 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.CareRecord_ObservationReferral;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.ObservationReferral;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.IdentifierHelper;
@@ -15,16 +16,19 @@ import org.hl7.fhir.instance.model.ReferralRequest;
 
 public class ObservationReferralTransformer {
 
-    public static void transform(String folderPath,
+    public static void transform(String version,
+                                 String folderPath,
                                  CSVFormat csvFormat,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        CareRecord_ObservationReferral parser = new CareRecord_ObservationReferral(folderPath, csvFormat);
+        ObservationReferral parser = new ObservationReferral(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createResource(parser, csvProcessor, csvHelper);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {
@@ -32,7 +36,7 @@ public class ObservationReferralTransformer {
         }
     }
 
-    private static void createResource(CareRecord_ObservationReferral observationParser,
+    private static void createResource(ObservationReferral observationParser,
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 

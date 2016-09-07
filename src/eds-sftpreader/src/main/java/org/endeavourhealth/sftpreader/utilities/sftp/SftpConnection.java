@@ -1,7 +1,6 @@
 package org.endeavourhealth.sftpreader.utilities.sftp;
 
 import com.jcraft.jsch.*;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.LoggerFactory;
 
@@ -46,10 +45,9 @@ public class SftpConnection
 
         this.channel = (ChannelSftp)session.openChannel("sftp");
         this.channel.connect();
-
-        LOG.info("Connection opened");
     }
 
+    @SuppressWarnings("unchecked")
     public List<SftpRemoteFile> getFileList(String remotePath) throws SftpException
     {
         Vector<ChannelSftp.LsEntry> fileList = channel.ls(remotePath);
@@ -75,6 +73,18 @@ public class SftpConnection
     public void deleteFile(String remotePath) throws SftpException
     {
         channel.rm(remotePath);
+    }
+
+    public void cd(String remotePath) throws SftpException {
+        channel.cd(remotePath);
+    }
+
+    public void put(String localPath, String destinationPath) throws SftpException {
+        channel.put(localPath, destinationPath);
+    }
+
+    public void mkDir(String path) throws SftpException {
+        channel.mkdir(path);
     }
 
     public void close()

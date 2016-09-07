@@ -2,13 +2,17 @@ package org.endeavourhealth.ui.endpoints;
 
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.data.admin.models.*;
+import org.endeavourhealth.core.data.admin.models.ActiveItem;
+import org.endeavourhealth.core.data.admin.models.DefinitionItemType;
+import org.endeavourhealth.core.data.admin.models.Item;
+import org.endeavourhealth.core.data.admin.models.ItemDependency;
+import org.endeavourhealth.core.security.SecurityUtils;
+import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.QueryDocument.System;
-import org.endeavourhealth.ui.framework.security.Unsecured;
-import org.endeavourhealth.ui.json.*;
+import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.ui.DependencyType;
-import org.endeavourhealth.ui.querydocument.QueryDocumentSerializer;
+import org.endeavourhealth.ui.json.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -65,13 +69,14 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/saveLibraryItem")
+    @RequiresAdmin
     public Response saveLibraryItem(@Context SecurityContext sc, LibraryItem libraryItem) throws Exception {
         super.setLogbackMarkers(sc);
 
         LibraryRepository repository = new LibraryRepository();
 
         UUID orgUuid = getOrganisationUuidFromToken(sc);
-        UUID userUuid = getEndUserUuidFromToken(sc);
+        UUID userUuid = SecurityUtils.getCurrentUserId(sc);
 
         UUID libraryItemUuid = parseUuidFromStr(libraryItem.getUuid());
         String name = libraryItem.getName();
@@ -116,7 +121,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
             }
 
             ActiveItem activeItem = repository.getActiveItemByItemId(libraryItemUuid);
-            type = DefinitionItemType.values()[activeItem.getItemTypeId()];
+            type = DefinitionItemType.get(activeItem.getItemTypeId());
             doc = null; //clear this, because we don't want to overwrite what's on the DB with an empty query doc
         }
 
@@ -158,12 +163,13 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/deleteLibraryItem")
+    @RequiresAdmin
     public Response deleteLibraryItem(@Context SecurityContext sc, LibraryItem libraryItem) throws Exception {
         super.setLogbackMarkers(sc);
 
         UUID libraryItemUuid = parseUuidFromStr(libraryItem.getUuid());
         UUID orgUuid = getOrganisationUuidFromToken(sc);
-        UUID userUuid = getEndUserUuidFromToken(sc);
+        UUID userUuid = SecurityUtils.getCurrentUserId(sc);
 
         LOG.trace("DeletingLibraryItem UUID {}", libraryItemUuid);
 
@@ -217,11 +223,12 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/moveLibraryItems")
+    @RequiresAdmin
     public Response moveLibraryItems(@Context SecurityContext sc, JsonMoveItems parameters) throws Exception {
         super.setLogbackMarkers(sc);
 
         UUID orgUuid = getOrganisationUuidFromToken(sc);
-        UUID userUuid = getEndUserUuidFromToken(sc);
+        UUID userUuid = SecurityUtils.getCurrentUserId(sc);
 
         LOG.trace("moveLibraryItems");
 
@@ -315,6 +322,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
                 .entity(ret)
                 .build();
     }
+
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -410,7 +418,6 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/getProtocols")
-    @Unsecured
     public Response getProtocols(@QueryParam("serviceId") String serviceId) throws Exception {
 
         List<LibraryItem> ret = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId);

@@ -3,9 +3,10 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.Admin_Organisation;
+import org.endeavourhealth.transform.emis.csv.schema.admin.Organisation;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.OrganisationType;
 import org.hl7.fhir.instance.model.*;
@@ -14,16 +15,19 @@ import java.util.Date;
 
 public class OrganisationTransformer {
 
-    public static void transform(String folderPath,
+    public static void transform(String version,
+                                 String folderPath,
                                  CSVFormat csvFormat,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Admin_Organisation parser = new Admin_Organisation(folderPath, csvFormat);
+        Organisation parser = new Organisation(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createOrganisation(parser, csvProcessor, csvHelper);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {
@@ -31,7 +35,7 @@ public class OrganisationTransformer {
         }
     }
 
-    private static void createOrganisation(Admin_Organisation organisationParser,
+    private static void createOrganisation(Organisation organisationParser,
                                            CsvProcessor csvProcessor,
                                            EmisCsvHelper csvHelper) throws Exception {
 
@@ -42,7 +46,7 @@ public class OrganisationTransformer {
         fhirOrganisation.setId(orgGuid);
 
         String odsCode = organisationParser.getODScode();
-        Identifier fhirIdentifier = IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, FhirUri.IDENTIFIER_SYSTEM_ODS_CODE, odsCode);
+        Identifier fhirIdentifier = IdentifierHelper.createOdsOrganisationIdentifier(odsCode);
         fhirOrganisation.addIdentifier(fhirIdentifier);
 
         String name = organisationParser.getOrganisatioName();
@@ -52,7 +56,7 @@ public class OrganisationTransformer {
         Date closeDate = organisationParser.getCloseDate();
         Period fhirPeriod = PeriodHelper.createPeriod(openDate, closeDate);
         fhirOrganisation.setActive(PeriodHelper.isActive(fhirPeriod));
-        fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ORGANISATION_ACTIVE_PERIOD, fhirPeriod));
+        fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ACTIVE_PERIOD, fhirPeriod));
 
         String parentOrganisationGuid = organisationParser.getParentOrganisationGuid();
         if (!Strings.isNullOrEmpty(parentOrganisationGuid)) {
@@ -75,7 +79,7 @@ public class OrganisationTransformer {
 
         String mainLocationGuid = organisationParser.getMainLocationGuid();
         Reference fhirReference = csvHelper.createLocationReference(mainLocationGuid);
-        fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.LOCATION, fhirReference));
+        fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ORGANISATION_MAIN_LOCATION, fhirReference));
 
         csvProcessor.saveAdminResource(fhirOrganisation);
     }

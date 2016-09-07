@@ -1,6 +1,5 @@
 package org.endeavourhealth.transform.common.idmappers;
 
-import org.hl7.fhir.instance.model.AllergyIntolerance;
 import org.hl7.fhir.instance.model.MedicationStatement;
 import org.hl7.fhir.instance.model.Resource;
 
@@ -15,18 +14,18 @@ public class IdMapperMedicationStatement extends BaseIdMapper {
         super.mapExtensions(medicationStatement, serviceId, systemId);
 
         if (medicationStatement.hasIdentifier()) {
-            super.mapIdentifiers(medicationStatement.getIdentifier(), serviceId, systemId);
+            super.mapIdentifiers(medicationStatement.getIdentifier(), resource, serviceId, systemId);
         }
         if (medicationStatement.hasPatient()) {
-            super.mapReference(medicationStatement.getPatient(), serviceId, systemId);
+            super.mapReference(medicationStatement.getPatient(), resource, serviceId, systemId);
         }
         if (medicationStatement.hasInformationSource()) {
-            super.mapReference(medicationStatement.getInformationSource(), serviceId, systemId);
+            super.mapReference(medicationStatement.getInformationSource(), resource, serviceId, systemId);
         }
         if (medicationStatement.hasReasonForUse()) {
             try {
                 if (medicationStatement.hasReasonForUseReference()) {
-                    super.mapReference(medicationStatement.getReasonForUseReference(), serviceId, systemId);
+                    super.mapReference(medicationStatement.getReasonForUseReference(), resource, serviceId, systemId);
                 }
             } catch (Exception ex) {
                 //do nothing if not a reference
@@ -35,7 +34,7 @@ public class IdMapperMedicationStatement extends BaseIdMapper {
         if (medicationStatement.hasMedication()) {
             try {
                 if (medicationStatement.hasMedicationReference()) {
-                    super.mapReference(medicationStatement.getMedicationReference(), serviceId, systemId);
+                    super.mapReference(medicationStatement.getMedicationReference(), resource, serviceId, systemId);
                 }
             } catch (Exception ex) {
                 //do nothing if not a reference
@@ -45,7 +44,7 @@ public class IdMapperMedicationStatement extends BaseIdMapper {
             for (MedicationStatement.MedicationStatementDosageComponent dosage: medicationStatement.getDosage()) {
                 try {
                     if (dosage.hasSiteReference()) {
-                        super.mapReference(dosage.getSiteReference(), serviceId, systemId);
+                        super.mapReference(dosage.getSiteReference(), resource, serviceId, systemId);
                     }
                 } catch (Exception ex) {
                     //do nothing if not a reference

@@ -4,9 +4,9 @@ import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.UserRepository;
 import org.endeavourhealth.core.data.admin.models.EndUser;
 import org.endeavourhealth.core.data.admin.models.Organisation;
+import org.endeavourhealth.core.security.RoleUtils;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.ui.framework.exceptions.BadRequestException;
-import org.endeavourhealth.ui.framework.security.UserContext;
-import org.endeavourhealth.ui.framework.security.UserPrincipal;
 import org.slf4j.MDC;
 
 import javax.ws.rs.core.Context;
@@ -24,7 +24,7 @@ public abstract class AbstractEndpoint {
      * used to set LogBack to include the user UUID in all logging
      */
     protected void setLogbackMarkers(SecurityContext sc) {
-        UUID userUuid = getEndUserUuidFromToken(sc);
+        UUID userUuid = SecurityUtils.getCurrentUserId(sc);
         if (userUuid != null) {
             MDC.put(MDC_MARKER_UUID, userUuid.toString());
         }
@@ -37,17 +37,8 @@ public abstract class AbstractEndpoint {
     protected EndUser getEndUserFromSession(SecurityContext sc) throws Exception {
         UserRepository userRepository = new UserRepository();
 
-        UUID uuid = getEndUserUuidFromToken(sc);
+        UUID uuid = SecurityUtils.getCurrentUserId(sc);
         return userRepository.getById(uuid);
-    }
-
-    protected UUID getEndUserUuidFromToken(SecurityContext sc) {
-        UserPrincipal up = (UserPrincipal)sc.getUserPrincipal();
-        if (up == null) {
-            return null;
-        }
-        UserContext uc = up.getUserContext();
-        return uc.getUserUuid();
     }
 
     protected Organisation getOrganisationFromSession(SecurityContext sc) throws Exception {
@@ -58,11 +49,10 @@ public abstract class AbstractEndpoint {
     }
 
     protected UUID getOrganisationUuidFromToken(SecurityContext sc) throws Exception {
-        UserPrincipal up = (UserPrincipal) sc.getUserPrincipal();
-        UserContext uc = up.getUserContext();
-
         //an authenticated user MUST have a EndUser UUID, but they may not have an organisation selected yet
-        UUID orgUuid = uc.getOrganisationUuid();
+        //TODO - need to work out ORG UUID using keycloak??
+        UUID orgUuid = UUID.fromString("b6ff900d-8fcd-43d8-af37-5db3a87a6ef6");
+
         if (orgUuid == null) {
             throw new BadRequestException("Organisation must be selected before performing any actions");
         }
@@ -70,10 +60,7 @@ public abstract class AbstractEndpoint {
     }
 
     protected boolean isAdminFromSession(SecurityContext sc) throws Exception {
-        UserPrincipal up = (UserPrincipal) sc.getUserPrincipal();
-
-        UserContext uc = up.getUserContext();
-        return uc.isAdmin();
+        return RoleUtils.isAdmin(sc);       // TODO: should this be ADMIN or SUPERUSER??
     }
 
 }

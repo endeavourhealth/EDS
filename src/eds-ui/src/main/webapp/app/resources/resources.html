@@ -1,0 +1,129 @@
+<div class="module">
+    <div class="module-heading">
+        FHIR Resources
+    </div>
+    <div class="module-body">
+
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-4">
+
+                    <uib-tabset active="activeForm">
+                        <uib-tab index="0" heading="ID">
+
+                            <div class="panel panel-primary">
+                                <div class="panel-heading">FHIR Resource by ID</div>
+                                <div class="panel-body">
+
+                                    <form name="resourceIdForm">
+
+                                        <div class="form-group">
+                                            <label>Resource ID</label>
+                                            <input name="resourceId" type="text" class="form-control" ng-model="resourcesCtrl.resourceId">
+                                        </div>
+
+
+                                        <div class="form-group">
+                                            <label>Resource Type</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
+                                                <select name="resourceType" class="form-control" ng-model="resourcesCtrl.resourceTypeSelected">
+                                                    <option ng-repeat="item in resourcesCtrl.allResourceTypes" value="{{item.resourceType}}">{{item.resourceType}}</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <button type="button" class="btn btn-default" ng-disabled="resourceIdForm.$invalid" ng-click="resourcesCtrl.getResourceForId()">Search</button>
+                                        <span ng-show="resourceIdForm.resourceId.$touched && resourceIdForm.resourceId.$invalid">You must enter a resource ID</span>
+                                        <span ng-show="resourceIdForm.resourceType.$touched && resourceIdForm.resourceType.$invalid">You must select a resource type</span>
+                                    </form>
+                                </div>
+                            </div>
+
+                        </uib-tab>
+                        <uib-tab index="1" heading="Patient">
+
+                            <div class="panel panel-primary">
+                                <div class="panel-heading">FHIR Resources by Patient</div>
+                                <div class="panel-body">
+
+                                    <form name="patientResourceForm">
+
+                                        <div class="form-group">
+                                            <label>Patient ID</label>
+                                            <input name="patientId" type="text" class="form-control" ng-model="resourcesCtrl.patientId">
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>Resource Type</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
+                                                <select name="patientResourceType" class="form-control" ng-model="resourcesCtrl.patientResourceTypeSelected">
+                                                    <option ng-repeat="item in resourcesCtrl.allResourceTypes" value="{{item.resourceType}}">{{item.resourceType}}</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <button type="button" class="btn btn-default" ng-disabled="patientResourceForm.$invalid" ng-click="resourcesCtrl.getResourcesForPatient()">Search</button>
+                                        <span ng-show="patientResourceForm.patientId.$touched && patientResourceForm.patientId.$invalid">You must enter a patient ID</span>
+                                        <span ng-show="patientResourceForm.patientResourceType.$touched && patientResourceForm.patientResourceType.$invalid">You must select a resource type</span>
+                                    </form>
+
+                                </div>
+                            </div>
+
+                        </uib-tab>
+                    </uib-tabset>
+
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+
+                    <div ng-if="resourcesCtrl.resources != undefined">
+                        <div ng-if="resourcesCtrl.resources.length == 0">
+
+                            <div class="alert alert-danger">
+                                {{resourcesCtrl.resources.length}} Resources found
+                            </div>
+
+                            <!--<div uib-alert ng-class="alert alert-danger"></div>-->
+                        </div>
+                        <div ng-if="resourcesCtrl.resources.length > 0">
+
+                            <div class="alert alert-success">
+                                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                                {{resourcesCtrl.resources.length}} Resources found
+                            </div>
+
+                            <!--<div uib-alert ng-class="alert alert-success"></div>-->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+
+                    <div class="form-group" ng-repeat="resource in resourcesCtrl.resources">
+                        <div class="row">
+                            <div class="col-md-12">
+
+                                <div class="panel panel-primary">
+                                    <div class="panel-heading">{{ resource.resourceType }}: {{ resource.id }}</div>
+                                    <div class="panel-body">
+
+                                        <pre>{{resource | json}}</pre>
+
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

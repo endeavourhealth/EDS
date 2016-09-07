@@ -124,14 +124,15 @@ public class PgStoredProc
     {
         try
         {
-            this.multiResultSet = null;
-            this.multiConnection = this.dataSource.getConnection();
-            this.multiConnection.setAutoCommit(false);
-            this.multiStatement = this.multiConnection.createStatement();
-            this.multiResultSet = this.multiStatement.executeQuery(getFormattedQuery());
+            if (multiResultSet == null) {
+                this.multiConnection = this.dataSource.getConnection();
+                this.multiConnection.setAutoCommit(false);
+                this.multiStatement = this.multiConnection.createStatement();
+                this.multiResultSet = this.multiStatement.executeQuery(getFormattedQuery());
 
-            if (!this.multiResultSet.next())
-                throw new PgStoredProcException("No resultsets found");
+                if (!this.multiResultSet.next())
+                    throw new PgStoredProcException("No resultsets found");
+            }
 
             return populatePojoFromMultiResultSet(firstRowMapper);
         }
@@ -143,7 +144,7 @@ public class PgStoredProc
         }
     }
 
-    public <T extends Object> List<T> nextMultiQuery(IResultSetPopulator<T> nextRowMapper) throws PgStoredProcException
+    /*public <T extends Object> List<T> nextMultiQuery(IResultSetPopulator<T> nextRowMapper) throws PgStoredProcException
     {
         try
         {
@@ -155,7 +156,7 @@ public class PgStoredProc
 
             throw new PgStoredProcException("getNextMultiQuery error, see inner exception", e);
         }
-    }
+    }*/
 
     private static <T extends Object> List<T> populatePojo(ResultSet resultSet, IResultSetPopulator<T> rowMapper) throws SQLException
     {
@@ -187,19 +188,23 @@ public class PgStoredProc
         if (StringUtils.isEmpty(storedProcedureName))
             throw new IllegalArgumentException("storedProcedureName is empty");
 
-        return "select * from " + storedProcedureName
+        String sql = "select * from " + storedProcedureName
                 + "("
                 + getFormattedParameters()
                 + ");";
+
+        return sql;
     }
 
     private String getFormattedParameters()
     {
-        return StringUtils.join(parameters
-                .keySet()
-                .stream()
-                .map(t -> t + " := " + getFormattedParameterValue(parameters.get(t).toString()))
-                .toArray(), ',');
+        List<String> formattedParameters = new ArrayList<>();
+
+        for (String parameterName : parameters.keySet())
+            formattedParameters.add(parameterName + " := " + getFormattedParameterValue(parameters.get(parameterName)));
+
+        return StringUtils.join(formattedParameters, ", ");
+
     }
 
     private static String getFormattedParameterValue(Object value)
@@ -211,7 +216,13 @@ public class PgStoredProc
         else if ((value instanceof Boolean))
             return value.toString();
         else if (value instanceof java.time.LocalDate)
-            return "'" + ((java.time.LocalDate)value).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + "'";
+            return "'" + ((java.time.LocalDate)value).format(DateTimeFormatter.ISO_DATE) + "'";
+        else if (value instanceof java.time.LocalDateTime)
+            return "'" + ((java.time.LocalDateTime)value).format(DateTimeFormatter.ISO_DATE_TIME) + "'";
+        else if (value instanceof java.util.UUID)
+            return "'" + value.toString() + "'::uuid";
+        else if (value == null)
+            return "null";
 
         throw new NotImplementedException("Parameter type not supported");
     }

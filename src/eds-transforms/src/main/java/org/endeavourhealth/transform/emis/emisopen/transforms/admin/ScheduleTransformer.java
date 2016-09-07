@@ -1,13 +1,13 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.admin;
 
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.AppointmentSessionList;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.AppointmentSessionStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.HolderStruct;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -51,12 +51,12 @@ public class ScheduleTransformer
 
         for (HolderStruct subsequentPractitioner : subsequentPractitioners)
             schedule.addExtension(new Extension()
-                    .setUrl(FhirExtensionUri.ADDITIONAL_ACTOR)
+                    .setUrl(FhirExtensionUri.SCHEDULE_ADDITIONAL_ACTOR)
                     .setValue(ReferenceHelper.createReference(ResourceType.Practitioner, subsequentPractitioner.getGUID())));
 
         if (appointmentSession.getSite() != null)
             schedule.addExtension(new Extension()
-                    .setUrl(FhirExtensionUri.LOCATION)
+                    .setUrl(FhirExtensionUri.SCHEDULE_LOCATION)
                     .setValue(ReferenceHelper.createReference(ResourceType.Location, appointmentSession.getSite().getGUID())));
 
         return schedule;

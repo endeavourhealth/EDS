@@ -1,0 +1,141 @@
+<div class="module">
+    <div class="module-heading">
+        Patient Identity Tracing
+    </div>
+    <div class="module-body">
+
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-4">
+
+                    <uib-tabset active="activeForm">
+                        <uib-tab index="0" heading="NHS Number">
+
+                            <div class="panel panel-primary">
+                                <div class="panel-heading">Trace Patient by NHS Number</div>
+                                <div class="panel-body">
+
+                                    <form name="nhsNumberForm">
+                                        <div class="form-group">
+                                            <label>NHS#</label>
+                                            <input name="nhsNumber" type="text" class="form-control" ng-model="patientIdentityCtrl.nhsNumber" required>
+                                        </div>
+                                        <button type="button" class="btn btn-default" ng-disabled="nhsNumberForm.$invalid" ng-click="patientIdentityCtrl.getPatientIdentitiedByNhsNumber()">Search</button>
+                                        <span ng-show="nhsNumberForm.nhsNumber.$touched && nhsNumberForm.nhsNumber.$invalid">You must enter an NHS number</span>
+                                    </form>
+
+                                </div>
+                            </div>
+
+                        </uib-tab>
+                        <uib-tab index="1" heading="EDS ID">
+
+                            <div class="panel panel-primary">
+                                <div class="panel-heading">Trace Patient by EDS Patient ID</div>
+                                <div class="panel-body">
+
+                                    <form name="edsIdForm">
+                                        <div class="form-group">
+                                            <label>Patient ID</label>
+                                            <input name="patientId" type="text" class="form-control" ng-model="patientIdentityCtrl.patientId" required>
+                                        </div>
+
+                                        <button type="button" class="btn btn-default" ng-disabled="edsIdForm.$invalid" ng-click="patientIdentityCtrl.getPatientIdentitiesByPatientId()">Search</button>
+                                        <span ng-show="edsIdForm.patientId.$touched && edsIdForm.patientId.$invalid">You must enter an EDS Patient ID</span>
+                                    </form>
+                                </div>
+                            </div>
+
+                        </uib-tab>
+                        <uib-tab index="2" heading="Local ID">
+
+                            <div class="panel panel-primary">
+                                <div class="panel-heading">Trace Patient by Local System ID</div>
+                                <div class="panel-body">
+
+                                    <form name="localIdForm">
+
+                                        <div class="form-group">
+                                            <label>Service</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
+                                                <select name="service" class="form-control" ng-model="patientIdentityCtrl.serviceId" ng-change="patientIdentityCtrl.loadSystems()" required>
+                                                    <option ng-repeat="item in patientIdentityCtrl.services" value="{{item.uuid}}">{{item.name}}</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>System</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon"><i class="fa fa-laptop fa-lg fa-fw"></i></span>
+                                                <select name="system" class="form-control" ng-model="patientIdentityCtrl.systemId" required>
+                                                    <option ng-repeat="item in patientIdentityCtrl.systems" value="{{item.uuid}}">{{item.name}}</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>Local ID</label>
+                                            <input name="localId" type="text" class="form-control" ng-model="patientIdentityCtrl.localId" required>
+                                        </div>
+
+                                        <button type="button" class="btn btn-default" ng-disabled="localIdForm.$invalid" ng-click="patientIdentityCtrl.getPatientIdentitiesByLocalIdentifier()">Search</button>
+                                        <span ng-show="localIdForm.service.$touched && localIdForm.service.$invalid">You must select a service</span>
+                                        <span ng-show="localIdForm.system.$touched && localIdForm.system.$invalid">You must select a system</span>
+                                        <span ng-show="localIdForm.localId.$touched && localIdForm.localId.$invalid">You must enter a local ID</span>
+                                    </form>
+                                </div>
+                            </div>
+
+                        </uib-tab>
+                    </uib-tabset>
+
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+
+                    <div class="table">
+                        <table class="table table-striped table-condensed">
+                            <thead>
+                                <tr>
+                                    <th>Patient ID</th>
+                                    <th>Service</th>
+                                    <th>System</th>
+                                    <th>NHS#</th>
+                                    <th>Forenames</th>
+                                    <th>Surname</th>
+                                    <th>DoB</th>
+                                    <th>Postcode</th>
+                                    <th>Gender</th>
+                                    <th>Local ID</th>
+                                    <th>Local ID System</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="id in patientIdentityCtrl.patientIdentities">
+                                    <td>{{id.patientId}}</td>
+                                    <td>{{id.serviceName}}</td>
+                                    <td>{{id.systemName}}</td>
+                                    <td>{{id.nhsNumber}}</td>
+                                    <td>{{id.forenames}}</td>
+                                    <td>{{id.surname}}</td>
+                                    <td>{{id.dateOfBirth | date:'dd-MMM-yyyy'}}</td>
+                                    <td>{{id.postcode}}</td>
+                                    <td>{{id.gender}}</td>
+                                    <td>{{id.localId}}</td>
+                                    <td>{{id.localIdSystem}}</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

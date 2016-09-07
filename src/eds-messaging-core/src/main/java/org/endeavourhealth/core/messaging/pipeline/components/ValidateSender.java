@@ -18,7 +18,7 @@ public class ValidateSender extends PipelineComponent {
 	}
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
-		String protocols = exchange.getHeader(HeaderKeys.ProtocolIds);
+		String protocols = exchange.getHeader(HeaderKeys.Protocols);
 
 		if (protocols == null || protocols.isEmpty()) {
 			LOG.debug("Sender invalid");

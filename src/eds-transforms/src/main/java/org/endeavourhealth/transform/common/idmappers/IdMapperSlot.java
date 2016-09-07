@@ -1,6 +1,5 @@
 package org.endeavourhealth.transform.common.idmappers;
 
-import org.hl7.fhir.instance.model.AllergyIntolerance;
 import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.Slot;
 
@@ -15,10 +14,10 @@ public class IdMapperSlot extends BaseIdMapper {
         super.mapExtensions(slot, serviceId, systemId);
 
         if (slot.hasIdentifier()) {
-            super.mapIdentifiers(slot.getIdentifier(), serviceId, systemId);
+            super.mapIdentifiers(slot.getIdentifier(), resource, serviceId, systemId);
         }
         if (slot.hasSchedule()) {
-            super.mapReference(slot.getSchedule(), serviceId, systemId);
+            super.mapReference(slot.getSchedule(), resource, serviceId, systemId);
         }
     }
 }

@@ -1,11 +1,11 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import org.endeavourhealth.core.cache.ParserPool;
 import org.endeavourhealth.core.configuration.EnvelopMessageConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.hl7.fhir.instance.formats.IParser;
 import org.hl7.fhir.instance.model.Binary;
 import org.hl7.fhir.instance.model.Bundle;
 import org.hl7.fhir.instance.model.MessageHeader;
@@ -35,12 +35,10 @@ public class EnvelopMessage extends PipelineComponent {
 		try {
 			String contentType = exchange.getHeader(HeaderKeys.ContentType);
 
-			IParser parser = getParser(contentType);
-
-			String bundleXml = parser.composeString(bundle);
+			String bundleXml = new ParserPool().composeString(contentType, bundle);
 			exchange.setBody(bundleXml);
 		} catch (Exception e) {
-			throw new PipelineException("Unable to serialize message bundle");
+			throw new PipelineException("Unable to serialize message bundle", e);
 		}
 
 

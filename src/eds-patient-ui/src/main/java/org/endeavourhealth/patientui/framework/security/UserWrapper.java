@@ -2,6 +2,7 @@ package org.endeavourhealth.patientui.framework.security;
 
 import java.util.UUID;
 
+// TODO: replace
 public class UserWrapper {
     private String nhsNumber = null;
     private UUID personId = null;

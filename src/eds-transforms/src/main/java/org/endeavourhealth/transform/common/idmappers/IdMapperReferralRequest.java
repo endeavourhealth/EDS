@@ -1,6 +1,5 @@
 package org.endeavourhealth.transform.common.idmappers;
 
-import org.hl7.fhir.instance.model.AllergyIntolerance;
 import org.hl7.fhir.instance.model.ReferralRequest;
 import org.hl7.fhir.instance.model.Resource;
 
@@ -15,22 +14,22 @@ public class IdMapperReferralRequest extends BaseIdMapper {
         super.mapExtensions(referralRequest, serviceId, systemId);
 
         if (referralRequest.hasIdentifier()) {
-            super.mapIdentifiers(referralRequest.getIdentifier(), serviceId, systemId);
+            super.mapIdentifiers(referralRequest.getIdentifier(), resource, serviceId, systemId);
         }
         if (referralRequest.hasPatient()) {
-            super.mapReference(referralRequest.getPatient(), serviceId, systemId);
+            super.mapReference(referralRequest.getPatient(), resource, serviceId, systemId);
         }
         if (referralRequest.hasRequester()) {
-            super.mapReference(referralRequest.getRequester(), serviceId, systemId);
+            super.mapReference(referralRequest.getRequester(), resource, serviceId, systemId);
         }
         if (referralRequest.hasRecipient()) {
-            super.mapReferences(referralRequest.getRecipient(), serviceId, systemId);
+            super.mapReferences(referralRequest.getRecipient(), resource, serviceId, systemId);
         }
         if (referralRequest.hasEncounter()) {
-            super.mapReference(referralRequest.getEncounter(), serviceId, systemId);
+            super.mapReference(referralRequest.getEncounter(), resource, serviceId, systemId);
         }
         if (referralRequest.hasSupportingInformation()) {
-            super.mapReferences(referralRequest.getSupportingInformation(), serviceId, systemId);
+            super.mapReferences(referralRequest.getSupportingInformation(), resource, serviceId, systemId);
         }
     }
 }

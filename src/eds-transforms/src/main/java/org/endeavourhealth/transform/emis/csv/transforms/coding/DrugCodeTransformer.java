@@ -2,48 +2,68 @@ package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.Coding_DrugCode;
+import org.endeavourhealth.transform.emis.csv.ThreadPool;
+import org.endeavourhealth.transform.emis.csv.schema.coding.DrugCode;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.CodeableConcept;
 
+import java.util.concurrent.Callable;
+
 public class DrugCodeTransformer {
 
 
-    public static void transform(String folderPath,
+    public static void transform(String version,
+                                 String folderPath,
                                CSVFormat csvFormat,
                                CsvProcessor csvProcessor,
                                EmisCsvHelper csvHelper) throws Exception {
 
-        Coding_DrugCode parser = new Coding_DrugCode(folderPath, csvFormat);
+        //inserting the entries into the IdCodeMap table is a lot slower than the rest of this
+        //file, so split up the saving over a few threads
+        ThreadPool threadPool = new ThreadPool(5, 50000);
+
+        DrugCode parser = new DrugCode(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                transform(parser, csvProcessor, csvHelper);
+                transform(parser, csvProcessor, csvHelper, threadPool);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {
             parser.close();
+            threadPool.waitAndStop();
         }
     }
 
-    private static void transform(Coding_DrugCode drugParser,
+    private static void transform(DrugCode drugParser,
                                   CsvProcessor csvProcessor,
-                                  EmisCsvHelper csvHelper) throws Exception {
+                                  EmisCsvHelper csvHelper,
+                                  ThreadPool threadPool) throws Exception {
 
-        Long codeId = drugParser.getCodeId();
-        String term = drugParser.getTerm();
-        Long dmdId = drugParser.getDmdProductCodeId();
+        final Long codeId = drugParser.getCodeId();
+        final String term = drugParser.getTerm();
+        final Long dmdId = drugParser.getDmdProductCodeId();
 
-        CodeableConcept fhirConcept = null;
+        final CodeableConcept fhirConcept;
         if (dmdId == null) {
+            //if there's no DM+D ID, create a textual codeable concept for the term
             fhirConcept = CodeableConceptHelper.createCodeableConcept(term);
         } else {
             fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_SNOMED_CT, term, dmdId.toString());
         }
 
-        csvHelper.addMedication(codeId, fhirConcept, csvProcessor);
+        threadPool.submit(new Callable() {
+            @Override
+            public Object call() throws Exception {
+                csvHelper.addMedication(codeId, fhirConcept, dmdId, term, csvProcessor);
+                return null;
+            }
+        });
     }
 }

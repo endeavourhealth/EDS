@@ -11,7 +11,7 @@ import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.ClinicalCodeNotFoundException;
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
 import org.endeavourhealth.transform.common.exceptions.ResourceNotFoundException;
-import org.endeavourhealth.transform.emis.csv.schema.ClinicalCodeType;
+import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
@@ -19,6 +19,7 @@ import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class EmisCsvHelper {
 
@@ -26,9 +27,9 @@ public class EmisCsvHelper {
     private static final String ID_DELIMITER = "//";
 
     //metadata, not relating to patients
-    private Map<Long, CodeableConcept> clinicalCodes = new HashMap<>();
-    private Map<Long, ClinicalCodeType> clinicalCodeTypes = new HashMap<>();
-    private Map<Long, CodeableConcept> medication = new HashMap<>();
+    private Map<Long, CodeableConcept> clinicalCodes = new ConcurrentHashMap<>();
+    private Map<Long, ClinicalCodeType> clinicalCodeTypes = new ConcurrentHashMap<>();
+    private Map<Long, CodeableConcept> medication = new ConcurrentHashMap<>();
     private EmisCsvCodeMapRepository mappingRepository = new EmisCsvCodeMapRepository();
     private ResourceRepository resourceRepository = new ResourceRepository();
 
@@ -72,6 +73,8 @@ public class EmisCsvHelper {
 
     public void addMedication(Long codeId,
                               CodeableConcept codeableConcept,
+                              Long snomedConceptId,
+                              String snomedTerm,
                               CsvProcessor csvProcessor) throws Exception {
         medication.put(codeId, codeableConcept);
 
@@ -86,12 +89,22 @@ public class EmisCsvHelper {
         mapping.setTimeUuid(UUIDs.timeBased());
         mapping.setCodeType(null);
         mapping.setCodeableConcept(json);
+        mapping.setSnomedConceptId(snomedConceptId);
+        mapping.setSnomedTerm(snomedTerm);
 
         mappingRepository.save(mapping);
     }
     public void addClinicalCode(Long codeId,
                                 CodeableConcept codeableConcept,
                                 ClinicalCodeType type,
+                                String readTerm,
+                                String readCode,
+                                Long snomedConceptId,
+                                Long snomedDescriptionId,
+                                String snomedTerm,
+                                String nationalCode,
+                                String nationalCodeCategory,
+                                String nationalCodeDescription,
                                 CsvProcessor csvProcessor) throws Exception {
         clinicalCodes.put(codeId, codeableConcept);
         clinicalCodeTypes.put(codeId, type);
@@ -107,6 +120,14 @@ public class EmisCsvHelper {
         mapping.setTimeUuid(UUIDs.timeBased());
         mapping.setCodeType(type.getValue());
         mapping.setCodeableConcept(json);
+        mapping.setReadTerm(readTerm);
+        mapping.setReadCode(readCode);
+        mapping.setSnomedConceptId(snomedConceptId);
+        mapping.setSnomedDescriptionId(snomedDescriptionId);
+        mapping.setSnomedTerm(snomedTerm);
+        mapping.setNationalCode(nationalCode);
+        mapping.setNationalCodeCategory(nationalCodeCategory);
+        mapping.setNationalCodeDescription(nationalCodeDescription);
 
         mappingRepository.save(mapping);
     }
@@ -256,7 +277,7 @@ public class EmisCsvHelper {
 
     private Resource retrieveResource(String locallyUniqueId, ResourceType resourceType, CsvProcessor csvProcessor) throws Exception {
 
-        UUID globallyUniqueId = IdHelper.getEdsResourceId(csvProcessor.getServiceId(),
+        UUID globallyUniqueId = IdHelper.getOrCreateEdsResourceId(csvProcessor.getServiceId(),
                                                         csvProcessor.getSystemId(),
                                                         resourceType,
                                                         locallyUniqueId);
@@ -299,7 +320,7 @@ public class EmisCsvHelper {
             //so we need to convert the local ID to the globally unique ID we'll have used before
             String locallyUniqueObservationId = createUniqueId(childResourceRelationship.getPatientGuid(), childResourceRelationship.getDependentResourceGuid());
 
-            String globallyUniqueObservationId = IdHelper.getEdsResourceIdString(csvProcessor.getServiceId(),
+            String globallyUniqueObservationId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
                                                                             csvProcessor.getSystemId(),
                                                                             childResourceRelationship.getDependentResourceType(),
                                                                             locallyUniqueObservationId);
@@ -328,7 +349,7 @@ public class EmisCsvHelper {
 
         if (changed) {
             //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
-            csvProcessor.savePatientResource(fhirObservation, false, patientGuid);
+            csvProcessor.savePatientResource(false, patientGuid, fhirObservation);
         }
     }
 
@@ -377,7 +398,7 @@ public class EmisCsvHelper {
             Condition fhirProblem = problemMap.get(locallyUniqueId);
             String patientGuid = getPatientGuidFromUniqueId(locallyUniqueId);
 
-            csvProcessor.savePatientResource(fhirProblem, patientGuid);
+            csvProcessor.savePatientResource(patientGuid, fhirProblem);
         }
     }
 
@@ -405,7 +426,7 @@ public class EmisCsvHelper {
 
             String locallyUniqueId = createUniqueId(childResourceRelationship.getPatientGuid(), childResourceRelationship.getDependentResourceGuid());
 
-            String globallyUniqueId = IdHelper.getEdsResourceIdString(csvProcessor.getServiceId(),
+            String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
                     csvProcessor.getSystemId(),
                     ResourceType.Observation,
                     locallyUniqueId);
@@ -430,7 +451,7 @@ public class EmisCsvHelper {
 
         if (changed) {
             //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
-            csvProcessor.savePatientResource(fhirCondition, false, patientGuid);
+            csvProcessor.savePatientResource(false, patientGuid, fhirCondition);
         }
     }
 

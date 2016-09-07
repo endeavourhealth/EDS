@@ -2,9 +2,12 @@ package org.endeavourhealth.core.data.ehr;
 
 import com.datastax.driver.core.utils.UUIDs;
 import com.datastax.driver.mapping.Mapper;
+import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.PatientIdentifierAccessor;
-import org.endeavourhealth.core.data.ehr.models.PatientIdentifier;
+import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByLocalId;
+import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByNhsNumber;
+import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByPatientId;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.*;
@@ -17,15 +20,30 @@ public class PatientIdentifierRepository extends Repository {
                                     UUID serviceId,
                                     UUID systemId) {
 
+        for (Identifier fhirIdentifier: fhirPatient.getIdentifier()) {
+
+            if (!fhirIdentifier.getSystem().equalsIgnoreCase(IDENTIFIER_SYSTEM_NHSNUMBER)) {
+                savePatientIdentity(fhirPatient, serviceId, systemId, fhirIdentifier.getSystem(), fhirIdentifier.getValue());
+            }
+        }
+    }
+    private void savePatientIdentity(Patient fhirPatient,
+                                    UUID serviceId,
+                                    UUID systemId,
+                                    String localIdSystem,
+                                    String localId) {
+
         UUID patientId = UUID.fromString(fhirPatient.getId());
 
-        PatientIdentifier patientIdentifier = getMostRecent(serviceId, systemId, patientId);
+        PatientIdentifierByLocalId patientIdentifier = getMostRecentByLocalId(serviceId, systemId, localId, localIdSystem);
 
         //if we've never encountered this patient before, create a new personIdentifier record
         if (patientIdentifier == null) {
-            patientIdentifier = new PatientIdentifier();
+            patientIdentifier = new PatientIdentifierByLocalId();
             patientIdentifier.setServiceId(serviceId);
             patientIdentifier.setSystemId(systemId);
+            patientIdentifier.setLocalId(localId);
+            patientIdentifier.setLocalIdSystem(localIdSystem);
             patientIdentifier.setPatientId(patientId);
         }
 
@@ -48,7 +66,7 @@ public class PatientIdentifierRepository extends Repository {
         save(patientIdentifier);
     }
 
-    private String findForenames(Patient fhirPatient) {
+    private static String findForenames(Patient fhirPatient) {
         List<String> forenames = new ArrayList<>();
 
         for (HumanName fhirName: fhirPatient.getName()) {
@@ -63,7 +81,7 @@ public class PatientIdentifierRepository extends Repository {
         return String.join(" ", forenames);
     }
 
-    private String findSurname(Patient fhirPatient) {
+    private static String findSurname(Patient fhirPatient) {
         List<String> surnames = new ArrayList<>();
 
         for (HumanName fhirName: fhirPatient.getName()) {
@@ -78,7 +96,7 @@ public class PatientIdentifierRepository extends Repository {
         return String.join(" ", surnames);
     }
 
-    private String findPostcode(Patient fhirPatient) {
+    private static String findPostcode(Patient fhirPatient) {
 
         for (Address fhirAddress: fhirPatient.getAddress()) {
             if (fhirAddress.getUse() != Address.AddressUse.HOME) {
@@ -89,7 +107,7 @@ public class PatientIdentifierRepository extends Repository {
         return null;
     }
 
-    private String findNhsNumber(Patient fhirPatient) {
+    private static String findNhsNumber(Patient fhirPatient) {
 
         for (Identifier fhirIdentifier: fhirPatient.getIdentifier()) {
             if (fhirIdentifier.getSystem().equals(IDENTIFIER_SYSTEM_NHSNUMBER)) {
@@ -99,30 +117,19 @@ public class PatientIdentifierRepository extends Repository {
         return null;
     }
 
-    /*private String findLocalIdentifier(Patient fhirPatient) {
-
-        for (Identifier fhirIdentifier: fhirPatient.getIdentifier()) {
-            if (fhirIdentifier.getSystem() == null
-                || !fhirIdentifier.getSystem().equals(IDENTIFIER_SYSTEM_NHSNUMBER)) {
-                return fhirIdentifier.getValue();
-            }
-        }
-        return null;
-    }*/
-
-    public void save(PatientIdentifier patientIdentifier) {
+    public void save(PatientIdentifierByLocalId patientIdentifier) {
         if (patientIdentifier == null) {
             throw new IllegalArgumentException("personIdentifier is null");
         }
 
-        Mapper<PatientIdentifier> mapper = getMappingManager().mapper(PatientIdentifier.class);
+        Mapper<PatientIdentifierByLocalId> mapper = getMappingManager().mapper(PatientIdentifierByLocalId.class);
         mapper.save(patientIdentifier);
     }
 
-    public PatientIdentifier getMostRecent(UUID serviceId, UUID systemId, UUID patientId) {
+    public PatientIdentifierByLocalId getMostRecentByLocalId(UUID serviceId, UUID systemId, String localId, String localIdSystem) {
 
         PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
-        Iterator<PatientIdentifier> iterator = accessor.getMostRecent(serviceId, systemId, patientId).iterator();
+        Iterator<PatientIdentifierByLocalId> iterator = accessor.getMostRecentForLocalId(serviceId, systemId, localId, localIdSystem).iterator();
         if (iterator.hasNext()) {
             return iterator.next();
         } else {
@@ -130,5 +137,27 @@ public class PatientIdentifierRepository extends Repository {
         }
     }
 
+    public List<PatientIdentifierByLocalId> getForLocalId(UUID serviceId, UUID systemId, String localId) {
 
+        PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
+        return Lists.newArrayList(accessor.getForLocalId(serviceId, systemId, localId));
+    }
+
+
+    public List<PatientIdentifierByNhsNumber> getForNhsNumber(String nhsNumber) {
+
+        PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
+        return Lists.newArrayList(accessor.getForNhsNumber(nhsNumber));
+    }
+
+    public PatientIdentifierByPatientId getMostRecentByPatientId(UUID patientId) {
+
+        PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
+        Iterator<PatientIdentifierByPatientId> iterator = accessor.getMostRecentForPatientId(patientId).iterator();
+        if (iterator.hasNext()) {
+            return iterator.next();
+        } else {
+            return null;
+        }
+    }
 }

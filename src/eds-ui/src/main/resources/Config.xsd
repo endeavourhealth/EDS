@@ -14,6 +14,12 @@
 			<xs:element name="cookieDomain" type="xs:string"/>
 		</xs:sequence>
 	</xs:complexType>
+	<xs:complexType name="rabbitmqManagement">
+		<xs:sequence>
+			<xs:element name="username" type="xs:string"/>
+			<xs:element name="password" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
 	<xs:complexType name="messagingQueue">
 		<xs:sequence>
 			<xs:element name="url" type="xs:string"/>
@@ -50,6 +56,7 @@
 		<xs:sequence>
 			<xs:element name="database" type="database"/>
 			<xs:element name="webServer" type="webServer"/>
+                        <xs:element name="rabbitmqManagement" type="rabbitmqManagement"/>
 			<xs:element name="messagingQueue" type="messagingQueue" minOccurs="0"/>
 			<xs:element name="email" type="email" minOccurs="0"/>
 		</xs:sequence>

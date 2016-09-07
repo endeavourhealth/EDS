@@ -1,6 +1,9 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -31,7 +34,7 @@ public class PostMessageToExchange extends PipelineComponent {
 		String routingKey = getRoutingKey(exchange);
 
 		// Generate message identifier and store message in db
-		UUID messageUuid = UUID.randomUUID();
+		UUID messageUuid = exchange.getExchangeId();
 		new QueuedMessageRepository().save(messageUuid, exchange.getBody());
 
 		Connection connection = getConnection();
@@ -52,14 +55,21 @@ public class PostMessageToExchange extends PipelineComponent {
 		if (multicastHeader == null || multicastHeader.isEmpty() || exchange.getHeader(multicastHeader) == null) {
 			publishMessage(routingKey, messageUuid, channel, properties);
 		} else {
-			String[] multicastValues = exchange.getHeader(multicastHeader).split(",", -1);
+			String multicastData = exchange.getHeader(multicastHeader);
+			try {
+				Object[] multicastItems = ObjectMapperPool.getInstance().readValue(multicastData, Object[].class);
 
-			for (String multicastValue : multicastValues) {
-				// Replace header list with individual value
-				headers.put(multicastHeader, multicastValue);
-				properties = properties.builder().headers(headers).build();
-				publishMessage(routingKey, messageUuid, channel, properties);
+				for (Object multicastItem : multicastItems) {
+					String itemData = ObjectMapperPool.getInstance().writeValueAsString(multicastItem);
+					// Replace header list with individual value
+					headers.put(multicastHeader, itemData);
+					properties = properties.builder().headers(headers).build();
+					publishMessage(routingKey, messageUuid, channel, properties);
+				}
+			} catch (IOException e) {
+				throw new PipelineException("Could not parse multicast data", e);
 			}
+
 		}
 
 		waitForConfirmations(channel);
@@ -89,6 +99,7 @@ public class PostMessageToExchange extends PipelineComponent {
 	}
 
 	private void publishMessage(String routingKey, UUID messageUuid, Channel channel, AMQP.BasicProperties properties) throws PipelineException {
+		LOG.info("Posting exchange {} to Rabbit exchange {} with routing key {}", messageUuid, config.getExchange(), routingKey);
 		try {
 			channel.basicPublish(
 					config.getExchange(),
@@ -97,7 +108,7 @@ public class PostMessageToExchange extends PipelineComponent {
 					messageUuid.toString().getBytes());
 		} catch (IOException e) {
 			LOG.error("Unable to publish message");
-			throw new PipelineException("Unable to publish message: " + e.getMessage());
+			throw new PipelineException("Unable to publish message: " + e.getMessage(), e);
 		}
 	}
 
@@ -108,7 +119,7 @@ public class PostMessageToExchange extends PipelineComponent {
 			channel.confirmSelect();
 		} catch (IOException e) {
 			LOG.error("Unable to get publish channel");
-			throw new PipelineException("Unable to get publish channel: " + e.getMessage());
+			throw new PipelineException("Unable to get publish channel: " + e.getMessage(), e);
 		}
 		return channel;
 	}
@@ -122,10 +133,10 @@ public class PostMessageToExchange extends PipelineComponent {
 					);
 		} catch (IOException e) {
 			LOG.error("Unable to connect to rabbit");
-			throw new PipelineException("Unable to connect to Rabbit : " + e.getMessage());
+			throw new PipelineException("Unable to connect to Rabbit : " + e.getMessage(), e);
 		} catch (TimeoutException e) {
 			LOG.error("Connection to Rabbit timed out");
-			throw new PipelineException("Connection to rabbit timed out : " + e.getMessage());
+			throw new PipelineException("Connection to rabbit timed out : " + e.getMessage(), e);
 		}
 	}
 

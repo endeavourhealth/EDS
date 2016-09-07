@@ -94,6 +94,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link MessageTransformInboundConfig }
+     * 
+     */
+    public MessageTransformInboundConfig createMessageTransformInboundConfig() {
+        return new MessageTransformInboundConfig();
+    }
+
+    /**
      * Create an instance of {@link PGPDecryptConfig }
      * 
      */
@@ -102,27 +110,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link Pipeline }
-     * 
-     */
-    public Pipeline createPipeline() {
-        return new Pipeline();
-    }
-
-    /**
      * Create an instance of {@link PostMessageToLogConfig }
      * 
      */
     public PostMessageToLogConfig createPostMessageToLogConfig() {
         return new PostMessageToLogConfig();
-    }
-
-    /**
-     * Create an instance of {@link MessageTransformConfig }
-     * 
-     */
-    public MessageTransformConfig createMessageTransformConfig() {
-        return new MessageTransformConfig();
     }
 
     /**
@@ -147,6 +139,14 @@ public class ObjectFactory {
      */
     public ComponentConfig createComponentConfig() {
         return new ComponentConfig();
+    }
+
+    /**
+     * Create an instance of {@link MessageTransformOutboundConfig }
+     * 
+     */
+    public MessageTransformOutboundConfig createMessageTransformOutboundConfig() {
+        return new MessageTransformOutboundConfig();
     }
 
     /**

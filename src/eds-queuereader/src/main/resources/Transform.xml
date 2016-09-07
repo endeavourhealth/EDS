@@ -7,8 +7,7 @@
     <Nodes>localhost:5672</Nodes>
     <Queue>EdsTransform-A-M</Queue>
     <Pipeline>
-        <MessageTransform/>
-        <PostToSubscriberWebService/>
+        <MessageTransformOutbound/>
         <PostMessageToLog>
             <EventType>Validate</EventType>
         </PostMessageToLog>
@@ -19,7 +18,8 @@
             </Credentials>
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsSubscriber</Exchange>
-            <RoutingHeader>Subscribers</RoutingHeader>
+            <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
+            <MulticastHeader>SubscriberBatch</MulticastHeader>
         </PostMessageToExchange>
     </Pipeline>
 </QueueReaderConfiguration>

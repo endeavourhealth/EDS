@@ -76,7 +76,7 @@ public class SiteTransformer {
         String name = tppSite.getName();
         fhirOrganisation.setName(name);
 
-        Identifier fhirIdentifier = IdentifierHelper.createIdentifier(Identifier.IdentifierUse.OFFICIAL, id, FhirUri.IDENTIFIER_SYSTEM_ODS_CODE);
+        Identifier fhirIdentifier = IdentifierHelper.createOdsOrganisationIdentifier(id);
         //TODO - some sites will have local identifiers and not ODS codes. Need to differentiate somehow.
         fhirOrganisation.addIdentifier(fhirIdentifier);
 

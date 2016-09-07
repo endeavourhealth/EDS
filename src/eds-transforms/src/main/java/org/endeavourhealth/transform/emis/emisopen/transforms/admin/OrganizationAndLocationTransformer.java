@@ -47,7 +47,7 @@ public class OrganizationAndLocationTransformer
             if (StringUtils.isNotBlank(typeOfLocationType.getDescription()))
                 organization.setType(new CodeableConcept().setText(typeOfLocationType.getDescription()));
 
-        organization.addExtension(new Extension().setUrl(FhirExtensionUri.MAIN_LOCATION).setValue(ReferenceHelper.createReference(ResourceType.Location, locationType.getGUID())));
+        organization.addExtension(new Extension().setUrl(FhirExtensionUri.ORGANISATION_MAIN_LOCATION).setValue(ReferenceHelper.createReference(ResourceType.Location, locationType.getGUID())));
 
         return organization;
     }

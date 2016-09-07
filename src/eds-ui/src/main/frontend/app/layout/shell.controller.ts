@@ -46,7 +46,8 @@ module app.layout {
 				closeModals();
 			});
 
-			$scope.$on('IdleTimeout', function () {
+			// TODO: this needs some design input - a modal login for OAuth doesn't work when identity is federated
+			/*$scope.$on('IdleTimeout', function () {
 				closeModals();
 				$modalStack.dismissAll();
 				var userName = securityService.getCurrentUser().username;
@@ -61,7 +62,7 @@ module app.layout {
 				};
 
 				$modal.open(options);
-			});
+			});*/
 		}
 	}
 

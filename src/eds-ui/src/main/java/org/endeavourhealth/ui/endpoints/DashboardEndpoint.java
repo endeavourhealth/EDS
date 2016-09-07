@@ -1,14 +1,18 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.Audit;
 import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.config.ConfigurationRepository;
 import org.endeavourhealth.core.data.config.models.ConfigurationResource;
+import org.endeavourhealth.ui.framework.config.ConfigSerializer;
+import org.endeavourhealth.ui.framework.config.models.RabbitmqManagement;
+import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.ui.json.*;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +31,12 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(DashboardEndpoint.class);
 	private static final Random rnd = new Random();
 
+	private final HttpAuthenticationFeature rabbitAuth;
+	{
+		RabbitmqManagement authConfig = ConfigSerializer.getConfig().getRabbitmqManagement();
+		rabbitAuth = HttpAuthenticationFeature.basic(authConfig.getUsername(), authConfig.getPassword());
+	}
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -34,7 +44,7 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	public Response getRecentDocuments(@Context SecurityContext sc, @QueryParam("count") int count) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		UUID userUuid = getEndUserUuidFromToken(sc);
+		UUID userUuid = SecurityUtils.getCurrentUserId(sc);
 		UUID orgUuid = getOrganisationUuidFromToken(sc);
 
 		LOG.trace("getRecentDocuments {}", count);
@@ -93,7 +103,6 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	public Response pingRabbitNode(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		HttpAuthenticationFeature rabbitAuth = HttpAuthenticationFeature.basic("guest", "guest");
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 
@@ -132,7 +141,6 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	public Response getRabbitQueues(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		HttpAuthenticationFeature rabbitAuth = HttpAuthenticationFeature.basic("guest", "guest");
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 
@@ -163,7 +171,6 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	public Response getRabbitExchanges(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		HttpAuthenticationFeature rabbitAuth = HttpAuthenticationFeature.basic("guest", "guest");
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 
@@ -209,7 +216,8 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/rabbitNode/synchronize")
-	public Response synchronizeRabbit(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
+	@RequiresAdmin
+	public Response synchronizeRabbit(@Context SecurityContext sc, String address) throws Exception {
 		String[] pipelines = {"EdsInbound", "EdsProtocol", "EdsTransform", "EdsResponse", "EdsSubscriber"};
 
 		super.setLogbackMarkers(sc);
@@ -259,9 +267,8 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	private String getRabbitBindingsJson(String address) {
 		String json = null;
 
-		HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("guest", "guest");
 		Client client = ClientBuilder.newClient();
-		client.register(feature);
+		client.register(rabbitAuth);
 
 		WebTarget resource = client.target("http://"+address+"/api/bindings");
 		Invocation.Builder request = resource.request();
@@ -281,7 +288,7 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 		List<JsonRabbitBinding> bindings = new ArrayList<>();
 		String json = getRabbitBindingsJson(address);
 		if (json != null) {
-			bindings = new ObjectMapper().readValue(json, new TypeReference<List<JsonRabbitBinding>>(){});
+			bindings = ObjectMapperPool.getInstance().readValue(json, new TypeReference<List<JsonRabbitBinding>>(){});
 		}
 		return bindings;
 	}
@@ -290,14 +297,13 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 		List<JsonRouteGroup> bindings = new ArrayList<>();
 		ConfigurationResource configurationResource = new ConfigurationRepository().getByKey(UUID.fromString("b9b14e26-5a52-4f36-ad89-f01e465c1361"));
 		if (configurationResource != null) {
-			bindings = new ObjectMapper().readValue(configurationResource.getConfigurationData(), new TypeReference<List<JsonRouteGroup>>(){});
+			bindings = ObjectMapperPool.getInstance().readValue(configurationResource.getConfigurationData(), new TypeReference<List<JsonRouteGroup>>(){});
 		}
 
 		return bindings;
 	}
 
 	private void declareAllQueues(String address, String queuePrefix, List<JsonRouteGroup> routeGroups) throws Exception {
-		HttpAuthenticationFeature rabbitAuth = HttpAuthenticationFeature.basic("guest", "guest");
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 
@@ -319,7 +325,6 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	}
 
 	private void bindQueuesToExchange(String address, String exchange, String queuePrefix, List<JsonRouteGroup> routeGroups) throws Exception {
-		HttpAuthenticationFeature rabbitAuth = HttpAuthenticationFeature.basic("guest", "guest");
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 
@@ -354,7 +359,6 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	}
 
 	private void removeBindingFromExchange(String address, String exchange, String queue, String routingKey) throws Exception {
-		HttpAuthenticationFeature rabbitAuth = HttpAuthenticationFeature.basic("guest", "guest");
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
 

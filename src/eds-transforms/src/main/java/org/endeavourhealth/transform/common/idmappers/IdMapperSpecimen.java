@@ -1,6 +1,5 @@
 package org.endeavourhealth.transform.common.idmappers;
 
-import org.hl7.fhir.instance.model.AllergyIntolerance;
 import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.Specimen;
 
@@ -15,23 +14,23 @@ public class IdMapperSpecimen extends BaseIdMapper {
         super.mapExtensions(specimen, serviceId, systemId);
 
         if (specimen.hasIdentifier()) {
-            super.mapIdentifiers(specimen.getIdentifier(), serviceId, systemId);
+            super.mapIdentifiers(specimen.getIdentifier(), resource, serviceId, systemId);
         }
         if (specimen.hasParent()) {
-            super.mapReference(specimen.getSubject(), serviceId, systemId);
+            super.mapReference(specimen.getSubject(), resource, serviceId, systemId);
         }
         if (specimen.hasSubject()) {
-            super.mapReference(specimen.getSubject(), serviceId, systemId);
+            super.mapReference(specimen.getSubject(), resource, serviceId, systemId);
         }
         if (specimen.hasCollection()) {
             if (specimen.getCollection().hasCollector()) {
-                super.mapReference(specimen.getCollection().getCollector(), serviceId, systemId);
+                super.mapReference(specimen.getCollection().getCollector(), resource, serviceId, systemId);
             }
         }
         if (specimen.hasTreatment()) {
             for (Specimen.SpecimenTreatmentComponent treatment: specimen.getTreatment()) {
                 if (treatment.hasAdditive()) {
-                    super.mapReferences(treatment.getAdditive(), serviceId, systemId);
+                    super.mapReferences(treatment.getAdditive(), resource, serviceId, systemId);
                 }
             }
         }
@@ -39,7 +38,7 @@ public class IdMapperSpecimen extends BaseIdMapper {
             for (Specimen.SpecimenContainerComponent container: specimen.getContainer()) {
                 if (container.hasAdditive()) {
                     try {
-                        super.mapReference(container.getAdditiveReference(), serviceId, systemId);
+                        super.mapReference(container.getAdditiveReference(), resource, serviceId, systemId);
                     } catch (Exception ex) {
                         //do nothing if not a reference
                     }

@@ -1,25 +1,28 @@
 package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.schema.Appointment_SessionUser;
+import org.endeavourhealth.transform.emis.csv.schema.appointment.SessionUser;
 
 import java.util.*;
 
 public class SessionUserTransformer {
 
-    public static Map<String, List<String>> transform(String folderPath, CSVFormat csvFormat) throws Exception {
+    public static Map<String, List<String>> transform(String version, String folderPath, CSVFormat csvFormat) throws Exception {
 
         //we need to extract the staff UUIDs in proper order, as the first staff member in a session is
         //regarded as the main actor in the session. As the CSV may be out of order, we use a temporary
         //storage object to persist the processingId, which is then used to sort the records before returning.
         Map<String, List<UUIDAndProcessingOrder>> sessionToUserMap = new HashMap<>();
 
-        Appointment_SessionUser parser = new Appointment_SessionUser(folderPath, csvFormat);
+        SessionUser parser = new SessionUser(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
                 createSessionUserMapping(parser, sessionToUserMap);
             }
+        } catch (FutureException fe) {
+            throw fe;
         } catch (Exception ex) {
             throw new TransformException(parser.getErrorLine(), ex);
         } finally {
@@ -48,7 +51,7 @@ public class SessionUserTransformer {
         return ret;
     }
 
-    private static void createSessionUserMapping(Appointment_SessionUser sessionUserParser, Map<String, List<UUIDAndProcessingOrder>> sessionToUserMap) throws Exception {
+    private static void createSessionUserMapping(SessionUser sessionUserParser, Map<String, List<UUIDAndProcessingOrder>> sessionToUserMap) throws Exception {
 
         //ignore deleted records
         if (sessionUserParser.getdDeleted()) {

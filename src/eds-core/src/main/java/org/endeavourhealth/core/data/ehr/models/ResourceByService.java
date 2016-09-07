@@ -1,9 +1,6 @@
 package org.endeavourhealth.core.data.ehr.models;
 
-import com.datastax.driver.mapping.annotations.ClusteringColumn;
-import com.datastax.driver.mapping.annotations.Column;
-import com.datastax.driver.mapping.annotations.PartitionKey;
-import com.datastax.driver.mapping.annotations.Table;
+import com.datastax.driver.mapping.annotations.*;
 
 import java.util.Date;
 import java.util.UUID;
@@ -37,6 +34,9 @@ public class ResourceByService {
 
     @Column(name = "schema_version")
     private String schemaVersion;
+
+    @Column(name = "resource_metadata")
+    private String resourceMetadata;
 
     @Column(name = "resource_data")
     private String resourceData;
@@ -103,6 +103,14 @@ public class ResourceByService {
 
     public void setSchemaVersion(String schemaVersion) {
         this.schemaVersion = schemaVersion;
+    }
+
+    public String getResourceMetadata() {
+        return resourceMetadata;
+    }
+
+    public void setResourceMetadata(String resourceMetadata) {
+        this.resourceMetadata = resourceMetadata;
     }
 
     public String getResourceData() {

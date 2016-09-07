@@ -1,15 +1,15 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.DetermineRelevantProtocolIdsConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,24 +27,20 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
-		String serviceUuid = exchange.getHeader(HeaderKeys.SenderUuid);
+		String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
 
 		// Determine relevant publisher protocols
 		List<LibraryItem> protocols = getProtocolsForPublisherService(serviceUuid);
 		if (protocols.size() == 0)
-			throw new PipelineException("No publisher protocols found for service");
+			throw new PipelineException("No publisher protocols found for service " + serviceUuid);
 
-		ObjectMapper mapper = new ObjectMapper();
 		try {
-			String protocolsJson = mapper.writeValueAsString(protocols);
-			exchange.setHeader(HeaderKeys.ProtocolData, protocolsJson);
+			String protocolsJson = ObjectMapperPool.getInstance().writeValueAsString(protocols.toArray());
+			exchange.setHeader(HeaderKeys.Protocols, protocolsJson);
 		} catch (JsonProcessingException e) {
 			LOG.error("Unable to serialize protocols to JSON");
-			throw new PipelineException(e.getMessage());
+			throw new PipelineException(e.getMessage(), e);
 		}
-
-		List<String> protocolIds = protocols.stream().map(LibraryItem::getUuid).collect(Collectors.toList());
-		exchange.setHeader(HeaderKeys.ProtocolIds, String.join(",",protocolIds));
 
 		LOG.debug("Data distribution protocols identified");
 	}
@@ -56,7 +52,7 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		try {
 			libraryItemList = LibraryRepositoryHelper.getProtocolsByServiceId(serviceUuid);
 		} catch (Exception e) {
-			throw new PipelineException(e.getMessage());
+			throw new PipelineException(e.getMessage(), e);
 		}
 
 		// Get protocols where service is publisher

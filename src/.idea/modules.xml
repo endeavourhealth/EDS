@@ -2,14 +2,18 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../eds.iml" filepath="$PROJECT_DIR$/../eds.iml" />
       <module fileurl="file://$PROJECT_DIR$/eds-admin/eds-admin.iml" filepath="$PROJECT_DIR$/eds-admin/eds-admin.iml" group="core" />
+      <module fileurl="file://$PROJECT_DIR$/eds-bootstrap/eds-bootstrap.iml" filepath="$PROJECT_DIR$/eds-bootstrap/eds-bootstrap.iml" />
       <module fileurl="file://$PROJECT_DIR$/eds-clinical/eds-clinical.iml" filepath="$PROJECT_DIR$/eds-clinical/eds-clinical.iml" group="core" />
       <module fileurl="file://$PROJECT_DIR$/eds-core/eds-core.iml" filepath="$PROJECT_DIR$/eds-core/eds-core.iml" group="core" />
+      <module fileurl="file://$PROJECT_DIR$/eds-keycloak-theme/eds-keycloak-theme.iml" filepath="$PROJECT_DIR$/eds-keycloak-theme/eds-keycloak-theme.iml" />
       <module fileurl="file://$PROJECT_DIR$/eds-messaging-api/eds-messaging-api.iml" filepath="$PROJECT_DIR$/eds-messaging-api/eds-messaging-api.iml" group="messaging" />
       <module fileurl="file://$PROJECT_DIR$/eds-messaging-core/eds-messaging-core.iml" filepath="$PROJECT_DIR$/eds-messaging-core/eds-messaging-core.iml" group="messaging" />
       <module fileurl="file://$PROJECT_DIR$/eds-patient-ui/eds-patient-ui.iml" filepath="$PROJECT_DIR$/eds-patient-ui/eds-patient-ui.iml" group="core" />
       <module fileurl="file://$PROJECT_DIR$/eds-queuereader/eds-queuereader.iml" filepath="$PROJECT_DIR$/eds-queuereader/eds-queuereader.iml" group="messaging" />
       <module fileurl="file://$PROJECT_DIR$/eds-sftpreader/eds-sftpreader.iml" filepath="$PROJECT_DIR$/eds-sftpreader/eds-sftpreader.iml" group="messaging" />
+      <module fileurl="file://$PROJECT_DIR$/eds-subscriber/eds-subscriber.iml" filepath="$PROJECT_DIR$/eds-subscriber/eds-subscriber.iml" />
       <module fileurl="file://$PROJECT_DIR$/eds-transforms/eds-transforms.iml" filepath="$PROJECT_DIR$/eds-transforms/eds-transforms.iml" group="core" />
       <module fileurl="file://$PROJECT_DIR$/eds-ui/eds-ui.iml" filepath="$PROJECT_DIR$/eds-ui/eds-ui.iml" group="core" />
     </modules>

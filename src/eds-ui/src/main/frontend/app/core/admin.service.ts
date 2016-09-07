@@ -6,7 +6,6 @@
 
 module app.core {
 	import IPromise = angular.IPromise;
-	import LoginResponse = app.models.LoginResponse;
 	import UserList = app.models.UserList;
 	import User = app.models.User;
 	'use strict';
@@ -32,8 +31,13 @@ module app.core {
 				{caption: 'Organisations', state: 'app.organisation', icon: 'fa fa-hospital-o'},
 				{caption: 'Services', state: 'app.service', icon: 'fa fa-building-o'},
 				{caption: 'Queueing', state: 'app.routeGroup', icon: 'fa fa-tasks'},
-				{caption: 'Administration', state: 'app.admin', icon: 'fa fa-users'},
-				{caption: 'Audit', state: 'app.audit', icon: 'fa fa-archive'}
+
+				{caption: 'Patients', state: 'app.patientIdentity', icon: 'fa fa-tag'},
+				{caption: 'Resources', state: 'app.resources', icon: 'fa fa-fire'},
+
+				{caption: 'Monitoring', state: 'app.logging', icon: 'fa fa-list-alt'},
+				{caption: 'Statistics', state: 'app.stats', icon: 'fa fa-line-chart'},
+				{caption: 'Audit', state: 'app.audit', icon: 'fa fa-list-ul'}
 			];
 		}
 

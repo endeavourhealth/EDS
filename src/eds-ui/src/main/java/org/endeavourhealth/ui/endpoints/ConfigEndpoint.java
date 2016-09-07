@@ -2,11 +2,8 @@ package org.endeavourhealth.ui.endpoints;
 
 import org.endeavourhealth.core.data.config.ConfigurationRepository;
 import org.endeavourhealth.core.data.config.models.ConfigurationResource;
+import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.ui.database.TableSaveMode;
-import org.endeavourhealth.ui.database.lookups.DbSourceOrganisation;
-import org.endeavourhealth.ui.database.lookups.DbSourceOrganisationSet;
-import org.endeavourhealth.ui.json.JsonSourceOrganisation;
-import org.endeavourhealth.ui.json.JsonSourceOrganisationSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +40,7 @@ public final class ConfigEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/saveConfig")
+    @RequiresAdmin
     public Response saveConfig(@Context SecurityContext sc, ConfigurationResource configurationResource) throws Exception {
         super.setLogbackMarkers(sc);
 

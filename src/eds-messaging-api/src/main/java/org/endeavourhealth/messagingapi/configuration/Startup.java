@@ -1,6 +1,5 @@
 package org.endeavourhealth.messagingapi.configuration;
 
-import org.endeavourhealth.core.data.logging.LogbackCassandraAppender;
 import org.endeavourhealth.core.engineConfiguration.EngineConfigurationSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,9 +25,7 @@ public final class Startup implements ServletContextListener {
             LOG.error("Error leading engine configuration", e);
         }
 
-        //logging
-        LogbackCassandraAppender.tryRegisterDbAppender();
-        LOG.error("EDS API WebServer Startup Complete");
+        LOG.info("EDS API WebServer Startup Complete");
 
     }
 

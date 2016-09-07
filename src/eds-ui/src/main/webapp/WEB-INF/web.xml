@@ -4,16 +4,17 @@
          xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
          version="3.1">
 
+    <!-- protected resources that require auth -->
     <servlet>
         <servlet-name>Endeavour Data Service</servlet-name>
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
         <init-param>
             <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>org.endeavourhealth.ui</param-value>
+            <param-value>org.endeavourhealth.ui.endpoints</param-value>
         </init-param>
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
-            <param-value>org.glassfish.jersey.jackson.JacksonFeature</param-value>
+            <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.core.security.CustomRolesAllowedFeature,org.endeavourhealth.ui.framework.exceptions.BaseExceptionMapper</param-value>
         </init-param>
 
         <!-- enable directory listings -->
@@ -28,6 +29,27 @@
     <servlet-mapping>
         <servlet-name>Endeavour Data Service</servlet-name>
         <url-pattern>/api/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- public resources, no auth needed -->
+    <servlet>
+        <servlet-name>Public Resources</servlet-name>
+        <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+        <init-param>
+            <param-name>jersey.config.server.provider.packages</param-name>
+            <param-value>org.endeavourhealth.ui.endpoints_public</param-value>
+        </init-param>
+        <init-param>
+            <param-name>jersey.config.server.provider.classnames</param-name>
+            <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.ui.framework.exceptions.BaseExceptionMapper</param-value>
+        </init-param>
+
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>Public Resources</servlet-name>
+        <url-pattern>/public/*</url-pattern>
     </servlet-mapping>
 
     <!--register our Startup class as a servlet listener so we can perform one-time setup-->
@@ -54,4 +76,35 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
+    <!-- ============================================ -->
+    <!-- JEE security settings - Keycloak integration -->
+    <!-- ============================================ -->
+
+    <!-- set the class to provide keycloak.json -->
+    <context-param>
+        <param-name>keycloak.config.resolver</param-name>
+        <param-value>org.endeavourhealth.core.security.keycloak.KeycloakConfigResolverImpl</param-value>
+    </context-param>
+
+    <!-- API is private and requires the user to authenticate and be an EDS user -->
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>api</web-resource-name>
+            <url-pattern>/api/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>eds_user_professional</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+    <!-- use Keycloak authentication valve installed in the container -->
+    <login-config>
+        <auth-method>KEYCLOAK</auth-method>
+        <realm-name>Endeavour</realm-name>
+    </login-config>
+
+    <!-- all roles in the system MUST be specified here -->
+    <security-role>
+        <role-name>eds_user_professional</role-name>
+    </security-role>
 </web-app>

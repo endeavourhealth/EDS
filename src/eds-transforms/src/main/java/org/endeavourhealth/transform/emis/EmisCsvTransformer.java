@@ -1,188 +1,285 @@
 package org.endeavourhealth.transform.emis;
 
 import com.google.common.io.Files;
-import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.FileFormatException;
-import org.endeavourhealth.transform.emis.csv.EmisCsvFileSplitter;
-import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.transforms.admin.LocationTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.admin.OrganisationTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.admin.PatientTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.admin.UserInRoleTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.appointment.SessionTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.appointment.SlotTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.*;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.ClinicalCodeTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.coding.DrugCodeTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.prescribing.DrugRecordTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.prescribing.IssueRecordTransformer;
+import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
+import org.endeavourhealth.transform.emis.csv.schema.admin.*;
+import org.endeavourhealth.transform.emis.csv.schema.appointment.Session;
+import org.endeavourhealth.transform.emis.csv.schema.appointment.SessionUser;
+import org.endeavourhealth.transform.emis.csv.schema.appointment.Slot;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.*;
+import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCode;
+import org.endeavourhealth.transform.emis.csv.schema.coding.DrugCode;
+import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
+import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public abstract class EmisCsvTransformer {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmisCsvTransformer.class);
 
-    public static final String DATE_FORMAT_YYYY_MM_DD = "yyyy-MM-dd"; //EMIS spec says "dd/MM/yyyy", but test data has different
-    public static final String TIME_FORMAT = "hh:mm:ss";
-    public static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
+    public static final String VERSION_5_1 = "5.1";
+    public static final String VERSION_TEST_PACK = "TestPack";
 
-    public static void transform(File folder, CsvProcessor csvProcessor) throws Exception {
-        transform(folder.getAbsolutePath(), csvProcessor);
-    }
-    public static void transform(String folderPath, CsvProcessor csvProcessor) throws Exception {
+    public static List<UUID> transform(String version,
+                                       String sharedStoragePath,
+                                       String[] files,
+                                       UUID exchangeId,
+                                       UUID serviceId,
+                                       UUID systemId) throws Exception {
 
-        EmisCsvHelper csvHelper = new EmisCsvHelper();
+        LOG.info("Invoking EMIS CSV transformer for {} files", files.length);
 
-        transformCodes(folderPath, csvProcessor, csvHelper);
-        transformAdminData(folderPath, csvProcessor, csvHelper);
-        transformPatientData(folderPath, csvProcessor, csvHelper);
-    }
+        //the files should all be in a directory structure of org folder -> processing ID folder -> CSV files
+        LOG.trace("Validating all files are in same directory");
+        File orgDirectory = validateAndFindCommonDirectory(sharedStoragePath, files);
 
-    private static void transformCodes(String folderPath, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
+        //under the org directory should be a directory for each processing ID
+        for (File processingIdDirectory: orgDirectory.listFiles()) {
 
-        LOG.trace("ClinicalCodeTransformer");
-        ClinicalCodeTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
+            //validate that we've got all the files we expect
+            LOG.trace("Validating all files are present in {}", processingIdDirectory);
+            List<File> expectedFiles = validateExpectedFiles(processingIdDirectory, version);
 
-        LOG.trace("DrugCodeTransformer");
-        DrugCodeTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-    }
+            //validate there's no additional files in the common directory
+            LOG.trace("Validating no additional files in {}", processingIdDirectory);
+            validateNoExtraFiles(processingIdDirectory, expectedFiles);
 
-    private static void transformAdminData(String folderPath, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
-
-        LOG.trace("LocationTransformer");
-        LocationTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-
-        LOG.trace("OrganisationTransformer");
-        OrganisationTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-
-        LOG.trace("UserInRoleTransformer");
-        UserInRoleTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-
-        LOG.trace("SessionTransformer");
-        SessionTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-    }
-
-    private static void transformPatientData(String folderPath, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
-
-        //invoke any pre-transformers, which extract referential data from the files before the main transforms
-        LOG.trace("ObservationPreTransformer");
-        ObservationPreTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-
-        //note the order of these transforms is important, as consultations should be before obs etc.
-        LOG.trace("PatientTransformer");
-        PatientTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-
-        LOG.trace("ConsultationTransformer");
-        ConsultationTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-
-        LOG.trace("ObservationReferralTransformer");
-        ObservationReferralTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-
-        LOG.trace("ProblemTransformer");
-        ProblemTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-
-        LOG.trace("ObservationTransformer");
-        ObservationTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-
-        LOG.trace("IssueRecordTransformer");
-        IssueRecordTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-
-        LOG.trace("DrugRecordTransformer");
-        DrugRecordTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-
-        LOG.trace("SlotTransformer");
-        SlotTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-
-        LOG.trace("DiaryTransformer");
-        DiaryTransformer.transform(folderPath, CSV_FORMAT, csvProcessor, csvHelper);
-
-        //if we have any new Obs that reference pre-existing parent obs or problems,
-        //then we need to retrieve the existing resources and update them
-        csvHelper.processRemainingObservationParentChildLinks(csvProcessor);
-        csvHelper.processRemainingProblemRelationships(csvProcessor);
-    }
-
-    public static List<UUID> splitAndTransform(String[] files, UUID exchangeId, UUID serviceId, UUID systemId) throws Exception {
-
-        //validate that all the files are in the same directory
-        File commonDir = validateCommonDirectory(files);
-
-        //validate that we've got all the files we expect
-        List<File> expectedFiles = validateExpectedFiles(commonDir);
-
-        //validate there's no additional files in the common directory
-        validateNoExtraFiles(commonDir, expectedFiles);
-
-        //split the source files by Organisation GUID
-        File srcDir = commonDir;
-        File dstDir = new File(srcDir, "Split");
-        EmisCsvFileSplitter.split(srcDir, dstDir);
-
-        final List<UUID> batchIds = Collections.synchronizedList(new ArrayList<>());
-
-        //process the non-organisation files on their own, before anything else
-        CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId);
-        EmisCsvTransformer.transform(dstDir, processor);
-        batchIds.addAll(processor.getBatchIdsCreated());
-
-        //having done the non-organisation data, we can do the organisation files in parallel
-        ExecutorService pool = Executors.newFixedThreadPool(5); //arbitrarily chosen five threads
-
-        for (File splitDir: dstDir.listFiles()) {
-            if (splitDir.isDirectory()) {
-
-                pool.submit(new Callable<Object>() {
-                    @Override
-                    public Object call() throws Exception {
-                        CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId);
-                        EmisCsvTransformer.transform(splitDir, processor);
-                        batchIds.addAll(processor.getBatchIdsCreated());
-                        return null;
-                    }
-                });
-            }
+            //validate the column names match what we expect (this is repeated when we actually perform
+            //the transform, but by doing it now, we fail earlier rather than later)
+            LOG.trace("Validating CSV column names in {}", processingIdDirectory);
+            validateColumnNames(processingIdDirectory, version);
         }
 
-        //wait for all pools to complete
-        pool.shutdown();
-        pool.awaitTermination(1, TimeUnit.DAYS);
+        //the orgDirectory contains a sub-directory for each processing ID, which must be processed in order
+        List<Integer> processingIds = new ArrayList<>();
+        Map<Integer, File> hmFiles = new HashMap<>();
+        for (File file: orgDirectory.listFiles()) {
+            Integer processingId = Integer.valueOf(file.getName());
+            processingIds.add(processingId);
+            hmFiles.put(processingId, file);
+        }
 
-        //having successfully processed all the split files, delete the split content (if any exceptions were raised, this won't happen)
-        dstDir.delete();
+        Collections.sort(processingIds);
 
-        return batchIds;
+        //the processor is responsible for saving FHIR resources
+        CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId);
+
+        LOG.trace("Starting transform for organisation {}", orgDirectory.getName());
+
+        for (Integer processingId: processingIds) {
+            File file = hmFiles.get(processingId);
+            EmisCsvTransformerWorker.transform(version, file, processor);
+        }
+
+        LOG.trace("Completed transfom for organisation {} - waiting for resources to commit to DB", orgDirectory.getName());
+
+        return processor.getBatchIdsCreated();
     }
-
 
     /**
-     * validates that all the files in the array are in the same common directory
+     * recursively empties the directory struture then deletes the directories
+     * Java can delete directories, but the files have to be manually deleted first
      */
-    private static File validateCommonDirectory(String[] files) throws Exception {
-        String commonDir = null;
-        for (String file: files) {
-            File f = new File(file);
-            if (!f.exists()) {
-                throw new FileNotFoundException("" + f + " doesn't exist");
-            }
-            if (commonDir == null) {
-                commonDir = f.getParent();
+    private static void deleteDirectory(File root) {
+
+        for (File f: root.listFiles()) {
+            if (f.isFile()) {
+                f.delete();
             } else {
-                if (!commonDir.equalsIgnoreCase(f.getParent())) {
-                    throw new FileNotFoundException("" + f + " is not in expected directory " + commonDir);
-                }
+                deleteDirectory(f);
             }
         }
-        return new File(commonDir);
+
+        root.delete();
+    }
+
+    /*static class TransformOrganisation implements Callable {
+
+        private String version = null;
+        private File orgDirectory = null;
+        private CsvProcessor processor = null;
+
+        public TransformOrganisation(String version, File orgDirectory, CsvProcessor processor) {
+            this.version = version;
+            this.orgDirectory = orgDirectory;
+            this.processor = processor;
+        }
+
+        @Override
+        public Object call() throws Exception {
+
+            LOG.trace("Starting transfom for organisation {}", orgDirectory.getName());
+
+            //the directory will contain a sub-directory for each processing ID, which must be processed in order
+            List<Integer> processingIds = new ArrayList<>();
+            Map<Integer, File> hmFiles = new HashMap<>();
+            for (File file: orgDirectory.listFiles()) {
+                Integer processingId = Integer.valueOf(file.getName());
+                processingIds.add(processingId);
+                hmFiles.put(processingId, file);
+            }
+
+            Collections.sort(processingIds);
+
+            for (Integer processingId: processingIds) {
+                File file = hmFiles.get(processingId);
+                EmisCsvTransformerWorker.transform(version, file, processor);
+            }
+
+            LOG.trace("Completed transfom for organisation {}", orgDirectory.getName());
+
+            return null;
+        }
+    }*/
+
+    /*private static void validateOrganisations(String version, File folder, UUID serviceId, UUID systemId, Set<UUID> orgIds) throws Exception {
+
+        //retrieve the Organisations from the org repository, and extract their ODS codes
+        Set<org.endeavourhealth.core.data.admin.models.Organisation> orgs = new OrganisationRepository().getByUds(orgIds);
+        Set<String> orgOdsCodes = orgs
+                                    .stream()
+                                    .map(t -> t.getNationalId())
+                                    .collect(Collectors.toSet());
+
+        //the file splitter has split into directories name using the org GUID, so we can just look at the directories
+        for (File f: folder.listFiles()) {
+            if (!f.isDirectory()) {
+                continue;
+            }
+
+            //ignore the admin folder
+            if (f.getName().equals(EmisCsvFileSplitter.ADMIN_FOLDER_NAME)) {
+                continue;
+            }
+
+            String orgGuid = f.getName();
+            String odsCode = null;
+
+            //first, use the ID helper to find the EDS ID for an organisation resource with the local orgGUID
+            UUID edsOrgId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Organization, orgGuid);
+            if (edsOrgId != null) {
+                //retrieve from EHR
+                odsCode = findOrganisationOdsFromEhrRepository(edsOrgId);
+            }
+
+            if (odsCode == null) {
+                //if there's no EDS org ID it means we've never encountered this organisation before, in which case we need
+                //to look in the Admin_Organisation file we're received, to find the ODS code for that organisation
+                File adminFolder = new File(folder, EmisCsvFileSplitter.ADMIN_FOLDER_NAME);
+                for (File adminBatchFolder: adminFolder.listFiles()) {
+
+                    odsCode = findOrganisationOdsFromCsvFile(version, orgGuid, adminBatchFolder);
+                    if (odsCode != null) {
+                        break;
+                    }
+                }
+
+            }
+
+            if (odsCode == null
+                    || !orgOdsCodes.contains(odsCode)) {
+                throw new UnexpectedOrganisationException(orgGuid, odsCode);
+            }
+        }
+    }
+
+    private static String findOrganisationOdsFromCsvFile(String version, String orgGuid, File folder) throws Exception {
+
+        Organisation parser = new Organisation(version, folder.getAbsolutePath(), EmisCsvTransformerWorker.CSV_FORMAT);
+        try {
+            while (parser.nextRecord()) {
+                String csvOrgGuid = parser.getOrganisationGuid();
+                if (csvOrgGuid.equalsIgnoreCase(orgGuid)) {
+                    return parser.getODScode();
+                }
+            }
+        } catch (Exception ex) {
+            throw new TransformException(parser.getErrorLine(), ex);
+        } finally {
+            parser.close();
+        }
+
+        return null;
+    }
+
+    private static String findOrganisationOdsFromEhrRepository(UUID edsOrgId) throws Exception {
+        ResourceHistory resourceHistory = new ResourceRepository().getCurrentVersion(ResourceType.Organization.toString(), edsOrgId);
+        if (resourceHistory == null) {
+            return null;
+        }
+
+        Organization fhirOrganisation = (Organization)new JsonParser().parse(resourceHistory.getResourceData());
+        for (Identifier fhirIdentifier: fhirOrganisation.getIdentifier()) {
+            if (fhirIdentifier.getSystem().equalsIgnoreCase(FhirUri.IDENTIFIER_SYSTEM_ODS_CODE)) {
+                return fhirIdentifier.getValue();
+            }
+        }
+
+        return null;
+    }*/
+
+    /**
+     * validates that all the files in the array are in the expected directory structure of org folder -> processing ID folder
+     */
+    private static File validateAndFindCommonDirectory(String sharedStoragePath, String[] files) throws Exception {
+        String organisationDir = null;
+
+        for (String file: files) {
+            File f = new File(sharedStoragePath, file);
+            if (!f.exists()) {
+                LOG.error("Failed to find file {} in shared storage {}", file, sharedStoragePath);
+                throw new FileNotFoundException("" + f + " doesn't exist");
+            }
+            //LOG.info("Successfully found file {} in shared storage {}", file, sharedStoragePath);
+
+            try {
+                File processingIdDir = f.getParentFile();
+                File orgDir = processingIdDir.getParentFile();
+
+                if (organisationDir == null) {
+                    organisationDir = orgDir.getAbsolutePath();
+                } else {
+                    if (!organisationDir.equalsIgnoreCase(orgDir.getAbsolutePath())) {
+                        throw new Exception();
+                    }
+                }
+
+            } catch (Exception ex) {
+                throw new FileNotFoundException("" + f + " isn't in the expected directory structure within " + organisationDir);
+            }
+
+        }
+        return new File(organisationDir);
+    }
+
+    private static void validateColumnNames(File commonDir, String version) throws Exception {
+        String folderPath = commonDir.getAbsolutePath();
+
+        //the column validation is performed in the constructor of each file parser, so just create and immediately close
+        new Location(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Organisation(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new OrganisationLocation(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Patient(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new UserInRole(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Session(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new SessionUser(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Slot(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Consultation(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Diary(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Observation(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new ObservationReferral(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new Problem(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new ClinicalCode(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new DrugCode(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new DrugRecord(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
+        new IssueRecord(version, folderPath, EmisCsvTransformerWorker.CSV_FORMAT).close();
     }
 
     /**
@@ -194,7 +291,9 @@ public abstract class EmisCsvTransformer {
 
         for (File file: commonDir.listFiles()) {
             if (file.isFile()
-                && !fileSet.contains(file)) {
+                && !fileSet.contains(file)
+                && !Files.getFileExtension(file.getAbsolutePath()).equalsIgnoreCase("gpg")) {
+
                 throw new FileFormatException(file, "Unexpected file " + file + " in EMIS CSV extract");
             }
         }
@@ -203,51 +302,59 @@ public abstract class EmisCsvTransformer {
     /**
      * validates that all expected files can be found in the folder
      */
-    private static List<File> validateExpectedFiles(File dir) throws FileNotFoundException {
+    private static List<File> validateExpectedFiles(File dir, String version) throws FileNotFoundException {
 
         List<File> list = new ArrayList<>();
-        list.add(getFileByPartialName("Admin_Location", dir));
-        list.add(getFileByPartialName("Admin_Organisation", dir));
-        list.add(getFileByPartialName("Admin_OrganisationLocation", dir));
-        list.add(getFileByPartialName("Admin_Patient", dir));
-        list.add(getFileByPartialName("Admin_UserInRole", dir));
-        list.add(getFileByPartialName("Agreements_SharingOrganisation", dir));
-        list.add(getFileByPartialName("Appointment_Session", dir));
-        list.add(getFileByPartialName("Appointment_SessionUser", dir));
-        list.add(getFileByPartialName("Appointment_Slot", dir));
-        list.add(getFileByPartialName("Audit_PatientAudit", dir));
-        list.add(getFileByPartialName("Audit_RegistrationAudit", dir));
-        list.add(getFileByPartialName("CareRecord_Consultation", dir));
-        list.add(getFileByPartialName("CareRecord_Diary", dir));
-        list.add(getFileByPartialName("CareRecord_Observation", dir));
-        list.add(getFileByPartialName("CareRecord_ObservationReferral", dir));
-        list.add(getFileByPartialName("CareRecord_Problem", dir));
-        list.add(getFileByPartialName("Coding_ClinicalCode", dir));
-        list.add(getFileByPartialName("Coding_DrugCode", dir));
-        list.add(getFileByPartialName("Prescribing_DrugRecord", dir));
-        list.add(getFileByPartialName("Prescribing_IssueRecord", dir));
+        list.add(getFileByPartialName("Admin", "Location", dir));
+        list.add(getFileByPartialName("Admin", "Organisation", dir));
+        list.add(getFileByPartialName("Admin", "OrganisationLocation", dir));
+        list.add(getFileByPartialName("Admin", "Patient", dir));
+        list.add(getFileByPartialName("Admin", "UserInRole", dir));
+        list.add(getFileByPartialName("Agreements", "SharingOrganisation", dir));
+        list.add(getFileByPartialName("Appointment", "Session", dir));
+        list.add(getFileByPartialName("Appointment", "SessionUser", dir));
+        list.add(getFileByPartialName("Appointment", "Slot", dir));
+        list.add(getFileByPartialName("CareRecord", "Consultation", dir));
+        list.add(getFileByPartialName("CareRecord", "Diary", dir));
+        list.add(getFileByPartialName("CareRecord", "Observation", dir));
+        list.add(getFileByPartialName("CareRecord", "ObservationReferral", dir));
+        list.add(getFileByPartialName("CareRecord", "Problem", dir));
+        list.add(getFileByPartialName("Coding", "ClinicalCode", dir));
+        list.add(getFileByPartialName("Coding", "DrugCode", dir));
+        list.add(getFileByPartialName("Prescribing", "DrugRecord", dir));
+        list.add(getFileByPartialName("Prescribing", "IssueRecord", dir));
+
+        if (version.equals(VERSION_5_1)) {
+            list.add(getFileByPartialName("Audit", "PatientAudit", dir)); //not present in EMIS test data
+            list.add(getFileByPartialName("Audit", "RegistrationAudit", dir)); //not present in EMIS test data
+        }
         return list;
     }
 
-    public static File getFileByPartialName(String partialFileName, File dir) throws FileNotFoundException {
-
-        //append a trailing underscore, so we don't pick up CareRecord_ObservationReferral when looking for CareRecord_Observation
-        partialFileName += "_";
+    public static File getFileByPartialName(String domain, String name, File dir) throws FileNotFoundException {
 
         for (File f: dir.listFiles()) {
-            String name = f.getName();
-            String extension = Files.getFileExtension(name);
+            String fName = f.getName();
+
+            //we're only interested in CSV files
+            String extension = Files.getFileExtension(fName);
             if (!extension.equalsIgnoreCase("csv")) {
                 continue;
             }
 
-            if (name.indexOf(partialFileName) == -1) {
+            String[] toks = fName.split("_");
+            if (toks.length != 5) {
+                continue;
+            }
+
+            if (!toks[1].equalsIgnoreCase(domain)
+                || !toks[2].equalsIgnoreCase(name)) {
                 continue;
             }
 
             return f;
         }
 
-        throw new FileNotFoundException("Failed to find CSV file for " + partialFileName);
+        throw new FileNotFoundException("Failed to find CSV file for " + domain + "_" + name + " in " + dir);
     }
 }

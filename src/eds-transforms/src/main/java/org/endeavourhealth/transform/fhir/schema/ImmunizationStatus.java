@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.fhir.schema;
 
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.FhirValueSetUri;
 
 public enum ImmunizationStatus {
 
@@ -20,7 +20,7 @@ public enum ImmunizationStatus {
         return description;
     }
     public String getSystem() {
-        return FhirUri.VALUE_SET_IMMUNIZATION_STATUS;
+        return FhirValueSetUri.VALUE_SET_IMMUNIZATION_STATUS;
     }
 
 

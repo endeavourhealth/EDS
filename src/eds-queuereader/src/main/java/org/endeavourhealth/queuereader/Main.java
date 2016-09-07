@@ -1,7 +1,6 @@
 package org.endeavourhealth.queuereader;
 
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
-import org.endeavourhealth.core.data.logging.LogbackCassandraAppender;
 import org.endeavourhealth.core.engineConfiguration.EngineConfigurationSerializer;
 import org.endeavourhealth.core.utility.XmlSerializer;
 import org.slf4j.Logger;
@@ -30,9 +29,6 @@ public class Main {
 		//load common config
 		EngineConfigurationSerializer.loadConfigFromArgIfPossible(args, 1);
 
-		//logging
-		LogbackCassandraAppender.tryRegisterDbAppender();
-
 		// Instantiate rabbit handler
 		LOG.info("Creating EDS queue reader");
 		RabbitHandler rabbitHandler = new RabbitHandler(configuration);
@@ -41,14 +37,5 @@ public class Main {
 		LOG.info("Starting message consumption");
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
-
-		LOG.info("Press any key to exit...");
-		System.in.read();
-
-		// Shutdown
-		LOG.info("Shutting down rabbit handler...");
-		rabbitHandler.stop();
-
-		LOG.info("Waiting for Async logger to shutdown...");
 	}
 }

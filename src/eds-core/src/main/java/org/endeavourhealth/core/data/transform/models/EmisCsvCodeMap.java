@@ -29,6 +29,22 @@ public class EmisCsvCodeMap {
     private String codeType = null;
     @Column(name = "codeable_concept")
     private String codeableConcept = null;
+    @Column(name = "read_term")
+    private String readTerm = null;
+    @Column(name = "read_code")
+    private String readCode = null;
+    @Column(name = "snomed_concept_id")
+    private Long snomedConceptId = null;
+    @Column(name = "snomed_description_id")
+    private Long snomedDescriptionId = null;
+    @Column(name = "snomed_term")
+    private String snomedTerm = null;
+    @Column(name = "national_code")
+    private String nationalCode = null;
+    @Column(name = "national_code_category")
+    private String nationalCodeCategory = null;
+    @Column(name = "national_code_description")
+    private String nationalCodeDescription = null;
 
 
     public UUID getServiceId() {
@@ -85,5 +101,69 @@ public class EmisCsvCodeMap {
 
     public void setCodeableConcept(String codeableConcept) {
         this.codeableConcept = codeableConcept;
+    }
+
+    public String getReadTerm() {
+        return readTerm;
+    }
+
+    public void setReadTerm(String readTerm) {
+        this.readTerm = readTerm;
+    }
+
+    public String getReadCode() {
+        return readCode;
+    }
+
+    public void setReadCode(String readCode) {
+        this.readCode = readCode;
+    }
+
+    public Long getSnomedConceptId() {
+        return snomedConceptId;
+    }
+
+    public void setSnomedConceptId(Long snomedConceptId) {
+        this.snomedConceptId = snomedConceptId;
+    }
+
+    public Long getSnomedDescriptionId() {
+        return snomedDescriptionId;
+    }
+
+    public void setSnomedDescriptionId(Long snomedDescriptionId) {
+        this.snomedDescriptionId = snomedDescriptionId;
+    }
+
+    public String getSnomedTerm() {
+        return snomedTerm;
+    }
+
+    public void setSnomedTerm(String snomedTerm) {
+        this.snomedTerm = snomedTerm;
+    }
+
+    public String getNationalCode() {
+        return nationalCode;
+    }
+
+    public void setNationalCode(String nationalCode) {
+        this.nationalCode = nationalCode;
+    }
+
+    public String getNationalCodeCategory() {
+        return nationalCodeCategory;
+    }
+
+    public void setNationalCodeCategory(String nationalCodeCategory) {
+        this.nationalCodeCategory = nationalCodeCategory;
+    }
+
+    public String getNationalCodeDescription() {
+        return nationalCodeDescription;
+    }
+
+    public void setNationalCodeDescription(String nationalCodeDescription) {
+        this.nationalCodeDescription = nationalCodeDescription;
     }
 }

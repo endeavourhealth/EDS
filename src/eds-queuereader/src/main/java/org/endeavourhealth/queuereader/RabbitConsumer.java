@@ -4,18 +4,21 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
+import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.data.admin.models.QueuedMessage;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
-import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 
 public class RabbitConsumer extends DefaultConsumer {
+	private static final Logger LOG = LoggerFactory.getLogger(RabbitConsumer.class);
+
 	PipelineProcessor pipeline;
 
 	public RabbitConsumer(Channel channel, QueueReaderConfiguration configuration) {
@@ -32,19 +35,31 @@ public class RabbitConsumer extends DefaultConsumer {
 		// Get the message from the db
 		QueuedMessage queuedMessage = new QueuedMessageRepository().getById(messageUuid);
 
-		Exchange exchange = new Exchange(queuedMessage.getMessageBody());
+		/*if (queuedMessage == null) {
+			this.getChannel().basicAck(envelope.getDeliveryTag(), false);
+			return;
+		}*/
+
+		Exchange exchange = new Exchange(messageUuid, queuedMessage.getMessageBody());
 		Map<String, Object> headers = properties.getHeaders();
 		if (headers != null) {
 			headers.keySet().stream()
 					.filter(headerKey -> headers.get(headerKey) != null)
 					.forEach(headerKey -> exchange.setHeader(headerKey, headers.get(headerKey).toString()));
 		}
+		LOG.info("Received exchange {} from Rabbit", exchange.getExchangeId());
 
 		// Process the message
 		if (pipeline.execute(exchange)) {
+			LOG.info("Successfully processed exchange {}", exchange.getExchangeId());
 			this.getChannel().basicAck(envelope.getDeliveryTag(), false);
+			LOG.info("Have sent ACK for exchange {}", exchange.getExchangeId());
 		} else {
+			LOG.error("Failed to process exchange {}", exchange.getExchangeId());
 			this.getChannel().basicReject(envelope.getDeliveryTag(), true);
+			LOG.info("Have sent REJECT for exchange {}", exchange.getExchangeId());
 		}
+
+
 	}
 }

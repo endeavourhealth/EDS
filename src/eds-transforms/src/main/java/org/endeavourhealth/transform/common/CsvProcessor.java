@@ -3,101 +3,152 @@ package org.endeavourhealth.transform.common;
 import com.datastax.driver.core.utils.UUIDs;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
+import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
+import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.csv.ThreadPool;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class CsvProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(CsvProcessor.class);
 
-    /*private static final int MAPPING_BATCH_SIZE = 5000;
-    private static final int SAVING_BATCH_SIZE = 10;*/
-    private static final int THREAD_POOL_SIZE = 10;
-
     private static Set<Class> patientResourceClasses = null;
 
-    private UUID exchangeId = null;
-    private UUID serviceId = null;
-    private UUID systemId = null;
-    private FhirStorageService storageService = null;
+    private final UUID exchangeId;
+    private final UUID serviceId;
+    private final UUID systemId;
+    private final FhirStorageService storageService;
+    private final ExchangeBatchRepository exchangeBatchRepository;
+    //private final Map<String, String> resourceTypes; //although a set would be idea, a map allows safe multi-thread access
 
-    private Map<String, UUID> patientBatchIdMap = new HashMap<>();
+    //batch IDs
+    private ReentrantLock batchIdLock = new ReentrantLock();
+    private Map<String, UUID> patientBatchIdMap = new ConcurrentHashMap<>();
     private UUID adminBatchId = null;
-    private ExecutorService threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-    private ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+
+    //threading
+    private ThreadPool threadPool = new ThreadPool(10, 100000); //allow 10 threads for saving, but limit to allowing 200,000 things to be queued
+
+    //counts
+    private Map<UUID, AtomicInteger> countResourcesSaved = new ConcurrentHashMap<>();
+    private Map<UUID, AtomicInteger> countResourcesDeleted = new ConcurrentHashMap<>();
+
 
     public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId) {
         this.exchangeId = exchangeId;
         this.serviceId = serviceId;
         this.systemId = systemId;
         this.storageService = new FhirStorageService(serviceId, systemId);
+        this.exchangeBatchRepository = new ExchangeBatchRepository();
+        //this.resourceTypes = new ConcurrentHashMap<>();
     }
 
 
-    public void saveAdminResource(Resource resource) throws Exception {
-        saveAdminResource(resource, true);
+    public void saveAdminResource(Resource... resources) throws Exception {
+        saveAdminResource(true, resources);
     }
-    public void saveAdminResource(Resource resource, boolean mapIds) throws Exception {
-        addResourceToQueue(resource, false, mapIds, getAdminBatchId(), false);
-    }
-
-    public void deleteAdminResource(Resource resource) throws Exception {
-        deleteAdminResource(resource, true);
-    }
-    public void deleteAdminResource(Resource resource, boolean mapIds) throws Exception {
-        addResourceToQueue(resource, false, mapIds, getAdminBatchId(), true);
+    public void saveAdminResource(boolean mapIds, Resource... resources) throws Exception {
+        addResourceToQueue(false, mapIds, getAdminBatchId(), false, resources);
     }
 
-    public void savePatientResource(Resource resource, String patientId) throws Exception {
-        savePatientResource(resource, true, patientId);
+    public void deleteAdminResource(Resource... resources) throws Exception {
+        deleteAdminResource(true, resources);
     }
-    public void savePatientResource(Resource resource, boolean mapIds, String patientId) throws Exception {
-        addResourceToQueue(resource, true, mapIds, getPatientBatchId(patientId), false);
-    }
-
-    public void deletePatientResource(Resource resource, String patientId) throws Exception {
-        deletePatientResource(resource, true, patientId);
-    }
-    public void deletePatientResource(Resource resource, boolean mapIds, String patientId) throws Exception {
-        addResourceToQueue(resource, true, mapIds, getPatientBatchId(patientId), true);
+    public void deleteAdminResource(boolean mapIds, Resource... resources) throws Exception {
+        addResourceToQueue(false, mapIds, getAdminBatchId(), true, resources);
     }
 
-    private void addResourceToQueue(Resource resource,
-                                    boolean expectingPatientResource,
+    public void savePatientResource(String patientId, Resource... resources) throws Exception {
+        savePatientResource(true, patientId, resources);
+    }
+    public void savePatientResource(boolean mapIds, String patientId, Resource... resources) throws Exception {
+        addResourceToQueue(true, mapIds, getPatientBatchId(patientId), false, resources);
+    }
+
+    public void deletePatientResource(String patientId, Resource... resources) throws Exception {
+        deletePatientResource(true, patientId, resources);
+    }
+    public void deletePatientResource(boolean mapIds, String patientId, Resource... resources) throws Exception {
+        addResourceToQueue(true, mapIds, getPatientBatchId(patientId), true, resources);
+    }
+
+    private void addResourceToQueue(boolean expectingPatientResource,
                                     boolean mapIds,
                                     UUID batchId,
-                                    boolean toDelete) throws Exception {
+                                    boolean toDelete,
+                                    Resource... resources) throws Exception {
 
-        if (isPatientResource(resource) != expectingPatientResource) {
-            throw new PatientResourceException(resource.getResourceType(), expectingPatientResource);
+        for (Resource resource: resources) {
+            //validate we're treating the resoure properly as admin / patient
+            if (isPatientResource(resource) != expectingPatientResource) {
+                throw new PatientResourceException(resource.getResourceType(), expectingPatientResource);
+            }
+
+            /*String resourceType = resource.getResourceType().toString();
+            resourceTypes.put(resourceType, resourceType);*/
+
+            //increment our counters for auditing
+            if (toDelete) {
+                countResourcesDeleted.get(batchId).incrementAndGet();
+            } else {
+                countResourcesSaved.get(batchId).incrementAndGet();
+            }
         }
 
-        threadPool.submit(new WorkerCallable(resource, batchId, toDelete, mapIds));
+        threadPool.submit(new MapAndSaveResourceTask(batchId, toDelete, mapIds, resources));
     }
-
 
     private UUID getAdminBatchId() {
         if (adminBatchId == null) {
-            adminBatchId = UUIDs.timeBased();
-            saveExchangeBatch(adminBatchId);
+
+            try {
+                batchIdLock.lock();
+
+                //make sure to check if it's still null, as another thread may have created the ID while we were waiting to batchIdLock
+                if (adminBatchId == null) {
+                    adminBatchId = UUIDs.timeBased();
+                    saveExchangeBatch(adminBatchId);
+
+                    countResourcesDeleted.put(adminBatchId, new AtomicInteger());
+                    countResourcesSaved.put(adminBatchId, new AtomicInteger());
+                }
+            } finally {
+                batchIdLock.unlock();
+            }
         }
         return adminBatchId;
     }
     private UUID getPatientBatchId(String patientId) {
         UUID patientBatchId = patientBatchIdMap.get(patientId);
         if (patientBatchId == null) {
-            patientBatchId = UUIDs.timeBased();
-            patientBatchIdMap.put(patientId, patientBatchId);
-            saveExchangeBatch(patientBatchId);
+
+            try {
+                batchIdLock.lock();
+
+                //make sure to check if it's still null, as another thread may have created the ID while we were waiting to batchIdLock
+                patientBatchId = patientBatchIdMap.get(patientId);
+                if (patientBatchId == null) {
+                    patientBatchId = UUIDs.timeBased();
+                    patientBatchIdMap.put(patientId, patientBatchId);
+                    saveExchangeBatch(patientBatchId);
+
+                    countResourcesDeleted.put(patientBatchId, new AtomicInteger());
+                    countResourcesSaved.put(patientBatchId, new AtomicInteger());
+                }
+            } finally {
+                batchIdLock.unlock();
+            }
         }
         return patientBatchId;
     }
@@ -109,23 +160,79 @@ public class CsvProcessor {
         exchangeBatchRepository.save(exchangeBatch);
     }
 
+    /**
+     * called after all content has been processed. It blocks until all operations have
+     * been completed in the thread pool, then returns the distinct batch IDs created
+     */
+    public List<UUID> getBatchIdsCreated() throws Exception {
 
-    public List<UUID> getBatchIdsCreated() {
+        //wait for all tasks to be completed
+        threadPool.waitAndStop();
 
-        LOG.trace("Processing completion starting");
+        //update the resource types used
+        //saveResourceTypesUsed();
 
-        //shutdown the threadpool and wait for all runnables to complete
-        threadPool.shutdown();
-        try {
-            LOG.trace("Waiting for thread pool to complete");
-            threadPool.awaitTermination(24, TimeUnit.HOURS);
-        } catch (InterruptedException ex) {
-            LOG.error("Error waiting for pool to finish", ex);
+        //log out counts of what we processed
+        logResults();
+
+        return getAllBatchIds();
+    }
+
+    /*private void saveResourceTypesUsed() {
+
+        ResourceRepository resourceRepository = new ResourceRepository();
+
+        Iterator<String> it = resourceTypes.keySet().iterator();
+        while (it.hasNext()) {
+            String resourceType = it.next();
+            ResourceTypesUsed resourceTypesUsed = new ResourceTypesUsed();
+            resourceTypesUsed.setServiceId(serviceId);
+            resourceTypesUsed.setSystemId(systemId);
+            resourceTypesUsed.setResourceType(resourceType);
+
+            resourceRepository.save(resourceTypesUsed);
+        }
+    }*/
+
+
+    private void logResults() throws Exception {
+
+        int totalSaved = 0;
+        int totalDeleted = 0;
+
+        LOG.info("CSV processing completed");
+
+        int saved = countResourcesSaved.get(adminBatchId).get();
+        int deleted = countResourcesDeleted.get(adminBatchId).get();
+        LOG.info("Saved {} and deleted {} non-patient resources", saved, deleted);
+        totalSaved += saved;
+        totalDeleted += deleted;
+
+        ResourceIdMapRepository idRepository = new ResourceIdMapRepository();
+
+        Iterator<String> it = patientBatchIdMap.keySet().iterator();
+        while (it.hasNext()) {
+            String patientId = it.next();
+            UUID batchId = patientBatchIdMap.get(patientId);
+
+            //look up the EDS ID for the patient, so we can log that too
+            ResourceIdMap resourceMapping = idRepository.getResourceIdMap(serviceId, systemId, ResourceType.Patient.toString(), patientId);
+            if (resourceMapping == null) {
+                throw new TransformException("Failed to find EDS ID for patient " + patientId + ", service " + serviceId + " and system " + systemId + " for batch ID " + batchId);
+            }
+            UUID edsPatientId = resourceMapping.getEdsId();
+
+            saved = countResourcesSaved.get(batchId).get();
+            deleted = countResourcesDeleted.get(batchId).get();
+            //LOG.info("Saved {} and deleted {} resources for patient {}", saved, deleted, edsPatientId);
+            totalSaved += saved;
+            totalDeleted += deleted;
         }
 
-        LOG.trace("Processing fully completed");
+        LOG.info("CSV processing completed, saving {} resources, deleting {} for {} distinct patients", totalSaved, totalDeleted, patientBatchIdMap.size());
+    }
 
-
+    private List<UUID> getAllBatchIds() {
         List<UUID> batchIds = new ArrayList<>();
         if (adminBatchId != null) {
             batchIds.add(adminBatchId);
@@ -181,15 +288,15 @@ public class CsvProcessor {
         return systemId;
     }
 
-    class WorkerCallable implements Callable {
+    class MapAndSaveResourceTask implements Callable {
 
-        private Resource resource = null;
+        private Resource[] resources = null;
         private UUID batchUuid = null;
         private boolean isDelete = false;
         private boolean mapIds = false;
 
-        public WorkerCallable(Resource resource, UUID batchUuid, boolean isDelete, boolean mapIds) {
-            this.resource = resource;
+        public MapAndSaveResourceTask(UUID batchUuid, boolean isDelete, boolean mapIds, Resource... resources) {
+            this.resources = resources;
             this.batchUuid = batchUuid;
             this.isDelete = isDelete;
             this.mapIds = mapIds;
@@ -198,17 +305,27 @@ public class CsvProcessor {
         @Override
         public Object call() throws Exception {
 
-            if (mapIds) {
-                IdHelper.mapIds(serviceId, systemId, resource);
-            }
+              for (Resource resource: resources) {
 
-            List<Resource> list = new ArrayList<>();
-            list.add(resource);
+                try {
+                    if (mapIds) {
+                        IdHelper.mapIds(serviceId, systemId, resource);
+                    }
 
-            if (isDelete) {
-                storageService.exchangeBatchDelete(exchangeId, batchUuid, list);
-            } else {
-                storageService.exchangeBatchUpdate(exchangeId, batchUuid, list);
+                    List<Resource> list = new ArrayList<>();
+                    list.add(resource);
+
+                    if (isDelete) {
+                        storageService.exchangeBatchDelete(exchangeId, batchUuid, list);
+                    } else {
+                        storageService.exchangeBatchUpdate(exchangeId, batchUuid, list);
+                    }
+
+                } catch (Exception ex) {
+                    LOG.error("Error saving {} {} but continuing", resource.getResourceType(), resource.getId());
+                    //TODO - restore exception throwing
+                    //throw new TransformException("Exception mapping or storing " + resource.getResourceType() + " " + resource.getId(), ex);
+                }
             }
 
             return null;

@@ -64,7 +64,17 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:complexType name="MessageTransformConfig">
+    <xs:complexType name="MessageTransformInboundConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig">
+                <xs:sequence>
+                    <xs:element name="SharedStoragePath" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="MessageTransformOutboundConfig">
         <xs:complexContent>
             <xs:extension base="ComponentConfig"/>
         </xs:complexContent>

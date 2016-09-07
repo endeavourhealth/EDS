@@ -1,6 +1,5 @@
 package org.endeavourhealth.transform.common.idmappers;
 
-import org.hl7.fhir.instance.model.AllergyIntolerance;
 import org.hl7.fhir.instance.model.Condition;
 import org.hl7.fhir.instance.model.Resource;
 
@@ -15,16 +14,16 @@ public class IdMapperCondition extends BaseIdMapper {
         super.mapExtensions(condition, serviceId, systemId);
 
         if (condition.hasIdentifier()) {
-            super.mapIdentifiers(condition.getIdentifier(), serviceId, systemId);
+            super.mapIdentifiers(condition.getIdentifier(), resource, serviceId, systemId);
         }
         if (condition.hasPatient()) {
-            super.mapReference(condition.getPatient(), serviceId, systemId);
+            super.mapReference(condition.getPatient(), resource, serviceId, systemId);
         }
         if (condition.hasEncounter()) {
-            super.mapReference(condition.getEncounter(), serviceId, systemId);
+            super.mapReference(condition.getEncounter(), resource, serviceId, systemId);
         }
         if (condition.hasAsserter()) {
-            super.mapReference(condition.getAsserter(), serviceId, systemId);
+            super.mapReference(condition.getAsserter(), resource, serviceId, systemId);
         }
 
 

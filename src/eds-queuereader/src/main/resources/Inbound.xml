@@ -5,9 +5,12 @@
         <Password>guest</Password>
     </Credentials>
     <Nodes>localhost:5672</Nodes>
-    <Queue>EdsInbound-A-M</Queue>
+    <Queue>EdsInbound-GPs_Eng_Wls</Queue>
+    <!--<Queue>EdsInbound-A-M</Queue>-->
     <Pipeline>
-        <MessageTransform/>
+        <MessageTransformInbound>
+            <SharedStoragePath>C:\SFTPData</SharedStoragePath>
+        </MessageTransformInbound>
         <PostMessageToExchange>
             <Credentials>
                 <Username>guest</Username>
@@ -25,7 +28,7 @@
             <Nodes>localhost:5672</Nodes>
             <Exchange>EdsProtocol</Exchange>
             <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
-            <MulticastHeader>ProtocolIds</MulticastHeader>
+            <MulticastHeader>BatchIds</MulticastHeader>
         </PostMessageToExchange>
     </Pipeline>
 </QueueReaderConfiguration>

@@ -8,10 +8,10 @@ import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.fhirStorage.exceptions.SerializationException;
 import org.endeavourhealth.core.fhirStorage.exceptions.UnprocessableEntityException;
 import org.endeavourhealth.core.fhirStorage.exceptions.VersionConflictException;
+import org.endeavourhealth.core.fhirStorage.metadata.MetadataFactory;
 import org.endeavourhealth.core.fhirStorage.metadata.PatientCompartment;
 import org.endeavourhealth.core.fhirStorage.metadata.ResourceMetadata;
-import org.endeavourhealth.core.fhirStorage.metadata.MetadataFactory;
-import org.hl7.fhir.instance.model.Meta;
+import org.endeavourhealth.core.utility.JsonSerializer;
 import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.Resource;
 
@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class FhirStorageService {
-    private static final String SCHEMA_VERSION = "1.0";
+    private static final String SCHEMA_VERSION = "0.1";
 
     private final ResourceRepository repository;
     private final PatientIdentifierRepository identifierRepository;
@@ -87,7 +87,7 @@ public class FhirStorageService {
 
         ResourceEntry entry = createResourceEntry(resource);
 
-        updateResourceMeta(resource, entry.getVersion(), entry.getCreatedAt());
+        FhirResourceHelper.updateMetaTags(resource, entry.getVersion(), entry.getCreatedAt());
 
         repository.save(entry, exchangeId, batchId);
 
@@ -106,16 +106,18 @@ public class FhirStorageService {
 
     private ResourceEntry createResourceEntry(Resource resource) throws UnprocessableEntityException, SerializationException {
         ResourceMetadata metadata = MetadataFactory.createMetadata(resource);
+        Date entryDate = new Date();
 
         ResourceEntry entry = new ResourceEntry();
-        entry.setResourceId(metadata.getId());
-        entry.setResourceType(metadata.getResourceTypeName());
-        entry.setVersion(UUIDs.timeBased());
-        entry.setCreatedAt(new Date());
+        entry.setResourceId(FhirResourceHelper.getResourceId(resource));
+        entry.setResourceType(FhirResourceHelper.getResourceType(resource));
+        entry.setVersion(createTimeBasedVersion());
+        entry.setCreatedAt(entryDate);
         entry.setServiceId(serviceId);
         entry.setSystemId(systemId);
         entry.setSchemaVersion(SCHEMA_VERSION);
-        entry.setResourceData(JsonSerializationHelper.serializeResource(resource));
+        entry.setResourceMetadata(JsonSerializer.serialize(metadata));
+        entry.setResourceData(FhirSerializationHelper.serializeResource(resource));
 
         if (metadata instanceof PatientCompartment) {
             entry.setPatientId(((PatientCompartment) metadata).getPatientId());
@@ -124,9 +126,7 @@ public class FhirStorageService {
         return entry;
     }
 
-    private void updateResourceMeta(Resource resource, UUID version, Date createdAt) {
-        Meta meta = resource.getMeta();
-        meta.setVersionId(version.toString());
-        meta.setLastUpdated(createdAt);
+    private UUID createTimeBasedVersion() {
+        return UUIDs.timeBased();
     }
 }

@@ -1,18 +1,14 @@
 package org.endeavourhealth.ui.endpoints;
 
 import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.Audit;
-import org.endeavourhealth.core.data.admin.models.ItemDependency;
-import org.endeavourhealth.core.data.admin.models.Item;
+import org.endeavourhealth.core.data.admin.models.*;
 import org.endeavourhealth.core.xml.QueryDocument.QueryDocument;
+import org.endeavourhealth.core.xml.QueryDocumentSerializer;
+import org.endeavourhealth.ui.DependencyType;
 import org.endeavourhealth.ui.json.JsonDeleteResponse;
 import org.endeavourhealth.ui.json.JsonMoveItem;
 import org.endeavourhealth.ui.json.JsonMoveItems;
 import org.endeavourhealth.ui.utility.QueryDocumentReaderFindDependentUuids;
-import org.endeavourhealth.core.data.admin.models.DefinitionItemType;
-import org.endeavourhealth.ui.DependencyType;
-import org.endeavourhealth.ui.querydocument.QueryDocumentSerializer;
 
 import javax.ws.rs.BadRequestException;
 import java.util.*;
@@ -119,7 +115,8 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
         LibraryRepository repository = new LibraryRepository();
 
         ActiveItem containingFolderActiveItem = repository.getActiveItemByItemId(containingFolderUuid);
-        DefinitionItemType containingFolderType = DefinitionItemType.values()[containingFolderActiveItem.getItemTypeId()];
+
+        DefinitionItemType containingFolderType = DefinitionItemType.get(containingFolderActiveItem.getItemTypeId());
 
         if (containingFolderType == DefinitionItemType.LibraryFolder) {
             //library folders can only contain other library folders and queries etc.
@@ -334,7 +331,7 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
             createUsingDependencies(oldQueryDocument, activeItem, toSave);
 
             //folder dependecies
-            createFolderDependency(false,  DefinitionItemType.values()[activeItem.getItemTypeId()], item, previousAuditUuid, folderUuid, toSave);
+            createFolderDependency(false,  DefinitionItemType.get(activeItem.getItemTypeId()), item, previousAuditUuid, folderUuid, toSave);
         }
 
         repository.save(toSave);

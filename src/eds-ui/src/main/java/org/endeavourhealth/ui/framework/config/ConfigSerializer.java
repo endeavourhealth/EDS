@@ -1,7 +1,7 @@
 package org.endeavourhealth.ui.framework.config;
 
+import org.endeavourhealth.core.utility.XmlSerializer;
 import org.endeavourhealth.ui.framework.config.models.Config;
-import org.endeavourhealth.ui.XmlSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,9 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-/**
- * Created by Drew on 22/03/2016.
- */
 public abstract class ConfigSerializer {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigSerializer.class);

@@ -21,25 +21,27 @@ public class PipelineProcessor {
 			for (Object processConfig : pipeline.getPipelineComponents()) {
 				PopulateExchangeParameters(exchange, processConfig);
 				component = getComponent(processConfig);
-				component.process(exchange);
+				LOG.info("Calling pipeline component {} for exchange {}", component.getClass().getSimpleName(), exchange.getExchangeId());
+				component.baseProcess(exchange);
+				LOG.info("Completed pipeline component {} for exchange {}", component.getClass().getSimpleName(), exchange.getExchangeId());
 			}
 			return true;
 		}
 		catch (PipelineException e) {
 			// Gracefully handle pipeline error and send response
 			if (component != null)
-				LOG.error("Pipeline exception (" + component.toString() + ") : " + e.getMessage());
+				LOG.error("Pipeline exception (" + component.toString() + ")", e);
 			else
-				LOG.error("Pipeline exception (null) : " + e.getMessage());
+				LOG.error("Pipeline exception (null)", e);
 			exchange.setException(e);
 			return false;
 		}
 		catch (Exception e) {
 			// Fatal error
 			if (component != null)
-				LOG.error("Fatal error (" + component.toString() + ") : " + e.getMessage());
+				LOG.error("Fatal error (" + component.toString() + ")", e);
 			else
-				LOG.error("Fatal error (null) : " + e.getMessage());
+				LOG.error("Fatal error (null)", e);
 
 			exchange.setException(e);
 			return false;
@@ -66,8 +68,10 @@ public class PipelineProcessor {
 				return new PostMessageToExchange((PostMessageToExchangeConfig) processConfig);
 			case "ReturnResponseAcknowledgementConfig":
 				return new ReturnResponseAcknowledgement((ReturnResponseAcknowledgementConfig) processConfig);
-			case "MessageTransformConfig":
-				return new MessageTransform((MessageTransformConfig) processConfig);
+			case "MessageTransformInboundConfig":
+				return new MessageTransformInbound((MessageTransformInboundConfig) processConfig);
+			case "MessageTransformOutboundConfig":
+				return new MessageTransformOutbound((MessageTransformOutboundConfig) processConfig);
 			case "PostToEventStoreConfig":
 				return new PostToEventStore((PostToEventStoreConfig) processConfig);
 			case "DetermineRelevantProtocolIdsConfig":
