@@ -6,10 +6,14 @@ import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.admin.models.Service;
+import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditAction;
+import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByLocalId;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByNhsNumber;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByPatientId;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.ui.framework.exceptions.BadRequestException;
 import org.endeavourhealth.ui.json.JsonPatientIdentifier;
 import org.slf4j.Logger;
@@ -36,6 +40,8 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
     private static final ServiceRepository serviceRepository = new ServiceRepository();
     private static final LibraryRepository libraryRepository = new LibraryRepository();
 
+    private UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.PatientIdentity);
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/byLocalIdentifier")
@@ -45,6 +51,10 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
                          @QueryParam("localId") String localId) throws Exception {
 
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Service Id", serviceIdStr,
+            "System Id", systemIdStr,
+            "Local Id", localId);
 
         if (Strings.isNullOrEmpty(serviceIdStr)) {
             throw new BadRequestException("A service must be selected");
@@ -100,6 +110,8 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
     @Path("/byNhsNumber")
     public Response byNhsNumber(@Context SecurityContext sc, @QueryParam("nhsNumber") String nhsNumber) throws Exception {
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "NHS Number", nhsNumber);
 
         if (Strings.isNullOrEmpty(nhsNumber)) {
             throw new BadRequestException("NHS number must be entered");
@@ -150,6 +162,8 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
     @Path("/byPatientId")
     public Response byPatientId(@Context SecurityContext sc, @QueryParam("patientId") String patientIdStr) throws Exception {
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Patient Id", patientIdStr);
 
         if (Strings.isNullOrEmpty(patientIdStr)) {
             throw new BadRequestException("Patient ID must be entered");

@@ -1,5 +1,8 @@
 package org.endeavourhealth.ui.endpoints;
 
+import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditAction;
+import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.ui.framework.config.ConfigService;
 import org.slf4j.Logger;
@@ -19,10 +22,14 @@ import java.net.URLEncoder;
 public final class UserEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(UserEndpoint.class);
 
+    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.User);
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/details")
     public Response userDetails(@Context SecurityContext sc) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Level", "Details");
         return Response
                 .ok()
                 .entity(SecurityUtils.getCurrentUser(sc))
@@ -32,6 +39,8 @@ public final class UserEndpoint extends AbstractEndpoint {
     @GET
     @Path("/account")
     public Response userAccount(@Context SecurityContext sc) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Level", "Account");
 
         String url = String.format(ConfigService.instance().getAuthConfig().getAuthServerUrl() + "/realms/%s/account",
                 SecurityUtils.getKeycloakSecurityContext(sc).getRealm());
@@ -44,6 +53,7 @@ public final class UserEndpoint extends AbstractEndpoint {
     @GET
     @Path("/logout")
     public Response logout(@Context SecurityContext sc) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Logoff);
 
         LOG.info("Logout: {}", SecurityUtils.getCurrentUser(sc));
 

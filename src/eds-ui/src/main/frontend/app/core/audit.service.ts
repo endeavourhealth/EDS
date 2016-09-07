@@ -5,19 +5,44 @@ module app.core {
 	'use strict';
 
 	export interface IAuditService {
-		getAuditEvents(serviceId : string):ng.IPromise<AuditEvent[]>;
+		getAuditEvents(userId : string, serviceId : string, module : string, submodule : string, action : string):ng.IPromise<AuditEvent[]>;
+		getModules() : ng.IPromise<string[]>;
+		getSubmodules(module : string) : ng.IPromise<string[]>;
+		getActions() : ng.IPromise<string[]>;
 	}
 
 	export class AuditService extends BaseHttpService implements IAuditService {
 
-		getAuditEvents(serviceId : string):ng.IPromise<AuditEvent[]> {
+		getAuditEvents(userId : string, serviceId : string, module : string, submodule : string, action : string):ng.IPromise<AuditEvent[]> {
 			var request = {
 				params: {
+					'userId' : userId,
 					'serviceId': serviceId,
+					'module' : module,
+					'subModule' : submodule,
+					'action' : action
 				}
 			};
 
-			return this.httpGet('api/audit/getAuditEvents', request);
+			return this.httpGet('api/audit', request);
+		}
+
+		getModules():ng.IPromise<String[]> {
+			return this.httpGet('api/audit/modules');
+		}
+
+		getSubmodules(module : string):ng.IPromise<String[]> {
+			var request = {
+				params: {
+					'module' : module,
+				}
+			};
+
+			return this.httpGet('api/audit/submodules', request);
+		}
+
+		getActions():ng.IPromise<String[]> {
+			return this.httpGet('api/audit/actions');
 		}
 	}
 

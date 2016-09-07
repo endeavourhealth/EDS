@@ -20,3 +20,26 @@ CREATE TABLE exchangeEvent
     event INT,
     PRIMARY KEY (exchangeId, timestamp)
   );
+
+CREATE TABLE user_event
+  (
+    user_id uuid,
+    service_id uuid,
+    module text,
+    submodule text,
+    action text,
+    timestamp timestamp,
+    data text,
+    PRIMARY KEY (user_id, module, submodule, action, timestamp)
+  );
+
+CREATE MATERIALIZED VIEW user_event_by_service_id AS
+SELECT user_id, service_id, module, submodule, action, timestamp, data
+FROM audit.user_event
+WHERE user_id IS NOT NULL
+AND service_id IS NOT NULL
+AND module IS NOT NULL
+AND submodule IS NOT NULL
+AND action IS NOT NULL
+AND timestamp IS NOT NULL
+PRIMARY KEY (user_id, service_id, module, submodule, action, timestamp);

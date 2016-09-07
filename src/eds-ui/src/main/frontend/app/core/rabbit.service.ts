@@ -19,7 +19,7 @@ module app.core {
 	export class RabbitService extends BaseHttpService implements IRabbitService {
 
 		getRabbitNodes() : ng.IPromise<RabbitNode[]> {
-			return this.httpGet('api/dashboard/rabbitNodes');
+			return this.httpGet('api/rabbit/nodes');
 		}
 
 		pingRabbitNode(address:string) : ng.IPromise<RabbitNode> {
@@ -28,7 +28,7 @@ module app.core {
 					'address': address
 				}
 			};
-			return this.httpGet('api/dashboard/rabbitNode/ping', request);
+			return this.httpGet('api/rabbit/ping', request);
 		}
 
 		getRabbitQueues(address:string) : ng.IPromise<RabbitQueue[]> {
@@ -37,7 +37,7 @@ module app.core {
 					'address': address
 				}
 			};
-			return this.httpGet('api/dashboard/rabbitNode/queues', request);
+			return this.httpGet('api/rabbit/queues', request);
 		}
 
 		getRabbitExchanges(address:string) : ng.IPromise<RabbitExchange[]> {
@@ -46,7 +46,7 @@ module app.core {
 					'address': address
 				}
 			};
-			return this.httpGet('api/dashboard/rabbitNode/exchanges', request);
+			return this.httpGet('api/rabbit/exchanges', request);
 		}
 
 		getRabbitBindings(address:string) : ng.IPromise<RabbitBinding[]> {
@@ -55,11 +55,11 @@ module app.core {
 					'address': address
 				}
 			};
-			return this.httpGet('api/dashboard/rabbitNode/bindings', request);
+			return this.httpGet('api/rabbit/bindings', request);
 		}
 
 		synchronize(address:string) : any {
-			return this.httpPost('api/dashboard/rabbitNode/synchronize', address);
+			return this.httpPost('api/rabbit/synchronize', address);
 		}
 	}
 

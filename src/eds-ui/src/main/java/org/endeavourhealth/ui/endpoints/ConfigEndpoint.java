@@ -1,9 +1,12 @@
 package org.endeavourhealth.ui.endpoints;
 
+import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditAction;
+import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.data.config.ConfigurationRepository;
 import org.endeavourhealth.core.data.config.models.ConfigurationResource;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
-import org.endeavourhealth.ui.database.TableSaveMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +20,7 @@ import java.util.*;
 @Path("/config")
 public final class ConfigEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(ConfigEndpoint.class);
+    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Config);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -24,6 +28,8 @@ public final class ConfigEndpoint extends AbstractEndpoint {
     @Path("/getConfig")
     public Response getConfig(@Context SecurityContext sc, @QueryParam("configurationId") String configurationId) throws Exception {
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Configuration Id", configurationId);
 
         LOG.trace("getConfig for configurationId {}", configurationId);
 
@@ -43,6 +49,8 @@ public final class ConfigEndpoint extends AbstractEndpoint {
     @RequiresAdmin
     public Response saveConfig(@Context SecurityContext sc, ConfigurationResource configurationResource) throws Exception {
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+            "Configuration", configurationResource);
 
         LOG.trace("saveConfig {} Name {}", configurationResource.getConfigurationId(), configurationResource.getConfigurationData());
 

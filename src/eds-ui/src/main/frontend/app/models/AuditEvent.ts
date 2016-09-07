@@ -2,21 +2,12 @@ module app.models {
 	'use strict';
 
 	export class AuditEvent {
-		timestmp: string;
-		formattedMessage: string;
-		loggerName: string;
-		levelString: string;
-		threadName: string;
-		referenceFlag: string;
-		arg0: string;
-		arg1: string;
-		arg2: string;
-		arg3: string;
-		callerFilename: string;
-		callerClass: string;
-		callerMethod: string;
-		callerLine: string;
-		eventId: string;
-		
+		userId : string;
+		serviceId : string;
+		module : string;
+		subModule : string;
+		action : string;
+		timestamp : string;
+		data : string;
 	}
 }

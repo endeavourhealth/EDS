@@ -4,6 +4,10 @@ import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
+import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditAction;
+import org.endeavourhealth.core.data.audit.models.AuditModule;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.ui.json.JsonOrganisation;
 import org.endeavourhealth.ui.json.JsonService;
@@ -20,8 +24,10 @@ import java.util.*;
 @Path("/organisation")
 public final class OrganisationEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
-	private final OrganisationRepository repository = new OrganisationRepository();
-	private final ServiceRepository serviceRepository = new ServiceRepository();
+
+	private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Organisation);
+	private static final OrganisationRepository repository = new OrganisationRepository();
+	private static final ServiceRepository serviceRepository = new ServiceRepository();
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
@@ -30,6 +36,8 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@RequiresAdmin
 	public Response post(@Context SecurityContext sc, JsonOrganisation organisation) throws Exception {
 		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+				"Organisation", organisation);
 
 		// Save the new
 		Organisation dbOrganisation = new Organisation();
@@ -58,6 +66,8 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@RequiresAdmin
 	public Response deleteOrganisation(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+				"Organisation Id", uuid);
 
 		UUID organisationUuid = UUID.fromString(uuid);
 		Organisation dbOrganisation = repository.getById(organisationUuid);
@@ -75,6 +85,9 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/services")
 	public Response getOrganisationServices(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"Organisation Services", uuid);
+
 		super.setLogbackMarkers(sc);
 		UUID organisationUuid = UUID.fromString(uuid);
 		Organisation organisation = repository.getById(organisationUuid);
@@ -98,6 +111,8 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@Path("/")
 	public Response getOrganisation(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"Organisation Id", uuid);
 
 		if (uuid == null) {
 			LOG.trace("getOrganisation - list");

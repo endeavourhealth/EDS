@@ -1,5 +1,8 @@
 package org.endeavourhealth.ui.endpoints;
 
+import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditAction;
+import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.fhirStorage.statistics.PatientStatistics;
 import org.endeavourhealth.core.fhirStorage.statistics.ResourceStatistics;
 import org.endeavourhealth.core.fhirStorage.statistics.StorageStatistics;
@@ -22,6 +25,8 @@ import java.util.UUID;
 public final class StatsEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(StatsEndpoint.class);
 
+    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Stats);
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -29,6 +34,10 @@ public final class StatsEndpoint extends AbstractEndpoint {
     public Response getStorageStatistics(@Context SecurityContext sc,
                                          @QueryParam("serviceList") List<String> services,
                                          @QueryParam("systemList") List<String> systems) throws Exception {
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Service list", services,
+            "System list", systems);
 
         UUID userUuid = SecurityUtils.getCurrentUserId(sc);
         UUID orgUuid = getOrganisationUuidFromToken(sc);

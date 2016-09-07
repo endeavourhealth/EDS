@@ -10,7 +10,11 @@ import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
+import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditAction;
+import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.System;
@@ -32,8 +36,10 @@ import java.util.UUID;
 @Path("/service")
 public final class ServiceEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(ServiceEndpoint.class);
-	private final ServiceRepository repository = new ServiceRepository();
-	private final OrganisationRepository organisationRepository = new OrganisationRepository();
+
+	private static final ServiceRepository repository = new ServiceRepository();
+	private static final OrganisationRepository organisationRepository = new OrganisationRepository();
+	private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Service);
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
@@ -42,6 +48,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	@RequiresAdmin
 	public Response post(@Context SecurityContext sc, JsonService service) throws Exception {
 		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+				"Service", service);
 
 		Service dbService = new Service();
 		dbService.setId(service.getUuid());
@@ -72,6 +80,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	@RequiresAdmin
 	public Response deleteService(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+				"Service Id", uuid);
 
 		UUID serviceUuid = UUID.fromString(uuid);
 		Service dbService = repository.getById(serviceUuid);
@@ -90,6 +100,9 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	@Path("/organisations")
 	public Response getServiceOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"Service Organisations", uuid);
+
 		UUID serviceUuid = UUID.fromString(uuid);
 		Service service = repository.getById(serviceUuid);
 
@@ -112,6 +125,9 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	@Path("/")
 	public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
 		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"Service Id", uuid,
+				"Search Data", searchData);
 
 		if (uuid == null && searchData == null) {
 			LOG.trace("Get Service list");
@@ -177,6 +193,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	@Path("/systemsForService")
 	public Response getSystemsForService(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr) throws Exception {
 		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"Service Systems", serviceIdStr);
 
 		UUID serviceId = UUID.fromString(serviceIdStr);
 		org.endeavourhealth.core.data.admin.models.Service service = new ServiceRepository().getById(serviceId);

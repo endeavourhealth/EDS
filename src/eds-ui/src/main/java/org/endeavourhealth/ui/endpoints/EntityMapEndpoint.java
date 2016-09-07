@@ -1,5 +1,9 @@
 package org.endeavourhealth.ui.endpoints;
 
+import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditAction;
+import org.endeavourhealth.core.data.audit.models.AuditModule;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.ui.entitymap.EntityMapHelper;
 import org.endeavourhealth.ui.entitymap.models.EntityMap;
 import org.slf4j.Logger;
@@ -18,6 +22,7 @@ import javax.ws.rs.core.SecurityContext;
 public final class EntityMapEndpoint extends AbstractEndpoint {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntityMapEndpoint.class);
+    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.EntityMap);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -25,6 +30,7 @@ public final class EntityMapEndpoint extends AbstractEndpoint {
     @Path("/getEntityMap")
     public Response getEntityMap(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load);
 
         LOG.trace("getEntityMap");
 

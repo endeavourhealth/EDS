@@ -1,10 +1,14 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditAction;
+import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.ui.framework.exceptions.BadRequestException;
 import org.endeavourhealth.ui.json.JsonResourceContainer;
 import org.endeavourhealth.ui.json.JsonResourceType;
@@ -30,7 +34,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
     private static final ResourceRepository resourceRepository = new ResourceRepository();
     private static final PatientIdentifierRepository identifierRepository = new PatientIdentifierRepository();
-
+    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Resource);
     /*@GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/resourceTypesForPatient")
@@ -75,8 +79,8 @@ public class ResourceEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/allResourceTypes")
     public Response getAllResourceTypes(@Context SecurityContext sc) throws Exception {
-
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load);
 
         List<JsonResourceType> ret = new ArrayList<>();
 
@@ -98,8 +102,11 @@ public class ResourceEndpoint extends AbstractEndpoint {
     public Response forId(@Context SecurityContext sc,
                           @QueryParam("resourceType") String resourceType,
                           @QueryParam("resourceId") String resourceId) throws Exception {
-
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Version", "Current",
+            "Resource Type", resourceType,
+            "Resource Id", resourceId);
 
         if (Strings.isNullOrEmpty(resourceType)) {
             throw new BadRequestException("Resource Type must be selected");
@@ -130,6 +137,9 @@ public class ResourceEndpoint extends AbstractEndpoint {
     public Response forPatient(@Context SecurityContext sc,
                                @QueryParam("resourceType") String resourceType,
                                @QueryParam("patientId") String patientIdStr) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Resource Type", resourceType,
+            "Patient Id", patientIdStr);
 
         super.setLogbackMarkers(sc);
 
@@ -171,8 +181,11 @@ public class ResourceEndpoint extends AbstractEndpoint {
     public Response resourceHistory(@Context SecurityContext sc,
                                     @QueryParam("resourceType") String resourceType,
                                     @QueryParam("resourceId") String resourceId) throws Exception {
-
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Version", "History",
+            "Resource Type", resourceType,
+            "Resource Id", resourceId);
 
         if (Strings.isNullOrEmpty(resourceType)) {
             throw new BadRequestException("Resource Type must be selected");
