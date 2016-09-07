@@ -9,6 +9,7 @@ import org.endeavourhealth.transform.emis.csv.ThreadPool;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCode;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.transform.fhir.CodingHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.CodeableConcept;
 import org.slf4j.Logger;
@@ -124,14 +125,13 @@ public abstract class ClinicalCodeTransformer {
 
             String snomedTerm = null;
 
-            //TODO - restored snomed term lookip - FAR TOO SLOW - need locally held mappings
-            /*try {
-                snomedTerm = Snomed.getTerm(snomedConceptId.longValue(), snomedDescriptionId.longValue());
+            try {
+                //snomedTerm = Snomed.getTerm(snomedConceptId.longValue(), snomedDescriptionId.longValue());
                 fhirConcept.addCoding(CodingHelper.createCoding(FhirUri.CODE_SYSTEM_SNOMED_CT, snomedTerm, snomedConceptId.toString()));
             } catch (Exception ex) {
                 //if we didn't get a term for the IDs, then it was a local term, so even though the Snomed code
                 //may have been non-null, the mapping wasn't to a valid Snomed concept/term pair, so don't add it to the FHIR resource
-            }*/
+            }
 
             csvHelper.addClinicalCode(codeId, fhirConcept, codeType, readTerm,
                     readCode, snomedConceptId, snomedDescriptionId, snomedTerm,
