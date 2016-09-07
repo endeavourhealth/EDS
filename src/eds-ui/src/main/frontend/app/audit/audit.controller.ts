@@ -4,12 +4,17 @@
 module app.audit {
 	import IAuditService = app.core.IAuditService;
 	import AuditEvent = app.models.AuditEvent;
+	import User = app.models.User;
+	import OrganisationPickerController = app.organisation.OrganisationPickerController;
+	import Organisation = app.models.Organisation;
 
 	'use strict';
 
 	export class AuditController {
-		userId : string;
-		serviceId : string;
+		userId : string = 'fbb470ed-64fb-4c50-9564-b15065d462e7';
+		user : string = 'Professional User';
+		organisationId : string;
+		organisationName : string = '';
 		module : string;
 		submodule : string;
 		action : string;
@@ -71,8 +76,8 @@ module app.audit {
 			var vm = this;
 			vm.auditEvents = null;
 			vm.auditService.getAuditEvents(
-				'fbb470ed-64fb-4c50-9564-b15065d462e7',
-				vm.serviceId,
+				vm.userId,
+				vm.organisationId,
 				vm.module,
 				vm.submodule,
 				vm.action
@@ -80,6 +85,16 @@ module app.audit {
 				.then(function (data:AuditEvent[]) {
 					vm.auditEvents = data;
 				});
+		}
+
+		pickOrganisation() {
+			var vm = this;
+			OrganisationPickerController.open(vm.$modal, [])
+				.result.then(function (result : Organisation[]) {
+				vm.organisationId = result[0].uuid;
+				vm.organisationName = result[0].name;
+				vm.refresh();
+			});
 		}
 	}
 

@@ -64,17 +64,17 @@ public class UserAuditRepository extends Repository{
         userEventMapper.save(userEvent);
     }
 
-    public Iterable<UserEvent> load(UUID userId, UUID serviceId, String module, String subModule, String action) {
+    public Iterable<UserEvent> load(UUID userId, UUID organisationId, String module, String subModule, String action) {
         Select.Where statement;
-        if (serviceId == null)
+        if (organisationId == null)
             statement = QueryBuilder.select()
                 .from("audit", "user_event")
                 .where(QueryBuilder.eq("user_id", userId));
         else {
             statement = QueryBuilder.select()
-                .from("audit", "audit.user_event_by_service_id")
+                .from("audit", "user_event_by_organisation_id")
                 .where(QueryBuilder.eq("user_id", userId))
-                .and(QueryBuilder.eq("service_id", serviceId));
+                .and(QueryBuilder.eq("organisation_id", organisationId));
         }
         if (module!=null && !module.isEmpty()) {
             statement = statement.and(QueryBuilder.eq("module", module));

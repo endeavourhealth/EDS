@@ -16,7 +16,7 @@ public final class JsonUserEvent {
     private String module = null;
     private String subModule = null;
     private String action = null;
-    private UUID serviceId = null;
+    private UUID organisationId = null;
     private Date timestamp = null;
     private String data = null;
 
@@ -29,7 +29,7 @@ public final class JsonUserEvent {
         this.module = userEvent.getModule();
         this.subModule = userEvent.getSubModule();
         this.action = userEvent.getAction();
-        this.serviceId = userEvent.getServiceId();
+        this.organisationId = userEvent.getOrganisationId();
         this.timestamp = userEvent.getTimestamp();
         this.data = userEvent.getData();
     }
@@ -66,12 +66,12 @@ public final class JsonUserEvent {
         this.action = action;
     }
 
-    public UUID getServiceId() {
-        return serviceId;
+    public UUID getOrganisationId() {
+        return organisationId;
     }
 
-    public void setServiceId(UUID serviceId) {
-        this.serviceId = serviceId;
+    public void setOrganisationId(UUID organisationId) {
+        this.organisationId = organisationId;
     }
 
     public Date getTimestamp() {

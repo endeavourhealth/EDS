@@ -12,25 +12,21 @@
 						<div class="panel-body">
 							<div class="row">
 								<div class="form-group col-md-3">
-									<label>Filter by User<i class="fa fa-filter fa-lg fa-fw"></i></label>
+									<label for="user">Select User<i class="fa fa-filter fa-lg fa-fw"></i></label>
 									<div class="input-group">
-										<span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
-										<select id="user" class="form-control" ng-model="ctrl.userId" ng-change="ctrl.refresh()">
-											<option ng-repeat="item in ctrl.services" value="{{item.uuid}}">{{item.name}}</option>
-										</select>
+										<input readonly id="user" class="form-control" ng-model="ctrl.userName" ng-change="ctrl.refresh()">
+										<span class="input-group-addon"><i class="fa fa-search fa-lg fa-fw"></i></span>
 									</div>
 								</div>
 								<div class="form-group col-md-3">
-									<label>Filter by Service<i class="fa fa-filter fa-lg fa-fw"></i></label>
+									<label for="organisation">Filter by Organisation<i class="fa fa-filter fa-lg fa-fw"></i></label>
 									<div class="input-group">
-										<span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
-										<select id="service" class="form-control" ng-model="ctrl.serviceId" ng-change="ctrl.refresh()">
-											<option ng-repeat="item in ctrl.services" value="{{item.uuid}}">{{item.name}}</option>
-										</select>
+										<input readonly id="organisation" class="form-control" ng-model="ctrl.organisationName" ng-change="ctrl.refresh()">
+										<span class="input-group-addon" ng-click="ctrl.pickOrganisation()"><i class="fa fa-search fa-lg fa-fw"></i></span>
 									</div>
 								</div>
 								<div class="form-group col-md-2">
-									<label>Filter by Module<i class="fa fa-filter fa-lg fa-fw"></i></label>
+									<label for="module">Filter by Module<i class="fa fa-filter fa-lg fa-fw"></i></label>
 									<div class="input-group">
 										<span class="input-group-addon"><i class="fa fa-warning fa-lg fa-fw"></i></span>
 										<select id="module" class="form-control" ng-model="ctrl.module" ng-change="ctrl.refresh()">
@@ -40,7 +36,7 @@
 									</div>
 								</div>
 								<div class="form-group col-md-2" ng-show="ctrl.module">
-									<label>Filter by Submodule<i class="fa fa-filter fa-lg fa-fw"></i></label>
+									<label for="submodule">Filter by Submodule<i class="fa fa-filter fa-lg fa-fw"></i></label>
 									<div class="input-group">
 										<span class="input-group-addon"><i class="fa fa-warning fa-lg fa-fw"></i></span>
 										<select id="submodule" class="form-control" ng-model="ctrl.submodule" ng-change="ctrl.refresh()">
@@ -50,7 +46,7 @@
 									</div>
 								</div>
 								<div class="form-group col-md-2" ng-show="ctrl.module && ctrl.submodule">
-									<label>Filter by Action<i class="fa fa-filter fa-lg fa-fw"></i></label>
+									<label for="action">Filter by Action<i class="fa fa-filter fa-lg fa-fw"></i></label>
 									<div class="input-group">
 										<span class="input-group-addon"><i class="fa fa-warning fa-lg fa-fw"></i></span>
 										<select id="action" class="form-control" ng-model="ctrl.action" ng-change="ctrl.refresh()">
@@ -66,8 +62,8 @@
 								<table class="table table-striped table-condensed">
 									<thead>
 										<tr>
-											<th>User Id</th>
-											<th>Service Id</th>
+											<!--<th>User Id</th>-->
+											<!--<th>Service Id</th>-->
 											<th>Module</th>
 											<th>Submodule</th>
 											<th>Action</th>
@@ -76,8 +72,8 @@
 									</thead>
 									<tbody>
 										<tr ng-repeat="event in ctrl.auditEvents">
-											<td>{{event.userId}}</td>
-											<td>{{event.serviceId}}</td>
+											<!--<td>{{event.userId}}</td>-->
+											<!--<td>{{event.serviceId}}</td>-->
 											<td>{{event.module}}</td>
 											<td>{{event.subModule}}</td>
 											<td>{{event.action}}</td>

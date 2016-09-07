@@ -30,21 +30,21 @@ public final class AuditEndpoint extends AbstractEndpoint {
     public Response getAudit(
         @Context SecurityContext sc,
         @QueryParam("userId") UUID userId,
-        @QueryParam("serviceId") UUID serviceId,
+        @QueryParam("organisationId") UUID organisationId,
         @QueryParam("module") String module,
         @QueryParam("subModule") String subModule,
         @QueryParam("action") String action) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
             "User Id", userId,
-            "Service Id", serviceId,
+            "Organisation Id", organisationId,
             "Module", module,
             "Sub Module", subModule,
             "Action", action);
 
         LOG.trace("getAudit");
 
-				Iterable<UserEvent> audit = userAudit.load(userId, serviceId, module, subModule, action);
+				Iterable<UserEvent> audit = userAudit.load(userId, organisationId, module, subModule, action);
 
         List<JsonUserEvent> jsonAudit = new ArrayList<>();
         for (UserEvent event : audit) {

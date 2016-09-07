@@ -14,14 +14,14 @@ public class UserEvent {
     @PartitionKey
     @Column(name = "user_id")
     private UUID userId = null;
+    @Column(name = "organisation_id")
+    private UUID organisationId = null;
     @Column(name = "module")
     private String module = null;
     @Column(name = "submodule")
     private String subModule = null;
     @Column(name = "action")
     private String action = null;
-    @Column(name = "service_id")
-    private UUID serviceId = null;
     @Column(name = "timestamp")
     private Date timestamp = null;
     @Column(name = "data")
@@ -38,7 +38,7 @@ public class UserEvent {
 
     public UserEvent(Row row) {
         this.userId = row.get("user_id", UUID.class);
-        this.serviceId = row.get("service_id", UUID.class);
+        this.organisationId = row.get("organisation_id", UUID.class);
         this.module = row.get("module", String.class);
         this.subModule = row.get("submodule", String.class);
         this.action = row.get("action", String.class);
@@ -46,9 +46,9 @@ public class UserEvent {
         this.data = row.get("data", String.class);
     }
 
-    public UserEvent(UUID userId, IAuditModule auditModule, IAuditModule auditSubModule, String action, UUID serviceId, String data) {
+    public UserEvent(UUID userId, IAuditModule auditModule, IAuditModule auditSubModule, String action, UUID organisationId, String data) {
         this.userId = userId;
-        this.serviceId = serviceId;
+        this.organisationId = organisationId;
         this.module = ((Enum)auditModule).name();
         this.subModule = ((Enum)auditSubModule).name();
         this.action = action;
@@ -88,12 +88,12 @@ public class UserEvent {
         this.userId = userId;
     }
 
-    public UUID getServiceId() {
-        return serviceId;
+    public UUID getOrganisationId() {
+        return organisationId;
     }
 
-    public void setServiceId(UUID serviceId) {
-        this.serviceId = serviceId;
+    public void setOrganisationId(UUID organisationId) {
+        this.organisationId = organisationId;
     }
 
     public String getData() {
