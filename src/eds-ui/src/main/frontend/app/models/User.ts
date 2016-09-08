@@ -8,7 +8,7 @@ module app.models {
         constructor() {
 		}
 
-        uuid:string;
+		uuid:string;
 		title:string;
 		forename:string;
 		surname:string;

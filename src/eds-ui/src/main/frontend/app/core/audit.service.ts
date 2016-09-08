@@ -5,7 +5,7 @@ module app.core {
 	'use strict';
 
 	export interface IAuditService {
-		getAuditEvents(userId : string, serviceId : string, module : string, submodule : string, action : string):ng.IPromise<AuditEvent[]>;
+		getAuditEvents(userId : string, organisationId : string, module : string, submodule : string, action : string):ng.IPromise<AuditEvent[]>;
 		getModules() : ng.IPromise<string[]>;
 		getSubmodules(module : string) : ng.IPromise<string[]>;
 		getActions() : ng.IPromise<string[]>;
@@ -13,11 +13,11 @@ module app.core {
 
 	export class AuditService extends BaseHttpService implements IAuditService {
 
-		getAuditEvents(userId : string, serviceId : string, module : string, submodule : string, action : string):ng.IPromise<AuditEvent[]> {
+		getAuditEvents(userId : string, organisationId : string, module : string, submodule : string, action : string):ng.IPromise<AuditEvent[]> {
 			var request = {
 				params: {
 					'userId' : userId,
-					'serviceId': serviceId,
+					'organisationId': organisationId,
 					'module' : module,
 					'subModule' : submodule,
 					'action' : action

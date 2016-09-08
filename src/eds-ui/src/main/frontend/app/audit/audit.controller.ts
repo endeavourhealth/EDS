@@ -7,31 +7,56 @@ module app.audit {
 	import User = app.models.User;
 	import OrganisationPickerController = app.organisation.OrganisationPickerController;
 	import Organisation = app.models.Organisation;
+	import IOrganisationService = app.organisation.IOrganisationService;
+
 
 	'use strict';
 
 	export class AuditController {
-		userId : string = 'fbb470ed-64fb-4c50-9564-b15065d462e7';
-		user : string = 'Professional User';
-		organisationId : string;
-		organisationName : string = '';
+		user : User;
+		organisation : Organisation;
 		module : string;
 		submodule : string;
 		action : string;
 
+		users : User[];
+		organisations : Organisation[];
 		modules : string[];
 		submodules : string[];
 		actions : string[];
 		auditEvents:AuditEvent[];
 
-		static $inject = ['AuditService', 'LoggerService', '$uibModal'];
+		static $inject = ['AuditService', 'LoggerService', 'OrganisationService', '$uibModal'];
 
 		constructor(protected auditService:IAuditService,
 					protected logger:ILoggerService,
+					protected organisationService : IOrganisationService,
 					protected $modal : IModalService) {
+
+			this.loadUsers();
+			this.loadOrganisations();
 			this.loadModules();
 			this.loadActions();
 			this.refresh();
+		}
+
+		loadUsers() {
+			var vm = this;
+			vm.users = [
+				{
+					uuid : 'fbb470ed-64fb-4c50-9564-b15065d462e7',
+					username : 'Professional User'
+				} as User
+			];
+		}
+
+		loadOrganisations() {
+			var vm = this;
+			vm.organisations = null;
+			vm.organisationService.getOrganisations()
+				.then(function(data:Organisation[]) {
+					vm.organisations = data;
+				});
 		}
 
 		loadModules() {
@@ -63,6 +88,12 @@ module app.audit {
 
 		refresh() {
 			var vm = this;
+
+			vm.auditEvents = [];
+
+			if (!vm.user)
+				return;
+
 			if (vm.module == '')
 				vm.module = null;
 			else
@@ -75,9 +106,13 @@ module app.audit {
 		getAuditEvents() {
 			var vm = this;
 			vm.auditEvents = null;
+
+			var organisationId : string = null;
+			if (vm.organisation)
+				organisationId = vm.organisation.uuid;
 			vm.auditService.getAuditEvents(
-				vm.userId,
-				vm.organisationId,
+				vm.user.uuid,
+				organisationId,
 				vm.module,
 				vm.submodule,
 				vm.action
@@ -87,15 +122,18 @@ module app.audit {
 				});
 		}
 
-		pickOrganisation() {
-			var vm = this;
-			OrganisationPickerController.open(vm.$modal, [])
-				.result.then(function (result : Organisation[]) {
-				vm.organisationId = result[0].uuid;
-				vm.organisationName = result[0].name;
-				vm.refresh();
-			});
-		}
+		//pickUser() {
+		//	UserPickerController.open(vm.$modal, vm.userId)
+		//}
+		//
+		//pickOrganisation() {
+		//	var vm = this;
+		//	OrganisationPickerController.open(vm.$modal, [vm.organisation])
+		//		.result.then(function (result : Organisation[]) {
+		//		vm.organisation = result[0];
+		//		vm.refresh();
+		//	});
+		//}
 	}
 
 

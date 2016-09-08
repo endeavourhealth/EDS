@@ -12,43 +12,47 @@
 						<div class="panel-body">
 							<div class="row">
 								<div class="form-group col-md-3">
-									<label for="user">Select User<i class="fa fa-filter fa-lg fa-fw"></i></label>
+									<label for="user">User</label>
 									<div class="input-group">
-										<input readonly id="user" class="form-control" ng-model="ctrl.userName" ng-change="ctrl.refresh()">
-										<span class="input-group-addon"><i class="fa fa-search fa-lg fa-fw"></i></span>
+										<span class="input-group-addon"><i class="fa fa-user fa-lg fa-fw"></i></span>
+										<select id="user" class="form-control" ng-options="selected.username for selected in ctrl.users" ng-model="ctrl.user" ng-change="ctrl.refresh()">
+											<option value="" disabled>Select User...</option>
+										</select>
 									</div>
 								</div>
-								<div class="form-group col-md-3">
-									<label for="organisation">Filter by Organisation<i class="fa fa-filter fa-lg fa-fw"></i></label>
+								<div class="form-group col-md-3" ng-show="ctrl.user">
+									<label for="organisation">Organisation</label>
 									<div class="input-group">
-										<input readonly id="organisation" class="form-control" ng-model="ctrl.organisationName" ng-change="ctrl.refresh()">
-										<span class="input-group-addon" ng-click="ctrl.pickOrganisation()"><i class="fa fa-search fa-lg fa-fw"></i></span>
+										<span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
+										<select id="organisation" class="form-control" ng-options="selected.name for selected in ctrl.organisations" ng-model="ctrl.organisation" ng-change="ctrl.refresh()">
+											<option value="">All</option>
+										</select>
 									</div>
 								</div>
-								<div class="form-group col-md-2">
-									<label for="module">Filter by Module<i class="fa fa-filter fa-lg fa-fw"></i></label>
+								<div class="form-group col-md-2" ng-show="ctrl.user">
+									<label for="module">Module</label>
 									<div class="input-group">
-										<span class="input-group-addon"><i class="fa fa-warning fa-lg fa-fw"></i></span>
+										<span class="input-group-addon"><i class="fa fa-th-large fa-lg fa-fw"></i></span>
 										<select id="module" class="form-control" ng-model="ctrl.module" ng-change="ctrl.refresh()">
 											<option value="">All</option>
 											<option ng-repeat="module in ctrl.modules" value="{{module}}">{{module}}</option>
 										</select>
 									</div>
 								</div>
-								<div class="form-group col-md-2" ng-show="ctrl.module">
-									<label for="submodule">Filter by Submodule<i class="fa fa-filter fa-lg fa-fw"></i></label>
+								<div class="form-group col-md-2" ng-show="ctrl.user && ctrl.module">
+									<label for="submodule">Submodule</label>
 									<div class="input-group">
-										<span class="input-group-addon"><i class="fa fa-warning fa-lg fa-fw"></i></span>
+										<span class="input-group-addon"><i class="fa fa-th fa-lg fa-fw"></i></span>
 										<select id="submodule" class="form-control" ng-model="ctrl.submodule" ng-change="ctrl.refresh()">
 											<option value="">All</option>
 											<option ng-repeat="submodule in ctrl.submodules" value="{{submodule}}">{{submodule}}</option>
 										</select>
 									</div>
 								</div>
-								<div class="form-group col-md-2" ng-show="ctrl.module && ctrl.submodule">
-									<label for="action">Filter by Action<i class="fa fa-filter fa-lg fa-fw"></i></label>
+								<div class="form-group col-md-2" ng-show="ctrl.user && ctrl.module && ctrl.submodule">
+									<label for="action">Action</label>
 									<div class="input-group">
-										<span class="input-group-addon"><i class="fa fa-warning fa-lg fa-fw"></i></span>
+										<span class="input-group-addon"><i class="fa fa-crosshairs fa-lg fa-fw"></i></span>
 										<select id="action" class="form-control" ng-model="ctrl.action" ng-change="ctrl.refresh()">
 											<option value="">All</option>
 											<option ng-repeat="action in ctrl.actions" value="{{action}}">{{action}}</option>
