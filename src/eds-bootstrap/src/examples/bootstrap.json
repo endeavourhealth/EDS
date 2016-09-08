@@ -1,6 +1,6 @@
 {
   "cassandra" : {
-    "url" : "cassandra.eds.c.healthforge.io",
+    "url" : "127.0.0.1",
     "port" : 9042,
     "username" : "",
     "password" : ""
@@ -13,6 +13,6 @@
       "password":"admin",
       "clientId":"admin-cli"
     },
-    "realm" : "e2"
+    "realm" : "endeavour"
   }
 }
