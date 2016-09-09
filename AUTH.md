@@ -287,4 +287,4 @@ In production the following things should be considered:
 - LDAP users used for SFTP authentication should be stored in a clustered LDAP instance - OpenLDAP can be configured to run in a master-master replica pair.
 - Server logs from both Tomcat and Keycloak should be collected using FileBeats and sent to LogStash.
 
-
+Use the [EDS bootstrapping tool](src/eds-bootstrap) to set the configuration and [see instructions for usage here](src/eds-bootstrap/README.me).  

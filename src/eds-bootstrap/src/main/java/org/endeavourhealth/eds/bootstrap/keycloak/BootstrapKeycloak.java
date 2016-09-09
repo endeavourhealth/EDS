@@ -141,6 +141,9 @@ public class BootstrapKeycloak implements Bootstrap {
         // Add users
         //
 
+        LOG.info("Adding application users...");
+        addAdminUser(client.realm("master"), newRealm, "eds-ui", "bd285adbc36842d7a27088e93c36c13e29ed69fa63a6", "EDS", "UI", "edsui@endeavourhealth.com", Lists.newArrayList("view-users", "manage-users", "view-events"));
+
         LOG.info("Adding users...");
 
         addUser(client.realm(newRealm), "superuser", "Test1234", "Super", "User", "superuser@example.com", Lists.newArrayList("eds_superuser"));
@@ -202,11 +205,53 @@ public class BootstrapKeycloak implements Bootstrap {
         // add roles
         realm.users().get(id).roles().realmLevel().add(getRoles(realm, roles));
 
+        LOG.info(toJson(user));
+    }
+
+    private void addAdminUser(RealmResource realm, String targetRealm, String username, String password, String firstName, String lastName, String email, List<String> roles) {
+        UserRepresentation user = new UserRepresentation();
+
+        user.setEnabled(true);
+        user.setUsername(username);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setEmail(email);
+        user.setRequiredActions(new ArrayList<>());
+
+        user.setEmailVerified(true);
+
+        // create basic user
+        realm.users().create(user);
+
+        // set password
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue(password);
+        credential.setTemporary(false);
+
+        String id = realm.users().search("", "", "", email, 0, 10).get(0).getId();
+
+        realm.users().get(id).resetPassword(credential);
+
+        // add roles
+        String clientId = realm.clients().findByClientId(targetRealm+"-realm").get(0).getId();
+        realm.users().get(id).roles().clientLevel(clientId).add(getClientRoles(clientId, realm, roles));
+    }
+
+    private String toJson(Object value) {
         try {
-            LOG.info(JsonSerialization.writeValueAsString(user));
+            return JsonSerialization.writeValueAsString(value);
         } catch (IOException e) {
 
         }
+        return null;
+    }
+
+    private List<RoleRepresentation> getClientRoles(String clientId, RealmResource realm, List<String> roles) {
+        final List<RoleRepresentation> r = realm .clients().get(clientId).roles().list();
+        return Lists.transform(roles,
+                s -> Iterables.find(r,
+                        (Predicate<RoleRepresentation>) t -> { return t.getName().equalsIgnoreCase(s); }, null));
     }
 
     private List<RoleRepresentation> getRoles(RealmResource realm, List<String> roles) {
