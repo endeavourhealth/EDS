@@ -14,6 +14,7 @@ import org.endeavourhealth.core.data.config.ConfigurationRepository;
 import org.endeavourhealth.core.security.KeycloakConfigUtils;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.keycloak.client.KeycloakClient;
+import org.endeavourhealth.ui.json.JsonEndUser;
 import org.endeavourhealth.ui.json.JsonUserEvent;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.admin.client.Keycloak;
@@ -29,6 +30,7 @@ import javax.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Path("/audit")
@@ -49,10 +51,10 @@ public final class AuditEndpoint extends AbstractEndpoint {
         keycloakRealm = keycloakDeployment.getRealm();
 
         // get config details for the realm admin client
+        Map<String, String> envVars = System.getenv();
 
-        // TODO: put this in config files !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        String adminClientUsername = "eds-ui";
-        String adminClientPassword = "bd285adbc36842d7a27088e93c36c13e29ed69fa63a6";
+        String adminClientUsername = envVars.get("KEYCLOAK_PROXY_USER");
+        String adminClientPassword = envVars.get("KEYCLOAK_PROXY_PASSWORD");
 
         // build the admin client
         KeycloakClient.init(keycloakDeployment.getAuthServerBaseUrl(),
@@ -103,13 +105,6 @@ public final class AuditEndpoint extends AbstractEndpoint {
         @QueryParam("action") String action) throws Exception {
         super.setLogbackMarkers(sc);
 
-        // TODO: remove this example code!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        List<UserRepresentation> users = keycloakGetUsers("*", 0, 10);
-        for(UserRepresentation user : users) {
-            LOG.info("{}: {} {} ({})", user.getId(), user.getFirstName(), user.getLastName(), user.getUsername());
-        }
-        // TODO: remove this example code!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
             "User Id", userId,
             "Organisation Id", organisationId,
@@ -133,7 +128,34 @@ public final class AuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/users")
+    public Response getUsers(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Data", "Users");
+
+        LOG.trace("getUsers");
+
+        List<JsonEndUser> userList = new ArrayList<>();
+
+        List<UserRepresentation> users = keycloakGetUsers("*", 0, 10);
+        for(UserRepresentation user : users) {
+            userList.add(new JsonEndUser(user));
+        }
+
+        clearLogbackMarkers();
+        return Response
+            .ok()
+            .entity(userList)
+            .build();
+    }
+
+
+        @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/modules")

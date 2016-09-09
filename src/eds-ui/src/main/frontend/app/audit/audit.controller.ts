@@ -42,12 +42,11 @@ module app.audit {
 
 		loadUsers() {
 			var vm = this;
-			vm.users = [
-				{
-					uuid : 'fbb470ed-64fb-4c50-9564-b15065d462e7',
-					username : 'Professional User'
-				} as User
-			];
+			vm.users = null;
+			vm.auditService.getUsers()
+				.then(function(data:User[]) {
+					vm.users = data;
+				});
 		}
 
 		loadOrganisations() {

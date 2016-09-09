@@ -2,16 +2,22 @@
 
 module app.core {
 	import AuditEvent = app.models.AuditEvent;
+	import User = app.models.User;
 	'use strict';
 
 	export interface IAuditService {
 		getAuditEvents(userId : string, organisationId : string, module : string, submodule : string, action : string):ng.IPromise<AuditEvent[]>;
+		getUsers() : ng.IPromise<User[]>;
 		getModules() : ng.IPromise<string[]>;
 		getSubmodules(module : string) : ng.IPromise<string[]>;
 		getActions() : ng.IPromise<string[]>;
 	}
 
 	export class AuditService extends BaseHttpService implements IAuditService {
+
+		getUsers():ng.IPromise<User[]> {
+			return this.httpGet('api/audit/users');
+		}
 
 		getAuditEvents(userId : string, organisationId : string, module : string, submodule : string, action : string):ng.IPromise<AuditEvent[]> {
 			var request = {

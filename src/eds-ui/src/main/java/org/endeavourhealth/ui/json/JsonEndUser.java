@@ -2,6 +2,7 @@ package org.endeavourhealth.ui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.core.data.admin.models.EndUser;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import java.util.UUID;
 
@@ -20,6 +21,13 @@ public final class JsonEndUser {
     private Boolean mustChangePassword = null;
 
     public JsonEndUser() {
+    }
+
+    public JsonEndUser(UserRepresentation keycloakUser) {
+        this.uuid = UUID.fromString(keycloakUser.getId());
+        this.username = keycloakUser.getUsername();
+        this.forename = keycloakUser.getFirstName();
+        this.surname = keycloakUser.getLastName();
     }
 
     public JsonEndUser(EndUser endUser, Boolean isAdmin, Boolean mustChangePassword) {
