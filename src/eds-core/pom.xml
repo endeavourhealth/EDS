@@ -98,11 +98,6 @@
             <artifactId>httpclient</artifactId>
             <version>4.5.2</version>
         </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-client</artifactId>
-            <version>${resteasy.version}</version>
-        </dependency>
         <!-- provided in the Tomcat lib directory -->
         <dependency>
             <groupId>org.keycloak</groupId>

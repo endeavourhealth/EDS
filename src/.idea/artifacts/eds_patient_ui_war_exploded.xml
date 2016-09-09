@@ -70,12 +70,6 @@
           </element>
           <element id="library" level="project" name="Maven: org.postgresql:postgresql:9.4.1208" />
           <element id="library" level="project" name="Maven: org.keycloak:keycloak-admin-client:2.0.0.Final" />
-          <element id="library" level="project" name="Maven: org.jboss.resteasy:resteasy-client:3.0.12.Final" />
-          <element id="library" level="project" name="Maven: org.jboss.resteasy:resteasy-jaxrs:3.0.12.Final" />
-          <element id="library" level="project" name="Maven: org.jboss.resteasy:jaxrs-api:3.0.12.Final" />
-          <element id="library" level="project" name="Maven: org.jboss.spec.javax.annotation:jboss-annotations-api_1.1_spec:1.0.1.Final" />
-          <element id="library" level="project" name="Maven: javax.activation:activation:1.1.1" />
-          <element id="library" level="project" name="Maven: net.jcip:jcip-annotations:1.0" />
         </element>
       </element>
       <element id="directory" name="META-INF">
