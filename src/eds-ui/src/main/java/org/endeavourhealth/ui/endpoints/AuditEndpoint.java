@@ -9,13 +9,13 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
-import org.endeavourhealth.core.data.audit.models.UserEvent;
+import org.endeavourhealth.core.data.audit.models.UserAudit;
 import org.endeavourhealth.core.data.config.ConfigurationRepository;
 import org.endeavourhealth.core.security.KeycloakConfigUtils;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.keycloak.client.KeycloakClient;
 import org.endeavourhealth.ui.json.JsonEndUser;
-import org.endeavourhealth.ui.json.JsonUserEvent;
+import org.endeavourhealth.ui.json.JsonUserAudit;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -36,7 +36,7 @@ import java.util.UUID;
 @Path("/audit")
 public final class AuditEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(AuditEndpoint.class);
-    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Audit);
+    private static final UserAuditRepository userAuditRepository = new UserAuditRepository(AuditModule.EdsUiModule.Audit);
 
     private KeycloakDeployment keycloakDeployment;
     private String keycloakRealm;
@@ -102,24 +102,23 @@ public final class AuditEndpoint extends AbstractEndpoint {
         @QueryParam("organisationId") UUID organisationId,
         @QueryParam("module") String module,
         @QueryParam("subModule") String subModule,
-        @QueryParam("action") String action) throws Exception {
+        @QueryParam("action") String action,
+        @QueryParam("pageState") String pageState) throws Exception {
         super.setLogbackMarkers(sc);
 
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+        userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
             "User Id", userId,
             "Organisation Id", organisationId,
             "Module", module,
             "Sub Module", subModule,
-            "Action", action);
+            "Action", action,
+            "PageState", pageState);
 
         LOG.trace("getAudit");
 
-        Iterable<UserEvent> audit = userAudit.load(userId, organisationId, module, subModule, action);
+        UserAudit userAudit = userAuditRepository.load(userId, organisationId, module, subModule, action, pageState);
 
-        List<JsonUserEvent> jsonAudit = new ArrayList<>();
-        for (UserEvent event : audit) {
-            jsonAudit.add(new JsonUserEvent(event));
-        }
+        JsonUserAudit jsonAudit = new JsonUserAudit(userAudit);
 
         clearLogbackMarkers();
         return Response
@@ -135,7 +134,7 @@ public final class AuditEndpoint extends AbstractEndpoint {
     @Path("/users")
     public Response getUsers(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+        userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
             "Data", "Users");
 
         LOG.trace("getUsers");
@@ -161,7 +160,7 @@ public final class AuditEndpoint extends AbstractEndpoint {
     @Path("/modules")
     public Response getAuditModules(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
             "Data", "Modules");
 
         LOG.trace("getAuditModules");
@@ -169,7 +168,7 @@ public final class AuditEndpoint extends AbstractEndpoint {
         clearLogbackMarkers();
         return Response
             .ok()
-            .entity(userAudit.getModuleList())
+            .entity(userAuditRepository.getModuleList())
             .build();
     }
 
@@ -179,7 +178,7 @@ public final class AuditEndpoint extends AbstractEndpoint {
     @Path("/submodules")
     public Response getAuditSubModules(@Context SecurityContext sc, @QueryParam("module") String module) throws Exception {
         super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+        userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
             "Data", "SubModules",
             "Module", module);
 
@@ -188,7 +187,7 @@ public final class AuditEndpoint extends AbstractEndpoint {
         clearLogbackMarkers();
         return Response
             .ok()
-            .entity(userAudit.getSubModuleList(module))
+            .entity(userAuditRepository.getSubModuleList(module))
             .build();
     }
 
@@ -198,7 +197,7 @@ public final class AuditEndpoint extends AbstractEndpoint {
     @Path("/actions")
     public Response getAuditActions(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+        userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
             "Data", "Actions");
 
         LOG.trace("getAuditActions");
@@ -206,7 +205,7 @@ public final class AuditEndpoint extends AbstractEndpoint {
         clearLogbackMarkers();
         return Response
             .ok()
-            .entity(userAudit.getActionList())
+            .entity(userAuditRepository.getActionList())
             .build();
     }
 }

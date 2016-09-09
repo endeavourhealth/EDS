@@ -1,6 +1,8 @@
 package org.endeavourhealth.core.data.audit;
 
+import com.datastax.driver.core.PagingState;
 import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select;
@@ -8,10 +10,7 @@ import com.datastax.driver.mapping.Mapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.Repository;
-import org.endeavourhealth.core.data.audit.models.AuditAction;
-import org.endeavourhealth.core.data.audit.models.AuditModule;
-import org.endeavourhealth.core.data.audit.models.IAuditModule;
-import org.endeavourhealth.core.data.audit.models.UserEvent;
+import org.endeavourhealth.core.data.audit.models.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +18,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class UserAuditRepository extends Repository{
+    private static final int PAGE_SIZE = 15;
     private IAuditModule module, subModule;
 
     public UserAuditRepository(IAuditModule auditModule) {
@@ -64,7 +64,7 @@ public class UserAuditRepository extends Repository{
         userEventMapper.save(userEvent);
     }
 
-    public Iterable<UserEvent> load(UUID userId, UUID organisationId, String module, String subModule, String action) {
+    public UserAudit load(UUID userId, UUID organisationId, String module, String subModule, String action, String pageState) {
         Select.Where statement;
         if (organisationId == null)
             statement = QueryBuilder.select()
@@ -84,12 +84,25 @@ public class UserAuditRepository extends Repository{
                     statement = statement.and(QueryBuilder.eq("action", action));
             }
         }
+
+        statement.setFetchSize(PAGE_SIZE);
+        if (pageState != null)
+            statement.setPagingState(PagingState.fromString(pageState));
+
         Session session = getSession();
         ResultSet resultSet = session.execute(statement);
-        List<UserEvent> audit = resultSet.all().stream()
-            .map(UserEvent::new)
-            .collect(Collectors.toList());
-        return audit;
+        PagingState pagingState = resultSet.getExecutionInfo().getPagingState();
+        if (pagingState != null)
+            pageState = pagingState.toString();
+
+        List<UserEvent> userEvents = new ArrayList<>();
+        int remaining = resultSet.getAvailableWithoutFetching();
+        for (Row row : resultSet) {
+            userEvents.add(new UserEvent(row));
+            if (--remaining == 0) break;
+        }
+
+        return new UserAudit(pageState, userEvents);
     }
 
     public Iterable<String> getModuleList() {

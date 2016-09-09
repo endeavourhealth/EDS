@@ -8,6 +8,7 @@ module app.audit {
 	import OrganisationPickerController = app.organisation.OrganisationPickerController;
 	import Organisation = app.models.Organisation;
 	import IOrganisationService = app.organisation.IOrganisationService;
+	import UserAudit = app.models.UserAudit;
 
 
 	'use strict';
@@ -18,6 +19,7 @@ module app.audit {
 		module : string;
 		submodule : string;
 		action : string;
+		pageState : string;
 
 		users : User[];
 		organisations : Organisation[];
@@ -89,6 +91,7 @@ module app.audit {
 			var vm = this;
 
 			vm.auditEvents = [];
+			vm.pageState = null;
 
 			if (!vm.user)
 				return;
@@ -109,16 +112,29 @@ module app.audit {
 			var organisationId : string = null;
 			if (vm.organisation)
 				organisationId = vm.organisation.uuid;
-			vm.auditService.getAuditEvents(
+			vm.auditService.getUserAudit(
 				vm.user.uuid,
 				organisationId,
 				vm.module,
 				vm.submodule,
-				vm.action
+				vm.action,
+				vm.pageState
 			)
-				.then(function (data:AuditEvent[]) {
-					vm.auditEvents = data;
+				.then(function (data:UserAudit) {
+					vm.pageState = data.pageState;
+					vm.auditEvents = data.userEvents;
 				});
+		}
+
+		first() {
+			var vm = this;
+			vm.pageState = null;
+			vm.getAuditEvents();
+		}
+
+		next() {
+			var vm = this;
+			vm.getAuditEvents();
 		}
 
 		//pickUser() {
