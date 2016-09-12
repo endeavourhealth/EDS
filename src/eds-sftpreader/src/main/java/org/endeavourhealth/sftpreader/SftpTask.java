@@ -245,13 +245,12 @@ public class SftpTask extends TimerTask
     {
         String localFilePath = batchFile.getLocalFilePath();
         String decryptedLocalFilePath = batchFile.getDecryptedLocalFilePath();
-        String senderPublicKey = dbConfiguration.getDbConfigurationPgp().getPgpSenderPublicKey();
         String recipientPrivateKey = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPrivateKey();
         String recipientPrivateKeyPassword = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPrivateKeyPassword();
 
         LOG.info("   Decrypting file to: " + decryptedLocalFilePath);
 
-        PgpUtil.decryptAndVerify(localFilePath, senderPublicKey, recipientPrivateKey, recipientPrivateKeyPassword, decryptedLocalFilePath);
+        PgpUtil.decryptAndVerify(localFilePath, recipientPrivateKey, recipientPrivateKeyPassword, decryptedLocalFilePath);
 
         batchFile.setDecryptedFileSizeBytes(getFileSizeBytes(batchFile.getDecryptedLocalFilePath()));
 

@@ -4,7 +4,6 @@ import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.util.io.Streams;
 
@@ -19,22 +18,23 @@ public class PgpUtil {
 
     private static final int BUFFER_SIZE = 10000000; //use approx 10MB for buffered streams, as a fair balance between disk IO and memory
 
-    public static void decryptAndVerify(String inputFileName, String publicKey, String secretKey, String secretKeyPassword, String outputFileName) throws IOException, NoSuchProviderException, PGPException, SignatureException
+    public static void decryptAndVerify(String inputFileName,
+                                        String secretKey,
+                                        String secretKeyPassword,
+                                        String outputFileName) throws IOException, NoSuchProviderException, PGPException, SignatureException
     {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 
         try (InputStream fileIn = new BufferedInputStream(new FileInputStream(inputFileName), BUFFER_SIZE);
-             InputStream publicKeyIn = new BufferedInputStream(new ByteArrayInputStream(publicKey.getBytes()));
              InputStream secretKeyIn = new BufferedInputStream(new ByteArrayInputStream(secretKey.getBytes()));
              BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(outputFileName), BUFFER_SIZE); )
         {
-            decryptAndVerify(fileIn, fileOut, publicKeyIn, secretKeyIn, secretKeyPassword);
+            decryptAndVerify(fileIn, fileOut, secretKeyIn, secretKeyPassword);
         }
     }
 
     private static void decryptAndVerify(InputStream fileIn,
                                          OutputStream fileOut,
-                                         InputStream publicKeyIn,
                                          InputStream secretKeyIn,
                                          String secretKeyPassword) throws IOException, SignatureException, PGPException, NoSuchProviderException
     {
@@ -80,7 +80,7 @@ public class PgpUtil {
         message = plainFact.nextObject();
         //ByteArrayOutputStream actualOutput = new ByteArrayOutputStream();
 
-        InputStream input = null;
+        //InputStream input = null;
 
         while (message != null)
         {
@@ -92,8 +92,8 @@ public class PgpUtil {
             }
 
             if (message instanceof PGPLiteralData)
-                input = ((PGPLiteralData) message).getInputStream();
-                //Streams.pipeAll(((PGPLiteralData) message).getInputStream(), fileOut);  // have to read it and keep it somewhere.
+                //input = ((PGPLiteralData) message).getInputStream();
+                Streams.pipeAll(((PGPLiteralData) message).getInputStream(), fileOut);  // have to read it and keep it somewhere.
             else if (message instanceof PGPOnePassSignatureList)
                 onePassSignatureList = (PGPOnePassSignatureList) message;
             else if (message instanceof PGPSignatureList)
@@ -112,16 +112,17 @@ public class PgpUtil {
 
         if (onePassSignatureList == null || signatureList == null) {
 
-            //if there's no signature to check, just stream all data from the input to the output
-            Streams.pipeAll(input, fileOut);
-
             //EMIS PGP data is encrypted but not signed, so don't throw this
             //throw new PGPException("Poor PGP. Signatures not found.");
         }
         else {
 
+            //TODO - the below code doesn't work without streaming the entire decrypted data to memory, which
+            //can eat up gigabytes of space. Commenting out for now, since we don't need to decrypted signed PGP for now
+            throw new SignatureException("Signed PGP files not supported");
+
             //if we have to verify the signature, we need to read the intput into a byte[] before writing to our output
-            byte[] buffer = new byte[BUFFER_SIZE]; //use the same size array as the buffered streams
+            /*byte[] buffer = new byte[BUFFER_SIZE]; //use the same size array as the buffered streams
 
             for (int i = 0; i < onePassSignatureList.size(); i++) {
 
@@ -158,7 +159,7 @@ public class PgpUtil {
             //moved here, from below, so we only check for the signing key if it was signed
             if (publicKey == null) {
                 throw new SignatureException("Signature not found");
-            }
+            }*/
         }
 
         //verify() actually calls isIntegrityProtected(), so extra call is redundant
