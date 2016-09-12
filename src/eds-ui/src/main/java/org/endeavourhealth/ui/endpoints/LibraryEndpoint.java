@@ -394,7 +394,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     public Response getDataSets(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-            "Entity Typ", "Data sets");
+            "Entity Type", "Data sets");
 
         DefinitionItemType itemType = DefinitionItemType.DataSet;
 

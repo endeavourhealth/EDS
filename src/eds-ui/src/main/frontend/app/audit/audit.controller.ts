@@ -8,36 +8,39 @@ module app.audit {
 	import OrganisationPickerController = app.organisation.OrganisationPickerController;
 	import Organisation = app.models.Organisation;
 	import IOrganisationService = app.organisation.IOrganisationService;
-	import UserAudit = app.models.UserAudit;
 
 
 	'use strict';
 
 	export class AuditController {
-		user : User;
-		organisation : Organisation;
 		module : string;
+		user : User;
+		month : Date;
+		organisation : Organisation;
 		submodule : string;
 		action : string;
-		pageState : string;
 
+		modules : string[];
 		users : User[];
 		organisations : Organisation[];
-		modules : string[];
 		submodules : string[];
 		actions : string[];
 		auditEvents:AuditEvent[];
 
-		static $inject = ['AuditService', 'LoggerService', 'OrganisationService', '$uibModal'];
+		static $inject = ['$scope', 'AuditService', 'LoggerService', 'OrganisationService', '$uibModal'];
 
-		constructor(protected auditService:IAuditService,
+		constructor(
+					protected $scope : any,
+					protected auditService:IAuditService,
 					protected logger:ILoggerService,
 					protected organisationService : IOrganisationService,
 					protected $modal : IModalService) {
 
+			this.month = new Date();
+			this.month.setDate(1);
+			this.loadModules();
 			this.loadUsers();
 			this.loadOrganisations();
-			this.loadModules();
 			this.loadActions();
 			this.refresh();
 		}
@@ -91,17 +94,15 @@ module app.audit {
 			var vm = this;
 
 			vm.auditEvents = [];
-			vm.pageState = null;
 
-			if (!vm.user)
+			if (!vm.user || !vm.module || !vm.month)
 				return;
 
-			if (vm.module == '')
-				vm.module = null;
-			else
-				vm.loadSubmodules();
+			vm.loadSubmodules();
+
 			if (vm.submodule == '') vm.submodule = null;
 			if (vm.action == '') vm.action = null;
+
 			vm.getAuditEvents();
 		}
 
@@ -112,43 +113,33 @@ module app.audit {
 			var organisationId : string = null;
 			if (vm.organisation)
 				organisationId = vm.organisation.uuid;
-			vm.auditService.getUserAudit(
-				vm.user.uuid,
-				organisationId,
-				vm.module,
-				vm.submodule,
-				vm.action,
-				vm.pageState
-			)
-				.then(function (data:UserAudit) {
-					vm.pageState = data.pageState;
-					vm.auditEvents = data.userEvents;
+				vm.auditService.getUserAudit(
+					vm.module,
+					vm.user.uuid,
+					vm.month,
+					organisationId
+				)
+				.then(function (data:AuditEvent[]) {
+					vm.auditEvents = data;
 				});
 		}
 
-		first() {
-			var vm = this;
-			vm.pageState = null;
-			vm.getAuditEvents();
-		}
+		getFilteredEvents(vm : any) {
+			return vm.auditEvents.filter(
+				function(item : any) {
+					if (!vm.submodule || vm.submodule === '')
+						return true;
+					if (item.subModule === vm.submodule) {
+						if (!vm.action || vm.action === '')
+							return true;
+						if (item.action === vm.action)
+							return true;
+					}
 
-		next() {
-			var vm = this;
-			vm.getAuditEvents();
+					return false;
+				}
+			);
 		}
-
-		//pickUser() {
-		//	UserPickerController.open(vm.$modal, vm.userId)
-		//}
-		//
-		//pickOrganisation() {
-		//	var vm = this;
-		//	OrganisationPickerController.open(vm.$modal, [vm.organisation])
-		//		.result.then(function (result : Organisation[]) {
-		//		vm.organisation = result[0];
-		//		vm.refresh();
-		//	});
-		//}
 	}
 
 

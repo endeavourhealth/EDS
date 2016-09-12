@@ -24,7 +24,7 @@ public final class JsonUserEvent {
     public JsonUserEvent() {
     }
 
-    public JsonUserEvent(UserEvent userEvent) throws IOException {
+    public JsonUserEvent(UserEvent userEvent) {
         this.userId = userEvent.getUserId();
         this.module = userEvent.getModule();
         this.subModule = userEvent.getSubModule();

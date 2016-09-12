@@ -95,7 +95,7 @@ public final class SecurityEndpoint extends AbstractEndpoint {
     public Response logoff(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
         LOG.trace("Logoff");
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Logoff);
+
 
         String redirectUrl = URLEncoder.encode(ConfigService.instance().getAppConfig().getAppUrl() + "/api/user/details", "UTF-8");
 

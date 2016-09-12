@@ -1,6 +1,5 @@
 package org.endeavourhealth.core.data.audit;
 
-import com.datastax.driver.core.PagingState;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -12,13 +11,10 @@ import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.audit.models.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class UserAuditRepository extends Repository{
-    private static final int PAGE_SIZE = 15;
     private IAuditModule module, subModule;
 
     public UserAuditRepository(IAuditModule auditModule) {
@@ -64,36 +60,36 @@ public class UserAuditRepository extends Repository{
         userEventMapper.save(userEvent);
     }
 
-    public UserAudit load(UUID userId, UUID organisationId, String module, String subModule, String action, String pageState) {
+    public List<UserEvent> load(String module, UUID userId, Date month, UUID organisationId) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(month);
+        cal.set(Calendar.DATE,1);
+        Date startDate = cal.getTime();
+        cal.add(Calendar.MONTH,1);
+        cal.add(Calendar.DAY_OF_MONTH, -1);
+        Date endDate = cal.getTime();
+
         Select.Where statement;
         if (organisationId == null)
             statement = QueryBuilder.select()
-                .from("audit", "user_event")
-                .where(QueryBuilder.eq("user_id", userId));
+                .from("audit", "user_event_by_module_user_timestamp")
+                .where(QueryBuilder.eq("module", module))
+                .and(QueryBuilder.eq("user_id", userId));
         else {
             statement = QueryBuilder.select()
-                .from("audit", "user_event_by_organisation_id")
-                .where(QueryBuilder.eq("user_id", userId))
+                .from("audit", "user_event_by_module_user_organisation_timestamp")
+                .where(QueryBuilder.eq("module", module))
+                .and(QueryBuilder.eq("user_id", userId))
                 .and(QueryBuilder.eq("organisation_id", organisationId));
-        }
-        if (module!=null && !module.isEmpty()) {
-            statement = statement.and(QueryBuilder.eq("module", module));
-            if (subModule != null && !subModule.isEmpty()) {
-                statement = statement.and(QueryBuilder.eq("submodule", subModule));
-                if (action != null && !action.isEmpty())
-                    statement = statement.and(QueryBuilder.eq("action", action));
-            }
+
         }
 
-        statement.setFetchSize(PAGE_SIZE);
-        if (pageState != null)
-            statement.setPagingState(PagingState.fromString(pageState));
+        statement = statement
+            .and(QueryBuilder.gte("timestamp", startDate))
+            .and(QueryBuilder.lte("timestamp", endDate));
 
         Session session = getSession();
         ResultSet resultSet = session.execute(statement);
-        PagingState pagingState = resultSet.getExecutionInfo().getPagingState();
-        if (pagingState != null)
-            pageState = pagingState.toString();
 
         List<UserEvent> userEvents = new ArrayList<>();
         int remaining = resultSet.getAvailableWithoutFetching();
@@ -102,7 +98,7 @@ public class UserAuditRepository extends Repository{
             if (--remaining == 0) break;
         }
 
-        return new UserAudit(pageState, userEvents);
+        return userEvents;
     }
 
     public Iterable<String> getModuleList() {

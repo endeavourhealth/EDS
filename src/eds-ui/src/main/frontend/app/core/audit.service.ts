@@ -3,11 +3,10 @@
 module app.core {
 	import AuditEvent = app.models.AuditEvent;
 	import User = app.models.User;
-	import UserAudit = app.models.UserAudit;
 	'use strict';
 
 	export interface IAuditService {
-		getUserAudit(userId : string, organisationId : string, module : string, submodule : string, action : string, pageState : string):ng.IPromise<UserAudit>;
+		getUserAudit(module : string, userId : string, month : Date, organisationId : string):ng.IPromise<AuditEvent[]>;
 		getUsers() : ng.IPromise<User[]>;
 		getModules() : ng.IPromise<string[]>;
 		getSubmodules(module : string) : ng.IPromise<string[]>;
@@ -20,15 +19,13 @@ module app.core {
 			return this.httpGet('api/audit/users');
 		}
 
-		getUserAudit(userId : string, organisationId : string, module : string, submodule : string, action : string, pageState : string):ng.IPromise<UserAudit> {
+		getUserAudit(module : string, userId : string, month : Date, organisationId : string):ng.IPromise<AuditEvent[]> {
 			var request = {
 				params: {
-					'userId' : userId,
-					'organisationId': organisationId,
 					'module' : module,
-					'subModule' : submodule,
-					'action' : action,
-					'pageState' : pageState
+					'userId' : userId,
+					'month' : month.valueOf(),
+					'organisationId': organisationId
 				}
 			};
 

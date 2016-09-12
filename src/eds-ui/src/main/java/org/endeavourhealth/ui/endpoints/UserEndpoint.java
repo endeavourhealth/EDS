@@ -53,7 +53,6 @@ public final class UserEndpoint extends AbstractEndpoint {
     @GET
     @Path("/logout")
     public Response logout(@Context SecurityContext sc) throws Exception {
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Logoff);
 
         LOG.info("Logout: {}", SecurityUtils.getCurrentUser(sc));
 

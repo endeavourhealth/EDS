@@ -9,13 +9,13 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
-import org.endeavourhealth.core.data.audit.models.UserAudit;
+import org.endeavourhealth.core.data.audit.models.UserEvent;
 import org.endeavourhealth.core.data.config.ConfigurationRepository;
 import org.endeavourhealth.core.security.KeycloakConfigUtils;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.keycloak.client.KeycloakClient;
 import org.endeavourhealth.ui.json.JsonEndUser;
-import org.endeavourhealth.ui.json.JsonUserAudit;
+import org.endeavourhealth.ui.json.JsonUserEvent;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -28,10 +28,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Path("/audit")
 public final class AuditEndpoint extends AbstractEndpoint {
@@ -98,32 +96,31 @@ public final class AuditEndpoint extends AbstractEndpoint {
     @Path("/")
     public Response getAudit(
         @Context SecurityContext sc,
-        @QueryParam("userId") UUID userId,
-        @QueryParam("organisationId") UUID organisationId,
         @QueryParam("module") String module,
-        @QueryParam("subModule") String subModule,
-        @QueryParam("action") String action,
-        @QueryParam("pageState") String pageState) throws Exception {
+        @QueryParam("userId") UUID userId,
+        @QueryParam("month") Long monthLong,
+        @QueryParam("organisationId") UUID organisationId) throws Exception {
         super.setLogbackMarkers(sc);
+
+        Date month = new Date(monthLong);
 
         userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
             "User Id", userId,
             "Organisation Id", organisationId,
-            "Module", module,
-            "Sub Module", subModule,
-            "Action", action,
-            "PageState", pageState);
+            "Module", module);
 
         LOG.trace("getAudit");
 
-        UserAudit userAudit = userAuditRepository.load(userId, organisationId, module, subModule, action, pageState);
+        List<UserEvent> events = userAuditRepository.load(module, userId, month, organisationId);
 
-        JsonUserAudit jsonAudit = new JsonUserAudit(userAudit);
+        List<JsonUserEvent> entity = events.stream()
+            .map(e -> new JsonUserEvent(e))
+            .collect(Collectors.toList());
 
         clearLogbackMarkers();
         return Response
                 .ok()
-                .entity(jsonAudit)
+                .entity(entity)
                 .build();
     }
 
@@ -182,7 +179,7 @@ public final class AuditEndpoint extends AbstractEndpoint {
             "Data", "SubModules",
             "Module", module);
 
-        LOG.trace("getAuditSubodules");
+        LOG.trace("getAuditSubmodules");
 
         clearLogbackMarkers();
         return Response

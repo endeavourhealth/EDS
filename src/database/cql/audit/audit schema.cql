@@ -30,10 +30,21 @@ CREATE TABLE user_event
     action text,
     timestamp timestamp,
     data text,
-    PRIMARY KEY (user_id, module, submodule, action, timestamp)
+    PRIMARY KEY (user_id, module, submodule, action)
   );
 
-CREATE MATERIALIZED VIEW user_event_by_organisation_id AS
+CREATE MATERIALIZED VIEW user_event_by_module_user_timestamp AS
+SELECT user_id, organisation_id, module, submodule, action, timestamp, data
+FROM audit.user_event
+WHERE user_id IS NOT NULL
+AND module IS NOT NULL
+AND submodule IS NOT NULL
+AND action IS NOT NULL
+AND timestamp IS NOT NULL
+PRIMARY KEY (module, user_id, timestamp, submodule, action)
+with CLUSTERING order BY (timestamp desc);
+
+CREATE MATERIALIZED VIEW user_event_by_module_user_organisation_timestamp AS
 SELECT user_id, organisation_id, module, submodule, action, timestamp, data
 FROM audit.user_event
 WHERE user_id IS NOT NULL
@@ -42,4 +53,5 @@ AND module IS NOT NULL
 AND submodule IS NOT NULL
 AND action IS NOT NULL
 AND timestamp IS NOT NULL
-PRIMARY KEY (user_id, organisation_id, module, submodule, action, timestamp);
+PRIMARY KEY (module, user_id, organisation_id, timestamp, submodule, action)
+with CLUSTERING order BY (timestamp desc);
