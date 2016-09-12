@@ -214,6 +214,9 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		List<JsonRouteGroup> configuredBindings = getConfiguredBindings();
 
 		for (String pipeline : pipelines) {
+			// Declare exchanges
+			declareAllExchanges(address, pipeline);
+
 			// Declare (config) queues
 			declareAllQueues(address, pipeline, configuredBindings);
 
@@ -287,6 +290,43 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		}
 
 		return bindings;
+	}
+
+	private void declareAllExchanges(String address, String pipeline) throws Exception {
+		Client client = ClientBuilder.newClient();
+		client.register(rabbitAuth);
+
+		// DLE
+		WebTarget resource = client.target("http://" + address + "/api/exchanges/%2f/"+pipeline+"-DLE");
+		Invocation.Builder request = resource.request();
+
+		JsonRabbitExchangeOptions optionsJson = new JsonRabbitExchangeOptions();
+		optionsJson.setType("fanout");
+		optionsJson.setAuto_delete(false);
+		optionsJson.setDurable(true);
+
+		Response response = request.put(Entity.json(optionsJson));
+		if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+			throw new Exception("Unable do declare the dead letter exchange");
+		}
+		response.close();
+
+		// Exchange
+		resource = client.target("http://" + address + "/api/exchanges/%2f/"+pipeline);
+		request = resource.request();
+
+		optionsJson = new JsonRabbitExchangeOptions();
+		optionsJson.setType("topic");
+		optionsJson.setAuto_delete(false);
+		optionsJson.setDurable(true);
+		optionsJson.getArguments().put("alternate-exchange", pipeline+"-DLE");
+
+		response = request.put(Entity.json(optionsJson));
+		if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+			throw new Exception("Unable do declare the dead letter exchange");
+		}
+		response.close();
+		client.close();
 	}
 
 	private void declareAllQueues(String address, String queuePrefix, List<JsonRouteGroup> routeGroups) throws Exception {
