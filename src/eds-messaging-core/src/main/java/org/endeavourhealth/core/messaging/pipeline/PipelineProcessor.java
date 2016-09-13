@@ -3,6 +3,7 @@ package org.endeavourhealth.core.messaging.pipeline;
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.components.*;
+import org.endeavourhealth.core.messaging.pipeline.components.ForEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +53,8 @@ public class PipelineProcessor {
 		String xmlTagName = processConfig.getClass().getSimpleName();
 
 		switch(xmlTagName) {
+			case "ForEachConfig" :
+				return new ForEach((ForEachConfig) processConfig);
 			case "OpenEnvelopeConfig":
 				return new OpenEnvelope((OpenEnvelopeConfig) processConfig);
 			case "EnvelopMessageConfig":
