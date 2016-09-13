@@ -37,6 +37,7 @@ angular.module('app', [
 		'app.query',
 		'app.routeGroup',
 		'app.patientIdentity',
+        'app.recordViewer',
 		'app.resources',
 		'app.audit',
 		'flowChart',

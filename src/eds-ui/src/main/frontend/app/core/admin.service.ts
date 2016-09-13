@@ -33,6 +33,7 @@ module app.core {
 				{caption: 'Queueing', state: 'app.routeGroup', icon: 'fa fa-tasks'},
 
 				{caption: 'Patients', state: 'app.patientIdentity', icon: 'fa fa-tag'},
+                {caption: 'Record viewer', state: 'app.recordViewer', icon: 'fa fa-heart'},
 				{caption: 'Resources', state: 'app.resources', icon: 'fa fa-fire'},
 
 				{caption: 'Monitoring', state: 'app.logging', icon: 'fa fa-list-alt'},
