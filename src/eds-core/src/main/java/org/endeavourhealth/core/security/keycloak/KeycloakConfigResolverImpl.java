@@ -38,7 +38,6 @@ public class KeycloakConfigResolverImpl implements KeycloakConfigResolver {
                 keycloakDeployment = KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/keycloak.json"));
             }
         }
-
         return keycloakDeployment;
     }
 

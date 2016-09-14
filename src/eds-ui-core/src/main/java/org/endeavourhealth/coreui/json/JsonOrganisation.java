@@ -13,7 +13,7 @@ public final class JsonOrganisation {
     private String nationalId = null;
     private Boolean isAdmin = null;
     private Map<UUID, String> services = null;
-    private Integer permissions = null; //to be removed once web client changed to use isAdmin
+    private Integer permissions = null; //to be removed once web client changed to use isEDSAdmin
 
 
     public JsonOrganisation() {

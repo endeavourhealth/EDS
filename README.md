@@ -44,3 +44,4 @@ cp src/eds-message-api/target/eds-messaging-api-1.0-SNAPSHOT.WAR /opt/eds/tomcat
 ```bash
 curl -H "Content-Type: text/xml" --binary-message @src/eds-messaging-api/src/main/resources/Message.xml http://localhost:8080/messaging/api/PostMessageAsync
 ```
+

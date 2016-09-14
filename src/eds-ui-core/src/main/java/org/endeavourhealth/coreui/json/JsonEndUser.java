@@ -17,7 +17,7 @@ public final class JsonEndUser {
     private String surname = null;
     private Boolean superUser = null; //using non-primative types because serialisation to JSON can skip nulls, if we want
     private Boolean admin = null;
-    private Integer permissions = null; //to be removed after isAdmin is adopted
+    private Integer permissions = null; //to be removed after isEDSAdmin is adopted
     private Boolean mustChangePassword = null;
 
     public JsonEndUser() {
@@ -40,7 +40,7 @@ public final class JsonEndUser {
         this.admin = isAdmin;
         this.mustChangePassword = mustChangePassword;
 
-        //to be removed once web client changed to use isAdmin
+        //to be removed once web client changed to use isEDSAdmin
         if (isAdmin != null) {
             if (isAdmin) {
                 this.permissions = new Integer(2);

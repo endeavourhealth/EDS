@@ -50,7 +50,9 @@
         <module>src/eds-sftpreader</module>
         <module>src/eds-transforms</module>
         <module>src/eds-ui</module>
+        <module>src/eds-keycloak-providers</module>
         <module>src/eds-keycloak-theme</module>
         <module>src/eds-bootstrap</module>
+        <module>src/eds-ui-integration-test</module>
     </modules>
 </project>

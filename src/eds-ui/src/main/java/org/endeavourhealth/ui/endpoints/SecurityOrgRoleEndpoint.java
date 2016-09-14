@@ -1,0 +1,244 @@
+package org.endeavourhealth.ui.endpoints;
+
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.Authorization;
+import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditModule;
+import org.endeavourhealth.core.security.OrgRoles;
+import org.endeavourhealth.core.security.annotations.RequiresAdmin;
+import org.endeavourhealth.core.security.keycloak.client.KeycloakAdminClient;
+import org.endeavourhealth.ui.json.security.JsonKeycloakUser;
+import org.endeavourhealth.ui.json.security.JsonOrgRole;
+import org.endeavourhealth.ui.utility.SecurityGroupHelper;
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Api(value = "Security - Organisation Role Groups", authorizations = {
+        @Authorization(value="oauth", scopes = {})
+})
+@Path("/security/orgRoleGroups/{organisationId}")
+public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
+    private static final Logger LOG = LoggerFactory.getLogger(SecurityOrgRoleEndpoint.class);
+
+    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Security);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("")
+    @RequiresAdmin
+    @ApiOperation(value = "Get all role profile groups for the currently selected organisation")
+    public Response list(@Context SecurityContext sc,
+                         @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The organisation id to view a list of roles") @PathParam(value = "organisationId") String organisationId,
+                         @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The currently selected organisation") @HeaderParam(value = OrgRoles.HEADER_ORGANISATION_ID) String headerOrgId ) throws Exception {
+
+        // TODO: audit action
+
+        if(StringUtils.isBlank(organisationId)) {
+            throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("Please specify an organisation id");
+        }
+
+        super.setLogbackMarkers(sc);
+
+        List<GroupRepresentation> groups = KeycloakAdminClient.instance().realms().groups().getGroups();
+
+        // TODO: the performance of this will be awful! Need to add a custom REST resource to Keycloak!
+        List<GroupRepresentation> groups2 = new ArrayList<>();
+        for(GroupRepresentation g : groups) {
+            groups2.add(KeycloakAdminClient.instance().realms().groups().getGroup(g.getId()));
+        }
+
+        List<JsonOrgRole> roles = groups2.stream()
+                .filter(g -> {
+                    String groupOrgId = SecurityGroupHelper.getOrganisationId(g);
+                    return (groupOrgId != null && groupOrgId.equalsIgnoreCase(organisationId));
+                })
+                .map(g -> SecurityGroupHelper.toJsonOrgRole(g))
+                .collect(Collectors.toList());
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(roles)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{orgRoleId}")
+    @RequiresAdmin
+    @ApiOperation(value = "Get a role profile group for the currently selected organisation")
+    public Response get(@Context SecurityContext sc,
+                        @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The organisation id to view a list of roles") @PathParam(value = "organisationId") String organisationId,
+                        @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The currently selected organisation") @HeaderParam(value = OrgRoles.HEADER_ORGANISATION_ID) String headerOrgId,
+                        @ApiParam(value="Role id") @PathParam(value = "orgRoleId") String orgRoleId) throws Exception {
+
+        // TODO: audit action
+
+        if(StringUtils.isBlank(organisationId)) {
+            throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("Please specify an organisation id");
+        }
+        if(StringUtils.isBlank(orgRoleId)) {
+            throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("Please specify an organisation role id");
+        }
+
+        super.setLogbackMarkers(sc);
+
+        GroupRepresentation group = KeycloakAdminClient.instance().realms().groups().getGroup(orgRoleId);
+        JsonOrgRole role = SecurityGroupHelper.toJsonOrgRole(group);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(role)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{orgRoleId}/members")
+    @RequiresAdmin
+    @ApiOperation(value = "Get members of a role profile group for the currently selected organisation")
+    public Response getMembers(@Context SecurityContext sc,
+                        @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The organisation id to view a list of roles") @PathParam(value = "organisationId") String organisationId,
+                        @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The currently selected organisation") @HeaderParam(value = OrgRoles.HEADER_ORGANISATION_ID) String headerOrgId,
+                        @ApiParam(defaultValue = "0", value="Paging offset") @QueryParam("offset") int offset,
+                        @ApiParam(defaultValue = "10", value="Paging limit") @QueryParam("limit") int limit,
+                        @ApiParam(value="Role id") @PathParam(value = "orgRoleId") String orgRoleId) throws Exception {
+
+
+        // TODO: audit action
+
+        if(StringUtils.isBlank(organisationId)) {
+            throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("Please specify an organisation id");
+        }
+        if(StringUtils.isBlank(orgRoleId)) {
+            throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("Please specify an organisation role id");
+        }
+
+        // only list the users if the organisationId in the path matches the group's organisation id
+        String groupOrgId = SecurityGroupHelper.getOrganisationId(KeycloakAdminClient.instance().realms().groups().getGroup(orgRoleId));
+        if(!groupOrgId.equalsIgnoreCase(organisationId)) {
+            throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("Organisation role id not associated with organisation specified.");
+        }
+
+        super.setLogbackMarkers(sc);
+
+        List<UserRepresentation> users = KeycloakAdminClient.instance().realms().groups().getGroupMembers(orgRoleId, offset, limit);
+        List<JsonKeycloakUser> usersOut = SecurityGroupHelper.toJsonKeycloakUserList(users);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(usersOut)
+                .build();
+    }
+
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("")
+    @RequiresAdmin
+    @ApiOperation(value = "Create a role profile group for the currently selected organisation")
+    public Response create(@Context SecurityContext sc,
+                           @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The organisation id to view a list of roles") @PathParam(value = "organisationId") String organisationId,
+                           @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The currently selected organisation") @HeaderParam(value = OrgRoles.HEADER_ORGANISATION_ID) String headerOrgId,
+                           JsonOrgRole orgRole) throws Exception {
+        // TODO: audit action
+
+        super.setLogbackMarkers(sc);
+
+        // clean up data before creating
+        orgRole.setOrgRoleId(null);
+        orgRole.setOrganisationId(UUID.fromString(organisationId));
+
+        GroupRepresentation groupOut = KeycloakAdminClient.instance().realms().groups().postGroup(SecurityGroupHelper.toGroupRepresentation(orgRole));
+        JsonOrgRole roleOut = SecurityGroupHelper.toJsonOrgRole(groupOut);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(roleOut)
+                .build();
+    }
+
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/{orgRoleId}")
+    @RequiresAdmin
+    @ApiOperation(value = "Update a role profile group for the currently selected organisation")
+    public Response update(@Context SecurityContext sc,
+                           @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The organisation id to view a list of roles") @PathParam(value = "organisationId") String organisationId,
+                           @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The currently selected organisation") @HeaderParam(value = OrgRoles.HEADER_ORGANISATION_ID) String headerOrgId,
+                           @ApiParam(value="Role id") @PathParam(value = "orgRoleId") String orgRoleId,
+                           JsonOrgRole orgRole) throws Exception {
+        // TODO: audit action
+
+        if(StringUtils.isBlank(organisationId)) {
+            throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("Please specify an organisation id");
+        }
+        if(orgRole.getOrgRoleId() == null) {
+            throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("Please specify an organisation id in body");
+        }
+        if(!orgRole.getOrganisationId().toString().equalsIgnoreCase(organisationId)) {
+            throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("The organisation id in the url path must match the body organisation id");
+        }
+
+        super.setLogbackMarkers(sc);
+
+        GroupRepresentation groupOut = KeycloakAdminClient.instance().realms().groups().putGroup(SecurityGroupHelper.toGroupRepresentation(orgRole));
+        JsonOrgRole roleOut = SecurityGroupHelper.toJsonOrgRole(groupOut);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(roleOut)
+                .build();
+    }
+
+    @DELETE
+    @Path("/{orgRoleId}")
+    @RequiresAdmin
+    @ApiOperation(value = "Delete a role profile group for the currently selected organisation")
+    public Response delete(@Context SecurityContext sc,
+                           @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The organisation id to view a list of roles") @PathParam(value = "organisationId") String organisationId,
+                           @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The currently selected organisation") @HeaderParam(value = OrgRoles.HEADER_ORGANISATION_ID) String headerOrgId,
+                           @ApiParam(value="Role id") @PathParam(value = "orgRoleId") String orgRoleId) throws Exception {
+        // TODO: audit action
+
+        if(StringUtils.isBlank(organisationId)) {
+            throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("Please specify an organisation id");
+        }
+
+        KeycloakAdminClient.instance().realms().groups().deleteGroup(orgRoleId);
+
+        super.setLogbackMarkers(sc);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .build();
+    }
+}
