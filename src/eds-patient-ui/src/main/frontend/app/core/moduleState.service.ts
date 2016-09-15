@@ -1,7 +1,5 @@
 /// <reference path="../../typings/index.d.ts" />
 /// <reference path="../models/MenuOption.ts" />
-/// <reference path="../models/Role.ts" />
-/// <reference path="../models/User.ts" />
 
 module app.core {
 	'use strict';

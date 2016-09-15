@@ -1,57 +1,105 @@
 /// <reference path="../../typings/index.d.ts" />
-/// <reference path="../models/MenuOption.ts" />
-/// <reference path="../models/Role.ts" />
-/// <reference path="../models/User.ts" />
 
 module app.core {
-	import IPromise = angular.IPromise;
-	import LoginResponse = app.models.LoginResponse;
 	'use strict';
+
+	import IPromise = angular.IPromise;
+	import User = app.models.User;
+	import AuthConfig = app.models.wellknown.AuthConfig;
+	import Auth = app.appstartup.Auth;
 
 	export interface ISecurityService {
 		getCurrentUser() : app.models.User;
+		// switchUserInRole(userInRoleUuid:string) : IPromise<app.models.UserInRole>;
 		isAuthenticated() : boolean;
-		login(username:string, password:string) : IPromise<app.models.User>;
+		login() : void;
 		logout() : void;
+		openUserAccountTab() : void;
+		onAuthSuccess(callback:any) : void;
+		onAuthError(callback:any) : void;
+		onAuthLogout(callback:any) : void;
+		onAuthReady(callback:any) : void;
 	}
 
 	export class SecurityService extends BaseHttpService implements ISecurityService {
 		currentUser:app.models.User;
 
-		getCurrentUser() : app.models.User {
+		static $inject = ['$http', '$q', '$rootScope'];
+
+		constructor(protected http:ng.IHttpService, protected promise:ng.IQService, protected $rootScope:IRootScopeService) {
+			super(http, promise);
+		}
+
+		getAuthz() : any {
+			return Auth.factory().getAuthz();
+		}
+
+		getCurrentUser() : User {
+			if(!this.currentUser) {
+				this.currentUser = this.parseUser();
+			}
 			return this.currentUser;
 		}
 
 		isAuthenticated():boolean {
-			return this.currentUser != null;
+			return this.getCurrentUser() != null;
 		}
 
-		login(username:string, password:string) : IPromise<app.models.User> {
-			var vm = this;
-			vm.currentUser = null;
-			var defer = vm.promise.defer();
-			var request = {
-				'username': username,
-				'password': password
-			};
-			vm.http.post('/patient/api/security/login', request)
-				.then(function (response) {
-					vm.currentUser = <app.models.User>response.data;
-						/*var loginResponse = <app.models.LoginResponse>response.data;
-                        vm.currentUser = loginResponse.user;*/
-					defer.resolve(vm.currentUser);
-				})
-				.catch(function (exception) {
-					defer.reject(exception);
-				});
+		// switchUserInRole(userInRoleUuid:string) : IPromise<app.models.UserInRole> {
+		// 	var request = '"' + userInRoleUuid + '"';
+		// 	return this.httpPost('/api/security/switchUserInRole', request);
+		// }
 
-			return defer.promise;
+		login() {
+			this.getAuthz().login({ redirectUri : Auth.factory().getRedirectUrl() });
 		}
 
 		logout() {
 			this.currentUser = null;
-			var vm = this;
-	//		vm.http.post('/patient/api/security/logout');
+			window.location.href = Auth.factory().getLogoutUrl();
+		}
+
+		openUserAccountTab() {
+			window.open(Auth.factory().getAccountUrl(), '_blank');
+		}
+
+		onAuthReady(callback:any) {
+
+			this.getAuthz().onReady = callback;
+		}
+
+		onAuthSuccess(callback:any) {
+			this.getAuthz().onAuthSuccess = callback;
+		}
+
+		onAuthError(callback:any) {
+			this.getAuthz().onAuthError = callback;
+		}
+
+		onAuthLogout(callback:any) {
+			this.getAuthz().onAuthLogout = callback;
+		}
+
+		private parseUser() : User {
+			if(this.getAuthz().idTokenParsed && this.getAuthz().realmAccess) {
+				var user = new User;
+				user.forename = this.getAuthz().idTokenParsed.given_name;
+				user.surname = this.getAuthz().idTokenParsed.family_name;
+				//user.title = this.getAuthz().idTokenParsed.title;              // TODO: custom attribute??
+				user.uuid = this.getAuthz().idTokenParsed.sub;
+				user.permissions = this.getAuthz().realmAccess.roles;
+
+				user.isSuperUser = false;                                   // TODO: design session needed on RBAC roles / ABAC attributes!
+				for(var permission in user.permissions) {
+					if(permission == 'eds_superuser') {
+						user.isSuperUser = true;
+						break;
+					}
+				}
+
+				return user;
+			}
+			return null;
 		}
 	}
 

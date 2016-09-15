@@ -2,13 +2,7 @@
 /// <reference path="../../blocks/logger.service.ts" />
 
 module app.dialogs {
-	import ITreeNode = AngularUITree.ITreeNode;
-	import ILibraryService = app.core.ILibraryService;
-	import LibraryService = app.core.LibraryService;
-	import TermlexSearchResult = app.models.TermlexSearchResult;
-	import TermlexSearchResultResult = app.models.TermlexSearchResultResult;
 	import IModalServiceInstance = angular.ui.bootstrap.IModalServiceInstance;
-	import FolderNode = app.models.FolderNode;
 	import IModalSettings = angular.ui.bootstrap.IModalSettings;
 	import IModalService = angular.ui.bootstrap.IModalService;
 	'use strict';

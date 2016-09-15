@@ -14,6 +14,7 @@ public final class Startup implements ServletContextListener {
     private static final Logger LOG = LoggerFactory.getLogger(EngineConfigurationSerializer.class);
 
     public void contextInitialized(ServletContextEvent contextEvent) {
+        Config config = ConfigSerializer.getConfig();
 
         //load common config
         try {
@@ -23,7 +24,6 @@ public final class Startup implements ServletContextListener {
         }
 
         //load local config
-        Config config = ConfigSerializer.getConfig();
         WebServer ws = config.getWebServer();
     }
 

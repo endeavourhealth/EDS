@@ -1,6 +1,5 @@
 /// <reference path="../../typings/index.d.ts" />
 /// <reference path="../core/admin.service.ts" />
-/// <reference path="../models/Role.ts" />
 /// <reference path="../models/User.ts" />
 
 module app.layout {
