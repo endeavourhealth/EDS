@@ -70,6 +70,7 @@ public abstract class ClinicalCodeTransformer {
         } else {
             //should ideally be able to distringuish between Read2 and EMIS codes
             fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, emisTerm, emisCode);
+            fhirConcept.setText(emisTerm);
         }
 
         threadPool.submit(new WebServiceLookup(codeId, fhirConcept, codeType, emisTerm,
