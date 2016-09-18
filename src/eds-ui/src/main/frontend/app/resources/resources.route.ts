@@ -19,7 +19,7 @@ module app.resources {
 				{
 					state: 'app.resources',
 					config: {
-						url: '/resources',
+						url: '/resources/:itemUuid/:itemAction',
 						templateUrl: 'app/resources/resources.html',
 						controller: 'ResourcesController',
 						controllerAs: 'resourcesCtrl'

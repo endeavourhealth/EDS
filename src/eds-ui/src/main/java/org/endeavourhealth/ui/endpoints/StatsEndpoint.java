@@ -57,6 +57,7 @@ public final class StatsEndpoint extends AbstractEndpoint {
         resourceNames.add("Condition");
         resourceNames.add("AllergyIntolerance");
         resourceNames.add("Procedure");
+        resourceNames.add("Immunization");
         resourceNames.add("ReferralRequest");
         resourceNames.add("Appointment");
         resourceNames.add("Encounter");

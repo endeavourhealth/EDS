@@ -116,7 +116,7 @@
                             </thead>
                             <tbody>
                                 <tr ng-repeat="id in patientIdentityCtrl.patientIdentities">
-                                    <td>{{id.patientId}}</td>
+                                    <td><a style="cursor: pointer" ng-click="patientIdentityCtrl.actionItem(id.patientId,'patient')">{{id.patientId}}</a></td>
                                     <td>{{id.serviceName}}</td>
                                     <td>{{id.systemName}}</td>
                                     <td>{{id.nhsNumber}}</td>

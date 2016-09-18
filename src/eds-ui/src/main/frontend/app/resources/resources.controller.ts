@@ -28,14 +28,12 @@ module app.resources {
 		resources : Object[];
 
 
-		static $inject = ['ResourcesService', 'LoggerService', '$scope', '$state'];
-
-
+		static $inject = ['ResourcesService', 'LoggerService', '$scope', '$stateParams'];
 
 		constructor(protected resourcesService:IResourcesService,
 					protected logger:ILoggerService,
 					protected $scope : any,
-					protected $state : IStateService) {
+					protected $stateParams : {itemAction : string, itemUuid : string}) {
 
 			this.getAllResourceTypes();
 
@@ -43,6 +41,22 @@ module app.resources {
 			$scope.isArray = angular.isArray;
 			$scope.isObject = angular.isObject;
 
+			this.performAction($stateParams.itemAction, $stateParams.itemUuid);
+
+		}
+
+		protected performAction(action:string, itemUuid:string) {
+			switch (action) {
+				case 'patient':
+					this.resourceId = itemUuid;
+					this.resourceTypeSelected = "Patient";
+
+					this.patientResourceTypeSelected = "Patient";
+					this.patientId = itemUuid;
+
+					this.getResourcesForPatient();
+					break;
+			}
 		}
 
 		getAllResourceTypes() {
@@ -69,6 +83,7 @@ module app.resources {
 
 		getResourceForId() {
 			var vm = this;
+
 			vm.resourcesService.getResourceForId(vm.resourceTypeSelected, vm.resourceId)
 				.then(function(result) {
 					vm.resourceContainers = result;

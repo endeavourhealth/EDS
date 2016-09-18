@@ -39,7 +39,6 @@ public class MedicationOrderMetadata extends AbstractResourceMetadata implements
                 Code newCode = new Code();
                 newCode.setSystem(system);
                 newCode.setCode(code);
-                newCode.setDisplay(display);
 
                 codes.add(newCode);
             }
