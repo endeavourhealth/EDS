@@ -27,6 +27,8 @@ public class LoggingManager {
         if (level != null && !level.isEmpty())
             sql += "    and e.levelString = :level";
 
+        sql += "    order by e.timestmp desc";
+
         Query query = entityManager.createQuery(sql, LoggingEventEntity.class)
                 .setParameter("serviceId", serviceId)
                 .setFirstResult(page * PAGESIZE)
