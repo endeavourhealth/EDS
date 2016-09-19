@@ -30,7 +30,7 @@ CREATE TABLE user_event
     action text,
     timestamp timestamp,
     data text,
-    PRIMARY KEY (user_id, module, submodule, action)
+    PRIMARY KEY (user_id, module, submodule, action, timestamp)
   );
 
 CREATE MATERIALIZED VIEW user_event_by_module_user_timestamp AS

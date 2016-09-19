@@ -38,7 +38,6 @@ public class ImmunizationMetadata extends AbstractResourceMetadata implements Pa
             Code newCode = new Code();
             newCode.setSystem(system);
             newCode.setCode(code);
-            newCode.setDisplay(display);
 
             codes.add(newCode);
         }

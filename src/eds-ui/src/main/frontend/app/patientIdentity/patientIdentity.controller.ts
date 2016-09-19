@@ -98,6 +98,10 @@ module app.patientIdentity {
 		/*actionItem(event : PatientIdentityEvent, action : string) {
 			alert(action+" : "+event.loggerName);
 		}*/
+
+		actionItem(uuid : string, action : string) {
+			this.$state.go('app.resources', {itemUuid: uuid, itemAction: action});
+		}
 	}
 
 	angular

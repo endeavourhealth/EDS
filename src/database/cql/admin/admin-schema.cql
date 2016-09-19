@@ -4,6 +4,13 @@ CREATE KEYSPACE admin WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replicat
 
 USE admin;
 
+CREATE TABLE snomed_lookup (
+    concept_id text,
+    type_id text,
+    term text,
+    PRIMARY KEY (concept_id)
+);
+
 CREATE TABLE item 
   ( 
     id UUID,
