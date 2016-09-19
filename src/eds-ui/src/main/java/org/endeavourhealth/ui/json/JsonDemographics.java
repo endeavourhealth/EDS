@@ -11,6 +11,36 @@ public class JsonDemographics {
     private UUID systemId;
     private UUID patientId;
     private String nhsNumber;
+    private String displayName;
+    private String dateOfBirthString;
+    private String genderString;
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public JsonDemographics setDisplayName(String displayName) {
+        this.displayName = displayName;
+        return this;
+    }
+
+    public String getDateOfBirthString() {
+        return dateOfBirthString;
+    }
+
+    public JsonDemographics setDateOfBirthString(String dateOfBirthString) {
+        this.dateOfBirthString = dateOfBirthString;
+        return this;
+    }
+
+    public String getGenderString() {
+        return genderString;
+    }
+
+    public JsonDemographics setGenderString(String genderString) {
+        this.genderString = genderString;
+        return this;
+    }
 
     public UUID getServiceId() {
         return serviceId;

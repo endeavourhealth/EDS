@@ -43,11 +43,14 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
         ResourceRepository resourceRepository = new ResourceRepository();
         List<ResourceByPatient> resourceByPatientList = resourceRepository.getResourcesByPatient(serviceId, systemId, patientId, RESOURCE_TYPE_PATIENT);
 
-        JsonDemographics demographics = new JsonDemographics();
-        demographics.setServiceId(serviceId);
-        demographics.setSystemId(systemId);
-        demographics.setPatientId(patientId);
-        demographics.setNhsNumber("9999999999");
+        JsonDemographics demographics = new JsonDemographics()
+                .setServiceId(serviceId)
+                .setSystemId(systemId)
+                .setPatientId(patientId)
+                .setNhsNumber("909 172 4098")
+                .setDisplayName("EVANS, James (Mr)")
+                .setDateOfBirthString("12-Feb-2006 (2y 5m)")
+                .setGenderString("Male");
 
         return Response
                 .ok()

@@ -4,7 +4,16 @@
 
         <div class="container-fluid">
 
-            <div>NHS Number: {{recordViewerCtrl.demographics.nhsNumber}}</div>
+            <div class="panel panel-default precis">
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-5"><span class="precis-patientname">{{recordViewerCtrl.demographics.displayName}}</span></div>
+                        <div class="col-md-3"><span class="precis-label">Born</span> <span class="precis-value">{{recordViewerCtrl.demographics.dateOfBirthString}}</span></div>
+                        <div class="col-md-2"><span class="precis-label">Gender</span> <span class="precis-value">{{recordViewerCtrl.demographics.genderString}}</span></div>
+                        <div class="col-md-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{recordViewerCtrl.demographics.nhsNumber}}</span></div>
+                    </div>
+                </div>
+            </div>
 
             <uib-tabset active="activeForm">
                 <uib-tab index="0" heading="Summary">

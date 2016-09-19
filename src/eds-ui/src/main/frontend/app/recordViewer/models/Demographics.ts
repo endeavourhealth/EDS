@@ -6,5 +6,8 @@ module app.models {
 		systemId: string;
         patientId: string;
 		nhsNumber: string;
+        displayName: string;
+        dateOfBirthString: Date;
+        genderString: string;
 	}
 }

@@ -330,3 +330,21 @@
     0%, 39%, 100% { opacity: 0; }
     40% { opacity: 1; }
 }
+
+/* record viewer - patient precis */
+.precis {
+
+}
+
+.precis-patientname {
+    font-weight: bold;
+    font-size: 120%;
+}
+
+.precis-label {
+    font-style: italic;
+}
+
+.precis-value {
+    font-weight: bold;
+}
