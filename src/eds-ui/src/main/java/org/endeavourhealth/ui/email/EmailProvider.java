@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.email;
 
-import org.endeavourhealth.core.data.admin.models.Organisation;
-import org.endeavourhealth.ui.framework.config.models.Template;
+import org.endeavourhealth.coreui.framework.config.models.Template;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

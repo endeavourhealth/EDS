@@ -4,6 +4,7 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.security.SecurityUtils;
+import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.ui.entitymap.EntityMapHelper;
 import org.endeavourhealth.ui.entitymap.models.EntityMap;
 import org.slf4j.Logger;

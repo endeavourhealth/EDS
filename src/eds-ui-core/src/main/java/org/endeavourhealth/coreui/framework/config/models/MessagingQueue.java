@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.ui.framework.config.models;
+package org.endeavourhealth.coreui.framework.config.models;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -8,18 +8,19 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for database complex type.
+ * <p>Java class for messagingQueue complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="database">
+ * &lt;complexType name="messagingQueue">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="url" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="username" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="password" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="queueName" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -29,12 +30,13 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "database", propOrder = {
+@XmlType(name = "messagingQueue", propOrder = {
     "url",
     "username",
-    "password"
+    "password",
+    "queueName"
 })
-public class Database {
+public class MessagingQueue {
 
     @XmlElement(required = true)
     protected String url;
@@ -42,6 +44,8 @@ public class Database {
     protected String username;
     @XmlElement(required = true)
     protected String password;
+    @XmlElement(required = true)
+    protected String queueName;
 
     /**
      * Gets the value of the url property.
@@ -113,6 +117,30 @@ public class Database {
      */
     public void setPassword(String value) {
         this.password = value;
+    }
+
+    /**
+     * Gets the value of the queueName property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getQueueName() {
+        return queueName;
+    }
+
+    /**
+     * Sets the value of the queueName property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setQueueName(String value) {
+        this.queueName = value;
     }
 
 }

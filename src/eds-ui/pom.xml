@@ -215,7 +215,7 @@
 
         <dependency>
             <groupId>org.endeavourhealth</groupId>
-            <artifactId>eds-core</artifactId>
+            <artifactId>eds-ui-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 

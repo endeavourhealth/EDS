@@ -7,6 +7,7 @@ import org.endeavourhealth.core.data.config.ConfigurationRepository;
 import org.endeavourhealth.core.data.config.models.ConfigurationResource;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
+import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

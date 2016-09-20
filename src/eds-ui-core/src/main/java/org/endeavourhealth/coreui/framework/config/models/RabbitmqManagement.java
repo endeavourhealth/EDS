@@ -1,4 +1,4 @@
-package org.endeavourhealth.ui.framework.config.models;
+package org.endeavourhealth.coreui.framework.config.models;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
