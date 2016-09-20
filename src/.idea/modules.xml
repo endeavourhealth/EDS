@@ -16,6 +16,7 @@
       <module fileurl="file://$PROJECT_DIR$/eds-subscriber/eds-subscriber.iml" filepath="$PROJECT_DIR$/eds-subscriber/eds-subscriber.iml" />
       <module fileurl="file://$PROJECT_DIR$/eds-transforms/eds-transforms.iml" filepath="$PROJECT_DIR$/eds-transforms/eds-transforms.iml" group="core" />
       <module fileurl="file://$PROJECT_DIR$/eds-ui/eds-ui.iml" filepath="$PROJECT_DIR$/eds-ui/eds-ui.iml" group="core" />
+      <module fileurl="file://$PROJECT_DIR$/eds-ui-core/eds-ui-core.iml" filepath="$PROJECT_DIR$/eds-ui-core/eds-ui-core.iml" />
     </modules>
   </component>
 </project>

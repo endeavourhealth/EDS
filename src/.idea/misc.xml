@@ -8,6 +8,7 @@
     <file type="web" url="file://$PROJECT_DIR$/eds-patient-ui" />
     <file type="web" url="file://$PROJECT_DIR$/eds-subscriber" />
     <file type="web" url="file://$PROJECT_DIR$/eds-ui" />
+    <file type="web" url="file://$PROJECT_DIR$/eds-ui-core" />
   </component>
   <component name="MavenProjectsManager">
     <option name="originalFiles">
@@ -24,6 +25,7 @@
         <option value="$PROJECT_DIR$/eds-patient-ui/pom.xml" />
         <option value="$PROJECT_DIR$/../pom.xml" />
         <option value="$PROJECT_DIR$/eds-subscriber/pom.xml" />
+        <option value="$PROJECT_DIR$/eds-ui-core/pom.xml" />
       </list>
     </option>
   </component>

@@ -131,35 +131,11 @@
             <version>${fhir-dstu2.version}</version>
         </dependency>
 
-        <!-- Keycloak -->
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-tomcat8-adapter</artifactId>
-            <version>${keycloak.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client</artifactId>
-            <version>${keycloak.version}</version>
-            <exclusions>
-                <!-- exclude common jars included in Tomcat lib directory, but
-                     include them below as provided dependencies-->
-                <exclusion>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-common</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-core</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
 
         <!-- dependent on EDS-core -->
         <dependency>
             <groupId>org.endeavourhealth</groupId>
-            <artifactId>eds-core</artifactId>
+            <artifactId>eds-ui-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 

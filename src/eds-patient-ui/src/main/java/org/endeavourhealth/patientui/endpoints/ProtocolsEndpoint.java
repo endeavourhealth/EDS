@@ -1,5 +1,6 @@
 package org.endeavourhealth.patientui.endpoints;
 
+import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +16,7 @@ import javax.ws.rs.core.SecurityContext;
 @Path("/audit")
 public class ProtocolsEndpoint extends AbstractEndpoint {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MedicalRecordEndpoint.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ProtocolsEndpoint.class);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
