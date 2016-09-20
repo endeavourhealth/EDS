@@ -22,7 +22,7 @@ module app.medicalRecord {
                         url: '/medicalRecord',
                         templateUrl: 'app/medicalRecord/medicalRecord.html',
                         controller: 'MedicalRecordController',
-                        controllerAs: 'medicalRecord'
+                        controllerAs: 'ctrl'
                     }
                 }
             ];

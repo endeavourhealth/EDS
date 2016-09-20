@@ -25,9 +25,9 @@ module app.recordViewer {
 					protected $state : IStateService) {
 
             // temporarily fix these until patient find is present
-            this.serviceId = "db7eba14-4a89-4090-abf8-af6c60742cb1";
-            this.systemId = "db8fa60e-08ff-4b61-ba4c-6170e6cb8df7";
-            this.patientId = "81b66483-ac01-47dd-98a7-73b4b5639680";
+            this.serviceId = "35663c09-0a0e-45c3-9989-e00334225906";
+            this.systemId = "d96d21de-0576-471a-91f3-7fe0116213a9";
+            this.patientId = "62ed352e-10f9-4680-83d9-ac055eb0afab";
 
             this.refresh();
 		}

@@ -7,8 +7,7 @@ import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.security.RoleUtils;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.coreui.framework.exceptions.BadRequestException;
-import org.endeavourhealth.coreui.framework.security.UserPrincipal;
-import org.endeavourhealth.coreui.framework.security.UserWrapper;
+import org.keycloak.KeycloakPrincipal;
 import org.slf4j.MDC;
 
 import javax.ws.rs.core.Context;
@@ -37,21 +36,13 @@ public abstract class AbstractEndpoint {
 
 
     protected String getNhsNumberFromSession(SecurityContext sc) throws Exception {
-        UserPrincipal up = (UserPrincipal)sc.getUserPrincipal();
+        // TODO : KeyCloakPrincipal - how to get NHS Number?
+        KeycloakPrincipal up = (KeycloakPrincipal)sc.getUserPrincipal();
         if (up == null) {
             return null;
         }
-        UserWrapper userWrapper = up.getUserWrapper();
-        return userWrapper.getNhsNumber();
-    }
 
-    protected UUID getPersonIdFromSession(SecurityContext sc) throws Exception {
-        UserPrincipal up = (UserPrincipal)sc.getUserPrincipal();
-        if (up == null) {
-            return null;
-        }
-        UserWrapper userWrapper = up.getUserWrapper();
-        return userWrapper.getPersonId();
+        return "6714697058";
     }
 
     protected EndUser getEndUserFromSession(SecurityContext sc) throws Exception {

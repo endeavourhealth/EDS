@@ -11,7 +11,23 @@
 						<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
 						The below table shows all the organisations that have stored medical data about you
 					</div>
-					<!--<p>The below table shows all the organisations that have stored medical data about you</p>-->
+					<div class="row">
+						<div class="form-group col-md-3">
+							<label>Filter by Service<i class="fa fa-filter fa-lg fa-fw"></i></label>
+							<div class="input-group">
+								<span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
+								<select id="service" class="form-control" ng-model="ctrl.selectedService" ng-change="ctrl.refresh()">
+									<option value="">All Services</option>
+									<option ng-repeat="item in ctrl.services" value="{{item.serviceId}}">{{item.serviceName}}</option>
+								</select>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-12">
+							<label>[Medical record data]</label>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
