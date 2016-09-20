@@ -1,4 +1,4 @@
-package org.endeavourhealth.ui.json;
+package org.endeavourhealth.coreui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;

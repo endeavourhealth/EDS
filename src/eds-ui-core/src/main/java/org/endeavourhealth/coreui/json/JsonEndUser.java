@@ -1,4 +1,4 @@
-package org.endeavourhealth.ui.json;
+package org.endeavourhealth.coreui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.core.data.admin.models.EndUser;
