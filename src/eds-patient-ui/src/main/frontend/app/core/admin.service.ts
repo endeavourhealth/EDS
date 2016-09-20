@@ -18,7 +18,9 @@ module app.core {
 
 		getMenuOptions():app.models.MenuOption[] {
 			return [
-				{caption: 'Patients', state: 'app.medicalRecord', icon: 'fa fa-tag'}
+				{caption: 'Patients', state: 'app.medicalRecord', icon: 'fa fa-tag'},
+				{caption: 'Consent', state: 'app.consent', icon: 'fa fa-check-square-o'},
+				{caption: 'Audit', state: 'app.audit', icon: 'fa fa-list-ul'},
 			];
 		}
 

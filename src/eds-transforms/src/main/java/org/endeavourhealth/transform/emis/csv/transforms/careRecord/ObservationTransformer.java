@@ -364,7 +364,7 @@ public class ObservationTransformer {
         fhirReferral.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
 
         Long codeId = parser.getCodeId();
-        fhirReferral.setReason(csvHelper.findClinicalCode(codeId, csvProcessor));
+        fhirReferral.setType(csvHelper.findClinicalCode(codeId, csvProcessor));
 
         String clinicianGuid = parser.getClinicianUserInRoleGuid();
         fhirReferral.setRequester(csvHelper.createPractitionerReference(clinicianGuid));

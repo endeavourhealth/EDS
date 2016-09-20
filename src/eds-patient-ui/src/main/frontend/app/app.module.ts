@@ -21,7 +21,10 @@ angular.module('app', [
 		'app.blocks',
 		'app.layout',
 		'app.dialogs',
-		'app.medicalRecord'
+
+		'app.medicalRecord',
+		'app.consent',
+		'app.audit'
 	])
 	.run(['$state', '$rootScope', 'AdminService', 'SecurityService', 'LoggerService', '$uibModal',
 		function ($state:IStateService,

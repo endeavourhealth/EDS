@@ -13,7 +13,7 @@
         </init-param>
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
-            <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.core.security.CustomRolesAllowedFeature,org.endeavourhealth.patientui.framework.exceptions.BaseExceptionMapper</param-value>
+            <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.core.security.CustomRolesAllowedFeature,org.endeavourhealth.coreui.framework.exceptions.BaseExceptionMapper</param-value>
         </init-param>
 
         <!-- enable directory listings -->
@@ -36,11 +36,11 @@
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
         <init-param>
             <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>org.endeavourhealth.patientui.endpoints_public</param-value>
+            <param-value>org.endeavourhealth.coreui.endpoints_public</param-value>
         </init-param>
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
-            <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.patientui.framework.exceptions.BaseExceptionMapper</param-value>
+            <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.coreui.framework.exceptions.BaseExceptionMapper</param-value>
         </init-param>
 
         <load-on-startup>1</load-on-startup>
@@ -54,7 +54,7 @@
     <!--register our Startup class as a servlet listener so we can perform one-time setup-->
     <listener>
         <listener-class>
-            org.endeavourhealth.patientui.framework.Startup
+            org.endeavourhealth.coreui.framework.Startup
         </listener-class>
     </listener>
 

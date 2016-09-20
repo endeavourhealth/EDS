@@ -16,7 +16,7 @@ import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
 import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
-import org.endeavourhealth.transform.ceg.CegFhirTransformer;
+import org.endeavourhealth.transform.enterprise.EnterpriseFhirTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +64,10 @@ public class MessageTransformOutbound extends PipelineComponent {
 				UUID serviceId = UUID.fromString(serviceIdStr);
 				String orgNationalIdStr = exchange.getHeader(HeaderKeys.SenderOrganisationUuid);
 				UUID orgNationalId = UUID.fromString(orgNationalIdStr);
-				String outbound = CegFhirTransformer.transformFromFhir(serviceId, orgNationalId, transformBatch.getBatchId(), transformBatch.getResourceIds());
+
+				String outbound = EnterpriseFhirTransformer.transformFromFhir(serviceId, orgNationalId, transformBatch.getBatchId(), transformBatch.getResourceIds());
+				//String outbound = CegFhirTransformer.transformFromFhir(serviceId, orgNationalId, transformBatch.getBatchId(), transformBatch.getResourceIds());
+
 				// Store transformed message
 				UUID messageUuid = UUID.randomUUID();
 				new QueuedMessageRepository().save(messageUuid, outbound);
