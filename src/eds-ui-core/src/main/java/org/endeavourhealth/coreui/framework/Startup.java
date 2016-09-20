@@ -18,7 +18,7 @@ public final class Startup implements ServletContextListener {
 
         //load common config
         try {
-            EngineConfigurationSerializer.loadConfigFromPropertyIfPossible("eds.patientUiEngineConfiguration");
+            EngineConfigurationSerializer.loadConfigFromPropertyIfPossible("eds.uiEngineConfiguration");
         } catch (Exception e) {
             LOG.error("Error loading engine config", e);
         }
