@@ -29,7 +29,7 @@ public class CegFhirTransformer {
     public static String transformFromFhir(UUID serviceId,
                                            UUID orgNationalId,
                                            UUID batchId,
-                                           List<UUID> resourceIds) throws Exception {
+                                           Map<ResourceType, List<UUID>> resourceIds) throws Exception {
 
         //retrieve our resources
         List<Resource> allResources = retrieveAllResources(batchId);
@@ -219,22 +219,25 @@ public class CegFhirTransformer {
         return ret;
     }
 
-    private static List<Resource> filterResources(List<Resource> allResources, List<UUID> resourceIds) throws Exception {
-
-        //if we have a list of IDs to restrict on, use it
-        Set<UUID> hsResourcesToKeep = null;
-        if (resourceIds != null) {
-            hsResourcesToKeep = new HashSet<>(resourceIds);
-        }
+    private static List<Resource> filterResources(List<Resource> allResources, Map<ResourceType, List<UUID>> resourceIdsToKeep) throws Exception {
 
         List<Resource> ret = new ArrayList<>();
 
         for (Resource resource: allResources) {
+            ResourceType resourceType = resource.getResourceType();
             UUID resourceId = UUID.fromString(resource.getId());
 
-            if (hsResourcesToKeep == null
-                || hsResourcesToKeep.contains(resourceId)) {
+            //during testing, the map is null, as the protocol component isn't in yet, so if the map is null, just accept it
+            if (resourceIdsToKeep == null) {
                 ret.add(resource);
+
+            } else {
+
+                List<UUID> uuidsToKeep = resourceIdsToKeep.get(resourceType);
+                if (uuidsToKeep != null
+                        && uuidsToKeep.contains(resourceId)) {
+                    ret.add(resource);
+                }
             }
         }
 
