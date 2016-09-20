@@ -162,7 +162,12 @@ public class ResourceRepository extends Repository {
      */
     public Resource getCurrentVersionAsResource(ResourceType resourceType, String resourceIdStr) throws Exception {
         ResourceHistory resourceHistory = getCurrentVersion(resourceType.toString(), UUID.fromString(resourceIdStr));
+
         if (resourceHistory == null) {
+            throw new Exception("Resource not found for type " + resourceType + " and ID " + resourceIdStr);
+        }
+
+        if (resourceHistory.getIsDeleted()) {
             return null;
         } else {
             return new JsonParser().parse(resourceHistory.getResourceData());

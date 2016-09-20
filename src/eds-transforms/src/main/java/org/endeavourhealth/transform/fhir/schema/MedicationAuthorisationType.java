@@ -28,6 +28,16 @@ public enum MedicationAuthorisationType {
         this.description = description;
     }
 
+
+    public static MedicationAuthorisationType fromCode(String v) {
+        for (MedicationAuthorisationType c: MedicationAuthorisationType.values()) {
+            if (c.getCode().equalsIgnoreCase(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
+    }
+
     public static MedicationAuthorisationType fromDescription(String v) {
         for (MedicationAuthorisationType c: MedicationAuthorisationType.values()) {
             if (c.getDescription().equalsIgnoreCase(v)) {

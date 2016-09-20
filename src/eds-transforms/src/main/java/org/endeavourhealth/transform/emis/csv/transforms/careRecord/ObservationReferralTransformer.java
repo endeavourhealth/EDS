@@ -74,7 +74,8 @@ public class ObservationReferralTransformer {
 
         String mode = observationParser.getReferralMode();
         if (!Strings.isNullOrEmpty(mode)) {
-            fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(mode));
+            //TODO - need a new extension for this, as TYPE is not the right place
+            //fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(mode));
         }
 
         //although the columns exist in the CSV, the spec. states that they'll always be empty
