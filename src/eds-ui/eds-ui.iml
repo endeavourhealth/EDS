@@ -17,7 +17,7 @@
         <setting name="validation-enabled" value="true" />
         <setting name="provider-name" value="" />
         <datasource-mapping>
-          <factory-entry name="NewPersistenceUnit" value="32da0db5-7b47-4f50-8b30-435e33aa2ec4" />
+          <factory-entry name="NewPersistenceUnit" value="81944359-7183-4a76-89d5-3d9cd34bfc9e" />
         </datasource-mapping>
         <deploymentDescriptor name="persistence.xml" url="file://$MODULE_DIR$/src/main/resources/META-INF/persistence.xml" />
       </configuration>
@@ -120,5 +120,9 @@
     <orderEntry type="library" name="Maven: org.jdom:jdom:1.1.3" level="project" />
     <orderEntry type="library" name="Maven: org.postgresql:postgresql:9.4.1208" level="project" />
     <orderEntry type="library" name="Maven: commons-io:commons-io:1.3.2" level="project" />
+    <orderEntry type="module" module-name="eds-transforms" />
+    <orderEntry type="library" name="Maven: org.apache.commons:commons-csv:1.3" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.jcs:jcs:1.3" level="project" />
+    <orderEntry type="library" name="Maven: concurrent:concurrent:1.0" level="project" />
   </component>
 </module>

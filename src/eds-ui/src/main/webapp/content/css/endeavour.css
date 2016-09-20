@@ -332,19 +332,27 @@
 }
 
 /* record viewer - patient precis */
-.precis {
+.record-viewer .precis {
 
 }
 
-.precis-patientname {
+.record-viewer .precis-patientname {
     font-weight: bold;
     font-size: 120%;
 }
 
-.precis-label {
+.record-viewer .precis-label {
     font-style: italic;
 }
 
-.precis-value {
+.record-viewer .precis-value {
     font-weight: bold;
+}
+
+.record-viewer .tab-panel {
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    border-radius: 0px 0px 5px 5px;
+    padding: 10px;
 }

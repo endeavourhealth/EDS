@@ -219,6 +219,14 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- dependent on EDS-transforms -->
+
+        <dependency>
+            <groupId>org.endeavourhealth</groupId>
+            <artifactId>eds-transforms</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -4,7 +4,7 @@
 
 module app.recordViewer {
 	import IRecordViewerService = app.core.IRecordViewerService;
-	import Demographics = app.models.Demographics;
+	import Patient = app.models.Patient;
 	import Service = app.models.Service;
 	import System = app.models.System;
 	import IServiceService = app.service.IServiceService;
@@ -15,7 +15,7 @@ module app.recordViewer {
         serviceId : string;
         systemId : string;
         patientId : string;
-		demographics: Demographics;
+		patient: Patient;
 
 		static $inject = ['RecordViewerService', 'LoggerService', 'ServiceService', '$state'];
 
@@ -38,12 +38,12 @@ module app.recordViewer {
 
 		getDemographics() {
 			var vm = this;
-			vm.demographics = null;
+			vm.patient = null;
 			vm.recordViewerService.getDemographics(vm.serviceId, vm.systemId, vm.patientId)
-				.then(function (data:Demographics) {
-					vm.demographics = data;
+				.then(function (data:Patient) {
+					vm.patient = data;
 					if (data == null) {
-						vm.logger.error('No demographics found');
+						vm.logger.error('No patient found');
 					}
 				});
 		}

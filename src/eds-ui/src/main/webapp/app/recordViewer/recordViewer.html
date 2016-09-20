@@ -1,4 +1,4 @@
-<div class="module">
+<div class="module record-viewer">
     <div class="module-heading">Record viewer</div>
     <div class="module-body">
 
@@ -7,10 +7,10 @@
             <div class="panel panel-default precis">
                 <div class="panel-body">
                     <div class="row">
-                        <div class="col-md-5"><span class="precis-patientname">{{recordViewerCtrl.demographics.displayName}}</span></div>
-                        <div class="col-md-3"><span class="precis-label">Born</span> <span class="precis-value">{{recordViewerCtrl.demographics.dateOfBirthString}}</span></div>
-                        <div class="col-md-2"><span class="precis-label">Gender</span> <span class="precis-value">{{recordViewerCtrl.demographics.genderString}}</span></div>
-                        <div class="col-md-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{recordViewerCtrl.demographics.nhsNumber}}</span></div>
+                        <div class="col-md-5"><span class="precis-patientname">{{recordViewerCtrl.patient.displayName}}</span></div>
+                        <div class="col-md-3"><span class="precis-label">Born</span> <span class="precis-value">{{recordViewerCtrl.patient.dateOfBirthFormatted}}</span></div>
+                        <div class="col-md-2"><span class="precis-label">Gender</span> <span class="precis-value">{{recordViewerCtrl.patient.genderFormatted}}</span></div>
+                        <div class="col-md-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{recordViewerCtrl.patient.nhsNumberFormatted}}</span></div>
                     </div>
                 </div>
             </div>
@@ -18,66 +18,44 @@
             <uib-tabset active="activeForm">
                 <uib-tab index="0" heading="Summary">
 
-                    <div class="panel panel-primary">
-                        <div class="panel-body">
-                            Summary
-                        </div>
+                    <div class="tab-panel">
+                        Summary
                     </div>
                 </uib-tab>
                 <uib-tab index="1" heading="Consultations">
 
-                    <div class="panel panel-primary">
-                        <div class="panel-body">
-                            Consultations
-                        </div>
+                    <div class="tab-panel">
+                        Consultations
                     </div>
                 </uib-tab>
                 <uib-tab index="2" heading="Medication">
 
-                    <div class="panel panel-primary">
-                        <div class="panel-body">
-                            Medication
-                        </div>
+                    <div class="tab-panel">
+                        Medication
                     </div>
                 </uib-tab>
                 <uib-tab index="3" heading="Problems">
 
-                    <div class="panel panel-primary">
-                        <div class="panel-body">
-                            Problems
-                        </div>
+                    <div class="tab-panel">
+                        Problems
                     </div>
                 </uib-tab>
                 <uib-tab index="4" heading="Investigations">
 
-                    <div class="panel panel-primary">
-                        <div class="panel-body">
-                            Investigations
-                        </div>
+                    <div class="tab-panel">
+                        Investigations
                     </div>
                 </uib-tab>
-                <uib-tab index="5" heading="Investigations">
+                <uib-tab index="5" heading="Care History">
 
-                    <div class="panel panel-primary">
-                        <div class="panel-body">
-                            Investigations
-                        </div>
+                    <div class="tab-panel">
+                        Care History
                     </div>
                 </uib-tab>
-                <uib-tab index="6" heading="Care History">
+                <uib-tab index="6" heading="Diary">
 
-                    <div class="panel panel-primary">
-                        <div class="panel-body">
-                            Care History
-                        </div>
-                    </div>
-                </uib-tab>
-                <uib-tab index="7" heading="Diary">
-
-                    <div class="panel panel-primary">
-                        <div class="panel-body">
+                    <div class="tab-panel">
                             Diary
-                        </div>
                     </div>
                 </uib-tab>
             </uib-tabset>

@@ -1,16 +1,16 @@
 /// <reference path="../../typings/index.d.ts" />
 
 module app.core {
-	import Demographics = app.models.Demographics;
+	import Patient = app.models.Patient;
 	'use strict';
 
 	export interface IRecordViewerService {
-		getDemographics(serviceId : string, systemId : string, patientId : string):ng.IPromise<Demographics>;
+		getDemographics(serviceId : string, systemId : string, patientId : string):ng.IPromise<Patient>;
 	}
 
 	export class RecordViewerService extends BaseHttpService implements IRecordViewerService {
 
-		getDemographics(serviceId : string, systemId : string, patientId : string):ng.IPromise<Demographics> {
+		getDemographics(serviceId : string, systemId : string, patientId : string):ng.IPromise<Patient> {
 			var request = {
 				params: {
 					'serviceId': serviceId,
