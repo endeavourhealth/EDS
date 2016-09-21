@@ -1,64 +1,74 @@
 <div class="module record-viewer">
-    <div class="module-heading">Record viewer</div>
+    <div class="module-heading">
+        <span>Record viewer</span>
+        <button class="btn btn-success btn-sm pull-right" ng-click="recordViewerCtrl.showPatientFind()"><i class="fa fa-search"></i> Find patient</button>
+    </div>
     <div class="module-body">
 
         <div class="container-fluid">
 
-            <div class="panel panel-default precis">
-                <div class="panel-body">
-                    <div class="row">
-                        <div class="col-md-5"><span class="precis-patientname">{{recordViewerCtrl.patient.displayName}}</span></div>
-                        <div class="col-md-3"><span class="precis-label">Born</span> <span class="precis-value">{{recordViewerCtrl.patient.dateOfBirthFormatted}}</span></div>
-                        <div class="col-md-2"><span class="precis-label">Gender</span> <span class="precis-value">{{recordViewerCtrl.patient.genderFormatted}}</span></div>
-                        <div class="col-md-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{recordViewerCtrl.patient.nhsNumberFormatted}}</span></div>
-                    </div>
-                </div>
+            <div name="noPatientSelectedView" ng-hide="patient">
+                No patient selected
             </div>
 
-            <uib-tabset active="activeForm">
-                <uib-tab index="0" heading="Summary">
+            <div name="recordView" ng-show="patient">
 
-                    <div class="tab-panel">
-                        Summary
+                <div class="panel panel-default precis">
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-sm-5"><span class="precis-patientname">{{recordViewerCtrl.patient.displayName}}</span></div>
+                            <div class="col-sm-3"><span class="precis-label">Born</span> <span class="precis-value">{{recordViewerCtrl.patient.dateOfBirthFormatted}}</span></div>
+                            <div class="col-sm-2"><span class="precis-label">Gender</span> <span class="precis-value">{{recordViewerCtrl.patient.genderFormatted}}</span></div>
+                            <div class="col-sm-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{recordViewerCtrl.patient.nhsNumberFormatted}}</span></div>
+                        </div>
                     </div>
-                </uib-tab>
-                <uib-tab index="1" heading="Consultations">
+                </div>
 
-                    <div class="tab-panel">
-                        Consultations
-                    </div>
-                </uib-tab>
-                <uib-tab index="2" heading="Medication">
+                <uib-tabset active="activeForm">
+                    <uib-tab index="0" heading="Summary">
 
-                    <div class="tab-panel">
-                        Medication
-                    </div>
-                </uib-tab>
-                <uib-tab index="3" heading="Problems">
+                        <div class="tab-panel">
+                            Summary
+                        </div>
+                    </uib-tab>
+                    <uib-tab index="1" heading="Consultations">
 
-                    <div class="tab-panel">
-                        Problems
-                    </div>
-                </uib-tab>
-                <uib-tab index="4" heading="Investigations">
+                        <div class="tab-panel">
+                            Consultations
+                        </div>
+                    </uib-tab>
+                    <uib-tab index="2" heading="Medication">
 
-                    <div class="tab-panel">
-                        Investigations
-                    </div>
-                </uib-tab>
-                <uib-tab index="5" heading="Care History">
+                        <div class="tab-panel">
+                            Medication
+                        </div>
+                    </uib-tab>
+                    <uib-tab index="3" heading="Problems">
 
-                    <div class="tab-panel">
-                        Care History
-                    </div>
-                </uib-tab>
-                <uib-tab index="6" heading="Diary">
+                        <div class="tab-panel">
+                            Problems
+                        </div>
+                    </uib-tab>
+                    <uib-tab index="4" heading="Investigations">
 
-                    <div class="tab-panel">
-                            Diary
-                    </div>
-                </uib-tab>
-            </uib-tabset>
+                        <div class="tab-panel">
+                            Investigations
+                        </div>
+                    </uib-tab>
+                    <uib-tab index="5" heading="Care History">
+
+                        <div class="tab-panel">
+                            Care History
+                        </div>
+                    </uib-tab>
+                    <uib-tab index="6" heading="Diary">
+
+                        <div class="tab-panel">
+                                Diary
+                        </div>
+                    </uib-tab>
+                </uib-tabset>
+            </div>
         </div>
     </div>
 </div>

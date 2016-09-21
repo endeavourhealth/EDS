@@ -1,6 +1,6 @@
 package org.endeavourhealth.ui.business.recordViewer;
 
-import org.endeavourhealth.ui.json.JsonPatient;
+import org.endeavourhealth.ui.business.recordViewer.models.JsonPatient;
 import org.hl7.fhir.instance.model.Patient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

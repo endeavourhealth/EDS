@@ -2,7 +2,7 @@ package org.endeavourhealth.ui.business.recordViewer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.ui.json.JsonPatient;
+import org.endeavourhealth.ui.business.recordViewer.models.JsonPatient;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.List;

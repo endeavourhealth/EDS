@@ -1,4 +1,4 @@
-package org.endeavourhealth.ui.json;
+package org.endeavourhealth.ui.business.recordViewer.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
