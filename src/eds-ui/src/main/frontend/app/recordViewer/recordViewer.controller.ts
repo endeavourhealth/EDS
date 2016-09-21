@@ -9,13 +9,12 @@ module app.recordViewer {
 	import System = app.models.System;
 	import IServiceService = app.service.IServiceService;
     import PatientFindController = app.dialogs.PatientFindController;
+    import PatientFindSelection = app.models.PatientFindSelection;
 
 	'use strict';
 
 	export class RecordViewerController {
-        serviceId : string;
-        systemId : string;
-        patientId : string;
+        patientFindSelection: PatientFindSelection;
 		patient: Patient;
 
 		static $inject = ['$uibModal', 'RecordViewerService', 'LoggerService', 'ServiceService', '$state'];
@@ -25,11 +24,6 @@ module app.recordViewer {
 					protected logger:ILoggerService,
 					protected serviceService : IServiceService,
 					protected $state : IStateService) {
-
-            // temporarily fix these until patient find is present
-            this.serviceId = "35663c09-0a0e-45c3-9989-e00334225906";
-            this.systemId = "d96d21de-0576-471a-91f3-7fe0116213a9";
-            this.patientId = "62ed352e-10f9-4680-83d9-ac055eb0afab";
 
             this.showPatientFind();
 		}
@@ -41,8 +35,8 @@ module app.recordViewer {
 		getDemographics() {
 			var vm = this;
 			vm.patient = null;
-			vm.recordViewerService.getDemographics(vm.serviceId, vm.systemId, vm.patientId)
-				.then(function (data:Patient) {
+			vm.recordViewerService.getDemographics(vm.patientFindSelection.serviceId, vm.patientFindSelection.systemId, vm.patientFindSelection.patientId)
+				.then(function (data: Patient) {
 					vm.patient = data;
 					if (data == null) {
 						vm.logger.error('No patient found');
@@ -50,12 +44,18 @@ module app.recordViewer {
 				});
 		}
 
-        private showPatientFind() {
+        showPatientFind() {
             var vm = this;
             PatientFindController.open(vm.$modal)
-                .result.then(function (result: Service[]) {
+                .result.then(function (result: PatientFindSelection) {
+                vm.patientFindSelection = result;
                 vm.refresh();
             });
+        }
+
+        clearPatient() {
+            this.patientFindSelection = null;
+            this.patient = null;
         }
 	}
 

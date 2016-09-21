@@ -2,16 +2,17 @@
     <div class="module-heading">
         <span>Record viewer</span>
         <button class="btn btn-success btn-sm pull-right" ng-click="recordViewerCtrl.showPatientFind()"><i class="fa fa-search"></i> Find patient</button>
+        <button class="btn btn-success btn-sm pull-right" ng-click="recordViewerCtrl.clearPatient()" ng-disabled="recordViewerCtrl.patient == null"><i class="fa fa-times-circle"></i> Clear patient</button>
     </div>
     <div class="module-body">
 
         <div class="container-fluid">
 
-            <div name="noPatientSelectedView" ng-hide="patient">
+            <div name="noPatientSelectedView" ng-hide="recordViewerCtrl.patient">
                 No patient selected
             </div>
 
-            <div name="recordView" ng-show="patient">
+            <div name="recordView" ng-show="recordViewerCtrl.patient">
 
                 <div class="panel panel-default precis">
                     <div class="panel-body">
