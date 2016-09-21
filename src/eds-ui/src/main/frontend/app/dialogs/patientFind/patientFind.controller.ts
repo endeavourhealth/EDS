@@ -11,12 +11,18 @@ module app.dialogs {
 
 	export class PatientFindController extends BaseDialogController {
 
+        searchTerms: string;
+        searchedTerms: string;
+        selectedRowIndex: number;
+        patientSelection: PatientFindSelection;
+
 		public static open($modal : IModalService) : IModalServiceInstance {
 			var options : IModalSettings = {
 				templateUrl: 'app/dialogs/patientFind/patientFind.html',
 				controller: 'PatientFindController',
 				controllerAs: 'ctrl',
-				backdrop: 'static'
+				backdrop: 'static',
+                size: 'lg'
 			};
 
 			var dialog = $modal.open(options);
@@ -37,6 +43,23 @@ module app.dialogs {
 
             this.resultData = selection;
 		}
+
+		findPatient() {
+            this.searchedTerms = this.searchTerms;
+        }
+
+        selectPatient(selectedRowIndex: number) {
+            if (this.selectedRowIndex == selectedRowIndex) {
+                this.selectedRowIndex = null;
+            } else {
+                this.selectedRowIndex = selectedRowIndex;
+            }
+        }
+
+        searchTermsChanged() {
+            this.searchedTerms = null;
+            this.selectedRowIndex = null;
+        }
 	}
 
 	angular

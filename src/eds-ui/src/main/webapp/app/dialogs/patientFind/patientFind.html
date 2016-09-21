@@ -3,11 +3,41 @@
     <h4 class="modal-title">Find patient</h4>
 </div>
 <div class="modal-body">
-    <form endUserRole="form" class="container-fluid">
-    </form>
+
+    <div class="container-fluid">
+        <div class="input-group">
+            <input type="text" class="form-control" ng-model="ctrl.searchTerms" ng-change="ctrl.searchTermsChanged()" autofocus placeholder="Enter search terms...">
+            <span class="input-group-btn">
+                <button class="btn btn-primary" type="button" ng-click="ctrl.findPatient()">Find patient</button>
+            </span>
+        </div>
+
+        <div id="patient-find-search-results" ng-show="ctrl.searchedTerms">
+            <table class="table table-hover">
+                <thead>
+                    <th>Name / Address</th>
+                    <th>Date of birth</th>
+                    <th>NHS number</th>
+                </thead>
+                <tbody>
+                    <tr ng-class="{'selected': ctrl.selectedRowIndex == 1}" ng-click="ctrl.selectPatient(1)">
+                        <td>BLUE, James (Mr)<br/>1 Main Street</td>
+                        <td>12-May-2003</td>
+                        <td>448 858 8573</td>
+                    </tr>
+                    <tr ng-class="{'selected': ctrl.selectedRowIndex == 2}" ng-click="ctrl.selectPatient(2)">
+                        <td>GREEN, Freddy (Mr)<br/>1 Main Street</td>
+                        <td>20-Mar-2004</td>
+                        <td>994 756 2937</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
 <div class="modal-footer">
     <button type="button" class="btn bnt-default" data-ng-click="ctrl.cancel()">Cancel</button>
-    <button type="button" class="btn btn-primary" ng-hide="ctrl.editMode" data-ng-click="ctrl.ok()">OK</button>
+    <button type="button" class="btn btn-primary" ng-hide="ctrl.editMode" data-ng-click="ctrl.ok()" ng-disabled="ctrl.selectedRowIndex == null">OK</button>
 </div>
 
