@@ -7,8 +7,7 @@ module app.logging {
 	import LoggingEvent = app.models.LoggingEvent;
 	import Service = app.models.Service;
 	import IServiceService = app.service.IServiceService;
-	import MessageBoxController = app.dialogs.MessageBoxController;
-
+	import LogEntryDialogController = app.logging.LogEntryDialogController;
 	'use strict';
 
 	export class LoggingController {
@@ -24,13 +23,13 @@ module app.logging {
 					protected logger:ILoggerService,
 					protected serviceService : IServiceService,
 					protected $modal : IModalService) {
-			this.page = 0;
 			this.loadServices();
 			this.refresh();
 		}
 
 		refresh() {
 			var vm = this;
+			this.page = 0;
 			this.getLoggingEvents(vm.serviceId, vm.level, vm.page);
 		}
 
@@ -86,13 +85,26 @@ module app.logging {
 
 		showStackTrace(event : LoggingEvent, stackTrace : string) {
 			var vm = this;
-			MessageBoxController.openLarge(
-				vm.$modal,
-				event.formattedMessage + ' in ' + event.callerMethod,
-				stackTrace,
-				null,
-				'Close'
-			);
+			LogEntryDialogController.open(vm.$modal, event, stackTrace);
+		}
+
+		getLevelIcon(level : string) {
+			switch(level) {
+				case "TRACE" :
+					return "fa fa-fw fa-search text-success";
+				case "DEBUG":
+					return "fa fa-fw fa-bug text-primary";
+				case "INFO":
+					return "fa fa-fw fa-info text-info";
+				case "WARN" :
+					return "fa fa-fw fa-exclamation-circle text-warning";
+				case "ERROR":
+					return "fa fa-fw fa-ban text-danger";
+				case "FATAL":
+					return "fa fa-fw fa-stop text-danger";
+				default:
+					return "fa fa-fw fa-space";
+			}
 		}
 	}
 
