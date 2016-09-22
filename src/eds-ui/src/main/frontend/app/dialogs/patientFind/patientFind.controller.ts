@@ -66,6 +66,7 @@ module app.dialogs {
 
         searchTermsChanged() {
             this.searchedTerms = null;
+            this.foundPatients = null;
             this.selectedPatient = null;
         }
 	}
