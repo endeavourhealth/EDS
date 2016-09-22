@@ -32,4 +32,7 @@ public interface PatientIdentifierAccessor {
     @Query("SELECT * FROM ehr.patient_identifier_by_patient_id WHERE patient_id = :patient_id LIMIT 1")
     Result<PatientIdentifierByPatientId> getMostRecentForPatientId(@Param("patient_id") UUID patientId);
 
+    // temporary call to populate patient find with five patients
+    @Query("SELECT * FROM ehr.patient_identifier_by_local_id LIMIT 5")
+    Result<PatientIdentifierByLocalId> getFivePatients();
 }

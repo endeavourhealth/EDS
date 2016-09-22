@@ -5,7 +5,8 @@ module app.dialogs {
 	import IModalService = angular.ui.bootstrap.IModalService;
 	import IModalServiceInstance = angular.ui.bootstrap.IModalServiceInstance;
 	import IModalSettings = angular.ui.bootstrap.IModalSettings;
-    import PatientFindSelection = app.models.PatientFindSelection;
+    import IRecordViewerService = app.core.IRecordViewerService;
+    import Patient = app.models.Patient;
 
 	'use strict';
 
@@ -13,8 +14,8 @@ module app.dialogs {
 
         searchTerms: string;
         searchedTerms: string;
-        selectedRowIndex: number;
-        patientSelection: PatientFindSelection;
+        foundPatients: Patient[];
+        selectedPatient: Patient;
 
 		public static open($modal : IModalService) : IModalServiceInstance {
 			var options : IModalSettings = {
@@ -29,36 +30,43 @@ module app.dialogs {
 			return dialog;
 		}
 
-		static $inject = ['$uibModalInstance', '$uibModal', 'LoggerService'];
+		static $inject = ['$uibModalInstance', '$uibModal', 'RecordViewerService', 'LoggerService'];
 
 		constructor(protected $uibModalInstance : IModalServiceInstance,
 								private $modal : IModalService,
+                                protected recordViewerService: IRecordViewerService,
 								private log : ILoggerService) {
 			super($uibModalInstance);
-
-            var selection = new PatientFindSelection();
-            selection.serviceId = "db7eba14-4a89-4090-abf8-af6c60742cb1";
-            selection.systemId = "db8fa60e-08ff-4b61-ba4c-6170e6cb8df7";
-            selection.patientId = "81b66483-ac01-47dd-98a7-73b4b5639680";
-
-            this.resultData = selection;
 		}
+
+        ok() {
+            this.resultData = this.selectedPatient;
+            super.ok();
+        }
 
 		findPatient() {
             this.searchedTerms = this.searchTerms;
+
+            var vm = this;
+            vm.foundPatients = null;
+            vm.recordViewerService.findPatient(vm.searchedTerms)
+                .then(function (data: Patient[]) {
+                    vm.foundPatients = data;
+                    if (data == null) {
+                    }
+                });
         }
 
-        selectPatient(selectedRowIndex: number) {
-            if (this.selectedRowIndex == selectedRowIndex) {
-                this.selectedRowIndex = null;
-            } else {
-                this.selectedRowIndex = selectedRowIndex;
-            }
+        selectPatient(patient: Patient) {
+            if (this.selectedPatient == patient)
+                this.selectedPatient = null;
+            else
+                this.selectedPatient = patient;
         }
 
         searchTermsChanged() {
             this.searchedTerms = null;
-            this.selectedRowIndex = null;
+            this.selectedPatient = null;
         }
 	}
 

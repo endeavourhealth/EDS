@@ -20,15 +20,10 @@
                     <th>NHS number</th>
                 </thead>
                 <tbody>
-                    <tr ng-class="{'selected': ctrl.selectedRowIndex == 1}" ng-click="ctrl.selectPatient(1)">
-                        <td><b>BLUE, James (Mr)</b><br/>1 Main Street</td>
-                        <td>12-May-2003</td>
-                        <td>448 858 8573</td>
-                    </tr>
-                    <tr ng-class="{'selected': ctrl.selectedRowIndex == 2}" ng-click="ctrl.selectPatient(2)">
-                        <td><b>GREEN, Freddy (Mr)</b><br/>1 Main Street</td>
-                        <td>20-Mar-2004</td>
-                        <td>994 756 2937</td>
+                    <tr ng-repeat="patient in ctrl.foundPatients" ng-click="ctrl.selectPatient(patient)" ng-class="{'selected': ctrl.selectedPatient == patient}">
+                        <td><b>{{patient.displayName}}</b><br/>1 Main Street</td>
+                        <td>{{patient.dateOfBirthFormatted}}</td>
+                        <td>{{patient.nhsNumberFormatted}}</td>
                     </tr>
                 </tbody>
             </table>
@@ -38,6 +33,6 @@
 
 <div class="modal-footer">
     <button type="button" class="btn bnt-default" data-ng-click="ctrl.cancel()">Cancel</button>
-    <button type="button" class="btn btn-primary" ng-hide="ctrl.editMode" data-ng-click="ctrl.ok()" ng-disabled="ctrl.selectedRowIndex == null">OK</button>
+    <button type="button" class="btn btn-primary" ng-hide="ctrl.editMode" data-ng-click="ctrl.ok()" ng-disabled="ctrl.selectedPatient == null">OK</button>
 </div>
 

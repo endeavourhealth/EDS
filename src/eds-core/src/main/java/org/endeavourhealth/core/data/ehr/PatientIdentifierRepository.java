@@ -2,6 +2,8 @@ package org.endeavourhealth.core.data.ehr;
 
 import com.datastax.driver.core.utils.UUIDs;
 import com.datastax.driver.mapping.Mapper;
+import com.datastax.driver.mapping.Result;
+import com.datastax.driver.mapping.annotations.Query;
 import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.PatientIdentifierAccessor;
@@ -159,5 +161,11 @@ public class PatientIdentifierRepository extends Repository {
         } else {
             return null;
         }
+    }
+
+    // temporary call to populate patient find with five patients
+    public List<PatientIdentifierByLocalId> getFivePatients() {
+        PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
+        return Lists.newArrayList(accessor.getFivePatients());
     }
 }

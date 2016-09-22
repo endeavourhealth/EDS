@@ -15,6 +15,9 @@ public final class RecordViewerBusiness {
 
         Patient patient = RecordViewerData.getPatientResource(serviceId, systemId, patientId);
 
-        return PatientTransform.transform(patient);
+        return PatientTransform.transform(patient)
+            .setServiceId(serviceId)
+            .setSystemId(systemId)
+            .setPatientId(patientId);
     }
 }

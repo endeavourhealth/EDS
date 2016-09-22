@@ -2,15 +2,27 @@
 
 module app.core {
 	import Patient = app.models.Patient;
+
 	'use strict';
 
 	export interface IRecordViewerService {
-		getDemographics(serviceId : string, systemId : string, patientId : string):ng.IPromise<Patient>;
+        findPatient(searchTerms: string): ng.IPromise<Patient[]>;
+		getDemographics(serviceId: string, systemId: string, patientId: string): ng.IPromise<Patient>;
 	}
 
 	export class RecordViewerService extends BaseHttpService implements IRecordViewerService {
 
-		getDemographics(serviceId : string, systemId : string, patientId : string):ng.IPromise<Patient> {
+        findPatient(searchTerms: string): ng.IPromise<Patient[]> {
+            var request = {
+                params: {
+                    'searchTerms': searchTerms
+                }
+            }
+
+            return this.httpGet('api/recordViewer/findPatient', request);
+        }
+
+		getDemographics(serviceId: string, systemId: string, patientId: string): ng.IPromise<Patient> {
 			var request = {
 				params: {
 					'serviceId': serviceId,
