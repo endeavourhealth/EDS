@@ -62,7 +62,7 @@ public class IdHelper {
             try {
                 cache.put(key, edsId);
             } catch (Exception ex) {
-                LOG.error("Error adding key [{}] value [{}] to ID map cache", ex, key, edsId);
+                LOG.error("Error adding key ["+key+"] value ["+edsId+"] to ID map cache", ex);
             }
         }
         return edsId;
@@ -82,7 +82,7 @@ public class IdHelper {
             try {
                 cache.put(key, edsId);
             } catch (Exception ex) {
-                LOG.error("Error adding key [{}] value [{}] to ID map cache", ex, key, edsId);
+                LOG.error("Error adding key ["+key+"] value ["+edsId+"] to ID map cache", ex);
             }
         }
         return edsId;

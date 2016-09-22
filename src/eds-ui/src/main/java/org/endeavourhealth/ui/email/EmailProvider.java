@@ -98,8 +98,7 @@ public final class EmailProvider {
             return true;
 
         } catch (MessagingException e) {
-            LOG.error("Error sending email to {}", sendTo);
-            LOG.error("Exception", e);
+            LOG.error("Error sending email to " + sendTo, e);
             return false;
         }
     }

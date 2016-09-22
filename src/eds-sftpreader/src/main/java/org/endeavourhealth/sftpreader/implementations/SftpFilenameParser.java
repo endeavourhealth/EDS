@@ -35,7 +35,7 @@ public abstract class SftpFilenameParser
         catch (Exception e)
         {
             isFilenameValid = false;
-            LOG.error("Error '" + e.getMessage() + "' parsing filename: " + filename);
+            LOG.error("Error parsing filename: " + filename, e);
         }
     }
 

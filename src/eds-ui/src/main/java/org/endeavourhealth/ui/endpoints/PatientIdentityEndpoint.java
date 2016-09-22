@@ -292,7 +292,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
             Service service = serviceRepository.getById(serviceId);
             return service.getName();
         } catch (NullPointerException ex ) {
-            LOG.error("Failed to find service for ID {}", serviceId);
+            LOG.error("Failed to find service for ID " + serviceId, ex);
             return "UNKNOWN";
         }
 
@@ -303,7 +303,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
             Item item = libraryRepository.getItemByKey(systemId, activeItem.getAuditId());
             return item.getTitle();
         } catch (NullPointerException ex) {
-            LOG.error("Failed to find system for ID {}", systemId);
+            LOG.error("Failed to find system for ID " + systemId, ex);
             return "UNKNOWN";
         }
 

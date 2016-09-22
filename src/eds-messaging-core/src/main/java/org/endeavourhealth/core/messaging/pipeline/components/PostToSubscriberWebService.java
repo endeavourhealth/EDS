@@ -34,7 +34,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 			// Set list of destinations
 			exchange.setHeader(HeaderKeys.DestinationAddress, String.join(",", subscriberBatch.getEndpoints()));
 		} catch (IOException e) {
-			LOG.error("Error deserializing subscriber batch JSON");
+			LOG.error("Error deserializing subscriber batch JSON", e);
 			throw new PipelineException("Error deserializing subscriber batch JSON", e);
 		}
 		LOG.trace("Message subscribers identified");

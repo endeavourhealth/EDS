@@ -43,7 +43,7 @@ public enum PersistenceManager {
                 emFactory = Persistence.createEntityManagerFactory("NewPersistenceUnit", override);
             }
             catch (Exception e) {
-                LOG.error("Error initializing persistence manager : " + e.getMessage());
+                LOG.error("Error initializing persistence manager", e);
             }
         }
 

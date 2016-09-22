@@ -28,7 +28,7 @@ public class NotificationHandler implements HttpHandler{
 		try {
 			CegUnzipper.unzip(requestBody, new File(subscriber.unzipPath.getText()));
 		} catch (Exception e) {
-			LOG.error("Error unzipping data : " + e.getMessage());
+			LOG.error("Error unzipping data", e);
 		}
 
 		String response = "OK";

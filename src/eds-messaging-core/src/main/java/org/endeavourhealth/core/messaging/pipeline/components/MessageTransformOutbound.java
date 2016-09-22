@@ -83,7 +83,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 		try {
 			subscriberBatchesJson = ObjectMapperPool.getInstance().writeValueAsString(subscriberBatches);
 		} catch (JsonProcessingException e) {
-			LOG.error("Error serializing subscriber batch JSON");
+			LOG.error("Error serializing subscriber batch JSON", e);
 			throw new PipelineException("Error serializing subscriber batch JSON", e);
 		}
 		exchange.setHeader(HeaderKeys.SubscriberBatch, subscriberBatchesJson);
@@ -116,7 +116,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 		try {
 			return ObjectMapperPool.getInstance().readValue(transformBatchJson, TransformBatch.class);
 		} catch (IOException e) {
-			LOG.error("Error deserializing transformation batch JSON");
+			LOG.error("Error deserializing transformation batch JSON", e);
 			throw new PipelineException("Error deserializing transformation batch JSON", e);
 		}
 	}

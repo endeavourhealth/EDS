@@ -64,7 +64,7 @@ public final class AuditEndpoint extends AbstractEndpoint {
 		try {
 			LOG.trace("Keycloak token = '{}'", KeycloakClient.instance().getToken().getToken());
 		} catch (IOException e) {
-			LOG.trace("Keycloak token = 'null'");
+			LOG.trace("Keycloak token = 'null'", e);
 		}
 
 		initKeycloakAdmin = true;

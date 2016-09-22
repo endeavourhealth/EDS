@@ -43,7 +43,7 @@ public class SecurityUtils {
                 KeycloakPrincipal kp = (KeycloakPrincipal)sc.getUserPrincipal();
                 return kp.getKeycloakSecurityContext().getToken();
             } catch(Exception e) {
-                LOG.warn("Something appears to be wrong with the security configuration, UserPrincipal is not as expected.");
+                LOG.warn("Something appears to be wrong with the security configuration, UserPrincipal is not as expected.", e);
             }
         }
         return null;

@@ -208,7 +208,7 @@ public class CegFhirTransformer {
                     ret.add(r);
                     //LOG.info("Read " + r.getResourceType() + " ok");
                 } catch (Exception ex) {
-                    LOG.error(ex.getMessage());
+                    LOG.error("Error retrieving resources", ex);
                     LOG.error(json);
                     throw ex;
                 }

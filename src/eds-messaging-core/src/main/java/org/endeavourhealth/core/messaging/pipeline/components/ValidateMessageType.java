@@ -89,7 +89,7 @@ public class ValidateMessageType extends PipelineComponent {
 */
 
 		} catch (IOException e) {
-			LOG.error("Error parsing protocol JSON");
+			LOG.error("Error parsing protocol JSON", e);
 			throw new PipelineException("Error parsing protocol JSON : " + e.getMessage(), e);
 		}
 

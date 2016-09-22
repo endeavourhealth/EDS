@@ -36,7 +36,7 @@ public class RabbitConfig {
 				rmqConfig = XmlSerializer.deserializeFromResource(RMQConfig.class, CONFIG_RESOURCE, CONFIG_XSD);
 			}
 		} catch (Exception e) {
-			LOG.error("Unable to load rabbit configuration : " + e.getMessage());
+			LOG.error("Unable to load rabbit configuration ", e);
 		}
 	}
 

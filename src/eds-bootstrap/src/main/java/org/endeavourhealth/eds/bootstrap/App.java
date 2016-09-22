@@ -33,7 +33,7 @@ public class App {
         try {
             config = objectMapper.readValue(configFile, Config.class);
         } catch (IOException e) {
-            LOG.error(e.getMessage());
+            LOG.error("Error reading configuration", e);
             return;
         }
 

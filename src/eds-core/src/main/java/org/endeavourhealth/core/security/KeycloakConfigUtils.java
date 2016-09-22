@@ -23,7 +23,7 @@ public class KeycloakConfigUtils {
         try {
             keycloakConfig = new ConfigurationRepository().getByKey(configKey);
         } catch (Exception e) {
-            LOG.error("Configuration Repository error: {}", e.getMessage());
+            LOG.error("Configuration Repository error", e);
         }
 
         if (keycloakConfig != null && StringUtils.isNotEmpty(keycloakConfig.getConfigurationData())) {
