@@ -53,11 +53,11 @@ public class RoutingManager implements ICacheable {
 				LOG.debug("Routing table loaded : " + routingConfig.getConfigurationData());
 			}
 			catch (Exception e) {
-				LOG.error("Error reading routing config, falling back to defaults");
+				LOG.error("Error reading routing config, falling back to defaults", e);
 				routingMap = new RouteGroup[]{
 						new RouteGroup("Default A-M", "Default fallback group, initial character A-M", "A-M", "[A-M].*"),
 						new RouteGroup("Default A-Z", "Default fallback group, initial character N-Z", "N-Z", "[N-Z].*"),
-						new RouteGroup("Default 0-9", "Default fallback group, initial character 0-9", "0-9", "[0-9].*"),
+						new RouteGroup("Fallback", "Default fallback group, all remaining", "Fallback", ".*"),
 						// Any others will fall back to the "Unknown" routing key
 				};
 			}

@@ -58,7 +58,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			String transformBatchesJson = ObjectMapperPool.getInstance().writeValueAsString(transformBatches);
 			exchange.setHeader(HeaderKeys.TransformBatch, transformBatchesJson);
 		} catch (JsonProcessingException e) {
-			LOG.error("Error serializing transformation batches");
+			LOG.error("Error serializing transformation batches", e);
 			throw new PipelineException("Error serializing transformation batches", e);
 		}
 		LOG.debug("Data distribution protocols executed");

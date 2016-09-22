@@ -37,7 +37,7 @@ public class ConfigService {
                 appConfig = ObjectMapperPool.getInstance().readValue(configurationResource.getConfigurationData(), AppConfig.class);
 
             } catch (Exception e) {
-                LOG.error("Configuration Repository error: {}", e.getMessage());
+                LOG.error("Configuration Repository error", e);
             }
         }
 
@@ -71,7 +71,7 @@ public class ConfigService {
                 );
 
             } catch (Exception e) {
-                LOG.error("Configuration Repository error: {}", e.getMessage());
+                LOG.error("Configuration Repository error", e);
             }
 
             if (keycloakConfig == null) {

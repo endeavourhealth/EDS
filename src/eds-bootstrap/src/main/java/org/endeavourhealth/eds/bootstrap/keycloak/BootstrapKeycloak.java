@@ -69,7 +69,7 @@ public class BootstrapKeycloak implements Bootstrap {
         try {
             client.realms().realm(newRealm).remove();
         } catch(Exception e) {
-            LOG.warn("Realm does not exist or failed to delete...");
+            LOG.warn("Realm does not exist or failed to delete...", e);
         }
 
         LOG.info("Adding realm '{}'...", newRealm);

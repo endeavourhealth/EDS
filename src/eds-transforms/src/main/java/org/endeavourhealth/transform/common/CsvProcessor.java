@@ -322,7 +322,7 @@ public class CsvProcessor {
                     }
 
                 } catch (Exception ex) {
-                    LOG.error("Error saving {} {} but continuing", resource.getResourceType(), resource.getId());
+                    LOG.error("Error saving " + resource.getResourceType() + " " + resource.getId() + "but continuing", ex);
                     //TODO - restore exception throwing
                     //throw new TransformException("Exception mapping or storing " + resource.getResourceType() + " " + resource.getId(), ex);
                 }

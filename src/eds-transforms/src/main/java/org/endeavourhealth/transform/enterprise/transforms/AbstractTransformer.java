@@ -91,7 +91,7 @@ public class AbstractTransformer {
             return new JsonParser().parse(json);
 
         } catch (Exception ex) {
-            LOG.error(ex.getMessage());
+            LOG.error("Error deserialising resource", ex);
             LOG.error(json);
             throw ex;
         }
