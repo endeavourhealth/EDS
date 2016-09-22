@@ -13,5 +13,6 @@ module app.models {
         displayName: string;
         dateOfBirthFormatted: string;
         genderFormatted: string;
+        singleLineAddress: string;
 	}
 }

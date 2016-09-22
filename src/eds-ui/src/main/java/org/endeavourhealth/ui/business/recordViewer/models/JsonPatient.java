@@ -18,6 +18,7 @@ public class JsonPatient {
     private String displayName;
     private String dateOfBirthFormatted;
     private String genderFormatted;
+    private String singleLineAddress;
 
     public String getDisplayName() {
         return displayName;
@@ -115,6 +116,15 @@ public class JsonPatient {
 
     public JsonPatient setSurname(String surname) {
         this.surname = surname;
+        return this;
+    }
+
+    public String getSingleLineAddress() {
+        return singleLineAddress;
+    }
+
+    public JsonPatient setSingleLineAddress(String singleLineAddress) {
+        this.singleLineAddress = singleLineAddress;
         return this;
     }
 }

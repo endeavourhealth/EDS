@@ -21,7 +21,7 @@
                 </thead>
                 <tbody>
                     <tr ng-repeat="patient in ctrl.foundPatients" ng-click="ctrl.selectPatient(patient)" ng-class="{'selected': ctrl.selectedPatient == patient}">
-                        <td><b>{{patient.displayName}}</b><br/>1 Main Street</td>
+                        <td><b>{{patient.displayName}}</b><br/>{{patient.singleLineAddress}}</td>
                         <td>{{patient.dateOfBirthFormatted}}</td>
                         <td>{{patient.nhsNumberFormatted}}</td>
                     </tr>

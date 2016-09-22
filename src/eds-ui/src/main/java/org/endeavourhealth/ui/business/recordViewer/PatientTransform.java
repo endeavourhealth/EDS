@@ -5,7 +5,12 @@ import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.ui.business.recordViewer.models.JsonPatient;
 import org.hl7.fhir.instance.model.*;
 
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 class PatientTransform {
 
@@ -17,10 +22,11 @@ class PatientTransform {
         String forename = getFirst(name.getGiven());
         String title = getFirst(name.getPrefix());
         String displayName = getDisplayName(title, forename, surname);
-
+        String birthDateFormatted = getBirthDateFormatted(patient.getBirthDate());
         String nhsNumber = getNhsNumber(patient.getIdentifier());
         String nhsNumberFormatted = formatNhsNumber(nhsNumber);
         String gender = getGender(patient.getGender());
+        String singleLineAddress = getSingleLineAddress(patient);
 
         JsonPatient jsonPatient = new JsonPatient()
                 .setNhsNumber(nhsNumber)
@@ -29,10 +35,46 @@ class PatientTransform {
                 .setForename(forename)
                 .setTitle(title)
                 .setDisplayName(displayName)
-                .setDateOfBirthFormatted("12-Feb-2006 (2y 5m)")
-                .setGenderFormatted(gender);
+                .setDateOfBirthFormatted(birthDateFormatted)
+                .setGenderFormatted(gender)
+                .setSingleLineAddress(singleLineAddress);
 
         return jsonPatient;
+    }
+
+    private static String getSingleLineAddress(Patient patient) {
+
+        if (patient.getAddress() == null)
+            return null;
+
+        if (patient.getAddress().size() == 0)
+            return null;
+
+        Address address = patient.getAddress().get(0);
+
+        List<String> lines = address
+                .getLine()
+                .stream()
+                .map(t -> t.getValue())
+                .collect(Collectors.toList());
+
+        lines.add(address.getCity());
+        lines.add(address.getDistrict());
+        lines.add(address.getPostalCode());
+        lines.add(address.getCountry());
+
+        lines = lines
+                .stream()
+                .filter(t -> (!StringUtils.isEmpty(t)))
+                .collect(Collectors.toList());
+
+        return StringUtils.join(lines, ", ");
+    }
+
+    private static String getBirthDateFormatted(Date birthDate) {
+        LocalDate localDate = birthDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        java.time.Period timespan = localDate.until(LocalDate.now());
+        return localDate.format(DateTimeFormatter.ofPattern("dd-MMM-yyyy")) + " (" + Integer.toString(timespan.getYears()) + "y " + Integer.toString(timespan.getMonths()) + "m)";
     }
 
     private static String getGender(Enumerations.AdministrativeGender gender) {
