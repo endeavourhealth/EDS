@@ -7,9 +7,10 @@ import org.hl7.fhir.instance.model.*;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 class PatientTransform {
@@ -60,7 +61,7 @@ class PatientTransform {
 
         lines.add(address.getCity());
         lines.add(address.getDistrict());
-        lines.add(address.getPostalCode());
+        lines.add(formatPostcode(address.getPostalCode()));
         lines.add(address.getCountry());
 
         lines = lines
@@ -69,6 +70,24 @@ class PatientTransform {
                 .collect(Collectors.toList());
 
         return StringUtils.join(lines, ", ");
+    }
+
+    private static String formatPostcode(String postcode) {
+        if (postcode == null)
+            return null;
+
+        postcode = postcode.replace(" ", "").toUpperCase().trim();
+
+        String matchString = "^(?<Primary>([A-Z]{1,2}[0-9]{1,2}[A-Z]?))(?<Secondary>([0-9]{1}[A-Z]{2}))$";
+
+        Pattern pattern = Pattern.compile(matchString);
+
+        Matcher matcher = pattern.matcher(postcode);
+
+        if (!matcher.find())
+            return postcode;
+
+        return matcher.group("Primary") + " " + matcher.group("Secondary");
     }
 
     private static String getBirthDateFormatted(Date birthDate) {

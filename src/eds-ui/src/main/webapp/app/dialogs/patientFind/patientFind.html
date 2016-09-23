@@ -16,13 +16,13 @@
             <table class="table table-hover">
                 <thead>
                     <th>Name / Address</th>
-                    <th>Date of birth</th>
+                    <th>Born / Gender</th>
                     <th>NHS number</th>
                 </thead>
                 <tbody>
                     <tr ng-repeat="patient in ctrl.foundPatients" ng-click="ctrl.selectPatient(patient)" ng-class="{'selected': ctrl.selectedPatient == patient}">
                         <td><b>{{patient.displayName}}</b><br/>{{patient.singleLineAddress}}</td>
-                        <td>{{patient.dateOfBirthFormatted}}</td>
+                        <td>{{patient.dateOfBirthFormatted}}<br/>{{patient.genderFormatted}}</td>
                         <td>{{patient.nhsNumberFormatted}}</td>
                     </tr>
                 </tbody>
