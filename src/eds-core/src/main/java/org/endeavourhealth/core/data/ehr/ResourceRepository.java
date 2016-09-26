@@ -194,9 +194,9 @@ public class ResourceRepository extends Repository {
         return Lists.newArrayList(accessor.getResourcesByPatient(serviceId, systemId, patientId, resourceType));
     }
 
-    public List<ResourceByService> getResourcesByService(UUID serviceId, UUID systemId, String resourceType, UUID resourceId) {
+    public List<ResourceByService> getResourcesByService(UUID serviceId, UUID systemId, String resourceType, List<UUID> resourceIds) {
         ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
-        return Lists.newArrayList(accessor.getResourcesByService(serviceId, systemId, resourceType, resourceId));
+        return Lists.newArrayList(accessor.getResourcesByService(serviceId, systemId, resourceType, resourceIds));
     }
 
     /*public List<ResourceTypesUsed> getResourcesTypesUsed(UUID serviceId, UUID systemId) {

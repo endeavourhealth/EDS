@@ -39,13 +39,7 @@ public final class RecordViewerBusiness {
 
         List<UUID> practitionerIds = JsonEncounterTransform.getPractitionerIds(encounterList);
 
-        for (UUID practitionerId : practitionerIds) {
-            List<Practitioner> practitioners = RecordViewerData.getResourcesByService(serviceId, systemId, practitionerId, Practitioner.class);
-
-            for (Practitioner practitioner : practitioners) {
-
-            }
-        }
+        List<Practitioner> practitioners = RecordViewerData.getResourcesByService(serviceId, systemId, practitionerIds, Practitioner.class);
 
 
         return new ArrayList<>();

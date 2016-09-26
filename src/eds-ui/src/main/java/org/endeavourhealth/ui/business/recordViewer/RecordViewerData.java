@@ -35,9 +35,9 @@ class RecordViewerData {
         return resources.get(0);
     }
 
-    public static <T> List<T> getResourcesByService(UUID serviceId, UUID systemId, UUID resourceId, Class<T> resourceType) throws Exception {
+    public static <T> List<T> getResourcesByService(UUID serviceId, UUID systemId, List<UUID> resourceIds, Class<T> resourceType) throws Exception {
         ResourceRepository resourceRepository = new ResourceRepository();
-        List<ResourceByService> resourceByServiceList = resourceRepository.getResourcesByService(serviceId, systemId, resourceType.getSimpleName(), resourceId);
+        List<ResourceByService> resourceByServiceList = resourceRepository.getResourcesByService(serviceId, systemId, resourceType.getSimpleName(), resourceIds);
 
         List<String> resources = resourceByServiceList
                 .stream()
@@ -47,8 +47,8 @@ class RecordViewerData {
         return parse(resources, resourceType);
     }
 
-    public static <T> T getSingleResourceByService(UUID serviceId, UUID systemId, UUID resourceId, Class<T> resourceType) throws Exception {
-        List<T> resources = getResourcesByService(serviceId, systemId, resourceId, resourceType);
+    public static <T> T getSingleResourceByService(UUID serviceId, UUID systemId, List<UUID> resourceIds, Class<T> resourceType) throws Exception {
+        List<T> resources = getResourcesByService(serviceId, systemId, resourceIds, resourceType);
 
         if ((resources == null) || (resources.size() == 0))
             throw new Exception(resourceType + " resource not found");

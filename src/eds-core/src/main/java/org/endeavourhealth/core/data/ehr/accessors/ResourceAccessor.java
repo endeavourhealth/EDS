@@ -9,6 +9,7 @@ import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
 import org.endeavourhealth.core.data.ehr.models.ResourceByService;
 
+import java.util.List;
 import java.util.UUID;
 
 @Accessor
@@ -37,9 +38,9 @@ public interface ResourceAccessor {
                                    @Param("system_id") UUID systemId,
                                    @Param("resource_type") String resourceType);
 
-    @Query("SELECT * FROM ehr.resource_by_service WHERE service_id = :service_id AND system_id = :system_id AND resource_type = :resource_type and resource_id = :resource_id")
+    @Query("SELECT * FROM ehr.resource_by_service WHERE service_id = :service_id AND system_id = :system_id AND resource_type = :resource_type and resource_id IN :resource_id")
     Result<ResourceByService> getResourcesByService(@Param("service_id") UUID serviceId,
                                                     @Param("system_id") UUID systemId,
                                                     @Param("resource_type") String resourceType,
-                                                    @Param("resource_id") UUID resourceId);
+                                                    @Param("resource_id") List<UUID> resourceIds);
 }
