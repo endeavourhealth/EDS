@@ -12,7 +12,7 @@
                 No patient selected
             </div>
 
-            <div name="recordView" ng-show="recordViewerCtrl.patient">
+            <div name="patientSelectedView" ng-show="recordViewerCtrl.patient">
 
                 <div class="panel panel-default precis">
                     <div class="panel-body">
@@ -32,10 +32,23 @@
                             Summary
                         </div>
                     </uib-tab>
-                    <uib-tab index="1" heading="Consultations">
+                    <uib-tab index="1" heading="Consultations" ng-click="recordViewerCtrl.loadConsultations();">
 
                         <div class="tab-panel">
-                            Consultations
+                            <table class="table table-hover">
+                                <thead>
+                                    <th>Date</th>
+                                    <th>Doctor</th>
+                                    <th>Place</th>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="consultation in recordViewerCtrl.consultations">
+                                        <td>{{consultation.date}}</td>
+                                        <td>{{consultation.doctor}}</td>
+                                        <td>{{consultation.place}}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </uib-tab>
                     <uib-tab index="2" heading="Medication">

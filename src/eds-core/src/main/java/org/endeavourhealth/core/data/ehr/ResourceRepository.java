@@ -194,6 +194,11 @@ public class ResourceRepository extends Repository {
         return Lists.newArrayList(accessor.getResourcesByPatient(serviceId, systemId, patientId, resourceType));
     }
 
+    public List<ResourceByService> getResourcesByService(UUID serviceId, UUID systemId, String resourceType, UUID resourceId) {
+        ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
+        return Lists.newArrayList(accessor.getResourcesByService(serviceId, systemId, resourceType, resourceId));
+    }
+
     /*public List<ResourceTypesUsed> getResourcesTypesUsed(UUID serviceId, UUID systemId) {
         ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
         return Lists.newArrayList(accessor.getResourceTypesUsed(serviceId, systemId));

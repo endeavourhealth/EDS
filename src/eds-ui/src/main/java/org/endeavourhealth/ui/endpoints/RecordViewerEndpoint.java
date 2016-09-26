@@ -5,6 +5,7 @@ import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByLocalId;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.ui.business.recordViewer.RecordViewerBusiness;
+import org.endeavourhealth.ui.business.recordViewer.models.JsonEncounter;
 import org.endeavourhealth.ui.business.recordViewer.models.JsonPatient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +36,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
         List<PatientIdentifierByLocalId> patientIds = identifierRepository.getFivePatients();
 
         for (PatientIdentifierByLocalId patientId : patientIds)
-            result.add(RecordViewerBusiness.getDemographics(patientId.getServiceId(), patientId.getSystemId(), patientId.getPatientId()));
+            result.add(RecordViewerBusiness.getPatient(patientId.getServiceId(), patientId.getSystemId(), patientId.getPatientId()));
 
         return Response
                 .ok()
@@ -45,25 +46,41 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/getDemographics")
-    public Response getDemographics(@Context SecurityContext sc,
-                                    @QueryParam("serviceId") String serviceIdString,
-                                    @QueryParam("systemId") String systemIdString,
-                                    @QueryParam("patientId") String patientIdString) throws Exception {
+    @Path("/getPatient")
+    public Response getPatient(@Context SecurityContext sc,
+                                    @QueryParam("serviceId") UUID serviceId,
+                                    @QueryParam("systemId") UUID systemId,
+                                    @QueryParam("patientId") UUID patientId) throws Exception {
 
-        Validate.notBlank(serviceIdString, "serviceId");
-        Validate.notBlank(systemIdString, "systemId");
-        Validate.notBlank(patientIdString, "patientId");
+        Validate.notNull(serviceId, "serviceId");
+        Validate.notNull(systemId, "systemId");
+        Validate.notNull(patientId, "patientId");
 
-        UUID serviceId = UUID.fromString(serviceIdString);
-        UUID systemId = UUID.fromString(systemIdString);
-        UUID patientId = UUID.fromString(patientIdString);
-
-        JsonPatient patient = RecordViewerBusiness.getDemographics(serviceId, systemId, patientId);
+        JsonPatient patient = RecordViewerBusiness.getPatient(serviceId, systemId, patientId);
 
         return Response
                 .ok()
                 .entity(patient)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/getEncounters")
+    public Response getEncounters(@Context SecurityContext sc,
+                                    @QueryParam("serviceId") UUID serviceId,
+                                    @QueryParam("systemId") UUID systemId,
+                                    @QueryParam("patientId") UUID patientId) throws Exception {
+
+        Validate.notNull(serviceId, "serviceId");
+        Validate.notNull(systemId, "systemId");
+        Validate.notNull(patientId, "patientId");
+
+        List<JsonEncounter> encounters = RecordViewerBusiness.getEncounters(serviceId, systemId, patientId);
+
+        return Response
+                .ok()
+                .entity(encounters)
                 .build();
     }
 }

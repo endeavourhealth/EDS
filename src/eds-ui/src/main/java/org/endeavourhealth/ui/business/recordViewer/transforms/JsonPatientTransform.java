@@ -1,4 +1,4 @@
-package org.endeavourhealth.ui.business.recordViewer;
+package org.endeavourhealth.ui.business.recordViewer.transforms;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.fhir.FhirUri;
@@ -13,7 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-class PatientTransform {
+public class JsonPatientTransform {
 
     public static JsonPatient transform(Patient patient) {
 
