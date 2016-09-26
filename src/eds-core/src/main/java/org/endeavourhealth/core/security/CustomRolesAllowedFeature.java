@@ -89,17 +89,22 @@ public class CustomRolesAllowedFeature implements DynamicFeature {
                     throw new ForbiddenException("Not Authorized");
                 }
 
+                // DEPRECATED: this has been remove in favour of organisation group roles, see below
                 /*for (final String role : rolesAllowed) {
                     if (SecurityUtils.hasRole(requestContext.getSecurityContext(), role)) {
                         return;
                     }
                 }*/
 
+                // get the currently selected organisation
                 String organisationId = SecurityUtils.getCurrentUserOrganisationId(requestContext);
-                if(StringUtils.isNotBlank(organisationId)) {
-                    if(SecurityUtils.hasOrganisationRole(requestContext.getSecurityContext(), organisationId, rolesAllowed))
-                        return;
+                if(StringUtils.isBlank(organisationId)) {
+                    // fallback to the root organisation
+                    organisationId = OrgRoles.ROOT_ORGANISATION_ID;
                 }
+
+                if(SecurityUtils.hasOrganisationRole(requestContext.getSecurityContext(), organisationId, rolesAllowed))
+                    return;
             }
 
             throw new ForbiddenException("Not Authorized");
