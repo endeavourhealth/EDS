@@ -10,6 +10,7 @@ import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.security.OrgRoles;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.security.keycloak.client.KeycloakAdminClient;
+import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.ui.json.security.JsonRole;
 import org.endeavourhealth.ui.json.security.JsonRoleProfile;
 import org.endeavourhealth.ui.utility.SecurityRoleHelper;

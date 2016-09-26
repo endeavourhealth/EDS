@@ -2,6 +2,8 @@ package org.endeavourhealth.coreui.endpoints;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.Authorization;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -31,6 +33,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Api(value = "Audit", authorizations = {
+		@Authorization(value="oauth", scopes = {})
+})
 @Path("/audit")
 public final class AuditEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(AuditEndpoint.class);

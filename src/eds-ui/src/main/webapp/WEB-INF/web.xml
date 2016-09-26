@@ -10,7 +10,7 @@
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
         <init-param>
             <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>io.swagger.jaxrs.listing,org.endeavourhealth.ui.endpoints</param-value>
+            <param-value>io.swagger.jaxrs.listing,org.endeavourhealth.coreui.endpoints,org.endeavourhealth.ui.endpoints</param-value>
         </init-param>
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
@@ -42,7 +42,7 @@
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
         <init-param>
             <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>org.endeavourhealth.ui.endpoints_public</param-value>
+            <param-value>org.endeavourhealth.coreui.endpoints_public,org.endeavourhealth.ui.endpoints_public</param-value>
         </init-param>
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
@@ -61,7 +61,7 @@
     <!--register our Startup class as a servlet listener so we can perform one-time setup-->
     <listener>
         <listener-class>
-            org.endeavourhealth.ui.framework.Startup
+            org.endeavourhealth.coreui.framework.Startup
         </listener-class>
     </listener>
 

@@ -37,6 +37,7 @@
         <javax.annotation-api.version>1.2</javax.annotation-api.version>
         <postgresql.version>9.4.1208</postgresql.version>
         <junit.version>4.12</junit.version>
+        <swagger.version>1.5.10</swagger.version>
     </properties>
 
 
@@ -44,6 +45,7 @@
         <module>src/eds-core</module>
         <module>src/eds-messaging-api</module>
         <module>src/eds-messaging-core</module>
+        <module>src/eds-subscriber</module>
         <module>src/eds-ui-core</module>
         <module>src/eds-patient-ui</module>
         <module>src/eds-queuereader</module>

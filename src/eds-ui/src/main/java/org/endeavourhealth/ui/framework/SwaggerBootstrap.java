@@ -4,7 +4,7 @@ import io.swagger.jaxrs.config.SwaggerContextService;
 import io.swagger.models.Info;
 import io.swagger.models.Swagger;
 import io.swagger.models.auth.OAuth2Definition;
-import org.endeavourhealth.ui.framework.config.ConfigService;
+import org.endeavourhealth.coreui.framework.config.ConfigService;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;

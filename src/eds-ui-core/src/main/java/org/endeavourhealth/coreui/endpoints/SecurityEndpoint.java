@@ -1,4 +1,4 @@
-package org.endeavourhealth.ui.endpoints;
+package org.endeavourhealth.coreui.endpoints;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -10,7 +10,7 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.security.OrgRoles;
 import org.endeavourhealth.core.security.SecurityUtils;
-import org.endeavourhealth.ui.framework.config.ConfigService;
+import org.endeavourhealth.coreui.framework.config.ConfigService;
 import org.keycloak.KeycloakSecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

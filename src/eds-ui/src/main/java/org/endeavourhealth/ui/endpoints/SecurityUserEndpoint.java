@@ -13,6 +13,7 @@ import org.endeavourhealth.core.security.RoleUtils;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.security.keycloak.client.KeycloakAdminClient;
+import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.ui.json.security.JsonUser;
 import org.endeavourhealth.ui.utility.SecurityUserHelper;
 import org.keycloak.representations.idm.RoleRepresentation;
