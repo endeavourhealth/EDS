@@ -62,10 +62,10 @@ public class MessageTransformOutbound extends PipelineComponent {
 			try {
 				String serviceIdStr = exchange.getHeader(HeaderKeys.SenderServiceUuid);
 				UUID serviceId = UUID.fromString(serviceIdStr);
-				String orgNationalIdStr = exchange.getHeader(HeaderKeys.SenderOrganisationUuid);
-				UUID orgNationalId = UUID.fromString(orgNationalIdStr);
+				String orgIdStr = exchange.getHeader(HeaderKeys.SenderOrganisationUuid);
+				UUID orglId = UUID.fromString(orgIdStr);
 
-				String outbound = EnterpriseFhirTransformer.transformFromFhir(serviceId, orgNationalId, transformBatch.getBatchId(), transformBatch.getResourceIds());
+				String outbound = EnterpriseFhirTransformer.transformFromFhir(serviceId, orglId, transformBatch.getBatchId(), transformBatch.getResourceIds());
 				//String outbound = CegFhirTransformer.transformFromFhir(serviceId, orgNationalId, transformBatch.getBatchId(), transformBatch.getResourceIds());
 
 				// Store transformed message

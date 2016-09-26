@@ -1,11 +1,12 @@
 package org.endeavourhealth.transform.enterprise;
 
+import org.endeavourhealth.core.data.admin.OrganisationRepository;
+import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.utility.XmlSerializer;
+import org.endeavourhealth.core.xml.EnterpriseSerializer;
+import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.enterprise.schema.EnterpriseData;
-import org.endeavourhealth.transform.enterprise.schema.ObjectFactory;
 import org.endeavourhealth.transform.enterprise.transforms.*;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.Reference;
@@ -13,7 +14,6 @@ import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.bind.JAXBElement;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.zip.ZipEntry;
@@ -26,7 +26,7 @@ public class EnterpriseFhirTransformer {
     private static final String ZIP_ENTRY = "EnterpriseData.xml";
 
     public static String transformFromFhir(UUID serviceId,
-                                           UUID orgNationalId,
+                                           UUID orgId,
                                            UUID batchId,
                                            Map<ResourceType, List<UUID>> resourceIds) throws Exception {
 
@@ -34,11 +34,10 @@ public class EnterpriseFhirTransformer {
         List<ResourceByExchangeBatch> resourcesByExchangeBatch = new ResourceRepository().getResourcesForBatch(batchId);
         List<ResourceByExchangeBatch> filteredResources = filterResources(resourcesByExchangeBatch, resourceIds);
 
-        EnterpriseData data = tranformResources(filteredResources);
+        EnterpriseData data = tranformResources(filteredResources, orgId);
 
         //write our data to XML
-        JAXBElement element = new ObjectFactory().createEnterpriseData(data);
-        String xml = XmlSerializer.serializeToString(element, null);
+        String xml = EnterpriseSerializer.writeToXml(data);
 
         //may as well zip the data, since it will compress well
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -55,87 +54,83 @@ public class EnterpriseFhirTransformer {
         return Base64.getEncoder().encodeToString(bytes);
     }
 
-    private static EnterpriseData tranformResources(List<ResourceByExchangeBatch> filteredResources) throws Exception {
+    private static EnterpriseData tranformResources(List<ResourceByExchangeBatch> resources, UUID orgId) throws Exception {
 
         //hash the resources by reference to them, so we can process in a specific order
-        Map<String, ResourceByExchangeBatch> filteredResourcesMap = hashResourcesByReference(filteredResources);
-
-        //TODO - work out org ID
-        UUID enterpriseOrganisationUuid = null;
+        Map<String, ResourceByExchangeBatch> resourcesMap = hashResourcesByReference(resources);
 
         EnterpriseData data = new EnterpriseData();
 
-        for (ResourceByExchangeBatch resource: filteredResources) {
+        Organisation org = new OrganisationRepository().getById(orgId);
+        UUID enterpriseOrganisationUuid = org.getId();
+        String orgNationalId = org.getNationalId();
 
-            ResourceType resourceType = ResourceType.valueOf(resource.getResourceType());
+        //we detect whether we're doing an update or insert, based on whether we're previously mapped
+        //a reference to a resource, so we need to transform the resources in a specific order, so
+        //that we transform resources before we ones that refer to them
+        tranformResources(ResourceType.Organization, new OrganisationTransformer(orgNationalId), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.Practitioner, new PractitionerTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.Schedule, new ScheduleTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.EpisodeOfCare, new EpisodeOfCareTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.Patient, new PatientTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.Appointment, new AppointmentTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.Encounter, new EncounterTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.Condition, new ConditionTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.Procedure, new ProcedureTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.ReferralRequest, new ReferralRequestTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.ProcedureRequest, new ProcedureRequestTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.Observation, new ObservationTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.MedicationStatement, new MedicationStatementTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.MedicationOrder, new MedicationOrderTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.Immunization, new ImmunisationTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.FamilyMemberHistory, new FamilyMemberHistoryTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.AllergyIntolerance, new AllergyIntoleranceTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.DiagnosticOrder, new DiagnosticOrderTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
 
-            if (resourceType == ResourceType.Patient) {
-                PatientTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
+        //for these resource types, call with a null transformer as they're actually transformed when
+        //doing one of the above entities, but we want to remove them from the resources list
+        tranformResources(ResourceType.Slot, null, data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.Location, null, data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.EpisodeOfCare, null, data, resources, resourcesMap, enterpriseOrganisationUuid);
 
-            } else if (resourceType == ResourceType.Condition) {
-                ConditionTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.Procedure) {
-                ProcedureTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.ReferralRequest) {
-                ReferralRequestTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.ProcedureRequest) {
-                ProcedureRequestTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.Schedule) {
-                ScheduleTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.Slot) {
-                //slot resources are handled while we do Appointment resources
-
-            } else if (resourceType == ResourceType.Practitioner) {
-                PractitionerTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.Observation) {
-                ObservationTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.Organization) {
-                OrganisationTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.MedicationStatement) {
-                MedicationStatementTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.MedicationOrder) {
-                MedicationOrderTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.Location) {
-                //Locations are handled at the same time we handle Organisations
-
-            } else if (resourceType == ResourceType.Immunization) {
-                ImmunisationTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.FamilyMemberHistory) {
-                FamilyMemberHistoryTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.EpisodeOfCare) {
-                //EpisodeOfCare resources are handled at the same time as we handle Patients
-
-            } else if (resourceType == ResourceType.Encounter) {
-                EncounterTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.Appointment) {
-                AppointmentTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.AllergyIntolerance) {
-                AllergyIntoleranceTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else if (resourceType == ResourceType.DiagnosticOrder) {
-                DiagnosticOrderTransformer.transform(resource, data, filteredResourcesMap, enterpriseOrganisationUuid);
-
-            } else {
-                throw new TransformException("Unsupported FHIR resource type " + resource.getResourceType());
+        //if there's anything left in the list, then we've missed a resource type
+        if (!resources.isEmpty()) {
+            Set<String> resourceTypesMissed = new HashSet<>();
+            for (ResourceByExchangeBatch resource: resources) {
+                String resourceType = resource.getResourceType();
+                if (!resourceTypesMissed.contains(resource)) {
+                    LOG.error("Transform to Enterprise doesn't handle {} resource types", resourceType);
+                    resourceTypesMissed.add(resourceType);
+                }
             }
-
         }
 
         return data;
+    }
+    private static void tranformResources(ResourceType resourceType,
+                                          AbstractTransformer transformer,
+                                          EnterpriseData data,
+                                          List<ResourceByExchangeBatch> resources,
+                                          Map<String, ResourceByExchangeBatch> resourcesMap,
+                                          UUID enterpriseOrganisationUuid) throws Exception {
+
+        for (int i=resources.size()-1; i>=0; i--) {
+            ResourceByExchangeBatch resource = resources.get(i);
+            if (resource.getResourceType().equals(resourceType.toString())) {
+
+                //we use this function with a null transformer for resources we want to ignore
+                if (transformer != null) {
+                    try {
+                        transformer.transform(resource, data, resourcesMap, enterpriseOrganisationUuid);
+                    } catch (Exception ex) {
+                        throw new TransformException("Exception transforming " + resourceType + " " + resource.getResourceId(), ex);
+                    }
+
+                }
+
+                resources.remove(i);
+            }
+        }
     }
 
     /**
@@ -208,6 +203,13 @@ public class EnterpriseFhirTransformer {
                 ret.add(resource);
 
             } else {
+
+                //during testing, the resource ID is null, so handle this
+                if (resourceIds == null) {
+                    ret.add(resource);
+                    continue;
+                }
+
                 List<UUID> uuidsToKeep = resourceIds.get(resourceType);
                 if (uuidsToKeep != null
                         || uuidsToKeep.contains(resourceId)) {

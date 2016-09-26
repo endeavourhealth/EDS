@@ -50,4 +50,12 @@ public class EnterpriseIdMapRepository extends Repository {
         return mapping.getEnterpriseId();
     }
 
+    public void setEnterpriseIdMapping(String resourceType, UUID resourceId, UUID enterpriseId) {
+        EnterpriseIdMap mapping = new EnterpriseIdMap();
+        mapping.setResourceType(resourceType);
+        mapping.setResourceId(resourceId);
+        mapping.setEnterpriseId(enterpriseId);
+        insert(mapping);
+    }
+
 }

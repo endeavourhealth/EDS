@@ -92,7 +92,7 @@ public class DiaryTransformer {
             clinicianGuid = diaryParser.getClinicianUserInRoleGuid();
         }
 
-        if (clinicianGuid != null) {
+        if (!Strings.isNullOrEmpty(clinicianGuid)) {
             fhirRequest.setPerformer(csvHelper.createPractitionerReference(clinicianGuid));
         }
 
@@ -110,12 +110,12 @@ public class DiaryTransformer {
         }
 
         String enterdByGuid = diaryParser.getEnteredByUserInRoleGuid();
-        if (enterdByGuid != null) {
+        if (!Strings.isNullOrEmpty(enterdByGuid)) {
             fhirRequest.setOrderer(csvHelper.createPractitionerReference(enterdByGuid));
         }
 
         String consultationGuid = diaryParser.getConsultationGuid();
-        if (consultationGuid != null) {
+        if (!Strings.isNullOrEmpty(consultationGuid)) {
             fhirRequest.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
 

@@ -30,7 +30,7 @@ public abstract class ConfigSerializer {
 
     private static Config deserializeConfig() throws Exception {
 
-        String property = System.getProperty("enterprise.configurationFile");
+        String property = System.getProperty("schema.configurationFile");
 
         //if the property wasn't defined, read in the config file from our resource bundle
         if (property == null) {

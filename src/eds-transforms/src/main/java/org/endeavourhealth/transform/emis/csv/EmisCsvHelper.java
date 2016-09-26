@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv;
 
 import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.base.Strings;
+import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.data.transform.EmisCsvCodeMapRepository;
@@ -10,7 +11,6 @@ import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.ClinicalCodeNotFoundException;
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
-import org.endeavourhealth.transform.common.exceptions.ResourceNotFoundException;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class EmisCsvHelper {
 
     private static final String CODEABLE_CONCEPT = "CodeableConcept";
-    private static final String ID_DELIMITER = "//";
+    private static final String ID_DELIMITER = ":";
 
     //metadata, not relating to patients
     private Map<Long, CodeableConcept> clinicalCodes = new ConcurrentHashMap<>();
@@ -200,9 +200,6 @@ public class EmisCsvHelper {
     public Reference createScheduleReference(String scheduleGuid) throws Exception {
         return ReferenceHelper.createReference(ResourceType.Schedule, scheduleGuid);
     }
-    public Reference createSlotReference(String slotGuid) throws Exception {
-        return ReferenceHelper.createReference(ResourceType.Slot, slotGuid);
-    }
 
     /**
      * patient-type resources must include the patient GUID are part of the unique ID in the reference
@@ -212,18 +209,33 @@ public class EmisCsvHelper {
         return ReferenceHelper.createReference(ResourceType.Patient, createUniqueId(patientGuid, null));
     }
     public Reference createAppointmentReference(String appointmentGuid, String patientGuid) throws Exception {
+        if (Strings.isNullOrEmpty(appointmentGuid)) {
+            throw new IllegalArgumentException("Missing appointmentGuid");
+        }
         return ReferenceHelper.createReference(ResourceType.Appointment, createUniqueId(patientGuid, appointmentGuid));
     }
     public Reference createEncounterReference(String encounterGuid, String patientGuid) throws Exception {
+        if (Strings.isNullOrEmpty(encounterGuid)) {
+            throw new IllegalArgumentException("Missing encounterGuid");
+        }
         return ReferenceHelper.createReference(ResourceType.Encounter, createUniqueId(patientGuid, encounterGuid));
     }
     public Reference createObservationReference(String observationGuid, String patientGuid) throws Exception {
+        if (Strings.isNullOrEmpty(observationGuid)) {
+            throw new IllegalArgumentException("Missing observationGuid");
+        }
         return ReferenceHelper.createReference(ResourceType.Observation, createUniqueId(patientGuid, observationGuid));
     }
     public Reference createMedicationStatementReference(String medicationStatementGuid, String patientGuid) throws Exception {
+        if (Strings.isNullOrEmpty(medicationStatementGuid)) {
+            throw new IllegalArgumentException("Missing medicationStatementGuid");
+        }
         return ReferenceHelper.createReference(ResourceType.MedicationStatement, createUniqueId(patientGuid, medicationStatementGuid));
     }
     public Reference createProblemReference(String problemGuid, String patientGuid) throws Exception {
+        if (Strings.isNullOrEmpty(problemGuid)) {
+            throw new IllegalArgumentException("Missing problemGuid");
+        }
         return ReferenceHelper.createReference(ResourceType.Condition, createUniqueId(patientGuid, problemGuid));
     }
 

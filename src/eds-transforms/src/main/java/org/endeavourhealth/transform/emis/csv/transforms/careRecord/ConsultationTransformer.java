@@ -61,7 +61,7 @@ public class ConsultationTransformer {
         fhirEncounter.setStatus(Encounter.EncounterState.FINISHED);
 
         String appointmentGuid = consultationParser.getAppointmentSlotGuid();
-        if (appointmentGuid != null) {
+        if (!Strings.isNullOrEmpty(appointmentGuid)) {
             fhirEncounter.setAppointment(csvHelper.createAppointmentReference(appointmentGuid, patientGuid));
         }
 

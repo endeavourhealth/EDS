@@ -1,8 +1,9 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.enterprise.schema.EnterpriseData;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.DiagnosticOrder;
 import org.hl7.fhir.instance.model.Reference;
@@ -12,12 +13,12 @@ import java.util.UUID;
 
 public class DiagnosticOrderTransformer extends AbstractTransformer {
 
-    public static void transform(ResourceByExchangeBatch resource,
+    public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  UUID enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.transform.enterprise.schema.DiagnosticOrder model = new org.endeavourhealth.transform.enterprise.schema.DiagnosticOrder();
+        org.endeavourhealth.core.xml.enterprise.DiagnosticOrder model = new org.endeavourhealth.core.xml.enterprise.DiagnosticOrder();
 
         mapIdAndMode(resource, model);
 
@@ -27,8 +28,8 @@ public class DiagnosticOrderTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getMode() == INSERT
-                || model.getMode() == UPDATE) {
+        if (model.getSaveMode() == SaveMode.INSERT
+                || model.getSaveMode() == SaveMode.UPDATE) {
 
             DiagnosticOrder fhir = (DiagnosticOrder)deserialiseResouce(resource);
 
@@ -50,10 +51,14 @@ public class DiagnosticOrderTransformer extends AbstractTransformer {
                 model.setPractitionerId(enterprisePractitionerUuid.toString());
             }
 
-            DiagnosticOrder.DiagnosticOrderEventComponent event = fhir.getEvent().get(0);
-            DateTimeType dt = event.getDateTimeElement();
-            model.setDate(convertDate(dt.getValue()));
-            model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+            if (fhir.hasEvent()) {
+                DiagnosticOrder.DiagnosticOrderEventComponent event = fhir.getEvent().get(0);
+                if (event.hasDateTimeElement()) {
+                    DateTimeType dt = event.getDateTimeElement();
+                    model.setDate(convertDate(dt.getValue()));
+                    model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+                }
+            }
 
             if (fhir.getItem().size() > 1) {
                 throw new TransformException("DiagnosticOrder with more than one item not supported");

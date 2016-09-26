@@ -1,24 +1,22 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.enterprise.schema.EnterpriseData;
-import org.hl7.fhir.instance.model.DateTimeType;
-import org.hl7.fhir.instance.model.Observation;
-import org.hl7.fhir.instance.model.Quantity;
-import org.hl7.fhir.instance.model.Reference;
+import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.SaveMode;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.hl7.fhir.instance.model.*;
 
 import java.util.Map;
 import java.util.UUID;
 
 public class ObservationTransformer extends AbstractTransformer {
 
-    public static void transform(ResourceByExchangeBatch resource,
+    public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  UUID enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.transform.enterprise.schema.Observation model = new org.endeavourhealth.transform.enterprise.schema.Observation();
+        org.endeavourhealth.core.xml.enterprise.Observation model = new org.endeavourhealth.core.xml.enterprise.Observation();
 
         mapIdAndMode(resource, model);
 
@@ -28,8 +26,8 @@ public class ObservationTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getMode() == INSERT
-                || model.getMode() == UPDATE) {
+        if (model.getSaveMode() == SaveMode.INSERT
+                || model.getSaveMode() == SaveMode.UPDATE) {
 
             Observation fhir = (Observation)deserialiseResouce(resource);
 
@@ -40,23 +38,26 @@ public class ObservationTransformer extends AbstractTransformer {
             model.setPatientId(enterprisePatientUuid.toString());
 
             if (fhir.hasEncounter()) {
-                Reference encounterReference = (Reference)fhir.getEncounter();
+                Reference encounterReference = fhir.getEncounter();
                 UUID enterpriseEncounterUuid = findEnterpriseUuid(encounterReference);
                 model.setEncounterId(enterpriseEncounterUuid.toString());
             }
 
             if (fhir.hasPerformer()) {
-                if (fhir.getPerformer().size() > 1) {
-                    throw new TransformException("Observations with more than one performer not supported " + fhir.getId());
+                for (Reference reference: fhir.getPerformer()) {
+                    ResourceType resourceType = ReferenceHelper.getResourceType(reference);
+                    if (resourceType == ResourceType.Practitioner) {
+                        UUID enterprisePractitionerUuid = findEnterpriseUuid(reference);
+                        model.setPractitionerId(enterprisePractitionerUuid.toString());
+                    }
                 }
-                Reference practitionerReference = fhir.getPerformer().get(0);
-                UUID enterprisePractitionerUuid = findEnterpriseUuid(practitionerReference);
-                model.setPractitionerId(enterprisePractitionerUuid.toString());
             }
 
-            DateTimeType dt = fhir.getEffectiveDateTimeType();
-            model.setDate(convertDate(dt.getValue()));
-            model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+            if (fhir.hasEffectiveDateTimeType()) {
+                DateTimeType dt = fhir.getEffectiveDateTimeType();
+                model.setDate(convertDate(dt.getValue()));
+                model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+            }
 
             Long snomedConceptId = findSnomedConceptId(fhir.getCode());
             model.setSnomedConceptId(snomedConceptId);

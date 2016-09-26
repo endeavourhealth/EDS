@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS emis_csv_code_map;
 DROP MATERIALIZED VIEW IF EXISTS resource_id_map_by_eds_id;
 DROP TABLE IF EXISTS resource_id_map;
 
+DROP TABLE IF EXISTS enterprise_id_map;
   
 CREATE TABLE emis_csv_code_map (
 	service_id uuid,
@@ -47,5 +48,12 @@ WHERE service_id IS NOT NULL
   AND source_id IS NOT NULL
   AND eds_id IS NOT NULL
 PRIMARY KEY((resource_type, eds_id), service_id, system_id, source_id);
+
+CREATE TABLE enterprise_id_map (
+	resource_type text, 
+	resource_id UUID, 
+	enterprise_id UUID, 
+PRIMARY KEY ((resource_type), resource_id));
+	  
 
 	

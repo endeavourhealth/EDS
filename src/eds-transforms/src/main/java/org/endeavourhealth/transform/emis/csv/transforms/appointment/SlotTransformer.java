@@ -85,7 +85,11 @@ public class SlotTransformer {
             fhirAppointment.setMinutesDuration(duration.intValue());
         }
 
-        fhirAppointment.addSlot(csvHelper.createSlotReference(slotGuid));
+        Reference slotReference = ReferenceHelper.createReference(ResourceType.Slot, fhirSlot.getId());
+        if (slotReference.getReference().indexOf("/") == -1)  {
+String s = "";
+        }
+        fhirAppointment.addSlot(slotReference);
 
         Appointment.AppointmentParticipantComponent fhirParticipant = fhirAppointment.addParticipant();
         fhirParticipant.setActor(csvHelper.createPatientReference(patientGuid));

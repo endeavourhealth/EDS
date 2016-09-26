@@ -1,22 +1,26 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
+import com.google.common.base.Strings;
+import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.transform.enterprise.schema.EnterpriseData;
-import org.hl7.fhir.instance.model.DateTimeType;
-import org.hl7.fhir.instance.model.Reference;
-import org.hl7.fhir.instance.model.ReferralRequest;
+import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.SaveMode;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.hl7.fhir.instance.model.*;
 
 import java.util.Map;
 import java.util.UUID;
 
 public class ReferralRequestTransformer extends AbstractTransformer {
 
-    public static void transform(ResourceByExchangeBatch resource,
+    public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  UUID enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.transform.enterprise.schema.ReferralRequest model = new org.endeavourhealth.transform.enterprise.schema.ReferralRequest();
+        org.endeavourhealth.core.xml.enterprise.ReferralRequest model = new org.endeavourhealth.core.xml.enterprise.ReferralRequest();
 
         mapIdAndMode(resource, model);
 
@@ -26,8 +30,8 @@ public class ReferralRequestTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getMode() == INSERT
-                || model.getMode() == UPDATE) {
+        if (model.getSaveMode() == SaveMode.INSERT
+                || model.getSaveMode() == SaveMode.UPDATE) {
 
             ReferralRequest fhir = (ReferralRequest)deserialiseResouce(resource);
 
@@ -49,20 +53,68 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                 model.setPractitionerId(enterprisePractitionerUuid.toString());
             }
 
-            DateTimeType dt = fhir.getDateElement();
-            model.setDate(convertDate(dt.getValue()));
-            model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+            if (fhir.hasDateElement()) {
+                DateTimeType dt = fhir.getDateElement();
+                model.setDate(convertDate(dt.getValue()));
+                model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+            }
 
             Long snomedConceptId = findSnomedConceptId(fhir.getType());
             model.setSnomedConceptId(snomedConceptId);
 
-            //TODO - referral fields!!!
-            /**
-            protected String recipientOrganisationId;
-            protected String urgency;
-             protected String serviceRequested;
-             protected String type;
-             */
+            if (fhir.hasRecipient()) {
+                if (fhir.getRecipient().size() > 1) {
+                    throw new TransformException("Cannot handle referral requests with more than one recipient " + fhir.getId());
+                }
+                Reference recipientReference = fhir.getRecipient().get(0);
+                ResourceType resourceType = ReferenceHelper.getResourceType(recipientReference);
+                if (resourceType == ResourceType.Organization) {
+
+                    //the EMIS test pack contains referrals that point to recipient organisations that don't exist,
+                    //so we need to handle the failure to find the organisation
+                    try {
+                        Organization organization = (Organization) findResource(recipientReference, otherResources);
+                        String name = organization.getName();
+                        String odsCode = null;
+                        for (Identifier identifier : organization.getIdentifier()) {
+                            if (identifier.getSystem().equals(FhirUri.IDENTIFIER_SYSTEM_ODS_CODE)) {
+                                odsCode = identifier.getValue();
+                            }
+                        }
+
+                        model.setRecipientOrganisationName(name);
+                        model.setRecipientOrganisationOdsCode(odsCode);
+                    } catch (ResourceNotFoundException ex) {
+                        //ignore
+                    }
+
+                }
+            }
+
+            if (fhir.hasPriority()) {
+                CodeableConcept codeableConcept = fhir.getPriority();
+                if (!Strings.isNullOrEmpty(codeableConcept.getText())) {
+                    model.setPriority(codeableConcept.getText());
+                } else {
+                    for (Coding coding: codeableConcept.getCoding()) {
+                        model.setPriority(coding.getDisplay());
+                    }
+                }
+            }
+
+            if (fhir.hasServiceRequested()) {
+                for (CodeableConcept codeableConcept: fhir.getServiceRequested()) {
+                    if (!Strings.isNullOrEmpty(codeableConcept.getText())) {
+                        model.setServiceRequested(codeableConcept.getText());
+                    } else {
+                        for (Coding coding: codeableConcept.getCoding()) {
+                            model.setServiceRequested(coding.getDisplay());
+                        }
+                    }
+                }
+            }
+
+            //TODO - finish referralRequest (referral mode)
         }
 
         data.getReferralRequest().add(model);

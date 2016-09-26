@@ -1,9 +1,10 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.xml.enterprise.AppointmentStatus;
+import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.enterprise.schema.AppointmentStatus;
-import org.endeavourhealth.transform.enterprise.schema.EnterpriseData;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.ReferenceComponents;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
@@ -15,12 +16,12 @@ import java.util.UUID;
 
 public class AppointmentTransformer extends AbstractTransformer {
 
-    public static void transform(ResourceByExchangeBatch resource,
+    public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  UUID enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.transform.enterprise.schema.Appointment model = new org.endeavourhealth.transform.enterprise.schema.Appointment();
+        org.endeavourhealth.core.xml.enterprise.Appointment model = new org.endeavourhealth.core.xml.enterprise.Appointment();
 
         mapIdAndMode(resource, model);
 
@@ -30,8 +31,8 @@ public class AppointmentTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getMode() == INSERT
-                || model.getMode() == UPDATE) {
+        if (model.getSaveMode() == SaveMode.INSERT
+                || model.getSaveMode() == SaveMode.UPDATE) {
 
             Appointment fhir = (Appointment)deserialiseResouce(resource);
 

@@ -65,6 +65,11 @@ public class ReferenceHelper
         return new ReferenceComponents(resourceType, id);
     }
 
+    public static ResourceType getResourceType(Reference reference) {
+        ReferenceComponents comps = getReferenceComponents(reference);
+        return comps.getResourceType();
+    }
+
     public static Boolean referenceEquals(Reference reference, ResourceType resourceType, String id)
     {
         if (StringUtils.isBlank(id))

@@ -40,7 +40,7 @@ jcs.region.SnomedDescendantsForConcept.cacheattributes.DiskUsagePatternName=UPDA
 jcs.region.SnomedDescendantsForConcept.elementattributes=org.apache.jcs.engine.ElementAttributes
 jcs.region.SnomedDescendantsForConcept.elementattributes.IsEternal=true
 
-# MEMORY ONLY CACHE FOR RESOURCE ID MAPPING
+# MEMORY ONLY CACHE FOR THIRD-PARTY to EDS ID MAPPING
 jcs.region.ResourceIdentifiers=
 jcs.region.ResourceIdentifiers.cacheattributes=org.apache.jcs.engine.CompositeCacheAttributes
 jcs.region.ResourceIdentifiers.cacheattributes.MaxObjects=1000000
@@ -53,6 +53,18 @@ jcs.region.ResourceIdentifiers.cacheattributes.DiskUsagePatternName=UPDATE
 jcs.region.ResourceIdentifiers.elementattributes=org.apache.jcs.engine.ElementAttributes
 jcs.region.ResourceIdentifiers.elementattributes.IsEternal=false
 
+# MEMORY ONLY CACHE FOR EDS to Enterprise ID MAPPING
+jcs.region.EnterpriseResourceMap=
+jcs.region.EnterpriseResourceMap.cacheattributes=org.apache.jcs.engine.CompositeCacheAttributes
+jcs.region.EnterpriseResourceMap.cacheattributes.MaxObjects=1000000
+jcs.region.EnterpriseResourceMap.cacheattributes.MemoryCacheName=org.apache.jcs.engine.memory.lru.LRUMemoryCache
+jcs.region.EnterpriseResourceMap.cacheattributes.UseMemoryShrinker=true
+jcs.region.EnterpriseResourceMap.cacheattributes.MaxMemoryIdleTimeSeconds=3600
+jcs.region.EnterpriseResourceMap.cacheattributes.ShrinkerIntervalSeconds=60
+jcs.region.EnterpriseResourceMap.cacheattributes.MaxSpoolPerRun=500
+jcs.region.EnterpriseResourceMap.cacheattributes.DiskUsagePatternName=UPDATE
+jcs.region.EnterpriseResourceMap.elementattributes=org.apache.jcs.engine.ElementAttributes
+jcs.region.EnterpriseResourceMap.elementattributes.IsEternal=false
 
 # AVAILABLE AUXILIARY CACHES
 jcs.auxiliary.DC=org.apache.jcs.auxiliary.disk.indexed.IndexedDiskCacheFactory

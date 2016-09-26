@@ -1,8 +1,10 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.enterprise.schema.EnterpriseData;
+import org.endeavourhealth.transform.fhir.schema.EncounterParticipantType;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Map;
@@ -10,12 +12,12 @@ import java.util.UUID;
 
 public class EncounterTransformer extends AbstractTransformer {
 
-    public static void transform(ResourceByExchangeBatch resource,
+    public  void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  UUID enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.transform.enterprise.schema.Encounter model = new org.endeavourhealth.transform.enterprise.schema.Encounter();
+        org.endeavourhealth.core.xml.enterprise.Encounter model = new org.endeavourhealth.core.xml.enterprise.Encounter();
 
         mapIdAndMode(resource, model);
 
@@ -25,8 +27,8 @@ public class EncounterTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getMode() == INSERT
-                || model.getMode() == UPDATE) {
+        if (model.getSaveMode() == SaveMode.INSERT
+                || model.getSaveMode() == SaveMode.UPDATE) {
 
             Encounter fhir = (Encounter)deserialiseResouce(resource);
 
@@ -37,13 +39,25 @@ public class EncounterTransformer extends AbstractTransformer {
             model.setPatientId(enterprisePatientUuid.toString());
 
             if (fhir.hasParticipant()) {
-                if (fhir.getParticipant().size() > 1) {
-                    throw new TransformException("Cannot transform Encounters with more than one participant " + fhir.getId());
+
+                for (Encounter.EncounterParticipantComponent participantComponent: fhir.getParticipant()) {
+
+                    boolean primary = false;
+                    for (CodeableConcept codeableConcept: participantComponent.getType()) {
+                        for (Coding coding : codeableConcept.getCoding()) {
+                            if (coding.getCode().equals(EncounterParticipantType.PRIMARY_PERFORMER.getCode())) {
+                                primary = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (primary) {
+                        Reference practitionerReference = participantComponent.getIndividual();
+                        UUID enterprisePractitionerUuid = findEnterpriseUuid(practitionerReference);
+                        model.setPractitionerId(enterprisePractitionerUuid.toString());
+                    }
                 }
-                Encounter.EncounterParticipantComponent participantComponent = fhir.getParticipant().get(0);
-                Reference practitionerReference = participantComponent.getIndividual();
-                UUID enterprisePractitionerUuid = findEnterpriseUuid(practitionerReference);
-                model.setPractitionerId(enterprisePractitionerUuid.toString());
             }
 
             if (fhir.hasAppointment()) {

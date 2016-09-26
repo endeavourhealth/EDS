@@ -1,7 +1,9 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.transform.enterprise.schema.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.Immunisation;
+import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.Immunization;
 import org.hl7.fhir.instance.model.Reference;
@@ -11,12 +13,12 @@ import java.util.UUID;
 
 public class ImmunisationTransformer extends AbstractTransformer {
 
-    public static void transform(ResourceByExchangeBatch resource,
+    public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  UUID enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.transform.enterprise.schema.Immunisation model = new org.endeavourhealth.transform.enterprise.schema.Immunisation();
+        Immunisation model = new Immunisation();
 
         mapIdAndMode(resource, model);
 
@@ -26,8 +28,8 @@ public class ImmunisationTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getMode() == INSERT
-                || model.getMode() == UPDATE) {
+        if (model.getSaveMode() == SaveMode.INSERT
+                || model.getSaveMode() == SaveMode.UPDATE) {
 
             Immunization fhir = (Immunization)deserialiseResouce(resource);
 
@@ -49,9 +51,11 @@ public class ImmunisationTransformer extends AbstractTransformer {
                 model.setPractitionerId(enterprisePractitionerUuid.toString());
             }
 
-            DateTimeType dt = fhir.getDateElement();
-            model.setDate(convertDate(dt.getValue()));
-            model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+            if (fhir.hasDateElement()) {
+                DateTimeType dt = fhir.getDateElement();
+                model.setDate(convertDate(dt.getValue()));
+                model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+            }
 
             Long snomedConceptId = findSnomedConceptId(fhir.getVaccineCode());
             model.setSnomedConceptId(snomedConceptId);

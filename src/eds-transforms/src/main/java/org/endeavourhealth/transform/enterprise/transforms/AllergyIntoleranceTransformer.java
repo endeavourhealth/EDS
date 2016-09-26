@@ -1,7 +1,8 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.transform.enterprise.schema.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.AllergyIntolerance;
 import org.hl7.fhir.instance.model.DateTimeType;
@@ -13,12 +14,12 @@ import java.util.UUID;
 
 public class AllergyIntoleranceTransformer extends AbstractTransformer {
 
-    public static void transform(ResourceByExchangeBatch resource,
+    public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  UUID enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.transform.enterprise.schema.AllergyIntolerance model = new org.endeavourhealth.transform.enterprise.schema.AllergyIntolerance();
+        org.endeavourhealth.core.xml.enterprise.AllergyIntolerance model = new org.endeavourhealth.core.xml.enterprise.AllergyIntolerance();
 
         mapIdAndMode(resource, model);
 
@@ -28,8 +29,8 @@ public class AllergyIntoleranceTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getMode() == INSERT
-                || model.getMode() == UPDATE) {
+        if (model.getSaveMode() == SaveMode.INSERT
+                || model.getSaveMode() == SaveMode.UPDATE) {
 
             AllergyIntolerance fhir = (AllergyIntolerance)deserialiseResouce(resource);
 

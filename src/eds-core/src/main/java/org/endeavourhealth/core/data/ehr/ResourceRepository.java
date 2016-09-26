@@ -164,7 +164,7 @@ public class ResourceRepository extends Repository {
         ResourceHistory resourceHistory = getCurrentVersion(resourceType.toString(), UUID.fromString(resourceIdStr));
 
         if (resourceHistory == null) {
-            throw new Exception("Resource not found for type " + resourceType + " and ID " + resourceIdStr);
+            throw new ResourceNotFoundException(resourceType, UUID.fromString(resourceIdStr));
         }
 
         if (resourceHistory.getIsDeleted()) {

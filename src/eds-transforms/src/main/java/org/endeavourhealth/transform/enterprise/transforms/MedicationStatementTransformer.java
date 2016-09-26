@@ -1,10 +1,11 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.MedicationStatementAuthorisationType;
+import org.endeavourhealth.core.xml.enterprise.MedicationStatementStatus;
+import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.enterprise.schema.EnterpriseData;
-import org.endeavourhealth.transform.enterprise.schema.MedicationStatementAuthorisationType;
-import org.endeavourhealth.transform.enterprise.schema.MedicationStatementStatus;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.schema.MedicationAuthorisationType;
 import org.hl7.fhir.instance.model.*;
@@ -14,12 +15,12 @@ import java.util.UUID;
 
 public class MedicationStatementTransformer extends AbstractTransformer {
 
-    public static void transform(ResourceByExchangeBatch resource,
+    public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  UUID enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.transform.enterprise.schema.MedicationStatement model = new org.endeavourhealth.transform.enterprise.schema.MedicationStatement();
+        org.endeavourhealth.core.xml.enterprise.MedicationStatement model = new org.endeavourhealth.core.xml.enterprise.MedicationStatement();
 
         mapIdAndMode(resource, model);
 
@@ -29,8 +30,8 @@ public class MedicationStatementTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getMode() == INSERT
-                || model.getMode() == UPDATE) {
+        if (model.getSaveMode() == SaveMode.INSERT
+                || model.getSaveMode() == SaveMode.UPDATE) {
 
             MedicationStatement fhir = (MedicationStatement)deserialiseResouce(resource);
 
@@ -46,9 +47,11 @@ public class MedicationStatementTransformer extends AbstractTransformer {
                 model.setPractitionerId(enterprisePractitionerUuid.toString());
             }
 
-            DateTimeType dt = fhir.getDateAssertedElement();
-            model.setDate(convertDate(dt.getValue()));
-            model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+            if (fhir.hasDateAssertedElement()) {
+                DateTimeType dt = fhir.getDateAssertedElement();
+                model.setDate(convertDate(dt.getValue()));
+                model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+            }
 
             Long snomedConceptId = findSnomedConceptId(fhir.getMedicationCodeableConcept());
             model.setDmdId(snomedConceptId);

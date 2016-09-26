@@ -168,7 +168,9 @@ public class ObservationTransformer {
         createRecordedDateExtension(fhirProblem, parser);
 
         String consultationGuid = parser.getConsultationGuid();
-        fhirProblem.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
+        if (!Strings.isNullOrEmpty(consultationGuid)) {
+            fhirProblem.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
+        }
 
         Long codeId = parser.getCodeId();
         fhirProblem.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
@@ -361,7 +363,9 @@ public class ObservationTransformer {
         fhirReferral.setDateElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         String consultationGuid = parser.getConsultationGuid();
-        fhirReferral.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
+        if (!Strings.isNullOrEmpty(consultationGuid)) {
+            fhirReferral.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
+        }
 
         Long codeId = parser.getCodeId();
         fhirReferral.setType(csvHelper.findClinicalCode(codeId, csvProcessor));
@@ -497,7 +501,7 @@ public class ObservationTransformer {
         fhirAllergy.setNote(AnnotationHelper.createAnnotation(associatedText));
 
         String consultationGuid = parser.getConsultationGuid();
-        if (consultationGuid != null) {
+        if (!Strings.isNullOrEmpty(consultationGuid)) {
             Reference reference = csvHelper.createEncounterReference(consultationGuid, patientGuid);
             fhirAllergy.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, reference));
         }
@@ -557,7 +561,7 @@ public class ObservationTransformer {
         fhirProcedure.addNotes(AnnotationHelper.createAnnotation(associatedText));
 
         String consultationGuid = parser.getConsultationGuid();
-        if (consultationGuid != null) {
+        if (!Strings.isNullOrEmpty(consultationGuid)) {
             fhirProcedure.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
 
@@ -627,7 +631,7 @@ public class ObservationTransformer {
         fhirCondition.setNotes(associatedText);
 
         String consultationGuid = parser.getConsultationGuid();
-        if (consultationGuid != null) {
+        if (!Strings.isNullOrEmpty(consultationGuid)) {
             fhirCondition.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
 
@@ -687,9 +691,6 @@ public class ObservationTransformer {
         String clinicianGuid = parser.getClinicianUserInRoleGuid();
         fhirObservation.addPerformer(csvHelper.createPractitionerReference(clinicianGuid));
 
-        String orgGuid = parser.getOrganisationGuid();
-        fhirObservation.addPerformer(csvHelper.createOrganisationReference(orgGuid));
-
         Double value = parser.getValue();
         String units = parser.getNumericUnit();
         fhirObservation.setValue(QuantityHelper.createQuantity(value, units));
@@ -714,7 +715,7 @@ public class ObservationTransformer {
         fhirObservation.setComments(associatedText);
 
         String consultationGuid = parser.getConsultationGuid();
-        if (consultationGuid != null) {
+        if (!Strings.isNullOrEmpty(consultationGuid)) {
             fhirObservation.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
 
@@ -808,7 +809,7 @@ public class ObservationTransformer {
         fhirFamilyHistory.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
 
         String consultationGuid = parser.getConsultationGuid();
-        if (consultationGuid != null) {
+        if (!Strings.isNullOrEmpty(consultationGuid)) {
             reference = csvHelper.createEncounterReference(consultationGuid, patientGuid);
             fhirFamilyHistory.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, reference));
         }
@@ -869,7 +870,7 @@ public class ObservationTransformer {
         fhirImmunisation.setPerformer(reference);
 
         String consultationGuid = parser.getConsultationGuid();
-        if (consultationGuid != null) {
+        if (!Strings.isNullOrEmpty(consultationGuid)) {
             reference = csvHelper.createEncounterReference(consultationGuid, patientGuid);
             fhirImmunisation.setEncounter(reference);
         }

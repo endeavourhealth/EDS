@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SubscriberConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                         xsi:noNamespaceSchemaLocation="SubscriberConfiguration.xsd">
+
+    <PostgreSQLConnection>
+        <Hostname>localhost</Hostname>
+        <Port>5432</Port>
+        <Database>enterprise_data</Database>
+        <Username>postgres</Username>
+        <Password>greyarmy1</Password>
+    </PostgreSQLConnection>
+
+</SubscriberConfiguration>

@@ -109,7 +109,7 @@ public class DrugRecordTransformer {
 
         //if the Medication is linked to a Problem, then use the problem's Observation as the Medication reason
         String problemObservationGuid = parser.getProblemObservationGuid();
-        if (problemObservationGuid != null) {
+        if (!Strings.isNullOrEmpty(problemObservationGuid)) {
             fhirMedicationStatement.setReasonForUse(csvHelper.createObservationReference(problemObservationGuid, patientGuid));
         }
 

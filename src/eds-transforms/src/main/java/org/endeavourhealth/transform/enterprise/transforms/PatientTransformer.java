@@ -1,11 +1,13 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.Gender;
+import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.enterprise.schema.EnterpriseData;
-import org.endeavourhealth.transform.enterprise.schema.Gender;
-import org.hl7.fhir.instance.model.Enumerations;
-import org.hl7.fhir.instance.model.Patient;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.hl7.fhir.instance.model.*;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -14,12 +16,17 @@ import java.util.UUID;
 
 public class PatientTransformer extends AbstractTransformer {
 
-    public static void transform(ResourceByExchangeBatch resource,
-                                 EnterpriseData data,
-                                 Map<String, ResourceByExchangeBatch> otherResources,
-                                 UUID enterpriseOrganisationUuid) throws Exception {
+    public void transform(ResourceByExchangeBatch resource,
+                          EnterpriseData data,
+                          Map<String, ResourceByExchangeBatch> otherResources,
+                          UUID enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.transform.enterprise.schema.Patient model = new org.endeavourhealth.transform.enterprise.schema.Patient();
+        //we transform EpisodeOfCare BEFORE Patient, and handle Patient while doing it. So we only need
+        //to consider the case where we have a change to our Patient, but there wasn't a change to the EpisodeOfCare
+
+        //TODO - work out how to handle Patient changing W/O EpisodeOfCare
+
+        org.endeavourhealth.core.xml.enterprise.Patient model = new org.endeavourhealth.core.xml.enterprise.Patient();
 
         mapIdAndMode(resource, model);
 
@@ -29,38 +36,61 @@ public class PatientTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getMode() == INSERT
-                || model.getMode() == UPDATE) {
+        if (model.getSaveMode() == SaveMode.INSERT
+                || model.getSaveMode() == SaveMode.UPDATE) {
 
-            Patient fhir = (Patient)deserialiseResouce(resource);
+            Patient fhirPatient = (Patient)deserialiseResouce(resource);
 
             model.setOrganisationId(enterpriseOrganisationUuid.toString());
 
-            Date dob = fhir.getBirthDate();
+            Date dob = fhirPatient.getBirthDate();
             model.setDateOfBirth(convertDate(dob));
 
-            if (fhir.hasDeceasedDateTimeType()) {
-                Date dod = fhir.getDeceasedDateTimeType().getValue();
+            if (fhirPatient.hasDeceasedDateTimeType()) {
+                Date dod = fhirPatient.getDeceasedDateTimeType().getValue();
                 Calendar cal = Calendar.getInstance();
                 cal.setTime(dod);
                 int yearOfDeath = cal.get(Calendar.YEAR);
                 model.setYearOfDeath(new Integer(yearOfDeath));
             }
 
-            Gender gender = convertGender(fhir.getGender());
+            Gender gender = convertGender(fhirPatient.getGender());
             model.setGender(gender);
 
+            if (fhirPatient.hasCareProvider()) {
+                for (Reference reference: fhirPatient.getCareProvider()) {
+                    ResourceType resourceType = ReferenceHelper.getResourceType(reference);
+                    if (resourceType == ResourceType.Practitioner) {
+                        Practitioner practitioner = (Practitioner)findResource(reference, otherResources);
+                        String name = practitioner.getName().getText();
+                        model.setUsualGpName(name);
+                    }
+                }
+            }
+
+            if (fhirPatient.hasExtension()) {
+                for (Extension extension: fhirPatient.getExtension()) {
+                    if (extension.getUrl().equals(FhirExtensionUri.PATIENT_REGISTRATION_TYPE)) {
+                        Coding coding = (Coding)extension.getValue();
+                        model.setRegistrationTypeCode(coding.getCode());
+                        model.setRegistrationTypeDesc(coding.getDisplay());
+                    }
+                }
+            }
+
+            //TODO - restore this
+            model.setDateRegistered(convertDate(new Date()));
+         /*   Period period = fhirEpisode.getPeriod();
+            if (period.hasStart()) {
+                model.setDateRegistered(convertDate(period.getStart()));
+            }
+            if (period.hasEnd()) {
+                model.setDateRegisteredEnd(convertDate(period.getEnd()));
+            }*/
 
 
-            //TODO - finish Patient transform
-/**
-  protected XMLGregorianCalendar dateRegistered;
- protected XMLGregorianCalendar dateRegisteredEnd;
- protected String usualGpName;
- protected String registrationTypeCode;
- protected String registrationTypeDesc;
- protected String pseudoId;
- */
+            //TODO - finish Patient transform (pseudo code)
+            model.setPseudoId(UUID.randomUUID().toString());
         }
 
         data.getPatient().add(model);

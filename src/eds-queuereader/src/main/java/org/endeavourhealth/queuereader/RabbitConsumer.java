@@ -35,10 +35,10 @@ public class RabbitConsumer extends DefaultConsumer {
 		// Get the message from the db
 		QueuedMessage queuedMessage = new QueuedMessageRepository().getById(messageUuid);
 
-		/*if (queuedMessage == null) {
+		if (queuedMessage == null) {
 			this.getChannel().basicAck(envelope.getDeliveryTag(), false);
 			return;
-		}*/
+		}
 
 		Exchange exchange = new Exchange(messageUuid, queuedMessage.getMessageBody());
 		Map<String, Object> headers = properties.getHeaders();
