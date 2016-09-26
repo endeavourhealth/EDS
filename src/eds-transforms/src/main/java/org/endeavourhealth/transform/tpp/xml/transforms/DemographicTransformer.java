@@ -27,7 +27,7 @@ public class DemographicTransformer {
         fhirPatient.setId(patientUid);
         fhirResources.add(fhirPatient);
 
-        fhirPatient.setManagingOrganization(ReferenceHelper.createReference(Organization.class, fhirResources));
+        fhirPatient.setManagingOrganization(ReferenceHelper.findAndCreateReference(Organization.class, fhirResources));
 
         transformIdentity(fhirPatient, patientUid, tppId);
         transformName(fhirPatient, tppDemographics);
@@ -85,7 +85,7 @@ public class DemographicTransformer {
         String patientId = fhirPatient.getId();
         fhirEpisode.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientId));
 
-        fhirEpisode.setManagingOrganization(ReferenceHelper.createReference(Organization.class, fhirResources));
+        fhirEpisode.setManagingOrganization(ReferenceHelper.findAndCreateReference(Organization.class, fhirResources));
     }
 
     private static void transformUsualGp(Patient fhirPatient, Demographics tppDemographics, List<Resource> fhirResources) throws TransformException {

@@ -60,7 +60,7 @@ public class ClinicalCodeTransformer {
         fhirProblem.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROBLEM));
         fhirResources.add(fhirProblem);
 
-        fhirProblem.setPatient(ReferenceHelper.createReference(Patient.class, fhirResources));
+        fhirProblem.setPatient(ReferenceHelper.findAndCreateReference(Patient.class, fhirResources));
 
         if (fhirEncounter != null) {
             String encounterId = fhirEncounter.getId();

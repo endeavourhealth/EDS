@@ -39,6 +39,8 @@ public class EmisCsvHelper {
     private Map<String, List<ResourceRelationship>> observationChildMap = new HashMap<>();
     private Map<String, List<ResourceRelationship>> problemChildMap = new HashMap<>();
     private Map<String, DateTimeType> issueRecordDateMap = new HashMap<>();
+    private Map<String, List<Observation.ObservationComponentComponent>> bpComponentMap = new HashMap<>();
+    private Map<String, SessionPractitioners> sessionPractitionerMap = new HashMap<>();
 
 
     public EmisCsvHelper() {
@@ -287,7 +289,7 @@ public class EmisCsvHelper {
         }
     }
 
-    private Resource retrieveResource(String locallyUniqueId, ResourceType resourceType, CsvProcessor csvProcessor) throws Exception {
+    public Resource retrieveResource(String locallyUniqueId, ResourceType resourceType, CsvProcessor csvProcessor) throws Exception {
 
         UUID globallyUniqueId = IdHelper.getOrCreateEdsResourceId(csvProcessor.getServiceId(),
                                                         csvProcessor.getSystemId(),
@@ -382,7 +384,11 @@ public class EmisCsvHelper {
         list.add(new ResourceRelationship(patientGuid, resourceGuid, resourceType));
     }
 
-    public void processRemainingProblemRelationships(CsvProcessor csvProcessor) throws Exception {
+    /**
+     * called at the end of the transform, to update Problem resources with references to all the
+     * child resources in that problem
+     */
+    public void processProblemRelationships(CsvProcessor csvProcessor) throws Exception {
         Iterator<String> it = problemChildMap.keySet().iterator();
         while (it.hasNext()) {
             String problemLocallyUniqueId = it.next();
@@ -390,6 +396,8 @@ public class EmisCsvHelper {
 
             //the problem may be one just created, or one created previously
             Condition fhirProblem = problemMap.get(problemLocallyUniqueId);
+
+            //if the problem is null from the map, it means we're updating a pre-existing problem, so retrive from the DB
             if (fhirProblem == null) {
 
                 try {
@@ -399,6 +407,8 @@ public class EmisCsvHelper {
                     //we have test data with medication items linking to non-existant and deleted problems, so don't fail if we get this
                 }
             } else {
+
+                //updating a problem that we just created in this transform
                 addRelationshipsToNewProblem(fhirProblem, childResourceRelationships);
             }
         }
@@ -416,10 +426,90 @@ public class EmisCsvHelper {
 
     private void addRelationshipsToNewProblem(Condition fhirProblem, List<ResourceRelationship> resourceRelationships) throws Exception {
 
+        //store the referenced resources in a List resource, which we add inline to the Condition
+        List_ list = new List_();
+
         for (ResourceRelationship resourceRelationship : resourceRelationships) {
 
             String uniqueId = createUniqueId(resourceRelationship.getPatientGuid(), resourceRelationship.getDependentResourceGuid());
             Reference reference = ReferenceHelper.createReference(resourceRelationship.getDependentResourceType(), uniqueId);
+            List_.ListEntryComponent entry = list.addEntry();
+            entry.setItem(reference);
+        }
+
+        Reference listReference = ReferenceHelper.createReferenceInline(list);
+        fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, listReference));
+    }
+
+    private void addRelationshipsToExistingProblem(Condition fhirProblem,
+                                                   List<ResourceRelationship> childResourceRelationships,
+                                                   CsvProcessor csvProcessor) throws Exception {
+
+        List_ list = new List_();
+
+        //find the existing list of child resource references
+        if (fhirProblem.hasExtension()) {
+            for (Extension extension: fhirProblem.getExtension()) {
+                if (extension.getUrl().equals(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE)) {
+                    Reference reference = (Reference)extension.getValue();
+                    list = (List_)reference.getResource();
+                }
+            }
+        }
+
+        //if the extension wasn't there before, create and add it
+        if (list == null) {
+            list = new List_();
+            Reference listReference = ReferenceHelper.createReferenceInline(list);
+            fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, listReference));
+        }
+
+        boolean changed = false;
+        String patientGuid = null;
+
+        for (ResourceRelationship childResourceRelationship : childResourceRelationships) {
+
+            //all the relationships have the same patientGuid, so it's safe to just keep reassigning this
+            patientGuid = childResourceRelationship.getPatientGuid();
+
+            //we're updating an already existing FHIR resource, so need to manually map the IDs here, from EMIS GUIDs to EDS IDs
+            String locallyUniqueId = createUniqueId(childResourceRelationship.getPatientGuid(), childResourceRelationship.getDependentResourceGuid());
+
+            String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
+                    csvProcessor.getSystemId(),
+                    childResourceRelationship.getDependentResourceType(),
+                    locallyUniqueId);
+
+            Reference reference = ReferenceHelper.createReference(childResourceRelationship.getDependentResourceType(), globallyUniqueId);
+
+            //check to see if this resource is already linked to the problem
+            boolean alreadyLinked = false;
+            for (List_.ListEntryComponent entry: list.getEntry()) {
+                Reference entryReference = entry.getItem();
+                if (entryReference.getReference().equals(reference.getReference())) {
+                    alreadyLinked = true;
+                    break;
+                }
+            }
+
+            if (!alreadyLinked) {
+                list.addEntry().setItem(reference);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
+            csvProcessor.savePatientResource(false, patientGuid, fhirProblem);
+        }
+    }
+
+    /*private void addRelationshipsToNewProblem(Condition fhirProblem, List<ResourceRelationship> resourceRelationships) throws Exception {
+
+        for (ResourceRelationship resourceRelationship : resourceRelationships) {
+
+            String uniqueId = createUniqueId(resourceRelationship.getPatientGuid(), resourceRelationship.getDependentResourceGuid());
+            Reference reference = ReferenceHelper.findAndCreateReference(resourceRelationship.getDependentResourceType(), uniqueId);
             fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, reference));
         }
     }
@@ -443,7 +533,7 @@ public class EmisCsvHelper {
                     ResourceType.Observation,
                     locallyUniqueId);
 
-            Reference globallyUniqueReference = ReferenceHelper.createReference(ResourceType.Observation, globallyUniqueId);
+            Reference globallyUniqueReference = ReferenceHelper.findAndCreateReference(ResourceType.Observation, globallyUniqueId);
 
             //check to see if this resource is already linked to the problem
             boolean alreadyLinked = false;
@@ -465,7 +555,7 @@ public class EmisCsvHelper {
             //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
             csvProcessor.savePatientResource(false, patientGuid, fhirCondition);
         }
-    }
+    }*/
 
     public void cacheDrugRecordDate(String drugRecordGuid, String patientGuid, DateTimeType dateTime) {
         String uniqueId = createUniqueId(patientGuid, drugRecordGuid);
@@ -478,6 +568,129 @@ public class EmisCsvHelper {
     public DateTimeType getDrugRecordDate(String drugRecordId, String patientGuid) {
         return issueRecordDateMap.get(createUniqueId(patientGuid, drugRecordId));
     }
+
+    public void cacheBpComponent(String parentObservationGuid, String patientGuid, Observation.ObservationComponentComponent component) {
+        String key = createUniqueId(patientGuid, parentObservationGuid);
+        List<Observation.ObservationComponentComponent> list = bpComponentMap.get(key);
+        if (list == null) {
+            list = new ArrayList<>();
+        }
+        list.add(component);
+    }
+
+    public List<Observation.ObservationComponentComponent> findBpComponents(String observationGuid, String patientGuid) {
+        String key = createUniqueId(patientGuid, observationGuid);
+        return bpComponentMap.remove(key);
+    }
+
+    public void cacheSessionPractitionerMap(String sessionGuid, String emisUserGuid, boolean isDeleted) {
+
+        SessionPractitioners obj = sessionPractitionerMap.get(sessionGuid);
+        if (obj == null) {
+            obj = new SessionPractitioners();
+            sessionPractitionerMap.put(sessionGuid, obj);
+        }
+
+        if (isDeleted) {
+            obj.getEmisUserGuidsToDelete().add(emisUserGuid);
+        } else {
+            obj.getEmisUserGuidsToSave().add(emisUserGuid);
+        }
+    }
+
+    public List<String> findSessionPractionersToSave(String sessionGuid) {
+        SessionPractitioners obj = sessionPractitionerMap.remove(sessionGuid);
+        if (obj == null) {
+            return new ArrayList<>();
+        } else {
+            obj.setProcessedSession(true);
+            return obj.getEmisUserGuidsToSave();
+        }
+    }
+
+    /**
+     * called at the end of the transform. If the sessionPractitionerMap contains any entries that haven't been processed
+     * then we have changes to the staff in a previously saved FHIR Schedule, so we need to amend that Schedule
+     */
+    public void processRemainingSessionPractitioners(CsvProcessor csvProcessor) throws Exception {
+        Iterator<String> it = sessionPractitionerMap.keySet().iterator();
+        while (it.hasNext()) {
+            String sessionGuid = it.next();
+            SessionPractitioners practitioners = sessionPractitionerMap.get(sessionGuid);
+            if (!practitioners.isProcessedSession()) {
+                updateExistingScheduleWithNewPractitioners(sessionGuid, practitioners, csvProcessor);
+            }
+        }
+    }
+
+    private void updateExistingScheduleWithNewPractitioners(String sessionGuid, SessionPractitioners practitioners, CsvProcessor csvProcessor) throws Exception {
+        Schedule fhirSchedule = (Schedule)retrieveResource(sessionGuid, ResourceType.Schedule, csvProcessor);
+
+        //get the references from the existing schedule, removing them as we go
+        List<Reference> references = new ArrayList<>();
+
+        if (fhirSchedule.hasActor()) {
+            references.add(fhirSchedule.getActor());
+            fhirSchedule.setActor(null);
+        }
+        if (fhirSchedule.hasExtension()) {
+            List<Extension> extensions = fhirSchedule.getExtension();
+            for (int i=extensions.size()-1; i>=0; i--) {
+                Extension extension = extensions.get(i);
+                if (extension.getUrl().equals(FhirExtensionUri.SCHEDULE_ADDITIONAL_ACTOR)) {
+                    references.add((Reference)extension.getValue());
+                    extensions.remove(i);
+                }
+            }
+        }
+
+        //add any new practitioner references
+        for (String emisUserGuid: practitioners.getEmisUserGuidsToSave()) {
+
+            //we're updating an existing FHIR resource, so need to explicitly map the EMIS user GUID to an EDS ID
+            String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
+                    csvProcessor.getSystemId(),
+                    ResourceType.Practitioner,
+                    emisUserGuid);
+
+            references.add(ReferenceHelper.createReference(ResourceType.Practitioner, globallyUniqueId));
+        }
+
+        for (String emisUserGuid: practitioners.getEmisUserGuidsToDelete()) {
+
+            //we're updating an existing FHIR resource, so need to explicitly map the EMIS user GUID to an EDS ID
+            String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
+                    csvProcessor.getSystemId(),
+                    ResourceType.Practitioner,
+                    emisUserGuid);
+
+            Reference referenceToDelete = ReferenceHelper.createReference(ResourceType.Practitioner, globallyUniqueId);
+
+            for (Reference existing: references) {
+                //the FHIR objects don't implement an equals(..) override, so we must manually iterate check the reference internal String
+                if (referenceToDelete.getReference().equals(existing.getReference())) {
+                    references.remove(existing);
+                    break;
+                }
+            }
+        }
+
+        //save the references back into the schedule, treating the first as the main practitioner
+        if (!references.isEmpty()) {
+
+            Reference first = references.get(0);
+            fhirSchedule.setActor(first);
+
+            //add any additional references as additional actors
+            for (int i = 1; i < references.size(); i++) {
+                Reference additional = references.get(i);
+                fhirSchedule.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.SCHEDULE_ADDITIONAL_ACTOR, additional));
+            }
+        }
+
+        csvProcessor.saveAdminResource(false, fhirSchedule);
+    }
+
 
     /**
      * object to temporarily store relationships between resources, such as things linked to a problem
@@ -507,4 +720,33 @@ public class EmisCsvHelper {
         }
     }
 
+    public class SessionPractitioners {
+        private List<String> emisUserGuidsToSave = new ArrayList<>();
+        private List<String> emisUserGuidsToDelete = new ArrayList<>();
+        private boolean processedSession = false;
+
+        public List<String> getEmisUserGuidsToSave() {
+            return emisUserGuidsToSave;
+        }
+
+        public void setEmisUserGuidsToSave(List<String> emisUserGuidsToSave) {
+            this.emisUserGuidsToSave = emisUserGuidsToSave;
+        }
+
+        public List<String> getEmisUserGuidsToDelete() {
+            return emisUserGuidsToDelete;
+        }
+
+        public void setEmisUserGuidsToDelete(List<String> emisUserGuidsToDelete) {
+            this.emisUserGuidsToDelete = emisUserGuidsToDelete;
+        }
+
+        public boolean isProcessedSession() {
+            return processedSession;
+        }
+
+        public void setProcessedSession(boolean processedSession) {
+            this.processedSession = processedSession;
+        }
+    }
 }

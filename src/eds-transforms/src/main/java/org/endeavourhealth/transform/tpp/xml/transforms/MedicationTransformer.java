@@ -55,7 +55,7 @@ public class MedicationTransformer {
 
         fhirMedicationOrder.setStatus(convertStatus(endDate, endReason));
 
-        fhirMedicationOrder.setPatient(ReferenceHelper.createReference(Patient.class, fhirResources));
+        fhirMedicationOrder.setPatient(ReferenceHelper.findAndCreateReference(Patient.class, fhirResources));
 
         String userName = tppEvent.getUserName();
         if (!Strings.isNullOrEmpty(userName)) {

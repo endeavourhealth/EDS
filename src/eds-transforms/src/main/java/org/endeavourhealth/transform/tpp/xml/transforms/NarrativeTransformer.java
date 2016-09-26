@@ -33,7 +33,7 @@ public class NarrativeTransformer {
         fhirObsrvation.setStatus(Observation.ObservationStatus.FINAL);
         fhirObsrvation.setCode(CodeableConceptHelper.createCodeableConcept(line));
 
-        fhirObsrvation.setSubject(ReferenceHelper.createReference(Patient.class, fhirResources));
+        fhirObsrvation.setSubject(ReferenceHelper.findAndCreateReference(Patient.class, fhirResources));
 
         if (fhirEncounter != null) {
             String encounterId = fhirEncounter.getId();
@@ -48,7 +48,7 @@ public class NarrativeTransformer {
             fhirObsrvation.addPerformer(ReferenceHelper.createReference(ResourceType.Encounter, userName));
         } else {
             //if we have no formal performer from the consultation, just fall back on using the organisation
-            fhirObsrvation.addPerformer(ReferenceHelper.createReference(Organization.class, fhirResources));
+            fhirObsrvation.addPerformer(ReferenceHelper.findAndCreateReference(Organization.class, fhirResources));
         }
     }
 }

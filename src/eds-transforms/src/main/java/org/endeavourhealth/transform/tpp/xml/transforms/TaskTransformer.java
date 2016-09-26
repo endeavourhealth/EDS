@@ -40,7 +40,7 @@ public class TaskTransformer
         //String userGroupAssigned = tppTask.getGroupNameAssigned();
 
         //link back to the patient
-        fhirTask.setSubject(ReferenceHelper.createReference(Patient.class, fhirResources));
+        fhirTask.setSubject(ReferenceHelper.findAndCreateReference(Patient.class, fhirResources));
 
         //TODO - not sure if we can set the required Status and Priority fields on the FHIR resource
     }
