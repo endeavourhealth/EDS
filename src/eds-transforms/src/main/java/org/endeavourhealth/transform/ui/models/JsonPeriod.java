@@ -1,4 +1,4 @@
-package org.endeavourhealth.ui.business.recordViewer.models;
+package org.endeavourhealth.transform.ui.models;
 
 import java.util.Date;
 

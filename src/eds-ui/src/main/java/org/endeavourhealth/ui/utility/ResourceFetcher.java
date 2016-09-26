@@ -1,4 +1,4 @@
-package org.endeavourhealth.ui.business.recordViewer;
+package org.endeavourhealth.ui.utility;
 
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-class RecordViewerData {
+public class ResourceFetcher {
     public static <T> List<T> getResourceByPatient(UUID serviceId, UUID systemId, UUID patientId, Class<T> resourceType) throws Exception {
         ResourceRepository resourceRepository = new ResourceRepository();
         List<ResourceByPatient> resourceByPatientList = resourceRepository.getResourcesByPatient(serviceId, systemId, patientId, resourceType.getSimpleName());
@@ -26,13 +26,7 @@ class RecordViewerData {
     public static <T> T getSingleResourceByPatient(UUID serviceId, UUID systemId, UUID patientId, Class<T> resourceType) throws Exception {
         List<T> resources = getResourceByPatient(serviceId, systemId, patientId, resourceType);
 
-        if ((resources == null) || (resources.size() == 0))
-            throw new Exception(resourceType + " resource not found");
-
-        if (resources.size() > 1)
-            throw new Exception("Multiple " + resourceType + " resources found");
-
-        return resources.get(0);
+        return ensureSingleResource(resources, resourceType);
     }
 
     public static <T> List<T> getResourcesByService(UUID serviceId, UUID systemId, List<UUID> resourceIds, Class<T> resourceType) throws Exception {
@@ -50,11 +44,15 @@ class RecordViewerData {
     public static <T> T getSingleResourceByService(UUID serviceId, UUID systemId, List<UUID> resourceIds, Class<T> resourceType) throws Exception {
         List<T> resources = getResourcesByService(serviceId, systemId, resourceIds, resourceType);
 
+        return ensureSingleResource(resources, resourceType);
+    }
+
+    private static <T> T ensureSingleResource(List<T> resources, Class<T> resourceType) throws Exception {
         if ((resources == null) || (resources.size() == 0))
-            throw new Exception(resourceType + " resource not found");
+            throw new Exception(resourceType.getSimpleName() + " resource not found");
 
         if (resources.size() > 1)
-            throw new Exception("Multiple " + resourceType + " resources found");
+            throw new Exception("Multiple " + resourceType.getSimpleName() + " resources found");
 
         return resources.get(0);
     }

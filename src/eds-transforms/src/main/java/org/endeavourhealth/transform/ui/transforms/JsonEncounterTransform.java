@@ -1,6 +1,7 @@
-package org.endeavourhealth.ui.business.recordViewer.transforms;
+package org.endeavourhealth.transform.ui.transforms;
 
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.transform.ui.models.JsonEncounter;
 import org.hl7.fhir.instance.model.Encounter;
 
 import java.util.ArrayList;
@@ -8,7 +9,11 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class JsonEncounterTransform {
+class JsonEncounterTransform {
+
+    public static JsonEncounter transform(Encounter encounter) {
+        return new JsonEncounter();
+    }
 
     public static List<UUID> getPractitionerIds(List<Encounter> encounters) {
         List<UUID> result = new ArrayList<>();

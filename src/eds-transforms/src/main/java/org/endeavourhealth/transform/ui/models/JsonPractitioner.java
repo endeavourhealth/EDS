@@ -1,4 +1,4 @@
-package org.endeavourhealth.ui.business.recordViewer.models;
+package org.endeavourhealth.transform.ui.models;
 
 public class JsonPractitioner {
     private String familyName;
