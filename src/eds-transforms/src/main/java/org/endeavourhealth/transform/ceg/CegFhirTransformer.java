@@ -77,7 +77,7 @@ public class CegFhirTransformer {
 
         for (Resource resource: allResources) {
 
-            Reference reference = ReferenceHelper.createReference(resource);
+            Reference reference = ReferenceHelper.createReferenceExternal(resource);
             String referenceStr = reference.getReference();
             ret.put(referenceStr, resource);
         }

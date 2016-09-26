@@ -7,6 +7,7 @@ import org.endeavourhealth.transform.emis.csv.transforms.admin.OrganisationTrans
 import org.endeavourhealth.transform.emis.csv.transforms.admin.PatientTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.UserInRoleTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.appointment.SessionTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.appointment.SessionUserTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.appointment.SlotTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.careRecord.*;
 import org.endeavourhealth.transform.emis.csv.transforms.coding.ClinicalCodeTransformer;
@@ -52,6 +53,7 @@ public class EmisCsvTransformerWorker {
         LocationTransformer.transform(version, folderPath, CSV_FORMAT, csvProcessor, csvHelper);
         OrganisationTransformer.transform(version, folderPath, CSV_FORMAT, csvProcessor, csvHelper);
         UserInRoleTransformer.transform(version, folderPath, CSV_FORMAT, csvProcessor, csvHelper);
+        SessionUserTransformer.transform(version, folderPath, CSV_FORMAT, csvProcessor, csvHelper);
         SessionTransformer.transform(version, folderPath, CSV_FORMAT, csvProcessor, csvHelper);
     }
 
@@ -74,6 +76,11 @@ public class EmisCsvTransformerWorker {
         //if we have any new Obs, Conditions, Medication etc. that reference pre-existing parent obs or problems,
         //then we need to retrieve the existing resources and update them
         csvHelper.processRemainingObservationParentChildLinks(csvProcessor);
-        csvHelper.processRemainingProblemRelationships(csvProcessor);
+
+        //if we have any new Obs etc. that refer to pre-existing problems, we need to update the existing FHIR problem
+        csvHelper.processProblemRelationships(csvProcessor);
+
+        //if we have any changes to the staff in pre-existing sessions, we need to update the existing FHIR Schedules
+        csvHelper.processRemainingSessionPractitioners(csvProcessor);
     }
 }

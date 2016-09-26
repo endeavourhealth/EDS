@@ -28,6 +28,17 @@ public class ReferenceHelper
         return new Reference().setReference("#" + id);
     }
 
+
+    public static Reference createReferenceExternal(Resource resource) throws TransformException {
+        return createReference(resource.getResourceType(), resource.getId());
+    }
+
+    public static Reference createReferenceInline(Resource resource) throws TransformException {
+        return new Reference(resource);
+    }
+
+
+
     public static String getReferenceId(Reference reference) {
         return getReferenceId(reference, null);
     }
@@ -70,40 +81,12 @@ public class ReferenceHelper
         return comps.getResourceType();
     }
 
-    public static Boolean referenceEquals(Reference reference, ResourceType resourceType, String id)
-    {
-        if (StringUtils.isBlank(id))
-            return false;
-
-        String referenceId = getReferenceId(reference, resourceType);
-
-        return id.equals(referenceId);
-    }
-
-    public static Reference createReference(Resource resource) throws TransformException {
-        return createReference(resource.getResourceType(), resource.getId());
-    }
-
-    /*public static Reference createPractitionerReference(String id) throws TransformException {
-        return createReference(ResourceType.Practitioner, id);
-    }
-    public static Reference createEncounterReference(String id) throws TransformException {
-        return createReference(ResourceType.Encounter, id);
-    }
-    public static Reference createPatientReference(String id) throws TransformException {
-        return createReference(ResourceType.Patient, id);
-    }
-    public static Reference createLocationReference(String id) throws TransformException {
-        return createReference(ResourceType.Location, id);
-    }*/
 
 
-
-
-    public static <T extends Resource> Reference createReference(Class<T> type, List<Resource> resources) throws TransformException {
+    public static <T extends Resource> Reference findAndCreateReference(Class<T> type, List<Resource> resources) throws TransformException {
         T resource = ResourceHelper.findResourceOfType(type, resources);
         if (resource != null) {
-            return createReference(resource);
+            return createReferenceExternal(resource);
         } else {
             return null;
         }

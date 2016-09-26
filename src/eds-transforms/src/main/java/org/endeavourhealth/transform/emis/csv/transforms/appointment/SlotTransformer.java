@@ -11,6 +11,7 @@ import org.endeavourhealth.transform.fhir.*;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
+import java.util.List;
 
 public class SlotTransformer {
 
@@ -54,7 +55,7 @@ public class SlotTransformer {
         Appointment fhirAppointment = new Appointment();
         fhirAppointment.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_APPOINTMENT));
 
-        //use the same slot GUID as the appointment GUID, since it's a different resource type, it should be fine
+        //use the same slot GUID as the appointment GUID; since it's a different resource type, it should be fine
         EmisCsvHelper.setUniqueId(fhirAppointment, patientGuid, slotGuid);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
@@ -86,14 +87,20 @@ public class SlotTransformer {
         }
 
         Reference slotReference = ReferenceHelper.createReference(ResourceType.Slot, fhirSlot.getId());
-        if (slotReference.getReference().indexOf("/") == -1)  {
-String s = "";
-        }
         fhirAppointment.addSlot(slotReference);
 
         Appointment.AppointmentParticipantComponent fhirParticipant = fhirAppointment.addParticipant();
         fhirParticipant.setActor(csvHelper.createPatientReference(patientGuid));
         fhirParticipant.setStatus(Appointment.ParticipationStatus.ACCEPTED);
+
+        //the helper class has a list of our practitioners
+        List<String> userGuids = csvHelper.findSessionPractionersToSave(sessionGuid);
+        for (String userGuid: userGuids) {
+
+            fhirParticipant = fhirAppointment.addParticipant();
+            fhirParticipant.setActor(ReferenceHelper.createReference(ResourceType.Practitioner, userGuid));
+            fhirParticipant.setStatus(Appointment.ParticipationStatus.ACCEPTED);
+        }
 
         if (slotParser.getDidNotAttend()) {
             fhirAppointment.setStatus(Appointment.AppointmentStatus.NOSHOW);

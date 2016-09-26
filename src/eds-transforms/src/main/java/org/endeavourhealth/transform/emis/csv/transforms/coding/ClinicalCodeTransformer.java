@@ -1,6 +1,8 @@
 package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.core.data.admin.CodeRepository;
+import org.endeavourhealth.core.data.admin.models.SnomedLookup;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
@@ -19,6 +21,8 @@ import java.util.concurrent.Callable;
 
 public abstract class ClinicalCodeTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(ClinicalCodeTransformer.class);
+
+    private static CodeRepository repository = new CodeRepository();
 
     public static void transform(String version,
                                  String folderPath,
@@ -72,6 +76,7 @@ public abstract class ClinicalCodeTransformer {
             fhirConcept.setText(emisTerm);
         }
 
+        //spin the remainder of our work off to a small thread pool, so we can perform multiple snomed term lookups in parallel
         threadPool.submit(new WebServiceLookup(codeId, fhirConcept, codeType, emisTerm,
                 emisCode, snomedConceptId, snomedDescriptionId,
                 nationalCode, nationalCodeCategory, nationalCodeDescription,
@@ -126,16 +131,18 @@ public abstract class ClinicalCodeTransformer {
 
             String snomedTerm = null;
 
-            try {
-                //TODO - change Smomed lookup to use new Cassandra table
-                //snomedTerm = Snomed.getTerm(snomedConceptId.longValue(), snomedDescriptionId.longValue());
-                snomedTerm = "";
+            SnomedLookup snomedLookup = repository.getSnomedLookup(snomedConceptId.toString());
+
+            if (snomedLookup == null) {
+                //if the concept ID isn't a valid Snomed concept, then still store in FHIR, but as an EMIS code
+                fhirConcept.addCoding(CodingHelper.createCoding(FhirUri.CODE_SYSTEM_EMISSNOMED, readTerm, snomedConceptId.toString()));
+
+            } else {
+                snomedTerm = snomedLookup.getTerm();
                 fhirConcept.addCoding(CodingHelper.createCoding(FhirUri.CODE_SYSTEM_SNOMED_CT, snomedTerm, snomedConceptId.toString()));
-            } catch (Exception ex) {
-                //if we didn't get a term for the IDs, then it was a local term, so even though the Snomed code
-                //may have been non-null, the mapping wasn't to a valid Snomed concept/term pair, so don't add it to the FHIR resource
             }
 
+            //store the coding in Cassandra
             csvHelper.addClinicalCode(codeId, fhirConcept, codeType, readTerm,
                     readCode, snomedConceptId, snomedDescriptionId, snomedTerm,
                     nationalCode, nationalCodeCategory, nationalCodeDescription, csvProcessor);

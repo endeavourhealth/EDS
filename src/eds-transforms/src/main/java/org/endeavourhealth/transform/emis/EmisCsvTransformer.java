@@ -87,7 +87,7 @@ public abstract class EmisCsvTransformer {
      * recursively empties the directory struture then deletes the directories
      * Java can delete directories, but the files have to be manually deleted first
      */
-    private static void deleteDirectory(File root) {
+    /*private static void deleteDirectory(File root) {
 
         for (File f: root.listFiles()) {
             if (f.isFile()) {
@@ -98,7 +98,7 @@ public abstract class EmisCsvTransformer {
         }
 
         root.delete();
-    }
+    }*/
 
     /*static class TransformOrganisation implements Callable {
 

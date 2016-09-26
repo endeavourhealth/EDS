@@ -2,11 +2,12 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
+import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.FieldNotEmptyException;
 import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation;
@@ -17,11 +18,13 @@ import org.endeavourhealth.transform.fhir.schema.ImmunizationStatus;
 import org.endeavourhealth.transform.terminology.Read2;
 import org.hl7.fhir.instance.model.*;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public class ObservationTransformer {
 
+    private static ResourceIdMapRepository idMapRepository = new ResourceIdMapRepository();
 
     public static void transform(String version,
                                  String folderPath,
@@ -32,7 +35,14 @@ public class ObservationTransformer {
         Observation parser = new Observation(version, folderPath, csvFormat);
         try {
             while (parser.nextRecord()) {
-                createResource(version, parser, csvProcessor, csvHelper);
+
+                //depending whether deleting or saving, we go through a different path to find what
+                //the target resource type should be
+                if (parser.getDeleted() || parser.getIsConfidential()) {
+                    deleteResource(version, parser, csvProcessor, csvHelper);
+                } else {
+                    createResource(version, parser, csvProcessor, csvHelper);
+                }
             }
         } catch (FutureException fe) {
             throw fe;
@@ -41,50 +51,120 @@ public class ObservationTransformer {
         } finally {
             parser.close();
         }
-
     }
 
+    private static void deleteResource(String version,
+                                       Observation parser,
+                                       CsvProcessor csvProcessor,
+                                       EmisCsvHelper csvHelper) throws Exception {
+
+        ResourceType resourceType = findOriginalTargetResourceType(parser, csvProcessor);
+        switch (resourceType) {
+            case Observation:
+                createOrDeleteObservation(parser, csvProcessor, csvHelper);
+                break;
+            //checked below, as this is a special case
+            /*case Condition:
+                createOrDeleteCondition(parser, csvProcessor, csvHelper);
+                break;*/
+            case Procedure:
+                createOrDeleteProcedure(parser, csvProcessor, csvHelper);
+                break;
+            case AllergyIntolerance:
+                createOrDeleteAllergy(parser, csvProcessor, csvHelper);
+                break;
+            case FamilyMemberHistory:
+                createOrDeleteFamilyMemberHistory(parser, csvProcessor, csvHelper);
+                break;
+            case Immunization:
+                createOrDeleteImmunization(parser, csvProcessor, csvHelper);
+                break;
+            case DiagnosticOrder:
+                createOrDeleteDiagnosticOrder(parser, csvProcessor, csvHelper);
+                break;
+            case ReferralRequest:
+                createOrDeleteReferralRequest(parser, csvProcessor, csvHelper);
+                break;
+/*            case Specimen:
+                createOrDeleteSpecimen(observationParser, csvProcessor, csvHelper);
+                break;*/
+            default:
+                throw new IllegalArgumentException("Unsupported resource type: " + resourceType);
+        }
+        
+        //if EMIS has a non-Condition code (e.g. family history) that's flagged as a problem, we'll create
+        //a FHIR Condition (for the problem) as well as the FHIR FamilyMemberHistory. The above code will
+        //sort out deleting the FamilyMemberHistory, so we also need to see if the same EMIS observation
+        //was saved as a condition too
+        if (wasSavedAsResourceType(csvProcessor, ResourceType.Condition, parser)) {
+            createOrDeleteCondition(parser, csvProcessor, csvHelper);
+        }
+    }
+
+    /**
+     * finds out what resource type an EMIS observation was previously saved as
+     */
+    private static ResourceType findOriginalTargetResourceType(Observation parser, CsvProcessor csvProcessor) {
+        
+        String observationGuid = parser.getObservationGuid();
+        
+        List<ResourceType> potentialResourceTypes = new ArrayList<>();
+        potentialResourceTypes.add(ResourceType.Observation);
+        //potentialResourceTypes.add(ResourceType.Condition); //don't check this here - as conditions are handled differently
+        potentialResourceTypes.add(ResourceType.Procedure);
+        potentialResourceTypes.add(ResourceType.AllergyIntolerance);
+        potentialResourceTypes.add(ResourceType.FamilyMemberHistory);
+        potentialResourceTypes.add(ResourceType.Immunization);
+        potentialResourceTypes.add(ResourceType.DiagnosticOrder);
+        potentialResourceTypes.add(ResourceType.ReferralRequest);
+        
+        for (ResourceType resourceType: potentialResourceTypes) {
+            if (wasSavedAsResourceType(csvProcessor, resourceType, parser)) {
+                return resourceType;
+            }
+        }
+        return null;
+    }
+
+    private static boolean wasSavedAsResourceType(CsvProcessor csvProcessor, ResourceType resourceType, Observation parser) {
+        ResourceIdMap mapping = idMapRepository.getResourceIdMap(csvProcessor.getServiceId(), csvProcessor.getSystemId(), resourceType.toString(), parser.getObservationGuid());
+        return mapping != null;
+    }
+    
 
     private static void createResource(String version,
                                        Observation parser,
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 
-        //the EMIS test pack has observation records that are completely invalid, missing almost every mandatory value,
-        //so detect that and skip the rows
-        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)
-                && parser.getCodeId() == null) {
-            return;
-        }
-
         ResourceType resourceType = getTargetResourceType(parser, csvProcessor, csvHelper);
         switch (resourceType) {
             case Observation:
-                createObservation(parser, csvProcessor, csvHelper);
+                createOrDeleteObservation(parser, csvProcessor, csvHelper);
                 break;
             case Condition:
-                createCondition(parser, csvProcessor, csvHelper);
+                createOrDeleteCondition(parser, csvProcessor, csvHelper);
                 break;
             case Procedure:
-                createProcedure(parser, csvProcessor, csvHelper);
+                createOrDeleteProcedure(parser, csvProcessor, csvHelper);
                 break;
             case AllergyIntolerance:
-                createAllergy(parser, csvProcessor, csvHelper);
+                createOrDeleteAllergy(parser, csvProcessor, csvHelper);
                 break;
             case FamilyMemberHistory:
-                createFamilyMemberHistory(parser, csvProcessor, csvHelper);
+                createOrDeleteFamilyMemberHistory(parser, csvProcessor, csvHelper);
                 break;
             case Immunization:
-                createImmunization(parser, csvProcessor, csvHelper);
+                createOrDeleteImmunization(parser, csvProcessor, csvHelper);
                 break;
             case DiagnosticOrder:
-                createDiagnosticOrder(parser, csvProcessor, csvHelper);
+                createOrDeleteDiagnosticOrder(parser, csvProcessor, csvHelper);
                 break;
             case ReferralRequest:
-                createReferralRequest(parser, csvProcessor, csvHelper);
+                createOrDeleteReferralRequest(parser, csvProcessor, csvHelper);
                 break;
 /*            case Specimen:
-                createSpecimen(observationParser, csvProcessor, csvHelper);
+                createOrDeleteSpecimen(observationParser, csvProcessor, csvHelper);
                 break;*/
             default:
                 throw new IllegalArgumentException("Unsupported resource type: " + resourceType);
@@ -93,11 +173,13 @@ public class ObservationTransformer {
         String observationGuid = parser.getObservationGuid();
         String patientGuid = parser.getPatientGuid();
 
-        //the observation row may also be referenced by a row in the Problems file, which
-        //we've already processed. Check this, and complete processing if required.
-        Condition fhirProblem = csvHelper.findProblem(observationGuid, patientGuid);
-        if (fhirProblem != null) {
-            completeProblem(parser, fhirProblem, csvProcessor, csvHelper);
+        //if we didn't transform our record into a Condition, but the Problem CSV had a row for
+        //it, then we'll also have part-created a Condition resource for it, which we need to finish populating
+        if (resourceType != ResourceType.Condition) {
+            Condition fhirProblem = csvHelper.findProblem(observationGuid, patientGuid);
+            if (fhirProblem != null) {
+                createOrDeleteCondition(parser, csvProcessor, csvHelper);
+            }
         }
 
         //remove any cached links of child observations that link to the row we just processed. If the row used
@@ -147,7 +229,7 @@ public class ObservationTransformer {
     }
 
 
-    private static void completeProblem(Observation parser,
+    /*private static void completeProblem(Observation parser,
                                          Condition fhirProblem,
                                          CsvProcessor csvProcessor,
                                          EmisCsvHelper csvHelper) throws Exception {
@@ -182,7 +264,7 @@ public class ObservationTransformer {
         fhirProblem.setNotes(associatedText);
 
         //problems are added to the processor for saving after all files are finished, so it doesn't need saving here
-    }
+    }*/
 
 
     private static boolean isProcedure(Long codeId,
@@ -248,9 +330,9 @@ public class ObservationTransformer {
         csvProcessor.savePatientResource(fhirSpecimen, patientGuid);
     }*/
 
-    /*private static void createSpecimen(CareRecord_Observation observationParser,
-                                       CsvProcessor csvProcessor,
-                                       EmisCsvHelper csvHelper) throws Exception {
+    /*private static void createOrDeleteSpecimen(CareRecord_Observation observationParser,
+                                               CsvProcessor csvProcessor,
+                                               EmisCsvHelper csvHelper) throws Exception {
 
         Specimen fhirSpecimen = new Specimen();
         fhirSpecimen.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SPECIMIN));
@@ -329,9 +411,9 @@ public class ObservationTransformer {
         csvHelper.cacheDiagnosticReport(fhirReport);
     }*/
 
-    private static void createReferralRequest(Observation parser,
-                                         CsvProcessor csvProcessor,
-                                         EmisCsvHelper csvHelper) throws Exception {
+    private static void createOrDeleteReferralRequest(Observation parser,
+                                                      CsvProcessor csvProcessor,
+                                                      EmisCsvHelper csvHelper) throws Exception {
 
         //we have already parsed the ObservationReferral file, and will have created ReferralRequest
         //resources for all records in that file. So, first find any pre-created ReferralRequest for our record
@@ -399,9 +481,9 @@ public class ObservationTransformer {
     }
 
 
-    private static void createDiagnosticOrder(Observation parser,
-                                              CsvProcessor csvProcessor,
-                                              EmisCsvHelper csvHelper) throws Exception {
+    private static void createOrDeleteDiagnosticOrder(Observation parser,
+                                                      CsvProcessor csvProcessor,
+                                                      EmisCsvHelper csvHelper) throws Exception {
         DiagnosticOrder fhirOrder = new DiagnosticOrder();
         fhirOrder.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_DIAGNOSTIC_ORDER));
 
@@ -461,9 +543,9 @@ public class ObservationTransformer {
 
     }
 
-    private static void createAllergy(Observation parser,
-                                      CsvProcessor csvProcessor,
-                                      EmisCsvHelper csvHelper) throws Exception {
+    private static void createOrDeleteAllergy(Observation parser,
+                                              CsvProcessor csvProcessor,
+                                              EmisCsvHelper csvHelper) throws Exception {
 
         AllergyIntolerance fhirAllergy = new AllergyIntolerance();
         fhirAllergy.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ALLERGY_INTOLERANCE));
@@ -521,9 +603,9 @@ public class ObservationTransformer {
 
     }
 
-    private static void createProcedure(Observation parser,
-                                        CsvProcessor csvProcessor,
-                                        EmisCsvHelper csvHelper) throws Exception {
+    private static void createOrDeleteProcedure(Observation parser,
+                                                CsvProcessor csvProcessor,
+                                                EmisCsvHelper csvHelper) throws Exception {
 
         Procedure fhirProcedure = new Procedure();
         fhirProcedure.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROCEDURE));
@@ -586,19 +668,35 @@ public class ObservationTransformer {
     }
 
 
-    private static void createCondition(Observation parser,
-                                        CsvProcessor csvProcessor,
-                                        EmisCsvHelper csvHelper) throws Exception {
+    private static void createOrDeleteCondition(Observation parser,
+                                                CsvProcessor csvProcessor,
+                                                EmisCsvHelper csvHelper) throws Exception {
 
-        Condition fhirCondition = new Condition();
-        fhirCondition.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_CONDITION));
-
+        //we have already parsed the Problem file, and will have created Condition
+        //resources for all records in that file. So, first find any pre-created Condition for our record
         String observationGuid = parser.getObservationGuid();
         String patientGuid = parser.getPatientGuid();
 
-        EmisCsvHelper.setUniqueId(fhirCondition, patientGuid, observationGuid);
+        //as well as processing the Observation row into a FHIR resource, we
+        //may also have a row in the Referral file that we've previously processed into
+        //a FHIR ReferralRequest that we need to complete
+        Condition fhirCondition = csvHelper.findProblem(observationGuid, patientGuid);
+        boolean isProblem = true;
 
-        fhirCondition.setPatient(csvHelper.createPatientReference(patientGuid));
+        //if we didn't find a Condtion from the problem map, then it's not a problem and should be
+        //treated just as a standalone condition resource
+        if (fhirCondition == null) {
+
+            isProblem = false;
+
+            //if we didn't have a record in the Problem file, we need to create a new one
+            fhirCondition = new Condition();
+            fhirCondition.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_CONDITION));
+
+            EmisCsvHelper.setUniqueId(fhirCondition, patientGuid, observationGuid);
+
+            fhirCondition.setPatient(csvHelper.createPatientReference(patientGuid));
+        }
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
@@ -653,12 +751,16 @@ public class ObservationTransformer {
                 observationGuid,
                 fhirCondition.getResourceType());
 
-        csvProcessor.savePatientResource(patientGuid, fhirCondition);
+        //if the condition is a Problem, then it will be saved when the transform is complete,
+        //as we need to finish processing before we know what other observations etc. link to the problem
+        if (!isProblem) {
+            csvProcessor.savePatientResource(patientGuid, fhirCondition);
+        }
     }
 
-    private static void createObservation(Observation parser,
-                                          CsvProcessor csvProcessor,
-                                          EmisCsvHelper csvHelper) throws Exception {
+    private static void createOrDeleteObservation(Observation parser,
+                                                  CsvProcessor csvProcessor,
+                                                  EmisCsvHelper csvHelper) throws Exception {
 
         org.hl7.fhir.instance.model.Observation fhirObservation = new org.hl7.fhir.instance.model.Observation();
         fhirObservation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_OBSERVATION));
@@ -722,6 +824,14 @@ public class ObservationTransformer {
         List<EmisCsvHelper.ResourceRelationship> childObservationIds = csvHelper.getAndRemoveObservationParentRelationships(observationGuid, patientGuid);
         linkChildObservations(csvHelper, fhirObservation, patientGuid, childObservationIds);
 
+        //if we have BP readings from child observations, include them in the components for this observation too
+        List<org.hl7.fhir.instance.model.Observation.ObservationComponentComponent> observationComponents = csvHelper.findBpComponents(observationGuid, patientGuid);
+        if (observationComponents != null) {
+            for (org.hl7.fhir.instance.model.Observation.ObservationComponentComponent component: observationComponents) {
+                fhirObservation.getComponent().add(component);
+            }
+        }
+
         //the entered date and person are stored in extensions
         createRecordedByExtension(fhirObservation, parser, csvHelper);
         createRecordedDateExtension(fhirObservation, parser);
@@ -766,9 +876,9 @@ public class ObservationTransformer {
 
     }
 
-    private static void createFamilyMemberHistory(Observation parser,
-                                                  CsvProcessor csvProcessor,
-                                                  EmisCsvHelper csvHelper) throws Exception {
+    private static void createOrDeleteFamilyMemberHistory(Observation parser,
+                                                          CsvProcessor csvProcessor,
+                                                          EmisCsvHelper csvHelper) throws Exception {
 
         FamilyMemberHistory fhirFamilyHistory = new FamilyMemberHistory();
         fhirFamilyHistory.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_FAMILY_MEMBER_HISTORY));
@@ -834,9 +944,9 @@ public class ObservationTransformer {
         csvProcessor.savePatientResource(patientGuid, fhirFamilyHistory);
     }
 
-    private static void createImmunization(Observation parser,
-                                           CsvProcessor csvProcessor,
-                                           EmisCsvHelper csvHelper) throws Exception {
+    private static void createOrDeleteImmunization(Observation parser,
+                                                   CsvProcessor csvProcessor,
+                                                   EmisCsvHelper csvHelper) throws Exception {
 
         Immunization fhirImmunisation = new Immunization();
         fhirImmunisation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_IMMUNIZATION));
