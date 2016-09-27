@@ -58,6 +58,10 @@
             org.endeavourhealth.coreui.framework.Startup
         </listener-class>
     </listener>
+    
+    <listener>
+        <listener-class>org.endeavourhealth.core.data.CassandraShutdownListener</listener-class>
+    </listener>
 
     <filter>
         <filter-name>CorsFilter</filter-name>
