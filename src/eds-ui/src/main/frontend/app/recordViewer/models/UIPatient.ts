@@ -1,15 +1,12 @@
 module app.models {
 	'use strict';
 
-	export class Patient {
+	export class UIPatient {
 		serviceId: string;
 		systemId: string;
         patientId: string;
 		nhsNumber: string;
         nhsNumberFormatted: string;
-        title: string;
-        forename: string;
-        surname: string;
         displayName: string;
         dateOfBirthFormatted: string;
         genderFormatted: string;

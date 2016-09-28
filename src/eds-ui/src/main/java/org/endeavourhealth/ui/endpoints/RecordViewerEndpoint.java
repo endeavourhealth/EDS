@@ -4,8 +4,9 @@ import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByLocalId;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
-import org.endeavourhealth.transform.ui.transforms.JsonTransform;
-import org.endeavourhealth.transform.ui.models.JsonPatient;
+import org.endeavourhealth.transform.ui.models.UIEncounter;
+import org.endeavourhealth.transform.ui.transforms.UITransform;
+import org.endeavourhealth.transform.ui.models.UIPatient;
 import org.endeavourhealth.ui.utility.ResourceFetcher;
 import org.hl7.fhir.instance.model.Encounter;
 import org.hl7.fhir.instance.model.Patient;
@@ -34,7 +35,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
     public Response findPatient(@Context SecurityContext sc,
                                     @QueryParam("searchTerms") String searchTerms) throws Exception {
 
-        List<JsonPatient> result = new ArrayList<>();
+        List<UIPatient> result = new ArrayList<>();
 
         List<PatientIdentifierByLocalId> patientIds = identifierRepository.getFivePatients();
 
@@ -59,7 +60,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
         Validate.notNull(systemId, "systemId");
         Validate.notNull(patientId, "patientId");
 
-        JsonPatient patient = getPatient(serviceId, systemId, patientId);
+        UIPatient patient = getPatient(serviceId, systemId, patientId);
 
         return Response
                 .ok()
@@ -79,27 +80,27 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
         Validate.notNull(systemId, "systemId");
         Validate.notNull(patientId, "patientId");
 
-        List<Encounter> encounterList = ResourceFetcher.getResourceByPatient(serviceId, systemId, patientId, Encounter.class);
+        List<Encounter> fhirEncounters = ResourceFetcher.getResourceByPatient(serviceId, systemId, patientId, Encounter.class);
 
-        List<UUID> practitionerIds = JsonTransform.getPractitionerIds(encounterList);
+        List<UUID> practitionerIds = UITransform.getPractitionerIds(fhirEncounters);
 
-        List<Practitioner> practitioners = ResourceFetcher.getResourcesByService(serviceId, systemId, practitionerIds, Practitioner.class);
+        List<Practitioner> fhirPractitioners = ResourceFetcher.getResourcesByService(serviceId, systemId, practitionerIds, Practitioner.class);
 
+        List<UIEncounter> encounters = UITransform.transformEncounters(fhirEncounters, fhirPractitioners);
 
         return Response
                 .ok()
-                .entity(encounterList)
+                .entity(encounters)
                 .build();
     }
 
-    private static JsonPatient getPatient(UUID serviceId, UUID systemId, UUID patientId) throws Exception {
+    private static UIPatient getPatient(UUID serviceId, UUID systemId, UUID patientId) throws Exception {
 
         Patient patient = ResourceFetcher.getSingleResourceByPatient(serviceId, systemId, patientId, Patient.class);
 
-        return JsonTransform.transformPatient(patient)
+        return UITransform.transformPatient(patient)
                 .setServiceId(serviceId)
                 .setSystemId(systemId)
                 .setPatientId(patientId);
     }
-
 }

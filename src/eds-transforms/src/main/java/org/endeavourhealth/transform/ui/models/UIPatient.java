@@ -5,16 +5,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class JsonPatient {
+public class UIPatient {
 
     private UUID serviceId;
     private UUID systemId;
     private UUID patientId;
     private String nhsNumber;
     private String nhsNumberFormatted;
-    private String title;
-    private String forename;
-    private String surname;
     private String displayName;
     private String dateOfBirthFormatted;
     private String genderFormatted;
@@ -24,7 +21,7 @@ public class JsonPatient {
         return displayName;
     }
 
-    public JsonPatient setDisplayName(String displayName) {
+    public UIPatient setDisplayName(String displayName) {
         this.displayName = displayName;
         return this;
     }
@@ -33,7 +30,7 @@ public class JsonPatient {
         return dateOfBirthFormatted;
     }
 
-    public JsonPatient setDateOfBirthFormatted(String dateOfBirthFormatted) {
+    public UIPatient setDateOfBirthFormatted(String dateOfBirthFormatted) {
         this.dateOfBirthFormatted = dateOfBirthFormatted;
         return this;
     }
@@ -42,7 +39,7 @@ public class JsonPatient {
         return genderFormatted;
     }
 
-    public JsonPatient setGenderFormatted(String genderFormatted) {
+    public UIPatient setGenderFormatted(String genderFormatted) {
         this.genderFormatted = genderFormatted;
         return this;
     }
@@ -51,7 +48,7 @@ public class JsonPatient {
         return serviceId;
     }
 
-    public JsonPatient setServiceId(UUID serviceId) {
+    public UIPatient setServiceId(UUID serviceId) {
         this.serviceId = serviceId;
         return this;
     }
@@ -60,7 +57,7 @@ public class JsonPatient {
         return systemId;
     }
 
-    public JsonPatient setSystemId(UUID systemId) {
+    public UIPatient setSystemId(UUID systemId) {
         this.systemId = systemId;
         return this;
     }
@@ -69,7 +66,7 @@ public class JsonPatient {
         return patientId;
     }
 
-    public JsonPatient setPatientId(UUID patientId) {
+    public UIPatient setPatientId(UUID patientId) {
         this.patientId = patientId;
         return this;
     }
@@ -78,7 +75,7 @@ public class JsonPatient {
         return nhsNumber;
     }
 
-    public JsonPatient setNhsNumber(String nhsNumber) {
+    public UIPatient setNhsNumber(String nhsNumber) {
         this.nhsNumber = nhsNumber;
         return this;
     }
@@ -87,35 +84,8 @@ public class JsonPatient {
         return nhsNumberFormatted;
     }
 
-    public JsonPatient setNhsNumberFormatted(String nhsNumberFormatted) {
+    public UIPatient setNhsNumberFormatted(String nhsNumberFormatted) {
         this.nhsNumberFormatted = nhsNumberFormatted;
-        return this;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public JsonPatient setTitle(String title) {
-        this.title = title;
-        return this;
-    }
-
-    public String getForename() {
-        return forename;
-    }
-
-    public JsonPatient setForename(String forename) {
-        this.forename = forename;
-        return this;
-    }
-
-    public String getSurname() {
-        return surname;
-    }
-
-    public JsonPatient setSurname(String surname) {
-        this.surname = surname;
         return this;
     }
 
@@ -123,7 +93,7 @@ public class JsonPatient {
         return singleLineAddress;
     }
 
-    public JsonPatient setSingleLineAddress(String singleLineAddress) {
+    public UIPatient setSingleLineAddress(String singleLineAddress) {
         this.singleLineAddress = singleLineAddress;
         return this;
     }

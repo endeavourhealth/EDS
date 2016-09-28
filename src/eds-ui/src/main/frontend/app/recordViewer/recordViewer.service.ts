@@ -1,20 +1,20 @@
 /// <reference path="../../typings/index.d.ts" />
 
 module app.core {
-	import Patient = app.models.Patient;
+	import UIPatient = app.models.UIPatient;
     import Encounter = app.models.Encounter;
 
 	'use strict';
 
 	export interface IRecordViewerService {
-        findPatient(searchTerms: string): ng.IPromise<Patient[]>;
-		getPatient(serviceId: string, systemId: string, patientId: string): ng.IPromise<Patient>;
+        findPatient(searchTerms: string): ng.IPromise<UIPatient[]>;
+		getPatient(serviceId: string, systemId: string, patientId: string): ng.IPromise<UIPatient>;
         getEncounters(serviceId: string, systemId: string, patientId: string): ng.IPromise<Encounter[]>;
 	}
 
 	export class RecordViewerService extends BaseHttpService implements IRecordViewerService {
 
-        findPatient(searchTerms: string): ng.IPromise<Patient[]> {
+        findPatient(searchTerms: string): ng.IPromise<UIPatient[]> {
             var request = {
                 params: {
                     'searchTerms': searchTerms
@@ -24,7 +24,7 @@ module app.core {
             return this.httpGet('api/recordViewer/findPatient', request);
         }
 
-		getPatient(serviceId: string, systemId: string, patientId: string): ng.IPromise<Patient> {
+		getPatient(serviceId: string, systemId: string, patientId: string): ng.IPromise<UIPatient> {
 			var request = {
 				params: {
 					'serviceId': serviceId,

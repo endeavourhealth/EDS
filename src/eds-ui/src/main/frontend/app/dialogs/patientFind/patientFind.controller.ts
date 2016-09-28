@@ -6,7 +6,7 @@ module app.dialogs {
 	import IModalServiceInstance = angular.ui.bootstrap.IModalServiceInstance;
 	import IModalSettings = angular.ui.bootstrap.IModalSettings;
     import IRecordViewerService = app.core.IRecordViewerService;
-    import Patient = app.models.Patient;
+    import UIPatient = app.models.UIPatient;
 
 	'use strict';
 
@@ -14,8 +14,8 @@ module app.dialogs {
 
         searchTerms: string;
         searchedTerms: string;
-        foundPatients: Patient[];
-        selectedPatient: Patient;
+        foundPatients: UIPatient[];
+        selectedPatient: UIPatient;
 
 		public static open($modal : IModalService) : IModalServiceInstance {
 			var options : IModalSettings = {
@@ -50,14 +50,14 @@ module app.dialogs {
             var vm = this;
             vm.foundPatients = null;
             vm.recordViewerService.findPatient(vm.searchedTerms)
-                .then(function (data: Patient[]) {
+                .then(function (data: UIPatient[]) {
                     vm.foundPatients = data;
                     if (data == null) {
                     }
                 });
         }
 
-        selectPatient(patient: Patient) {
+        selectPatient(patient: UIPatient) {
             if (this.selectedPatient == patient)
                 this.selectedPatient = null;
             else

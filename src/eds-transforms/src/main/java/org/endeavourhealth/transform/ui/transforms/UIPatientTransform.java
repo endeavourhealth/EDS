@@ -2,7 +2,9 @@ package org.endeavourhealth.transform.ui.transforms;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.ui.models.JsonPatient;
+import org.endeavourhealth.transform.ui.helpers.DateHelper;
+import org.endeavourhealth.transform.ui.helpers.NameHelper;
+import org.endeavourhealth.transform.ui.models.UIPatient;
 import org.hl7.fhir.instance.model.*;
 
 import java.time.*;
@@ -13,34 +15,26 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-class JsonPatientTransform {
+class UIPatientTransform {
 
-    public static JsonPatient transform(Patient patient) {
+    public static UIPatient transform(Patient patient) {
 
-        HumanName name = getUsualOrOfficialName(patient.getName());
-
-        String surname = getFirst(name.getFamily());
-        String forename = getFirst(name.getGiven());
-        String title = getFirst(name.getPrefix());
-        String displayName = getDisplayName(title, forename, surname);
-        String birthDateFormatted = getBirthDateFormatted(patient.getBirthDate());
+        String displayName = NameHelper.getUsualOrOfficialNameForDisplay(patient.getName());
+        String birthDateFormatted = DateHelper.getCuiDob(patient.getBirthDate());
         String nhsNumber = getNhsNumber(patient.getIdentifier());
         String nhsNumberFormatted = formatNhsNumber(nhsNumber);
         String gender = getGender(patient.getGender());
         String singleLineAddress = getSingleLineAddress(patient);
 
-        JsonPatient jsonPatient = new JsonPatient()
+        UIPatient UIPatient = new UIPatient()
                 .setNhsNumber(nhsNumber)
                 .setNhsNumberFormatted(nhsNumberFormatted)
-                .setSurname(surname)
-                .setForename(forename)
-                .setTitle(title)
                 .setDisplayName(displayName)
                 .setDateOfBirthFormatted(birthDateFormatted)
                 .setGenderFormatted(gender)
                 .setSingleLineAddress(singleLineAddress);
 
-        return jsonPatient;
+        return UIPatient;
     }
 
     private static String getSingleLineAddress(Patient patient) {
@@ -90,12 +84,6 @@ class JsonPatientTransform {
         return matcher.group("Primary") + " " + matcher.group("Secondary");
     }
 
-    private static String getBirthDateFormatted(Date birthDate) {
-        LocalDate localDate = birthDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        java.time.Period timespan = localDate.until(LocalDate.now());
-        return localDate.format(DateTimeFormatter.ofPattern("dd-MMM-yyyy")) + " (" + Integer.toString(timespan.getYears()) + "y " + Integer.toString(timespan.getMonths()) + "m)";
-    }
-
     private static String getGender(Enumerations.AdministrativeGender gender) {
         if (gender == null)
             return null;
@@ -125,64 +113,5 @@ class JsonPatientTransform {
             return nhsNumber;
 
         return nhsNumber.substring(0, 2) + " " + nhsNumber.substring(3, 5) + " " + nhsNumber.substring(6, 9);
-    }
-
-    private static String getDisplayName(String title, String forename, String surname) {
-        if (title == null)
-            title = "";
-
-        title = StringUtils.capitalize(title.trim());
-
-        if (forename == null)
-            forename = "";
-
-        forename = StringUtils.capitalize(forename.trim());
-
-        if (StringUtils.isEmpty(surname))
-            surname = "UNKNOWN";
-
-        surname = surname.trim().toUpperCase();
-
-        String result = surname;
-
-        if (StringUtils.isNotEmpty(forename))
-            result += ", " + forename;
-
-        if (StringUtils.isNotEmpty(title))
-            result += " (" + title + ")";
-
-        return result;
-    }
-
-    private static HumanName getUsualOrOfficialName(List<HumanName> names) {
-        HumanName name = getNameByUse(names, HumanName.NameUse.USUAL);
-
-        if (name == null)
-            name = getNameByUse(names, HumanName.NameUse.OFFICIAL);
-
-        return name;
-    }
-
-    private static HumanName getNameByUse(List<HumanName> names, HumanName.NameUse nameUse) {
-        if (names == null)
-            return null;
-
-        for (HumanName name : names)
-            if (name.getUse() != null)
-                if (name.getUse() == nameUse)
-                    return name;
-
-        return null;
-    }
-
-    private static String getFirst(List<StringType> strings)
-    {
-        if (strings == null)
-            return null;
-
-        if (strings.get(0) == null)
-            return null;
-
-        return strings.get(0).getValue();
     }
 }

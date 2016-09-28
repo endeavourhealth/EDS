@@ -4,7 +4,7 @@
 
 module app.recordViewer {
 	import IRecordViewerService = app.core.IRecordViewerService;
-	import Patient = app.models.Patient;
+	import UIPatient = app.models.UIPatient;
 	import Service = app.models.Service;
 	import System = app.models.System;
 	import IServiceService = app.service.IServiceService;
@@ -14,7 +14,7 @@ module app.recordViewer {
 	'use strict';
 
 	export class RecordViewerController {
-        patient: Patient;
+        patient: UIPatient;
         encounters: Encounter[];
 
 		static $inject = ['$uibModal', 'RecordViewerService', 'LoggerService', 'ServiceService', '$state'];
@@ -31,7 +31,7 @@ module app.recordViewer {
         showPatientFind() {
             var vm = this;
             PatientFindController.open(vm.$modal)
-                .result.then(function (result: Patient) {
+                .result.then(function (result: UIPatient) {
                 vm.patient = result;
             });
         }
