@@ -21,6 +21,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -93,7 +94,7 @@ public final class SecurityUserEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("")
-    @RequiresAdmin
+    @RolesAllowed({ "eds_admin" })
     @ApiOperation(value = "Create a user")
     public Response create(@Context SecurityContext sc,
                            @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The currently selected organisation") @HeaderParam(value = OrgRoles.HEADER_ORGANISATION_ID) String headerOrgId,

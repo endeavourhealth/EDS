@@ -45,18 +45,23 @@ public class Users extends KeycloakAdminClientBase {
     // get user
     //
 
-    public UserRepresentation getUser(String userId) {
+    public UserRepresentation getUser(String userId) throws KeycloakClientException {
         assertKeycloakAdminClientInitialised();
         return getUser(keycloakDeployment.getRealm(), userId);
     }
 
-    public UserRepresentation getUser(String realm, String userId) {
+    public UserRepresentation getUser(String realm, String userId) throws KeycloakClientException {
         assertKeycloakAdminClientInitialised();
 
         UserRepresentation userRepresentation = null;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpResponse response = doGet(httpClient, keycloakDeployment.getAuthServerBaseUrl() + "/admin/realms/" + realm + "/users/" + userId.trim());
-            userRepresentation = toEntity(response, userRepresentationTypeReference);
+            if(isHttpOkStatus(response)) {
+                userRepresentation = toEntity(response, userRepresentationTypeReference);
+            } else {
+                throw new KeycloakClientException("Failed to get user", response.getStatusLine().getReasonPhrase());
+            }
+
         } catch (IOException e) {
             LOG.error("Keycloak get user failed", e);
         }

@@ -198,10 +198,10 @@ public final class SecurityRoleProfileEndpoint extends AbstractEndpoint {
     @ApiOperation(value = "Delete a role profile")
     public Response delete(@Context SecurityContext sc,
                            @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The currently selected organisation") @HeaderParam(value = OrgRoles.HEADER_ORGANISATION_ID) String headerOrgId,
-                           @ApiParam(value="Role profile name (not the UUID!)") @PathParam(value = "role-profile-name") String roleProfileId) throws Exception {
+                           @ApiParam(value="Role profile name (not the UUID!)") @PathParam(value = "role-profile-name") String roleProfileName) throws Exception {
         // TODO: audit action
 
-        KeycloakAdminClient.instance().realms().roles().deleteRealmRole(roleProfileId);
+        KeycloakAdminClient.instance().realms().roles().deleteRealmRole(roleProfileName);
 
         super.setLogbackMarkers(sc);
 

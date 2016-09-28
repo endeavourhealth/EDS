@@ -7,16 +7,19 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Groups extends KeycloakAdminClientBase {
 
     private static final TypeReference<GroupRepresentation> groupRepresentationTypeReference = new TypeReference<GroupRepresentation>() {};
     private static final TypeReference<List<GroupRepresentation>> listGroupRepresentationTypeReference = new TypeReference<List<GroupRepresentation>>() {};
     private static final TypeReference<List<UserRepresentation>> listUserRepresentationTypeReference = new TypeReference<List<UserRepresentation>>() {};
+    private static final TypeReference<List<RoleRepresentation>> listRoleRepresentationTypeReference = new TypeReference<List<RoleRepresentation>>() {};
 
     //
     // get groups
@@ -183,4 +186,101 @@ public class Groups extends KeycloakAdminClientBase {
         return users;
     }
 
+    //
+    // get effective realm role-mappings
+    //
+
+    public List<RoleRepresentation> getEffectiveRealmRoleMappingIds(String groupId) {
+        assertKeycloakAdminClientInitialised();
+        return getEffectiveRealmRoleMappingIds(keycloakDeployment.getRealm(), groupId);
+    }
+
+    public List<RoleRepresentation> getEffectiveRealmRoleMappingIds(String realm, String groupId) {
+        assertKeycloakAdminClientInitialised();
+
+        List<RoleRepresentation> roleMappings = null;
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            HttpResponse response = doGet(httpClient, keycloakDeployment.getAuthServerBaseUrl() + "/admin/realms/" + realm + "/groups/" + groupId.trim() + "/role-mappings/realm/composite");
+            roleMappings = toEntity(response, listRoleRepresentationTypeReference);
+        } catch (IOException e) {
+            LOG.error("Keycloak get realm role-mappings failed", e);
+        }
+        return roleMappings;
+    }
+
+    //
+    // get realm role-mappings
+    //
+
+    public List<RoleRepresentation> getRealmRoleMappingIds(String groupId) {
+        assertKeycloakAdminClientInitialised();
+        return getRealmRoleMappingIds(keycloakDeployment.getRealm(), groupId);
+    }
+
+    public List<RoleRepresentation> getRealmRoleMappingIds(String realm, String groupId) {
+        assertKeycloakAdminClientInitialised();
+
+        List<RoleRepresentation> roleMappings = null;
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            HttpResponse response = doGet(httpClient, keycloakDeployment.getAuthServerBaseUrl() + "/admin/realms/" + realm + "/groups/" + groupId.trim() + "/role-mappings/realm");
+            roleMappings = toEntity(response, listRoleRepresentationTypeReference);
+        } catch (IOException e) {
+            LOG.error("Keycloak get realm role-mappings failed", e);
+        }
+        return roleMappings;
+    }
+
+    //
+    // add realm role-mappings
+    //
+
+    public List<RoleRepresentation> addRealmRoleMapping(String groupId, List<RoleRepresentation> roles) throws KeycloakClientException {
+        assertKeycloakAdminClientInitialised();
+        return addRealmRoleMapping(keycloakDeployment.getRealm(), groupId, roles);
+    }
+
+    public List<RoleRepresentation> addRealmRoleMapping(String realm, String groupId, List<RoleRepresentation> roles) throws KeycloakClientException {
+        assertKeycloakAdminClientInitialised();
+
+        List<RoleRepresentation> roleMappings = null;
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            HttpResponse response = doPost(httpClient, keycloakDeployment.getAuthServerBaseUrl() + "/admin/realms/" + realm + "/groups/" + groupId.trim() + "/role-mappings/realm", roles);
+            if(isHttpOkStatus(response)) {
+                response = doGet(httpClient, keycloakDeployment.getAuthServerBaseUrl() + "/admin/realms/" + realm + "/groups/" + groupId.trim() + "/role-mappings/realm");
+                roleMappings = toEntity(response, listRoleRepresentationTypeReference);
+            } else {
+                throw new KeycloakClientException("Failed to add realm role-mapping", response.getStatusLine().getReasonPhrase());
+            }
+        } catch (IOException e) {
+            LOG.error("Keycloak add realm role-mappings failed", e);
+        }
+        return roleMappings;
+    }
+
+    //
+    // remove realm role-mappings
+    //
+
+    public List<RoleRepresentation> deleteRealmRoleMapping(String groupId, List<RoleRepresentation> roles) throws KeycloakClientException {
+        assertKeycloakAdminClientInitialised();
+        return deleteRealmRoleMapping(keycloakDeployment.getRealm(), groupId, roles);
+    }
+
+    public List<RoleRepresentation> deleteRealmRoleMapping(String realm, String groupId, List<RoleRepresentation> roles) throws KeycloakClientException {
+        assertKeycloakAdminClientInitialised();
+
+        List<RoleRepresentation> roleMappings = null;
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            HttpResponse response = doDelete(httpClient, keycloakDeployment.getAuthServerBaseUrl() + "/admin/realms/" + realm + "/groups/" + groupId.trim() + "/role-mappings/realm", roles);
+            if(isHttpOkStatus(response)) {
+                response = doGet(httpClient, keycloakDeployment.getAuthServerBaseUrl() + "/admin/realms/" + realm + "/groups/" + groupId.trim() + "/role-mappings/realm");
+                roleMappings = toEntity(response, listRoleRepresentationTypeReference);
+            } else {
+                throw new KeycloakClientException("Failed to delete realm role-mapping", response.getStatusLine().getReasonPhrase());
+            }
+        } catch (IOException e) {
+            LOG.error("Keycloak delete realm role-mappings failed", e);
+        }
+        return roleMappings;
+    }
 }

@@ -13,8 +13,10 @@ import org.endeavourhealth.core.security.keycloak.client.KeycloakAdminClient;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.ui.json.security.JsonKeycloakUser;
 import org.endeavourhealth.ui.json.security.JsonOrgRole;
+import org.endeavourhealth.ui.json.security.JsonRole;
 import org.endeavourhealth.ui.utility.SecurityGroupHelper;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,7 +102,11 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
 
         super.setLogbackMarkers(sc);
 
+        // TODO: improve performance through custom REST resource
         GroupRepresentation group = KeycloakAdminClient.instance().realms().groups().getGroup(orgRoleId);
+        List<RoleRepresentation> roles = KeycloakAdminClient.instance().realms().groups().getRealmRoleMappingIds(orgRoleId);
+        List<String> roleIds = roles.stream().map(r -> r.getId()).collect(Collectors.toList());
+        group.setRealmRoles(roleIds);
         JsonOrgRole role = SecurityGroupHelper.toJsonOrgRole(group);
 
         clearLogbackMarkers();
@@ -108,6 +114,39 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .entity(role)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{orgRoleId}/effective")
+    @RequiresAdmin
+    @ApiOperation(value = "Get effective roles for a role profile group for the currently selected organisation")
+    public Response getEffective(@Context SecurityContext sc,
+                        @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The organisation id to view a list of roles") @PathParam(value = "organisationId") String organisationId,
+                        @ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value="The currently selected organisation") @HeaderParam(value = OrgRoles.HEADER_ORGANISATION_ID) String headerOrgId,
+                        @ApiParam(value="Role id") @PathParam(value = "orgRoleId") String orgRoleId) throws Exception {
+
+        // TODO: audit action
+
+        if(StringUtils.isBlank(organisationId)) {
+            throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("Please specify an organisation id");
+        }
+        if(StringUtils.isBlank(orgRoleId)) {
+            throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("Please specify an organisation role id");
+        }
+        validateOrgId(organisationId, orgRoleId);
+
+        super.setLogbackMarkers(sc);
+
+        List<RoleRepresentation> roleRepresentations = KeycloakAdminClient.instance().realms().groups().getEffectiveRealmRoleMappingIds(orgRoleId);
+        List<JsonRole> roles = roleRepresentations.stream().map(r -> new JsonRole(UUID.fromString(r.getId()), r.getName(), r.getDescription(), r.isComposite())).collect(Collectors.toList());
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(roles)
                 .build();
     }
 
@@ -132,12 +171,8 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
         if(StringUtils.isBlank(orgRoleId)) {
             throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("Please specify an organisation role id");
         }
+        validateOrgId(organisationId, orgRoleId);
 
-        // only list the users if the organisationId in the path matches the group's organisation id
-        String groupOrgId = SecurityGroupHelper.getOrganisationId(KeycloakAdminClient.instance().realms().groups().getGroup(orgRoleId));
-        if(!groupOrgId.equalsIgnoreCase(organisationId)) {
-            throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("Organisation role id not associated with organisation specified.");
-        }
 
         super.setLogbackMarkers(sc);
 
@@ -150,6 +185,14 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(usersOut)
                 .build();
+    }
+
+    private void validateOrgId(@ApiParam(defaultValue = OrgRoles.ROOT_ORGANISATION_ID, value = "The organisation id to view a list of roles") @PathParam(value = "organisationId") String organisationId, @ApiParam(value = "Role id") @PathParam(value = "orgRoleId") String orgRoleId) throws org.endeavourhealth.ui.framework.exceptions.NotFoundException {
+        // only list the users if the organisationId in the path matches the group's organisation id
+        String groupOrgId = SecurityGroupHelper.getOrganisationId(KeycloakAdminClient.instance().realms().groups().getGroup(orgRoleId));
+        if(!groupOrgId.equalsIgnoreCase(organisationId)) {
+            throw new org.endeavourhealth.ui.framework.exceptions.NotFoundException("Organisation role id not associated with organisation specified.");
+        }
     }
 
 
@@ -171,7 +214,14 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
         orgRole.setOrgRoleId(null);
         orgRole.setOrganisationId(UUID.fromString(organisationId));
 
-        GroupRepresentation groupOut = KeycloakAdminClient.instance().realms().groups().postGroup(SecurityGroupHelper.toGroupRepresentation(orgRole));
+        List<RoleRepresentation> realmRoles = KeycloakAdminClient.instance().realms().roles().getRealmRoles();
+        GroupRepresentation groupRepresentation = SecurityGroupHelper.toGroupRepresentation(orgRole);
+        GroupRepresentation groupOut = KeycloakAdminClient.instance().realms().groups().postGroup(groupRepresentation);
+        List<RoleRepresentation> roles = groupRepresentation.getRealmRoles().stream()
+                .map(r -> realmRoles.stream().filter(f -> f.getId().equalsIgnoreCase(r)).findFirst().get())
+                .collect(Collectors.toList());
+        KeycloakAdminClient.instance().realms().groups().addRealmRoleMapping(groupOut.getId(), roles);
+        groupOut.setRealmRoles(groupRepresentation.getRealmRoles());
         JsonOrgRole roleOut = SecurityGroupHelper.toJsonOrgRole(groupOut);
 
         clearLogbackMarkers();
@@ -207,7 +257,25 @@ public final class SecurityOrgRoleEndpoint extends AbstractEndpoint {
 
         super.setLogbackMarkers(sc);
 
-        GroupRepresentation groupOut = KeycloakAdminClient.instance().realms().groups().putGroup(SecurityGroupHelper.toGroupRepresentation(orgRole));
+        List<RoleRepresentation> realmRoles = KeycloakAdminClient.instance().realms().roles().getRealmRoles();
+
+        List<RoleRepresentation> origRoles = KeycloakAdminClient.instance().realms().groups().getRealmRoleMappingIds(orgRoleId);
+        List<String> origRoleIds = origRoles.stream().map(r -> r.getId()).collect(Collectors.toList());
+        List<RoleRepresentation> rolesOrig = origRoleIds.stream()
+                .map(r -> realmRoles.stream().filter(f -> f.getId().equalsIgnoreCase(r)).findFirst().get())
+                .collect(Collectors.toList());
+
+        GroupRepresentation groupRepresentation = SecurityGroupHelper.toGroupRepresentation(orgRole);
+        GroupRepresentation groupOut = KeycloakAdminClient.instance().realms().groups().putGroup(groupRepresentation);
+
+        KeycloakAdminClient.instance().realms().groups().deleteRealmRoleMapping(groupOut.getId(), rolesOrig);
+
+        List<RoleRepresentation> roles = groupRepresentation.getRealmRoles().stream()
+                .map(r -> realmRoles.stream().filter(f -> f.getId().equalsIgnoreCase(r)).findFirst().get())
+                .collect(Collectors.toList());
+        KeycloakAdminClient.instance().realms().groups().addRealmRoleMapping(groupOut.getId(), roles);
+        groupOut.setRealmRoles(groupRepresentation.getRealmRoles());
+
         JsonOrgRole roleOut = SecurityGroupHelper.toJsonOrgRole(groupOut);
 
         clearLogbackMarkers();

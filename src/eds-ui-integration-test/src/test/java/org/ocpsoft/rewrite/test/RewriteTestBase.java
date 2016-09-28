@@ -10,11 +10,13 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.*;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.endeavourhealth.core.security.keycloak.client.resources.HttpDeleteWithBody;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
@@ -86,7 +88,7 @@ public abstract class RewriteTestBase
      *
      * @throws Exception
      */
-    protected HttpAction<HttpGet> get(HttpClient client, String path, Header... headers) throws Exception
+    public HttpAction<HttpGet> get(HttpClient client, String path, Header... headers) throws Exception
     {
         HttpGet request = new HttpGet(getBaseURL() + getContextPath() + path);
         if (headers != null && headers.length > 0) {
@@ -96,6 +98,57 @@ public abstract class RewriteTestBase
         HttpResponse response = client.execute(request, context);
 
         return new HttpAction<HttpGet>(client, context, request, response, getBaseURL(), getContextPath());
+    }
+
+    protected HttpAction<HttpPost> post(HttpClient client, String path, String jsonContent, Header... headers) throws Exception
+    {
+        HttpPost request = new HttpPost(getBaseURL() + getContextPath() + path);
+        if (headers != null && headers.length > 0) {
+            request.setHeaders(headers);
+        }
+        request.setEntity(new StringEntity(jsonContent, ContentType.APPLICATION_JSON));
+        HttpContext context = new BasicHttpContext();
+        HttpResponse response = client.execute(request, context);
+
+        return new HttpAction<HttpPost>(client, context, request, response, getBaseURL(), getContextPath());
+    }
+
+    protected HttpAction<HttpPut> put(HttpClient client, String path, String jsonContent, Header... headers) throws Exception
+    {
+        HttpPut request = new HttpPut(getBaseURL() + getContextPath() + path);
+        if (headers != null && headers.length > 0) {
+            request.setHeaders(headers);
+        }
+        request.setEntity(new StringEntity(jsonContent, ContentType.APPLICATION_JSON));
+        HttpContext context = new BasicHttpContext();
+        HttpResponse response = client.execute(request, context);
+
+        return new HttpAction<HttpPut>(client, context, request, response, getBaseURL(), getContextPath());
+    }
+
+    public HttpAction<HttpDelete> delete(HttpClient client, String path, Header... headers) throws Exception
+    {
+        HttpDelete request = new HttpDelete(getBaseURL() + getContextPath() + path);
+        if (headers != null && headers.length > 0) {
+            request.setHeaders(headers);
+        }
+        HttpContext context = new BasicHttpContext();
+        HttpResponse response = client.execute(request, context);
+
+        return new HttpAction<HttpDelete>(client, context, request, response, getBaseURL(), getContextPath());
+    }
+
+    protected HttpAction<HttpDeleteWithBody> delete(HttpClient client, String path, String jsonContent, Header... headers) throws Exception
+    {
+        HttpDeleteWithBody request = new HttpDeleteWithBody(getBaseURL() + getContextPath() + path);
+        if (headers != null && headers.length > 0) {
+            request.setHeaders(headers);
+        }
+        request.setEntity(new StringEntity(jsonContent, ContentType.APPLICATION_JSON));
+        HttpContext context = new BasicHttpContext();
+        HttpResponse response = client.execute(request, context);
+
+        return new HttpAction<HttpDeleteWithBody>(client, context, request, response, getBaseURL(), getContextPath());
     }
 
     /**

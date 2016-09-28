@@ -54,6 +54,10 @@ public class SecurityRoleHelper {
     }
 
     public static List<RoleRepresentation> toCompositeRoleRepresentation(JsonRoleProfile roleIn) {
+        if(roleIn.getRoles() == null || roleIn.getRoles().size() < 1) {
+            return new ArrayList<>();
+        }
+
         return roleIn.getRoles().stream().map(c -> {
             RoleRepresentation r = new RoleRepresentation();
             r.setId(c);

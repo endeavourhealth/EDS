@@ -86,7 +86,7 @@
     <!--                    Swagger                   -->
     <!-- ============================================ -->
     <servlet>
-        <servlet-name>swaggerB</servlet-name>
+        <servlet-name>swaggerBootstrap</servlet-name>
         <servlet-class>org.endeavourhealth.ui.framework.SwaggerBootstrap</servlet-class>
         <load-on-startup>2</load-on-startup>
     </servlet>
