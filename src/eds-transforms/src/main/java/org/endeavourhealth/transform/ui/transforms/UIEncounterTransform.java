@@ -38,12 +38,14 @@ class UIEncounterTransform {
         if (enteredByPractitioner != null)
             uiEncounter.setEnteredBy(UIPractitionerTransform.transform(enteredByPractitioner));
 
-        uiEncounter.setDate(getStartDate(encounter));
+        uiEncounter.setDate(encounter.getPeriod().getStart());
+        
+        uiEncounter.setDisplayDate(getStartDisplayDate(encounter));
 
         return uiEncounter;
     }
 
-    private static String getStartDate(Encounter encounter) {
+    private static String getStartDisplayDate(Encounter encounter) {
         return DateHelper.format(encounter.getPeriod().getStart());
     }
 
@@ -62,7 +64,7 @@ class UIEncounterTransform {
     private static Practitioner getEnteredByPractitionerId(Encounter encounter, List<Practitioner> practitioners) {
         for (Encounter.EncounterParticipantComponent component : encounter.getParticipant())
             if (component.getType().size() > 0)
-                if (component.getType().get(0).getText().equals("Entered by"))
+                if (component.getType().get(0).getText() == ("Entered by"))
                     return practitioners
                         .stream()
                         .filter(t -> t.getId().equals(ReferenceHelper.getReferenceId(component.getIndividual())))

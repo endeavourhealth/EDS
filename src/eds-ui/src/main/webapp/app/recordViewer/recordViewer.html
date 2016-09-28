@@ -42,10 +42,10 @@
                                     <th>Place</th>
                                 </thead>
                                 <tbody>
-                                    <tr ng-repeat="consultation in recordViewerCtrl.consultations">
-                                        <td>{{consultation.date}}</td>
-                                        <td>{{consultation.doctor}}</td>
-                                        <td>{{consultation.place}}</td>
+                                    <tr ng-repeat="encounter in recordViewerCtrl.encounters">
+                                        <td>{{encounter.displayDate}}</td>
+                                        <td>{{encounter.performedBy.displayName}}</td>
+                                        <td>{{encounter.place}}</td>
                                     </tr>
                                 </tbody>
                             </table>

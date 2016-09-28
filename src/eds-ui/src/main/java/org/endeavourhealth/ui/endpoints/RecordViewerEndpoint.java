@@ -19,9 +19,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Path("/recordViewer")
 public final class RecordViewerEndpoint extends AbstractEndpoint {
@@ -87,6 +86,11 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
         List<Practitioner> fhirPractitioners = ResourceFetcher.getResourcesByService(serviceId, systemId, practitionerIds, Practitioner.class);
 
         List<UIEncounter> encounters = UITransform.transformEncounters(fhirEncounters, fhirPractitioners);
+
+        encounters = encounters
+                .stream()
+                .sorted(Comparator.comparing(t -> ((UIEncounter)t).getDate()).reversed())
+                .collect(Collectors.toList());
 
         return Response
                 .ok()

@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.ui.models;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,7 +12,8 @@ public class UIEncounter {
     private String status;
     private UIPractitioner performedBy;
     private UIPractitioner enteredBy;
-    private String date;
+    private String displayDate;
+    private Date date;
     private List<UICode> reason = new ArrayList<>();
 
     public String getStatus() {
@@ -23,11 +25,20 @@ public class UIEncounter {
         return this;
     }
 
-    public String getDate() {
+    public String getDisplayDate() {
+        return displayDate;
+    }
+
+    public UIEncounter setDisplayDate(String displayDate) {
+        this.displayDate = displayDate;
+        return this;
+    }
+
+    public Date getDate() {
         return date;
     }
 
-    public UIEncounter setDate(String date) {
+    public UIEncounter setDate(Date date) {
         this.date = date;
         return this;
     }
