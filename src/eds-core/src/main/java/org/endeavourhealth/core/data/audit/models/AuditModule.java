@@ -33,7 +33,8 @@ public enum AuditModule implements IAuditModule{
 		Service,
 		Resource,
 		Config,
-		Audit;
+		Audit,
+		Ekb;
 
 		public IAuditModule getParent() { return AuditModule.EdsUi; }
 	}
