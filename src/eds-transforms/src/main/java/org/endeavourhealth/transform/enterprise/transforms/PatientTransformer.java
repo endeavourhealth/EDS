@@ -1,20 +1,24 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
+import OpenPseudonymiser.Crypto;
+import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.Gender;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class PatientTransformer extends AbstractTransformer {
+
+    private static final String PSEUDO_KEY_NHS_NUMBER = "NHSNumber";
+    private static final String PSEUDO_KEY_DATE_OF_BIRTH = "DOB";
 
     public void transform(ResourceByExchangeBatch resource,
                           EnterpriseData data,
@@ -88,12 +92,46 @@ public class PatientTransformer extends AbstractTransformer {
                 model.setDateRegisteredEnd(convertDate(period.getEnd()));
             }*/
 
-
-            //TODO - finish Patient transform (pseudo code)
-            model.setPseudoId(UUID.randomUUID().toString());
+            model.setPseudoId(pseudonomise(fhirPatient));
         }
 
         data.getPatient().add(model);
+    }
+
+    private static String pseudonomise(Patient fhirPatient) throws Exception {
+
+        String nhsNumber = null;
+        if (fhirPatient.hasIdentifier()) {
+            for (Identifier identifier: fhirPatient.getIdentifier()) {
+                if (identifier.getSystem().equals(FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER)) {
+                    nhsNumber = identifier.getValue();
+                    break;
+                }
+            }
+        }
+
+        String dob = null;
+        if (fhirPatient.hasBirthDate()) {
+            Date d = fhirPatient.getBirthDate();
+            dob = new SimpleDateFormat("dd-MM-yyyy").format(d);
+        }
+
+        //if we don't have either of these values, we can't generate a pseudo ID
+        if (Strings.isNullOrEmpty(nhsNumber)
+                || Strings.isNullOrEmpty(dob)) {
+            return "";
+        }
+
+        TreeMap keys = new TreeMap();
+        keys.put(PSEUDO_KEY_DATE_OF_BIRTH, dob);
+        keys.put(PSEUDO_KEY_NHS_NUMBER, nhsNumber);
+
+        Crypto crypto = new Crypto();
+
+        // set the salt to a plain text word/phrase
+        String salt = "mackerel";
+        crypto.SetPlainTextSalt(salt);
+        return crypto.GetDigest(keys);
     }
 
     private static Gender convertGender(Enumerations.AdministrativeGender gender) throws Exception {
