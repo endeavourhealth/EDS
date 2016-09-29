@@ -22,7 +22,7 @@ module app.recordViewer {
 						url: '/recordViewer',
 						templateUrl: 'app/recordViewer/recordViewer.html',
 						controller: 'RecordViewerController',
-						controllerAs: 'recordViewerCtrl'
+						controllerAs: 'ctrl'
 					}
 				}
 			];

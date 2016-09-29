@@ -1,38 +1,38 @@
 <div class="module record-viewer">
     <div class="module-heading">
         <span>Record viewer</span>
-        <button class="btn btn-success btn-sm pull-right" ng-click="recordViewerCtrl.showPatientFind()"><i class="fa fa-search"></i> Find patient</button>
-        <button class="btn btn-success btn-sm pull-right" ng-click="recordViewerCtrl.clearPatient()" ng-disabled="recordViewerCtrl.patient == null"><i class="fa fa-times-circle"></i> Clear patient</button>
+        <button class="btn btn-success btn-sm pull-right" ng-click="ctrl.showPatientFind()"><i class="fa fa-search"></i> Find patient</button>
+        <button class="btn btn-success btn-sm pull-right" ng-click="ctrl.clearPatient()" ng-disabled="ctrl.patient == null"><i class="fa fa-times-circle"></i> Clear patient</button>
     </div>
     <div class="module-body">
 
         <div class="container-fluid">
 
-            <div name="noPatientSelectedView" ng-hide="recordViewerCtrl.patient">
+            <div name="noPatientSelectedView" ng-hide="ctrl.patient">
                 No patient selected
             </div>
 
-            <div name="patientSelectedView" ng-show="recordViewerCtrl.patient">
+            <div name="patientSelectedView" ng-show="ctrl.patient">
 
                 <div class="panel panel-default precis">
                     <div class="panel-body">
                         <div class="row">
-                            <div class="col-sm-5"><span class="precis-patientname">{{recordViewerCtrl.patient.displayName}}</span></div>
-                            <div class="col-sm-3"><span class="precis-label">Born</span> <span class="precis-value">{{recordViewerCtrl.patient.dateOfBirthFormatted}}</span></div>
-                            <div class="col-sm-2"><span class="precis-label">Gender</span> <span class="precis-value">{{recordViewerCtrl.patient.genderFormatted}}</span></div>
-                            <div class="col-sm-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{recordViewerCtrl.patient.nhsNumberFormatted}}</span></div>
+                            <div class="col-sm-5"><span class="precis-patientname">{{ctrl.patient.displayName}}</span></div>
+                            <div class="col-sm-3"><span class="precis-label">Born</span> <span class="precis-value">{{ctrl.patient.dateOfBirthFormatted}}</span></div>
+                            <div class="col-sm-2"><span class="precis-label">Gender</span> <span class="precis-value">{{ctrl.patient.genderFormatted}}</span></div>
+                            <div class="col-sm-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{ctrl.patient.nhsNumberFormatted}}</span></div>
                         </div>
                     </div>
                 </div>
 
-                <uib-tabset active="activeForm">
-                    <uib-tab index="0" heading="Summary">
+                <uib-tabset>
+                    <uib-tab index="0" active="ctrl.firstTabActive" heading="Summary">
 
                         <div class="tab-panel">
                             Summary
                         </div>
                     </uib-tab>
-                    <uib-tab index="1" heading="Consultations" ng-click="recordViewerCtrl.loadConsultations();">
+                    <uib-tab index="1" heading="Consultations" ng-click="ctrl.loadConsultations();">
 
                         <div class="tab-panel">
                             <table class="table table-hover">
@@ -42,7 +42,7 @@
                                     <th>Place</th>
                                 </thead>
                                 <tbody>
-                                    <tr ng-repeat="encounter in recordViewerCtrl.encounters">
+                                    <tr ng-repeat="encounter in ctrl.encounters">
                                         <td>{{encounter.displayDate}}</td>
                                         <td>{{encounter.performedBy.displayName}}</td>
                                         <td>{{encounter.place}}</td>

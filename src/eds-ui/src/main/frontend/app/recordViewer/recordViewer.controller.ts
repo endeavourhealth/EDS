@@ -4,11 +4,8 @@
 
 module app.recordViewer {
 	import IRecordViewerService = app.core.IRecordViewerService;
-	import UIPatient = app.models.UIPatient;
-	import Service = app.models.Service;
-	import System = app.models.System;
-	import IServiceService = app.service.IServiceService;
     import PatientFindController = app.dialogs.PatientFindController;
+    import UIPatient = app.models.UIPatient;
     import Encounter = app.models.Encounter;
 
 	'use strict';
@@ -16,27 +13,35 @@ module app.recordViewer {
 	export class RecordViewerController {
         patient: UIPatient;
         encounters: Encounter[];
+        firstTabActive: boolean = true;
 
-		static $inject = ['$uibModal', 'RecordViewerService', 'LoggerService', 'ServiceService', '$state'];
+		static $inject = ['$uibModal', 'RecordViewerService'];
 
 		constructor(private $modal: IModalService,
-        		    protected recordViewerService: IRecordViewerService,
-					protected logger: ILoggerService,
-					protected serviceService: IServiceService,
-					protected $state: IStateService) {
+                    protected recordViewerService: IRecordViewerService) {
 
             this.showPatientFind();
 		}
 
         showPatientFind() {
             var vm = this;
-            PatientFindController.open(vm.$modal)
-                .result.then(function (result: UIPatient) {
-                vm.patient = result;
-            });
+
+            PatientFindController
+                .open(vm.$modal)
+                .result
+                .then(
+                    function (result: UIPatient) {
+                        vm.setPatient(result);
+                    });
+        }
+
+        setPatient(patient: UIPatient) {
+            this.clearPatient();
+            this.patient = patient;
         }
 
         clearPatient() {
+            this.firstTabActive = true;
             this.patient = null;
             this.encounters = null;
         }
@@ -44,12 +49,11 @@ module app.recordViewer {
         loadConsultations() {
             var vm = this;
             vm.encounters = null;
+
             vm.recordViewerService.getEncounters(vm.patient.serviceId, vm.patient.systemId, vm.patient.patientId)
-                .then(function (data: Encounter[]) {
+                .then(
+                    function (data: Encounter[]) {
                     vm.encounters = data;
-                    if (data == null) {
-                        vm.logger.error('No patient found');
-                    }
                 });
         }
     }
