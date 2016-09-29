@@ -59,39 +59,41 @@ public class ObservationTransformer {
                                        EmisCsvHelper csvHelper) throws Exception {
 
         ResourceType resourceType = findOriginalTargetResourceType(parser, csvProcessor);
-        switch (resourceType) {
-            case Observation:
-                createOrDeleteObservation(parser, csvProcessor, csvHelper);
-                break;
-            //checked below, as this is a special case
-            /*case Condition:
-                createOrDeleteCondition(parser, csvProcessor, csvHelper);
-                break;*/
-            case Procedure:
-                createOrDeleteProcedure(parser, csvProcessor, csvHelper);
-                break;
-            case AllergyIntolerance:
-                createOrDeleteAllergy(parser, csvProcessor, csvHelper);
-                break;
-            case FamilyMemberHistory:
-                createOrDeleteFamilyMemberHistory(parser, csvProcessor, csvHelper);
-                break;
-            case Immunization:
-                createOrDeleteImmunization(parser, csvProcessor, csvHelper);
-                break;
-            case DiagnosticOrder:
-                createOrDeleteDiagnosticOrder(parser, csvProcessor, csvHelper);
-                break;
-            case ReferralRequest:
-                createOrDeleteReferralRequest(parser, csvProcessor, csvHelper);
-                break;
-/*            case Specimen:
-                createOrDeleteSpecimen(observationParser, csvProcessor, csvHelper);
-                break;*/
-            default:
-                throw new IllegalArgumentException("Unsupported resource type: " + resourceType);
+        if (resourceType != null) {
+            switch (resourceType) {
+                case Observation:
+                    createOrDeleteObservation(parser, csvProcessor, csvHelper);
+                    break;
+                //checked below, as this is a special case
+                /*case Condition:
+                    createOrDeleteCondition(parser, csvProcessor, csvHelper);
+                    break;*/
+                case Procedure:
+                    createOrDeleteProcedure(parser, csvProcessor, csvHelper);
+                    break;
+                case AllergyIntolerance:
+                    createOrDeleteAllergy(parser, csvProcessor, csvHelper);
+                    break;
+                case FamilyMemberHistory:
+                    createOrDeleteFamilyMemberHistory(parser, csvProcessor, csvHelper);
+                    break;
+                case Immunization:
+                    createOrDeleteImmunization(parser, csvProcessor, csvHelper);
+                    break;
+                case DiagnosticOrder:
+                    createOrDeleteDiagnosticOrder(parser, csvProcessor, csvHelper);
+                    break;
+                case ReferralRequest:
+                    createOrDeleteReferralRequest(parser, csvProcessor, csvHelper);
+                    break;
+    /*            case Specimen:
+                    createOrDeleteSpecimen(observationParser, csvProcessor, csvHelper);
+                    break;*/
+                default:
+                    throw new IllegalArgumentException("Unsupported resource type: " + resourceType);
+            }
         }
-        
+
         //if EMIS has a non-Condition code (e.g. family history) that's flagged as a problem, we'll create
         //a FHIR Condition (for the problem) as well as the FHIR FamilyMemberHistory. The above code will
         //sort out deleting the FamilyMemberHistory, so we also need to see if the same EMIS observation
@@ -105,9 +107,7 @@ public class ObservationTransformer {
      * finds out what resource type an EMIS observation was previously saved as
      */
     private static ResourceType findOriginalTargetResourceType(Observation parser, CsvProcessor csvProcessor) {
-        
-        String observationGuid = parser.getObservationGuid();
-        
+
         List<ResourceType> potentialResourceTypes = new ArrayList<>();
         potentialResourceTypes.add(ResourceType.Observation);
         //potentialResourceTypes.add(ResourceType.Condition); //don't check this here - as conditions are handled differently
@@ -625,9 +625,6 @@ public class ObservationTransformer {
 
         fhirProcedure.setStatus(Procedure.ProcedureStatus.COMPLETED);
 
-        Date enteredDate = parser.getEnteredDateTime();
-        fhirProcedure.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(enteredDate)));
-
         Long codeId = parser.getCodeId();
         fhirProcedure.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
 
@@ -784,9 +781,6 @@ public class ObservationTransformer {
         String effectiveDatePrecision = parser.getEffectiveDatePrecision();
         fhirObservation.setEffective(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
-        Date enteredDate = parser.getEnteredDateTime();
-        fhirObservation.setIssued(enteredDate);
-
         Long codeId = parser.getCodeId();
         fhirObservation.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
 
@@ -916,7 +910,7 @@ public class ObservationTransformer {
 
         String clinicianGuid = parser.getClinicianUserInRoleGuid();
         Reference reference = csvHelper.createPractitionerReference(clinicianGuid);
-        fhirFamilyHistory.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
+        fhirFamilyHistory.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.FAMILY_MEMBER_HISTOY_REPORTED_BY, reference));
 
         String consultationGuid = parser.getConsultationGuid();
         if (!Strings.isNullOrEmpty(consultationGuid)) {

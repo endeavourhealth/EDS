@@ -7,9 +7,9 @@ import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.ObservationReferral;
-import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.IdentifierHelper;
+import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.fhir.schema.ReferralRequestSendMode;
+import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.DiagnosticOrder;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.ReferralRequest;
@@ -74,8 +74,18 @@ public class ObservationReferralTransformer {
 
         String mode = observationParser.getReferralMode();
         if (!Strings.isNullOrEmpty(mode)) {
-            //TODO - need a new extension for this, as TYPE is not the right place
-            //fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(mode));
+
+            CodeableConcept codeableConcept = null;
+
+            try {
+                ReferralRequestSendMode fhirMode = ReferralRequestSendMode.fromDescription(mode);
+                codeableConcept = CodeableConceptHelper.createCodeableConcept(fhirMode);
+            } catch (IllegalArgumentException ex) {
+                //if we couldn't map to a send mode from the value set, just save as a textual codeable concept
+                codeableConcept = CodeableConceptHelper.createCodeableConcept(mode);
+            }
+
+            fhirReferral.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.REFERRAL_REQUEST_SEND_MODE, codeableConcept));
         }
 
         //although the columns exist in the CSV, the spec. states that they'll always be empty

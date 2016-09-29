@@ -44,7 +44,9 @@ public class CodeableConceptHelper {
         return new CodeableConcept().addCoding(CodingHelper.createCoding(nhsNumberVerificationStatus));
     }
 
-
+    public static CodeableConcept createCodeableConcept(ReferralRequestSendMode referralRequestSendMode) {
+        return new CodeableConcept().addCoding(CodingHelper.createCoding(referralRequestSendMode));
+    }
 
     public static CodeableConcept createCodeableConcept(String text) {
         return new CodeableConcept().setText(text);
