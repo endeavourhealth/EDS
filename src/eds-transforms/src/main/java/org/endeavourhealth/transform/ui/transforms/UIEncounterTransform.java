@@ -2,22 +2,31 @@ package org.endeavourhealth.transform.ui.transforms;
 
 import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.UIEncounter;
 import org.endeavourhealth.transform.ui.models.UIPeriod;
 import org.hl7.fhir.instance.model.Encounter;
 import org.hl7.fhir.instance.model.Practitioner;
+import org.hl7.fhir.instance.model.Reference;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
-class UIEncounterTransform {
+public class UIEncounterTransform implements IUIClinicalTransform<Encounter, UIEncounter> {
 
-    public static List<UIEncounter> transform(List<Encounter> encounters, List<Practitioner> practitioners) {
+    public List<UIEncounter> transform(List<Encounter> encounters, ReferencedResources referencedResources) {
         return encounters
                 .stream()
-                .map(t -> transform(t, practitioners))
+                .map(t -> transform(t, referencedResources.getPractitioners()))
+                .collect(Collectors.toList());
+    }
+
+    public List<Reference> getReferences(List<Encounter> encounters) {
+        return encounters
+                .stream()
+                .flatMap(t -> t.getParticipant().stream())
+                .filter(t -> t.hasIndividual())
+                .map(t -> t.getIndividual())
                 .collect(Collectors.toList());
     }
 
@@ -62,23 +71,5 @@ class UIEncounterTransform {
                         .collect(StreamExtension.firstOrNullCollector());
 
         return null;
-    }
-
-    public static List<UUID> getPractitionerIds(List<Encounter> encounters) {
-        List<UUID> result = new ArrayList<>();
-
-        for (Encounter encounter : encounters) {
-            if (encounter == null)
-                continue;
-
-            for (Encounter.EncounterParticipantComponent participantComponent : encounter.getParticipant())
-                if (participantComponent.getIndividual() != null)
-                    result.add(UUID.fromString(ReferenceHelper.getReferenceId(participantComponent.getIndividual())));
-        }
-
-        return result
-                .stream()
-                .distinct()
-                .collect(Collectors.toList());
     }
 }

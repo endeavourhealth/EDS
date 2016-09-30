@@ -1,16 +1,19 @@
 package org.endeavourhealth.ui.endpoints;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByLocalId;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
+import org.endeavourhealth.transform.ui.models.UICondition;
 import org.endeavourhealth.transform.ui.models.UIEncounter;
+import org.endeavourhealth.transform.ui.transforms.IUIClinicalTransform;
 import org.endeavourhealth.transform.ui.transforms.UITransform;
 import org.endeavourhealth.transform.ui.models.UIPatient;
 import org.endeavourhealth.ui.utility.ResourceFetcher;
-import org.hl7.fhir.instance.model.Encounter;
-import org.hl7.fhir.instance.model.Patient;
-import org.hl7.fhir.instance.model.Practitioner;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,6 +72,26 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Path("/getConditions")
+    public Response getConditions(@Context SecurityContext sc,
+                                  @QueryParam("serviceId") UUID serviceId,
+                                  @QueryParam("systemId") UUID systemId,
+                                  @QueryParam("patientId") UUID patientId) throws Exception {
+
+        Validate.notNull(serviceId, "serviceId");
+        Validate.notNull(systemId, "systemId");
+        Validate.notNull(patientId, "patientId");
+
+        List<UICondition> conditions = getClinicalResources(serviceId, systemId, patientId, Condition.class);
+
+        return Response
+                .ok()
+                .entity(conditions)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("/getEncounters")
     public Response getEncounters(@Context SecurityContext sc,
                                     @QueryParam("serviceId") UUID serviceId,
@@ -79,14 +102,9 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
         Validate.notNull(systemId, "systemId");
         Validate.notNull(patientId, "patientId");
 
-        List<Encounter> fhirEncounters = ResourceFetcher.getResourceByPatient(serviceId, systemId, patientId, Encounter.class);
+        List<UICondition> encounters = getClinicalResources(serviceId, systemId, patientId, Encounter.class);
 
-        List<UUID> practitionerIds = UITransform.getPractitionerIds(fhirEncounters);
-
-        List<Practitioner> fhirPractitioners = ResourceFetcher.getResourcesByService(serviceId, systemId, practitionerIds, Practitioner.class);
-
-        List<UIEncounter> encounters = UITransform.transformEncounters(fhirEncounters, fhirPractitioners);
-
+        // move to client
         encounters = encounters
                 .stream()
                 .sorted(Comparator.comparing(t -> ((UIEncounter)t).getPeriod().getStart()).reversed())
@@ -106,5 +124,37 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                 .setServiceId(serviceId)
                 .setSystemId(systemId)
                 .setPatientId(patientId);
+    }
+
+    private <T extends Resource, U> List<U> getClinicalResources(UUID serviceId, UUID systemId, UUID patientId, Class<T> resourceType) throws Exception {
+
+        List<T> resources = ResourceFetcher.getResourceByPatient(serviceId, systemId, patientId, resourceType);
+
+        IUIClinicalTransform transform = UITransform.getClinicalTransformer(resourceType);
+
+        List<Reference> references = transform.getReferences(resources);
+        ReferencedResources referencedResources = getReferencedResources(serviceId, systemId, references);
+
+        return transform.transform(resources, referencedResources);
+    }
+
+    private ReferencedResources getReferencedResources(UUID serviceId, UUID systemId, List<Reference> references) throws Exception {
+
+        ReferencedResources referencedResources = new ReferencedResources();
+
+        List<UUID> practitionerIds = getIdsOfType(references, ResourceType.Practitioner);
+        referencedResources.setPractitioners(ResourceFetcher.getResourcesByService(serviceId, systemId, practitionerIds, Practitioner.class));
+
+        return referencedResources;
+    }
+
+    private static List<UUID> getIdsOfType(List<Reference> references, ResourceType resourceType) {
+        return references
+                .stream()
+                .map(t -> ReferenceHelper.getReferenceId(t, resourceType))
+                .filter(t -> StringUtils.isNotEmpty(t))
+                .distinct()
+                .map(t -> UUID.fromString(t))
+                .collect(Collectors.toList());
     }
 }
