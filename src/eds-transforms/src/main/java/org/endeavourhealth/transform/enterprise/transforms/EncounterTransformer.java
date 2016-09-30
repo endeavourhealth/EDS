@@ -3,7 +3,6 @@ package org.endeavourhealth.transform.enterprise.transforms;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.fhir.schema.EncounterParticipantType;
 import org.hl7.fhir.instance.model.*;
 
@@ -71,15 +70,6 @@ public class EncounterTransformer extends AbstractTransformer {
                 DateTimeType dt = period.getStartElement();
                 model.setDate(convertDate(dt.getValue()));
                 model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
-            }
-
-            if (fhir.hasReason()) {
-                if (fhir.getReason().size() > 1) {
-                    throw new TransformException("Cannot transform encounters with more than one reason " + fhir.getId());
-                }
-                CodeableConcept cc = fhir.getReason().get(0);
-                Long snomedConceptId = findSnomedConceptId(cc);
-                model.setReasonSnomedConceptId(snomedConceptId);
             }
         }
 

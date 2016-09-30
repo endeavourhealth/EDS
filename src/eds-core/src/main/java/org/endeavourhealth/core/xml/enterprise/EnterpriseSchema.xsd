@@ -232,7 +232,6 @@
                     <xs:element name="appointment_id" type="uuid" minOccurs="0"/>
                     <xs:element name="date" type="xs:dateTime" minOccurs="0"/>
                     <xs:element name="date_precision" type="date_precision" minOccurs="0"/>
-                    <xs:element name="reason_snomed_concept_id" type="xs:long" minOccurs="0"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>

@@ -206,7 +206,7 @@ public class EnterpriseFiler {
             if (value == null) {
                 statement.setNull(index, Types.INTEGER);
             } else {
-                statement.setInt(index, ((Long)value).intValue());
+                statement.setLong(index, ((Long)value).longValue());
             }
 
         } else if (fieldCls == Gender.class) {

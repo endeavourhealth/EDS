@@ -13,6 +13,11 @@ public class Resources {
         return text;
     }
 
+    public static byte[] getResourceAsBytes(String url) throws IOException {
+        URL urlItem = getResourceAsURLObject(url);
+        return com.google.common.io.Resources.toByteArray(urlItem);
+    }
+
     public static URL getResourceAsURLObject(String url) throws IOException {
         URL urlItem = com.google.common.io.Resources.getResource(url);
         return urlItem;

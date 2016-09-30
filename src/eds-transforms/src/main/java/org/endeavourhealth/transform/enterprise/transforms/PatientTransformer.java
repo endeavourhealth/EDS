@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.enterprise.transforms;
 import OpenPseudonymiser.Crypto;
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.utility.Resources;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.Gender;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
@@ -19,6 +20,9 @@ public class PatientTransformer extends AbstractTransformer {
 
     private static final String PSEUDO_KEY_NHS_NUMBER = "NHSNumber";
     private static final String PSEUDO_KEY_DATE_OF_BIRTH = "DOB";
+    private static final String PSEUDO_SALT_RESOURCE = "Endeavour Enterprise - East London.EncryptedSalt";
+
+    private static byte[] saltBytes = null;
 
     public void transform(ResourceByExchangeBatch resource,
                           EnterpriseData data,
@@ -127,11 +131,15 @@ public class PatientTransformer extends AbstractTransformer {
         keys.put(PSEUDO_KEY_NHS_NUMBER, nhsNumber);
 
         Crypto crypto = new Crypto();
-
-        // set the salt to a plain text word/phrase
-        String salt = "mackerel";
-        crypto.SetPlainTextSalt(salt);
+        crypto.SetEncryptedSalt(getEncryptedSalt());
         return crypto.GetDigest(keys);
+    }
+
+    private static byte[] getEncryptedSalt() throws Exception {
+        if (saltBytes == null) {
+            saltBytes = Resources.getResourceAsBytes(PSEUDO_SALT_RESOURCE);
+        }
+        return saltBytes;
     }
 
     private static Gender convertGender(Enumerations.AdministrativeGender gender) throws Exception {
