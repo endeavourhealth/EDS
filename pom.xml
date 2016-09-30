@@ -45,7 +45,6 @@
         <module>src/eds-core</module>
         <module>src/eds-messaging-api</module>
         <module>src/eds-messaging-core</module>
-        <module>src/eds-subscriber</module>
         <module>src/eds-ui-core</module>
         <module>src/eds-patient-ui</module>
         <module>src/eds-queuereader</module>
