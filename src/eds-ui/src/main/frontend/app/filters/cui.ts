@@ -3,10 +3,9 @@
 module app.filters {
     import Duration = moment.Duration;
     import UIHumanName = app.models.UIHumanName;
+    import UIAddress = app.models.UIAddress;
 
     'use strict';
-    import UIAddress = app.models.UIAddress;
-    import textSpanIsEmpty = ts.textSpanIsEmpty;
 
     export function cuiDate() {
         return formatCuiDate;
@@ -22,6 +21,10 @@ module app.filters {
 
     export function cuiName() {
         return formatName;
+    }
+
+    export function cuiSingleLineAddress() {
+        return formatSingleLineAddress;
     }
 
     function formatCuiDate(date: Date): string {
@@ -93,11 +96,11 @@ module app.filters {
         return text;
     }
 
-    function getSingleLineAddress(address: UIAddress): string {
+    function formatSingleLineAddress(address: UIAddress): string {
         if (address == null)
             return "";
 
-        let lines: string[];
+        let lines: string[] = new Array<string>();
 
         lines.push(address.line1);
         lines.push(address.line2);
@@ -117,16 +120,13 @@ module app.filters {
 
         postalCode = postalCode.replace(" ", "").toUpperCase().trim();
 
-        let matchString: string = "^(?<Primary>([A-Z]{1,2}[0-9]{1,2}[A-Z]?))(?<Secondary>([0-9]{1}[A-Z]{2}))$";
-
-        let regExp: RegExp = new RegExp(matchString);
-
+        let regExp: RegExp = new RegExp("^([A-Z]{1,2}[0-9]{1,2}[A-Z]?)([0-9][A-Z]{2})$");
         let result: RegExpExecArray = regExp.exec(postalCode);
 
-        if (result.length != 2)
+        if ((result == null) || (result.length != 2))
             return postalCode;
 
-        return postalCode[0] + " " + regExp[1];
+        return result[0] + " " + regExp[1];
     }
 
     function isEmpty(str: string): boolean {
@@ -141,5 +141,6 @@ module app.filters {
         .filter('cuiDate', cuiDate)
         .filter('cuiDateOfBirth', cuiDateOfBirth)
         .filter('cuiNhsNumber', cuiNhsNumber)
-        .filter('cuiName', cuiName);
+        .filter('cuiName', cuiName)
+        .filter('cuiSingleLineAddress', cuiSingleLineAddress);
 }
