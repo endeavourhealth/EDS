@@ -12,9 +12,8 @@ public class UIEncounter {
     private String status;
     private UIPractitioner performedBy;
     private UIPractitioner enteredBy;
-    private String displayDate;
-    private Date date;
     private List<UICode> reason = new ArrayList<>();
+    private UIPeriod period;
 
     public String getStatus() {
         return status;
@@ -22,24 +21,6 @@ public class UIEncounter {
 
     public UIEncounter setStatus(String status) {
         this.status = status;
-        return this;
-    }
-
-    public String getDisplayDate() {
-        return displayDate;
-    }
-
-    public UIEncounter setDisplayDate(String displayDate) {
-        this.displayDate = displayDate;
-        return this;
-    }
-
-    public Date getDate() {
-        return date;
-    }
-
-    public UIEncounter setDate(Date date) {
-        this.date = date;
         return this;
     }
 
@@ -67,6 +48,15 @@ public class UIEncounter {
 
     public UIEncounter setEnteredBy(UIPractitioner enteredBy) {
         this.enteredBy = enteredBy;
+        return this;
+    }
+
+    public UIPeriod getPeriod() {
+        return period;
+    }
+
+    public UIEncounter setPeriod(UIPeriod period) {
+        this.period = period;
         return this;
     }
 }

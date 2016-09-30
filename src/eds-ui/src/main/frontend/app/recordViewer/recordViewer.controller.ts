@@ -6,13 +6,13 @@ module app.recordViewer {
 	import IRecordViewerService = app.core.IRecordViewerService;
     import PatientFindController = app.dialogs.PatientFindController;
     import UIPatient = app.models.UIPatient;
-    import Encounter = app.models.Encounter;
+    import UIEncounter = app.models.UIEncounter;
 
 	'use strict';
 
 	export class RecordViewerController {
         patient: UIPatient;
-        encounters: Encounter[];
+        encounters: UIEncounter[];
         firstTabActive: boolean = true;
 
 		static $inject = ['$uibModal', 'RecordViewerService'];
@@ -52,7 +52,7 @@ module app.recordViewer {
 
             vm.recordViewerService.getEncounters(vm.patient.serviceId, vm.patient.systemId, vm.patient.patientId)
                 .then(
-                    function (data: Encounter[]) {
+                    function (data: UIEncounter[]) {
                     vm.encounters = data;
                 });
         }

@@ -1,7 +1,9 @@
 package org.endeavourhealth.transform.ui.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.hl7.fhir.instance.model.HumanName;
 
+import java.util.Date;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -11,27 +13,26 @@ public class UIPatient {
     private UUID systemId;
     private UUID patientId;
     private String nhsNumber;
-    private String nhsNumberFormatted;
-    private String displayName;
-    private String dateOfBirthFormatted;
+    private UIHumanName name;
+    private Date dateOfBirth;
     private String genderFormatted;
     private String singleLineAddress;
 
-    public String getDisplayName() {
-        return displayName;
+    public UIHumanName getName() {
+        return name;
     }
 
-    public UIPatient setDisplayName(String displayName) {
-        this.displayName = displayName;
+    public UIPatient setName(UIHumanName name) {
+        this.name = name;
         return this;
     }
 
-    public String getDateOfBirthFormatted() {
-        return dateOfBirthFormatted;
+    public Date getDateOfBirth() {
+        return dateOfBirth;
     }
 
-    public UIPatient setDateOfBirthFormatted(String dateOfBirthFormatted) {
-        this.dateOfBirthFormatted = dateOfBirthFormatted;
+    public UIPatient setDateOfBirth(Date dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
         return this;
     }
 
@@ -77,15 +78,6 @@ public class UIPatient {
 
     public UIPatient setNhsNumber(String nhsNumber) {
         this.nhsNumber = nhsNumber;
-        return this;
-    }
-
-    public String getNhsNumberFormatted() {
-        return nhsNumberFormatted;
-    }
-
-    public UIPatient setNhsNumberFormatted(String nhsNumberFormatted) {
-        this.nhsNumberFormatted = nhsNumberFormatted;
         return this;
     }
 

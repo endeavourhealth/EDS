@@ -6,9 +6,8 @@ module app.models {
 		systemId: string;
         patientId: string;
 		nhsNumber: string;
-        nhsNumberFormatted: string;
-        displayName: string;
-        dateOfBirthFormatted: string;
+        name: UIHumanName;
+        dateOfBirth: Date;
         genderFormatted: string;
         singleLineAddress: string;
 	}

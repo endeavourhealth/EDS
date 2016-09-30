@@ -2,14 +2,11 @@ package org.endeavourhealth.transform.ui.transforms;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.ui.helpers.DateHelper;
 import org.endeavourhealth.transform.ui.helpers.NameHelper;
+import org.endeavourhealth.transform.ui.models.UIHumanName;
 import org.endeavourhealth.transform.ui.models.UIPatient;
 import org.hl7.fhir.instance.model.*;
 
-import java.time.*;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,18 +16,14 @@ class UIPatientTransform {
 
     public static UIPatient transform(Patient patient) {
 
-        String displayName = NameHelper.getUsualOrOfficialNameForDisplay(patient.getName());
-        String birthDateFormatted = DateHelper.getCuiDob(patient.getBirthDate());
-        String nhsNumber = getNhsNumber(patient.getIdentifier());
-        String nhsNumberFormatted = formatNhsNumber(nhsNumber);
+        UIHumanName name = NameHelper.getUsualOrOfficialName(patient.getName());
         String gender = getGender(patient.getGender());
         String singleLineAddress = getSingleLineAddress(patient);
 
         UIPatient UIPatient = new UIPatient()
-                .setNhsNumber(nhsNumber)
-                .setNhsNumberFormatted(nhsNumberFormatted)
-                .setDisplayName(displayName)
-                .setDateOfBirthFormatted(birthDateFormatted)
+                .setNhsNumber(getNhsNumber(patient.getIdentifier()))
+                .setName(name)
+                .setDateOfBirth(patient.getBirthDate())
                 .setGenderFormatted(gender)
                 .setSingleLineAddress(singleLineAddress);
 
@@ -92,26 +85,17 @@ class UIPatientTransform {
     }
 
     private static String getNhsNumber(List<Identifier> identifiers) {
-        if (identifiers == null)
-            return null;
+        String result = null;
 
-        for (Identifier identifier : identifiers)
-            if (identifier.getSystem() != null)
-                if (identifier.getSystem().equals(FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER))
-                    return identifier.getValue();
+        if (identifiers != null)
+            for (Identifier identifier : identifiers)
+                if (identifier.getSystem() != null)
+                    if (identifier.getSystem().equals(FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER))
+                        return identifier.getValue();
 
-        return null;
-    }
+        if (result != null)
+            result = result.replaceAll(" ", "");
 
-    private static String formatNhsNumber(String nhsNumber) {
-        if (nhsNumber == null)
-            return null;
-
-        nhsNumber = nhsNumber.replace(" ", "");
-
-        if (nhsNumber.length() != 10)
-            return nhsNumber;
-
-        return nhsNumber.substring(0, 2) + " " + nhsNumber.substring(3, 5) + " " + nhsNumber.substring(6, 9);
+        return result;
     }
 }

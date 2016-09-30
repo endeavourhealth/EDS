@@ -1,7 +1,7 @@
 module app.models {
     'use strict';
 
-    export class Code2 {
+    export class UICode {
         system: string;
         code: string;
         display: string;

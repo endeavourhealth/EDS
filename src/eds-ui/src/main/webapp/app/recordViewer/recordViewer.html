@@ -17,10 +17,10 @@
                 <div class="panel panel-default precis">
                     <div class="panel-body">
                         <div class="row">
-                            <div class="col-sm-5"><span class="precis-patientname">{{ctrl.patient.displayName}}</span></div>
-                            <div class="col-sm-3"><span class="precis-label">Born</span> <span class="precis-value">{{ctrl.patient.dateOfBirthFormatted}}</span></div>
+                            <div class="col-sm-5"><span class="precis-patientname">{{ctrl.patient.name | cuiName}}</span></div>
+                            <div class="col-sm-3"><span class="precis-label">Born</span> <span class="precis-value">{{ctrl.patient.dateOfBirth | cuiDateOfBirth}}</span></div>
                             <div class="col-sm-2"><span class="precis-label">Gender</span> <span class="precis-value">{{ctrl.patient.genderFormatted}}</span></div>
-                            <div class="col-sm-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{ctrl.patient.nhsNumberFormatted}}</span></div>
+                            <div class="col-sm-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{ctrl.patient.nhsNumber | cuiNhsNumber}}</span></div>
                         </div>
                     </div>
                 </div>
@@ -39,13 +39,11 @@
                                 <thead>
                                     <th>Date</th>
                                     <th>Doctor</th>
-                                    <th>Place</th>
                                 </thead>
                                 <tbody>
                                     <tr ng-repeat="encounter in ctrl.encounters">
-                                        <td>{{encounter.displayDate}}</td>
+                                        <td>{{encounter.period.start | cuiDate}}</td>
                                         <td>{{encounter.performedBy.displayName}}</td>
-                                        <td>{{encounter.place}}</td>
                                     </tr>
                                 </tbody>
                             </table>

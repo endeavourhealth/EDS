@@ -89,7 +89,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
 
         encounters = encounters
                 .stream()
-                .sorted(Comparator.comparing(t -> ((UIEncounter)t).getDate()).reversed())
+                .sorted(Comparator.comparing(t -> ((UIEncounter)t).getPeriod().getStart()).reversed())
                 .collect(Collectors.toList());
 
         return Response

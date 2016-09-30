@@ -10,6 +10,15 @@ module app.dialogs {
 
 	'use strict';
 
+    enum KeyCodes {
+        ReturnKey = 13,
+        Escape = 27,
+        LeftArrow = 37,
+        UpArrow = 38,
+        RightArrow = 39,
+        DownArrow = 40
+    }
+
 	export class PatientFindController extends BaseDialogController {
 
         searchTerms: string;
@@ -62,6 +71,37 @@ module app.dialogs {
                 this.selectedPatient = null;
             else
                 this.selectedPatient = patient;
+        }
+
+        keydown($event: KeyboardEvent) {
+            if ($event.keyCode == KeyCodes.UpArrow) {
+                this.selectPreviousPatient();
+            }
+            else if ($event.keyCode == KeyCodes.DownArrow) {
+                this.selectNextPatient();
+            }
+        }
+
+        selectNextPatient() {
+            if (this.foundPatients == null)
+                return;
+
+            let selectedPatientIndex: number =
+                this.foundPatients.indexOf(this.selectedPatient);
+
+            if (++selectedPatientIndex < this.foundPatients.length)
+                this.selectedPatient = this.foundPatients[selectedPatientIndex];
+        }
+
+        selectPreviousPatient() {
+            if (this.foundPatients == null)
+                return;
+
+            let selectedPatientIndex: number =
+                this.foundPatients.indexOf(this.selectedPatient);
+
+            if (--selectedPatientIndex >= 0)
+                this.selectedPatient = this.foundPatients[selectedPatientIndex];
         }
 
         searchTermsChanged() {

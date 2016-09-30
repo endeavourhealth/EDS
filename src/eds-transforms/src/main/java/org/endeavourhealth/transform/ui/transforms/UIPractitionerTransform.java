@@ -8,7 +8,7 @@ class UIPractitionerTransform {
     public static UIPractitioner transform(Practitioner practitioner) {
 
         return new UIPractitioner()
-                .setDisplayName(NameHelper.getNameForDisplay(practitioner.getName()))
+                .setName(NameHelper.transform(practitioner.getName()))
                 .setActive(practitioner.getActive());
     }
 }

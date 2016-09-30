@@ -4,15 +4,15 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UIPractitioner {
-    private String displayName;
+    private UIHumanName name;
     private Boolean active;
 
-    public String getDisplayName() {
-        return displayName;
+    public UIHumanName getName() {
+        return name;
     }
 
-    public UIPractitioner setDisplayName(String displayName) {
-        this.displayName = displayName;
+    public UIPractitioner setName(UIHumanName name) {
+        this.name = name;
         return this;
     }
 

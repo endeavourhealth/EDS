@@ -1,11 +1,11 @@
 module app.models {
     'use strict';
 
-    export class Encounter {
+    export class UIEncounter {
         status: string;
-        performedBy: Practitioner;
-        enteredBy: Practitioner;
-        date: string;
-        reason: Code2[];
+        performedBy: UIPractitioner;
+        enteredBy: UIPractitioner;
+        reason: UICode[];
+        period: UIPeriod;
     }
 }

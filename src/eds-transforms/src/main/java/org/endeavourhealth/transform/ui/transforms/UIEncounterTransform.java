@@ -2,8 +2,8 @@ package org.endeavourhealth.transform.ui.transforms;
 
 import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
-import org.endeavourhealth.transform.ui.helpers.DateHelper;
 import org.endeavourhealth.transform.ui.models.UIEncounter;
+import org.endeavourhealth.transform.ui.models.UIPeriod;
 import org.hl7.fhir.instance.model.Encounter;
 import org.hl7.fhir.instance.model.Practitioner;
 
@@ -38,15 +38,9 @@ class UIEncounterTransform {
         if (enteredByPractitioner != null)
             uiEncounter.setEnteredBy(UIPractitionerTransform.transform(enteredByPractitioner));
 
-        uiEncounter.setDate(encounter.getPeriod().getStart());
-        
-        uiEncounter.setDisplayDate(getStartDisplayDate(encounter));
+        uiEncounter.setPeriod(new UIPeriod().setStart(encounter.getPeriod().getStart()));
 
         return uiEncounter;
-    }
-
-    private static String getStartDisplayDate(Encounter encounter) {
-        return DateHelper.format(encounter.getPeriod().getStart());
     }
 
     private static Practitioner getPerformedByParticipantId(Encounter encounter, List<Practitioner> practitioners) {
