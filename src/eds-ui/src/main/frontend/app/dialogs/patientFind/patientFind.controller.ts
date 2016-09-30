@@ -6,16 +6,25 @@ module app.dialogs {
 	import IModalServiceInstance = angular.ui.bootstrap.IModalServiceInstance;
 	import IModalSettings = angular.ui.bootstrap.IModalSettings;
     import IRecordViewerService = app.core.IRecordViewerService;
-    import Patient = app.models.Patient;
+    import UIPatient = app.models.UIPatient;
 
 	'use strict';
+
+    enum KeyCodes {
+        ReturnKey = 13,
+        Escape = 27,
+        LeftArrow = 37,
+        UpArrow = 38,
+        RightArrow = 39,
+        DownArrow = 40
+    }
 
 	export class PatientFindController extends BaseDialogController {
 
         searchTerms: string;
         searchedTerms: string;
-        foundPatients: Patient[];
-        selectedPatient: Patient;
+        foundPatients: UIPatient[];
+        selectedPatient: UIPatient;
 
 		public static open($modal : IModalService) : IModalServiceInstance {
 			var options : IModalSettings = {
@@ -50,18 +59,49 @@ module app.dialogs {
             var vm = this;
             vm.foundPatients = null;
             vm.recordViewerService.findPatient(vm.searchedTerms)
-                .then(function (data: Patient[]) {
+                .then(function (data: UIPatient[]) {
                     vm.foundPatients = data;
                     if (data == null) {
                     }
                 });
         }
 
-        selectPatient(patient: Patient) {
+        selectPatient(patient: UIPatient) {
             if (this.selectedPatient == patient)
                 this.selectedPatient = null;
             else
                 this.selectedPatient = patient;
+        }
+
+        keydown($event: KeyboardEvent) {
+            if ($event.keyCode == KeyCodes.UpArrow) {
+                this.selectPreviousPatient();
+            }
+            else if ($event.keyCode == KeyCodes.DownArrow) {
+                this.selectNextPatient();
+            }
+        }
+
+        selectNextPatient() {
+            if (this.foundPatients == null)
+                return;
+
+            let selectedPatientIndex: number =
+                this.foundPatients.indexOf(this.selectedPatient);
+
+            if (++selectedPatientIndex < this.foundPatients.length)
+                this.selectedPatient = this.foundPatients[selectedPatientIndex];
+        }
+
+        selectPreviousPatient() {
+            if (this.foundPatients == null)
+                return;
+
+            let selectedPatientIndex: number =
+                this.foundPatients.indexOf(this.selectedPatient);
+
+            if (--selectedPatientIndex >= 0)
+                this.selectedPatient = this.foundPatients[selectedPatientIndex];
         }
 
         searchTermsChanged() {

@@ -20,7 +20,7 @@ angular.module('app', [
 		'app.config',
 		'app.blocks',
 		'app.layout',
-
+        'app.filters',
 		'app.dialogs',
 		'app.dashboard',
 		'app.logging',

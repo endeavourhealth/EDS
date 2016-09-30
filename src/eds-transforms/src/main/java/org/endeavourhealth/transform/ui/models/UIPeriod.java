@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.ui.models;
 
 import java.util.Date;
 
-public class JsonPeriod {
+public class UIPeriod {
     private Date start;
     private Date end;
 
@@ -10,7 +10,7 @@ public class JsonPeriod {
         return start;
     }
 
-    public JsonPeriod setStart(Date start) {
+    public UIPeriod setStart(Date start) {
         this.start = start;
         return this;
     }
@@ -19,7 +19,7 @@ public class JsonPeriod {
         return end;
     }
 
-    public JsonPeriod setEnd(Date end) {
+    public UIPeriod setEnd(Date end) {
         this.end = end;
         return this;
     }

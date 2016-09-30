@@ -49,6 +49,7 @@
         <module>src/eds-ui-core</module>
         <module>src/eds-patient-ui</module>
         <module>src/eds-queuereader</module>
+        <module>src/eds-subscriber</module>
         <module>src/eds-sftpreader</module>
         <module>src/eds-transforms</module>
         <module>src/eds-ui</module>

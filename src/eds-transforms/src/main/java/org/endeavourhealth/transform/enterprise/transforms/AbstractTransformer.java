@@ -75,7 +75,8 @@ public abstract class AbstractTransformer {
 
     protected static Long findSnomedConceptId(CodeableConcept code) {
         for (Coding coding: code.getCoding()) {
-            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_SNOMED_CT)) {
+            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_SNOMED_CT)
+                    || coding.getSystem().equals(FhirUri.CODE_SYSTEM_EMISSNOMED)) {
                 return Long.parseLong(coding.getCode());
             }
         }

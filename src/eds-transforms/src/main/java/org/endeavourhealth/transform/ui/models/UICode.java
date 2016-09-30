@@ -1,6 +1,9 @@
 package org.endeavourhealth.transform.ui.models;
 
-public class JsonCode {
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class UICode {
     private String system;
     private String code;
     private String display;
@@ -9,7 +12,7 @@ public class JsonCode {
         return system;
     }
 
-    public JsonCode setSystem(String system) {
+    public UICode setSystem(String system) {
         this.system = system;
         return this;
     }
@@ -18,7 +21,7 @@ public class JsonCode {
         return code;
     }
 
-    public JsonCode setCode(String code) {
+    public UICode setCode(String code) {
         this.code = code;
         return this;
     }
@@ -27,7 +30,7 @@ public class JsonCode {
         return display;
     }
 
-    public JsonCode setDisplay(String display) {
+    public UICode setDisplay(String display) {
         this.display = display;
         return this;
     }

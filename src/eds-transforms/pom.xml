@@ -69,6 +69,18 @@
             <artifactId>eds-subscriber</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.endeavourhealth</groupId>
+            <artifactId>eds-subscriber</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <!--open pseudonomiser -->
+        <dependency>
+            <groupId>org.openpseudonymiser</groupId>
+            <artifactId>cryptolib</artifactId>
+            <version>0.9.7</version>
+        </dependency>
 
         <!-- eCache caching framework -->
         <!--<dependency>-->
@@ -86,18 +98,28 @@
 
     <build>
 
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.1</version>
-            <configuration>
-                <source>${java.version}</source>
-                <target>${java.version}</target>
-            </configuration>
-        </plugin>
-    </plugins>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+        </plugins>
 
     </build>
+
+    <!--OpenPseudonomiser isn't in an online Maven repo, so has been installed in a local repo folder -->
+    <!--See https://devcenter.heroku.com/articles/local-maven-dependencies -->
+    <repositories>
+        <repository>
+            <id>project.local</id>
+            <name>project</name>
+            <url>file:${project.basedir}/repo</url>
+        </repository>
+    </repositories>
 
 </project>

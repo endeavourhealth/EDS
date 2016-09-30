@@ -6,6 +6,7 @@ import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
@@ -114,7 +115,19 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                 }
             }
 
-            //TODO - finish referralRequest (referral mode)
+            if (fhir.hasExtension()) {
+                for (Extension extension: fhir.getExtension()) {
+                    if (extension.getUrl().equals(FhirExtensionUri.REFERRAL_REQUEST_SEND_MODE)) {
+                        CodeableConcept cc = (CodeableConcept)extension.getValue();
+                        if (!Strings.isNullOrEmpty(cc.getText())) {
+                            model.setMode(cc.getText());
+                        } else {
+                            Coding coding = cc.getCoding().get(0);
+                            model.setMode(coding.getDisplay());
+                        }
+                    }
+                }
+            }
         }
 
         data.getReferralRequest().add(model);

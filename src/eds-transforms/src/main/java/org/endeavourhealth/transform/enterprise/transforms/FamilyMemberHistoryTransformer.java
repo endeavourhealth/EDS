@@ -47,16 +47,14 @@ public class FamilyMemberHistoryTransformer extends AbstractTransformer {
                         Reference encounterReference = (Reference)extension.getValue();
                         UUID enterpriseEncounterUuid = findEnterpriseUuid(encounterReference);
                         model.setEncounterId(enterpriseEncounterUuid.toString());
+
+                    } else if (extension.getUrl().equals(FhirExtensionUri.FAMILY_MEMBER_HISTOY_REPORTED_BY)) {
+                        Reference practitionerReference = (Reference)extension.getValue();
+                        UUID enterprisePractitionerUuid = findEnterpriseUuid(practitionerReference);
+                        model.setPractitionerId(enterprisePractitionerUuid.toString());
                     }
                 }
             }
-
-            //TODO - need to extract practitioner for FamilyMemberHistory
-            /*if (fhir.hasOrderer()) {
-                Reference practitionerReference = fhir.getOrderer();
-                UUID enterprisePractitionerUuid = findEnterpriseUuid(practitionerReference);
-                model.setPractitionerId(enterprisePractitionerUuid.toString());
-            }*/
 
             if (fhir.hasDateElement()) {
                 DateTimeType dt = fhir.getDateElement();
@@ -65,7 +63,7 @@ public class FamilyMemberHistoryTransformer extends AbstractTransformer {
             }
 
             if (fhir.getCondition().size() > 1) {
-                throw new TransformException("DiagnosticOrder with more than one item not supported");
+                throw new TransformException("FamilyMemberHistory with more than one item not supported");
             }
             FamilyMemberHistory.FamilyMemberHistoryConditionComponent condition = fhir.getCondition().get(0);
             Long snomedConceptId = findSnomedConceptId(condition.getCode());

@@ -37,12 +37,13 @@
 		<script src="/bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
 		<script src="/bower_components/toastr/toastr.js"></script>
 		<script src="/bower_components/keycloak/dist/keycloak.min.js"></script>
-        <script src="/bower_components/keycloak/dist/keycloak-authz.min.js"></script>
+		<script src="/bower_components/keycloak/dist/keycloak-authz.min.js"></script>
 		<script src="/angular-ui-tree-withFix.js"></script>
 		<script src="/bower_components/angular-dragdrop/src/angular-dragdrop.js"></script>
 		<script src="/bower_components/angular-uuid-generator/angular-uuid-generator.js"></script>
 		<script src="/bower_components/highcharts/highcharts.js"></script>
 		<script src="/bower_components/highchartTable/jquery.highchartTable.js"></script>
+        <script src="/bower_components/moment/moment.js"></script>
 
         <!-- must go first -->
 		<script src="app/appstartup/appstartup.module.js"></script>
@@ -54,7 +55,11 @@
 		<script src="app/models/ItemType.js"></script>
 		<script src="app/models/FolderType.js"></script>
 		<script src="app/models/UuidNameKVP.js"></script>
-        <script src="app/models/PatientFindSelection.js"></script>
+		<script src="app/models/PatientFindSelection.js"></script>
+
+        <!-- Filters -->
+        <script src="app/filters/filters.module.js"></script>
+        <script src="app/filters/cui.js"></script>
 
 		<!-- Core (i.e. config/constants/services) -->
 		<script src="app/core/core.module.js"></script>
@@ -83,8 +88,9 @@
 		<script src="app/config/config.module.js"></script>
 		<script src="app/config/config.service.js"></script>
 
-		<!-- Termlex -->
+		<!-- Coding -->
 		<script src="app/termlex/termlexCoding.service.js"></script>
+		<!--<script src="app/ekb/ekbCoding.service.js"></script>-->
 
 		<!-- Blocks -->
 		<script src="app/blocks/blocks.module.js"></script>

@@ -8,6 +8,7 @@
     "angular-idle": "github:DefinitelyTyped/DefinitelyTyped/angular-idle/angular-idle.d.ts#86dbea8fc37d9473fee465da4f0a21bea4f8cbd9",
     "angular-ui-bootstrap": "github:DefinitelyTyped/DefinitelyTyped/angular-ui-bootstrap/angular-ui-bootstrap.d.ts#e69fe60f2d6377ea4fae539493997b098f52cad1",
     "angular-ui-tree": "github:DefinitelyTyped/DefinitelyTyped/angular-ui-tree/angular-ui-tree.d.ts#4ec3c5bf291bc02f49eb30c1077340b235165c67",
-    "keycloak": "file:typings/local/keycloak/keycloak.d.ts"
+    "keycloak": "file:typings/local/keycloak/keycloak.d.ts",
+    "moment": "github:DefinitelyTyped/DefinitelyTyped/moment/moment.d.ts#e919f89ae61ae268a19e6796b4c601173e05d1de"
   }
 }

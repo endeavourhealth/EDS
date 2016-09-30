@@ -98,6 +98,7 @@
           <element id="archive" name="eds-subscriber-1.0-SNAPSHOT.jar">
             <element id="module-output" name="eds-subscriber" />
           </element>
+          <element id="library" level="project" name="Maven: org.openpseudonymiser:cryptolib:0.9.7" />
         </element>
       </element>
       <element id="directory" name="META-INF">

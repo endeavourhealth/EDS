@@ -78,6 +78,13 @@ public class CodingHelper {
                 .setCode(medicationAuthorisationType.getCode());
     }
 
+    public static Coding createCoding(ReferralRequestSendMode referralRequestSendMode) {
+        return new Coding()
+                .setSystem(referralRequestSendMode.getSystem())
+                .setDisplay(referralRequestSendMode.getDescription())
+                .setCode(referralRequestSendMode.getCode());
+    }
+
 
     public static Coding createCoding(String system, String term, String code) {
         return new Coding()

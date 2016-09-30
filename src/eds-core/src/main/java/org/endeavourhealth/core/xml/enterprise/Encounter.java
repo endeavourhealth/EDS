@@ -21,7 +21,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="appointment_id" type="{}uuid" minOccurs="0"/>
  *         &lt;element name="date" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
  *         &lt;element name="date_precision" type="{}date_precision" minOccurs="0"/>
- *         &lt;element name="reason_snomed_concept_id" type="{http://www.w3.org/2001/XMLSchema}long" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/extension>
  *   &lt;/complexContent>
@@ -37,8 +36,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "practitionerId",
     "appointmentId",
     "date",
-    "datePrecision",
-    "reasonSnomedConceptId"
+    "datePrecision"
 })
 public class Encounter
     extends BaseRecord
@@ -57,8 +55,6 @@ public class Encounter
     @XmlElement(name = "date_precision")
     @XmlSchemaType(name = "string")
     protected DatePrecision datePrecision;
-    @XmlElement(name = "reason_snomed_concept_id")
-    protected Long reasonSnomedConceptId;
 
     /**
      * Gets the value of the organisationId property.
@@ -202,30 +198,6 @@ public class Encounter
      */
     public void setDatePrecision(DatePrecision value) {
         this.datePrecision = value;
-    }
-
-    /**
-     * Gets the value of the reasonSnomedConceptId property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Long }
-     *     
-     */
-    public Long getReasonSnomedConceptId() {
-        return reasonSnomedConceptId;
-    }
-
-    /**
-     * Sets the value of the reasonSnomedConceptId property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Long }
-     *     
-     */
-    public void setReasonSnomedConceptId(Long value) {
-        this.reasonSnomedConceptId = value;
     }
 
 }
