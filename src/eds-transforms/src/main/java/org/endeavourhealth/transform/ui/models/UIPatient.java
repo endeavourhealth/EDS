@@ -16,7 +16,7 @@ public class UIPatient {
     private UIHumanName name;
     private Date dateOfBirth;
     private String genderFormatted;
-    private String singleLineAddress;
+    private UIAddress homeAddress;
 
     public UIHumanName getName() {
         return name;
@@ -81,12 +81,12 @@ public class UIPatient {
         return this;
     }
 
-    public String getSingleLineAddress() {
-        return singleLineAddress;
+    public UIAddress getHomeAddress() {
+        return homeAddress;
     }
 
-    public UIPatient setSingleLineAddress(String singleLineAddress) {
-        this.singleLineAddress = singleLineAddress;
+    public UIPatient setHomeAddress(UIAddress homeAddress) {
+        this.homeAddress = homeAddress;
         return this;
     }
 }

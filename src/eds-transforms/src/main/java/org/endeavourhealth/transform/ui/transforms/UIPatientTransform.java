@@ -2,7 +2,9 @@ package org.endeavourhealth.transform.ui.transforms;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.ui.helpers.AddressHelper;
 import org.endeavourhealth.transform.ui.helpers.NameHelper;
+import org.endeavourhealth.transform.ui.models.UIAddress;
 import org.endeavourhealth.transform.ui.models.UIHumanName;
 import org.endeavourhealth.transform.ui.models.UIPatient;
 import org.hl7.fhir.instance.model.*;
@@ -17,64 +19,16 @@ class UIPatientTransform {
     public static UIPatient transform(Patient patient) {
 
         UIHumanName name = NameHelper.getUsualOrOfficialName(patient.getName());
-        String gender = getGender(patient.getGender());
-        String singleLineAddress = getSingleLineAddress(patient);
+        UIAddress homeAddress = AddressHelper.getHomeAddress(patient.getAddress());
 
         UIPatient UIPatient = new UIPatient()
                 .setNhsNumber(getNhsNumber(patient.getIdentifier()))
                 .setName(name)
                 .setDateOfBirth(patient.getBirthDate())
-                .setGenderFormatted(gender)
-                .setSingleLineAddress(singleLineAddress);
+                .setGenderFormatted(getGender(patient.getGender()))
+                .setHomeAddress(homeAddress);
 
         return UIPatient;
-    }
-
-    private static String getSingleLineAddress(Patient patient) {
-
-        if (patient.getAddress() == null)
-            return null;
-
-        if (patient.getAddress().size() == 0)
-            return null;
-
-        Address address = patient.getAddress().get(0);
-
-        List<String> lines = address
-                .getLine()
-                .stream()
-                .map(t -> t.getValue())
-                .collect(Collectors.toList());
-
-        lines.add(address.getCity());
-        lines.add(address.getDistrict());
-        lines.add(formatPostcode(address.getPostalCode()));
-        lines.add(address.getCountry());
-
-        lines = lines
-                .stream()
-                .filter(t -> (!StringUtils.isEmpty(t)))
-                .collect(Collectors.toList());
-
-        return StringUtils.join(lines, ", ");
-    }
-
-    private static String formatPostcode(String postcode) {
-        if (postcode == null)
-            return null;
-
-        postcode = postcode.replace(" ", "").toUpperCase().trim();
-
-        String matchString = "^(?<Primary>([A-Z]{1,2}[0-9]{1,2}[A-Z]?))(?<Secondary>([0-9]{1}[A-Z]{2}))$";
-
-        Pattern pattern = Pattern.compile(matchString);
-
-        Matcher matcher = pattern.matcher(postcode);
-
-        if (!matcher.find())
-            return postcode;
-
-        return matcher.group("Primary") + " " + matcher.group("Secondary");
     }
 
     private static String getGender(Enumerations.AdministrativeGender gender) {

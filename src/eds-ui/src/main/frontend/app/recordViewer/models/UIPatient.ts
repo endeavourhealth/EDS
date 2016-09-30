@@ -9,6 +9,6 @@ module app.models {
         name: UIHumanName;
         dateOfBirth: Date;
         genderFormatted: string;
-        singleLineAddress: string;
+        address: UIAddress;
 	}
 }

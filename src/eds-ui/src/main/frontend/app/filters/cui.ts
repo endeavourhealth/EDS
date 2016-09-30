@@ -5,6 +5,8 @@ module app.filters {
     import UIHumanName = app.models.UIHumanName;
 
     'use strict';
+    import UIAddress = app.models.UIAddress;
+    import textSpanIsEmpty = ts.textSpanIsEmpty;
 
     export function cuiDate() {
         return formatCuiDate;
@@ -89,6 +91,49 @@ module app.filters {
 
     function titleCase(text: string) {
         return text;
+    }
+
+    function getSingleLineAddress(address: UIAddress): string {
+        if (address == null)
+            return "";
+
+        let lines: string[];
+
+        lines.push(address.line1);
+        lines.push(address.line2);
+        lines.push(address.line3);
+        lines.push(address.city);
+        lines.push(address.district);
+        lines.push(formatPostalCode(address.postalCode));
+
+        return lines
+                .filter(t => !isEmpty(t))
+                .join(", ");
+    }
+
+    function formatPostalCode(postalCode: string): string {
+        if (postalCode == null)
+            return null;
+
+        postalCode = postalCode.replace(" ", "").toUpperCase().trim();
+
+        let matchString: string = "^(?<Primary>([A-Z]{1,2}[0-9]{1,2}[A-Z]?))(?<Secondary>([0-9]{1}[A-Z]{2}))$";
+
+        let regExp: RegExp = new RegExp(matchString);
+
+        let result: RegExpExecArray = regExp.exec(postalCode);
+
+        if (result.length != 2)
+            return postalCode;
+
+        return postalCode[0] + " " + regExp[1];
+    }
+
+    function isEmpty(str: string): boolean {
+        if (str == null)
+            return true;
+
+        return (str.trim().length == 0);
     }
 
     angular
