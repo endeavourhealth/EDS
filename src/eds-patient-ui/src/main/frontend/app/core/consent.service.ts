@@ -1,16 +1,7 @@
-/// <reference path="../../typings/index.d.ts" />
+import {BaseHttpService} from "./baseHttp.service";
 
-module app.core {
-    'use strict';
+export interface IConsentService {
+}
 
-    export interface IConsentService {
-    }
-
-    export class ConsentService extends BaseHttpService implements IConsentService {
-
-    }
-
-    angular
-        .module('app.core')
-        .service('ConsentService', ConsentService);
+export class ConsentService extends BaseHttpService implements IConsentService {
 }

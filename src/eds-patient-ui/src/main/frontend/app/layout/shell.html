@@ -1,0 +1,68 @@
+<div>
+	<header class="clearfix">
+		<div class="navbar navbar-default navbar-fixed-top">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					<img class="logo-image">
+					<span class="logo">Patient Manager</span>
+				</div>
+				<div ng-controller="TopnavController as topnav" class="pull-right" style="padding: 10px;color:gray">
+					Logged in : {{topnav.currentUser.title}} {{topnav.currentUser.forename}} {{topnav.currentUser.surname}}
+
+
+					<!--<div class="dropdown" uib-dropdown>-->
+					<!--Organisation : <a href="#" class="dropdown-toggle" uib-dropdown-toggle>-->
+					<!--{{ topnav.selectedRole.organisationName }}-->
+					<!--<span class="caret"></span>-->
+					<!--</a>-->
+					<!--<ul uib-dropdown-menu>-->
+					<!--<li ng-repeat="endUserRole in topnav.currentUser.userInRoles">-->
+					<!--<a href="#" ng-click="topnav.updateRole(endUserRole.userInRoleUuid)">-->
+					<!--{{ endUserRole.organisationName }}-->
+					<!--</a>-->
+					<!--</li>-->
+					<!--</ul>-->
+					<!--</div>-->
+				</div>
+			</div>
+		</div>
+	</header>
+	<section id="content" class="content">
+		<nav class="sidebar" ng-controller="SidebarController as sidebar">
+			<ul>
+				<li ng-repeat="menuItem in sidebar.menuOptions">
+					<div ui-sref="{{menuItem.state}}" class="menuItem">
+						<span class="fa fa-2x {{menuItem.icon}}"></span>
+						<span style="cursor:pointer" class="nav-text">
+						{{menuItem.caption}}
+				</span>
+					</div>
+				</li>
+			</ul>
+			<ul class="logout">
+				<li>
+					<div ng-click="sidebar.logout()" class="menuItem">
+						<i class="fa fa-2x fa-power-off"></i>
+						<span style="cursor:pointer" class="nav-text">
+						Logout
+				</span>
+					</div>
+				</li>
+			</ul>
+		</nav>
+
+		<div ui-view></div>
+	</section>
+
+	<section data-ng-controller="ShellController as shell">
+		<script type="text/ng-template" id="warning-dialog.html">
+			<div class="modal-header">
+				<h3>Session Idle.</h3>
+			</div>
+			<div idle-countdown="shell.countdown" ng-init="shell.countdown=10" class="modal-body">
+				You'll be logged out in {{shell.countdown}} second(s).
+				<uib-progressbar max="10" value="shell.countdown" animate="true" class="progress-striped active"/>
+			</div>
+		</script>
+	</section>
+</div>

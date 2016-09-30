@@ -146,6 +146,12 @@
     vertical-align: middle
 }
 
+.logo-image {
+    height: 50px;
+    width: 50px;
+    content: url('../img/endeavour_logo.png');
+}
+
 .vcenter {
     min-height: 100%; /* Fallback for vh unit */
     min-height: 100vh;

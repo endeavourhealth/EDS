@@ -1,36 +1,27 @@
-/// <reference path="../../typings/index.d.ts" />
+import {IStateProvider} from "angular-ui-router";
 
-module app.medicalRecord {
-    'use strict';
+export class MedicalRecordRoute {
+    static $inject = ['$stateProvider'];
 
-    class MedicalRecordRoute {
-        static $inject = ['$stateProvider'];
+    constructor(stateProvider:IStateProvider) {
+        var routes = MedicalRecordRoute.getRoutes();
 
-        constructor(stateProvider:angular.ui.IStateProvider) {
-            var routes = MedicalRecordRoute.getRoutes();
-
-            routes.forEach(function (route) {
-                stateProvider.state(route.state, route.config);
-            });
-        }
-
-        static getRoutes() {
-            return [
-                {
-                    state: 'app.medicalRecord',
-                    config: {
-                        url: '/medicalRecord',
-                        templateUrl: 'app/medicalRecord/medicalRecord.html',
-                        controller: 'MedicalRecordController',
-                        controllerAs: 'ctrl'
-                    }
-                }
-            ];
-        }
+        routes.forEach(function (route) {
+            stateProvider.state(route.state, route.config);
+        });
     }
 
-    angular
-        .module('app.medicalRecord')
-        .config(MedicalRecordRoute);
-
+    static getRoutes() {
+        return [
+            {
+                state: 'app.medicalRecord',
+                config: {
+                    url: '/medicalRecord',
+                    template: require('./medicalRecord.html'),
+                    controller: 'MedicalRecordController',
+                    controllerAs: 'ctrl'
+                }
+            }
+        ];
+    }
 }

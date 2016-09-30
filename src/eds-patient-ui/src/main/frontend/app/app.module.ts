@@ -1,20 +1,33 @@
-/// <reference path="../typings/index.d.ts" />
+/// <reference path="../typings/index.d.ts"/>
 
-import ILoggerService = app.blocks.ILoggerService;
-import IStateService = angular.ui.IStateService;
-import IRootScopeService = angular.IRootScopeService;
+import '../content/css/index.css';
+import 'angular';
+import 'angular-ui-bootstrap';
+import 'bootstrap-css';
+
+import {module} from "angular";
+import {IRootScopeService} from 'angular';
 import IModalService = angular.ui.bootstrap.IModalService;
-import ISecurityService = app.core.ISecurityService;
-import IAdminService = app.core.IAdminService;
 
-angular.module('app', [
-		'ui.bootstrap',
-		'ngIdle',
-		'ui.tree',
-		'ngDragDrop',
-		'angular-uuid-generator',
+import {ILoggerService} from "./blocks/logger.service";
+import {IStateService} from "angular-ui-router";
+import {IAdminService} from "./core/admin.service";
+import {ISecurityService} from "./core/security.service";
+import {AppRoute} from "./app.route";
+
+import "./appstartup/appstartup.module";
+import "./audit/audit.module";
+import "./blocks/blocks.module";
+import "./config/config.module";
+import "./consent/consent.module";
+import "./core/core.module";
+import "./dialogs/dialogs.module";
+import "./layout/layout.module";
+import "./medicalRecord/medicalRecord.module";
+import "./models/models.module";
+
+export let app = module('app', [
 		'app.appstartup',
-
 		'app.models',
 		'app.core',
 		'app.config',
@@ -72,5 +85,6 @@ angular.module('app', [
 			logger.log('Starting app...', securityService.getCurrentUser());
 			$state.go('app.medicalRecord', {}, {});
 		}]
-	);
+	)
+	.config(AppRoute);
 

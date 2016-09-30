@@ -1,3 +1,4 @@
-/// <reference path="../../typings/index.d.ts" />
+import {ConfigService} from "./config.service";
 
-angular.module('app.config', []);
+angular.module('app.config', [])
+	.service('ConfigService', ConfigService);

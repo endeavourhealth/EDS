@@ -1,24 +1,14 @@
-/// <reference path="../../typings/index.d.ts" />
-/// <reference path="../blocks/logger.service.ts" />
+import {ILoggerService} from "../blocks/logger.service";
+import {IAuditService} from "../core/audit.service";
+import {IStateService} from "angular-ui-router";
 
-module app.audit {
-    import IAuditService = app.core.IAuditService;
-    import ILoggerService = app.blocks.ILoggerService;
+export class AuditController {
 
-    'use strict';
+		static $inject = ['AuditService', 'LoggerService', '$state'];
 
-    class AuditController {
-
-        static $inject = ['AuditService', 'LoggerService', '$state'];
-
-        constructor(private auditService:IAuditService,
-                    private logger:ILoggerService,
-                    private $state : IStateService) {
-            //this.refresh();
-        }
-    }
-
-    angular
-        .module('app.audit')
-        .controller('AuditController', AuditController);
+		constructor(private auditService:IAuditService,
+								private logger:ILoggerService,
+								private $state : IStateService) {
+				//this.refresh();
+		}
 }

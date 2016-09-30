@@ -1,16 +1,7 @@
-/// <reference path="../../typings/index.d.ts" />
+import {BaseHttpService} from "./baseHttp.service";
 
-module app.core {
-    'use strict';
+export interface IAuditService {
+}
 
-    export interface IAuditService {
-    }
-
-    export class AuditService extends BaseHttpService implements IAuditService {
-
-    }
-
-    angular
-        .module('app.core')
-        .service('AuditService', AuditService);
+export class AuditService extends BaseHttpService implements IAuditService {
 }

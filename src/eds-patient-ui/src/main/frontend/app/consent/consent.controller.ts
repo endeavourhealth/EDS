@@ -1,24 +1,15 @@
-/// <reference path="../../typings/index.d.ts" />
-/// <reference path="../blocks/logger.service.ts" />
+import {ILoggerService} from "../blocks/logger.service";
+import {IConsentService} from "../core/consent.service";
+import {IStateService} from "angular-ui-router";
 
-module app.consent {
-    import IConsentService = app.core.IConsentService;
-    import ILoggerService = app.blocks.ILoggerService;
+export class ConsentController {
 
-    'use strict';
+    static $inject = ['ConsentService', 'LoggerService', '$state'];
 
-    class ConsentController {
-
-        static $inject = ['ConsentService', 'LoggerService', '$state'];
-
-        constructor(private consentService:IConsentService,
-                    private logger:ILoggerService,
-                    private $state : IStateService) {
-            //this.refresh();
-        }
+    constructor(private consentService:IConsentService,
+                private logger:ILoggerService,
+                private $state : IStateService) {
+        //this.refresh();
     }
-
-    angular
-        .module('app.consent')
-        .controller('ConsentController', ConsentController);
 }
+

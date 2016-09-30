@@ -1,34 +1,25 @@
-/// <reference path="../typings/index.d.ts" />
+import {IStateProvider} from "angular-ui-router";
 
-module app {
-	'use strict';
+export class AppRoute {
+	static $inject = ['$stateProvider'];
 
-	class AppRoute {
-		static $inject = ['$stateProvider'];
+	constructor(stateProvider:IStateProvider) {
+		var routes = AppRoute.getRoutes();
 
-		constructor(stateProvider:angular.ui.IStateProvider) {
-			var routes = AppRoute.getRoutes();
-
-			routes.forEach(function (route) {
-				stateProvider.state(route.state, route.config);
-			});
-		}
-
-		static getRoutes() {
-			return [
-				{
-					state: 'app',
-					config: {
-						url: '/app',
-						templateUrl: 'app/layout/shell.html',
-					}
-				}
-			];
-		}
+		routes.forEach(function (route) {
+			stateProvider.state(route.state, route.config);
+		});
 	}
 
-	angular
-		.module('app')
-		.config(AppRoute);
-
+	static getRoutes() {
+		return [
+			{
+				state: 'app',
+				config: {
+					url: '/app',
+					template: require('./layout/shell.html'),
+				}
+			}
+		];
+	}
 }

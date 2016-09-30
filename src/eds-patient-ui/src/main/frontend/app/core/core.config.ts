@@ -1,32 +1,25 @@
-/// <reference path="../../typings/index.d.ts" />
+import toastr = require('toastr');
 
-module app.core {
-	import IIdleProvider = angular.idle.IIdleProvider;
-	import IKeepAliveProvider = angular.idle.IKeepAliveProvider;
-	import IHttpProvider = angular.IHttpProvider;
-	'use strict';
+import IHttpProvider = angular.IHttpProvider;
+import IIdleProvider = angular.idle.IIdleProvider;
+import IKeepAliveProvider = angular.idle.IKeepAliveProvider;
 
-	class Config {
+export class Config {
 
-		static $inject = ['$httpProvider', 'IdleProvider', 'KeepaliveProvider'];
+	static $inject = ['$httpProvider', 'IdleProvider', 'KeepaliveProvider'];
 
-		constructor(
-			$httpProvider:IHttpProvider,
-			IdleProvider:IIdleProvider,
-			KeepaliveProvider:IKeepAliveProvider) {
-			$httpProvider.defaults.headers.post['Accept'] = 'application/json';
-			$httpProvider.defaults.headers.post['Content-Type'] = 'application/json; charset=utf-8';
-			$httpProvider.defaults.withCredentials = true;
+	constructor(
+		$httpProvider:IHttpProvider,
+		IdleProvider:IIdleProvider,
+		KeepaliveProvider:IKeepAliveProvider) {
+		$httpProvider.defaults.headers.post['Accept'] = 'application/json';
+		$httpProvider.defaults.headers.post['Content-Type'] = 'application/json; charset=utf-8';
+		$httpProvider.defaults.withCredentials = true;
 
-			toastr.options.timeOut = 4000;
-			toastr.options.positionClass = 'toast-bottom-right';
-			IdleProvider.idle(300);
-			IdleProvider.timeout(10);
-			KeepaliveProvider.interval(10);
-		}
+		toastr.options.timeOut = 4000;
+		toastr.options.positionClass = 'toast-bottom-right';
+		IdleProvider.idle(300);
+		IdleProvider.timeout(10);
+		KeepaliveProvider.interval(10);
 	}
-
-	angular
-		.module('app.core')
-		.config(Config);
 }

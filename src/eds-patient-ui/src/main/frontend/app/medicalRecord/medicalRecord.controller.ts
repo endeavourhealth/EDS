@@ -1,38 +1,30 @@
-/// <reference path="../../typings/index.d.ts" />
-/// <reference path="../blocks/logger.service.ts" />
+import 'angular-ui-router';
 
-module app.medicalRecord {
-    import IMedicalRecordService = app.core.IMedicalRecordService;
-    import ILoggerService = app.blocks.ILoggerService;
+import {IStateService} from "angular-ui-router";
+import {ILoggerService} from "../blocks/logger.service";
+import {IMedicalRecordService} from "../core/medicalRecord.service";
+import {PatientService} from "../models/PatientService";
 
-    'use strict';
-    import PatientService = app.models.PatientService;
+export class MedicalRecordController {
+    static $inject = ['MedicalRecordService', 'LoggerService', '$state'];
 
-    class MedicalRecordController {
-        static $inject = ['MedicalRecordService', 'LoggerService', '$state'];
+    services : PatientService[];
+    selectedService : string;
 
-        services : PatientService[];
-        selectedService : string;
-
-        constructor(private medicalRecordService:IMedicalRecordService,
-                    private logger:ILoggerService,
-                    private $state : IStateService) {
-            this.loadServiceList();
-        }
-
-        loadServiceList() {
-            var vm = this;
-            vm.services = null;
-            vm.medicalRecordService.getServices()
-              .then(function(data : PatientService[])
-              {
-                 vm.services = data;
-              }
-            );
-        }
+    constructor(private medicalRecordService:IMedicalRecordService,
+                private logger:ILoggerService,
+                private $state : IStateService) {
+        this.loadServiceList();
     }
 
-    angular
-        .module('app.medicalRecord')
-        .controller('MedicalRecordController', MedicalRecordController);
+    loadServiceList() {
+        var vm = this;
+        vm.services = null;
+        vm.medicalRecordService.getServices()
+          .then(function(data : PatientService[])
+          {
+             vm.services = data;
+          }
+        );
+    }
 }

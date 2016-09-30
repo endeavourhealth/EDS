@@ -1,20 +1,17 @@
-/// <reference path="../../typings/index.d.ts" />
-/// <reference path="../core/admin.service.ts" />
-/// <reference path="../models/MenuOption.ts" />
+import {IAdminService} from "../core/admin.service";
+import {MenuOption} from "../models/MenuOption";
+import {ISecurityService} from "../core/security.service";
 
-module app.layout {
-	'use strict';
+export class SidebarController {
+	menuOptions:MenuOption[];
 
-	class SidebarController {
-		menuOptions:app.models.MenuOption[];
+	static $inject = ['AdminService', 'SecurityService'];
 
-		static $inject = ['AdminService'];
-
-		constructor(adminService:app.core.IAdminService) {
-			this.menuOptions = adminService.getMenuOptions();
-		}
+	constructor(adminService:IAdminService, private securityService:ISecurityService) {
+		this.menuOptions = adminService.getMenuOptions();
 	}
 
-	angular.module('app.layout')
-		.controller('SidebarController', SidebarController);
+	logout() {
+		this.securityService.logout();
+	}
 }

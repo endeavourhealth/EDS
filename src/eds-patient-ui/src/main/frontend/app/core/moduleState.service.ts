@@ -1,28 +1,16 @@
-/// <reference path="../../typings/index.d.ts" />
-/// <reference path="../models/MenuOption.ts" />
+export interface IModuleStateService {
+	setState(moduleName : string, state : any) : void;
+	getState(moduleName : string) : any;
+}
 
-module app.core {
-	'use strict';
+export class ModuleStateService implements IModuleStateService {
+	states : any = {};
 
-	export interface IModuleStateService {
-		setState(moduleName : string, state : any) : void;
-		getState(moduleName : string) : any;
+	setState(moduleName : string, state : any) {
+		this.states[moduleName] = state;
 	}
 
-	export class ModuleStateService implements IModuleStateService {
-		states : any = {};
-
-		setState(moduleName : string, state : any) {
-			this.states[moduleName] = state;
-		}
-
-		getState(moduleName : string) : any {
-			return this.states[moduleName];
-		}
-
+	getState(moduleName : string) : any {
+		return this.states[moduleName];
 	}
-
-	angular
-		.module('app.core')
-		.service('ModuleStateService', ModuleStateService);
 }

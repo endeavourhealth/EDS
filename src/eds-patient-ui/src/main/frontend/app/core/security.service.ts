@@ -1,109 +1,99 @@
-/// <reference path="../../typings/index.d.ts" />
+import {BaseHttpService} from "./baseHttp.service";
+import IRootScopeService = angular.IRootScopeService;
+import {Auth} from "../appstartup/appstartup.auth";
+import {User} from "../models/User";
 
-module app.core {
-	'use strict';
+export interface ISecurityService {
+	getCurrentUser() : User;
+	// switchUserInRole(userInRoleUuid:string) : IPromise<app.models.UserInRole>;
+	isAuthenticated() : boolean;
+	login() : void;
+	logout() : void;
+	openUserAccountTab() : void;
+	onAuthSuccess(callback:any) : void;
+	onAuthError(callback:any) : void;
+	onAuthLogout(callback:any) : void;
+	onAuthReady(callback:any) : void;
+}
 
-	import IPromise = angular.IPromise;
-	import User = app.models.User;
-	import AuthConfig = app.models.wellknown.AuthConfig;
-	import Auth = app.appstartup.Auth;
+export class SecurityService extends BaseHttpService implements ISecurityService {
+	currentUser:User;
 
-	export interface ISecurityService {
-		getCurrentUser() : app.models.User;
-		// switchUserInRole(userInRoleUuid:string) : IPromise<app.models.UserInRole>;
-		isAuthenticated() : boolean;
-		login() : void;
-		logout() : void;
-		openUserAccountTab() : void;
-		onAuthSuccess(callback:any) : void;
-		onAuthError(callback:any) : void;
-		onAuthLogout(callback:any) : void;
-		onAuthReady(callback:any) : void;
+	static $inject = ['$http', '$q', '$rootScope'];
+
+	constructor(protected http:ng.IHttpService, protected promise:ng.IQService, protected $rootScope:IRootScopeService) {
+		super(http, promise);
 	}
 
-	export class SecurityService extends BaseHttpService implements ISecurityService {
-		currentUser:app.models.User;
+	getAuthz() : any {
+		return Auth.factory().getAuthz();
+	}
 
-		static $inject = ['$http', '$q', '$rootScope'];
-
-		constructor(protected http:ng.IHttpService, protected promise:ng.IQService, protected $rootScope:IRootScopeService) {
-			super(http, promise);
+	getCurrentUser() : User {
+		if(!this.currentUser) {
+			this.currentUser = this.parseUser();
 		}
+		return this.currentUser;
+	}
 
-		getAuthz() : any {
-			return Auth.factory().getAuthz();
-		}
+	isAuthenticated():boolean {
+		return this.getCurrentUser() != null;
+	}
 
-		getCurrentUser() : User {
-			if(!this.currentUser) {
-				this.currentUser = this.parseUser();
-			}
-			return this.currentUser;
-		}
+	// switchUserInRole(userInRoleUuid:string) : IPromise<app.models.UserInRole> {
+	// 	var request = '"' + userInRoleUuid + '"';
+	// 	return this.httpPost('/api/security/switchUserInRole', request);
+	// }
 
-		isAuthenticated():boolean {
-			return this.getCurrentUser() != null;
-		}
+	login() {
+		this.getAuthz().login({ redirectUri : Auth.factory().getRedirectUrl() });
+	}
 
-		// switchUserInRole(userInRoleUuid:string) : IPromise<app.models.UserInRole> {
-		// 	var request = '"' + userInRoleUuid + '"';
-		// 	return this.httpPost('/api/security/switchUserInRole', request);
-		// }
+	logout() {
+		this.currentUser = null;
+		window.location.href = Auth.factory().getLogoutUrl();
+	}
 
-		login() {
-			this.getAuthz().login({ redirectUri : Auth.factory().getRedirectUrl() });
-		}
+	openUserAccountTab() {
+		window.open(Auth.factory().getAccountUrl(), '_blank');
+	}
 
-		logout() {
-			this.currentUser = null;
-			window.location.href = Auth.factory().getLogoutUrl();
-		}
+	onAuthReady(callback:any) {
 
-		openUserAccountTab() {
-			window.open(Auth.factory().getAccountUrl(), '_blank');
-		}
+		this.getAuthz().onReady = callback;
+	}
 
-		onAuthReady(callback:any) {
+	onAuthSuccess(callback:any) {
+		this.getAuthz().onAuthSuccess = callback;
+	}
 
-			this.getAuthz().onReady = callback;
-		}
+	onAuthError(callback:any) {
+		this.getAuthz().onAuthError = callback;
+	}
 
-		onAuthSuccess(callback:any) {
-			this.getAuthz().onAuthSuccess = callback;
-		}
+	onAuthLogout(callback:any) {
+		this.getAuthz().onAuthLogout = callback;
+	}
 
-		onAuthError(callback:any) {
-			this.getAuthz().onAuthError = callback;
-		}
+	private parseUser() : User {
+		if(this.getAuthz().idTokenParsed && this.getAuthz().realmAccess) {
+			var user = new User;
+			user.forename = this.getAuthz().idTokenParsed.given_name;
+			user.surname = this.getAuthz().idTokenParsed.family_name;
+			//user.title = this.getAuthz().idTokenParsed.title;              // TODO: custom attribute??
+			user.uuid = this.getAuthz().idTokenParsed.sub;
+			user.permissions = this.getAuthz().realmAccess.roles;
 
-		onAuthLogout(callback:any) {
-			this.getAuthz().onAuthLogout = callback;
-		}
-
-		private parseUser() : User {
-			if(this.getAuthz().idTokenParsed && this.getAuthz().realmAccess) {
-				var user = new User;
-				user.forename = this.getAuthz().idTokenParsed.given_name;
-				user.surname = this.getAuthz().idTokenParsed.family_name;
-				//user.title = this.getAuthz().idTokenParsed.title;              // TODO: custom attribute??
-				user.uuid = this.getAuthz().idTokenParsed.sub;
-				user.permissions = this.getAuthz().realmAccess.roles;
-
-				user.isSuperUser = false;                                   // TODO: design session needed on RBAC roles / ABAC attributes!
-				for(var permission in user.permissions) {
-					if(permission == 'eds_superuser') {
-						user.isSuperUser = true;
-						break;
-					}
+			user.isSuperUser = false;                                   // TODO: design session needed on RBAC roles / ABAC attributes!
+			for(var permission in user.permissions) {
+				if(permission == 'eds_superuser') {
+					user.isSuperUser = true;
+					break;
 				}
-
-				return user;
 			}
-			return null;
-		}
-	}
 
-	angular
-		.module('app.core')
-		.service('SecurityService', SecurityService);
+			return user;
+		}
+		return null;
+	}
 }

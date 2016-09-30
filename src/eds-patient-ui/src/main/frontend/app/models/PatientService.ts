@@ -1,13 +1,9 @@
-module app.models {
-	'use strict';
+export class PatientService {
+	serviceId:string;
+	serviceName:string;
+	organisationId:string;
+	organisationName:string;
+	organisationNationalId:string;
 
-	export class PatientService {
-		serviceId:string;
-		serviceName:string;
-		organisationId:string;
-		organisationName:string;
-		organisationNationalId:string;
-
-		constructor() {}
-	}
+	constructor() {}
 }
