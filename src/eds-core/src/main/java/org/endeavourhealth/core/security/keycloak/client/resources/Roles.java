@@ -52,22 +52,30 @@ public class Roles extends KeycloakAdminClientBase {
     // get role
     //
 
-    public RoleRepresentation getRole(String roleName) {
+    public RoleRepresentation getRole(String roleName) throws KeycloakClientException {
         assertKeycloakAdminClientInitialised();
         return getRole(keycloakDeployment.getRealm(), roleName);
     }
 
-    public RoleRepresentation getRole(String realm, String roleName) {
+    public RoleRepresentation getRole(String realm, String roleName) throws KeycloakClientException {
         assertKeycloakAdminClientInitialised();
 
         RoleRepresentation roleRepresentation = null;
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            HttpResponse response = doGet(httpClient, keycloakDeployment.getAuthServerBaseUrl() + "/admin/realms/" + realm + "/roles/" + roleName.trim());
-            roleRepresentation = toEntity(response, roleRepresentationTypeReference);
+            roleRepresentation = internalGetRole(realm, roleName, httpClient);
         } catch (IOException e) {
             LOG.error("Keycloak get role failed", e);
         }
         return roleRepresentation;
+    }
+
+    private RoleRepresentation internalGetRole(String realm, String roleName, CloseableHttpClient httpClient) throws IOException, KeycloakClientException {
+        HttpResponse response = doGet(httpClient, keycloakDeployment.getAuthServerBaseUrl() + "/admin/realms/" + realm + "/roles/" + roleName.trim());
+        if(isHttpOkStatus(response)) {
+            return toEntity(response, roleRepresentationTypeReference);
+        } else {
+            throw new KeycloakClientException("Failed to get role", response.getStatusLine().getReasonPhrase());
+        }
     }
 
     //
@@ -85,8 +93,7 @@ public class Roles extends KeycloakAdminClientBase {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpResponse response = doPost(httpClient, keycloakDeployment.getAuthServerBaseUrl() + "/admin/realms/" + realm + "/roles", role);
             if(isHttpOkStatus(response)) {
-                response = doGet(httpClient, keycloakDeployment.getAuthServerBaseUrl() + "/admin/realms/" + realm + "/roles/" + getIdFromLocation(response));
-                role = toEntity(response, roleRepresentationTypeReference);
+                role = internalGetRole(realm, getIdFromLocation(response), httpClient);
             } else {
                 throw new KeycloakClientException("Failed to post role", response.getStatusLine().getReasonPhrase());
             }

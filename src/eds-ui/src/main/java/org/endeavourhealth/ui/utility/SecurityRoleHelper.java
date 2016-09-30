@@ -19,8 +19,7 @@ public class SecurityRoleHelper {
 
         List<String> compositeRoles = new ArrayList<>();
         if(composites != null && composites.size() > 0) {
-            composites.stream().map(c -> c.getName()).collect(Collectors.toList());
-
+            compositeRoles = composites.stream().map(c -> c.getName()).collect(Collectors.toList());
         }
         JsonRoleProfile roleProfile = new JsonRoleProfile(toUUID(r.getId()), r.getName(), r.getDescription(), compositeRoles);
         return roleProfile;
