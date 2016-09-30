@@ -123,10 +123,10 @@ module app.filters {
         let regExp: RegExp = new RegExp("^([A-Z]{1,2}[0-9]{1,2}[A-Z]?)([0-9][A-Z]{2})$");
         let result: RegExpExecArray = regExp.exec(postalCode);
 
-        if ((result == null) || (result.length != 2))
-            return postalCode;
+        if ((result == null) || (result.length != 3))
+            return result.length.toString();
 
-        return result[0] + " " + regExp[1];
+        return result[1] + " " + result[2];
     }
 
     function isEmpty(str: string): boolean {
