@@ -1,5 +1,5 @@
-import {User} from "../models/User";
 import {ISecurityService} from "../core/security.service";
+import {User} from "../models/User";
 
 export class TopnavController {
 	currentUser:User;

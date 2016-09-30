@@ -1,5 +1,3 @@
-import 'angular-ui-bootstrap';
-
 import {InputBoxController} from "./inputBox/inputBox.controller";
 import {MessageBoxController} from "./messageBox/messageBox.controller";
 

@@ -1,20 +1,15 @@
 /// <reference path="../typings/index.d.ts"/>
 
-import '../content/css/index.css';
+// Node dependencies
 import 'angular';
 import 'angular-ui-bootstrap';
+import 'angular-ui-router';
 import 'bootstrap-css';
 
-import {module} from "angular";
-import {IRootScopeService} from 'angular';
-import IModalService = angular.ui.bootstrap.IModalService;
+// Internal dependencies
+import '../content/css/index.css';
 
-import {ILoggerService} from "./blocks/logger.service";
-import {IStateService} from "angular-ui-router";
-import {IAdminService} from "./core/admin.service";
-import {ISecurityService} from "./core/security.service";
-import {AppRoute} from "./app.route";
-
+// Internal module dependencies
 import "./appstartup/appstartup.module";
 import "./audit/audit.module";
 import "./blocks/blocks.module";
@@ -26,7 +21,18 @@ import "./layout/layout.module";
 import "./medicalRecord/medicalRecord.module";
 import "./models/models.module";
 
-export let app = module('app', [
+// Node module types
+import IModalService = angular.ui.bootstrap.IModalService;
+import IStateService = angular.ui.IStateService;
+import IRootScopeService = angular.IRootScopeService;
+
+// Internal module types
+import {ISecurityService} from "./core/security.service";
+import {ILoggerService} from "./blocks/logger.service";
+import {IAdminService} from "./core/admin.service";
+import {AppRoute} from "./app.route";
+
+export let app = angular.module('app', [
 		'app.appstartup',
 		'app.models',
 		'app.core',

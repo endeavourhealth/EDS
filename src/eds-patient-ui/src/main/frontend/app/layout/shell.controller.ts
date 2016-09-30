@@ -1,8 +1,9 @@
 import IModalServiceInstance = angular.ui.bootstrap.IModalServiceInstance;
 import IModalService = angular.ui.bootstrap.IModalService;
 import IModalStackService = angular.ui.bootstrap.IModalStackService;
-import {IRootScopeService} from 'angular';
-import {IStateService} from "angular-ui-router";
+import IRootScopeService = angular.IRootScopeService;
+import IStateService = angular.ui.IStateService;
+
 import {ISecurityService} from "../core/security.service";
 
 export class ShellController {

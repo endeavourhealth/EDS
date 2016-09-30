@@ -1,7 +1,8 @@
-import {BaseDialogController} from "../baseDialog.controller";
 import IModalService = angular.ui.bootstrap.IModalService;
 import IModalServiceInstance = angular.ui.bootstrap.IModalServiceInstance;
 import IModalSettings = angular.ui.bootstrap.IModalSettings;
+
+import {BaseDialogController} from "../baseDialog.controller";
 
 export class InputBoxController extends BaseDialogController {
 	title : string;

@@ -1,4 +1,4 @@
-import {IStateProvider} from "angular-ui-router";
+import IStateProvider = angular.ui.IStateProvider;
 
 export class MedicalRecordRoute {
     static $inject = ['$stateProvider'];

@@ -1,6 +1,7 @@
+import IStateService = angular.ui.IStateService;
+
 import {ILoggerService} from "../blocks/logger.service";
 import {IAuditService} from "../core/audit.service";
-import {IStateService} from "angular-ui-router";
 
 export class AuditController {
 

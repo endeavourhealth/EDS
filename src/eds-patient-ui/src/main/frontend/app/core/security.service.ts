@@ -1,5 +1,6 @@
-import {BaseHttpService} from "./baseHttp.service";
 import IRootScopeService = angular.IRootScopeService;
+
+import {BaseHttpService} from "./baseHttp.service";
 import {Auth} from "../appstartup/appstartup.auth";
 import {User} from "../models/User";
 

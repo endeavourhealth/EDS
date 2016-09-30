@@ -1,6 +1,5 @@
-import 'angular-ui-router';
+import IStateService = angular.ui.IStateService;
 
-import {IStateService} from "angular-ui-router";
 import {ILoggerService} from "../blocks/logger.service";
 import {IMedicalRecordService} from "../core/medicalRecord.service";
 import {PatientService} from "../models/PatientService";
