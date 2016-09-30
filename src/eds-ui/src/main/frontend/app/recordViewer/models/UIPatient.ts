@@ -8,7 +8,7 @@ module app.models {
 		nhsNumber: string;
         name: UIHumanName;
         dateOfBirth: Date;
-        genderFormatted: string;
+        gender: string;
         homeAddress: UIAddress;
 	}
 }

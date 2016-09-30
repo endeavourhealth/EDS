@@ -27,6 +27,10 @@ module app.filters {
         return formatSingleLineAddress;
     }
 
+    export function cuiGender() {
+        return formatCuiGender;
+    }
+
     function formatCuiDate(date: Date): string {
         return moment(date).format("DD-MMM-YYYY");
     }
@@ -50,6 +54,22 @@ module app.filters {
             return result;
 
         return result.substring(0, 3) + " " + result.substring(3, 6) + " " + result.substring(6, 10);
+    }
+
+    function formatCuiGender(genderCode: string): string {
+        if (isEmpty(genderCode))
+            return "";
+
+        if (genderCode == "male")
+            return "Male";
+        else if (genderCode == "female")
+            return "Female";
+        else if (genderCode == "other")
+            return "Not known";
+        else if (genderCode == "unknown")
+            return "Not specified";
+
+        return "";
     }
 
     function formatName(name: UIHumanName): string {
@@ -86,7 +106,7 @@ module app.filters {
         if (firstGivenName != "")
             result += ", " + firstGivenName;
 
-        if (prefix != null)
+        if (prefix != "")
             result += " (" + prefix + ")";
 
         return result;
@@ -142,5 +162,6 @@ module app.filters {
         .filter('cuiDateOfBirth', cuiDateOfBirth)
         .filter('cuiNhsNumber', cuiNhsNumber)
         .filter('cuiName', cuiName)
-        .filter('cuiSingleLineAddress', cuiSingleLineAddress);
+        .filter('cuiSingleLineAddress', cuiSingleLineAddress)
+        .filter('cuiGender', cuiGender);
 }

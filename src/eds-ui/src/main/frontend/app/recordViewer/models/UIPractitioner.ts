@@ -2,7 +2,7 @@ module app.models {
     'use strict';
 
     export class UIPractitioner {
-        displayName: string;
+        name: UIHumanName;
         active: boolean;
     }
 }

@@ -1,7 +1,6 @@
 package org.endeavourhealth.transform.ui.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.hl7.fhir.instance.model.HumanName;
 
 import java.util.Date;
 import java.util.UUID;
@@ -15,7 +14,7 @@ public class UIPatient {
     private String nhsNumber;
     private UIHumanName name;
     private Date dateOfBirth;
-    private String genderFormatted;
+    private String gender;
     private UIAddress homeAddress;
 
     public UIHumanName getName() {
@@ -36,12 +35,12 @@ public class UIPatient {
         return this;
     }
 
-    public String getGenderFormatted() {
-        return genderFormatted;
+    public String getGender() {
+        return gender;
     }
 
-    public UIPatient setGenderFormatted(String genderFormatted) {
-        this.genderFormatted = genderFormatted;
+    public UIPatient setGender(String gender) {
+        this.gender = gender;
         return this;
     }
 

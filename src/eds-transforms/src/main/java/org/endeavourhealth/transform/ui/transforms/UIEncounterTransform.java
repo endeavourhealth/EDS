@@ -15,13 +15,10 @@ import java.util.stream.Collectors;
 class UIEncounterTransform {
 
     public static List<UIEncounter> transform(List<Encounter> encounters, List<Practitioner> practitioners) {
-        List<UIEncounter> uiEncounters = new ArrayList<>();
-
-        for (Encounter encounter : encounters) {
-            uiEncounters.add(transform(encounter, practitioners));
-        }
-
-        return uiEncounters;
+        return encounters
+                .stream()
+                .map(t -> transform(t, practitioners))
+                .collect(Collectors.toList());
     }
 
     private static UIEncounter transform(Encounter encounter, List<Practitioner> practitioners) {
