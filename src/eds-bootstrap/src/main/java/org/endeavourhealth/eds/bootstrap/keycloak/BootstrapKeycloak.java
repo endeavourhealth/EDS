@@ -108,7 +108,7 @@ public class BootstrapKeycloak implements Bootstrap {
         String edsUIClientJson = client.realm(newRealm).clients().get(clientName).getInstallationProvider("keycloak-oidc-keycloak-json");
         LOG.info(edsUIClientJson);
 
-        setCassandraConfig("c865eb28-58dd-4ec4-9ca9-fda1273566bf", "KeycloakConfig", edsUIClientJson);
+        setCassandraConfig("f48c8bf3-a03d-411e-baf1-8712569ed67f", "KeycloakConfig", edsUIClientJson);
 
         LOG.info("Adding EDS SFTP Reader client...");
 
