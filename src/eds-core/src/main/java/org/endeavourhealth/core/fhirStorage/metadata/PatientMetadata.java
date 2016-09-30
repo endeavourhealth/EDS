@@ -38,6 +38,12 @@ public class PatientMetadata extends AbstractResourceMetadata implements Patient
         active = resource.getActive();
         deceased = resource.hasDeceased();
         dob = resource.getBirthDate();
-        gender = resource.getGender().getDisplay();
+
+        //when deleting a resource, the gender will be null
+        if (resource.getGender() == null) {
+            gender = null;
+        } else {
+            gender = resource.getGender().getDisplay();
+        }
     }
 }

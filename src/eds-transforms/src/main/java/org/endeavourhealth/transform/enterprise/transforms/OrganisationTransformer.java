@@ -99,19 +99,13 @@ public class OrganisationTransformer extends AbstractTransformer {
                     if (extension.getUrl().equals(FhirExtensionUri.ORGANISATION_MAIN_LOCATION)) {
 
                         Reference locationReference = (Reference)extension.getValue();
-
-                        //TODO - remove this try/catch and investigate
-                        try {
-                            Location location = (Location)findResource(locationReference, otherResources);
-                            if (location != null
-                                    && location.hasAddress()) {
-                                Address address = location.getAddress();
-                                if (address.hasPostalCode()) {
-                                    model.setPostcode(address.getPostalCode());
-                                }
+                        Location location = (Location)findResource(locationReference, otherResources);
+                        if (location != null
+                                && location.hasAddress()) {
+                            Address address = location.getAddress();
+                            if (address.hasPostalCode()) {
+                                model.setPostcode(address.getPostalCode());
                             }
-                        } catch (Exception ex) {
-                            //nothing
                         }
                     }
 

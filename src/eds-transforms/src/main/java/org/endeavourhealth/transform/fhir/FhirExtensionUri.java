@@ -32,6 +32,12 @@ public class FhirExtensionUri {
     //extensions specific to Condition resource
     public final static String CONDITION_PART_OF_PROBLEM = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-condition-partofproblemepisode-extension";
 
+    //extensions specific to FamilyMemberHistory resource
+    public final static String FAMILY_MEMBER_HISTOY_REPORTED_BY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-family-member-history-reporter-extension";
+
+    //extensions specific to ReferralRequest resource
+    public final static String REFERRAL_REQUEST_SEND_MODE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-referral-request-send-mode-extension";
+
     //extensions specific to Task resource
     public final static String TASK_TYPE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-task-type-extension";
     public final static String TASK_STATUS = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-task-status-extension";
@@ -40,6 +46,9 @@ public class FhirExtensionUri {
     //extensions specific to Schedule resource
     public final static String SCHEDULE_LOCATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-location-extension";
     public final static String SCHEDULE_ADDITIONAL_ACTOR = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-additional-actor-extension";
+
+    //extensions specific to Encounter resource
+    public final static String ENCOUNTER_SOURCE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-encounter_source";
 
     //extensions specific to MedicationStatement (profile is MedicationAuthorisation) resource
     public final static String MEDICATION_AUTHORISATION_PRIVATE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-privateprescription-extension";

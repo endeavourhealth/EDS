@@ -3,8 +3,10 @@ package org.endeavourhealth.transform.enterprise.transforms;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.Condition;
 import org.hl7.fhir.instance.model.DateTimeType;
+import org.hl7.fhir.instance.model.Extension;
 import org.hl7.fhir.instance.model.Reference;
 
 import java.util.Map;
@@ -60,8 +62,25 @@ public class ConditionTransformer extends AbstractTransformer {
             Long snomedConceptId = findSnomedConceptId(fhir.getCode());
             model.setSnomedConceptId(snomedConceptId);
 
-            //TODO - need to know if a condition is a review or not
-            //model.setIsReview(...);
+            //if a condition is part of a problem but has the same code as the problem itself,
+            //then we know it's a review, since EMIS re-records the diagnostic code for reviews
+            model.setIsReview(new Boolean(false));
+
+            if (fhir.hasExtension()) {
+                for (Extension extension: fhir.getExtension()) {
+                    if (extension.getUrl().equals(FhirExtensionUri.CONDITION_PART_OF_PROBLEM)) {
+                        Reference problemReference = (Reference)extension.getValue();
+                        Condition fhirProblem = (Condition)findResource(problemReference, otherResources);
+                        if (fhirProblem != null) {
+
+                            Long problemSnomedConceptId = findSnomedConceptId(fhirProblem.getCode());
+                            if (snomedConceptId.equals(problemSnomedConceptId)) {
+                                model.setIsReview(new Boolean(true));
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         data.getCondition().add(model);
