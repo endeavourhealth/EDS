@@ -5,16 +5,20 @@ import java.util.Date;
 public class UICondition extends UIResource {
     private Date dateRecorded;
     private Date onsetDate;
+    private Date endDate;
+    private Boolean hasEnded;
     private UIPractitioner asserter;
     private UIPractitioner recorder;
     private UICodeableConcept code;
+    private String notes;
 
     public Date getDateRecorded() {
         return dateRecorded;
     }
 
-    public void setDateRecorded(Date dateRecorded) {
+    public UICondition setDateRecorded(Date dateRecorded) {
         this.dateRecorded = dateRecorded;
+        return this;
     }
 
     public Date getOnsetDate() {
@@ -48,6 +52,33 @@ public class UICondition extends UIResource {
 
     public UICondition setCode(UICodeableConcept code) {
         this.code = code;
+        return this;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public UICondition setNotes(String notes) {
+        this.notes = notes;
+        return this;
+    }
+
+    public Boolean getHasEnded() {
+        return hasEnded;
+    }
+
+    public UICondition setHasEnded(Boolean hasEnded) {
+        this.hasEnded = hasEnded;
+        return this;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public UICondition setEndDate(Date endDate) {
+        this.endDate = endDate;
         return this;
     }
 }

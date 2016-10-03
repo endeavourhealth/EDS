@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.ui.transforms;
 
+import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
@@ -15,6 +16,7 @@ import org.hl7.fhir.instance.model.Reference;
 
 import java.util.Date;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,23 +32,44 @@ class UIConditionTransform implements IUIClinicalTransform<Condition, UIConditio
     }
 
     static UICondition transform(Condition condition, ReferencedResources referencedResources, boolean createProblem) {
+        try {
+            UICondition uiCondition = new UICondition();
 
-        UICondition uiCondition = new UICondition();
+            if (createProblem)
+                uiCondition = new UIProblem();
 
-        if (createProblem)
-            uiCondition = new UIProblem();
-
-        Date onsetDate = getOnsetDate(condition);
-
-        return uiCondition
-                .setCode(CodeHelper.convert(condition.getCode()))
-                .setOnsetDate(onsetDate);
+            return uiCondition
+                    .setCode(CodeHelper.convert(condition.getCode()))
+                    .setOnsetDate(getOnsetDate(condition))
+                    .setEndDate(getEndedDate(condition))
+                    .setHasEnded(getHasEnded(condition))
+                    .setNotes(condition.getNotes())
+                    .setDateRecorded(condition.getDateRecorded());
+        } catch (Exception e) {
+            throw new TransformRuntimeException(e);
+        }
     }
 
-    private static Date getOnsetDate(Condition condition) {
-        if (condition.hasOnset())
-            if (condition.getOnset().getClass().equals(DateTimeType.class))
-                return ((DateTimeType)condition.getOnset()).getValue();
+    private static Date getOnsetDate(Condition condition) throws Exception {
+        if (condition.hasOnsetDateTimeType())
+            return ((DateTimeType) condition.getOnset()).getValue();
+
+        return null;
+    }
+
+    private static Boolean getHasEnded(Condition condition) throws Exception {
+        if (condition.hasAbatementBooleanType())
+            return condition.getAbatementBooleanType().getValue();
+        else if (condition.hasAbatementDateTimeType())
+            return true;
+
+        return false;
+    }
+
+    private static Date getEndedDate(Condition condition) throws Exception {
+        if (condition.hasAbatement())
+            if (condition.hasAbatementDateTimeType())
+                return condition.getAbatementDateTimeType().getValue();
 
         return null;
     }

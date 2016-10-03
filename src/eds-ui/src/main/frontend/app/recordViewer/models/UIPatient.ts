@@ -1,7 +1,7 @@
 module app.models {
 	'use strict';
 
-	export class UIPatient {
+	export class UIPatient extends UIResource {
 		serviceId: string;
 		systemId: string;
         patientId: string;
