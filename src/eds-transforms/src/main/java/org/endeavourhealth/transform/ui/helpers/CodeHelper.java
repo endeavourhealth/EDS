@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.ui.helpers;
 import org.endeavourhealth.transform.ui.models.UICode;
 import org.endeavourhealth.transform.ui.models.UICodeableConcept;
 import org.hl7.fhir.instance.model.CodeableConcept;
+import org.hl7.fhir.instance.model.Coding;
 
 import java.util.stream.Collectors;
 
@@ -16,13 +17,17 @@ public class CodeHelper {
             uiCodeableConcept.setCodes(codeableConcept
                     .getCoding()
                     .stream()
-                    .map(t -> new UICode()
-                            .setCode(t.getCode())
-                            .setDisplay(t.getDisplay())
-                            .setSystem(t.getSystem()))
+                    .map(t -> convert(t))
                     .collect(Collectors.toList()));
         }
 
         return uiCodeableConcept;
+    }
+
+    public static UICode convert(Coding coding) {
+        return new UICode()
+                .setCode(coding.getCode())
+                .setDisplay(coding.getDisplay())
+                .setSystem(coding.getSystem());
     }
 }

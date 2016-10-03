@@ -7,5 +7,6 @@ module app.models {
         enteredBy: UIPractitioner;
         code: UICodeableConcept;
         period: UIPeriod;
+        significance: UICode;
     }
 }

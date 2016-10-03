@@ -5,13 +5,12 @@ import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByLocalId;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
-import org.endeavourhealth.transform.ui.models.UICondition;
-import org.endeavourhealth.transform.ui.models.UIEncounter;
+import org.endeavourhealth.transform.ui.models.*;
 import org.endeavourhealth.transform.ui.transforms.IUIClinicalTransform;
 import org.endeavourhealth.transform.ui.transforms.UITransform;
-import org.endeavourhealth.transform.ui.models.UIPatient;
 import org.endeavourhealth.ui.utility.ResourceFetcher;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -78,7 +77,25 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
 
         validateIdentifiers(serviceId, systemId, patientId);
 
-        List<UICondition> conditions = getClinicalResources(serviceId, systemId, patientId, Condition.class);
+        List<UICondition> conditions = getClinicalResources(serviceId, systemId, patientId, Condition.class, UICondition.class);
+
+        return Response
+                .ok()
+                .entity(conditions)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/getProblems")
+    public Response getProblems(@Context SecurityContext sc,
+                                  @QueryParam("serviceId") UUID serviceId,
+                                  @QueryParam("systemId") UUID systemId,
+                                  @QueryParam("patientId") UUID patientId) throws Exception {
+
+        validateIdentifiers(serviceId, systemId, patientId);
+
+        List<UIProblem> conditions = getClinicalResources(serviceId, systemId, patientId, Condition.class, UIProblem.class);
 
         return Response
                 .ok()
@@ -96,7 +113,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
 
         validateIdentifiers(serviceId, systemId, patientId);
 
-        List<UICondition> encounters = getClinicalResources(serviceId, systemId, patientId, Encounter.class);
+        List<UIEncounter> encounters = getClinicalResources(serviceId, systemId, patientId, Encounter.class, UIEncounter.class);
 
         // move to client
         encounters = encounters
@@ -128,11 +145,16 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                 .setPatientId(patientId);
     }
 
-    private <T extends Resource, U> List<U> getClinicalResources(UUID serviceId, UUID systemId, UUID patientId, Class<T> resourceType) throws Exception {
+    private <T extends Resource,
+            U extends UIResource> List<U> getClinicalResources(UUID serviceId,
+                                                               UUID systemId,
+                                                               UUID patientId,
+                                                               Class<T> fhirResourceType,
+                                                               Class<U> uiResourceType) throws Exception {
 
-        List<T> resources = ResourceFetcher.getResourceByPatient(serviceId, systemId, patientId, resourceType);
+        List<T> resources = ResourceFetcher.getResourceByPatient(serviceId, systemId, patientId, fhirResourceType);
 
-        IUIClinicalTransform transform = UITransform.getClinicalTransformer(resourceType);
+        IUIClinicalTransform transform = UITransform.getClinicalTransformer(uiResourceType);
 
         List<Reference> references = transform.getReferences(resources);
         ReferencedResources referencedResources = getReferencedResources(serviceId, systemId, references);

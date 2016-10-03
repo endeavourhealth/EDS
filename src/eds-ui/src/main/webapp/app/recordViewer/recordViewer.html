@@ -62,13 +62,13 @@
                                 <thead>
                                     <th>Date</th>
                                     <th>Code</th>
-                                    <th>Associated text</th>
+                                    <th>Significance</th>
                                 </thead>
                                 <tbody>
                                     <tr ng-repeat="condition in ctrl.conditions">
                                         <td>{{condition.onsetDate | cuiDate}}</td>
                                         <td>{{condition.code | codeTerm}}</td>
-                                        <td>{{condition.code.text}}</td>
+                                        <td>{{condition.significance.display}}</td>
                                     </tr>
                                 </tbody>
                             </table>

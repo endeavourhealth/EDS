@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.ui.models;
 
 import java.util.Date;
 
-public class UICondition {
+public class UICondition extends UIResource {
     private Date dateRecorded;
     private Date onsetDate;
     private UIPractitioner asserter;

@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UIPatient {
+public class UIPatient extends UIResource {
 
     private UUID serviceId;
     private UUID systemId;

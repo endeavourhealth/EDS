@@ -2,10 +2,7 @@ package org.endeavourhealth.transform.ui.transforms;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
-import org.endeavourhealth.transform.ui.models.UICondition;
-import org.endeavourhealth.transform.ui.models.UIEncounter;
-import org.endeavourhealth.transform.ui.models.UIPatient;
-import org.endeavourhealth.transform.ui.models.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.*;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -18,11 +15,13 @@ public class UITransform {
         return UIPatientTransform.transform(patient);
     }
 
-    public static <T extends Resource> IUIClinicalTransform getClinicalTransformer(Class<T> resourceType) {
+    public static <T extends UIResource> IUIClinicalTransform getClinicalTransformer(Class<T> resourceType) {
 
-        if (resourceType == Condition.class)
+        if (resourceType == UICondition.class)
             return new UIConditionTransform();
-        else if (resourceType == Encounter.class)
+        else if (resourceType == UIProblem.class)
+            return new UIProblemTransform();
+        else if (resourceType == UIEncounter.class)
             return new UIEncounterTransform();
 
         throw new NotImplementedException(resourceType.getSimpleName());
