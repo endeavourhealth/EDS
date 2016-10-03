@@ -3,6 +3,7 @@
 module app.core {
 	import UIPatient = app.models.UIPatient;
     import UIEncounter = app.models.UIEncounter;
+    import UICondition = app.models.UICondition;
 
 	'use strict';
 
@@ -10,6 +11,7 @@ module app.core {
         findPatient(searchTerms: string): ng.IPromise<UIPatient[]>;
 		getPatient(serviceId: string, systemId: string, patientId: string): ng.IPromise<UIPatient>;
         getEncounters(serviceId: string, systemId: string, patientId: string): ng.IPromise<UIEncounter[]>;
+        getConditions(serviceId: string, systemId: string, patientId: string): ng.IPromise<UICondition[]>;
 	}
 
 	export class RecordViewerService extends BaseHttpService implements IRecordViewerService {
@@ -46,6 +48,18 @@ module app.core {
             };
 
             return this.httpGet('api/recordViewer/getEncounters', request);
+        }
+
+        getConditions(serviceId: string, systemId: string, patientId: string): ng.IPromise<UICondition[]> {
+            var request = {
+                params: {
+                    'serviceId': serviceId,
+                    'systemId': systemId,
+                    'patientId': patientId
+                }
+            };
+
+            return this.httpGet('api/recordViewer/getConditions', request);
         }
 	}
 

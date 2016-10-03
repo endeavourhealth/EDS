@@ -7,15 +7,15 @@ import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UICodeableConcept {
-    private UICode[] uiCodes = new UICode[0];
+    private UICode[] codes = new UICode[0];
     private String text;
 
-    public UICode[] getUiCodes() {
-        return uiCodes;
+    public UICode[] getCodes() {
+        return codes;
     }
 
-    public UICodeableConcept setUiCodes(List<UICode> uiCodes) {
-        this.uiCodes = uiCodes.toArray(new UICode[uiCodes.size()]);
+    public UICodeableConcept setCodes(List<UICode> codes) {
+        this.codes = codes.toArray(new UICode[codes.size()]);
         return this;
     }
 

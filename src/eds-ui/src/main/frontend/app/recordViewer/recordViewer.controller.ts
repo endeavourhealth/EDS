@@ -7,12 +7,14 @@ module app.recordViewer {
     import PatientFindController = app.dialogs.PatientFindController;
     import UIPatient = app.models.UIPatient;
     import UIEncounter = app.models.UIEncounter;
+    import UICondition = app.models.UICondition;
 
 	'use strict';
 
 	export class RecordViewerController {
         patient: UIPatient;
         encounters: UIEncounter[];
+        conditions: UICondition[];
         firstTabActive: boolean = true;
 
 		static $inject = ['$uibModal', 'RecordViewerService'];
@@ -44,6 +46,7 @@ module app.recordViewer {
             this.firstTabActive = true;
             this.patient = null;
             this.encounters = null;
+            this.conditions = null;
         }
 
         loadConsultations() {
@@ -55,6 +58,17 @@ module app.recordViewer {
                     function (data: UIEncounter[]) {
                     vm.encounters = data;
                 });
+        }
+
+        loadConditions() {
+            var vm = this;
+            vm.conditions = null;
+
+            vm.recordViewerService.getConditions(vm.patient.serviceId, vm.patient.systemId, vm.patient.patientId)
+                .then(
+                    function (data: UICondition[]) {
+                        vm.conditions = data;
+                    });
         }
     }
 

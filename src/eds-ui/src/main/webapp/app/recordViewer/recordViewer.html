@@ -55,10 +55,23 @@
                             Medication
                         </div>
                     </uib-tab>
-                    <uib-tab index="3" heading="Problems">
+                    <uib-tab index="3" heading="Problems" ng-click="ctrl.loadConditions();">
 
                         <div class="tab-panel">
-                            Problems
+                            <table class="table table-hover">
+                                <thead>
+                                    <th>Date</th>
+                                    <th>Code</th>
+                                    <th>Associated text</th>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="condition in ctrl.conditions">
+                                        <td>{{condition.onsetDate | cuiDate}}</td>
+                                        <td>{{condition.code | codeTerm}}</td>
+                                        <td>{{condition.code.text}}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </uib-tab>
                     <uib-tab index="4" heading="Investigations">

@@ -58,9 +58,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                     @QueryParam("systemId") UUID systemId,
                                     @QueryParam("patientId") UUID patientId) throws Exception {
 
-        Validate.notNull(serviceId, "serviceId");
-        Validate.notNull(systemId, "systemId");
-        Validate.notNull(patientId, "patientId");
+        validateIdentifiers(serviceId, systemId, patientId);
 
         UIPatient patient = getPatient(serviceId, systemId, patientId);
 
@@ -78,9 +76,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                   @QueryParam("systemId") UUID systemId,
                                   @QueryParam("patientId") UUID patientId) throws Exception {
 
-        Validate.notNull(serviceId, "serviceId");
-        Validate.notNull(systemId, "systemId");
-        Validate.notNull(patientId, "patientId");
+        validateIdentifiers(serviceId, systemId, patientId);
 
         List<UICondition> conditions = getClinicalResources(serviceId, systemId, patientId, Condition.class);
 
@@ -98,9 +94,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                     @QueryParam("systemId") UUID systemId,
                                     @QueryParam("patientId") UUID patientId) throws Exception {
 
-        Validate.notNull(serviceId, "serviceId");
-        Validate.notNull(systemId, "systemId");
-        Validate.notNull(patientId, "patientId");
+        validateIdentifiers(serviceId, systemId, patientId);
 
         List<UICondition> encounters = getClinicalResources(serviceId, systemId, patientId, Encounter.class);
 
@@ -114,6 +108,14 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(encounters)
                 .build();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private static void validateIdentifiers(UUID serviceId, UUID systemId, UUID patientId) {
+        Validate.notNull(serviceId, "serviceId");
+        Validate.notNull(systemId, "systemId");
+        Validate.notNull(patientId, "patientId");
     }
 
     private static UIPatient getPatient(UUID serviceId, UUID systemId, UUID patientId) throws Exception {

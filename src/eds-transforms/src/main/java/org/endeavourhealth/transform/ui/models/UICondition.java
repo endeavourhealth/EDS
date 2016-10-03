@@ -21,8 +21,9 @@ public class UICondition {
         return onsetDate;
     }
 
-    public void setOnsetDate(Date onsetDate) {
+    public UICondition setOnsetDate(Date onsetDate) {
         this.onsetDate = onsetDate;
+        return this;
     }
 
     public UIPractitioner getAsserter() {
@@ -45,7 +46,8 @@ public class UICondition {
         return code;
     }
 
-    public void setCode(UICodeableConcept code) {
+    public UICondition setCode(UICodeableConcept code) {
         this.code = code;
+        return this;
     }
 }
