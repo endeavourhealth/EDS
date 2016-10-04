@@ -1,4 +1,4 @@
-package org.endeavourhealth.transform.ui.transforms;
+package org.endeavourhealth.transform.ui.transforms.clinical;
 
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.ui.helpers.ExtensionHelper;

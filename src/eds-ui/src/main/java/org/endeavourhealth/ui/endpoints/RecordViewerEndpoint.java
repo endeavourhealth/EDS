@@ -8,7 +8,7 @@ import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.*;
-import org.endeavourhealth.transform.ui.transforms.UIClinicalTransform;
+import org.endeavourhealth.transform.ui.transforms.clinical.UIClinicalTransform;
 import org.endeavourhealth.transform.ui.transforms.UITransform;
 import org.endeavourhealth.ui.utility.ResourceFetcher;
 import org.hl7.fhir.instance.model.*;

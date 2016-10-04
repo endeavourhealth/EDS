@@ -1,7 +1,8 @@
-package org.endeavourhealth.transform.ui.transforms;
+package org.endeavourhealth.transform.ui.transforms.clinical;
 
 import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.QuantityHelper;
@@ -16,6 +17,7 @@ import org.hl7.fhir.instance.model.ResourceType;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class UIObservationTransform extends UIClinicalTransform<Observation, UIObservation> {
 
@@ -113,6 +115,14 @@ public class UIObservationTransform extends UIClinicalTransform<Observation, UIO
 
     @Override
     public List<Reference> getReferences(List<Observation> resources) {
-        return null;
+         return Stream.concat(resources
+                         .stream()
+                         .flatMap(t -> t.getPerformer().stream()),
+                 resources
+                         .stream()
+                         .flatMap(t -> t.getExtension().stream())
+                         .filter(t -> t.getUrl() == FhirExtensionUri.RECORDED_BY)
+                         .map(t -> (Reference)t.getValue()))
+                 .collect(Collectors.toList());
     }
 }

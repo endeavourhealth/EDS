@@ -6,9 +6,9 @@ import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.models.resources.UILocation;
 import org.endeavourhealth.transform.ui.models.resources.UIOrganisation;
 import org.endeavourhealth.transform.ui.models.resources.UIPractitioner;
-import org.endeavourhealth.transform.ui.transforms.UILocationTransform;
-import org.endeavourhealth.transform.ui.transforms.UIOrganisationTransform;
-import org.endeavourhealth.transform.ui.transforms.UIPractitionerTransform;
+import org.endeavourhealth.transform.ui.transforms.admin.UILocationTransform;
+import org.endeavourhealth.transform.ui.transforms.admin.UIOrganisationTransform;
+import org.endeavourhealth.transform.ui.transforms.admin.UIPractitionerTransform;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.List;

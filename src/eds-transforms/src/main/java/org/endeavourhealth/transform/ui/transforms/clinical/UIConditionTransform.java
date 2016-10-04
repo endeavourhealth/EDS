@@ -1,4 +1,4 @@
-package org.endeavourhealth.transform.ui.transforms;
+package org.endeavourhealth.transform.ui.transforms.clinical;
 
 import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-class UIConditionTransform extends UIClinicalTransform<Condition, UICondition> {
+public class UIConditionTransform extends UIClinicalTransform<Condition, UICondition> {
 
     @Override
     public List<UICondition> transform(List<Condition> resources, ReferencedResources referencedResources) {

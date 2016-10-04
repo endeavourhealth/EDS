@@ -1,4 +1,4 @@
-package org.endeavourhealth.transform.ui.transforms;
+package org.endeavourhealth.transform.ui.transforms.admin;
 
 import org.endeavourhealth.transform.ui.helpers.NameHelper;
 import org.endeavourhealth.transform.ui.models.resources.UIPractitioner;

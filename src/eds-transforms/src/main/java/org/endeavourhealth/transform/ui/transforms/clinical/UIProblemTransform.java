@@ -1,20 +1,21 @@
-package org.endeavourhealth.transform.ui.transforms;
+package org.endeavourhealth.transform.ui.transforms.clinical;
 
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.ExtensionHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
-import org.endeavourhealth.transform.ui.models.types.UICode;
 import org.endeavourhealth.transform.ui.models.resources.UIPractitioner;
 import org.endeavourhealth.transform.ui.models.resources.UIProblem;
+import org.endeavourhealth.transform.ui.models.types.UICode;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-class UIProblemTransform extends UIClinicalTransform<Condition, UIProblem> {
+public class UIProblemTransform extends UIClinicalTransform<Condition, UIProblem> {
 
     @Override
     public List<UIProblem> transform(List<Condition> resources, ReferencedResources referencedResources) {
@@ -26,7 +27,7 @@ class UIProblemTransform extends UIClinicalTransform<Condition, UIProblem> {
     }
 
     private UIProblem transform(Condition condition, ReferencedResources referencedResources) {
-        UIProblem uiProblem = (UIProblem)UIConditionTransform.transform(condition, referencedResources, true);
+        UIProblem uiProblem = (UIProblem) UIConditionTransform.transform(condition, referencedResources, true);
 
         return uiProblem
                 .setExpectedDuration(getExpectedDuration(condition))
@@ -80,6 +81,16 @@ class UIProblemTransform extends UIClinicalTransform<Condition, UIProblem> {
 
     @Override
     public List<Reference> getReferences(List<Condition> resources) {
-        return new UIConditionTransform().getReferences(resources);
+        return Stream.concat(new UIConditionTransform()
+                        .getReferences(resources)
+                        .stream(),
+                resources
+                        .stream()
+                        .flatMap(t -> t.getExtension().stream())
+                        .filter(t -> t.getUrl() == FhirExtensionUri.PROBLEM_LAST_REVIEWED)
+                        .flatMap(t -> t.getExtension().stream())
+                        .filter(t -> t.getUrl() == FhirExtensionUri._PROBLEM_LAST_REVIEWED__PERFORMER)
+                        .map(t -> (Reference)t.getValue()))
+                .collect(Collectors.toList());
     }
 }

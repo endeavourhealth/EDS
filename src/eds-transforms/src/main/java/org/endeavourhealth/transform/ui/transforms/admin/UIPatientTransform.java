@@ -1,4 +1,4 @@
-package org.endeavourhealth.transform.ui.transforms;
+package org.endeavourhealth.transform.ui.transforms.admin;
 
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.ui.helpers.AddressHelper;
@@ -11,7 +11,7 @@ import org.hl7.fhir.instance.model.*;
 
 import java.util.List;
 
-class UIPatientTransform {
+public class UIPatientTransform {
 
     public static UIPatient transform(Patient patient) {
 

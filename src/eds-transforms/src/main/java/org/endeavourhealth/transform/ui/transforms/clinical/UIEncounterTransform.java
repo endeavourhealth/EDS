@@ -1,37 +1,25 @@
-package org.endeavourhealth.transform.ui.transforms;
+package org.endeavourhealth.transform.ui.transforms.clinical;
 
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.ExtensionHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
-import org.endeavourhealth.transform.ui.models.resources.UIAppointment;
 import org.endeavourhealth.transform.ui.models.resources.UIEncounter;
 import org.endeavourhealth.transform.ui.models.resources.UIOrganisation;
-import org.endeavourhealth.transform.ui.models.types.UICode;
 import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
 import org.endeavourhealth.transform.ui.models.types.UIPeriod;
 import org.endeavourhealth.transform.ui.models.resources.UIPractitioner;
 import org.hl7.fhir.instance.model.*;
 
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class UIEncounterTransform extends UIClinicalTransform<Encounter, UIEncounter> {
+public class UIEncounterTransform extends UIClinicalTransform<Encounter, UIEncounter> {
 
     public List<UIEncounter> transform(List<Encounter> encounters, ReferencedResources referencedResources) {
         return encounters
                 .stream()
                 .map(t -> transform(t, referencedResources))
-                .collect(Collectors.toList());
-    }
-
-    public List<Reference> getReferences(List<Encounter> encounters) {
-        return encounters
-                .stream()
-                .flatMap(t -> t.getParticipant().stream())
-                .filter(t -> t.hasIndividual())
-                .map(t -> t.getIndividual())
                 .collect(Collectors.toList());
     }
 
@@ -94,5 +82,14 @@ class UIEncounterTransform extends UIClinicalTransform<Encounter, UIEncounter> {
                     return referencedResources.getUIPractitioner(component.getIndividual());
 
         return null;
+    }
+
+    public List<Reference> getReferences(List<Encounter> encounters) {
+        return encounters
+                .stream()
+                .flatMap(t -> t.getParticipant().stream())
+                .filter(t -> t.hasIndividual())
+                .map(t -> t.getIndividual())
+                .collect(Collectors.toList());
     }
 }
