@@ -83,10 +83,10 @@ public class ProblemTransformer {
             Extension fhirExtension = ExtensionConverter.createCompoundExtension(FhirExtensionUri.PROBLEM_LAST_REVIEWED);
 
             if (lastReviewDateType != null) {
-                fhirExtension.addExtension(ExtensionConverter.createExtension("date", lastReviewDateType));
+                fhirExtension.addExtension(ExtensionConverter.createExtension(FhirExtensionUri._PROBLEM_LAST_REVIEWED__DATE, lastReviewDateType));
             }
             if (!Strings.isNullOrEmpty(lastReviewedByGuid)) {
-                fhirExtension.addExtension(ExtensionConverter.createExtension("performer", csvHelper.createPractitionerReference(lastReviewedByGuid)));
+                fhirExtension.addExtension(ExtensionConverter.createExtension(FhirExtensionUri._PROBLEM_LAST_REVIEWED__PERFORMER, csvHelper.createPractitionerReference(lastReviewedByGuid)));
             }
             fhirProblem.addExtension(fhirExtension);
         }

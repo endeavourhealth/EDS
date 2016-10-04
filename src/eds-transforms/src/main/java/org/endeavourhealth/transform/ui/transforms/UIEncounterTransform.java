@@ -5,6 +5,7 @@ import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.UIEncounter;
 import org.endeavourhealth.transform.ui.models.UIPeriod;
+import org.endeavourhealth.transform.ui.models.UIPractitioner;
 import org.hl7.fhir.instance.model.Encounter;
 import org.hl7.fhir.instance.model.Practitioner;
 import org.hl7.fhir.instance.model.Reference;
@@ -17,7 +18,7 @@ public class UIEncounterTransform implements IUIClinicalTransform<Encounter, UIE
     public List<UIEncounter> transform(List<Encounter> encounters, ReferencedResources referencedResources) {
         return encounters
                 .stream()
-                .map(t -> transform(t, referencedResources.getPractitioners()))
+                .map(t -> transform(t, referencedResources))
                 .collect(Collectors.toList());
     }
 
@@ -30,45 +31,40 @@ public class UIEncounterTransform implements IUIClinicalTransform<Encounter, UIE
                 .collect(Collectors.toList());
     }
 
-    private static UIEncounter transform(Encounter encounter, List<Practitioner> practitioners) {
+    private static UIEncounter transform(Encounter encounter, ReferencedResources referencedResources) {
 
         UIEncounter uiEncounter = new UIEncounter();
 
-        Practitioner performedByPractitioner = getPerformedByParticipantId(encounter, practitioners);
+        UIPractitioner performedByPractitioner = getPerformedByParticipantId(encounter, referencedResources);
 
         if (performedByPractitioner != null)
-            uiEncounter.setPerformedBy(UIPractitionerTransform.transform(performedByPractitioner));
+            uiEncounter.setPerformedBy(performedByPractitioner);
 
-        Practitioner enteredByPractitioner = getEnteredByPractitionerId(encounter, practitioners);
+        UIPractitioner enteredByPractitioner = getEnteredByPractitionerId(encounter, referencedResources);
 
         if (enteredByPractitioner != null)
-            uiEncounter.setEnteredBy(UIPractitionerTransform.transform(enteredByPractitioner));
+            uiEncounter.setEnteredBy(enteredByPractitioner);
 
         uiEncounter.setPeriod(new UIPeriod().setStart(encounter.getPeriod().getStart()));
 
         return uiEncounter;
     }
 
-    private static Practitioner getPerformedByParticipantId(Encounter encounter, List<Practitioner> practitioners) {
+    private static UIPractitioner getPerformedByParticipantId(Encounter encounter, ReferencedResources referencedResources) {
         for (Encounter.EncounterParticipantComponent component : encounter.getParticipant())
             if (component.getType().size() > 0)
                 if (component.getType().get(0).getCoding().size() > 0)
                     if (component.getType().get(0).getCoding().get(0).getCode().equals("PPRF"))
-                        return practitioners
-                                .stream()
-                                .filter(t -> t.getId().equals(ReferenceHelper.getReferenceId(component.getIndividual())))
-                                .collect(StreamExtension.firstOrNullCollector());
+                        return referencedResources.getUIPractitioner(component.getIndividual());
+
         return null;
     }
 
-    private static Practitioner getEnteredByPractitionerId(Encounter encounter, List<Practitioner> practitioners) {
+    private static UIPractitioner getEnteredByPractitionerId(Encounter encounter, ReferencedResources referencedResources) {
         for (Encounter.EncounterParticipantComponent component : encounter.getParticipant())
             if (component.getType().size() > 0)
                 if (component.getType().get(0).getText() == ("Entered by"))
-                    return practitioners
-                        .stream()
-                        .filter(t -> t.getId().equals(ReferenceHelper.getReferenceId(component.getIndividual())))
-                        .collect(StreamExtension.firstOrNullCollector());
+                    return referencedResources.getUIPractitioner(component.getIndividual());
 
         return null;
     }
