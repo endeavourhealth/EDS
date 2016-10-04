@@ -9,7 +9,7 @@ public class UITransform {
         return UIPatientTransform.transform(patient);
     }
 
-    public static <T extends UIResource> IUIClinicalTransform getClinicalTransformer(Class<T> resourceType) {
+    public static <T extends UIResource> UIClinicalTransform getClinicalTransformer(Class<T> resourceType) {
 
         if (resourceType == UICondition.class)
             return new UIConditionTransform();

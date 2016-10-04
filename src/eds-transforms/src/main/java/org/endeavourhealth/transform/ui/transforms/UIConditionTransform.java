@@ -4,19 +4,20 @@ import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
-import org.endeavourhealth.transform.ui.helpers.ExtensionHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.UICondition;
 import org.endeavourhealth.transform.ui.models.resources.UIPractitioner;
 import org.endeavourhealth.transform.ui.models.resources.UIProblem;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Condition;
+import org.hl7.fhir.instance.model.DateTimeType;
+import org.hl7.fhir.instance.model.Reference;
 
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-class UIConditionTransform implements IUIClinicalTransform<Condition, UICondition> {
+class UIConditionTransform extends UIClinicalTransform<Condition, UICondition> {
 
     @Override
     public List<UICondition> transform(List<Condition> resources, ReferencedResources referencedResources) {
@@ -36,19 +37,18 @@ class UIConditionTransform implements IUIClinicalTransform<Condition, UIConditio
 
             return uiCondition
                     .setId(condition.getId())
-                    .setAsserter(getAsserter(condition, referencedResources))
+                    .setRecordedBy(getRecordedByExtensionValue(condition, referencedResources))
                     .setRecordedDate(condition.getDateRecorded())
+                    .setAsserter(getAsserter(condition, referencedResources))
                     .setCode(CodeHelper.convert(condition.getCode()))
                     .setClinicalStatus(condition.getClinicalStatus())
                     .setVerificationStatus(getConditionVerificationStatus(condition))
                     .setOnsetDate(getOnsetDate(condition))
                     .setAbatementDate(getAbatementDate(condition))
                     .setHasAbated(getAbatement(condition))
-                    .setNotes(condition.getNotes())
-                    .setRecorder(getRecorder(condition, referencedResources));
+                    .setNotes(condition.getNotes());
 
 //            private UIEncounter encounter;     *
-//            private Date dateRecorded;
 //            private UICodeableConcept code;
 //            private String clinicalStatus;
 //            private String verificationStatus;
@@ -57,8 +57,6 @@ class UIConditionTransform implements IUIClinicalTransform<Condition, UIConditio
 //            private Boolean hasAbated;
 //            private String notes;
 //            private UIProblem partOfProblem;   *
-//            private UIPractitioner recorder;
-
 
         } catch (Exception e) {
             throw new TransformRuntimeException(e);
@@ -77,12 +75,6 @@ class UIConditionTransform implements IUIClinicalTransform<Condition, UIConditio
             return null;
 
         return referencedResources.getUIPractitioner(condition.getAsserter());
-    }
-
-    private static UIPractitioner getRecorder(Condition condition, ReferencedResources referencedResources) {
-        Reference reference = ExtensionHelper.getExtensionValue(condition, FhirExtensionUri.RECORDED_BY, Reference.class);
-
-        return referencedResources.getUIPractitioner(reference);
     }
 
     private static Date getOnsetDate(Condition condition) throws Exception {

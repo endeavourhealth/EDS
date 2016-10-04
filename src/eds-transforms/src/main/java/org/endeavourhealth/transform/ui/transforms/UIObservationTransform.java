@@ -1,17 +1,114 @@
 package org.endeavourhealth.transform.ui.transforms;
 
+import org.endeavourhealth.core.utility.StreamExtension;
+import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.transform.ui.helpers.CodeHelper;
+import org.endeavourhealth.transform.ui.helpers.QuantityHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.UIObservation;
+import org.endeavourhealth.transform.ui.models.resources.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.types.UIQuantity;
 import org.hl7.fhir.instance.model.Observation;
 import org.hl7.fhir.instance.model.Reference;
+import org.hl7.fhir.instance.model.ResourceType;
 
+import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class UIObservationTransform implements IUIClinicalTransform<Observation,UIObservation> {
+public class UIObservationTransform extends UIClinicalTransform<Observation, UIObservation> {
 
     @Override
     public List<UIObservation> transform(List<Observation> resources, ReferencedResources referencedResources) {
-        return null;
+        return resources
+                .stream()
+                .map(t -> transform(t, referencedResources))
+                .collect(Collectors.toList());
+    }
+
+    private static UIObservation transform(Observation observation, ReferencedResources referencedResources) {
+        try {
+            return new UIObservation()
+                    .setId(observation.getId())
+                    .setRecordedBy(getRecordedByExtensionValue(observation, referencedResources))
+                    .setRecordedDate(getRecordedDateExtensionValue(observation))
+                    .setStatus(getStatus(observation))
+                    .setEffectiveDateTime(getEffectiveDateTime(observation))
+                    .setCode(CodeHelper.convert(observation.getCode()))
+                    .setPerformer(getPerformer(observation, referencedResources))
+                    .setValue(getValue(observation))
+                    .setReferenceRangeHigh(getReferenceRangeHigh(observation))
+                    .setReferenceRangeLow(getReferenceRangeLow(observation))
+                    .setComments(observation.getComments());
+
+//        private String status;
+//        private Date effectiveDateTime;
+//        private UICodeableConcept code;
+//        private Practitioner performer;
+//        private UIQuantity value;
+//        private UIQuantity referenceRangeLow;
+//        private UIQuantity referenceRangeHigh;
+//        private String comments;
+//        private Encounter encounter;            *
+        } catch (Exception e) {
+            throw new TransformRuntimeException(e);
+        }
+    }
+
+    private static UIQuantity getReferenceRangeHigh(Observation observation) {
+        if (!observation.hasReferenceRange())
+            return null;
+
+        Observation.ObservationReferenceRangeComponent referenceRangeComponent = observation.getReferenceRange().get(0);
+
+        if (!referenceRangeComponent.hasHigh())
+            return null;
+
+        return QuantityHelper.convert(referenceRangeComponent.getHigh());
+    }
+
+    private static UIQuantity getReferenceRangeLow(Observation observation) {
+        if (!observation.hasReferenceRange())
+            return null;
+
+        Observation.ObservationReferenceRangeComponent referenceRangeComponent = observation.getReferenceRange().get(0);
+
+        if (!referenceRangeComponent.hasLow())
+            return null;
+
+        return QuantityHelper.convert(referenceRangeComponent.getLow());
+    }
+
+    private static UIQuantity getValue(Observation observation) throws Exception {
+        if (!observation.hasValueQuantity())
+            return null;
+
+        return QuantityHelper.convert(observation.getValueQuantity());
+    }
+
+    private static UIPractitioner getPerformer(Observation observation, ReferencedResources referencedResources) {
+        Reference reference = observation
+                .getPerformer()
+                .stream()
+                .filter(t -> ReferenceHelper.isResourceType(t, ResourceType.Practitioner))
+                .collect(StreamExtension.firstOrNullCollector());
+
+        return referencedResources.getUIPractitioner(reference);
+    }
+
+    private static String getStatus(Observation observation) {
+        if (observation.getStatus() == null)
+            return null;
+
+        return observation.getStatus().toCode();
+    }
+
+    private static Date getEffectiveDateTime(Observation observation) throws Exception {
+        if (!observation.hasEffectiveDateTimeType())
+            return null;
+
+        return observation.getEffectiveDateTimeType().getValue();
     }
 
     @Override

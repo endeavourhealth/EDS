@@ -14,7 +14,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class UIProblemTransform implements IUIClinicalTransform<Condition, UIProblem> {
+class UIProblemTransform extends UIClinicalTransform<Condition, UIProblem> {
 
     @Override
     public List<UIProblem> transform(List<Condition> resources, ReferencedResources referencedResources) {

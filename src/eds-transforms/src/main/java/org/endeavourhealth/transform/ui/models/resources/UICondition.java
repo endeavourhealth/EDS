@@ -6,10 +6,9 @@ import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
 import java.util.Date;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UICondition extends UIResource<UICondition> {
+public class UICondition extends UIClinicalResource<UICondition> {
     private UIEncounter encounter;
     private UIPractitioner asserter;
-    private Date recordedDate;
     private UICodeableConcept code;
     private String clinicalStatus;
     private String verificationStatus;
@@ -18,7 +17,6 @@ public class UICondition extends UIResource<UICondition> {
     private Boolean hasAbated;
     private String notes;
     private UIProblem partOfProblem;
-    private UIPractitioner recorder;
 
     public UIEncounter getEncounter() {
         return encounter;
@@ -56,15 +54,6 @@ public class UICondition extends UIResource<UICondition> {
         return this;
     }
 
-    public Date getRecordedDate() {
-        return recordedDate;
-    }
-
-    public UICondition setRecordedDate(Date recorded) {
-        this.recordedDate = recordedDate;
-        return this;
-    }
-
     public Date getOnsetDate() {
         return onsetDate;
     }
@@ -80,15 +69,6 @@ public class UICondition extends UIResource<UICondition> {
 
     public UICondition setAsserter(UIPractitioner asserter) {
         this.asserter = asserter;
-        return this;
-    }
-
-    public UIPractitioner getRecorder() {
-        return recorder;
-    }
-
-    public UICondition setRecorder(UIPractitioner recorder) {
-        this.recorder = recorder;
         return this;
     }
 

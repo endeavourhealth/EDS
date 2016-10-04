@@ -44,6 +44,18 @@ public class ReferenceHelper
     }
     public static String getReferenceId(Reference reference, ResourceType resourceType)
     {
+        ReferenceComponents referenceComponents = getReferenceComponents(reference);
+
+        if (referenceComponents == null)
+            return null;
+
+        if (!referenceComponents.getResourceType().equals(resourceType))
+            return null;
+
+        return referenceComponents.getId();
+    }
+
+    public static ReferenceComponents getReferenceComponents(Reference reference) {
         if (reference == null)
             return null;
 
@@ -55,33 +67,23 @@ public class ReferenceHelper
         if (parts.length != 2)
             throw new IllegalArgumentException("Invalid reference string.");
 
-        if (resourceType != null) {
-            if (!parts[0].equals(resourceType.toString())) {
-                return null;
-            }
-        }
-
-        return parts[1];
+        ResourceType resourceType = ResourceType.valueOf(parts[0]);
+        return new ReferenceComponents(resourceType, parts[1]);
     }
 
-    public static ReferenceComponents getReferenceComponents(Reference reference) {
-        if (reference == null) {
-            return null;
-        }
+    public static boolean isResourceType(Reference reference, ResourceType resourceType) {
+        ReferenceComponents referenceComponents = getReferenceComponents(reference);
 
-        String[] parts = reference.getReference().split("\\/");
-        String resourceTypeStr = parts[0];
-        String id = parts[1];
-        ResourceType resourceType = ResourceType.valueOf(resourceTypeStr);
-        return new ReferenceComponents(resourceType, id);
+        if (referenceComponents == null)
+            return false;
+
+        return referenceComponents.getResourceType().equals(resourceType);
     }
 
     public static ResourceType getResourceType(Reference reference) {
         ReferenceComponents comps = getReferenceComponents(reference);
         return comps.getResourceType();
     }
-
-
 
     public static <T extends Resource> Reference findAndCreateReference(Class<T> type, List<Resource> resources) throws TransformException {
         T resource = ResourceHelper.findResourceOfType(type, resources);

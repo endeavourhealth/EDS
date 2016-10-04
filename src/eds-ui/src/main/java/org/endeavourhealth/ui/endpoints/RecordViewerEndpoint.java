@@ -8,7 +8,7 @@ import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.*;
-import org.endeavourhealth.transform.ui.transforms.IUIClinicalTransform;
+import org.endeavourhealth.transform.ui.transforms.UIClinicalTransform;
 import org.endeavourhealth.transform.ui.transforms.UITransform;
 import org.endeavourhealth.ui.utility.ResourceFetcher;
 import org.hl7.fhir.instance.model.*;
@@ -153,7 +153,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
 
         List<T> resources = ResourceFetcher.getResourceByPatient(serviceId, systemId, patientId, fhirResourceType);
 
-        IUIClinicalTransform transform = UITransform.getClinicalTransformer(uiResourceType);
+        UIClinicalTransform transform = UITransform.getClinicalTransformer(uiResourceType);
 
         List<Reference> references = transform.getReferences(resources);
         ReferencedResources referencedResources = getReferencedResources(serviceId, systemId, references);

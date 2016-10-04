@@ -10,14 +10,12 @@ import java.util.Date;
 import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UIEncounter extends UIResource<UIEncounter> {
+public class UIEncounter extends UIClinicalResource<UIEncounter> {
     private String status;
     private UIAppointment appointment;
     private UIPractitioner performedBy;
-    private UIPractitioner recordedBy;
     private UIPeriod period;
     private UIOrganisation serviceProvider;
-    private Date recordedDate;
     private UICodeableConcept encounterSource;
 
     public UIAppointment getAppointment() {
@@ -35,15 +33,6 @@ public class UIEncounter extends UIResource<UIEncounter> {
 
     public UIEncounter setServiceProvider(UIOrganisation serviceProvider) {
         this.serviceProvider = serviceProvider;
-        return this;
-    }
-
-    public Date getRecordedDate() {
-        return recordedDate;
-    }
-
-    public UIEncounter setRecordedDate(Date recordedDate) {
-        this.recordedDate = recordedDate;
         return this;
     }
 
@@ -71,15 +60,6 @@ public class UIEncounter extends UIResource<UIEncounter> {
 
     public UIEncounter setPerformedBy(UIPractitioner performedBy) {
         this.performedBy = performedBy;
-        return this;
-    }
-
-    public UIPractitioner getRecordedBy() {
-        return recordedBy;
-    }
-
-    public UIEncounter setRecordedBy(UIPractitioner recordedBy) {
-        this.recordedBy = recordedBy;
         return this;
     }
 

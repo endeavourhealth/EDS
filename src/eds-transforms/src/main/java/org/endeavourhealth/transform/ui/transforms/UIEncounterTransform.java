@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class UIEncounterTransform implements IUIClinicalTransform<Encounter, UIEncounter> {
+class UIEncounterTransform extends UIClinicalTransform<Encounter, UIEncounter> {
 
     public List<UIEncounter> transform(List<Encounter> encounters, ReferencedResources referencedResources) {
         return encounters
@@ -40,11 +40,11 @@ public class UIEncounterTransform implements IUIClinicalTransform<Encounter, UIE
         return new UIEncounter()
                 .setId(encounter.getId())
                 .setStatus(getStatus(encounter))
-                .setPerformedBy(getPerformedByParticipantId(encounter, referencedResources))
-                .setRecordedBy(getRecordedByPractitionerId(encounter, referencedResources))
+                .setPerformedBy(getPerformedBy(encounter, referencedResources))
+                .setRecordedBy(getRecordedBy(encounter, referencedResources))
                 .setPeriod(getPeriod(encounter.getPeriod()))
                 .setServiceProvider(getServiceProvider(encounter, referencedResources))
-                .setRecordedDate(getRecordedDate(encounter))
+                .setRecordedDate(getRecordedDateExtensionValue(encounter))
                 .setEncounterSource(getEncounterSource(encounter));
 
 //        private String status;
@@ -62,15 +62,6 @@ public class UIEncounterTransform implements IUIClinicalTransform<Encounter, UIE
         return CodeHelper.convert(encounterSource);
     }
 
-    private static Date getRecordedDate(Encounter encounter) {
-        DateTimeType recordedDate = ExtensionHelper.getExtensionValue(encounter, FhirExtensionUri.RECORDED_DATE, DateTimeType.class);
-
-        if (recordedDate == null)
-            return null;
-
-        return recordedDate.getValue();
-    }
-
     private static UIOrganisation getServiceProvider(Encounter encounter, ReferencedResources referencedResources) {
         return referencedResources.getUIOrganisation(encounter.getServiceProvider());
     }
@@ -86,7 +77,7 @@ public class UIEncounterTransform implements IUIClinicalTransform<Encounter, UIE
         return encounter.getStatus().toCode();
     }
 
-    private static UIPractitioner getPerformedByParticipantId(Encounter encounter, ReferencedResources referencedResources) {
+    private static UIPractitioner getPerformedBy(Encounter encounter, ReferencedResources referencedResources) {
         for (Encounter.EncounterParticipantComponent component : encounter.getParticipant())
             if (component.getType().size() > 0)
                 if (component.getType().get(0).getCoding().size() > 0)
@@ -96,7 +87,7 @@ public class UIEncounterTransform implements IUIClinicalTransform<Encounter, UIE
         return null;
     }
 
-    private static UIPractitioner getRecordedByPractitionerId(Encounter encounter, ReferencedResources referencedResources) {
+    private static UIPractitioner getRecordedBy(Encounter encounter, ReferencedResources referencedResources) {
         for (Encounter.EncounterParticipantComponent component : encounter.getParticipant())
             if (component.getType().size() > 0)
                 if (component.getType().get(0).getText() == ("Entered by"))
