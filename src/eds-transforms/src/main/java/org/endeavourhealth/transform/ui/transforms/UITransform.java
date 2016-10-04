@@ -21,6 +21,8 @@ public class UITransform {
             return new UIEncounterTransform();
         else if (resourceType == UIObservation.class)
             return new UIObservationTransform();
+        else if (resourceType == UIAllergyIntolerance.class)
+            return new UIAllergyIntoleranceTransform();
 
         throw new NotImplementedException(resourceType.getSimpleName());
     }

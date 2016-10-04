@@ -1,7 +1,6 @@
 package org.endeavourhealth.transform.ui.models.resources;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
 import org.endeavourhealth.transform.ui.models.types.UIQuantity;
 import org.hl7.fhir.instance.model.Encounter;
 
@@ -11,7 +10,6 @@ import java.util.Date;
 public class UIObservation extends UIClinicalResource<UIObservation> {
     private String status;
     private Date effectiveDateTime;
-    private UICodeableConcept code;
     private UIPractitioner performer;
     private UIQuantity value;
     private UIQuantity referenceRangeLow;
@@ -34,15 +32,6 @@ public class UIObservation extends UIClinicalResource<UIObservation> {
 
     public UIObservation setEffectiveDateTime(Date effectiveDateTime) {
         this.effectiveDateTime = effectiveDateTime;
-        return this;
-    }
-
-    public UICodeableConcept getCode() {
-        return code;
-    }
-
-    public UIObservation setCode(UICodeableConcept code) {
-        this.code = code;
         return this;
     }
 

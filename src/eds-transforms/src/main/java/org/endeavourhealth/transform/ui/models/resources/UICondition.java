@@ -1,7 +1,6 @@
 package org.endeavourhealth.transform.ui.models.resources;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
 
 import java.util.Date;
 
@@ -9,7 +8,6 @@ import java.util.Date;
 public class UICondition extends UIClinicalResource<UICondition> {
     private UIEncounter encounter;
     private UIPractitioner asserter;
-    private UICodeableConcept code;
     private String clinicalStatus;
     private String verificationStatus;
     private Date onsetDate;
@@ -69,15 +67,6 @@ public class UICondition extends UIClinicalResource<UICondition> {
 
     public UICondition setAsserter(UIPractitioner asserter) {
         this.asserter = asserter;
-        return this;
-    }
-
-    public UICodeableConcept getCode() {
-        return code;
-    }
-
-    public UICondition setCode(UICodeableConcept code) {
-        this.code = code;
         return this;
     }
 
