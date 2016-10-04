@@ -1,7 +1,11 @@
-package org.endeavourhealth.transform.ui.models;
+package org.endeavourhealth.transform.ui.models.resources;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import org.endeavourhealth.transform.ui.models.types.UICode;
 
 import java.util.Date;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UIProblem extends UICondition {
     private Integer expectedDuration;
     private Date lastReviewDate;

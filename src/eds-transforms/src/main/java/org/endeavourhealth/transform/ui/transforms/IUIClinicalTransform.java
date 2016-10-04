@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.ui.transforms;
 
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
-import org.endeavourhealth.transform.ui.models.UIResource;
+import org.endeavourhealth.transform.ui.models.resources.UIResource;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.Resource;
 

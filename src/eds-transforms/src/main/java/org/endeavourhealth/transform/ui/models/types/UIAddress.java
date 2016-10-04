@@ -1,5 +1,8 @@
-package org.endeavourhealth.transform.ui.models;
+package org.endeavourhealth.transform.ui.models.types;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UIAddress {
     private String line1;
     private String line2;

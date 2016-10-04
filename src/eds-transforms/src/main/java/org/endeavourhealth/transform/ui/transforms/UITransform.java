@@ -1,14 +1,8 @@
 package org.endeavourhealth.transform.ui.transforms;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
-import org.endeavourhealth.transform.ui.models.*;
+import org.endeavourhealth.transform.ui.models.resources.*;
 import org.hl7.fhir.instance.model.*;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
 
 public class UITransform {
     public static UIPatient transformPatient(Patient patient) {
@@ -23,6 +17,8 @@ public class UITransform {
             return new UIProblemTransform();
         else if (resourceType == UIEncounter.class)
             return new UIEncounterTransform();
+        else if (resourceType == UIObservation.class)
+            return new UIObservationTransform();
 
         throw new NotImplementedException(resourceType.getSimpleName());
     }

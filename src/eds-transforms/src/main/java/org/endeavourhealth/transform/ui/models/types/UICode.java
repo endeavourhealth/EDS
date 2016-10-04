@@ -1,4 +1,4 @@
-package org.endeavourhealth.transform.ui.models;
+package org.endeavourhealth.transform.ui.models.types;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

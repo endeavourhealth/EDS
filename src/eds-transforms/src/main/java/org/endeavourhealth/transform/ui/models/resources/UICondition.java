@@ -1,16 +1,20 @@
-package org.endeavourhealth.transform.ui.models;
+package org.endeavourhealth.transform.ui.models.resources;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
 
 import java.util.Date;
 
-public class UICondition extends UIResource {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class UICondition extends UIResource<UICondition> {
     private UIEncounter encounter;
     private UIPractitioner asserter;
-    private Date dateRecorded;
+    private Date recordedDate;
     private UICodeableConcept code;
     private String clinicalStatus;
     private String verificationStatus;
-    private Date onset;
-    private Date abatement;
+    private Date onsetDate;
+    private Date abatementDate;
     private Boolean hasAbated;
     private String notes;
     private UIProblem partOfProblem;
@@ -52,21 +56,21 @@ public class UICondition extends UIResource {
         return this;
     }
 
-    public Date getDateRecorded() {
-        return dateRecorded;
+    public Date getRecordedDate() {
+        return recordedDate;
     }
 
-    public UICondition setDateRecorded(Date dateRecorded) {
-        this.dateRecorded = dateRecorded;
+    public UICondition setRecordedDate(Date recorded) {
+        this.recordedDate = recordedDate;
         return this;
     }
 
-    public Date getOnset() {
-        return onset;
+    public Date getOnsetDate() {
+        return onsetDate;
     }
 
-    public UICondition setOnset(Date onset) {
-        this.onset = onset;
+    public UICondition setOnsetDate(Date onsetDate) {
+        this.onsetDate = onsetDate;
         return this;
     }
 
@@ -115,12 +119,12 @@ public class UICondition extends UIResource {
         return this;
     }
 
-    public Date getAbatement() {
-        return abatement;
+    public Date getAbatementDate() {
+        return abatementDate;
     }
 
-    public UICondition setAbatement(Date abatement) {
-        this.abatement = abatement;
+    public UICondition setAbatementDate(Date abatementDate) {
+        this.abatementDate = abatementDate;
         return this;
     }
 }

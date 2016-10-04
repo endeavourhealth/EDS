@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.ui.helpers;
 
-import org.endeavourhealth.transform.ui.models.UICode;
-import org.endeavourhealth.transform.ui.models.UICodeableConcept;
+import org.endeavourhealth.transform.ui.models.types.UICode;
+import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
 import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.Coding;
 

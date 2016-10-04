@@ -4,9 +4,9 @@ import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.ui.helpers.AddressHelper;
 import org.endeavourhealth.transform.ui.helpers.IdentifierHelper;
 import org.endeavourhealth.transform.ui.helpers.NameHelper;
-import org.endeavourhealth.transform.ui.models.UIAddress;
-import org.endeavourhealth.transform.ui.models.UIHumanName;
-import org.endeavourhealth.transform.ui.models.UIPatient;
+import org.endeavourhealth.transform.ui.models.types.UIAddress;
+import org.endeavourhealth.transform.ui.models.types.UIHumanName;
+import org.endeavourhealth.transform.ui.models.resources.UIPatient;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.List;

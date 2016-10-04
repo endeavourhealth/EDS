@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.ui.transforms;
 
-import org.endeavourhealth.transform.ui.models.UILocation;
+import org.endeavourhealth.transform.ui.models.resources.UILocation;
 import org.hl7.fhir.instance.model.Location;
 
 public class UILocationTransform {

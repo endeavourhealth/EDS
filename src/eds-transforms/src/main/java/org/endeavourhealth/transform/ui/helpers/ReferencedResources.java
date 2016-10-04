@@ -3,9 +3,9 @@ package org.endeavourhealth.transform.ui.helpers;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
-import org.endeavourhealth.transform.ui.models.UILocation;
-import org.endeavourhealth.transform.ui.models.UIOrganisation;
-import org.endeavourhealth.transform.ui.models.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.resources.UILocation;
+import org.endeavourhealth.transform.ui.models.resources.UIOrganisation;
+import org.endeavourhealth.transform.ui.models.resources.UIPractitioner;
 import org.endeavourhealth.transform.ui.transforms.UILocationTransform;
 import org.endeavourhealth.transform.ui.transforms.UIOrganisationTransform;
 import org.endeavourhealth.transform.ui.transforms.UIPractitionerTransform;
@@ -31,10 +31,6 @@ public class ReferencedResources {
                 .collect(Collectors.toList());
     }
 
-    public List<UIPractitioner> getUiPractitioners() {
-        return uiPractitioners;
-    }
-
     public UIPractitioner getUIPractitioner(Reference reference) {
         String referenceId = ReferenceHelper.getReferenceId(reference, ResourceType.Practitioner);
 
@@ -42,11 +38,23 @@ public class ReferencedResources {
             return null;
 
         return this
-                .getUiPractitioners()
+                .uiPractitioners
                 .stream()
                 .filter(t -> t.getId().equals(referenceId))
                 .collect(StreamExtension.firstOrNullCollector());
+    }
 
+    public UIOrganisation getUIOrganisation(Reference reference) {
+        String referenceId = ReferenceHelper.getReferenceId(reference, ResourceType.Organization);
+
+        if (StringUtils.isEmpty(referenceId))
+            return null;
+
+        return this
+                .uiOrganisations
+                .stream()
+                .filter(t -> t.getId().equals(referenceId))
+                .collect(StreamExtension.firstOrNullCollector());
     }
 
     public void setOrganisations(List<Organization> organisations) {

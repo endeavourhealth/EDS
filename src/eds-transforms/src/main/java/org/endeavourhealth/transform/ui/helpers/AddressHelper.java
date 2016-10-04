@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.ui.helpers;
 
 import org.endeavourhealth.core.utility.StreamExtension;
-import org.endeavourhealth.transform.ui.models.UIAddress;
+import org.endeavourhealth.transform.ui.models.types.UIAddress;
 import org.hl7.fhir.instance.model.Address;
 import org.hl7.fhir.instance.model.StringType;
 

@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.ui.helpers;
 
-import org.endeavourhealth.transform.ui.models.UIHumanName;
+import org.endeavourhealth.transform.ui.models.types.UIHumanName;
 import org.hl7.fhir.instance.model.HumanName;
 import org.hl7.fhir.instance.model.StringType;
 

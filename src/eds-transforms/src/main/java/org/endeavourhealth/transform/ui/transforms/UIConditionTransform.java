@@ -6,7 +6,9 @@ import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.ExtensionHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
-import org.endeavourhealth.transform.ui.models.*;
+import org.endeavourhealth.transform.ui.models.resources.UICondition;
+import org.endeavourhealth.transform.ui.models.resources.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.resources.UIProblem;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
@@ -33,13 +35,14 @@ class UIConditionTransform implements IUIClinicalTransform<Condition, UIConditio
                 uiCondition = new UIProblem();
 
             return uiCondition
+                    .setId(condition.getId())
                     .setAsserter(getAsserter(condition, referencedResources))
-                    .setDateRecorded(condition.getDateRecorded())
+                    .setRecordedDate(condition.getDateRecorded())
                     .setCode(CodeHelper.convert(condition.getCode()))
                     .setClinicalStatus(condition.getClinicalStatus())
                     .setVerificationStatus(getConditionVerificationStatus(condition))
-                    .setOnset(getOnsetDate(condition))
-                    .setAbatement(getAbatementDate(condition))
+                    .setOnsetDate(getOnsetDate(condition))
+                    .setAbatementDate(getAbatementDate(condition))
                     .setHasAbated(getAbatement(condition))
                     .setNotes(condition.getNotes())
                     .setRecorder(getRecorder(condition, referencedResources));

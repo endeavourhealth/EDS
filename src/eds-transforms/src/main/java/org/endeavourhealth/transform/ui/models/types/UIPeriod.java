@@ -1,7 +1,10 @@
-package org.endeavourhealth.transform.ui.models;
+package org.endeavourhealth.transform.ui.models.types;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.Date;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UIPeriod {
     private Date start;
     private Date end;
