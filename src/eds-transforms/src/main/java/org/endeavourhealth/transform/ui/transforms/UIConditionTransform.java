@@ -1,17 +1,13 @@
 package org.endeavourhealth.transform.ui.transforms;
 
+import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.ExtensionHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
-import org.endeavourhealth.transform.ui.models.UICode;
-import org.endeavourhealth.transform.ui.models.UICondition;
-import org.endeavourhealth.transform.ui.models.UIProblem;
-import org.hl7.fhir.instance.model.CodeableConcept;
-import org.hl7.fhir.instance.model.Condition;
-import org.hl7.fhir.instance.model.DateTimeType;
-import org.hl7.fhir.instance.model.Reference;
+import org.endeavourhealth.transform.ui.models.*;
+import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
 import java.util.List;
@@ -30,23 +26,82 @@ class UIConditionTransform implements IUIClinicalTransform<Condition, UIConditio
     }
 
     static UICondition transform(Condition condition, ReferencedResources referencedResources, boolean createProblem) {
+        try {
+            UICondition uiCondition = new UICondition();
 
-        UICondition uiCondition = new UICondition();
+            if (createProblem)
+                uiCondition = new UIProblem();
 
-        if (createProblem)
-            uiCondition = new UIProblem();
+            return uiCondition
+                    .setAsserter(getAsserter(condition, referencedResources))
+                    .setDateRecorded(condition.getDateRecorded())
+                    .setCode(CodeHelper.convert(condition.getCode()))
+                    .setClinicalStatus(condition.getClinicalStatus())
+                    .setVerificationStatus(getConditionVerificationStatus(condition))
+                    .setOnset(getOnsetDate(condition))
+                    .setAbatement(getAbatementDate(condition))
+                    .setHasAbated(getAbatement(condition))
+                    .setNotes(condition.getNotes())
+                    .setRecorder(getRecorder(condition, referencedResources));
 
-        Date onsetDate = getOnsetDate(condition);
+//            private UIEncounter encounter;     *
+//            private Date dateRecorded;
+//            private UICodeableConcept code;
+//            private String clinicalStatus;
+//            private String verificationStatus;
+//            private Date onset;
+//            private Date abatement;
+//            private Boolean hasAbated;
+//            private String notes;
+//            private UIProblem partOfProblem;   *
+//            private UIPractitioner recorder;
 
-        return uiCondition
-                .setCode(CodeHelper.convert(condition.getCode()))
-                .setOnsetDate(onsetDate);
+
+        } catch (Exception e) {
+            throw new TransformRuntimeException(e);
+        }
     }
 
-    private static Date getOnsetDate(Condition condition) {
-        if (condition.hasOnset())
-            if (condition.getOnset().getClass().equals(DateTimeType.class))
-                return ((DateTimeType)condition.getOnset()).getValue();
+    private static String getConditionVerificationStatus(Condition condition) {
+        if (condition.getVerificationStatus() == null)
+            return null;
+
+        return condition.getVerificationStatus().toCode();
+    }
+
+    private static UIPractitioner getAsserter(Condition condition, ReferencedResources referencedResources) {
+        if (!condition.hasAsserter())
+            return null;
+
+        return referencedResources.getUIPractitioner(condition.getAsserter());
+    }
+
+    private static UIPractitioner getRecorder(Condition condition, ReferencedResources referencedResources) {
+        Reference reference = ExtensionHelper.getExtensionValue(condition, FhirExtensionUri.RECORDED_BY, Reference.class);
+
+        return referencedResources.getUIPractitioner(reference);
+    }
+
+    private static Date getOnsetDate(Condition condition) throws Exception {
+        if (condition.hasOnsetDateTimeType())
+            return ((DateTimeType) condition.getOnset()).getValue();
+
+        return null;
+    }
+
+    private static Boolean getAbatement(Condition condition) throws Exception {
+        if (condition.hasAbatementBooleanType())
+            return condition.getAbatementBooleanType().getValue();
+        else if (condition.hasAbatementDateTimeType())
+            return true;
+
+        return false;
+    }
+
+    private static Date getAbatementDate(Condition condition) throws Exception {
+        if (condition.hasAbatement())
+            if (condition.hasAbatementDateTimeType())
+                return condition.getAbatementDateTimeType().getValue();
 
         return null;
     }

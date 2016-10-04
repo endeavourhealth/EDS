@@ -25,6 +25,8 @@ public class FhirExtensionUri {
     //extensions specific to Problem resource
     public final static String PROBLEM_EXPECTED_DURATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-problem-expectedduration-extension";
     public final static String PROBLEM_LAST_REVIEWED = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-problem-lastreviewed-extension";
+    public final static String _PROBLEM_LAST_REVIEWED__DATE = "date";
+    public final static String _PROBLEM_LAST_REVIEWED__PERFORMER = "performer";
     public final static String PROBLEM_SIGNIFICANCE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-problem-significance-extension";
     public final static String PROBLEM_ASSOCIATED_RESOURCE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-problem-associated-extension";
     public final static String PROBLEM_RELATED = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-problem-related-extension";

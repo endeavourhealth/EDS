@@ -1,7 +1,7 @@
 module app.models {
     'use strict';
 
-    export class UIPractitioner {
+    export class UIPractitioner extends UIResource {
         name: UIHumanName;
         active: boolean;
     }
