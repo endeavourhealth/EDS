@@ -5,8 +5,8 @@ import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.ExtensionHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
-import org.endeavourhealth.transform.ui.models.resources.UIPractitioner;
-import org.endeavourhealth.transform.ui.models.resources.UIProblem;
+import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UIProblem;
 import org.endeavourhealth.transform.ui.models.types.UICode;
 import org.hl7.fhir.instance.model.*;
 

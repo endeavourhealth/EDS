@@ -5,9 +5,9 @@ import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
-import org.endeavourhealth.transform.ui.models.resources.UICondition;
-import org.endeavourhealth.transform.ui.models.resources.UIPractitioner;
-import org.endeavourhealth.transform.ui.models.resources.UIProblem;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UICondition;
+import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UIProblem;
 import org.hl7.fhir.instance.model.Condition;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.Reference;
@@ -37,13 +37,13 @@ public class UIConditionTransform extends UIClinicalTransform<Condition, UICondi
 
             return uiCondition
                     .setId(condition.getId())
-                    .setRecordedBy(getRecordedByExtensionValue(condition, referencedResources))
-                    .setRecordedDate(condition.getDateRecorded())
-                    .setAsserter(getAsserter(condition, referencedResources))
                     .setCode(CodeHelper.convert(condition.getCode()))
+                    .setEffectivePractitioner(getAsserter(condition, referencedResources))
+                    .setEffectiveDate(getOnsetDate(condition))
+                    .setRecordingPractitioner(getRecordedByExtensionValue(condition, referencedResources))
+                    .setRecordedDate(condition.getDateRecorded())
                     .setClinicalStatus(condition.getClinicalStatus())
                     .setVerificationStatus(getConditionVerificationStatus(condition))
-                    .setOnsetDate(getOnsetDate(condition))
                     .setAbatementDate(getAbatementDate(condition))
                     .setHasAbated(getAbatement(condition))
                     .setNotes(condition.getNotes());

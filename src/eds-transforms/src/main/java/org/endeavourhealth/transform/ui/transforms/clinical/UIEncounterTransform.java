@@ -4,11 +4,11 @@ import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.ExtensionHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
-import org.endeavourhealth.transform.ui.models.resources.UIEncounter;
-import org.endeavourhealth.transform.ui.models.resources.UIOrganisation;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UIEncounter;
+import org.endeavourhealth.transform.ui.models.resources.admin.UIOrganisation;
 import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
 import org.endeavourhealth.transform.ui.models.types.UIPeriod;
-import org.endeavourhealth.transform.ui.models.resources.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.List;

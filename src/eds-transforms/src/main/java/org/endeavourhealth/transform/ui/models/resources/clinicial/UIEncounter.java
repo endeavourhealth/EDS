@@ -1,13 +1,14 @@
-package org.endeavourhealth.transform.ui.models.resources;
+package org.endeavourhealth.transform.ui.models.resources.clinicial;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.endeavourhealth.transform.ui.models.types.UICode;
+import org.endeavourhealth.transform.ui.models.resources.UIResource;
+import org.endeavourhealth.transform.ui.models.resources.admin.UIAppointment;
+import org.endeavourhealth.transform.ui.models.resources.admin.UIOrganisation;
+import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
 import org.endeavourhealth.transform.ui.models.types.UIPeriod;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UIEncounter extends UIResource<UIEncounter> {

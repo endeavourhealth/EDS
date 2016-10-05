@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.ui.transforms.clinical;
 
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
-import org.endeavourhealth.transform.ui.models.resources.UIAllergyIntolerance;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UIAllergyIntolerance;
 import org.hl7.fhir.instance.model.AllergyIntolerance;
 import org.hl7.fhir.instance.model.Reference;
 
@@ -23,9 +23,9 @@ public class UIAllergyIntoleranceTransform extends UIClinicalTransform<AllergyIn
 
         return new UIAllergyIntolerance()
                 .setId(allergyIntolerance.getId())
-                .setRecordedBy(getRecordedByExtensionValue(allergyIntolerance, referencedResources))
-                .setRecordedDate(allergyIntolerance.getRecordedDate())
-                .setCode(CodeHelper.convert(allergyIntolerance.getSubstance()));
+                .setCode(CodeHelper.convert(allergyIntolerance.getSubstance()))
+                .setRecordingPractitioner(getRecordedByExtensionValue(allergyIntolerance, referencedResources))
+                .setRecordedDate(allergyIntolerance.getRecordedDate());
     }
 
     @Override

@@ -1,7 +1,9 @@
 package org.endeavourhealth.transform.ui.transforms;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.endeavourhealth.transform.ui.models.resources.*;
+import org.endeavourhealth.transform.ui.models.resources.UIResource;
+import org.endeavourhealth.transform.ui.models.resources.admin.UIPatient;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.*;
 import org.endeavourhealth.transform.ui.transforms.admin.UIPatientTransform;
 import org.endeavourhealth.transform.ui.transforms.clinical.*;
 import org.hl7.fhir.instance.model.*;

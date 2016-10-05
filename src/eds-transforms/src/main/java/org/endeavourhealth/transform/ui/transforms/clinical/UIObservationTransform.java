@@ -7,8 +7,8 @@ import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.QuantityHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
-import org.endeavourhealth.transform.ui.models.resources.UIObservation;
-import org.endeavourhealth.transform.ui.models.resources.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UIObservation;
+import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 import org.endeavourhealth.transform.ui.models.types.UIQuantity;
 import org.hl7.fhir.instance.model.Observation;
 import org.hl7.fhir.instance.model.Reference;
@@ -33,12 +33,12 @@ public class UIObservationTransform extends UIClinicalTransform<Observation, UIO
         try {
             return new UIObservation()
                     .setId(observation.getId())
-                    .setRecordedBy(getRecordedByExtensionValue(observation, referencedResources))
+                    .setCode(CodeHelper.convert(observation.getCode()))
+                    .setEffectivePractitioner(getPerformer(observation, referencedResources))
+                    .setEffectiveDate(getEffectiveDateTime(observation))
+                    .setRecordingPractitioner(getRecordedByExtensionValue(observation, referencedResources))
                     .setRecordedDate(getRecordedDateExtensionValue(observation))
                     .setStatus(getStatus(observation))
-                    .setEffectiveDateTime(getEffectiveDateTime(observation))
-                    .setCode(CodeHelper.convert(observation.getCode()))
-                    .setPerformer(getPerformer(observation, referencedResources))
                     .setValue(getValue(observation))
                     .setReferenceRangeHigh(getReferenceRangeHigh(observation))
                     .setReferenceRangeLow(getReferenceRangeLow(observation))

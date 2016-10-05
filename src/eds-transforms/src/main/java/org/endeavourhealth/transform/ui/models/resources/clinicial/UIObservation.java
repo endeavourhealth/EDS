@@ -1,6 +1,7 @@
-package org.endeavourhealth.transform.ui.models.resources;
+package org.endeavourhealth.transform.ui.models.resources.clinicial;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 import org.endeavourhealth.transform.ui.models.types.UIQuantity;
 import org.hl7.fhir.instance.model.Encounter;
 
@@ -9,8 +10,6 @@ import java.util.Date;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UIObservation extends UIClinicalResource<UIObservation> {
     private String status;
-    private Date effectiveDateTime;
-    private UIPractitioner performer;
     private UIQuantity value;
     private UIQuantity referenceRangeLow;
     private UIQuantity referenceRangeHigh;
@@ -23,24 +22,6 @@ public class UIObservation extends UIClinicalResource<UIObservation> {
 
     public UIObservation setStatus(String status) {
         this.status = status;
-        return this;
-    }
-
-    public Date getEffectiveDateTime() {
-        return effectiveDateTime;
-    }
-
-    public UIObservation setEffectiveDateTime(Date effectiveDateTime) {
-        this.effectiveDateTime = effectiveDateTime;
-        return this;
-    }
-
-    public UIPractitioner getPerformer() {
-        return performer;
-    }
-
-    public UIObservation setPerformer(UIPractitioner performer) {
-        this.performer = performer;
         return this;
     }
 

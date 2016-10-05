@@ -1,6 +1,7 @@
-package org.endeavourhealth.transform.ui.models.resources;
+package org.endeavourhealth.transform.ui.models.resources.admin;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.endeavourhealth.transform.ui.models.resources.UIResource;
 import org.endeavourhealth.transform.ui.models.types.UIAddress;
 import org.endeavourhealth.transform.ui.models.types.UIHumanName;
 

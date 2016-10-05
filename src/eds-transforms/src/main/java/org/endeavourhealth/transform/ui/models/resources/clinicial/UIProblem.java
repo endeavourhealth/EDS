@@ -1,6 +1,7 @@
-package org.endeavourhealth.transform.ui.models.resources;
+package org.endeavourhealth.transform.ui.models.resources.clinicial;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 import org.endeavourhealth.transform.ui.models.types.UICode;
 
 import java.util.Date;

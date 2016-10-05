@@ -1,16 +1,15 @@
-package org.endeavourhealth.transform.ui.models.resources;
+package org.endeavourhealth.transform.ui.models.resources.clinicial;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 
 import java.util.Date;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UICondition extends UIClinicalResource<UICondition> {
     private UIEncounter encounter;
-    private UIPractitioner asserter;
     private String clinicalStatus;
     private String verificationStatus;
-    private Date onsetDate;
     private Date abatementDate;
     private Boolean hasAbated;
     private String notes;
@@ -49,24 +48,6 @@ public class UICondition extends UIClinicalResource<UICondition> {
 
     public UICondition setPartOfProblem(UIProblem partOfProblem) {
         this.partOfProblem = partOfProblem;
-        return this;
-    }
-
-    public Date getOnsetDate() {
-        return onsetDate;
-    }
-
-    public UICondition setOnsetDate(Date onsetDate) {
-        this.onsetDate = onsetDate;
-        return this;
-    }
-
-    public UIPractitioner getAsserter() {
-        return asserter;
-    }
-
-    public UICondition setAsserter(UIPractitioner asserter) {
-        this.asserter = asserter;
         return this;
     }
 
