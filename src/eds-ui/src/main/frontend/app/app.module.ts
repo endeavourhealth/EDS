@@ -14,13 +14,17 @@ angular.module('app', [
 		'ui.tree',
 		'ngDragDrop',
 		'angular-uuid-generator',
+		'flowChart',
+		'dragging',
+		'mouseCapture',
+
 		'app.appstartup',
 		'app.models',
 		'app.core',
 		'app.config',
 		'app.blocks',
 		'app.layout',
-        'app.filters',
+		'app.filters',
 		'app.dialogs',
 		'app.dashboard',
 		'app.logging',
@@ -37,13 +41,9 @@ angular.module('app', [
 		'app.query',
 		'app.routeGroup',
 		'app.patientIdentity',
-        'app.recordViewer',
+		'app.recordViewer',
 		'app.resources',
-		'app.audit',
-		'flowChart',
-		'dragging',
-		'mouseCapture'
-
+		'app.audit'
 	])
 	.run(['$state', '$rootScope', 'AdminService', 'SecurityService', 'LoggerService', '$uibModal',
 		function ($state:IStateService,

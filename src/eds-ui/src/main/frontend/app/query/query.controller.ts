@@ -1,7 +1,5 @@
 /// <reference path="../../typings/index.d.ts" />
 
-var flowchart : any;
-
 module app.query {
 	import TestEditorController = app.dialogs.TestEditorController;
 	import ExpressionEditorController = app.dialogs.ExpressionEditorController;
@@ -17,6 +15,7 @@ module app.query {
 	import QuerySelection = app.models.QuerySelection;
 
 	'use strict';
+	import flowchart = app.flowchart.flowchart;
 
 	class QueryController {
 	}

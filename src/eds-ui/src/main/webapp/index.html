@@ -55,12 +55,11 @@
 		<script src="app/models/ItemType.js"></script>
 		<script src="app/models/FolderType.js"></script>
 		<script src="app/models/UuidNameKVP.js"></script>
-		<script src="app/models/PatientFindSelection.js"></script>
 
-        <!-- Filters -->
-        <script src="app/filters/filters.module.js"></script>
-        <script src="app/filters/coding.js"></script>
-        <script src="app/filters/cui.js"></script>
+		<!-- Filters -->
+		<script src="app/filters/filters.module.js"></script>
+		<script src="app/filters/coding.js"></script>
+		<script src="app/filters/cui.js"></script>
 
 		<!-- Core (i.e. config/constants/services) -->
 		<script src="app/core/core.module.js"></script>
@@ -94,6 +93,7 @@
 		<!--<script src="app/ekb/ekbCoding.service.js"></script>-->
 
 		<!-- Blocks -->
+		<script src="app/blocks/svg.helper.js"></script>
 		<script src="app/blocks/blocks.module.js"></script>
 		<script src="app/blocks/logger.service.js"></script>
 
@@ -108,7 +108,7 @@
 		<script src="app/dialogs/userEditor/userEditor.controller.js"></script>
 		<script src="app/dialogs/organisationPicker/organisationPicker.controller.js"></script>
 		<script src="app/dialogs/queryPicker/queryPicker.controller.js"></script>
-        <script src="app/dialogs/patientFind/patientFind.controller.js"></script>
+		<script src="app/dialogs/patientFind/patientFind.controller.js"></script>
 
 		<!-- Common -->
 		<script src="app/common/libraryItemModuleBase.js"></script>
@@ -159,16 +159,21 @@
 		<script src="app/administration/admin.module.js"></script>
 		<script src="app/administration/admin.route.js"></script>
 		<script src="app/administration/admin.controller.js"></script>
+		<!-- Query Flowchart -->
+		<script src="app/mousecapture/mousecapture.service.js"></script>
+		<script src="app/mousecapture/mousecapture.directives.js"></script>
+		<script src="app/mousecapture/mousecapture.module.js"></script>
+		<script src="app/dragging/dragging.service.js"></script>
+		<script src="app/dragging/dragging.module.js"></script>
+
+		<script src="app/flowchart/flowchart.controller.js"></script>
+		<script src="app/flowchart/flowchart.directives.js"></script>
+		<script src="app/flowchart/flowchart.module.js"></script>
+		<script src="app/flowchart/flowchart.viewmodel.js"></script>
 		<!-- Query -->
 		<script src="app/query/query.module.js"></script>
 		<script src="app/query/query.route.js"></script>
 		<script src="app/query/query.controller.js"></script>
-		<!-- Query Flowchart -->
-		<script src="app/query/flowchart/svgclass.js"></script>
-		<script src="app/query/flowchart/mousecapture.service.js"></script>
-		<script src="app/query/flowchart/dragging.service.js"></script>
-		<script src="app/query/flowchart/flowchart.viewmodel.js"></script>
-		<script src="app/query/flowchart/flowchart.directive.js"></script>
 		<!-- Route groups -->
 		<script src="app/routeGroup/routeGroup.module.js"></script>
 		<script src="app/routeGroup/list/routeGroupList.route.js"></script>
@@ -202,7 +207,6 @@
 		<script src="app/recordViewer/recordViewer.route.js"></script>
 		<script src="app/recordViewer/recordViewer.controller.js"></script>
 		<script src="app/recordViewer/recordViewer.service.js"></script>
-		<script src="app/recordViewer/models/Patient.js"></script>
 		<!-- Resources -->
 		<script src="app/models/FhirResourceContainer.js"></script>
 		<script src="app/models/FhirResourceType.js"></script>
