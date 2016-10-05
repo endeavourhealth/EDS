@@ -1,0 +1,56 @@
+package org.endeavourhealth.transform.ui.transforms.clinical;
+
+import org.endeavourhealth.core.utility.StreamExtension;
+import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.transform.ui.helpers.CodeHelper;
+import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
+import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UIProcedure;
+import org.hl7.fhir.instance.model.Procedure;
+import org.hl7.fhir.instance.model.Reference;
+import org.hl7.fhir.instance.model.ResourceType;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class UIProcedureTransform extends UIClinicalTransform<Procedure, UIProcedure> {
+
+    @Override
+    public List<UIProcedure> transform(List<Procedure> resources, ReferencedResources referencedResources) {
+        return resources
+                .stream()
+                .map(t -> transform(t, referencedResources))
+                .collect(Collectors.toList());
+    }
+
+    private static UIProcedure transform(Procedure procedure, ReferencedResources referencedResources) {
+        try {
+            return new UIProcedure()
+                    .setId(procedure.getId())
+                    .setCode(CodeHelper.convert(procedure.getCode()))
+                    .setEffectiveDate(procedure.getPerformedDateTimeType().getValue())
+                    .setEffectivePractitioner(getPerformer(procedure, referencedResources))
+                    .setRecordedDate(getRecordedDateExtensionValue(procedure))
+                    .setRecordingPractitioner(getRecordedByExtensionValue(procedure, referencedResources))
+                    .setNotes(getNotes(procedure.getNotes()));
+
+        } catch (Exception e) {
+            throw new TransformRuntimeException(e);
+        }
+    }
+
+    private static UIPractitioner getPerformer(Procedure procedure, ReferencedResources referencedResources) {
+        return referencedResources.getUIPractitioner(procedure
+                .getPerformer()
+                .stream()
+                .filter(t -> ReferenceHelper.isResourceType(t.getActor(), ResourceType.Practitioner))
+                .map(t -> t.getActor())
+                .collect(StreamExtension.firstOrNullCollector()));
+    }
+
+    @Override
+    public List<Reference> getReferences(List<Procedure> resources) {
+        return null;
+    }
+}

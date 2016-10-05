@@ -38,11 +38,11 @@ public class UIObservationTransform extends UIClinicalTransform<Observation, UIO
                     .setEffectiveDate(getEffectiveDateTime(observation))
                     .setRecordingPractitioner(getRecordedByExtensionValue(observation, referencedResources))
                     .setRecordedDate(getRecordedDateExtensionValue(observation))
+                    .setNotes(observation.getComments())
                     .setStatus(getStatus(observation))
                     .setValue(getValue(observation))
                     .setReferenceRangeHigh(getReferenceRangeHigh(observation))
-                    .setReferenceRangeLow(getReferenceRangeLow(observation))
-                    .setComments(observation.getComments());
+                    .setReferenceRangeLow(getReferenceRangeLow(observation));
 
 //        private String status;
 //        private Date effectiveDateTime;

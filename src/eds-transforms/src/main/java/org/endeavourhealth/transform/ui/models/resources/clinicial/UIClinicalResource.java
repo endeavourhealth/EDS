@@ -14,6 +14,7 @@ public abstract class UIClinicalResource<T extends UIClinicalResource> extends U
     private Date effectiveDate;
     private UIPractitioner recordingPractitioner;
     private Date recordedDate;
+    private String notes;
 
     public UICodeableConcept getCode() {
         return code;
@@ -57,6 +58,15 @@ public abstract class UIClinicalResource<T extends UIClinicalResource> extends U
 
     public T setRecordedDate(Date recordedDate) {
         this.recordedDate = recordedDate;
+        return (T)this;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public T setNotes(String notes) {
+        this.notes = notes;
         return (T)this;
     }
 }

@@ -12,7 +12,6 @@ public class UICondition extends UIClinicalResource<UICondition> {
     private String verificationStatus;
     private Date abatementDate;
     private Boolean hasAbated;
-    private String notes;
     private UIProblem partOfProblem;
 
     public UIEncounter getEncounter() {
@@ -48,15 +47,6 @@ public class UICondition extends UIClinicalResource<UICondition> {
 
     public UICondition setPartOfProblem(UIProblem partOfProblem) {
         this.partOfProblem = partOfProblem;
-        return this;
-    }
-
-    public String getNotes() {
-        return notes;
-    }
-
-    public UICondition setNotes(String notes) {
-        this.notes = notes;
         return this;
     }
 

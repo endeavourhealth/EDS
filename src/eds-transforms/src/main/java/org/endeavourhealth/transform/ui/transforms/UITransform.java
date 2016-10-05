@@ -25,6 +25,10 @@ public class UITransform {
             return new UIObservationTransform();
         else if (resourceType == UIAllergyIntolerance.class)
             return new UIAllergyIntoleranceTransform();
+        else if (resourceType == UIImmunisation.class)
+            return new UIImmunisationTransform();
+        else if (resourceType == UIProcedure.class)
+            return new UIProcedureTransform();
 
         throw new NotImplementedException(resourceType.getSimpleName());
     }

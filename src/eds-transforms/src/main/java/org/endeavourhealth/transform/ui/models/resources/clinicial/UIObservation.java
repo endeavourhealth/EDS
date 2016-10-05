@@ -13,7 +13,6 @@ public class UIObservation extends UIClinicalResource<UIObservation> {
     private UIQuantity value;
     private UIQuantity referenceRangeLow;
     private UIQuantity referenceRangeHigh;
-    private String comments;
     private Encounter encounter;
 
     public String getStatus() {
@@ -49,15 +48,6 @@ public class UIObservation extends UIClinicalResource<UIObservation> {
 
     public UIObservation setReferenceRangeHigh(UIQuantity referenceRangeHigh) {
         this.referenceRangeHigh = referenceRangeHigh;
-        return this;
-    }
-
-    public String getComments() {
-        return comments;
-    }
-
-    public UIObservation setComments(String comments) {
-        this.comments = comments;
         return this;
     }
 

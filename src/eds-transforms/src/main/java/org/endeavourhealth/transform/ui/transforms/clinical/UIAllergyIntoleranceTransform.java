@@ -24,8 +24,11 @@ public class UIAllergyIntoleranceTransform extends UIClinicalTransform<AllergyIn
         return new UIAllergyIntolerance()
                 .setId(allergyIntolerance.getId())
                 .setCode(CodeHelper.convert(allergyIntolerance.getSubstance()))
+                .setEffectivePractitioner(referencedResources.getUIPractitioner(allergyIntolerance.getRecorder()))
+                .setEffectiveDate(allergyIntolerance.getOnset())
                 .setRecordingPractitioner(getRecordedByExtensionValue(allergyIntolerance, referencedResources))
-                .setRecordedDate(allergyIntolerance.getRecordedDate());
+                .setRecordedDate(allergyIntolerance.getRecordedDate())
+                .setNotes(getNotes(allergyIntolerance.getNote()));
     }
 
     @Override
