@@ -263,6 +263,10 @@ public class EmisCsvHelper {
         return observationChildMap.remove(createUniqueId(patientGuid, parentObservationGuid));
     }
 
+    public boolean hasChildObservations(String parentObservationGuid, String patientGuid) {
+        return observationChildMap.containsKey(createUniqueId(patientGuid, parentObservationGuid));
+    }
+
     public void cacheObservationParentRelationship(String parentObservationGuid, String patientGuid, String observationGuid) {
 
         List<ResourceRelationship> list = observationChildMap.get(createUniqueId(patientGuid, parentObservationGuid));

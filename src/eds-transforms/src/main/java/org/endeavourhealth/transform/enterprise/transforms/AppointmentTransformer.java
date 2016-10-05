@@ -1,7 +1,6 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.xml.enterprise.AppointmentStatus;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
@@ -12,21 +11,17 @@ import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
 import java.util.Map;
-import java.util.UUID;
 
 public class AppointmentTransformer extends AbstractTransformer {
 
     public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
-                                 UUID enterpriseOrganisationUuid) throws Exception {
+                                 Integer enterpriseOrganisationUuid) throws Exception {
 
         org.endeavourhealth.core.xml.enterprise.Appointment model = new org.endeavourhealth.core.xml.enterprise.Appointment();
 
-        mapIdAndMode(resource, model);
-
-        //if no ID was mapped, we don't want to pass to Enterprise
-        if (model.getId() == null) {
+        if (!mapIdAndMode(resource, model)) {
             return;
         }
 
@@ -36,7 +31,7 @@ public class AppointmentTransformer extends AbstractTransformer {
 
             Appointment fhir = (Appointment)deserialiseResouce(resource);
 
-            model.setOrganisationId(enterpriseOrganisationUuid.toString());
+            model.setOrganizationId(enterpriseOrganisationUuid);
 
             if (fhir.hasParticipant()) {
                 for (Appointment.AppointmentParticipantComponent participantComponent: fhir.getParticipant()) {
@@ -44,12 +39,12 @@ public class AppointmentTransformer extends AbstractTransformer {
                     ReferenceComponents components = ReferenceHelper.getReferenceComponents(reference);
 
                     if (components.getResourceType() == ResourceType.Patient) {
-                        UUID enterprisePatientUuid = findEnterpriseUuid(reference);
-                        model.setPatientId(enterprisePatientUuid.toString());
+                        Integer enterprisePatientUuid = findEnterpriseId(reference);
+                        model.setPatientId(enterprisePatientUuid);
 
                     } else if (components.getResourceType() == ResourceType.Practitioner) {
-                        UUID enterprisePractitionerUuid = findEnterpriseUuid(reference);
-                        model.setPractitionerId(enterprisePractitionerUuid.toString());
+                        Integer enterprisePractitionerUuid = findEnterpriseId(reference);
+                        model.setPractitionerId(enterprisePractitionerUuid);
 
                     }
                 }
@@ -63,25 +58,26 @@ public class AppointmentTransformer extends AbstractTransformer {
             if (fhirSlot != null) {
 
                 Reference scheduleReference = fhirSlot.getSchedule();
-                UUID enterpriseScheduleUuid = findEnterpriseUuid(scheduleReference);
-                model.setScheduleId(enterpriseScheduleUuid.toString());
+                Integer enterpriseScheduleUuid = findEnterpriseId(scheduleReference);
+                model.setScheduleId(enterpriseScheduleUuid);
             }
 
             Date start = fhir.getStart();
-            model.setStart(convertDate(start));
+            model.setStartDate(convertDate(start));
 
             Date end = fhir.getEnd();
-            model.setEnd(convertDate(end));
+            if (start != null && end != null) {
+                long millisDiff = end.getTime() - start.getTime();
+                model.setPlannedDuration(new Integer((int)(millisDiff / (1000 * 60))));
+            }
 
             if (fhir.hasMinutesDuration()) {
                 int duration = fhir.getMinutesDuration();
                 model.setActualDuration(new Integer(duration));
             }
 
-            if (fhir.hasStatus()) {
-                Appointment.AppointmentStatus status = fhir.getStatus();
-                model.setStatus(convertStatus(status));
-            }
+            Appointment.AppointmentStatus status = fhir.getStatus();
+            model.setAppointmentStatusId(status.ordinal());
 
             if (fhir.hasExtension()) {
                 for (Extension extension: fhir.getExtension()) {
@@ -116,27 +112,6 @@ public class AppointmentTransformer extends AbstractTransformer {
         }
 
         data.getAppointment().add(model);
-    }
-
-    private static AppointmentStatus convertStatus(Appointment.AppointmentStatus status) throws Exception {
-        switch (status) {
-            case PROPOSED:
-                return AppointmentStatus.PROPOSED;
-            case PENDING:
-                return AppointmentStatus.PENDING;
-            case BOOKED:
-                return AppointmentStatus.BOOKED;
-            case ARRIVED:
-                return AppointmentStatus.ARRIVED;
-            case FULFILLED:
-                return AppointmentStatus.FULFILLED;
-            case CANCELLED:
-                return AppointmentStatus.CANCELLED;
-            case NOSHOW:
-                return AppointmentStatus.NOSHOW;
-            default:
-                throw new TransformException("Unsupported appointment status " + status);
-        }
     }
 
 

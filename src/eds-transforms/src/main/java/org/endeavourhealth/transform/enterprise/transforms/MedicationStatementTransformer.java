@@ -2,8 +2,6 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.MedicationStatementAuthorisationType;
-import org.endeavourhealth.core.xml.enterprise.MedicationStatementStatus;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
@@ -11,21 +9,17 @@ import org.endeavourhealth.transform.fhir.schema.MedicationAuthorisationType;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class MedicationStatementTransformer extends AbstractTransformer {
 
     public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
-                                 UUID enterpriseOrganisationUuid) throws Exception {
+                                 Integer enterpriseOrganisationUuid) throws Exception {
 
         org.endeavourhealth.core.xml.enterprise.MedicationStatement model = new org.endeavourhealth.core.xml.enterprise.MedicationStatement();
 
-        mapIdAndMode(resource, model);
-
-        //if no ID was mapped, we don't want to pass to Enterprise
-        if (model.getId() == null) {
+        if (!mapIdAndMode(resource, model)) {
             return;
         }
 
@@ -35,30 +29,30 @@ public class MedicationStatementTransformer extends AbstractTransformer {
 
             MedicationStatement fhir = (MedicationStatement)deserialiseResouce(resource);
 
-            model.setOrganisationId(enterpriseOrganisationUuid.toString());
+            model.setOrganizationId(enterpriseOrganisationUuid);
 
             Reference patientReference = fhir.getPatient();
-            UUID enterprisePatientUuid = findEnterpriseUuid(patientReference);
-            model.setPatientId(enterprisePatientUuid.toString());
+            Integer enterprisePatientUuid = findEnterpriseId(patientReference);
+            model.setPatientId(enterprisePatientUuid);
 
             if (fhir.hasInformationSource()) {
                 Reference practitionerReference = fhir.getInformationSource();
-                UUID enterprisePractitionerUuid = findEnterpriseUuid(practitionerReference);
-                model.setPractitionerId(enterprisePractitionerUuid.toString());
+                Integer enterprisePractitionerUuid = findEnterpriseId(practitionerReference);
+                model.setPractitionerId(enterprisePractitionerUuid);
             }
 
             if (fhir.hasDateAssertedElement()) {
                 DateTimeType dt = fhir.getDateAssertedElement();
-                model.setDate(convertDate(dt.getValue()));
-                model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+                model.setClinicalEffectiveDate(convertDate(dt.getValue()));
+                model.setDatePrecisionId(convertDatePrecision(dt.getPrecision()));
             }
 
             Long snomedConceptId = findSnomedConceptId(fhir.getMedicationCodeableConcept());
             model.setDmdId(snomedConceptId);
 
             if (fhir.hasStatus()) {
-                MedicationStatement.MedicationStatementStatus status = fhir.getStatus();
-                model.setStatus(convertMedicationStatus(status));
+                MedicationStatement.MedicationStatementStatus fhirStatus = fhir.getStatus();
+                model.setIsActive(fhirStatus == MedicationStatement.MedicationStatementStatus.ACTIVE);
             }
 
             if (fhir.hasDosage()) {
@@ -85,7 +79,7 @@ public class MedicationStatementTransformer extends AbstractTransformer {
                     } else if (extension.getUrl().equals(FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE)) {
                         Coding c = (Coding)extension.getValue();
                         MedicationAuthorisationType type = MedicationAuthorisationType.fromCode(c.getCode());
-                        model.setAuthorisationType(convertAuthorisationType(type));
+                        model.setMedicationStatementAuthorisationTypeId(type.ordinal());
                     }
                 }
             }
@@ -94,35 +88,6 @@ public class MedicationStatementTransformer extends AbstractTransformer {
         data.getMedicationStatement().add(model);
     }
 
-    private static MedicationStatementAuthorisationType convertAuthorisationType(MedicationAuthorisationType code) throws Exception {
-        switch (code) {
-            case ACUTE:
-                return MedicationStatementAuthorisationType.ACUTE;
-            case REPEAT:
-                return MedicationStatementAuthorisationType.REPEAT;
-            case REPEAT_DISPENSING:
-                return MedicationStatementAuthorisationType.REPEAT_DISPENSING;
-            case AUTOMATIC:
-                return MedicationStatementAuthorisationType.AUTOMATIC;
-            default:
-                throw new TransformException("Unsupported medication statement authorisation type " + code);
-        }
-    }
-
-    private static MedicationStatementStatus convertMedicationStatus(MedicationStatement.MedicationStatementStatus status) throws Exception {
-        switch (status) {
-            case ACTIVE:
-                return MedicationStatementStatus.ACTIVE;
-            case COMPLETED:
-                return MedicationStatementStatus.COMPLETED;
-            case ENTEREDINERROR:
-                return MedicationStatementStatus.ENTERED_IN_ERROR;
-            case INTENDED:
-                return MedicationStatementStatus.INTENDED;
-            default:
-                throw new TransformException("Unexpected medication status " + status);
-        }
-    }
 
 
 }

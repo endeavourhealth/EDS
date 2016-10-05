@@ -3,21 +3,22 @@ package org.endeavourhealth.transform.enterprise.transforms;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.DateTimeType;
-import org.hl7.fhir.instance.model.Procedure;
+import org.hl7.fhir.instance.model.DiagnosticReport;
+import org.hl7.fhir.instance.model.Extension;
 import org.hl7.fhir.instance.model.Reference;
 
 import java.util.Map;
 
-public class ProcedureTransformer extends AbstractTransformer {
+public class DiagnosticReportTransformer extends AbstractTransformer {
 
     public void transform(ResourceByExchangeBatch resource,
-                                 EnterpriseData data,
-                                 Map<String, ResourceByExchangeBatch> otherResources,
-                                 Integer enterpriseOrganisationUuid) throws Exception {
+                          EnterpriseData data,
+                          Map<String, ResourceByExchangeBatch> otherResources,
+                          Integer enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.core.xml.enterprise.Procedure model = new org.endeavourhealth.core.xml.enterprise.Procedure();
+        org.endeavourhealth.core.xml.enterprise.DiagnosticReport model = new org.endeavourhealth.core.xml.enterprise.DiagnosticReport();
 
         if (!mapIdAndMode(resource, model)) {
             return;
@@ -27,7 +28,7 @@ public class ProcedureTransformer extends AbstractTransformer {
         if (model.getSaveMode() == SaveMode.INSERT
                 || model.getSaveMode() == SaveMode.UPDATE) {
 
-            Procedure fhir = (Procedure)deserialiseResouce(resource);
+            DiagnosticReport fhir = (DiagnosticReport)deserialiseResouce(resource);
 
             model.setOrganizationId(enterpriseOrganisationUuid);
 
@@ -41,18 +42,18 @@ public class ProcedureTransformer extends AbstractTransformer {
                 model.setEncounterId(enterpriseEncounterUuid);
             }
 
-            if (fhir.hasPerformer()) {
-                if (fhir.getPerformer().size() > 1) {
-                    throw new TransformException("Procedures with more than one performer not supported " + fhir.getId());
+            if (fhir.hasExtension()) {
+                for (Extension extension: fhir.getExtension()) {
+                    if (extension.getUrl().equals(FhirExtensionUri.DIAGNOSTIC_REPORT_FILED_BY)) {
+                        Reference practitionerReference = (Reference)extension.getValue();
+                        Integer enterprisePractitionerUuid = findEnterpriseId(practitionerReference);
+                        model.setPractitionerId(enterprisePractitionerUuid);
+                    }
                 }
-                Procedure.ProcedurePerformerComponent performerComponent = fhir.getPerformer().get(0);
-                Reference practitionerReference = performerComponent.getActor();
-                Integer enterprisePractitionerUuid = findEnterpriseId(practitionerReference);
-                model.setPractitionerId(enterprisePractitionerUuid);
             }
 
-            if (fhir.hasPerformedDateTimeType()) {
-                DateTimeType dt = fhir.getPerformedDateTimeType();
+            if (fhir.hasEffectiveDateTimeType()) {
+                DateTimeType dt = fhir.getEffectiveDateTimeType();
                 model.setClinicalEffectiveDate(convertDate(dt.getValue()));
                 model.setDatePrecisionId(convertDatePrecision(dt.getPrecision()));
             }
@@ -61,9 +62,6 @@ public class ProcedureTransformer extends AbstractTransformer {
             model.setSnomedConceptId(snomedConceptId);
         }
 
-        data.getProcedure().add(model);
+        data.getDiagnosticReport().add(model);
     }
-
-
 }
-

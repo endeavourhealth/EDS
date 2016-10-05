@@ -7,21 +7,17 @@ import org.endeavourhealth.transform.fhir.FhirValueSetUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class PractitionerTransformer extends AbstractTransformer {
 
     public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
-                                 UUID enterpriseOrganisationUuid) throws Exception {
+                                 Integer enterpriseOrganisationUuid) throws Exception {
 
         org.endeavourhealth.core.xml.enterprise.Practitioner model = new org.endeavourhealth.core.xml.enterprise.Practitioner();
 
-        mapIdAndMode(resource, model);
-
-        //if no ID was mapped, we don't want to pass to Enterprise
-        if (model.getId() == null) {
+        if (!mapIdAndMode(resource, model)) {
             return;
         }
 
@@ -40,12 +36,12 @@ public class PractitionerTransformer extends AbstractTransformer {
 
                 Reference organisationReference = role.getManagingOrganization();
 
-                UUID enterpriseOrgId = findEnterpriseUuid(organisationReference);
+                Integer enterpriseOrgId = findEnterpriseId(organisationReference);
                 if (enterpriseOrgId == null) {
                     continue;
                 }
 
-                model.setOrganisationId(enterpriseOrgId.toString());
+                model.setOrganizationId(enterpriseOrgId);
 
                 CodeableConcept cc = role.getRole();
                 for (Coding coding: cc.getCoding()) {
@@ -59,8 +55,8 @@ public class PractitionerTransformer extends AbstractTransformer {
 
         //the EMIS test data has practitioners that point to non-exist organisations,
         //so, in order to file them in enterprise, we sub in the main org ID
-        if (model.getOrganisationId() == null) {
-            model.setOrganisationId(enterpriseOrganisationUuid.toString());
+        if (model.getOrganizationId() == 0) {
+            model.setOrganizationId(enterpriseOrganisationUuid);
         }
 
         data.getPractitioner().add(model);

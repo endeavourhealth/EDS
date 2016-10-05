@@ -4,6 +4,7 @@ import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.data.transform.EnterpriseIdMapRepository;
 import org.endeavourhealth.core.xml.EnterpriseSerializer;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
@@ -62,13 +63,16 @@ public class EnterpriseFhirTransformer {
         EnterpriseData data = new EnterpriseData();
 
         Organisation org = new OrganisationRepository().getById(orgId);
-        UUID enterpriseOrganisationUuid = org.getId();
         String orgNationalId = org.getNationalId();
 
         //we detect whether we're doing an update or insert, based on whether we're previously mapped
         //a reference to a resource, so we need to transform the resources in a specific order, so
         //that we transform resources before we ones that refer to them
-        tranformResources(ResourceType.Organization, new OrganisationTransformer(orgNationalId), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.Organization, new OrganisationTransformer(orgNationalId), data, resources, resourcesMap, null);
+
+        //if this is the first time processing this organisation's data, we will have generated the enterprise ID for that org while transforming the orgs
+        Integer enterpriseOrganisationUuid = new EnterpriseIdMapRepository().getEnterpriseOrganisationIdMapping(orgNationalId);
+
         tranformResources(ResourceType.Practitioner, new PractitionerTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
         tranformResources(ResourceType.Schedule, new ScheduleTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
         tranformResources(ResourceType.EpisodeOfCare, new EpisodeOfCareTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
@@ -86,6 +90,7 @@ public class EnterpriseFhirTransformer {
         tranformResources(ResourceType.FamilyMemberHistory, new FamilyMemberHistoryTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
         tranformResources(ResourceType.AllergyIntolerance, new AllergyIntoleranceTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
         tranformResources(ResourceType.DiagnosticOrder, new DiagnosticOrderTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.DiagnosticReport, new DiagnosticReportTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
 
         //for these resource types, call with a null transformer as they're actually transformed when
         //doing one of the above entities, but we want to remove them from the resources list
@@ -107,12 +112,14 @@ public class EnterpriseFhirTransformer {
 
         return data;
     }
+
+
     private static void tranformResources(ResourceType resourceType,
                                           AbstractTransformer transformer,
                                           EnterpriseData data,
                                           List<ResourceByExchangeBatch> resources,
                                           Map<String, ResourceByExchangeBatch> resourcesMap,
-                                          UUID enterpriseOrganisationUuid) throws Exception {
+                                          Integer enterpriseOrganisationId) throws Exception {
 
         for (int i=resources.size()-1; i>=0; i--) {
             ResourceByExchangeBatch resource = resources.get(i);
@@ -121,7 +128,7 @@ public class EnterpriseFhirTransformer {
                 //we use this function with a null transformer for resources we want to ignore
                 if (transformer != null) {
                     try {
-                        transformer.transform(resource, data, resourcesMap, enterpriseOrganisationUuid);
+                        transformer.transform(resource, data, resourcesMap, enterpriseOrganisationId);
                     } catch (Exception ex) {
                         throw new TransformException("Exception transforming " + resourceType + " " + resource.getResourceId(), ex);
                     }
@@ -153,39 +160,6 @@ public class EnterpriseFhirTransformer {
         return ret;
     }
 
-
-    private static void transformResource(ResourceByExchangeBatch resource,
-                                          EnterpriseData data,
-                                          Map<String, ResourceByExchangeBatch> allResources) throws Exception {
-
-
-    }
-
-    /*private static List<Resource> retrieveAllResources(UUID batchId) throws Exception {
-
-        List<ResourceByExchangeBatch> resourcesByExchangeBatch = new ResourceRepository().getResourcesForBatch(batchId);
-        //LOG.info("Got {} resources for batch {}", resourcesByExchangeBatch.size(), batchId);
-
-        List<Resource> ret = new ArrayList<>();
-
-        for (ResourceByExchangeBatch resourceByExchangeBatch: resourcesByExchangeBatch) {
-            String json = resourceByExchangeBatch.getResourceData();
-            if (!Strings.isNullOrEmpty(json)) {
-                try {
-                    Resource r = new JsonParser().parse(json);
-                    ret.add(r);
-                    //LOG.info("Read " + r.getResourceType() + " ok");
-                } catch (Exception ex) {
-                    LOG.error(ex.getMessage());
-                    LOG.error(json);
-                    throw ex;
-                }
-            }
-
-        }
-
-        return ret;
-    }*/
 
     private static List<ResourceByExchangeBatch> filterResources(List<ResourceByExchangeBatch> allResources,
                                                                  Map<ResourceType, List<UUID>> resourceIds) throws Exception {

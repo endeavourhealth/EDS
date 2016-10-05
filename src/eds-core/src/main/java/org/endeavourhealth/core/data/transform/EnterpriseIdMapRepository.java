@@ -1,25 +1,19 @@
 package org.endeavourhealth.core.data.transform;
 
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.mapping.Mapper;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.transform.accessors.EnterpriseIdMapAccessor;
 import org.endeavourhealth.core.data.transform.models.EnterpriseIdMap;
+import org.endeavourhealth.core.data.transform.models.EnterpriseOrganisationIdMap;
 
 import java.util.Iterator;
 import java.util.UUID;
 
 public class EnterpriseIdMapRepository extends Repository {
 
-    public void insert(EnterpriseIdMap enterpriseIdMap) {
-        if (enterpriseIdMap == null) {
-            throw new IllegalArgumentException("enterpriseIdMap is null");
-        }
-
-        Mapper<EnterpriseIdMap> mapper = getMappingManager().mapper(EnterpriseIdMap.class);
-        mapper.save(enterpriseIdMap);
-    }
-
-    public UUID getEnterpriseIdMappingUuid(String resourceType, UUID resourceId) {
+    public Integer getEnterpriseIdMappingId(String resourceType, UUID resourceId) {
         EnterpriseIdMap mapping = getEnterpriseIdMapping(resourceType, resourceId);
         if (mapping != null) {
             return mapping.getEnterpriseId();
@@ -39,23 +33,45 @@ public class EnterpriseIdMapRepository extends Repository {
         }
     }
 
-    public UUID createEnterpriseIdMappingUuid(String resourceType, UUID resourceId) {
-
-        EnterpriseIdMap mapping = new EnterpriseIdMap();
-        mapping.setResourceType(resourceType);
-        mapping.setResourceId(resourceId);
-        mapping.setEnterpriseId(UUID.randomUUID());
-        insert(mapping);
-
-        return mapping.getEnterpriseId();
-    }
-
-    public void setEnterpriseIdMapping(String resourceType, UUID resourceId, UUID enterpriseId) {
+    public void saveEnterpriseIdMapping(String resourceType, UUID resourceId, Integer enterpriseId) {
         EnterpriseIdMap mapping = new EnterpriseIdMap();
         mapping.setResourceType(resourceType);
         mapping.setResourceId(resourceId);
         mapping.setEnterpriseId(enterpriseId);
-        insert(mapping);
+
+        Mapper<EnterpriseIdMap> mapper = getMappingManager().mapper(EnterpriseIdMap.class);
+        mapper.save(mapping);
     }
 
+    public int getMaxEnterpriseId(String resourceType) {
+        EnterpriseIdMapAccessor accessor = getMappingManager().createAccessor(EnterpriseIdMapAccessor.class);
+        ResultSet resultSet = accessor.getMaxEnterpriseId(resourceType);
+        Row row = resultSet.one();
+        if (row.isNull(0)) {
+            return 0;
+        } else {
+            return row.getInt(0);
+        }
+    }
+
+    public Integer getEnterpriseOrganisationIdMapping(String odsCode) {
+
+        EnterpriseIdMapAccessor accessor = getMappingManager().createAccessor(EnterpriseIdMapAccessor.class);
+        Iterator<EnterpriseOrganisationIdMap> iterator = accessor.getEnterpriseIdMapping(odsCode).iterator();
+        if (iterator.hasNext()) {
+            EnterpriseOrganisationIdMap mapping = iterator.next();
+            return mapping.getEnterpriseId();
+        } else {
+            return null;
+        }
+    }
+
+    public void saveEnterpriseOrganisationIdMapping(String odsCode, Integer enterpriseId) {
+        EnterpriseOrganisationIdMap mapping = new EnterpriseOrganisationIdMap();
+        mapping.setOrganisationOdsCode(odsCode);
+        mapping.setEnterpriseId(enterpriseId);
+
+        Mapper<EnterpriseOrganisationIdMap> mapper = getMappingManager().mapper(EnterpriseOrganisationIdMap.class);
+        mapper.save(mapping);
+    }
 }

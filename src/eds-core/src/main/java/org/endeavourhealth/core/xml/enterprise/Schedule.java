@@ -15,9 +15,9 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *   &lt;complexContent>
  *     &lt;extension base="{}baseRecord">
  *       &lt;sequence>
- *         &lt;element name="organisation_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="practitioner_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="date" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
+ *         &lt;element name="organization_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
+ *         &lt;element name="practitioner_id" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
+ *         &lt;element name="start_date" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
  *         &lt;element name="type" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="location" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *       &lt;/sequence>
@@ -30,9 +30,9 @@ import javax.xml.datatype.XMLGregorianCalendar;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "schedule", propOrder = {
-    "organisationId",
+    "organizationId",
     "practitionerId",
-    "date",
+    "startDate",
     "type",
     "location"
 })
@@ -40,37 +40,30 @@ public class Schedule
     extends BaseRecord
 {
 
-    @XmlElement(name = "organisation_id")
-    protected String organisationId;
+    @XmlElement(name = "organization_id")
+    protected int organizationId;
     @XmlElement(name = "practitioner_id")
-    protected String practitionerId;
+    protected Integer practitionerId;
+    @XmlElement(name = "start_date")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar date;
+    protected XMLGregorianCalendar startDate;
     protected String type;
     protected String location;
 
     /**
-     * Gets the value of the organisationId property.
+     * Gets the value of the organizationId property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
      */
-    public String getOrganisationId() {
-        return organisationId;
+    public int getOrganizationId() {
+        return organizationId;
     }
 
     /**
-     * Sets the value of the organisationId property.
+     * Sets the value of the organizationId property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
      */
-    public void setOrganisationId(String value) {
-        this.organisationId = value;
+    public void setOrganizationId(int value) {
+        this.organizationId = value;
     }
 
     /**
@@ -78,10 +71,10 @@ public class Schedule
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public String getPractitionerId() {
+    public Integer getPractitionerId() {
         return practitionerId;
     }
 
@@ -90,35 +83,35 @@ public class Schedule
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public void setPractitionerId(String value) {
+    public void setPractitionerId(Integer value) {
         this.practitionerId = value;
     }
 
     /**
-     * Gets the value of the date property.
+     * Gets the value of the startDate property.
      * 
      * @return
      *     possible object is
      *     {@link XMLGregorianCalendar }
      *     
      */
-    public XMLGregorianCalendar getDate() {
-        return date;
+    public XMLGregorianCalendar getStartDate() {
+        return startDate;
     }
 
     /**
-     * Sets the value of the date property.
+     * Sets the value of the startDate property.
      * 
      * @param value
      *     allowed object is
      *     {@link XMLGregorianCalendar }
      *     
      */
-    public void setDate(XMLGregorianCalendar value) {
-        this.date = value;
+    public void setStartDate(XMLGregorianCalendar value) {
+        this.startDate = value;
     }
 
     /**

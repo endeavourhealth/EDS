@@ -19,7 +19,7 @@ public class EnterpriseIdMap {
     private UUID resourceId = null;
 
     @Column(name = "enterprise_id")
-    private UUID enterpriseId = null;
+    private Integer enterpriseId = null;
 
     public EnterpriseIdMap() {}
 
@@ -39,11 +39,11 @@ public class EnterpriseIdMap {
         this.resourceId = resourceId;
     }
 
-    public UUID getEnterpriseId() {
+    public Integer getEnterpriseId() {
         return enterpriseId;
     }
 
-    public void setEnterpriseId(UUID enterpriseId) {
+    public void setEnterpriseId(Integer enterpriseId) {
         this.enterpriseId = enterpriseId;
     }
 }

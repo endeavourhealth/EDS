@@ -1,32 +1,26 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class ReferralRequestTransformer extends AbstractTransformer {
 
     public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
-                                 UUID enterpriseOrganisationUuid) throws Exception {
+                                 Integer enterpriseOrganisationUuid) throws Exception {
 
         org.endeavourhealth.core.xml.enterprise.ReferralRequest model = new org.endeavourhealth.core.xml.enterprise.ReferralRequest();
 
-        mapIdAndMode(resource, model);
-
-        //if no ID was mapped, we don't want to pass to Enterprise
-        if (model.getId() == null) {
+        if (!mapIdAndMode(resource, model)) {
             return;
         }
 
@@ -36,28 +30,28 @@ public class ReferralRequestTransformer extends AbstractTransformer {
 
             ReferralRequest fhir = (ReferralRequest)deserialiseResouce(resource);
 
-            model.setOrganisationId(enterpriseOrganisationUuid.toString());
+            model.setOrganizationId(enterpriseOrganisationUuid);
 
             Reference patientReference = fhir.getPatient();
-            UUID enterprisePatientUuid = findEnterpriseUuid(patientReference);
-            model.setPatientId(enterprisePatientUuid.toString());
+            Integer enterprisePatientUuid = findEnterpriseId(patientReference);
+            model.setPatientId(enterprisePatientUuid);
 
             if (fhir.hasEncounter()) {
                 Reference encounterReference = (Reference)fhir.getEncounter();
-                UUID enterpriseEncounterUuid = findEnterpriseUuid(encounterReference);
-                model.setEncounterId(enterpriseEncounterUuid.toString());
+                Integer enterpriseEncounterUuid = findEnterpriseId(encounterReference);
+                model.setEncounterId(enterpriseEncounterUuid);
             }
 
             if (fhir.hasRequester()) {
                 Reference practitionerReference = fhir.getRequester();
-                UUID enterprisePractitionerUuid = findEnterpriseUuid(practitionerReference);
-                model.setPractitionerId(enterprisePractitionerUuid.toString());
+                Integer enterprisePractitionerUuid = findEnterpriseId(practitionerReference);
+                model.setPractitionerId(enterprisePractitionerUuid);
             }
 
             if (fhir.hasDateElement()) {
                 DateTimeType dt = fhir.getDateElement();
-                model.setDate(convertDate(dt.getValue()));
-                model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+                model.setClinicalEffectiveDate(convertDate(dt.getValue()));
+                model.setDatePrecisionId(convertDatePrecision(dt.getPrecision()));
             }
 
             Long snomedConceptId = findSnomedConceptId(fhir.getType());
@@ -73,24 +67,25 @@ public class ReferralRequestTransformer extends AbstractTransformer {
 
                     //the EMIS test pack contains referrals that point to recipient organisations that don't exist,
                     //so we need to handle the failure to find the organisation
-                    try {
-                        Organization organization = (Organization) findResource(recipientReference, otherResources);
-                        String name = organization.getName();
-                        String odsCode = null;
-                        for (Identifier identifier : organization.getIdentifier()) {
-                            if (identifier.getSystem().equals(FhirUri.IDENTIFIER_SYSTEM_ODS_CODE)) {
-                                odsCode = identifier.getValue();
-                            }
-                        }
-
-                        model.setRecipientOrganisationName(name);
-                        model.setRecipientOrganisationOdsCode(odsCode);
-                    } catch (ResourceNotFoundException ex) {
-                        //ignore
+                    Integer enterpriseId = findEnterpriseId(recipientReference);
+                    if (enterpriseId != null) {
+                        model.setRecipientOrganizationId(enterpriseId);
                     }
+                } else if (resourceType == ResourceType.Practitioner) {
 
+                    Practitioner fhirPractitioner = (Practitioner)findResource(recipientReference, otherResources);
+                    Practitioner.PractitionerPractitionerRoleComponent role = fhirPractitioner.getPractitionerRole().get(0);
+                    Reference organisationReference = role.getManagingOrganization();
+                    Integer enterpriseId = findEnterpriseId(organisationReference);
+                    if (enterpriseId != null) {
+                        model.setRecipientOrganizationId(enterpriseId);
+                    }
                 }
             }
+
+            //base the outgoing flag simply on whether the recipient ID matches the owning ID
+            boolean outgoing = model.getRecipientOrganizationId() != model.getOrganizationId();
+            model.setOutgoingReferral(outgoing);
 
             if (fhir.hasPriority()) {
                 CodeableConcept codeableConcept = fhir.getPriority();

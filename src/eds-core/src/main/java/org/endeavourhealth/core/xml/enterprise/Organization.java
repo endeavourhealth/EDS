@@ -8,12 +8,12 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for organisation complex type.
+ * <p>Java class for organization complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="organisation">
+ * &lt;complexType name="organization">
  *   &lt;complexContent>
  *     &lt;extension base="{}baseRecord">
  *       &lt;sequence>
@@ -22,7 +22,7 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="type_code" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="type_desc" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="postcode" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="parent_organisation_id" type="{}uuid" minOccurs="0"/>
+ *         &lt;element name="parent_organization_id" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/extension>
  *   &lt;/complexContent>
@@ -32,15 +32,15 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "organisation", propOrder = {
+@XmlType(name = "organization", propOrder = {
     "odsCode",
     "name",
     "typeCode",
     "typeDesc",
     "postcode",
-    "parentOrganisationId"
+    "parentOrganizationId"
 })
-public class Organisation
+public class Organization
     extends BaseRecord
 {
 
@@ -52,8 +52,8 @@ public class Organisation
     @XmlElement(name = "type_desc")
     protected String typeDesc;
     protected String postcode;
-    @XmlElement(name = "parent_organisation_id")
-    protected String parentOrganisationId;
+    @XmlElement(name = "parent_organization_id")
+    protected Integer parentOrganizationId;
 
     /**
      * Gets the value of the odsCode property.
@@ -176,27 +176,27 @@ public class Organisation
     }
 
     /**
-     * Gets the value of the parentOrganisationId property.
+     * Gets the value of the parentOrganizationId property.
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public String getParentOrganisationId() {
-        return parentOrganisationId;
+    public Integer getParentOrganizationId() {
+        return parentOrganizationId;
     }
 
     /**
-     * Sets the value of the parentOrganisationId property.
+     * Sets the value of the parentOrganizationId property.
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public void setParentOrganisationId(String value) {
-        this.parentOrganisationId = value;
+    public void setParentOrganizationId(Integer value) {
+        this.parentOrganizationId = value;
     }
 
 }

@@ -2,28 +2,23 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.Immunisation;
+import org.endeavourhealth.core.xml.enterprise.Immunization;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.hl7.fhir.instance.model.DateTimeType;
-import org.hl7.fhir.instance.model.Immunization;
 import org.hl7.fhir.instance.model.Reference;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class ImmunisationTransformer extends AbstractTransformer {
 
     public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
-                                 UUID enterpriseOrganisationUuid) throws Exception {
+                                 Integer enterpriseOrganisationUuid) throws Exception {
 
-        Immunisation model = new Immunisation();
+        Immunization model = new Immunization();
 
-        mapIdAndMode(resource, model);
-
-        //if no ID was mapped, we don't want to pass to Enterprise
-        if (model.getId() == null) {
+        if (!mapIdAndMode(resource, model)) {
             return;
         }
 
@@ -31,37 +26,37 @@ public class ImmunisationTransformer extends AbstractTransformer {
         if (model.getSaveMode() == SaveMode.INSERT
                 || model.getSaveMode() == SaveMode.UPDATE) {
 
-            Immunization fhir = (Immunization)deserialiseResouce(resource);
+            org.hl7.fhir.instance.model.Immunization fhir = (org.hl7.fhir.instance.model.Immunization)deserialiseResouce(resource);
 
-            model.setOrganisationId(enterpriseOrganisationUuid.toString());
+            model.setOrganizationId(enterpriseOrganisationUuid);
 
             Reference patientReference = fhir.getPatient();
-            UUID enterprisePatientUuid = findEnterpriseUuid(patientReference);
-            model.setPatientId(enterprisePatientUuid.toString());
+            Integer enterprisePatientUuid = findEnterpriseId(patientReference);
+            model.setPatientId(enterprisePatientUuid);
 
             if (fhir.hasEncounter()) {
                 Reference encounterReference = (Reference)fhir.getEncounter();
-                UUID enterpriseEncounterUuid = findEnterpriseUuid(encounterReference);
-                model.setEncounterId(enterpriseEncounterUuid.toString());
+                Integer enterpriseEncounterUuid = findEnterpriseId(encounterReference);
+                model.setEncounterId(enterpriseEncounterUuid);
             }
 
             if (fhir.hasPerformer()) {
                 Reference practitionerReference = fhir.getPerformer();
-                UUID enterprisePractitionerUuid = findEnterpriseUuid(practitionerReference);
-                model.setPractitionerId(enterprisePractitionerUuid.toString());
+                Integer enterprisePractitionerUuid = findEnterpriseId(practitionerReference);
+                model.setPractitionerId(enterprisePractitionerUuid);
             }
 
             if (fhir.hasDateElement()) {
                 DateTimeType dt = fhir.getDateElement();
-                model.setDate(convertDate(dt.getValue()));
-                model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+                model.setClinicalEffectiveDate(convertDate(dt.getValue()));
+                model.setDatePrecisionId(convertDatePrecision(dt.getPrecision()));
             }
 
             Long snomedConceptId = findSnomedConceptId(fhir.getVaccineCode());
             model.setSnomedConceptId(snomedConceptId);
         }
 
-        data.getImmunisation().add(model);
+        data.getImmunization().add(model);
     }
 
 

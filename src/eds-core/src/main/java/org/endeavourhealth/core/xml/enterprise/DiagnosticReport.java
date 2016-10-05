@@ -6,12 +6,12 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 
 /**
- * <p>Java class for allergy_intolerance complex type.
+ * <p>Java class for diagnostic_report complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="allergy_intolerance">
+ * &lt;complexType name="diagnostic_report">
  *   &lt;complexContent>
  *     &lt;extension base="{}baseRecord">
  *       &lt;sequence>
@@ -31,7 +31,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "allergy_intolerance", propOrder = {
+@XmlType(name = "diagnostic_report", propOrder = {
     "organizationId",
     "patientId",
     "encounterId",
@@ -40,7 +40,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "datePrecisionId",
     "snomedConceptId"
 })
-public class AllergyIntolerance
+public class DiagnosticReport
     extends BaseRecord
 {
 

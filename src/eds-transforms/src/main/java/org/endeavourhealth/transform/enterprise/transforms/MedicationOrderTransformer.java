@@ -8,21 +8,17 @@ import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class MedicationOrderTransformer extends AbstractTransformer {
 
     public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
-                                 UUID enterpriseOrganisationUuid) throws Exception {
+                                 Integer enterpriseOrganisationUuid) throws Exception {
 
         org.endeavourhealth.core.xml.enterprise.MedicationOrder model = new org.endeavourhealth.core.xml.enterprise.MedicationOrder();
 
-        mapIdAndMode(resource, model);
-
-        //if no ID was mapped, we don't want to pass to Enterprise
-        if (model.getId() == null) {
+        if (!mapIdAndMode(resource, model)) {
             return;
         }
 
@@ -32,28 +28,28 @@ public class MedicationOrderTransformer extends AbstractTransformer {
 
             org.hl7.fhir.instance.model.MedicationOrder fhir = (org.hl7.fhir.instance.model.MedicationOrder)deserialiseResouce(resource);
 
-            model.setOrganisationId(enterpriseOrganisationUuid.toString());
+            model.setOrganizationId(enterpriseOrganisationUuid);
 
             Reference patientReference = fhir.getPatient();
-            UUID enterprisePatientUuid = findEnterpriseUuid(patientReference);
-            model.setPatientId(enterprisePatientUuid.toString());
+            Integer enterprisePatientUuid = findEnterpriseId(patientReference);
+            model.setPatientId(enterprisePatientUuid);
 
             if (fhir.hasPrescriber()) {
                 Reference practitionerReference = fhir.getPrescriber();
-                UUID enterprisePractitionerUuid = findEnterpriseUuid(practitionerReference);
-                model.setPractitionerId(enterprisePractitionerUuid.toString());
+                Integer enterprisePractitionerUuid = findEnterpriseId(practitionerReference);
+                model.setPractitionerId(enterprisePractitionerUuid);
             }
 
             if (fhir.hasEncounter()) {
                 Reference encounterReference = fhir.getEncounter();
-                UUID enterpriseEncounterUuid = findEnterpriseUuid(encounterReference);
-                model.setEncounterId(enterpriseEncounterUuid.toString());
+                Integer enterpriseEncounterUuid = findEnterpriseId(encounterReference);
+                model.setEncounterId(enterpriseEncounterUuid);
             }
 
             if (fhir.hasDateWrittenElement()) {
                 DateTimeType dt = fhir.getDateWrittenElement();
-                model.setDate(convertDate(dt.getValue()));
-                model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+                model.setClinicalEffectiveDate(convertDate(dt.getValue()));
+                model.setDatePrecisionId(convertDatePrecision(dt.getPrecision()));
             }
 
             Long snomedConceptId = findSnomedConceptId(fhir.getMedicationCodeableConcept());
@@ -91,8 +87,8 @@ public class MedicationOrderTransformer extends AbstractTransformer {
 
                     } else if (extension.getUrl().equals(FhirExtensionUri.MEDICATION_ORDER_AUTHORISATION)) {
                         Reference medicationStatementReference = (Reference)extension.getValue();
-                        UUID enterprisePractitionerUuid = findEnterpriseUuid(medicationStatementReference);
-                        model.setMedicationStatementId(enterprisePractitionerUuid.toString());
+                        Integer enterprisePractitionerUuid = findEnterpriseId(medicationStatementReference);
+                        model.setMedicationStatementId(enterprisePractitionerUuid);
                     }
                 }
             }

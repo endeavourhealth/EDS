@@ -19,7 +19,7 @@ import java.util.List;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="organisation" type="{}organisation" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="organization" type="{}organization" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="practitioner" type="{}practitioner" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="schedule" type="{}schedule" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="patient" type="{}patient" maxOccurs="unbounded" minOccurs="0"/>
@@ -32,10 +32,11 @@ import java.util.List;
  *         &lt;element name="observation" type="{}observation" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="medication_statement" type="{}medication_statement" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="medication_order" type="{}medication_order" maxOccurs="unbounded" minOccurs="0"/>
- *         &lt;element name="immunisation" type="{}immunisation" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="immunization" type="{}immunization" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="family_member_history" type="{}family_member_history" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="allergy_intolerance" type="{}allergy_intolerance" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="diagnostic_order" type="{}diagnostic_order" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="diagnostic_report" type="{}diagnostic_report" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -46,7 +47,7 @@ import java.util.List;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "enterpriseData", propOrder = {
-    "organisation",
+    "organization",
     "practitioner",
     "schedule",
     "patient",
@@ -59,14 +60,15 @@ import java.util.List;
     "observation",
     "medicationStatement",
     "medicationOrder",
-    "immunisation",
+    "immunization",
     "familyMemberHistory",
     "allergyIntolerance",
-    "diagnosticOrder"
+    "diagnosticOrder",
+    "diagnosticReport"
 })
 public class EnterpriseData {
 
-    protected List<Organisation> organisation;
+    protected List<Organization> organization;
     protected List<Practitioner> practitioner;
     protected List<Schedule> schedule;
     protected List<Patient> patient;
@@ -83,41 +85,43 @@ public class EnterpriseData {
     protected List<MedicationStatement> medicationStatement;
     @XmlElement(name = "medication_order")
     protected List<MedicationOrder> medicationOrder;
-    protected List<Immunisation> immunisation;
+    protected List<Immunization> immunization;
     @XmlElement(name = "family_member_history")
     protected List<FamilyMemberHistory> familyMemberHistory;
     @XmlElement(name = "allergy_intolerance")
     protected List<AllergyIntolerance> allergyIntolerance;
     @XmlElement(name = "diagnostic_order")
     protected List<DiagnosticOrder> diagnosticOrder;
+    @XmlElement(name = "diagnostic_report")
+    protected List<DiagnosticReport> diagnosticReport;
 
     /**
-     * Gets the value of the organisation property.
+     * Gets the value of the organization property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the organisation property.
+     * This is why there is not a <CODE>set</CODE> method for the organization property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getOrganisation().add(newItem);
+     *    getOrganization().add(newItem);
      * </pre>
      * 
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
-     * {@link Organisation }
+     * {@link Organization }
      * 
      * 
      */
-    public List<Organisation> getOrganisation() {
-        if (organisation == null) {
-            organisation = new ArrayList<Organisation>();
+    public List<Organization> getOrganization() {
+        if (organization == null) {
+            organization = new ArrayList<Organization>();
         }
-        return this.organisation;
+        return this.organization;
     }
 
     /**
@@ -469,32 +473,32 @@ public class EnterpriseData {
     }
 
     /**
-     * Gets the value of the immunisation property.
+     * Gets the value of the immunization property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the immunisation property.
+     * This is why there is not a <CODE>set</CODE> method for the immunization property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getImmunisation().add(newItem);
+     *    getImmunization().add(newItem);
      * </pre>
      * 
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
-     * {@link Immunisation }
+     * {@link Immunization }
      * 
      * 
      */
-    public List<Immunisation> getImmunisation() {
-        if (immunisation == null) {
-            immunisation = new ArrayList<Immunisation>();
+    public List<Immunization> getImmunization() {
+        if (immunization == null) {
+            immunization = new ArrayList<Immunization>();
         }
-        return this.immunisation;
+        return this.immunization;
     }
 
     /**
@@ -582,6 +586,35 @@ public class EnterpriseData {
             diagnosticOrder = new ArrayList<DiagnosticOrder>();
         }
         return this.diagnosticOrder;
+    }
+
+    /**
+     * Gets the value of the diagnosticReport property.
+     * 
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the diagnosticReport property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getDiagnosticReport().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link DiagnosticReport }
+     * 
+     * 
+     */
+    public List<DiagnosticReport> getDiagnosticReport() {
+        if (diagnosticReport == null) {
+            diagnosticReport = new ArrayList<DiagnosticReport>();
+        }
+        return this.diagnosticReport;
     }
 
 }

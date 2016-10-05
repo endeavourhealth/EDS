@@ -4,7 +4,7 @@
 
     <xs:complexType name="enterpriseData">
         <xs:sequence>
-            <xs:element name="organisation" type="organisation" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="organization" type="organization" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="practitioner" type="practitioner" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="schedule" type="schedule" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="patient" type="patient" minOccurs="0" maxOccurs="unbounded"/>
@@ -17,26 +17,20 @@
             <xs:element name="observation" type="observation" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="medication_statement" type="medication_statement" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="medication_order" type="medication_order" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="immunisation" type="immunisation" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="immunization" type="immunization" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="family_member_history" type="family_member_history" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="allergy_intolerance" type="allergy_intolerance" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="diagnostic_order" type="diagnostic_order" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="diagnostic_report" type="diagnostic_report" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="baseRecord">
         <xs:sequence>
             <xs:element name="save_mode" type="save_mode"/>
-            <xs:element name="id" type="uuid"/>
+            <xs:element name="id" type="xs:int"/>
         </xs:sequence>
     </xs:complexType>
-
-    <xs:simpleType name="uuid">
-       <xs:restriction base="xs:string">
-            <xs:length value="36" fixed="true" />
-            <xs:pattern value="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[8-9a-bA-B][0-9a-fA-F]{3}-[0-9a-fA-F]{12}" />
-        </xs:restriction>
-    </xs:simpleType>
 
     <xs:simpleType name="save_mode">
         <xs:restriction base="xs:string">
@@ -46,70 +40,7 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:simpleType name="date_precision">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="year"/>
-            <xs:enumeration value="month"/>
-            <xs:enumeration value="day"/>
-            <xs:enumeration value="minute"/>
-        </xs:restriction>
-    </xs:simpleType>
-
-    <xs:simpleType name="gender">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="male"/>
-            <xs:enumeration value="female"/>
-            <xs:enumeration value="other"/>
-            <xs:enumeration value="unknown"/>
-        </xs:restriction>
-    </xs:simpleType>
-
-    <xs:simpleType name="procedure_request_status">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="proposed"/>
-            <xs:enumeration value="draft"/>
-            <xs:enumeration value="requested"/>
-            <xs:enumeration value="received"/>
-            <xs:enumeration value="accepted"/>
-            <xs:enumeration value="in-progress"/>
-            <xs:enumeration value="completed"/>
-            <xs:enumeration value="suspended"/>
-            <xs:enumeration value="rejected"/>
-            <xs:enumeration value="aborted"/>
-        </xs:restriction>
-    </xs:simpleType>
-
-    <xs:simpleType name="medication_statement_status">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="active"/>
-            <xs:enumeration value="completed"/>
-            <xs:enumeration value="entered-in-error"/>
-            <xs:enumeration value="intended"/>
-        </xs:restriction>
-    </xs:simpleType>
-
-    <xs:simpleType name="medication_statement_authorisation_type">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="acute"/>
-            <xs:enumeration value="repeat"/>
-            <xs:enumeration value="repeat-dispensing"/>
-            <xs:enumeration value="automatic"/>
-        </xs:restriction>
-    </xs:simpleType>
-
-    <xs:simpleType name="appointment_status">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="proposed"/>
-            <xs:enumeration value="pending"/>
-            <xs:enumeration value="booked"/>
-            <xs:enumeration value="arrived"/>
-            <xs:enumeration value="fulfilled"/>
-            <xs:enumeration value="cancelled"/>
-            <xs:enumeration value="noshow"/>
-        </xs:restriction>
-    </xs:simpleType>
-
-    <xs:complexType name="organisation">
+    <xs:complexType name="organization">
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
@@ -118,7 +49,7 @@
                     <xs:element name="type_code" type="xs:string" minOccurs="0"/>
                     <xs:element name="type_desc" type="xs:string" minOccurs="0"/>
                     <xs:element name="postcode" type="xs:string" minOccurs="0"/>
-                    <xs:element name="parent_organisation_id" type="uuid" minOccurs="0"/>
+                    <xs:element name="parent_organization_id" type="xs:int" minOccurs="0"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -128,7 +59,7 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
                     <xs:element name="name" type="xs:string" minOccurs="0"/>
                     <xs:element name="role_code" type="xs:string" minOccurs="0"/>
                     <xs:element name="role_desc" type="xs:string" minOccurs="0"/>
@@ -141,9 +72,9 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="practitioner_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="start_date" type="xs:dateTime" minOccurs="0"/>
                     <xs:element name="type" type="xs:string" minOccurs="0"/>
                     <xs:element name="location" type="xs:string" minOccurs="0"/>
                 </xs:sequence>
@@ -155,12 +86,12 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="patient_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="encounter_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="practitioner_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="date" type="xs:dateTime" minOccurs="0"/>
-                    <xs:element name="date_precision" type="date_precision" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="encounter_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
                     <xs:element name="snomed_concept_id" type="xs:long" minOccurs="0"/>
                 </xs:sequence>
             </xs:extension>
@@ -171,15 +102,14 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="patient_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="practitioner_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="schedule_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="start" type="xs:dateTime" minOccurs="0"/>
-                    <xs:element name="end" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="schedule_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="start_date" type="xs:dateTime" minOccurs="0"/>
                     <xs:element name="planned_duration" type="xs:int" minOccurs="0"/>
                     <xs:element name="actual_duration" type="xs:int" minOccurs="0"/>
-                    <xs:element name="status" type="appointment_status" minOccurs="0"/>
+                    <xs:element name="appointment_status_id" type="xs:int"/>
                     <xs:element name="patient_wait" type="xs:int" minOccurs="0"/>
                     <xs:element name="patient_delay" type="xs:int" minOccurs="0"/>
                     <xs:element name="sent_in" type="xs:dateTime" minOccurs="0"/>
@@ -193,12 +123,12 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="patient_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="encounter_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="practitioner_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="date" type="xs:dateTime" minOccurs="0"/>
-                    <xs:element name="date_precision" type="date_precision" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="encounter_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
                     <xs:element name="snomed_concept_id" type="xs:long" minOccurs="0"/>
                     <xs:element name="is_review" type="xs:boolean" minOccurs="0"/>
                 </xs:sequence>
@@ -210,12 +140,28 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="patient_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="encounter_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="practitioner_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="date" type="xs:dateTime" minOccurs="0"/>
-                    <xs:element name="date_precision" type="date_precision" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="encounter_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="snomed_concept_id" type="xs:long" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="diagnostic_report">
+        <xs:complexContent>
+            <xs:extension base="baseRecord">
+                <xs:sequence>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="encounter_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
                     <xs:element name="snomed_concept_id" type="xs:long" minOccurs="0"/>
                 </xs:sequence>
             </xs:extension>
@@ -226,12 +172,12 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="patient_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="practitioner_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="appointment_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="date" type="xs:dateTime" minOccurs="0"/>
-                    <xs:element name="date_precision" type="date_precision" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="appointment_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -241,28 +187,28 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="patient_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="encounter_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="practitioner_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="date" type="xs:dateTime" minOccurs="0"/>
-                    <xs:element name="date_precision" type="date_precision" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="encounter_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
                     <xs:element name="snomed_concept_id" type="xs:long" minOccurs="0"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:complexType name="immunisation">
+    <xs:complexType name="immunization">
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="patient_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="encounter_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="practitioner_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="date" type="xs:dateTime" minOccurs="0"/>
-                    <xs:element name="date_precision" type="date_precision" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="encounter_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
                     <xs:element name="snomed_concept_id" type="xs:long" minOccurs="0"/>
                 </xs:sequence>
             </xs:extension>
@@ -273,19 +219,19 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="patient_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="encounter_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="practitioner_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="date" type="xs:dateTime" minOccurs="0"/>
-                    <xs:element name="date_precision" type="date_precision" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="encounter_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
                     <xs:element name="dmd_id" type="xs:long" minOccurs="0"/>
                     <xs:element name="dose" type="xs:string" minOccurs="0"/>
                     <xs:element name="quantity_value" type="xs:decimal" minOccurs="0"/>
                     <xs:element name="quantity_unit" type="xs:string" minOccurs="0"/>
                     <xs:element name="duration_days" type="xs:int" minOccurs="0"/>
                     <xs:element name="estimated_cost" type="xs:decimal" minOccurs="0"/>
-                    <xs:element name="medication_statement_id" type="uuid" minOccurs="0"/>
+                    <xs:element name="medication_statement_id" type="xs:int" minOccurs="0"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -295,19 +241,19 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="patient_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="encounter_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="practitioner_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="date" type="xs:dateTime" minOccurs="0"/>
-                    <xs:element name="date_precision" type="date_precision" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="encounter_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
                     <xs:element name="dmd_id" type="xs:long" minOccurs="0"/>
-                    <xs:element name="status" type="medication_statement_status" minOccurs="0"/>
+                    <xs:element name="is_active" type="xs:boolean" minOccurs="0"/>
                     <xs:element name="cancellation_date" type="xs:dateTime" minOccurs="0"/>
                     <xs:element name="dose" type="xs:string" minOccurs="0"/>
                     <xs:element name="quantity_value" type="xs:decimal" minOccurs="0"/>
                     <xs:element name="quantity_unit" type="xs:string" minOccurs="0"/>
-                    <xs:element name="authorisation_type" type="medication_statement_authorisation_type" minOccurs="0"/>
+                    <xs:element name="medication_statement_authorisation_type_id" type="xs:int"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -317,12 +263,12 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="patient_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="encounter_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="practitioner_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="date" type="xs:dateTime" minOccurs="0"/>
-                    <xs:element name="date_precision" type="date_precision" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="encounter_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
                     <xs:element name="snomed_concept_id" type="xs:long" minOccurs="0"/>
                     <xs:element name="value" type="xs:decimal" minOccurs="0"/>
                     <xs:element name="units" type="xs:string" minOccurs="0"/>
@@ -335,13 +281,13 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="date_of_birth" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="date_of_birth" type="xs:dateTime"/>
                     <xs:element name="year_of_death" type="xs:int" minOccurs="0"/>
-                    <xs:element name="gender" type="gender" minOccurs="0"/>
+                    <xs:element name="patient_gender_id" type="xs:int"/>
                     <xs:element name="date_registered" type="xs:dateTime" minOccurs="0"/>
                     <xs:element name="date_registered_end" type="xs:dateTime" minOccurs="0"/>
-                    <xs:element name="usual_gp_name" type="xs:string" minOccurs="0"/>
+                    <xs:element name="usual_gp_practitioner_id" type="xs:int" minOccurs="0"/>
                     <xs:element name="registration_type_code" type="xs:string" minOccurs="0"/>
                     <xs:element name="registration_type_desc" type="xs:string" minOccurs="0"/>
                     <xs:element name="pseudo_id" type="xs:string" minOccurs="0"/>
@@ -354,12 +300,12 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="patient_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="encounter_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="practitioner_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="date" type="xs:dateTime" minOccurs="0"/>
-                    <xs:element name="date_precision" type="date_precision" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="encounter_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
                     <xs:element name="snomed_concept_id" type="xs:long" minOccurs="0"/>
                 </xs:sequence>
             </xs:extension>
@@ -370,14 +316,14 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="patient_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="encounter_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="practitioner_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="date" type="xs:dateTime" minOccurs="0"/>
-                    <xs:element name="date_precision" type="date_precision" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="encounter_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
                     <xs:element name="snomed_concept_id" type="xs:long" minOccurs="0"/>
-                    <xs:element name="procedure_status" type="procedure_request_status" minOccurs="0"/>
+                    <xs:element name="procedure_request_status_id" type="xs:int"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -387,18 +333,18 @@
         <xs:complexContent>
             <xs:extension base="baseRecord">
                 <xs:sequence>
-                    <xs:element name="organisation_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="patient_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="encounter_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="practitioner_id" type="uuid" minOccurs="0"/>
-                    <xs:element name="date" type="xs:dateTime" minOccurs="0"/>
-                    <xs:element name="date_precision" type="date_precision" minOccurs="0"/>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="encounter_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
                     <xs:element name="snomed_concept_id" type="xs:long" minOccurs="0"/>
-                    <xs:element name="recipient_organisation_name" type="xs:string" minOccurs="0"/>
-                    <xs:element name="recipient_organisation_ods_code" type="xs:string" minOccurs="0"/>
+                    <xs:element name="recipient_organization_id" type="xs:int"/>
                     <xs:element name="priority" type="xs:string" minOccurs="0"/>
                     <xs:element name="service_requested" type="xs:string" minOccurs="0"/>
                     <xs:element name="mode" type="xs:string" minOccurs="0"/>
+                    <xs:element name="outgoing_referral" type="xs:boolean" minOccurs="0"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>

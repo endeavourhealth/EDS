@@ -10,21 +10,17 @@ import org.hl7.fhir.instance.model.Extension;
 import org.hl7.fhir.instance.model.Reference;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class AllergyIntoleranceTransformer extends AbstractTransformer {
 
     public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
-                                 UUID enterpriseOrganisationUuid) throws Exception {
+                                 Integer enterpriseOrganisationUuid) throws Exception {
 
         org.endeavourhealth.core.xml.enterprise.AllergyIntolerance model = new org.endeavourhealth.core.xml.enterprise.AllergyIntolerance();
 
-        mapIdAndMode(resource, model);
-
-        //if no ID was mapped, we don't want to pass to Enterprise
-        if (model.getId() == null) {
+        if (!mapIdAndMode(resource, model)) {
             return;
         }
 
@@ -34,32 +30,32 @@ public class AllergyIntoleranceTransformer extends AbstractTransformer {
 
             AllergyIntolerance fhir = (AllergyIntolerance)deserialiseResouce(resource);
 
-            model.setOrganisationId(enterpriseOrganisationUuid.toString());
+            model.setOrganizationId(enterpriseOrganisationUuid);
 
             Reference patientReference = fhir.getPatient();
-            UUID enterprisePatientUuid = findEnterpriseUuid(patientReference);
-            model.setPatientId(enterprisePatientUuid.toString());
+            Integer enterprisePatientUuid = findEnterpriseId(patientReference);
+            model.setPatientId(enterprisePatientUuid);
 
             if (fhir.hasExtension()) {
                 for (Extension extension: fhir.getExtension()) {
                     if (extension.getUrl().equals(FhirExtensionUri.ASSOCIATED_ENCOUNTER)) {
                         Reference encounterReference = (Reference)extension.getValue();
-                        UUID enterpriseEncounterUuid = findEnterpriseUuid(encounterReference);
-                        model.setEncounterId(enterpriseEncounterUuid.toString());
+                        Integer enterpriseEncounterUuid = findEnterpriseId(encounterReference);
+                        model.setEncounterId(enterpriseEncounterUuid);
                     }
                 }
             }
 
             if (fhir.hasRecorder()) {
                 Reference practitionerReference = fhir.getRecorder();
-                UUID enterprisePractitionerUuid = findEnterpriseUuid(practitionerReference);
-                model.setPractitionerId(enterprisePractitionerUuid.toString());
+                Integer enterprisePractitionerUuid = findEnterpriseId(practitionerReference);
+                model.setPractitionerId(enterprisePractitionerUuid);
             }
 
             if (fhir.hasOnset()) {
                 DateTimeType dt = fhir.getOnsetElement();
-                model.setDate(convertDate(dt.getValue()));
-                model.setDatePrecision(convertDatePrecision(dt.getPrecision()));
+                model.setClinicalEffectiveDate(convertDate(dt.getValue()));
+                model.setDatePrecisionId(convertDatePrecision(dt.getPrecision()));
 
             }
 

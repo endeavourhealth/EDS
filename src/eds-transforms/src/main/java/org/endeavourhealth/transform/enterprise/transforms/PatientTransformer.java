@@ -5,16 +5,17 @@ import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.utility.Resources;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.Gender;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class PatientTransformer extends AbstractTransformer {
 
@@ -27,7 +28,7 @@ public class PatientTransformer extends AbstractTransformer {
     public void transform(ResourceByExchangeBatch resource,
                           EnterpriseData data,
                           Map<String, ResourceByExchangeBatch> otherResources,
-                          UUID enterpriseOrganisationUuid) throws Exception {
+                          Integer enterpriseOrganisationUuid) throws Exception {
 
         //we transform EpisodeOfCare BEFORE Patient, and handle Patient while doing it. So we only need
         //to consider the case where we have a change to our Patient, but there wasn't a change to the EpisodeOfCare
@@ -36,10 +37,7 @@ public class PatientTransformer extends AbstractTransformer {
 
         org.endeavourhealth.core.xml.enterprise.Patient model = new org.endeavourhealth.core.xml.enterprise.Patient();
 
-        mapIdAndMode(resource, model);
-
-        //if no ID was mapped, we don't want to pass to Enterprise
-        if (model.getId() == null) {
+        if (!mapIdAndMode(resource, model)) {
             return;
         }
 
@@ -49,7 +47,7 @@ public class PatientTransformer extends AbstractTransformer {
 
             Patient fhirPatient = (Patient)deserialiseResouce(resource);
 
-            model.setOrganisationId(enterpriseOrganisationUuid.toString());
+            model.setOrganizationId(enterpriseOrganisationUuid);
 
             Date dob = fhirPatient.getBirthDate();
             model.setDateOfBirth(convertDate(dob));
@@ -62,16 +60,14 @@ public class PatientTransformer extends AbstractTransformer {
                 model.setYearOfDeath(new Integer(yearOfDeath));
             }
 
-            Gender gender = convertGender(fhirPatient.getGender());
-            model.setGender(gender);
+            model.setPatientGenderId(fhirPatient.getGender().ordinal());
 
             if (fhirPatient.hasCareProvider()) {
                 for (Reference reference: fhirPatient.getCareProvider()) {
                     ResourceType resourceType = ReferenceHelper.getResourceType(reference);
                     if (resourceType == ResourceType.Practitioner) {
-                        Practitioner practitioner = (Practitioner)findResource(reference, otherResources);
-                        String name = practitioner.getName().getText();
-                        model.setUsualGpName(name);
+                        Integer enterprisePractitionerUuid = findEnterpriseId(reference);
+                        model.setUsualGpPractitionerId(enterprisePractitionerUuid);
                     }
                 }
             }
@@ -142,17 +138,4 @@ public class PatientTransformer extends AbstractTransformer {
         return saltBytes;
     }
 
-    private static Gender convertGender(Enumerations.AdministrativeGender gender) throws Exception {
-        if (gender == Enumerations.AdministrativeGender.MALE) {
-            return Gender.MALE;
-        } else if (gender == Enumerations.AdministrativeGender.FEMALE) {
-            return Gender.FEMALE;
-        } else if (gender == Enumerations.AdministrativeGender.OTHER) {
-            return Gender.OTHER;
-        } else if (gender == Enumerations.AdministrativeGender.UNKNOWN) {
-            return Gender.UNKNOWN;
-        } else {
-            throw new TransformException("Unsupported gender " + gender);
-        }
-    }
 }

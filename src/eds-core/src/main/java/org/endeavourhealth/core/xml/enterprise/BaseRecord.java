@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.*;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="save_mode" type="{}save_mode"/>
- *         &lt;element name="id" type="{}uuid"/>
+ *         &lt;element name="id" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -30,20 +30,21 @@ import javax.xml.bind.annotation.*;
     "id"
 })
 @XmlSeeAlso({
-    AllergyIntolerance.class,
-    Organisation.class,
-    Appointment.class,
-    Patient.class,
     MedicationOrder.class,
+    AllergyIntolerance.class,
     Practitioner.class,
     Observation.class,
+    Appointment.class,
     FamilyMemberHistory.class,
     MedicationStatement.class,
+    DiagnosticReport.class,
     Encounter.class,
-    Immunisation.class,
     Procedure.class,
     Schedule.class,
     Condition.class,
+    Immunization.class,
+    Patient.class,
+    Organization.class,
     ReferralRequest.class,
     DiagnosticOrder.class,
     ProcedureRequest.class
@@ -53,8 +54,7 @@ public class BaseRecord {
     @XmlElement(name = "save_mode", required = true)
     @XmlSchemaType(name = "string")
     protected SaveMode saveMode;
-    @XmlElement(required = true)
-    protected String id;
+    protected int id;
 
     /**
      * Gets the value of the saveMode property.
@@ -83,24 +83,16 @@ public class BaseRecord {
     /**
      * Gets the value of the id property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
      */
-    public String getId() {
+    public int getId() {
         return id;
     }
 
     /**
      * Sets the value of the id property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
      */
-    public void setId(String value) {
+    public void setId(int value) {
         this.id = value;
     }
 

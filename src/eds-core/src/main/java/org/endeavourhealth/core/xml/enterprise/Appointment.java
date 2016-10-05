@@ -15,15 +15,14 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *   &lt;complexContent>
  *     &lt;extension base="{}baseRecord">
  *       &lt;sequence>
- *         &lt;element name="organisation_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="patient_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="practitioner_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="schedule_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="start" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
- *         &lt;element name="end" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
+ *         &lt;element name="organization_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
+ *         &lt;element name="patient_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
+ *         &lt;element name="practitioner_id" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
+ *         &lt;element name="schedule_id" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
+ *         &lt;element name="start_date" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
  *         &lt;element name="planned_duration" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *         &lt;element name="actual_duration" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
- *         &lt;element name="status" type="{}appointment_status" minOccurs="0"/>
+ *         &lt;element name="appointment_status_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *         &lt;element name="patient_wait" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *         &lt;element name="patient_delay" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *         &lt;element name="sent_in" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
@@ -38,15 +37,14 @@ import javax.xml.datatype.XMLGregorianCalendar;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "appointment", propOrder = {
-    "organisationId",
+    "organizationId",
     "patientId",
     "practitionerId",
     "scheduleId",
-    "start",
-    "end",
+    "startDate",
     "plannedDuration",
     "actualDuration",
-    "status",
+    "appointmentStatusId",
     "patientWait",
     "patientDelay",
     "sentIn",
@@ -56,24 +54,23 @@ public class Appointment
     extends BaseRecord
 {
 
-    @XmlElement(name = "organisation_id")
-    protected String organisationId;
+    @XmlElement(name = "organization_id")
+    protected int organizationId;
     @XmlElement(name = "patient_id")
-    protected String patientId;
+    protected int patientId;
     @XmlElement(name = "practitioner_id")
-    protected String practitionerId;
+    protected Integer practitionerId;
     @XmlElement(name = "schedule_id")
-    protected String scheduleId;
+    protected Integer scheduleId;
+    @XmlElement(name = "start_date")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar start;
-    @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar end;
+    protected XMLGregorianCalendar startDate;
     @XmlElement(name = "planned_duration")
     protected Integer plannedDuration;
     @XmlElement(name = "actual_duration")
     protected Integer actualDuration;
-    @XmlSchemaType(name = "string")
-    protected AppointmentStatus status;
+    @XmlElement(name = "appointment_status_id")
+    protected int appointmentStatusId;
     @XmlElement(name = "patient_wait")
     protected Integer patientWait;
     @XmlElement(name = "patient_delay")
@@ -85,50 +82,34 @@ public class Appointment
     protected XMLGregorianCalendar left;
 
     /**
-     * Gets the value of the organisationId property.
+     * Gets the value of the organizationId property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
      */
-    public String getOrganisationId() {
-        return organisationId;
+    public int getOrganizationId() {
+        return organizationId;
     }
 
     /**
-     * Sets the value of the organisationId property.
+     * Sets the value of the organizationId property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
      */
-    public void setOrganisationId(String value) {
-        this.organisationId = value;
+    public void setOrganizationId(int value) {
+        this.organizationId = value;
     }
 
     /**
      * Gets the value of the patientId property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
      */
-    public String getPatientId() {
+    public int getPatientId() {
         return patientId;
     }
 
     /**
      * Sets the value of the patientId property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
      */
-    public void setPatientId(String value) {
+    public void setPatientId(int value) {
         this.patientId = value;
     }
 
@@ -137,10 +118,10 @@ public class Appointment
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public String getPractitionerId() {
+    public Integer getPractitionerId() {
         return practitionerId;
     }
 
@@ -149,10 +130,10 @@ public class Appointment
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public void setPractitionerId(String value) {
+    public void setPractitionerId(Integer value) {
         this.practitionerId = value;
     }
 
@@ -161,10 +142,10 @@ public class Appointment
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public String getScheduleId() {
+    public Integer getScheduleId() {
         return scheduleId;
     }
 
@@ -173,59 +154,35 @@ public class Appointment
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public void setScheduleId(String value) {
+    public void setScheduleId(Integer value) {
         this.scheduleId = value;
     }
 
     /**
-     * Gets the value of the start property.
+     * Gets the value of the startDate property.
      * 
      * @return
      *     possible object is
      *     {@link XMLGregorianCalendar }
      *     
      */
-    public XMLGregorianCalendar getStart() {
-        return start;
+    public XMLGregorianCalendar getStartDate() {
+        return startDate;
     }
 
     /**
-     * Sets the value of the start property.
+     * Sets the value of the startDate property.
      * 
      * @param value
      *     allowed object is
      *     {@link XMLGregorianCalendar }
      *     
      */
-    public void setStart(XMLGregorianCalendar value) {
-        this.start = value;
-    }
-
-    /**
-     * Gets the value of the end property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link XMLGregorianCalendar }
-     *     
-     */
-    public XMLGregorianCalendar getEnd() {
-        return end;
-    }
-
-    /**
-     * Sets the value of the end property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link XMLGregorianCalendar }
-     *     
-     */
-    public void setEnd(XMLGregorianCalendar value) {
-        this.end = value;
+    public void setStartDate(XMLGregorianCalendar value) {
+        this.startDate = value;
     }
 
     /**
@@ -277,27 +234,19 @@ public class Appointment
     }
 
     /**
-     * Gets the value of the status property.
+     * Gets the value of the appointmentStatusId property.
      * 
-     * @return
-     *     possible object is
-     *     {@link AppointmentStatus }
-     *     
      */
-    public AppointmentStatus getStatus() {
-        return status;
+    public int getAppointmentStatusId() {
+        return appointmentStatusId;
     }
 
     /**
-     * Sets the value of the status property.
+     * Sets the value of the appointmentStatusId property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link AppointmentStatus }
-     *     
      */
-    public void setStatus(AppointmentStatus value) {
-        this.status = value;
+    public void setAppointmentStatusId(int value) {
+        this.appointmentStatusId = value;
     }
 
     /**

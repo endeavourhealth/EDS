@@ -8,21 +8,17 @@ import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class ScheduleTransformer extends AbstractTransformer {
 
     public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
-                                 UUID enterpriseOrganisationUuid) throws Exception {
+                                 Integer enterpriseOrganisationUuid) throws Exception {
 
         org.endeavourhealth.core.xml.enterprise.Schedule model = new org.endeavourhealth.core.xml.enterprise.Schedule();
 
-        mapIdAndMode(resource, model);
-
-        //if no ID was mapped, we don't want to pass to Enterprise
-        if (model.getId() == null) {
+        if (!mapIdAndMode(resource, model)) {
             return;
         }
 
@@ -32,19 +28,19 @@ public class ScheduleTransformer extends AbstractTransformer {
 
             Schedule fhir = (Schedule)deserialiseResouce(resource);
 
-            model.setOrganisationId(enterpriseOrganisationUuid.toString());
+            model.setOrganizationId(enterpriseOrganisationUuid);
 
             if (fhir.hasActor()) {
                 Reference actorReference = fhir.getActor();
-                UUID enterpriseActorUuid = findEnterpriseUuid(actorReference);
+                Integer enterpriseActorUuid = findEnterpriseId(actorReference);
                 if (enterpriseActorUuid != null) {
-                    model.setPractitionerId(enterpriseActorUuid.toString());
+                    model.setPractitionerId(enterpriseActorUuid);
                 }
             }
 
             if (fhir.hasPlanningHorizon()) {
                 Period period = fhir.getPlanningHorizon();
-                model.setDate(convertDate(period.getStart()));
+                model.setStartDate(convertDate(period.getStart()));
             }
 
             if (fhir.hasExtension()) {

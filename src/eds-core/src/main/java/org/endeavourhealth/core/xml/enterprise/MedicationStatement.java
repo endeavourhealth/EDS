@@ -16,19 +16,19 @@ import java.math.BigDecimal;
  *   &lt;complexContent>
  *     &lt;extension base="{}baseRecord">
  *       &lt;sequence>
- *         &lt;element name="organisation_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="patient_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="encounter_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="practitioner_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="date" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
- *         &lt;element name="date_precision" type="{}date_precision" minOccurs="0"/>
+ *         &lt;element name="organization_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
+ *         &lt;element name="patient_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
+ *         &lt;element name="encounter_id" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
+ *         &lt;element name="practitioner_id" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
+ *         &lt;element name="clinical_effective_date" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
+ *         &lt;element name="date_precision_id" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *         &lt;element name="dmd_id" type="{http://www.w3.org/2001/XMLSchema}long" minOccurs="0"/>
- *         &lt;element name="status" type="{}medication_statement_status" minOccurs="0"/>
+ *         &lt;element name="is_active" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/>
  *         &lt;element name="cancellation_date" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
  *         &lt;element name="dose" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="quantity_value" type="{http://www.w3.org/2001/XMLSchema}decimal" minOccurs="0"/>
  *         &lt;element name="quantity_unit" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="authorisation_type" type="{}medication_statement_authorisation_type" minOccurs="0"/>
+ *         &lt;element name="medication_statement_authorisation_type_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *       &lt;/sequence>
  *     &lt;/extension>
  *   &lt;/complexContent>
@@ -39,41 +39,41 @@ import java.math.BigDecimal;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "medication_statement", propOrder = {
-    "organisationId",
+    "organizationId",
     "patientId",
     "encounterId",
     "practitionerId",
-    "date",
-    "datePrecision",
+    "clinicalEffectiveDate",
+    "datePrecisionId",
     "dmdId",
-    "status",
+    "isActive",
     "cancellationDate",
     "dose",
     "quantityValue",
     "quantityUnit",
-    "authorisationType"
+    "medicationStatementAuthorisationTypeId"
 })
 public class MedicationStatement
     extends BaseRecord
 {
 
-    @XmlElement(name = "organisation_id")
-    protected String organisationId;
+    @XmlElement(name = "organization_id")
+    protected int organizationId;
     @XmlElement(name = "patient_id")
-    protected String patientId;
+    protected int patientId;
     @XmlElement(name = "encounter_id")
-    protected String encounterId;
+    protected Integer encounterId;
     @XmlElement(name = "practitioner_id")
-    protected String practitionerId;
+    protected Integer practitionerId;
+    @XmlElement(name = "clinical_effective_date")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar date;
-    @XmlElement(name = "date_precision")
-    @XmlSchemaType(name = "string")
-    protected DatePrecision datePrecision;
+    protected XMLGregorianCalendar clinicalEffectiveDate;
+    @XmlElement(name = "date_precision_id")
+    protected Integer datePrecisionId;
     @XmlElement(name = "dmd_id")
     protected Long dmdId;
-    @XmlSchemaType(name = "string")
-    protected MedicationStatementStatus status;
+    @XmlElement(name = "is_active")
+    protected Boolean isActive;
     @XmlElement(name = "cancellation_date")
     @XmlSchemaType(name = "dateTime")
     protected XMLGregorianCalendar cancellationDate;
@@ -82,55 +82,38 @@ public class MedicationStatement
     protected BigDecimal quantityValue;
     @XmlElement(name = "quantity_unit")
     protected String quantityUnit;
-    @XmlElement(name = "authorisation_type")
-    @XmlSchemaType(name = "string")
-    protected MedicationStatementAuthorisationType authorisationType;
+    @XmlElement(name = "medication_statement_authorisation_type_id")
+    protected int medicationStatementAuthorisationTypeId;
 
     /**
-     * Gets the value of the organisationId property.
+     * Gets the value of the organizationId property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
      */
-    public String getOrganisationId() {
-        return organisationId;
+    public int getOrganizationId() {
+        return organizationId;
     }
 
     /**
-     * Sets the value of the organisationId property.
+     * Sets the value of the organizationId property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
      */
-    public void setOrganisationId(String value) {
-        this.organisationId = value;
+    public void setOrganizationId(int value) {
+        this.organizationId = value;
     }
 
     /**
      * Gets the value of the patientId property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
      */
-    public String getPatientId() {
+    public int getPatientId() {
         return patientId;
     }
 
     /**
      * Sets the value of the patientId property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
      */
-    public void setPatientId(String value) {
+    public void setPatientId(int value) {
         this.patientId = value;
     }
 
@@ -139,10 +122,10 @@ public class MedicationStatement
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public String getEncounterId() {
+    public Integer getEncounterId() {
         return encounterId;
     }
 
@@ -151,10 +134,10 @@ public class MedicationStatement
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public void setEncounterId(String value) {
+    public void setEncounterId(Integer value) {
         this.encounterId = value;
     }
 
@@ -163,10 +146,10 @@ public class MedicationStatement
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public String getPractitionerId() {
+    public Integer getPractitionerId() {
         return practitionerId;
     }
 
@@ -175,59 +158,59 @@ public class MedicationStatement
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public void setPractitionerId(String value) {
+    public void setPractitionerId(Integer value) {
         this.practitionerId = value;
     }
 
     /**
-     * Gets the value of the date property.
+     * Gets the value of the clinicalEffectiveDate property.
      * 
      * @return
      *     possible object is
      *     {@link XMLGregorianCalendar }
      *     
      */
-    public XMLGregorianCalendar getDate() {
-        return date;
+    public XMLGregorianCalendar getClinicalEffectiveDate() {
+        return clinicalEffectiveDate;
     }
 
     /**
-     * Sets the value of the date property.
+     * Sets the value of the clinicalEffectiveDate property.
      * 
      * @param value
      *     allowed object is
      *     {@link XMLGregorianCalendar }
      *     
      */
-    public void setDate(XMLGregorianCalendar value) {
-        this.date = value;
+    public void setClinicalEffectiveDate(XMLGregorianCalendar value) {
+        this.clinicalEffectiveDate = value;
     }
 
     /**
-     * Gets the value of the datePrecision property.
+     * Gets the value of the datePrecisionId property.
      * 
      * @return
      *     possible object is
-     *     {@link DatePrecision }
+     *     {@link Integer }
      *     
      */
-    public DatePrecision getDatePrecision() {
-        return datePrecision;
+    public Integer getDatePrecisionId() {
+        return datePrecisionId;
     }
 
     /**
-     * Sets the value of the datePrecision property.
+     * Sets the value of the datePrecisionId property.
      * 
      * @param value
      *     allowed object is
-     *     {@link DatePrecision }
+     *     {@link Integer }
      *     
      */
-    public void setDatePrecision(DatePrecision value) {
-        this.datePrecision = value;
+    public void setDatePrecisionId(Integer value) {
+        this.datePrecisionId = value;
     }
 
     /**
@@ -255,27 +238,27 @@ public class MedicationStatement
     }
 
     /**
-     * Gets the value of the status property.
+     * Gets the value of the isActive property.
      * 
      * @return
      *     possible object is
-     *     {@link MedicationStatementStatus }
+     *     {@link Boolean }
      *     
      */
-    public MedicationStatementStatus getStatus() {
-        return status;
+    public Boolean isIsActive() {
+        return isActive;
     }
 
     /**
-     * Sets the value of the status property.
+     * Sets the value of the isActive property.
      * 
      * @param value
      *     allowed object is
-     *     {@link MedicationStatementStatus }
+     *     {@link Boolean }
      *     
      */
-    public void setStatus(MedicationStatementStatus value) {
-        this.status = value;
+    public void setIsActive(Boolean value) {
+        this.isActive = value;
     }
 
     /**
@@ -375,27 +358,19 @@ public class MedicationStatement
     }
 
     /**
-     * Gets the value of the authorisationType property.
+     * Gets the value of the medicationStatementAuthorisationTypeId property.
      * 
-     * @return
-     *     possible object is
-     *     {@link MedicationStatementAuthorisationType }
-     *     
      */
-    public MedicationStatementAuthorisationType getAuthorisationType() {
-        return authorisationType;
+    public int getMedicationStatementAuthorisationTypeId() {
+        return medicationStatementAuthorisationTypeId;
     }
 
     /**
-     * Sets the value of the authorisationType property.
+     * Sets the value of the medicationStatementAuthorisationTypeId property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link MedicationStatementAuthorisationType }
-     *     
      */
-    public void setAuthorisationType(MedicationStatementAuthorisationType value) {
-        this.authorisationType = value;
+    public void setMedicationStatementAuthorisationTypeId(int value) {
+        this.medicationStatementAuthorisationTypeId = value;
     }
 
 }

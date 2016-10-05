@@ -1,7 +1,9 @@
 package org.endeavourhealth.subscriber;
 
 import org.endeavourhealth.core.xml.EnterpriseSerializer;
-import org.endeavourhealth.core.xml.enterprise.*;
+import org.endeavourhealth.core.xml.enterprise.BaseRecord;
+import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.subscriber.configuration.ConfigurationProvider;
 import org.endeavourhealth.subscriber.configuration.models.PostgreSQLConnection;
 import org.endeavourhealth.subscriber.configuration.models.SubscriberConfiguration;
@@ -21,7 +23,6 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -75,7 +76,7 @@ public class EnterpriseFiler {
         Connection connection = openConnection();
 
         try {
-            file(data.getOrganisation(), connection);
+            file(data.getOrganization(), connection);
             file(data.getPractitioner(), connection);
             file(data.getSchedule(), connection);
             file(data.getPatient(), connection);
@@ -88,10 +89,11 @@ public class EnterpriseFiler {
             file(data.getObservation(), connection);
             file(data.getMedicationStatement(), connection);
             file(data.getMedicationOrder(), connection);
-            file(data.getImmunisation(), connection);
+            file(data.getImmunization(), connection);
             file(data.getFamilyMemberHistory(), connection);
             file(data.getAllergyIntolerance(), connection);
             file(data.getDiagnosticOrder(), connection);
+            file(data.getDiagnosticReport(), connection);
 
         } catch (SQLException ex) {
 
@@ -158,7 +160,13 @@ public class EnterpriseFiler {
 
         if (fieldCls == String.class) {
 
-            //UUIDs are also represented as Strings in the objects, so we need a way to know which fields should be treated
+            if (value == null) {
+                statement.setNull(index, Types.VARCHAR);
+            } else {
+                statement.setString(index, (String)value);
+            }
+
+            /*//UUIDs are also represented as Strings in the objects, so we need a way to know which fields should be treated
             //as Strings and which as UUIDs. Not ideal, but works for the schema.
             String fieldName = field.getName();
             if (fieldName.equals("id")
@@ -177,7 +185,7 @@ public class EnterpriseFiler {
                 } else {
                     statement.setString(index, (String)value);
                 }
-            }
+            }*/
 
         } else if (fieldCls == XMLGregorianCalendar.class) {
             if (value == null) {
@@ -202,53 +210,18 @@ public class EnterpriseFiler {
                 statement.setInt(index, ((Integer)value).intValue());
             }
 
+        } else if (fieldCls == Integer.TYPE) {
+            if (value == null) {
+                statement.setNull(index, Types.INTEGER);
+            } else {
+                statement.setInt(index, (int)value);
+            }
+
         } else if (fieldCls == Long.class) {
             if (value == null) {
                 statement.setNull(index, Types.INTEGER);
             } else {
                 statement.setLong(index, ((Long)value).longValue());
-            }
-
-        } else if (fieldCls == Gender.class) {
-            if (value == null) {
-                statement.setNull(index, Types.VARCHAR);
-            } else {
-                statement.setString(index, ((Gender)value).value());
-            }
-
-        } else if (fieldCls == DatePrecision.class) {
-            if (value == null) {
-                statement.setNull(index, Types.VARCHAR);
-            } else {
-                statement.setString(index, ((DatePrecision)value).value());
-            }
-
-        } else if (fieldCls == ProcedureRequestStatus.class) {
-            if (value == null) {
-                statement.setNull(index, Types.VARCHAR);
-            } else {
-                statement.setString(index, ((ProcedureRequestStatus)value).value());
-            }
-
-        } else if (fieldCls == MedicationStatementStatus.class) {
-            if (value == null) {
-                statement.setNull(index, Types.VARCHAR);
-            } else {
-                statement.setString(index, ((MedicationStatementStatus)value).value());
-            }
-
-        } else if (fieldCls == AppointmentStatus.class) {
-            if (value == null) {
-                statement.setNull(index, Types.VARCHAR);
-            } else {
-                statement.setString(index, ((AppointmentStatus)value).value());
-            }
-
-        } else if (fieldCls == MedicationStatementAuthorisationType.class) {
-            if (value == null) {
-                statement.setNull(index, Types.VARCHAR);
-            } else {
-                statement.setString(index, ((MedicationStatementAuthorisationType)value).value());
             }
 
         } else if (fieldCls == Boolean.class) {
@@ -302,7 +275,7 @@ public class EnterpriseFiler {
         for (T record: objects) {
 
             //ID is always first and always a UUID
-            insert.setObject(1, UUID.fromString(record.getId()));
+            insert.setInt(1, record.getId());
 
             for (int i=0; i<fields.size(); i++) {
                 Field field = fields.get(i);
@@ -360,7 +333,7 @@ public class EnterpriseFiler {
             }
 
             //the ID is the last parameter
-            insert.setObject(fields.size()+1, UUID.fromString(record.getId()));
+            insert.setInt(fields.size()+1, record.getId());
 
             insert.addBatch();
         }
@@ -384,7 +357,7 @@ public class EnterpriseFiler {
 
         for (T record: objects) {
 
-            insert.setObject(1, UUID.fromString(record.getId()));
+            insert.setInt(1, record.getId());
             insert.addBatch();
         }
 
@@ -405,6 +378,11 @@ public class EnterpriseFiler {
 
         Connection conn = DriverManager.getConnection(url, user, pass);
         conn.setAutoCommit(false);
+
+        if (dbConfig.getSchema() != null) {
+            conn.setSchema(dbConfig.getSchema());
+        }
+
         return conn;
     }
 

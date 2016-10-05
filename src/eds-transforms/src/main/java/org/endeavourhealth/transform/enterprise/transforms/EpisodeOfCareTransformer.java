@@ -2,21 +2,16 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.Gender;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.hl7.fhir.instance.model.Enumerations;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class EpisodeOfCareTransformer extends AbstractTransformer {
 
     public void transform(ResourceByExchangeBatch resource,
                           EnterpriseData data,
                           Map<String, ResourceByExchangeBatch> otherResources,
-                          UUID enterpriseOrganisationUuid) throws Exception {
+                          Integer enterpriseOrganisationUuid) throws Exception {
 
-        //TODO - work this out
         /*org.endeavourhealth.core.xml.enterprise.Patient model = new org.endeavourhealth.core.xml.enterprise.Patient();
 
         mapIdAndMode(resource, model);
@@ -80,26 +75,10 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
             }
 
 
-            //TODO - finish Patient transform (pseudo code)
             model.setPseudoId(UUID.randomUUID().toString());
         }
 
         data.getPatient().add(model);*/
-    }
-
-
-    private static Gender convertGender(Enumerations.AdministrativeGender gender) throws Exception {
-        if (gender == Enumerations.AdministrativeGender.MALE) {
-            return Gender.MALE;
-        } else if (gender == Enumerations.AdministrativeGender.FEMALE) {
-            return Gender.FEMALE;
-        } else if (gender == Enumerations.AdministrativeGender.OTHER) {
-            return Gender.OTHER;
-        } else if (gender == Enumerations.AdministrativeGender.UNKNOWN) {
-            return Gender.UNKNOWN;
-        } else {
-            throw new TransformException("Unsupported gender " + gender);
-        }
     }
 
 

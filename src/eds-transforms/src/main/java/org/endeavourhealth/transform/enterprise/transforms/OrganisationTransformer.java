@@ -1,8 +1,9 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.data.transform.EnterpriseIdMapRepository;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.Organisation;
+import org.endeavourhealth.core.xml.enterprise.Organization;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
@@ -11,7 +12,6 @@ import org.endeavourhealth.transform.fhir.IdentifierHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class OrganisationTransformer extends AbstractTransformer {
 
@@ -24,14 +24,11 @@ public class OrganisationTransformer extends AbstractTransformer {
     public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
-                                 UUID enterpriseOrganisationUuid) throws Exception {
+                                 Integer enterpriseOrganisationUuid) throws Exception {
 
-        Organisation model = new Organisation();
+        Organization model = new Organization();
 
-        mapIdAndMode(resource, model);
-
-        //if no ID was mapped, we don't want to pass to Enterprise
-        if (model.getId() == null) {
+        if (!mapIdAndMode(resource, model)) {
             return;
         }
 
@@ -39,24 +36,20 @@ public class OrganisationTransformer extends AbstractTransformer {
         if (model.getSaveMode() == SaveMode.INSERT
                 || model.getSaveMode() == SaveMode.UPDATE) {
 
-            Organization fhir = (Organization)deserialiseResouce(resource);
+            org.hl7.fhir.instance.model.Organization fhir = (org.hl7.fhir.instance.model.Organization)deserialiseResouce(resource);
 
             if (fhir.hasIdentifier()) {
                 String odsCode = IdentifierHelper.findIdentifierValue(fhir.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_ODS_CODE);
                 model.setOdsCode(odsCode);
             }
 
-            //if the organisation ODS code matches the one we're filing data for, then use the enterpriseOrgUuid
-            //that we've already generated for the organisation that all the other tables point to
-            if (model.getSaveMode() == SaveMode.INSERT) {
+            //if the organisation ODS code matches the one we're filing data for, then save the Enterprise ID
+            //we've generated for the org in the the enterprise_organisation_id mapping table
+            if (model.getSaveMode() == SaveMode.INSERT
+                && model.getOdsCode() != null
+                && model.getOdsCode().equalsIgnoreCase(orgOdsCode)) {
 
-                if (model.getOdsCode() != null
-                        && model.getOdsCode().equalsIgnoreCase(orgOdsCode)) {
-                    model.setId(enterpriseOrganisationUuid.toString());
-
-                    //make sure the mapping table permanently links this org to the enterprise ID
-                    setEnterpriseUuid(fhir.getResourceType().toString(), UUID.fromString(fhir.getId()), enterpriseOrganisationUuid);
-                }
+                new EnterpriseIdMapRepository().saveEnterpriseOrganisationIdMapping(orgOdsCode, new Integer(model.getId()));
             }
 
             model.setName(fhir.getName());
@@ -67,12 +60,12 @@ public class OrganisationTransformer extends AbstractTransformer {
                 //this is wrapped in a try/catch to handle that failure to find the parent
                 try {
                     Reference partOfReference = fhir.getPartOf();
-                    Organization partOfOrganisation = (Organization)findResource(partOfReference, otherResources);
+                    org.hl7.fhir.instance.model.Organization partOfOrganisation = (org.hl7.fhir.instance.model.Organization)findResource(partOfReference, otherResources);
 
                     if (partOfOrganisation != null) {
-                        UUID partOfOrganisationUuid = findEnterpriseUuid(partOfOrganisation);
+                        Integer partOfOrganisationUuid = findEnterpriseId(partOfOrganisation);
                         if (partOfOrganisationUuid != null) {
-                            model.setParentOrganisationId(partOfOrganisationUuid.toString());
+                            model.setParentOrganizationId(partOfOrganisationUuid);
                         }
                     }
 
@@ -113,6 +106,6 @@ public class OrganisationTransformer extends AbstractTransformer {
             }
         }
 
-        data.getOrganisation().add(model);
+        data.getOrganization().add(model);
     }
 }

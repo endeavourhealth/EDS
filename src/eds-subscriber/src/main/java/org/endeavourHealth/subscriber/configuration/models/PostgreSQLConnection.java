@@ -23,6 +23,7 @@ import java.math.BigInteger;
  *         &lt;element name="Database" type="{}nonEmptyString"/>
  *         &lt;element name="Username" type="{}nonEmptyString"/>
  *         &lt;element name="Password" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="Schema" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -37,7 +38,8 @@ import java.math.BigInteger;
     "port",
     "database",
     "username",
-    "password"
+    "password",
+    "schema"
 })
 public class PostgreSQLConnection {
 
@@ -51,6 +53,8 @@ public class PostgreSQLConnection {
     protected String username;
     @XmlElement(name = "Password", required = true)
     protected String password;
+    @XmlElement(name = "Schema")
+    protected String schema;
 
     /**
      * Gets the value of the hostname property.
@@ -170,6 +174,30 @@ public class PostgreSQLConnection {
      */
     public void setPassword(String value) {
         this.password = value;
+    }
+
+    /**
+     * Gets the value of the schema property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getSchema() {
+        return schema;
+    }
+
+    /**
+     * Sets the value of the schema property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setSchema(String value) {
+        this.schema = value;
     }
 
 }

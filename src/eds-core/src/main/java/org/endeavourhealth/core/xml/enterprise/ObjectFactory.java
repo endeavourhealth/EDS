@@ -42,43 +42,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link AllergyIntolerance }
-     * 
-     */
-    public AllergyIntolerance createAllergyIntolerance() {
-        return new AllergyIntolerance();
-    }
-
-    /**
-     * Create an instance of {@link Organisation }
-     * 
-     */
-    public Organisation createOrganisation() {
-        return new Organisation();
-    }
-
-    /**
-     * Create an instance of {@link Appointment }
-     * 
-     */
-    public Appointment createAppointment() {
-        return new Appointment();
-    }
-
-    /**
-     * Create an instance of {@link Patient }
-     * 
-     */
-    public Patient createPatient() {
-        return new Patient();
-    }
-
-    /**
      * Create an instance of {@link MedicationOrder }
      * 
      */
     public MedicationOrder createMedicationOrder() {
         return new MedicationOrder();
+    }
+
+    /**
+     * Create an instance of {@link AllergyIntolerance }
+     * 
+     */
+    public AllergyIntolerance createAllergyIntolerance() {
+        return new AllergyIntolerance();
     }
 
     /**
@@ -98,6 +74,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link Appointment }
+     * 
+     */
+    public Appointment createAppointment() {
+        return new Appointment();
+    }
+
+    /**
      * Create an instance of {@link FamilyMemberHistory }
      * 
      */
@@ -114,19 +98,19 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link DiagnosticReport }
+     * 
+     */
+    public DiagnosticReport createDiagnosticReport() {
+        return new DiagnosticReport();
+    }
+
+    /**
      * Create an instance of {@link Encounter }
      * 
      */
     public Encounter createEncounter() {
         return new Encounter();
-    }
-
-    /**
-     * Create an instance of {@link Immunisation }
-     * 
-     */
-    public Immunisation createImmunisation() {
-        return new Immunisation();
     }
 
     /**
@@ -159,6 +143,30 @@ public class ObjectFactory {
      */
     public Condition createCondition() {
         return new Condition();
+    }
+
+    /**
+     * Create an instance of {@link Immunization }
+     * 
+     */
+    public Immunization createImmunization() {
+        return new Immunization();
+    }
+
+    /**
+     * Create an instance of {@link Patient }
+     * 
+     */
+    public Patient createPatient() {
+        return new Patient();
+    }
+
+    /**
+     * Create an instance of {@link Organization }
+     * 
+     */
+    public Organization createOrganization() {
+        return new Organization();
     }
 
     /**

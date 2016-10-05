@@ -15,13 +15,13 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *   &lt;complexContent>
  *     &lt;extension base="{}baseRecord">
  *       &lt;sequence>
- *         &lt;element name="organisation_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="date_of_birth" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
+ *         &lt;element name="organization_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
+ *         &lt;element name="date_of_birth" type="{http://www.w3.org/2001/XMLSchema}dateTime"/>
  *         &lt;element name="year_of_death" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
- *         &lt;element name="gender" type="{}gender" minOccurs="0"/>
+ *         &lt;element name="patient_gender_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *         &lt;element name="date_registered" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
  *         &lt;element name="date_registered_end" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
- *         &lt;element name="usual_gp_name" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="usual_gp_practitioner_id" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *         &lt;element name="registration_type_code" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="registration_type_desc" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="pseudo_id" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
@@ -35,13 +35,13 @@ import javax.xml.datatype.XMLGregorianCalendar;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "patient", propOrder = {
-    "organisationId",
+    "organizationId",
     "dateOfBirth",
     "yearOfDeath",
-    "gender",
+    "patientGenderId",
     "dateRegistered",
     "dateRegisteredEnd",
-    "usualGpName",
+    "usualGpPractitionerId",
     "registrationTypeCode",
     "registrationTypeDesc",
     "pseudoId"
@@ -50,23 +50,23 @@ public class Patient
     extends BaseRecord
 {
 
-    @XmlElement(name = "organisation_id")
-    protected String organisationId;
-    @XmlElement(name = "date_of_birth")
+    @XmlElement(name = "organization_id")
+    protected int organizationId;
+    @XmlElement(name = "date_of_birth", required = true)
     @XmlSchemaType(name = "dateTime")
     protected XMLGregorianCalendar dateOfBirth;
     @XmlElement(name = "year_of_death")
     protected Integer yearOfDeath;
-    @XmlSchemaType(name = "string")
-    protected Gender gender;
+    @XmlElement(name = "patient_gender_id")
+    protected int patientGenderId;
     @XmlElement(name = "date_registered")
     @XmlSchemaType(name = "dateTime")
     protected XMLGregorianCalendar dateRegistered;
     @XmlElement(name = "date_registered_end")
     @XmlSchemaType(name = "dateTime")
     protected XMLGregorianCalendar dateRegisteredEnd;
-    @XmlElement(name = "usual_gp_name")
-    protected String usualGpName;
+    @XmlElement(name = "usual_gp_practitioner_id")
+    protected Integer usualGpPractitionerId;
     @XmlElement(name = "registration_type_code")
     protected String registrationTypeCode;
     @XmlElement(name = "registration_type_desc")
@@ -75,27 +75,19 @@ public class Patient
     protected String pseudoId;
 
     /**
-     * Gets the value of the organisationId property.
+     * Gets the value of the organizationId property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
      */
-    public String getOrganisationId() {
-        return organisationId;
+    public int getOrganizationId() {
+        return organizationId;
     }
 
     /**
-     * Sets the value of the organisationId property.
+     * Sets the value of the organizationId property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
      */
-    public void setOrganisationId(String value) {
-        this.organisationId = value;
+    public void setOrganizationId(int value) {
+        this.organizationId = value;
     }
 
     /**
@@ -147,27 +139,19 @@ public class Patient
     }
 
     /**
-     * Gets the value of the gender property.
+     * Gets the value of the patientGenderId property.
      * 
-     * @return
-     *     possible object is
-     *     {@link Gender }
-     *     
      */
-    public Gender getGender() {
-        return gender;
+    public int getPatientGenderId() {
+        return patientGenderId;
     }
 
     /**
-     * Sets the value of the gender property.
+     * Sets the value of the patientGenderId property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link Gender }
-     *     
      */
-    public void setGender(Gender value) {
-        this.gender = value;
+    public void setPatientGenderId(int value) {
+        this.patientGenderId = value;
     }
 
     /**
@@ -219,27 +203,27 @@ public class Patient
     }
 
     /**
-     * Gets the value of the usualGpName property.
+     * Gets the value of the usualGpPractitionerId property.
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public String getUsualGpName() {
-        return usualGpName;
+    public Integer getUsualGpPractitionerId() {
+        return usualGpPractitionerId;
     }
 
     /**
-     * Sets the value of the usualGpName property.
+     * Sets the value of the usualGpPractitionerId property.
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public void setUsualGpName(String value) {
-        this.usualGpName = value;
+    public void setUsualGpPractitionerId(Integer value) {
+        this.usualGpPractitionerId = value;
     }
 
     /**

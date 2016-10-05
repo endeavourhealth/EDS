@@ -31,14 +31,17 @@ public class FhirExtensionUri {
     public final static String PROBLEM_ASSOCIATED_RESOURCE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-problem-associated-extension";
     public final static String PROBLEM_RELATED = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-problem-related-extension";
 
-    //extensions specific to Condition resource
+    //extensions specific to Condition resources
     public final static String CONDITION_PART_OF_PROBLEM = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-condition-partofproblemepisode-extension";
 
-    //extensions specific to FamilyMemberHistory resource
+    //extensions specific to FamilyMemberHistory resources
     public final static String FAMILY_MEMBER_HISTOY_REPORTED_BY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-family-member-history-reporter-extension";
 
-    //extensions specific to ReferralRequest resource
+    //extensions specific to ReferralRequest resources
     public final static String REFERRAL_REQUEST_SEND_MODE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-referral-request-send-mode-extension";
+
+    //extensions specific to DiagnosticReport resources
+    public final static String DIAGNOSTIC_REPORT_FILED_BY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-diagnostic-report-filed-by-extension";
 
     //extensions specific to Task resource
     public final static String TASK_TYPE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-task-type-extension";

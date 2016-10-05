@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;extension base="{}baseRecord">
  *       &lt;sequence>
- *         &lt;element name="organisation_id" type="{}uuid" minOccurs="0"/>
+ *         &lt;element name="organization_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *         &lt;element name="name" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="role_code" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="role_desc" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
@@ -31,7 +31,7 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "practitioner", propOrder = {
-    "organisationId",
+    "organizationId",
     "name",
     "roleCode",
     "roleDesc"
@@ -40,8 +40,8 @@ public class Practitioner
     extends BaseRecord
 {
 
-    @XmlElement(name = "organisation_id")
-    protected String organisationId;
+    @XmlElement(name = "organization_id")
+    protected int organizationId;
     protected String name;
     @XmlElement(name = "role_code")
     protected String roleCode;
@@ -49,27 +49,19 @@ public class Practitioner
     protected String roleDesc;
 
     /**
-     * Gets the value of the organisationId property.
+     * Gets the value of the organizationId property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
      */
-    public String getOrganisationId() {
-        return organisationId;
+    public int getOrganizationId() {
+        return organizationId;
     }
 
     /**
-     * Sets the value of the organisationId property.
+     * Sets the value of the organizationId property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
      */
-    public void setOrganisationId(String value) {
-        this.organisationId = value;
+    public void setOrganizationId(int value) {
+        this.organizationId = value;
     }
 
     /**

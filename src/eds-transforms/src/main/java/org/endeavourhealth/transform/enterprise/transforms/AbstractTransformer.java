@@ -6,10 +6,8 @@ import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.transform.EnterpriseIdMapRepository;
 import org.endeavourhealth.core.xml.enterprise.BaseRecord;
-import org.endeavourhealth.core.xml.enterprise.DatePrecision;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceComponents;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
@@ -24,6 +22,9 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class AbstractTransformer {
 
@@ -31,6 +32,8 @@ public abstract class AbstractTransformer {
 
     private static final EnterpriseIdMapRepository idMappingRepository = new EnterpriseIdMapRepository();
     private static JCS cache = null;
+    private static Map<String, AtomicInteger> maxIdMap = new ConcurrentHashMap<>();
+    private static ReentrantLock futuresLock = new ReentrantLock();
 
     static {
         try {
@@ -48,7 +51,7 @@ public abstract class AbstractTransformer {
     public abstract void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
-                                 UUID enterpriseOrganisationUuid) throws Exception;
+                                 Integer enterpriseOrganisationUuid) throws Exception;
 
 
     protected static XMLGregorianCalendar convertDate(Date date) throws Exception {
@@ -58,18 +61,8 @@ public abstract class AbstractTransformer {
         return DatatypeFactory.newInstance().newXMLGregorianCalendar(c);
     }
 
-    protected static DatePrecision convertDatePrecision(TemporalPrecisionEnum precision) throws Exception {
-        if (precision == TemporalPrecisionEnum.YEAR) {
-            return DatePrecision.YEAR;
-        } else if (precision == TemporalPrecisionEnum.MONTH) {
-            return DatePrecision.MONTH;
-        } else if (precision == TemporalPrecisionEnum.DAY) {
-            return DatePrecision.DAY;
-        } else if (precision == TemporalPrecisionEnum.MINUTE) {
-            return DatePrecision.MINUTE;
-        } else {
-            throw new TransformException("Unsupported date time precision " + precision);
-        }
+    protected static Integer convertDatePrecision(TemporalPrecisionEnum precision) throws Exception {
+        return new Integer(precision.getCalendarConstant());
     }
 
 
@@ -84,50 +77,51 @@ public abstract class AbstractTransformer {
         return null;
     }
 
-    protected static UUID findEnterpriseUuid(Resource resource) throws Exception {
+    protected static Integer findEnterpriseId(Resource resource) throws Exception {
         String resourceType = resource.getResourceType().toString();
         UUID resourceId = UUID.fromString(resource.getId());
-        UUID ret = checkCacheForUuid(resourceType, resourceId);
-        if (ret == null) {
-            ret = idMappingRepository.getEnterpriseIdMappingUuid(resourceType, resourceId);
-        }
-        return ret;
+        return findEnterpriseId(resourceType, resourceId);
     }
 
-    protected static UUID findEnterpriseUuid(Reference reference) throws Exception {
+    protected static Integer findEnterpriseId(Reference reference) throws Exception {
         ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
         String resourceType = comps.getResourceType().toString();
         UUID resourceId = UUID.fromString(comps.getId());
-        UUID ret = checkCacheForUuid(resourceType, resourceId);
+        return findEnterpriseId(resourceType, resourceId);
+    }
+
+    protected static Integer findEnterpriseId(ResourceByExchangeBatch resource) throws Exception {
+        return findEnterpriseId(resource.getResourceType(), resource.getResourceId());
+    }
+
+    private static Integer findEnterpriseId(String resourceType, UUID resourceId) throws Exception {
+        Integer ret = checkCacheForId(resourceType, resourceId);
         if (ret == null) {
-            ret = idMappingRepository.getEnterpriseIdMappingUuid(resourceType, resourceId);
+            ret = idMappingRepository.getEnterpriseIdMappingId(resourceType, resourceId);
         }
         return ret;
     }
 
-    protected static UUID findEnterpriseUuid(ResourceByExchangeBatch resource) throws Exception {
-        UUID ret = checkCacheForUuid(resource.getResourceType(), resource.getResourceId());
-        if (ret == null) {
-            ret = idMappingRepository.getEnterpriseIdMappingUuid(resource.getResourceType(), resource.getResourceId());
-        }
-        return ret;
+
+
+    protected static Integer createEnterpriseId(ResourceByExchangeBatch resource) throws Exception {
+        String resourceType = resource.getResourceType();
+        UUID resourceId = resource.getResourceId();
+        int enterpriseId = getNextId(resourceType);
+        idMappingRepository.saveEnterpriseIdMapping(resourceType, resourceId, new Integer(enterpriseId));
+        addIdToCache(resource.getResourceType(), resource.getResourceId(), enterpriseId);
+        return enterpriseId;
     }
 
-    protected static UUID createEnterpriseUuid(ResourceByExchangeBatch resource) throws Exception {
-        UUID uuid = idMappingRepository.createEnterpriseIdMappingUuid(resource.getResourceType(), resource.getResourceId());
-        addUuidToCache(resource.getResourceType(), resource.getResourceId(), uuid);
-        return uuid;
+    protected static void setEnterpriseId(String resourceType, UUID resourceId, Integer enterpriseId) throws Exception {
+        idMappingRepository.saveEnterpriseIdMapping(resourceType, resourceId, enterpriseId);
+        addIdToCache(resourceType, resourceId, enterpriseId);
     }
 
-    protected static void setEnterpriseUuid(String resourceType, UUID resourceId, UUID enterpriseId) throws Exception {
-        idMappingRepository.setEnterpriseIdMapping(resourceType, resourceId, enterpriseId);
-        addUuidToCache(resourceType, resourceId, enterpriseId);
+    private static Integer checkCacheForId(String resourceType, UUID resourceId) throws Exception {
+        return (Integer)cache.get(resourceType + "/" + resourceId);
     }
-
-    private static UUID checkCacheForUuid(String resourceType, UUID resourceId) throws Exception {
-        return (UUID)cache.get(resourceType + "/" + resourceId);
-    }
-    private static void addUuidToCache(String resourceType, UUID resourceId, UUID toCache) throws Exception {
+    private static void addIdToCache(String resourceType, UUID resourceId, Integer toCache) throws Exception {
         cache.put(resourceType + "/" + resourceId, toCache);
     }
 
@@ -165,31 +159,55 @@ public abstract class AbstractTransformer {
         }
     }
 
-    protected static void mapIdAndMode(ResourceByExchangeBatch resource, BaseRecord baseRecord) throws Exception {
-        UUID enterpriseId = findEnterpriseUuid(resource);
+    protected static boolean mapIdAndMode(ResourceByExchangeBatch resource, BaseRecord baseRecord) throws Exception {
+        Integer enterpriseId = findEnterpriseId(resource);
 
         if (resource.getIsDeleted()) {
 
             //if we've no Enterprise ID, the resource was never passed to Enterprise, so don't bother telling it to delete
             if (enterpriseId != null) {
-                baseRecord.setId(enterpriseId.toString());
+                baseRecord.setId(enterpriseId);
                 baseRecord.setSaveMode(SaveMode.DELETE);
+
+            } else {
+                //if it's a delete, but we've never sent it to enterprise, return false so we know not to send it now
+                return false;
             }
 
         } else {
 
             if (enterpriseId == null) {
                 //if we don't have an schema ID, the resource is new, so should be an INSERT transaction
-                enterpriseId = createEnterpriseUuid(resource);
+                enterpriseId = createEnterpriseId(resource);
 
-                baseRecord.setId(enterpriseId.toString());
+                baseRecord.setId(enterpriseId);
                 baseRecord.setSaveMode(SaveMode.INSERT);
 
             } else {
                 //if we have an schema ID, the resource was previously passed to Enterprise, so it's an update
-                baseRecord.setId(enterpriseId.toString());
+                baseRecord.setId(enterpriseId);
                 baseRecord.setSaveMode(SaveMode.UPDATE);
             }
         }
+
+        return true;
+    }
+
+    private static int getNextId(String resourceType) {
+
+        AtomicInteger ai = maxIdMap.get(resourceType);
+        if (ai == null) {
+            futuresLock.lock();
+
+            ai = maxIdMap.get(resourceType);
+            if (ai == null) {
+                int lastVal = idMappingRepository.getMaxEnterpriseId(resourceType);
+                ai = new AtomicInteger(lastVal);
+                maxIdMap.put(resourceType, ai);
+            }
+
+            futuresLock.unlock();
+        }
+        return ai.incrementAndGet();
     }
 }

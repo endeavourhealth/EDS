@@ -15,14 +15,14 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *   &lt;complexContent>
  *     &lt;extension base="{}baseRecord">
  *       &lt;sequence>
- *         &lt;element name="organisation_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="patient_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="encounter_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="practitioner_id" type="{}uuid" minOccurs="0"/>
- *         &lt;element name="date" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
- *         &lt;element name="date_precision" type="{}date_precision" minOccurs="0"/>
+ *         &lt;element name="organization_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
+ *         &lt;element name="patient_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
+ *         &lt;element name="encounter_id" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
+ *         &lt;element name="practitioner_id" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
+ *         &lt;element name="clinical_effective_date" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
+ *         &lt;element name="date_precision_id" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *         &lt;element name="snomed_concept_id" type="{http://www.w3.org/2001/XMLSchema}long" minOccurs="0"/>
- *         &lt;element name="procedure_status" type="{}procedure_request_status" minOccurs="0"/>
+ *         &lt;element name="procedure_request_status_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *       &lt;/sequence>
  *     &lt;/extension>
  *   &lt;/complexContent>
@@ -33,83 +33,66 @@ import javax.xml.datatype.XMLGregorianCalendar;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "procedure_request", propOrder = {
-    "organisationId",
+    "organizationId",
     "patientId",
     "encounterId",
     "practitionerId",
-    "date",
-    "datePrecision",
+    "clinicalEffectiveDate",
+    "datePrecisionId",
     "snomedConceptId",
-    "procedureStatus"
+    "procedureRequestStatusId"
 })
 public class ProcedureRequest
     extends BaseRecord
 {
 
-    @XmlElement(name = "organisation_id")
-    protected String organisationId;
+    @XmlElement(name = "organization_id")
+    protected int organizationId;
     @XmlElement(name = "patient_id")
-    protected String patientId;
+    protected int patientId;
     @XmlElement(name = "encounter_id")
-    protected String encounterId;
+    protected Integer encounterId;
     @XmlElement(name = "practitioner_id")
-    protected String practitionerId;
+    protected Integer practitionerId;
+    @XmlElement(name = "clinical_effective_date")
     @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar date;
-    @XmlElement(name = "date_precision")
-    @XmlSchemaType(name = "string")
-    protected DatePrecision datePrecision;
+    protected XMLGregorianCalendar clinicalEffectiveDate;
+    @XmlElement(name = "date_precision_id")
+    protected Integer datePrecisionId;
     @XmlElement(name = "snomed_concept_id")
     protected Long snomedConceptId;
-    @XmlElement(name = "procedure_status")
-    @XmlSchemaType(name = "string")
-    protected ProcedureRequestStatus procedureStatus;
+    @XmlElement(name = "procedure_request_status_id")
+    protected int procedureRequestStatusId;
 
     /**
-     * Gets the value of the organisationId property.
+     * Gets the value of the organizationId property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
      */
-    public String getOrganisationId() {
-        return organisationId;
+    public int getOrganizationId() {
+        return organizationId;
     }
 
     /**
-     * Sets the value of the organisationId property.
+     * Sets the value of the organizationId property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
      */
-    public void setOrganisationId(String value) {
-        this.organisationId = value;
+    public void setOrganizationId(int value) {
+        this.organizationId = value;
     }
 
     /**
      * Gets the value of the patientId property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
      */
-    public String getPatientId() {
+    public int getPatientId() {
         return patientId;
     }
 
     /**
      * Sets the value of the patientId property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
      */
-    public void setPatientId(String value) {
+    public void setPatientId(int value) {
         this.patientId = value;
     }
 
@@ -118,10 +101,10 @@ public class ProcedureRequest
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public String getEncounterId() {
+    public Integer getEncounterId() {
         return encounterId;
     }
 
@@ -130,10 +113,10 @@ public class ProcedureRequest
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public void setEncounterId(String value) {
+    public void setEncounterId(Integer value) {
         this.encounterId = value;
     }
 
@@ -142,10 +125,10 @@ public class ProcedureRequest
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public String getPractitionerId() {
+    public Integer getPractitionerId() {
         return practitionerId;
     }
 
@@ -154,59 +137,59 @@ public class ProcedureRequest
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link Integer }
      *     
      */
-    public void setPractitionerId(String value) {
+    public void setPractitionerId(Integer value) {
         this.practitionerId = value;
     }
 
     /**
-     * Gets the value of the date property.
+     * Gets the value of the clinicalEffectiveDate property.
      * 
      * @return
      *     possible object is
      *     {@link XMLGregorianCalendar }
      *     
      */
-    public XMLGregorianCalendar getDate() {
-        return date;
+    public XMLGregorianCalendar getClinicalEffectiveDate() {
+        return clinicalEffectiveDate;
     }
 
     /**
-     * Sets the value of the date property.
+     * Sets the value of the clinicalEffectiveDate property.
      * 
      * @param value
      *     allowed object is
      *     {@link XMLGregorianCalendar }
      *     
      */
-    public void setDate(XMLGregorianCalendar value) {
-        this.date = value;
+    public void setClinicalEffectiveDate(XMLGregorianCalendar value) {
+        this.clinicalEffectiveDate = value;
     }
 
     /**
-     * Gets the value of the datePrecision property.
+     * Gets the value of the datePrecisionId property.
      * 
      * @return
      *     possible object is
-     *     {@link DatePrecision }
+     *     {@link Integer }
      *     
      */
-    public DatePrecision getDatePrecision() {
-        return datePrecision;
+    public Integer getDatePrecisionId() {
+        return datePrecisionId;
     }
 
     /**
-     * Sets the value of the datePrecision property.
+     * Sets the value of the datePrecisionId property.
      * 
      * @param value
      *     allowed object is
-     *     {@link DatePrecision }
+     *     {@link Integer }
      *     
      */
-    public void setDatePrecision(DatePrecision value) {
-        this.datePrecision = value;
+    public void setDatePrecisionId(Integer value) {
+        this.datePrecisionId = value;
     }
 
     /**
@@ -234,27 +217,19 @@ public class ProcedureRequest
     }
 
     /**
-     * Gets the value of the procedureStatus property.
+     * Gets the value of the procedureRequestStatusId property.
      * 
-     * @return
-     *     possible object is
-     *     {@link ProcedureRequestStatus }
-     *     
      */
-    public ProcedureRequestStatus getProcedureStatus() {
-        return procedureStatus;
+    public int getProcedureRequestStatusId() {
+        return procedureRequestStatusId;
     }
 
     /**
-     * Sets the value of the procedureStatus property.
+     * Sets the value of the procedureRequestStatusId property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link ProcedureRequestStatus }
-     *     
      */
-    public void setProcedureStatus(ProcedureRequestStatus value) {
-        this.procedureStatus = value;
+    public void setProcedureRequestStatusId(int value) {
+        this.procedureRequestStatusId = value;
     }
 
 }

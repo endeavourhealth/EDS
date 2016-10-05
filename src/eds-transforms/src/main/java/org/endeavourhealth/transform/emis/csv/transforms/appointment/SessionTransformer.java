@@ -40,16 +40,17 @@ public class SessionTransformer {
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 
-        //skip deleted sessions
-        if (sessionParser.getDeleted()) {
-            return;
-        }
-
         Schedule fhirSchedule = new Schedule();
         fhirSchedule.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SCHEDULE));
 
         String sessionGuid = sessionParser.getAppointmnetSessionGuid();
         fhirSchedule.setId(sessionGuid);
+
+        //handle deleted sessions
+        if (sessionParser.getDeleted()) {
+            csvProcessor.deleteAdminResource(fhirSchedule);
+            return;
+        }
 
         String locationGuid = sessionParser.getLocationGuid();
         Reference fhirReference = csvHelper.createLocationReference(locationGuid);
