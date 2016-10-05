@@ -18,8 +18,12 @@ public abstract class UIClinicalTransform<T extends Resource, U extends UIResour
     public abstract List<Reference> getReferences(List<T> resources);
 
     protected static UIPractitioner getRecordedByExtensionValue(DomainResource resource, ReferencedResources referencedResources) {
-        Reference reference = ExtensionHelper.getExtensionValue(resource, FhirExtensionUri.RECORDED_BY, Reference.class);
+        Reference reference = getRecordedByExtensionValue(resource);
         return referencedResources.getUIPractitioner(reference);
+    }
+
+    protected static Reference getRecordedByExtensionValue(DomainResource resource) {
+        return ExtensionHelper.getExtensionValue(resource, FhirExtensionUri.RECORDED_BY, Reference.class);
     }
 
     protected static Date getRecordedDateExtensionValue(DomainResource resource) {

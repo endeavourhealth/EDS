@@ -69,9 +69,13 @@ public class UIProblemTransform extends UIClinicalTransform<Condition, UIProblem
         return lastReviewDate.getValue();
     }
 
-    private static UIPractitioner getLastReviewer(Condition condition, ReferencedResources referencedResources) {
+    private static Reference getLastReviewerReference(Condition condition) {
         Extension extension = ExtensionHelper.getExtension(condition, FhirExtensionUri.PROBLEM_LAST_REVIEWED);
-        Reference reference = ExtensionHelper.getExtensionValue(extension, FhirExtensionUri._PROBLEM_LAST_REVIEWED__DATE, Reference.class);
+        return ExtensionHelper.getExtensionValue(extension, FhirExtensionUri._PROBLEM_LAST_REVIEWED__PERFORMER, Reference.class);
+    }
+
+    private static UIPractitioner getLastReviewer(Condition condition, ReferencedResources referencedResources) {
+        Reference reference = getLastReviewerReference(condition);
 
         if (reference != null)
             return null;
@@ -86,11 +90,8 @@ public class UIProblemTransform extends UIClinicalTransform<Condition, UIProblem
                         .stream(),
                 resources
                         .stream()
-                        .flatMap(t -> t.getExtension().stream())
-                        .filter(t -> t.getUrl() == FhirExtensionUri.PROBLEM_LAST_REVIEWED)
-                        .flatMap(t -> t.getExtension().stream())
-                        .filter(t -> t.getUrl() == FhirExtensionUri._PROBLEM_LAST_REVIEWED__PERFORMER)
-                        .map(t -> (Reference)t.getValue()))
+                        .map(t -> getLastReviewerReference(t))
+                        .filter(t -> (t != null)))
                 .collect(Collectors.toList());
     }
 }

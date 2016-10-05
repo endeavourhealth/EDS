@@ -51,6 +51,27 @@ public class UIProcedureTransform extends UIClinicalTransform<Procedure, UIProce
 
     @Override
     public List<Reference> getReferences(List<Procedure> resources) {
-        return null;
+        return StreamExtension.concat(
+                resources
+                        .stream()
+                        .map(t -> t.getSubject()),
+                resources
+                        .stream()
+                        .filter(t -> t.hasPerformer())
+                        .flatMap(t -> t.getPerformer().stream())
+                        .map(t -> t.getActor()),
+                resources
+                        .stream()
+                        .filter(t -> t.hasEncounter())
+                        .map(t -> t.getEncounter()),
+                resources
+                        .stream()
+                        .filter(t -> t.hasLocation())
+                        .map(t -> t.getLocation()),
+                resources
+                        .stream()
+                        .map(t -> getRecordedByExtensionValue(t))
+                        .filter(t -> (t != null)))
+                .collect(Collectors.toList());
     }
 }

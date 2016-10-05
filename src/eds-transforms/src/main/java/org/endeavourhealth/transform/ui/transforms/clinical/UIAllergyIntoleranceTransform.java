@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.ui.transforms.clinical;
 
+import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIAllergyIntolerance;
@@ -33,6 +34,23 @@ public class UIAllergyIntoleranceTransform extends UIClinicalTransform<AllergyIn
 
     @Override
     public List<Reference> getReferences(List<AllergyIntolerance> resources) {
-        return null;
+        return StreamExtension.concat(
+                resources
+                        .stream()
+                        .filter(t -> t.hasRecorder())
+                        .map(t -> t.getRecorder()),
+                resources
+                        .stream()
+                        .filter(t -> t.hasPatient())
+                        .map(t -> t.getPatient()),
+                resources
+                        .stream()
+                        .filter(t -> t.hasReporter())
+                        .map(t -> t.getReporter()),
+                resources
+                        .stream()
+                        .map(t -> getRecordedByExtensionValue(t))
+                        .filter(t -> (t != null)))
+                .collect(Collectors.toList());
     }
 }

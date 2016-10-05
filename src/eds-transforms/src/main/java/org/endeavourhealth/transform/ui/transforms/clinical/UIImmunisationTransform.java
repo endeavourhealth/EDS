@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.ui.transforms.clinical;
 
-import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIImmunisation;
@@ -33,6 +33,35 @@ public class UIImmunisationTransform extends UIClinicalTransform<Immunization, U
 
     @Override
     public List<Reference> getReferences(List<Immunization> resources) {
-        return null;
+        return StreamExtension.concat(
+                resources
+                        .stream()
+                        .filter(t -> t.hasPatient())
+                        .map(t -> t.getPatient()),
+                resources
+                        .stream()
+                        .filter(t -> t.hasPerformer())
+                        .map(t -> t.getPerformer()),
+                resources
+                        .stream()
+                        .filter(t -> t.hasRequester())
+                        .map(t -> t.getRequester()),
+                resources
+                        .stream()
+                        .filter(t -> t.hasEncounter())
+                        .map(t -> t.getEncounter()),
+                resources
+                        .stream()
+                        .filter(t -> t.hasManufacturer())
+                        .map(t -> t.getManufacturer()),
+                resources
+                        .stream()
+                        .filter(t -> t.hasLocation())
+                        .map(t -> t.getLocation()),
+                resources
+                        .stream()
+                        .map(t -> getRecordedByExtensionValue(t))
+                        .filter(t -> (t != null)))
+                .collect(Collectors.toList());
     }
 }

@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.ui.transforms.clinical;
 
+import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.ExtensionHelper;
@@ -85,11 +86,42 @@ public class UIEncounterTransform extends UIClinicalTransform<Encounter, UIEncou
     }
 
     public List<Reference> getReferences(List<Encounter> encounters) {
-        return encounters
-                .stream()
-                .flatMap(t -> t.getParticipant().stream())
-                .filter(t -> t.hasIndividual())
-                .map(t -> t.getIndividual())
+        return StreamExtension.concat(
+                encounters
+                        .stream()
+                        .filter(t -> t.hasPatient())
+                        .map(t -> t.getPatient()),
+                encounters
+                        .stream()
+                        .filter(t -> t.hasEpisodeOfCare())
+                        .flatMap(t -> t.getEpisodeOfCare().stream()),
+                encounters
+                        .stream()
+                        .filter(t -> t.hasIncomingReferral())
+                        .flatMap(t -> t.getIncomingReferral().stream()),
+                encounters
+                        .stream()
+                        .filter(t -> t.hasParticipant())
+                        .flatMap(t -> t.getParticipant().stream())
+                        .filter(t -> t.hasIndividual())
+                        .map(t -> t.getIndividual()),
+                encounters
+                        .stream()
+                        .filter(t -> t.hasAppointment())
+                        .map(t -> t.getAppointment()),
+                encounters
+                        .stream()
+                        .filter(t -> t.hasLocation())
+                        .flatMap(t -> t.getLocation().stream())
+                        .map(t -> t.getLocation()),
+                encounters
+                        .stream()
+                        .filter(t -> t.hasServiceProvider())
+                        .map(t -> t.getServiceProvider()),
+                encounters
+                        .stream()
+                        .filter(t -> t.hasPartOf())
+                        .map(t -> t.getPartOf()))
                 .collect(Collectors.toList());
     }
 }

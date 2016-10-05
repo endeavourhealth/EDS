@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.ui.transforms.clinical;
 
+import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
@@ -103,16 +104,27 @@ public class UIConditionTransform extends UIClinicalTransform<Condition, UICondi
 
     @Override
     public List<Reference> getReferences(List<Condition> resources) {
-        return Stream.concat(
+        return StreamExtension.concat(
+                resources
+                        .stream()
+                        .map(t -> t.getPatient()),
+                resources
+                        .stream()
+                        .filter(t -> t.hasEncounter())
+                        .map(t -> t.getEncounter()),
                 resources
                         .stream()
                         .filter(t -> t.hasAsserter())
                         .map(t -> t.getAsserter()),
                 resources
                         .stream()
-                        .flatMap(t -> t.getExtension().stream())
-                        .filter(t -> t.getUrl() == FhirExtensionUri.RECORDED_BY)
-                        .map(t -> (Reference)t.getValue()))
+                        .map(t -> getRecordedByExtensionValue(t))
+                        .filter(t -> (t != null)),
+                resources
+                        .stream()
+                        .filter(t -> t.hasStage())
+                        .filter(t -> t.getStage().hasAssessment())
+                        .flatMap(t -> t.getStage().getAssessment().stream()))
                 .collect(Collectors.toList());
     }
 }

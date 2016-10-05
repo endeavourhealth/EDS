@@ -115,14 +115,23 @@ public class UIObservationTransform extends UIClinicalTransform<Observation, UIO
 
     @Override
     public List<Reference> getReferences(List<Observation> resources) {
-         return Stream.concat(resources
-                         .stream()
-                         .flatMap(t -> t.getPerformer().stream()),
-                 resources
-                         .stream()
-                         .flatMap(t -> t.getExtension().stream())
-                         .filter(t -> t.getUrl() == FhirExtensionUri.RECORDED_BY)
-                         .map(t -> (Reference)t.getValue()))
-                 .collect(Collectors.toList());
+        return StreamExtension.concat(
+                resources
+                        .stream()
+                        .filter(t -> t.hasSubject())
+                        .map(t -> t.getSubject()),
+                resources
+                        .stream()
+                        .filter(t -> t.hasEncounter())
+                        .map(t -> t.getEncounter()),
+                resources
+                        .stream()
+                        .filter(t -> t.hasPerformer())
+                        .flatMap(t -> t.getPerformer().stream()),
+                resources
+                        .stream()
+                        .map(t -> getRecordedByExtensionValue(t))
+                        .filter(t -> (t != null)))
+                .collect(Collectors.toList());
     }
 }
