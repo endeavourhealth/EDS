@@ -201,3 +201,43 @@
     -webkit-justify-content: center;
     justify-content: center;
 }
+
+/* record viewer - patient precis */
+.record-viewer .precis {
+
+}
+
+.record-viewer .precis-patientname {
+    font-weight: bold;
+    font-size: 120%;
+}
+
+.record-viewer .precis-label {
+    font-style: italic;
+}
+
+.record-viewer .precis-value {
+    font-weight: bold;
+}
+
+.record-viewer .tab-panel {
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    border-radius: 0px 0px 5px 5px;
+    padding: 10px;
+}
+
+#patient-find-search-results {
+    margin-top: 20px;
+}
+
+#patient-find-search-results tbody tr.selected,
+#patient-find-search-results tbody tr.selected:hover {
+    background: #93c9e9;
+}
+
+#patient-find-search-results tbody tr:hover {
+    background: #d3e9f6;
+    cursor: pointer;
+}
