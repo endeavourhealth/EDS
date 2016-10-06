@@ -1,0 +1,37 @@
+<div class="modal-header">
+    <button type="button" class="close" data-ng-click="ctrl.cancel()" aria-hidden="true">&times;</button>
+    <h4 class="modal-title">Find patient</h4>
+</div>
+<div class="modal-body" ng-keydown="ctrl.keydown($event)">
+
+    <div class="container-fluid">
+        <div class="input-group">
+            <input type="text" class="form-control" ng-model="ctrl.searchTerms" ng-change="ctrl.searchTermsChanged()" autofocus placeholder="Enter search terms...">
+            <span class="input-group-btn">
+                <button class="btn btn-primary" type="button" ng-click="ctrl.findPatient()">Find patient</button>
+            </span>
+        </div>
+
+        <div id="patient-find-search-results" ng-show="ctrl.foundPatients">
+            <table class="table table-hover">
+                <thead>
+                    <th>Name / Address</th>
+                    <th>Born / Gender</th>
+                    <th>NHS number</th>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="patient in ctrl.foundPatients" ng-click="ctrl.selectPatient(patient)" ng-class="{'selected': ctrl.selectedPatient == patient}">
+                        <td><b>{{patient.name | cuiName}}</b><br/>{{patient.homeAddress | cuiSingleLineAddress}}</td>
+                        <td>{{patient.dateOfBirth | cuiDateOfBirth}}<br/>{{patient.gender | cuiGender}}</td>
+                        <td>{{patient.nhsNumber | cuiNhsNumber}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn bnt-default" data-ng-click="ctrl.cancel()">Cancel</button>
+    <button type="button" class="btn btn-primary" ng-hide="ctrl.editMode" data-ng-click="ctrl.ok()" ng-disabled="ctrl.selectedPatient == null">OK</button>
+</div>

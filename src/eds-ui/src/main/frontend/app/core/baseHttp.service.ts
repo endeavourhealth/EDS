@@ -1,51 +1,45 @@
-/// <reference path="../../typings/index.d.ts" />
+export class BaseHttpService {
+	static $inject = ['$http', '$q'];
 
-module app.core {
-	'use strict';
+	constructor(protected http:ng.IHttpService, protected promise:ng.IQService) {
+	}
 
-	export class BaseHttpService {
-		static $inject = ['$http', '$q'];
+	httpGet(url : string, request? : any) : ng.IPromise<any> {
+		var defer = this.promise.defer();
+		this.http.get(url, request)
+			.then(function (response) {
+				defer.resolve(response.data);
+			})
+			.catch(function (exception) {
+				defer.reject(exception);
+			});
 
-		constructor(protected http:ng.IHttpService, protected promise:ng.IQService) {
-		}
+		return defer.promise;
+	}
 
-		httpGet(url : string, request? : any) : ng.IPromise<any> {
-			var defer = this.promise.defer();
-			this.http.get(url, request)
-				.then(function (response) {
-					defer.resolve(response.data);
-				})
-				.catch(function (exception) {
-					defer.reject(exception);
-				});
+	httpPost(url : string, request? : any) : ng.IPromise<any> {
+		var defer = this.promise.defer();
+		this.http.post(url, request)
+			.then(function (response) {
+				defer.resolve(response.data);
+			})
+			.catch(function (exception) {
+				defer.reject(exception);
+			});
 
-			return defer.promise;
-		}
+		return defer.promise;
+	}
 
-		httpPost(url : string, request? : any) : ng.IPromise<any> {
-			var defer = this.promise.defer();
-			this.http.post(url, request)
-				.then(function (response) {
-					defer.resolve(response.data);
-				})
-				.catch(function (exception) {
-					defer.reject(exception);
-				});
+	httpDelete(url : string, request? : any) : ng.IPromise<any> {
+		var defer = this.promise.defer();
+		this.http.delete(url, request)
+			.then(function (response) {
+				defer.resolve(response.data);
+			})
+			.catch(function (exception) {
+				defer.reject(exception);
+			});
 
-			return defer.promise;
-		}
-
-		httpDelete(url : string, request? : any) : ng.IPromise<any> {
-			var defer = this.promise.defer();
-			this.http.delete(url, request)
-				.then(function (response) {
-					defer.resolve(response.data);
-				})
-				.catch(function (exception) {
-					defer.reject(exception);
-				});
-
-			return defer.promise;
-		}
+		return defer.promise;
 	}
 }

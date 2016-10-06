@@ -1,167 +1,153 @@
-/// <reference path="../../typings/index.d.ts" />
+import Duration = moment.Duration;
 
-module app.filters {
-    import Duration = moment.Duration;
-    import UIHumanName = app.models.UIHumanName;
-    import UIAddress = app.models.UIAddress;
+import {UIHumanName} from "../recordViewer/models/UIHumanName";
+import {UIAddress} from "../recordViewer/models/UIAddress";
 
-    'use strict';
+export function cuiDate() {
+    return formatCuiDate;
+}
 
-    export function cuiDate() {
-        return formatCuiDate;
-    }
+export function cuiDateOfBirth() {
+    return formatCuiDateOfBirth;
+}
 
-    export function cuiDateOfBirth() {
-        return formatCuiDateOfBirth;
-    }
+export function cuiNhsNumber() {
+    return formatNhsNumber;
+}
 
-    export function cuiNhsNumber() {
-        return formatNhsNumber;
-    }
+export function cuiName() {
+    return formatName;
+}
 
-    export function cuiName() {
-        return formatName;
-    }
+export function cuiSingleLineAddress() {
+    return formatSingleLineAddress;
+}
 
-    export function cuiSingleLineAddress() {
-        return formatSingleLineAddress;
-    }
+export function cuiGender() {
+    return formatCuiGender;
+}
 
-    export function cuiGender() {
-        return formatCuiGender;
-    }
+function formatCuiDate(date: Date): string {
+    return moment(date).format("DD-MMM-YYYY");
+}
 
-    function formatCuiDate(date: Date): string {
-        return moment(date).format("DD-MMM-YYYY");
-    }
+function formatCuiDateOfBirth(dateOfBirth: Date): string {
+    let age: Duration = getDurationFromNow(dateOfBirth);
+    return formatCuiDate(dateOfBirth) + ' (' + age.years() + 'y ' + age.months() + 'm)';
+}
 
-    function formatCuiDateOfBirth(dateOfBirth: Date): string {
-        let age: Duration = getDurationFromNow(dateOfBirth);
-        return formatCuiDate(dateOfBirth) + ' (' + age.years() + 'y ' + age.months() + 'm)';
-    }
+function getDurationFromNow(date: Date): Duration {
+    return moment.duration(moment().diff(date));
+}
 
-    function getDurationFromNow(date: Date): Duration {
-        return moment.duration(moment().diff(date));
-    }
+function formatNhsNumber(nhsNumber: string): string {
+    if (nhsNumber == null)
+        return null;
 
-    function formatNhsNumber(nhsNumber: string): string {
-        if (nhsNumber == null)
-            return null;
+    let result: string = nhsNumber.replace(" ", "");
 
-        let result: string = nhsNumber.replace(" ", "");
-
-        if (result.length != 10)
-            return result;
-
-        return result.substring(0, 3) + " " + result.substring(3, 6) + " " + result.substring(6, 10);
-    }
-
-    function formatCuiGender(genderCode: string): string {
-        if (isEmpty(genderCode))
-            return "";
-
-        if (genderCode == "male")
-            return "Male";
-        else if (genderCode == "female")
-            return "Female";
-        else if (genderCode == "other")
-            return "Not known";
-        else if (genderCode == "unknown")
-            return "Not specified";
-
-        return "";
-    }
-
-    function formatName(name: UIHumanName): string {
-        let prefix: string;
-        let firstGivenName: string;
-        let familyName: string;
-
-        if (name != null) {
-            prefix = name.prefix;
-
-            if (name.givenNames != null)
-                if (name.givenNames.length > 0)
-                    firstGivenName = name.givenNames[0];
-
-            familyName = name.familyName;
-
-            if (prefix == null)
-                prefix = "";
-            if (firstGivenName == null)
-                firstGivenName = "";
-            if (familyName == null)
-                familyName = "";
-
-            prefix = titleCase(prefix.trim());
-            firstGivenName = titleCase(firstGivenName.trim());
-            familyName = familyName.trim().toUpperCase();
-        }
-
-        if (familyName == "")
-            familyName = "UNKNOWN";
-
-        let result: string = familyName;
-
-        if (firstGivenName != "")
-            result += ", " + firstGivenName;
-
-        if (prefix != "")
-            result += " (" + prefix + ")";
-
+    if (result.length != 10)
         return result;
+
+    return result.substring(0, 3) + " " + result.substring(3, 6) + " " + result.substring(6, 10);
+}
+
+function formatCuiGender(genderCode: string): string {
+    if (isEmpty(genderCode))
+        return "";
+
+    if (genderCode == "male")
+        return "Male";
+    else if (genderCode == "female")
+        return "Female";
+    else if (genderCode == "other")
+        return "Not known";
+    else if (genderCode == "unknown")
+        return "Not specified";
+
+    return "";
+}
+
+function formatName(name: UIHumanName): string {
+    let prefix: string;
+    let firstGivenName: string;
+    let familyName: string;
+
+    if (name != null) {
+        prefix = name.prefix;
+
+        if (name.givenNames != null)
+            if (name.givenNames.length > 0)
+                firstGivenName = name.givenNames[0];
+
+        familyName = name.familyName;
+
+        if (prefix == null)
+            prefix = "";
+        if (firstGivenName == null)
+            firstGivenName = "";
+        if (familyName == null)
+            familyName = "";
+
+        prefix = titleCase(prefix.trim());
+        firstGivenName = titleCase(firstGivenName.trim());
+        familyName = familyName.trim().toUpperCase();
     }
 
-    function titleCase(text: string) {
-        return text;
-    }
+    if (familyName == "")
+        familyName = "UNKNOWN";
 
-    function formatSingleLineAddress(address: UIAddress): string {
-        if (address == null)
-            return "";
+    let result: string = familyName;
 
-        let lines: string[] = new Array<string>();
+    if (firstGivenName != "")
+        result += ", " + firstGivenName;
 
-        lines.push(address.line1);
-        lines.push(address.line2);
-        lines.push(address.line3);
-        lines.push(address.city);
-        lines.push(address.district);
-        lines.push(formatPostalCode(address.postalCode));
+    if (prefix != "")
+        result += " (" + prefix + ")";
 
-        return lines
-                .filter(t => !isEmpty(t))
-                .join(", ");
-    }
+    return result;
+}
 
-    function formatPostalCode(postalCode: string): string {
-        if (postalCode == null)
-            return null;
+function titleCase(text: string) {
+    return text;
+}
 
-        postalCode = postalCode.replace(" ", "").toUpperCase().trim();
+function formatSingleLineAddress(address: UIAddress): string {
+    if (address == null)
+        return "";
 
-        let regExp: RegExp = new RegExp("^([A-Z]{1,2}[0-9]{1,2}[A-Z]?)([0-9][A-Z]{2})$");
-        let result: RegExpExecArray = regExp.exec(postalCode);
+    let lines: string[] = new Array<string>();
 
-        if ((result == null) || (result.length != 3))
-            return result.length.toString();
+    lines.push(address.line1);
+    lines.push(address.line2);
+    lines.push(address.line3);
+    lines.push(address.city);
+    lines.push(address.district);
+    lines.push(formatPostalCode(address.postalCode));
 
-        return result[1] + " " + result[2];
-    }
+    return lines
+            .filter(t => !isEmpty(t))
+            .join(", ");
+}
 
-    function isEmpty(str: string): boolean {
-        if (str == null)
-            return true;
+function formatPostalCode(postalCode: string): string {
+    if (postalCode == null)
+        return null;
 
-        return (str.trim().length == 0);
-    }
+    postalCode = postalCode.replace(" ", "").toUpperCase().trim();
 
-    angular
-        .module('app.filters')
-        .filter('cuiDate', cuiDate)
-        .filter('cuiDateOfBirth', cuiDateOfBirth)
-        .filter('cuiNhsNumber', cuiNhsNumber)
-        .filter('cuiName', cuiName)
-        .filter('cuiSingleLineAddress', cuiSingleLineAddress)
-        .filter('cuiGender', cuiGender);
+    let regExp: RegExp = new RegExp("^([A-Z]{1,2}[0-9]{1,2}[A-Z]?)([0-9][A-Z]{2})$");
+    let result: RegExpExecArray = regExp.exec(postalCode);
+
+    if ((result == null) || (result.length != 3))
+        return result.length.toString();
+
+    return result[1] + " " + result[2];
+}
+
+function isEmpty(str: string): boolean {
+    if (str == null)
+        return true;
+
+    return (str.trim().length == 0);
 }

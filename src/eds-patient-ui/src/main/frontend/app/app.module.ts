@@ -4,7 +4,8 @@
 import 'angular';
 import 'angular-ui-bootstrap';
 import 'angular-ui-router';
-import 'bootstrap-css';
+import 'angular-toastr';
+import 'bootstrap';
 
 // Internal dependencies
 import '../content/css/index.css';

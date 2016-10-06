@@ -1,23 +1,18 @@
-/// <reference path="../../typings/index.d.ts" />
+import IModalServiceInstance = angular.ui.bootstrap.IModalServiceInstance;
 
-module app.dialogs {
-	import IModalServiceInstance = angular.ui.bootstrap.IModalServiceInstance;
-	'use strict';
+export class BaseDialogController {
+	resultData : any;
 
-	export class BaseDialogController {
-		resultData : any;
+	constructor(protected $uibModalInstance : IModalServiceInstance) {
+	}
 
-		constructor(protected $uibModalInstance : IModalServiceInstance) {
-		}
+	ok() {
+		this.$uibModalInstance.close(this.resultData);
+		console.log('OK Pressed');
+	}
 
-		ok() {
-			this.$uibModalInstance.close(this.resultData);
-			console.log('OK Pressed');
-		}
-
-		cancel() {
-			this.$uibModalInstance.dismiss('cancel');
-			console.log('Cancel Pressed');
-		}
+	cancel() {
+		this.$uibModalInstance.dismiss('cancel');
+		console.log('Cancel Pressed');
 	}
 }

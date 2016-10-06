@@ -1,13 +1,11 @@
-module app.models {
-	'use strict';
+import {Endpoint} from "./Endpoint";
 
-	export class Service {
-		uuid:string;
-		localIdentifier : string;
-		name:string;
-		endpoints:Endpoint[];
-		organisations:{ [key:string]:string; };
+export class Service {
+	uuid:string;
+	localIdentifier : string;
+	name:string;
+	endpoints:Endpoint[];
+	organisations:{ [key:string]:string; };
 
-		constructor() {}
-	}
+	constructor() {}
 }

@@ -1,45 +1,34 @@
-/// <reference path="../../typings/index.d.ts" />
+export class QueryRoute {
+	static $inject = ['$stateProvider'];
 
-module app.query {
-	'use strict';
+	constructor(stateProvider:angular.ui.IStateProvider) {
+		var routes = QueryRoute.getRoutes();
 
-	class QueryRoute {
-		static $inject = ['$stateProvider'];
-
-		constructor(stateProvider:angular.ui.IStateProvider) {
-			var routes = QueryRoute.getRoutes();
-
-			routes.forEach(function (route) {
-				stateProvider.state(route.state, route.config);
-			});
-		}
-
-		static getRoutes() {
-			return [
-				{
-					state: 'app.query',
-					config: {
-						url: '/query',
-						templateUrl: 'app/query/query.html',
-						controller: 'QueryController',
-						controllerAs: 'query'
-					}
-				},
-				{
-					state: 'app.queryAction',
-					config: {
-						url: '/query/:itemUuid/:itemAction',
-						templateUrl: 'app/query/query.html',
-						controller: 'QueryController',
-						controllerAs: 'query'
-					}
-				}
-			];
-		}
+		routes.forEach(function (route) {
+			stateProvider.state(route.state, route.config);
+		});
 	}
 
-	angular
-		.module('app.query')
-		.config(QueryRoute);
-
+	static getRoutes() {
+		return [
+			{
+				state: 'app.query',
+				config: {
+					url: '/query',
+					template: require('./query.html'),
+					controller: 'QueryController',
+					controllerAs: 'query'
+				}
+			},
+			{
+				state: 'app.queryAction',
+				config: {
+					url: '/query/:itemUuid/:itemAction',
+					template: require('./query.html'),
+					controller: 'QueryController',
+					controllerAs: 'query'
+				}
+			}
+		];
+	}
 }

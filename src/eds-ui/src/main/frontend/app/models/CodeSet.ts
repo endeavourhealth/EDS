@@ -1,8 +1,6 @@
-module app.models {
-	'use strict';
+import {CodeSetValue} from "./CodeSetValue";
 
-	export class CodeSet {
-		codingSystem : string;
-		codeSetValue : CodeSetValue[];
-	}
+export class CodeSet {
+	codingSystem : string;
+	codeSetValue : CodeSetValue[];
 }

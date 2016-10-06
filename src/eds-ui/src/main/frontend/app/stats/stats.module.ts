@@ -1,3 +1,6 @@
-/// <reference path="../../typings/index.d.ts" />
+import {StatsController} from "./stats.controller";
+import {statsRoute} from "./stats.route";
 
-angular.module('app.stats', []);
+angular.module('app.stats', [])
+	.controller('StatsController', StatsController)
+	.config(statsRoute);

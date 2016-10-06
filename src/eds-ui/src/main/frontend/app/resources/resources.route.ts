@@ -1,36 +1,25 @@
-/// <reference path="../../typings/index.d.ts" />
+export class ResourcesRoute {
+	static $inject = ['$stateProvider'];
 
-module app.resources {
-	'use strict';
+	constructor(stateProvider:angular.ui.IStateProvider) {
+		var routes = ResourcesRoute.getRoutes();
 
-	class ResourcesRoute {
-		static $inject = ['$stateProvider'];
-
-		constructor(stateProvider:angular.ui.IStateProvider) {
-			var routes = ResourcesRoute.getRoutes();
-
-			routes.forEach(function (route) {
-				stateProvider.state(route.state, route.config);
-			});
-		}
-
-		static getRoutes() {
-			return [
-				{
-					state: 'app.resources',
-					config: {
-						url: '/resources/:itemUuid/:itemAction',
-						templateUrl: 'app/resources/resources.html',
-						controller: 'ResourcesController',
-						controllerAs: 'resourcesCtrl'
-					}
-				}
-			];
-		}
+		routes.forEach(function (route) {
+			stateProvider.state(route.state, route.config);
+		});
 	}
 
-	angular
-		.module('app.resources')
-		.config(ResourcesRoute);
-
+	static getRoutes() {
+		return [
+			{
+				state: 'app.resources',
+				config: {
+					url: '/resources/:itemUuid/:itemAction',
+					template: require('./resources.html'),
+					controller: 'ResourcesController',
+					controllerAs: 'resourcesCtrl'
+				}
+			}
+		];
+	}
 }

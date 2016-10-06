@@ -1,26 +1,16 @@
-/// <reference path="../../typings/index.d.ts" />
+import {UICodeableConcept} from "../recordViewer/models/UICodeableConcept";
 
-module app.filters {
-    import UICodeableConcept = app.models.UICodeableConcept;
+export function codeTerm() {
+    return getCodeTerm;
+}
 
-    'use strict';
+function getCodeTerm(codeableConcept: UICodeableConcept) {
+    if (codeableConcept == null)
+        return "";
 
-    export function codeTerm() {
-        return getCodeTerm;
-    }
+    for (let code of codeableConcept.codes)
+        if (code.system == "http://snomed.info/sct")
+            return code.display;
 
-    function getCodeTerm(codeableConcept: UICodeableConcept) {
-        if (codeableConcept == null)
-            return "";
-
-        for (let code of codeableConcept.codes)
-            if (code.system == "http://snomed.info/sct")
-                return code.display;
-
-        return "no snomed term";
-    }
-
-    angular
-        .module('app.filters')
-        .filter('codeTerm', codeTerm);
+    return "no snomed term";
 }

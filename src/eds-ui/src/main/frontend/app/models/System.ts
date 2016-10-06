@@ -1,9 +1,7 @@
-module app.models {
-	'use strict';
+import {TechnicalInterface} from "./TechnicalInterface";
 
-	export class System {
-		uuid:string;
-		name:string;
-		technicalInterface:TechnicalInterface[];
-	}
+export class System {
+	uuid:string;
+	name:string;
+	technicalInterface:TechnicalInterface[];
 }

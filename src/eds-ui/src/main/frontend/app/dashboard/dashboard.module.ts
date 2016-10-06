@@ -1,3 +1,6 @@
-/// <reference path="../../typings/index.d.ts" />
+import {DashboardController} from './dashboard.controller';
+import {DashboardRoute} from './dashboard.route';
 
-angular.module('app.dashboard', []);
+angular.module('app.dashboard', [])
+	.controller('DashboardController', DashboardController)
+	.config(DashboardRoute);

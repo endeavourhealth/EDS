@@ -1,3 +1,6 @@
-/// <reference path="../../typings/index.d.ts" />
+import {AdminController} from "./admin.controller"
+import {AdminRoute} from "./admin.route"
 
-angular.module('app.admin', []);
+angular.module('app.admin', [])
+	.controller('AdminController', AdminController)
+	.config(AdminRoute);

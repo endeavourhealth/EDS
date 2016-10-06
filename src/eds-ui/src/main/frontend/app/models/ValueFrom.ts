@@ -1,7 +1,5 @@
-module app.models {
-	'use strict';
+import {Value} from "./Value";
 
-	export class ValueFrom extends Value {
-		operator : string;
-	}
+export class ValueFrom extends Value {
+	operator : string;
 }

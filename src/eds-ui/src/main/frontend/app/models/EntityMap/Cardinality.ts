@@ -1,7 +1,3 @@
-module app.models {
-	'use strict';
-
-	export class Cardinality {
-		value : string;
-	}
+export class Cardinality {
+	value : string;
 }

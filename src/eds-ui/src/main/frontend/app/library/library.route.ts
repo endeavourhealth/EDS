@@ -1,36 +1,25 @@
-/// <reference path="../../typings/index.d.ts" />
+export class LibraryRoute {
+	static $inject = ['$stateProvider'];
 
-module app.library {
-	'use strict';
+	constructor(stateProvider:angular.ui.IStateProvider) {
+		var routes = LibraryRoute.getRoutes();
 
-	class LibraryRoute {
-		static $inject = ['$stateProvider'];
-
-		constructor(stateProvider:angular.ui.IStateProvider) {
-			var routes = LibraryRoute.getRoutes();
-
-			routes.forEach(function (route) {
-				stateProvider.state(route.state, route.config);
-			});
-		}
-
-		static getRoutes() {
-			return [
-				{
-					state: 'app.library',
-					config: {
-						url: '/library',
-						templateUrl: 'app/library/library.html',
-						controller: 'LibraryController',
-						controllerAs: 'ctrl'
-					}
-				}
-			];
-		}
+		routes.forEach(function (route) {
+			stateProvider.state(route.state, route.config);
+		});
 	}
 
-	angular
-		.module('app.library')
-		.config(LibraryRoute);
-
+	static getRoutes() {
+		return [
+			{
+				state: 'app.library',
+				config: {
+					url: '/library',
+					template: require('./library.html'),
+					controller: 'LibraryController',
+					controllerAs: 'ctrl'
+				}
+			}
+		];
+	}
 }

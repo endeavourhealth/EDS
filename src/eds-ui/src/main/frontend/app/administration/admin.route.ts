@@ -1,36 +1,25 @@
-/// <reference path="../../typings/index.d.ts" />
+export class AdminRoute {
+	static $inject = ['$stateProvider'];
 
-module app.admin {
-	'use strict';
+	constructor(stateProvider:angular.ui.IStateProvider) {
+		var routes = AdminRoute.getRoutes();
 
-	class AdminRoute {
-		static $inject = ['$stateProvider'];
-
-		constructor(stateProvider:angular.ui.IStateProvider) {
-			var routes = AdminRoute.getRoutes();
-
-			routes.forEach(function (route) {
-				stateProvider.state(route.state, route.config);
-			});
-		}
-
-		static getRoutes() {
-			return [
-				{
-					state: 'app.admin',
-					config: {
-						url: '/admin',
-						templateUrl: 'app/administration/admin.html',
-						controller: 'AdminController',
-						controllerAs: 'admin'
-					}
-				}
-			];
-		}
+		routes.forEach(function (route) {
+			stateProvider.state(route.state, route.config);
+		});
 	}
 
-	angular
-		.module('app.admin')
-		.config(AdminRoute);
-
+	static getRoutes() {
+		return [
+			{
+				state: 'app.admin',
+				config: {
+					url: '/admin',
+					template: require('./admin.html'),
+					controller: 'AdminController',
+					controllerAs: 'admin'
+				}
+			}
+		];
+	}
 }

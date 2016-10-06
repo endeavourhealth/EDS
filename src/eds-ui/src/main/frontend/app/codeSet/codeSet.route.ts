@@ -1,36 +1,25 @@
-/// <reference path="../../typings/index.d.ts" />
+export class CodeSetRoute {
+	static $inject = ['$stateProvider'];
 
-module app.codeSet {
-	'use strict';
+	constructor(stateProvider:angular.ui.IStateProvider) {
+		var routes = CodeSetRoute.getRoutes();
 
-	class CodeSetRoute {
-		static $inject = ['$stateProvider'];
-
-		constructor(stateProvider:angular.ui.IStateProvider) {
-			var routes = CodeSetRoute.getRoutes();
-
-			routes.forEach(function (route) {
-				stateProvider.state(route.state, route.config);
-			});
-		}
-
-		static getRoutes() {
-			return [
-				{
-					state: 'app.codeSetAction',
-					config: {
-						url: '/codeSet/:itemUuid/:itemAction',
-						templateUrl: 'app/codeSet/codeSet.html',
-						controller: 'CodeSetController',
-						controllerAs: 'codeSetCtrl'
-					}
-				}
-			];
-		}
+		routes.forEach(function (route) {
+			stateProvider.state(route.state, route.config);
+		});
 	}
 
-	angular
-		.module('app.codeSet')
-		.config(CodeSetRoute);
-
+	static getRoutes() {
+		return [
+			{
+				state: 'app.codeSetAction',
+				config: {
+					url: '/codeSet/:itemUuid/:itemAction',
+					template: require('./codeSet.html'),
+					controller: 'CodeSetController',
+					controllerAs: 'codeSetCtrl'
+				}
+			}
+		];
+	}
 }
