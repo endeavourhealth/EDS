@@ -2,11 +2,14 @@ package org.endeavourhealth.transform.ui.transforms.clinical;
 
 import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException;
+import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
+import org.endeavourhealth.transform.ui.helpers.DateHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIProcedure;
+import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.hl7.fhir.instance.model.Procedure;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -29,12 +32,23 @@ public class UIProcedureTransform extends UIClinicalTransform<Procedure, UIProce
             return new UIProcedure()
                     .setId(procedure.getId())
                     .setCode(CodeHelper.convert(procedure.getCode()))
-                    .setEffectiveDate(procedure.getPerformedDateTimeType().getValue())
+                    .setEffectiveDate(getPerformedDate(procedure))
                     .setEffectivePractitioner(getPerformer(procedure, referencedResources))
                     .setRecordedDate(getRecordedDateExtensionValue(procedure))
                     .setRecordingPractitioner(getRecordedByExtensionValue(procedure, referencedResources))
                     .setNotes(getNotes(procedure.getNotes()));
 
+        } catch (Exception e) {
+            throw new TransformRuntimeException(e);
+        }
+    }
+
+    private static UIDate getPerformedDate(Procedure procedure) {
+        try {
+            if (!procedure.hasPerformedDateTimeType())
+                return null;
+
+            return DateHelper.convert(procedure.getPerformedDateTimeType());
         } catch (Exception e) {
             throw new TransformRuntimeException(e);
         }

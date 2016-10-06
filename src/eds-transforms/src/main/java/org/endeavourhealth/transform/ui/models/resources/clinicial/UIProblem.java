@@ -3,13 +3,14 @@ package org.endeavourhealth.transform.ui.models.resources.clinicial;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 import org.endeavourhealth.transform.ui.models.types.UICode;
+import org.endeavourhealth.transform.ui.models.types.UIDate;
 
 import java.util.Date;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UIProblem extends UICondition {
     private Integer expectedDuration;
-    private Date lastReviewDate;
+    private UIDate lastReviewDate;
     private UIPractitioner lastReviewer;
     private UICode significance;
     private UIProblem relatedProblem;
@@ -33,11 +34,11 @@ public class UIProblem extends UICondition {
         return this;
     }
 
-    public Date getLastReviewDate() {
+    public UIDate getLastReviewDate() {
         return lastReviewDate;
     }
 
-    public UIProblem setLastReviewDate(Date lastReviewDate) {
+    public UIProblem setLastReviewDate(UIDate lastReviewDate) {
         this.lastReviewDate = lastReviewDate;
         return this;
     }

@@ -5,10 +5,12 @@ import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
+import org.endeavourhealth.transform.ui.helpers.DateHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UICondition;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIProblem;
+import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.hl7.fhir.instance.model.Condition;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.Reference;
@@ -40,9 +42,9 @@ public class UIConditionTransform extends UIClinicalTransform<Condition, UICondi
                     .setId(condition.getId())
                     .setCode(CodeHelper.convert(condition.getCode()))
                     .setEffectivePractitioner(getAsserter(condition, referencedResources))
-                    .setEffectiveDate(getOnsetDate(condition))
+                    .setEffectiveDate(getOnsetDateTime(condition))
                     .setRecordingPractitioner(getRecordedByExtensionValue(condition, referencedResources))
-                    .setRecordedDate(condition.getDateRecorded())
+                    .setRecordedDate(getDateRecorded(condition))
                     .setClinicalStatus(condition.getClinicalStatus())
                     .setVerificationStatus(getConditionVerificationStatus(condition))
                     .setAbatementDate(getAbatementDate(condition))
@@ -64,6 +66,13 @@ public class UIConditionTransform extends UIClinicalTransform<Condition, UICondi
         }
     }
 
+    private static UIDate getDateRecorded(Condition condition) {
+        if (!condition.hasDateRecorded())
+            return null;
+
+        return DateHelper.convert(condition.getDateRecordedElement());
+    }
+
     private static String getConditionVerificationStatus(Condition condition) {
         if (condition.getVerificationStatus() == null)
             return null;
@@ -78,11 +87,11 @@ public class UIConditionTransform extends UIClinicalTransform<Condition, UICondi
         return referencedResources.getUIPractitioner(condition.getAsserter());
     }
 
-    private static Date getOnsetDate(Condition condition) throws Exception {
-        if (condition.hasOnsetDateTimeType())
-            return ((DateTimeType) condition.getOnset()).getValue();
+    private static UIDate getOnsetDateTime(Condition condition) throws Exception {
+        if (!condition.hasOnsetDateTimeType())
+            return null;
 
-        return null;
+        return DateHelper.convert(condition.getOnsetDateTimeType());
     }
 
     private static Boolean getAbatement(Condition condition) throws Exception {
@@ -94,10 +103,10 @@ public class UIConditionTransform extends UIClinicalTransform<Condition, UICondi
         return false;
     }
 
-    private static Date getAbatementDate(Condition condition) throws Exception {
+    private static UIDate getAbatementDate(Condition condition) throws Exception {
         if (condition.hasAbatement())
             if (condition.hasAbatementDateTimeType())
-                return condition.getAbatementDateTimeType().getValue();
+                return DateHelper.convert(condition.getAbatementDateTimeType());
 
         return null;
     }

@@ -1,13 +1,16 @@
 package org.endeavourhealth.transform.ui.transforms.clinical;
 
+import org.endeavourhealth.transform.emis.openhr.transforms.common.DateConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
+import org.endeavourhealth.transform.ui.helpers.DateHelper;
 import org.endeavourhealth.transform.ui.helpers.ExtensionHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIProblem;
 import org.endeavourhealth.transform.ui.models.types.UICode;
+import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
@@ -59,14 +62,14 @@ public class UIProblemTransform extends UIClinicalTransform<Condition, UIProblem
         return expectedDuration.getValue();
     }
 
-    private static Date getLastReviewDate(Condition condition) {
+    private static UIDate getLastReviewDate(Condition condition) {
         Extension extension = ExtensionHelper.getExtension(condition, FhirExtensionUri.PROBLEM_LAST_REVIEWED);
         DateTimeType lastReviewDate = ExtensionHelper.getExtensionValue(extension, FhirExtensionUri._PROBLEM_LAST_REVIEWED__DATE, DateTimeType.class);
 
         if (lastReviewDate == null)
             return null;
 
-        return lastReviewDate.getValue();
+        return DateHelper.convert(lastReviewDate);
     }
 
     private static Reference getLastReviewerReference(Condition condition) {

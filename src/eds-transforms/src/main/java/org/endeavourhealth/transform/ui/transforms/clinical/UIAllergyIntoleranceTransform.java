@@ -2,13 +2,19 @@ package org.endeavourhealth.transform.ui.transforms.clinical;
 
 import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
+import org.endeavourhealth.transform.ui.helpers.DateHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIAllergyIntolerance;
+import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.hl7.fhir.instance.model.AllergyIntolerance;
+import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.Reference;
+import org.hl7.fhir.instance.model.Resource;
 
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class UIAllergyIntoleranceTransform extends UIClinicalTransform<AllergyIntolerance, UIAllergyIntolerance> {
 
@@ -26,10 +32,25 @@ public class UIAllergyIntoleranceTransform extends UIClinicalTransform<AllergyIn
                 .setId(allergyIntolerance.getId())
                 .setCode(CodeHelper.convert(allergyIntolerance.getSubstance()))
                 .setEffectivePractitioner(referencedResources.getUIPractitioner(allergyIntolerance.getRecorder()))
-                .setEffectiveDate(allergyIntolerance.getOnset())
+                .setEffectiveDate(getOnsetDate(allergyIntolerance))
                 .setRecordingPractitioner(getRecordedByExtensionValue(allergyIntolerance, referencedResources))
-                .setRecordedDate(allergyIntolerance.getRecordedDate())
+                .setRecordedDate(getRecordedDate(allergyIntolerance))
                 .setNotes(getNotes(allergyIntolerance.getNote()));
+    }
+
+    private static UIDate getRecordedDate(AllergyIntolerance allergyIntolerance) {
+
+        if (!allergyIntolerance.hasRecordedDate())
+            return null;
+
+        return DateHelper.convert(allergyIntolerance.getRecordedDateElement());
+    }
+
+    private static UIDate getOnsetDate(AllergyIntolerance allergyIntolerance) {
+        if (!allergyIntolerance.hasOnset())
+            return null;
+
+        return DateHelper.convert(allergyIntolerance.getOnsetElement());
     }
 
     @Override
