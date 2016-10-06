@@ -1,8 +1,6 @@
-module app.models {
-    'use strict';
+import {UIHumanName} from "./UIHumanName";
 
-    export class UIPractitioner extends UIResource {
-        name: UIHumanName;
-        active: boolean;
-    }
+export class UIPractitioner {
+    name: UIHumanName;
+    active: boolean;
 }

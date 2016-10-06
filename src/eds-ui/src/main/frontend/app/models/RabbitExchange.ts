@@ -1,9 +1,6 @@
-module app.models {
-    'use strict';
+import {RabbitMessageStats} from "./RabbitMessageStats";
 
-    export class RabbitExchange {
-        name: string;
-
-        message_stats: RabbitMessageStats;
-    }
+export class RabbitExchange {
+    name: string;
+    message_stats: RabbitMessageStats;
 }

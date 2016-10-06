@@ -1,42 +1,45 @@
-module app.blocks {
-    export class SvgHelper {
-        public static removeClassSVG(obj, remove) {
-            var classes = obj.attr('class');
-            if (!classes) {
-                return false;
-            }
+export interface SvgElement {
+    getScreenCTM();
+    createSVGPoint();
+}
 
-            var index = classes.search(remove);
+export class SvgHelper {
+    public static removeClassSVG(obj, remove) {
+        var classes = obj.attr('class');
+        if (!classes) {
+            return false;
+        }
 
-            // if the class already doesn't exist, return false now
-            if (index == -1) {
-                return false;
-            }
-            else {
-                // string manipulation to remove the class
-                classes = classes.substring(0, index) + classes.substring((index + remove.length), classes.length);
+        var index = classes.search(remove);
 
-                // set the new string as the object's class
-                obj.attr('class', classes);
+        // if the class already doesn't exist, return false now
+        if (index == -1) {
+            return false;
+        }
+        else {
+            // string manipulation to remove the class
+            classes = classes.substring(0, index) + classes.substring((index + remove.length), classes.length);
 
-                return true;
-            }
-        };
+            // set the new string as the object's class
+            obj.attr('class', classes);
 
-        public static hasClassSVG(obj, has) {
-            var classes = obj.attr('class');
-            if (!classes) {
-                return false;
-            }
+            return true;
+        }
+    };
 
-            var index = classes.search(has);
+    public static hasClassSVG(obj, has) {
+        var classes = obj.attr('class');
+        if (!classes) {
+            return false;
+        }
 
-            if (index == -1) {
-                return false;
-            }
-            else {
-                return true;
-            }
-        };
-    }
+        var index = classes.search(has);
+
+        if (index == -1) {
+            return false;
+        }
+        else {
+            return true;
+        }
+    };
 }

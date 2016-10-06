@@ -1,36 +1,25 @@
-/// <reference path="../../typings/index.d.ts" />
+export class OrganisationSetRoute {
+	static $inject = ['$stateProvider'];
 
-module app.organisationSet {
-	'use strict';
+	constructor(stateProvider:angular.ui.IStateProvider) {
+		var routes = OrganisationSetRoute.getRoutes();
 
-	class OrganisationSetRoute {
-		static $inject = ['$stateProvider'];
-
-		constructor(stateProvider:angular.ui.IStateProvider) {
-			var routes = OrganisationSetRoute.getRoutes();
-
-			routes.forEach(function (route) {
-				stateProvider.state(route.state, route.config);
-			});
-		}
-
-		static getRoutes() {
-			return [
-				{
-					state: 'app.organisationSet',
-					config: {
-						url: '/organisationSet',
-						templateUrl: 'app/organisationSet/organisationSet.html',
-						controller: 'OrganisationSetController',
-						controllerAs: 'ctrl'
-					}
-				}
-			];
-		}
+		routes.forEach(function (route) {
+			stateProvider.state(route.state, route.config);
+		});
 	}
 
-	angular
-		.module('app.organisationSet')
-		.config(OrganisationSetRoute);
-
+	static getRoutes() {
+		return [
+			{
+				state: 'app.organisationSet',
+				config: {
+					url: '/organisationSet',
+					template: require('./organisationSet.html'),
+					controller: 'OrganisationSetController',
+					controllerAs: 'ctrl'
+				}
+			}
+		];
+	}
 }

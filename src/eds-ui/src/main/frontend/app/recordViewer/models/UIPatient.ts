@@ -1,14 +1,13 @@
-module app.models {
-	'use strict';
+import {UIAddress} from "./UIAddress";
+import {UIHumanName} from "./UIHumanName";
 
-	export class UIPatient extends UIResource {
-		serviceId: string;
-		systemId: string;
-        patientId: string;
-		nhsNumber: string;
-        name: UIHumanName;
-        dateOfBirth: Date;
-        gender: string;
-        homeAddress: UIAddress;
-	}
+export class UIPatient {
+	serviceId: string;
+	systemId: string;
+	patientId: string;
+	nhsNumber: string;
+	name: UIHumanName;
+	dateOfBirth: Date;
+	gender: string;
+	homeAddress: UIAddress;
 }

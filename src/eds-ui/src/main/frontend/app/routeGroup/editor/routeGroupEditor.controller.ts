@@ -1,46 +1,39 @@
-/// <reference path="../../../typings/index.d.ts" />
-/// <reference path="../../blocks/logger.service.ts" />
+import IModalService = angular.ui.bootstrap.IModalService;
+import IModalServiceInstance = angular.ui.bootstrap.IModalServiceInstance;
+import IModalSettings = angular.ui.bootstrap.IModalSettings;
 
-module app.routeGroup {
-	import IModalServiceInstance = angular.ui.bootstrap.IModalServiceInstance;
-	import IModalSettings = angular.ui.bootstrap.IModalSettings;
-	import IModalService = angular.ui.bootstrap.IModalService;
-	import BaseDialogController = app.dialogs.BaseDialogController;
+import {BaseDialogController} from "../../dialogs/baseDialog.controller";
+import {IAdminService} from "../../core/admin.service";
+import {ILoggerService} from "../../blocks/logger.service";
+import {RouteGroup} from "../RouteGroup";
 
-	'use strict';
+export class RouteGroupEditorController extends BaseDialogController {
+	public static open($modal : IModalService, routeGroup : RouteGroup) : IModalServiceInstance {
+		var options : IModalSettings = {
+			template:require('./routeGroupEditor.html'),
+			controller:'RouteGroupEditorController',
+			controllerAs:'ctrl',
+			backdrop: 'static',
+			resolve:{
+				routeGroup : () => routeGroup
+			}
+		};
 
-	export class RouteGroupEditorController extends BaseDialogController {
-		public static open($modal : IModalService, routeGroup : RouteGroup) : IModalServiceInstance {
-			var options : IModalSettings = {
-				templateUrl:'app/routeGroup/editor/routeGroupEditor.html',
-				controller:'RouteGroupEditorController',
-				controllerAs:'ctrl',
-				backdrop: 'static',
-				resolve:{
-					routeGroup : () => routeGroup
-				}
-			};
-
-			var dialog = $modal.open(options);
-			return dialog;
-		}
-
-		static $inject = ['$uibModalInstance', 'LoggerService', 'AdminService', 'routeGroup'];
-
-		constructor(protected $uibModalInstance : IModalServiceInstance,
-								private logger:app.blocks.ILoggerService,
-								private adminService : IAdminService,
-								private routeGroup : RouteGroup) {
-			super($uibModalInstance);
-			this.resultData = jQuery.extend(true, {}, routeGroup);
-		}
-
-		addFilter(filter : string) {
-			this.resultData.regex += filter;
-		}
+		var dialog = $modal.open(options);
+		return dialog;
 	}
 
-	angular
-		.module('app.routeGroup')
-		.controller('RouteGroupEditorController', RouteGroupEditorController);
+	static $inject = ['$uibModalInstance', 'LoggerService', 'AdminService', 'routeGroup'];
+
+	constructor(protected $uibModalInstance : IModalServiceInstance,
+							private logger:ILoggerService,
+							private adminService : IAdminService,
+							private routeGroup : RouteGroup) {
+		super($uibModalInstance);
+		this.resultData = jQuery.extend(true, {}, routeGroup);
+	}
+
+	addFilter(filter : string) {
+		this.resultData.regex += filter;
+	}
 }

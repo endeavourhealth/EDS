@@ -1,8 +1,5 @@
-/// <reference path="../../typings/index.d.ts" />
-
-import FlowChartController = app.flowchart.FlowChartController;
-import FlowChartDirective = app.flowchart.FlowChartDirective;
-import ChartJSonEdit = app.flowchart.ChartJSonEdit;
+import {FlowChartController} from "./flowchart.controller";
+import {FlowChartDirective, ChartJSonEdit} from "./flowchart.directives";
 
 angular.module('flowChart', ['dragging'])
 	.controller('FlowChartController', FlowChartController)

@@ -1,13 +1,9 @@
-module app.models {
-    'use strict';
+export class RabbitRate {
+    rate : number;
+}
 
-    export class RabbitRate {
-        rate : number;
-    }
-
-    export class RabbitMessageStats {
-        publish_details : RabbitRate;
-        publish_in_details : RabbitRate;
-        publish_out_details : RabbitRate;
-    }
+export class RabbitMessageStats {
+    publish_details : RabbitRate;
+    publish_in_details : RabbitRate;
+    publish_out_details : RabbitRate;
 }

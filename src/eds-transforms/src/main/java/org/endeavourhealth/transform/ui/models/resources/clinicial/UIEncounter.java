@@ -6,9 +6,8 @@ import org.endeavourhealth.transform.ui.models.resources.admin.UIAppointment;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIOrganisation;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
+import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.endeavourhealth.transform.ui.models.types.UIPeriod;
-
-import java.util.Date;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UIEncounter extends UIResource<UIEncounter> {
@@ -19,7 +18,7 @@ public class UIEncounter extends UIResource<UIEncounter> {
     private UIOrganisation serviceProvider;
     private UICodeableConcept encounterSource;
     private UIPractitioner recordedBy;
-    private Date recordedDate;
+    private UIDate recordedDate;
 
     public UIAppointment getAppointment() {
         return appointment;
@@ -84,11 +83,11 @@ public class UIEncounter extends UIResource<UIEncounter> {
         return this;
     }
 
-    public Date getRecordedDate() {
+    public UIDate getRecordedDate() {
         return recordedDate;
     }
 
-    public UIEncounter setRecordedDate(Date recordedDate) {
+    public UIEncounter setRecordedDate(UIDate recordedDate) {
         this.recordedDate = recordedDate;
         return this;
     }

@@ -1,7 +1,3 @@
-module app.models {
-    'use strict';
-
-    export class StartingRules {
-        ruleId : string[];
-   }
-}
+  export class StartingRules {
+      ruleId : string[];
+ }

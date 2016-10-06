@@ -1,10 +1,8 @@
-module app.models {
-	'use strict';
+import {ParameterType} from "./ParameterType";
 
-	export class Value {
-		constant : string;
-		parameter : ParameterType;
-		absoluteUnit : string;
-		relativeUnit : string;
-	}
+export class Value {
+	constant : string;
+	parameter : ParameterType;
+	absoluteUnit : string;
+	relativeUnit : string;
 }

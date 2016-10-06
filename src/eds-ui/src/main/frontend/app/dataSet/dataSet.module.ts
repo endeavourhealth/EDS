@@ -1,3 +1,6 @@
-/// <reference path="../../typings/index.d.ts" />
+import {DataSetController} from "./dataSet.controller";
+import {DataSetRoute} from "./dataSet.route";
 
-angular.module('app.dataSet', []);
+angular.module('app.dataSet', [])
+	.controller('DataSetController', DataSetController)
+	.config(DataSetRoute);

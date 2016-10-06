@@ -1,9 +1,5 @@
-/// <reference path="UserInRole.ts" />
+import {User} from "./User";
 
-module app.models {
-	'use strict';
-
-	export class UserList {
-		users : User[];
-	}
+export class UserList {
+	users : User[];
 }

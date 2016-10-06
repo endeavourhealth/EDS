@@ -1,3 +1,6 @@
-/// <reference path="../../typings/index.d.ts" />
+import 'ng-idle';
 
-angular.module('app.config', []);
+import {ConfigService} from './config.service';
+
+angular.module('app.config', [])
+	.service('ConfigService', ConfigService);

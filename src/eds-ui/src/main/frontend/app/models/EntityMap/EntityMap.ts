@@ -1,7 +1,5 @@
-module app.models {
-	'use strict';
+import {Entity} from "./Entity";
 
-	export class EntityMap {
-		entity : Entity[];
-	}
+export class EntityMap {
+	entity : Entity[];
 }

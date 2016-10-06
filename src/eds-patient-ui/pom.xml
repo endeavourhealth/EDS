@@ -174,13 +174,6 @@
                         <goals><goal>npm</goal></goals>
                     </execution>
                     <execution>
-                        <id>bower install</id>
-                        <goals><goal>bower</goal></goals>
-                        <configuration>
-                            <arguments>install --config.directory=../webapp/bower_components</arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>typings install</id>
                         <goals><goal>npm</goal></goals>
                         <configuration>
@@ -191,7 +184,7 @@
                         <id>tsc</id>
                         <goals><goal>npm</goal></goals>
                         <configuration>
-                            <arguments>run tsc -- --outDir ../webapp</arguments>
+                            <arguments>run build</arguments>
                         </configuration>
                     </execution>
                 </executions>

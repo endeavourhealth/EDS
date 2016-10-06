@@ -1,9 +1,5 @@
-module app.models {
-    'use strict';
-
-    export class Concept {
-        id: string;
-        preferredTerm: string;
-        exclusion: boolean;
-    }
+export class Concept {
+    id: string;
+    preferredTerm: string;
+    exclusion: boolean;
 }

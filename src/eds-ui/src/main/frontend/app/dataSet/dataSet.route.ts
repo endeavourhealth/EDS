@@ -1,36 +1,25 @@
-/// <reference path="../../typings/index.d.ts" />
+export class DataSetRoute {
+	static $inject = ['$stateProvider'];
 
-module app.dataSet {
-	'use strict';
+	constructor(stateProvider:angular.ui.IStateProvider) {
+		var routes = DataSetRoute.getRoutes();
 
-	class dataSetRoute {
-		static $inject = ['$stateProvider'];
-
-		constructor(stateProvider:angular.ui.IStateProvider) {
-			var routes = dataSetRoute.getRoutes();
-
-			routes.forEach(function (route) {
-				stateProvider.state(route.state, route.config);
-			});
-		}
-
-		static getRoutes() {
-			return [
-				{
-					state: 'app.dataSetAction',
-					config: {
-						url: '/dataSet/:itemUuid/:itemAction',
-						templateUrl: 'app/dataSet/dataSet.html',
-						controller: 'dataSetController',
-						controllerAs: 'dataSetCtrl'
-					}
-				}
-			];
-		}
+		routes.forEach(function (route) {
+			stateProvider.state(route.state, route.config);
+		});
 	}
 
-	angular
-		.module('app.dataSet')
-		.config(dataSetRoute);
-
+	static getRoutes() {
+		return [
+			{
+				state: 'app.dataSetAction',
+				config: {
+					url: '/dataSet/:itemUuid/:itemAction',
+					template: require('./dataSet.html'),
+					controller: 'dataSetController',
+					controllerAs: 'dataSetCtrl'
+				}
+			}
+		];
+	}
 }

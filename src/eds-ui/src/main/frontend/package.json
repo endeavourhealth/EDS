@@ -1,12 +1,39 @@
 {
-    "name": "eds-ui",
-    "devDependencies": {
-        "bower": "^1.7.9",
-        "typescript": "^1.8.10",
-        "typings": "^1.3.1"
-    },
-    "scripts": {
-        "tsc": "tsc",
-        "typings": "typings"
-    }
+  "name": "eds-ui",
+  "devDependencies": {
+    "css-loader": "^0.25.0",
+    "file-loader": "^0.9.0",
+    "html-webpack-plugin": "^2.22.0",
+    "ng-cache-loader": "0.0.21",
+    "raw-loader": "^0.5.1",
+    "style-loader": "^0.13.1",
+    "ts-loader": "^0.8.2",
+    "typescript": "^1.8.10",
+    "typings": "^1.4.0",
+    "url-loader": "^0.5.7",
+    "webpack": "^1.13.2",
+    "webpack-dev-server": "^1.16.1"
+  },
+  "dependencies": {
+    "angular": "^1.5.8",
+    "angular-dragdrop": "^1.0.13",
+    "angular-moment": "^0.10.3",
+    "angular-toastr": "^2.1.1",
+    "angular-ui-bootstrap": "^2.1.4",
+    "angular-ui-router": "^0.3.1",
+    "angular-ui-tree": "^2.22.1",
+    "bootstrap": "^3.3.7",
+    "font-awesome": "^4.6.3",
+    "jquery": "^3.1.1",
+    "keycloak": "^1.2.0",
+    "moment": "^2.15.1",
+    "ng-idle": "^1.3.1"
+  },
+  "scripts": {
+    "typings": "typings",
+    "clean": "rm -rf ./dist",
+    "build": "node ./node_modules/webpack/bin/webpack.js --config webpack.dist.config.js --progress --profile --colors",
+    "build-dev": "node ./node_modules/webpack/bin/webpack.js --config webpack.dev.config.js --progress --profile --colors",
+    "dev": "node ./node_modules/webpack-dev-server/bin/webpack-dev-server.js --config webpack.dev.config.js --progress --colors"
+  }
 }

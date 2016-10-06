@@ -1,5 +1,6 @@
-module app.models {
-	'use strict';
+	import {CalculationType} from "./CalculationType";
+	import {FieldTest} from "./FieldTest";
+	import {Restriction} from "./Restriction";
 
 	export class Resource {
 		heading : string;
@@ -8,5 +9,3 @@ module app.models {
 		filter : FieldTest[];
 		restriction : Restriction;
 	}
-}
-

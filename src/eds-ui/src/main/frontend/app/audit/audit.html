@@ -1,0 +1,107 @@
+<div class="module">
+	<div class="module-heading">
+		Audit Monitor
+		<button class="btn btn-success btn-sm pull-right" ng-click="ctrl.refresh()">Refresh</button>
+	</div>
+	<div class="module-body">
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-md-12">
+					<div class="panel panel-primary">
+						<div class="panel-heading">Recent Audit Events <span class="fa fa-sm fa-refresh fa-refresh-animate" ng-hide="ctrl.auditEvents"></span></div>
+						<div class="panel-body" style="overflow:hidden; height:100%; min-height: 500px;">
+							<div class="row">
+								<div class="form-group col-md-2">
+									<label for="module">Application</label>
+									<div class="input-group">
+										<span class="input-group-addon"><i class="fa fa-th-large fa-lg fa-fw"></i></span>
+										<select id="module" class="form-control" ng-model="ctrl.module" ng-change="ctrl.refresh()">
+											<option value="" disabled>Select Application...</option>
+											<option ng-repeat="module in ctrl.modules" value="{{module}}">{{module}}</option>
+										</select>
+									</div>
+								</div>
+								<div class="form-group col-md-2">
+									<label for="user">User</label>
+									<div class="input-group">
+										<span class="input-group-addon"><i class="fa fa-user fa-lg fa-fw"></i></span>
+										<select id="user" class="form-control" ng-options="selected.username for selected in ctrl.users" ng-model="ctrl.user" ng-change="ctrl.refresh()">
+											<option value="" disabled>Select User...</option>
+										</select>
+									</div>
+								</div>
+								<div class="form-group col-md-2">
+									<label for="user">Month</label>
+									<div class="input-group">
+										<input type="text" class="form-control" uib-datepicker-popup="MM/yyyy" show-weeks="false" show-button-bar="false" ng-model="ctrl.month" is-open="auditMonthOpened" datepicker-options="{minMode: 'month'}" datepicker-mode="'month'" ng-change="ctrl.refresh()"/>
+										<span class="input-group-btn">
+											<button type="button" class="btn btn-default" ng-click="auditMonthOpened = true"><i class="fa fa-calendar fa-lg fa-fw"></i></button>
+										</span>
+									</div>
+								</div>
+								<div class="form-group col-md-2" ng-show="ctrl.user && ctrl.module">
+									<label for="organisation">Organisation</label>
+									<div class="input-group">
+										<span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
+										<select id="organisation" class="form-control" ng-options="selected.name for selected in ctrl.organisations" ng-model="ctrl.organisation" ng-change="ctrl.refresh()">
+											<option value="">All</option>
+										</select>
+									</div>
+								</div>
+								<div class="form-group col-md-2" ng-show="ctrl.user && ctrl.module">
+									<label for="submodule">Domain</label>
+									<div class="input-group">
+										<span class="input-group-addon"><i class="fa fa-th fa-lg fa-fw"></i></span>
+										<select id="submodule" class="form-control" ng-model="ctrl.submodule" ng-change="ctrl.refresh()">
+											<option value="">All</option>
+											<option ng-repeat="submodule in ctrl.submodules" value="{{submodule}}">{{submodule}}</option>
+										</select>
+									</div>
+								</div>
+								<div class="form-group col-md-2" ng-show="ctrl.user && ctrl.module && ctrl.submodule">
+									<label for="action">Action</label>
+									<div class="input-group">
+										<span class="input-group-addon"><i class="fa fa-crosshairs fa-lg fa-fw"></i></span>
+										<select id="action" class="form-control" ng-model="ctrl.action" ng-change="ctrl.refresh()">
+											<option value="">All</option>
+											<option ng-repeat="action in ctrl.actions" value="{{action}}">{{action}}</option>
+										</select>
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-md-12">
+									<div class="table scroll-box-500">
+										<table class="table table-striped table-condensed">
+											<thead>
+												<tr>
+													<!--<th>User Id</th>-->
+													<!--<th>Service Id</th>-->
+													<th>Module</th>
+													<th>Submodule</th>
+													<th>Action</th>
+													<th>Timestamp</th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr ng-repeat="event in ctrl.getFilteredEvents(ctrl)">
+													<!--<td>{{event.userId}}</td>-->
+													<!--<td>{{event.serviceId}}</td>-->
+													<td>{{event.module}}</td>
+													<td>{{event.subModule}}</td>
+													<td>{{event.action}}</td>
+													<td>{{event.timestamp | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+

@@ -1,13 +1,9 @@
-/// <reference path="../../typings/index.d.ts" />
-
-module app.core {
-	import LibraryItem = app.models.LibraryItem;
-	import EntityMap = app.models.EntityMap;
-	import FolderNode = app.models.FolderNode;
-	import System = app.models.System;
-	import Cohort = app.models.Cohort;
-	import Dataset = app.models.DataSet;
-	'use strict';
+	import {LibraryItem} from "../models/LibraryItem";
+	import {System} from "../models/System";
+	import {BaseHttpService} from "./baseHttp.service";
+	import {EntityMap} from "../models/EntityMap/EntityMap";
+	import {Cohort} from "../models/Cohort";
+	import {DataSet} from "../models/Dataset";
 
 	export interface ILibraryService {
 		getLibraryItem(uuid : string):ng.IPromise<LibraryItem>;
@@ -16,7 +12,7 @@ module app.core {
 		getEntityMap():ng.IPromise<EntityMap>;
 		getSystems():ng.IPromise<System[]>;
 		getCohorts():ng.IPromise<Cohort[]>;
-		getDatasets():ng.IPromise<Dataset[]>;
+		getDatasets():ng.IPromise<DataSet[]>;
 		getProtocols(serviceId : string):ng.IPromise<LibraryItem[]>;
 	}
 
@@ -54,7 +50,7 @@ module app.core {
 			return this.httpGet('api/library/getQueries');
 		}
 
-		getDatasets():ng.IPromise<Dataset[]> {
+		getDatasets():ng.IPromise<DataSet[]> {
 			return this.httpGet('api/library/getDataSets');
 		}
 
@@ -68,8 +64,3 @@ module app.core {
 			return this.httpGet('api/library/getProtocols', request);
 		}
 	}
-
-	angular
-		.module('app.core')
-		.service('LibraryService', LibraryService);
-}

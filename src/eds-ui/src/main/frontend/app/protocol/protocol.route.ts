@@ -1,36 +1,25 @@
-/// <reference path="../../typings/index.d.ts" />
+export class protocolRoute {
+	static $inject = ['$stateProvider'];
 
-module app.protocol {
-	'use strict';
+	constructor(stateProvider:angular.ui.IStateProvider) {
+		var routes = protocolRoute.getRoutes();
 
-	class protocolRoute {
-		static $inject = ['$stateProvider'];
-
-		constructor(stateProvider:angular.ui.IStateProvider) {
-			var routes = protocolRoute.getRoutes();
-
-			routes.forEach(function (route) {
-				stateProvider.state(route.state, route.config);
-			});
-		}
-
-		static getRoutes() {
-			return [
-				{
-					state: 'app.protocolAction',
-					config: {
-						url: '/protocol/:itemUuid/:itemAction',
-						templateUrl: 'app/protocol/protocol.html',
-						controller: 'ProtocolController',
-						controllerAs: 'protocolCtrl'
-					}
-				}
-			];
-		}
+		routes.forEach(function (route) {
+			stateProvider.state(route.state, route.config);
+		});
 	}
 
-	angular
-		.module('app.protocol')
-		.config(protocolRoute);
-
+	static getRoutes() {
+		return [
+			{
+				state: 'app.protocolAction',
+				config: {
+					url: '/protocol/:itemUuid/:itemAction',
+					template: require('./protocol.html'),
+					controller: 'ProtocolController',
+					controllerAs: 'protocolCtrl'
+				}
+			}
+		];
+	}
 }

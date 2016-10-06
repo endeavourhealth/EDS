@@ -1,12 +1,8 @@
-/// <reference path="Role.ts" />
+import {Role} from "./Role";
 
-module app.models {
-	'use strict';
-
-	export class UserInRole {
-		userInRoleUuid:string;
-		uuid:string;
-		organisationName:string;
-		endUserRole:Role;
-	}
+export class UserInRole {
+	userInRoleUuid:string;
+	uuid:string;
+	organisationName:string;
+	endUserRole:Role;
 }

@@ -1,8 +1,7 @@
-module app.models {
-	'use strict';
+import {ValueFrom} from "./ValueFrom";
+import {ValueTo} from "./ValueTo";
 
-	export class ValueRange {
-		valueFrom : ValueFrom;
-		valueTo : ValueTo;
-	}
+export class ValueRange {
+	valueFrom : ValueFrom;
+	valueTo : ValueTo;
 }

@@ -2,10 +2,12 @@ package org.endeavourhealth.transform.ui.transforms.clinical;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.transform.ui.helpers.DateHelper;
 import org.endeavourhealth.transform.ui.helpers.ExtensionHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 import org.endeavourhealth.transform.ui.models.resources.UIResource;
+import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
@@ -26,13 +28,13 @@ public abstract class UIClinicalTransform<T extends Resource, U extends UIResour
         return ExtensionHelper.getExtensionValue(resource, FhirExtensionUri.RECORDED_BY, Reference.class);
     }
 
-    protected static Date getRecordedDateExtensionValue(DomainResource resource) {
+    protected static UIDate getRecordedDateExtensionValue(DomainResource resource) {
         DateTimeType recordedDate = ExtensionHelper.getExtensionValue(resource, FhirExtensionUri.RECORDED_DATE, DateTimeType.class);
 
         if (recordedDate == null)
             return null;
 
-        return recordedDate.getValue();
+        return DateHelper.convert(recordedDate);
     }
 
     protected static String getNotes(Annotation annotation) {

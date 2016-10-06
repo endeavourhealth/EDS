@@ -16,9 +16,13 @@ public final class Startup implements ServletContextListener {
     public void contextInitialized(ServletContextEvent contextEvent) {
         Config config = ConfigSerializer.getConfig();
 
+        String propertyName = contextEvent.getServletContext().getInitParameter("engine_config_property");
+        if (propertyName == null || propertyName.isEmpty())
+            propertyName = "eds.engineConfiguration";
+
         //load common config
         try {
-            EngineConfigurationSerializer.loadConfigFromPropertyIfPossible("eds.uiEngineConfiguration");
+            EngineConfigurationSerializer.loadConfigFromPropertyIfPossible(propertyName);
         } catch (Exception e) {
             LOG.error("Error loading engine config", e);
         }

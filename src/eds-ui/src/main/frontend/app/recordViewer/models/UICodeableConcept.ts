@@ -1,8 +1,6 @@
-module app.models {
-    'use strict';
+import {UICode} from "./UICode";
 
-    export class UICodeableConcept {
-        codes: UICode[];
-        text: string;
-    }
+export class UICodeableConcept {
+    codes: UICode[];
+    text: string;
 }

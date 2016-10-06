@@ -1,8 +1,6 @@
-module app.models {
-    'use strict';
+import {Resource} from "./Resource";
 
-    export class Section {
-        heading:string;
-        resource : Resource[];
-    }
+export class Section {
+    heading:string;
+    resource : Resource[];
 }

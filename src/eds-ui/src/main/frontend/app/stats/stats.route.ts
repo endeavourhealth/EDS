@@ -1,36 +1,25 @@
-/// <reference path="../../typings/index.d.ts" />
+export class statsRoute {
+	static $inject = ['$stateProvider'];
 
-module app.stats {
-	'use strict';
+	constructor(stateProvider:angular.ui.IStateProvider) {
+		var routes = statsRoute.getRoutes();
 
-	class statsRoute {
-		static $inject = ['$stateProvider'];
-
-		constructor(stateProvider:angular.ui.IStateProvider) {
-			var routes = statsRoute.getRoutes();
-
-			routes.forEach(function (route) {
-				stateProvider.state(route.state, route.config);
-			});
-		}
-
-		static getRoutes() {
-			return [
-				{
-					state: 'app.stats',
-					config: {
-						url: '/stats',
-						templateUrl: 'app/stats/stats.html',
-						controller: 'StatsController',
-						controllerAs: 'statsCtrl'
-					}
-				}
-			];
-		}
+		routes.forEach(function (route) {
+			stateProvider.state(route.state, route.config);
+		});
 	}
 
-	angular
-		.module('app.stats')
-		.config(statsRoute);
-
+	static getRoutes() {
+		return [
+			{
+				state: 'app.stats',
+				config: {
+					url: '/stats',
+					template: require('./stats.html'),
+					controller: 'StatsController',
+					controllerAs: 'statsCtrl'
+				}
+			}
+		];
+	}
 }

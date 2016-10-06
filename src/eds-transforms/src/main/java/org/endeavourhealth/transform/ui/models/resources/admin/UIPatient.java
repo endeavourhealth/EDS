@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.ui.models.resources.admin;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.transform.ui.models.resources.UIResource;
 import org.endeavourhealth.transform.ui.models.types.UIAddress;
+import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.endeavourhealth.transform.ui.models.types.UIHumanName;
 
 import java.util.Date;
@@ -16,7 +17,7 @@ public class UIPatient extends UIResource<UIPatient> {
     private UUID patientId;
     private String nhsNumber;
     private UIHumanName name;
-    private Date dateOfBirth;
+    private UIDate dateOfBirth;
     private String gender;
     private UIAddress homeAddress;
 
@@ -29,11 +30,11 @@ public class UIPatient extends UIResource<UIPatient> {
         return this;
     }
 
-    public Date getDateOfBirth() {
+    public UIDate getDateOfBirth() {
         return dateOfBirth;
     }
 
-    public UIPatient setDateOfBirth(Date dateOfBirth) {
+    public UIPatient setDateOfBirth(UIDate dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
         return this;
     }

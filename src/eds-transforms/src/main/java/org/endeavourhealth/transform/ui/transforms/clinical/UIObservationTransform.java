@@ -5,10 +5,12 @@ import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
+import org.endeavourhealth.transform.ui.helpers.DateHelper;
 import org.endeavourhealth.transform.ui.helpers.QuantityHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIObservation;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.endeavourhealth.transform.ui.models.types.UIQuantity;
 import org.hl7.fhir.instance.model.Observation;
 import org.hl7.fhir.instance.model.Reference;
@@ -106,11 +108,11 @@ public class UIObservationTransform extends UIClinicalTransform<Observation, UIO
         return observation.getStatus().toCode();
     }
 
-    private static Date getEffectiveDateTime(Observation observation) throws Exception {
+    private static UIDate getEffectiveDateTime(Observation observation) throws Exception {
         if (!observation.hasEffectiveDateTimeType())
             return null;
 
-        return observation.getEffectiveDateTimeType().getValue();
+        return DateHelper.convert(observation.getEffectiveDateTimeType());
     }
 
     @Override

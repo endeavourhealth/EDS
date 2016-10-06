@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.ui.models.resources.clinicial;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.types.UIDate;
 
 import java.util.Date;
 
@@ -10,7 +11,7 @@ public class UICondition extends UIClinicalResource<UICondition> {
     private UIEncounter encounter;
     private String clinicalStatus;
     private String verificationStatus;
-    private Date abatementDate;
+    private UIDate abatementDate;
     private Boolean hasAbated;
     private UIProblem partOfProblem;
 
@@ -59,11 +60,11 @@ public class UICondition extends UIClinicalResource<UICondition> {
         return this;
     }
 
-    public Date getAbatementDate() {
+    public UIDate getAbatementDate() {
         return abatementDate;
     }
 
-    public UICondition setAbatementDate(Date abatementDate) {
+    public UICondition setAbatementDate(UIDate abatementDate) {
         this.abatementDate = abatementDate;
         return this;
     }

@@ -1,9 +1,6 @@
-module app.models {
-    'use strict';
+import {VariableType} from "./VariableType";
 
-    export class ExpressionType {
-        expressionText : string;
-        variable : VariableType[];
-    }
-
+export class ExpressionType {
+    expressionText : string;
+    variable : VariableType[];
 }

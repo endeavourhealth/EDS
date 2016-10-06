@@ -1,36 +1,25 @@
-/// <reference path="../../typings/index.d.ts" />
+export class DashboardRoute {
+	static $inject = ['$stateProvider'];
 
-module app.dashboard {
-	'use strict';
+	constructor(stateProvider:angular.ui.IStateProvider) {
+		var routes = DashboardRoute.getRoutes();
 
-	class DashboardRoute {
-		static $inject = ['$stateProvider'];
-
-		constructor(stateProvider:angular.ui.IStateProvider) {
-			var routes = DashboardRoute.getRoutes();
-
-			routes.forEach(function (route) {
-				stateProvider.state(route.state, route.config);
-			});
-		}
-
-		static getRoutes() {
-			return [
-				{
-					state: 'app.dashboard',
-					config: {
-						url: '/dashboard',
-						templateUrl: 'app/dashboard/dashboard.html',
-						controller: 'DashboardController',
-						controllerAs: 'dashboard'
-					}
-				}
-			];
-		}
+		routes.forEach(function (route) {
+			stateProvider.state(route.state, route.config);
+		});
 	}
 
-	angular
-		.module('app.dashboard')
-		.config(DashboardRoute);
-
+	static getRoutes() {
+		return [
+			{
+				state: 'app.dashboard',
+				config: {
+					url: '/dashboard',
+					template: require('./dashboard.html'),
+					controller: 'DashboardController',
+					controllerAs: 'dashboard'
+				}
+			}
+		];
+	}
 }

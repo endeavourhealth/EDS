@@ -1,7 +1,3 @@
-module app.models {
-	'use strict';
-
-	export class LogicalDataType {
-		value : string;
-	}
+export class LogicalDataType {
+	value : string;
 }

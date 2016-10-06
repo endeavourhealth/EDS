@@ -1,5 +1,5 @@
-module app.models {
-	export class ItemSummaryList {
-		contents:FolderItem[];
-	}
+import {FolderItem} from "./FolderContent";
+
+export class ItemSummaryList {
+	contents:FolderItem[];
 }

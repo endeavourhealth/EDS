@@ -1,48 +1,39 @@
-/// <reference path="../../typings/index.d.ts" />
-/// <reference path="../core/admin.service.ts" />
-/// <reference path="../models/Role.ts" />
-/// <reference path="../models/User.ts" />
-/// <reference path="../models/UserInRole.ts" />
+import {ISecurityService} from "../core/security.service";
+import {UserInRole} from "../models/UserInRole";
+import {User} from "../models/User";
 
-module app.layout {
-	'use strict';
+export class TopnavController {
+	currentUser:User;
+	selectedRole:UserInRole;
 
-	class TopnavController {
-		currentUser:app.models.User;
-		selectedRole:app.models.UserInRole;
+	static $inject = ['SecurityService'];
 
-		static $inject = ['SecurityService'];
-
-		constructor(private securityService:ISecurityService) {
-			this.getCurrentUser();
-		}
-
-		getCurrentUser() {
-			var vm:TopnavController = this;
-			vm.currentUser = vm.securityService.getCurrentUser();
-
-			//vm.updateRole(vm.currentUser.currentUserInRoleUuid);
-		}
-
-		showUserAccountTab() {
-			this.securityService.openUserAccountTab();
-		}
-
-		updateRole(userInRoleUuid : string) {
-			var vm = this;
-			var matches = $.grep(vm.currentUser.userInRoles, function (e) {
-				return e.userInRoleUuid === userInRoleUuid;
-			});
-			if (matches.length === 1) {
-				vm.securityService.switchUserInRole(userInRoleUuid)
-					.then(function(data) {
-						vm.currentUser.currentUserInRoleUuid = userInRoleUuid;
-						vm.selectedRole = matches[0];
-					});
-			}
-		}
+	constructor(private securityService:ISecurityService) {
+		this.getCurrentUser();
 	}
 
-	angular.module('app.layout')
-		.controller('TopnavController', TopnavController);
+	getCurrentUser() {
+		var vm:TopnavController = this;
+		vm.currentUser = vm.securityService.getCurrentUser();
+
+		//vm.updateRole(vm.currentUser.currentUserInRoleUuid);
+	}
+
+	showUserAccountTab() {
+		this.securityService.openUserAccountTab();
+	}
+
+	updateRole(userInRoleUuid : string) {
+		var vm = this;
+		var matches = $.grep(vm.currentUser.userInRoles, function (e) {
+			return e.userInRoleUuid === userInRoleUuid;
+		});
+		if (matches.length === 1) {
+			vm.securityService.switchUserInRole(userInRoleUuid)
+				.then(function(data) {
+					vm.currentUser.currentUserInRoleUuid = userInRoleUuid;
+					vm.selectedRole = matches[0];
+				});
+		}
+	}
 }

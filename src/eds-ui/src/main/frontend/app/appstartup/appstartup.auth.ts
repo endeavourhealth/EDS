@@ -1,96 +1,93 @@
-/// <reference path="../../typings/index.d.ts" />
+import Keycloak = require('keycloak');
 
-module app.appstartup {
-    'use strict';
-    import AuthConfig = app.models.wellknown.AuthConfig;
-    import IWellKnownConfig = app.appstartup.IWellKnownConfig;
+import {AuthConfig} from "../models/wellknown/AuthConfig";
+import {WellKnownConfig} from "./appstartup.module";
 
-    export interface IAuth {
-        init() : void;
-        getAuthz() : any;
-        getLogoutUrl() : string;
-        getRedirectUrl() : string;
+export interface IAuth {
+    init() : void;
+    getAuthz() : any;
+    getLogoutUrl() : string;
+    getRedirectUrl() : string;
+}
+
+export class Auth implements IAuth {
+
+    private static instance:Auth;
+    public static factory():Auth {
+        if(Auth.instance == null) {
+            Auth.instance = new Auth();
+        }
+        return Auth.instance;
     }
 
-    export class Auth implements IAuth {
+    private authz:any;
+    private accountUrl:string;
+    private logoutUrl:string;
+    private redirectUrl:string;
 
-        private static instance:Auth;
-        public static factory():Auth {
-            if(Auth.instance == null) {
-                Auth.instance = new Auth();
+    private onAuthSuccess:any;
+    private onAuthError:any;
+
+    constructor() {
+    }
+
+    init() {
+
+        var authConfig:AuthConfig = WellKnownConfig.factory().getAuthConfig();
+
+        this.authz = new Keycloak({
+            url: authConfig.authServerUrl,
+            realm: authConfig.realm,
+            clientId: authConfig.authClientId
+        });
+
+        this.accountUrl = authConfig.authServerUrl + '/realms/' + authConfig.realm + '/account';
+        this.redirectUrl = window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/';
+        this.logoutUrl = authConfig.authServerUrl + '/realms/' + authConfig.realm + '/protocol/openid-connect/logout?redirect_uri=' + this.redirectUrl;
+
+        var vm = this;
+        this.authz.init({onLoad: 'login-required'})
+          .success(function () {
+              if(vm.onAuthSuccess != null) {
+                  vm.onAuthSuccess();
+              }
+          }).error(function () {
+            console.log('Auth failed to initialise...');
+            if(vm.onAuthError != null) {
+                vm.onAuthError();
             }
-            return Auth.instance;
-        }
+        });
+    }
 
-        private authz:any;
-        private accountUrl:string;
-        private logoutUrl:string;
-        private redirectUrl:string;
+    getOnAuthSuccess():any {
+        return this.onAuthSuccess;
+    }
 
-        private onAuthSuccess:any;
-        private onAuthError:any;
+    setOnAuthSuccess(onAuthSuccess:any) {
+        this.onAuthSuccess = onAuthSuccess;
+    }
 
-        constructor() {
-        }
+    getOnAuthError():any {
+        return this.onAuthError;
+    }
 
-        init() {
+    setOnAuthError(onAuthError:any) {
+        this.onAuthError = onAuthError;
+    }
 
-            var authConfig:AuthConfig = WellKnownConfig.factory().getAuthConfig();
+    getAuthz() : any {
+        return this.authz;
+    }
 
-            this.authz = new Keycloak({
-                url: authConfig.authServerUrl,
-                realm: authConfig.realm,
-                clientId: authConfig.authClientId
-            });
+    getLogoutUrl() : string {
+        return this.logoutUrl;
+    }
 
-            this.accountUrl = authConfig.authServerUrl + '/realms/' + authConfig.realm + '/account';
-            this.redirectUrl = window.location.protocol + '//' + window.location.hostname + ':' + window.location.port + '/';
-            this.logoutUrl = authConfig.authServerUrl + '/realms/' + authConfig.realm + '/protocol/openid-connect/logout?redirect_uri=' + this.redirectUrl;
+    getAccountUrl() : string {
+        return this.accountUrl;
+    }
 
-            var vm = this;
-            this.authz.init({onLoad: 'login-required'})
-                .success(function () {
-                    if(vm.onAuthSuccess != null) {
-                        vm.onAuthSuccess();
-                    }
-                }).error(function () {
-                    console.log('Auth failed to initialise...');
-                    if(vm.onAuthError != null) {
-                        vm.onAuthError();
-                    }
-            });
-        }
-
-        getOnAuthSuccess():any {
-            return this.onAuthSuccess;
-        }
-
-        setOnAuthSuccess(onAuthSuccess:any) {
-            this.onAuthSuccess = onAuthSuccess;
-        }
-
-        getOnAuthError():any {
-            return this.onAuthError;
-        }
-
-        setOnAuthError(onAuthError:any) {
-            this.onAuthError = onAuthError;
-        }
-
-        getAuthz() : any {
-            return this.authz;
-        }
-
-        getLogoutUrl() : string {
-            return this.logoutUrl;
-        }
-
-        getAccountUrl() : string {
-            return this.accountUrl;
-        }
-
-        getRedirectUrl() : string {
-            return this.redirectUrl;
-        }
+    getRedirectUrl() : string {
+        return this.redirectUrl;
     }
 }

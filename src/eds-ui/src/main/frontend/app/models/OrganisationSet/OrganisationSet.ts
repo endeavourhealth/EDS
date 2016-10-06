@@ -1,9 +1,7 @@
-module app.models {
-	'use strict';
+import {OrganisationSetMember} from "./OrganisationSetMember";
 
-	export class OrganisationSet {
-		uuid : string;
-		name : string;
-		organisations : OrganisationSetMember[];
-	}
+export class OrganisationSet {
+	uuid : string;
+	name : string;
+	organisations : OrganisationSetMember[];
 }

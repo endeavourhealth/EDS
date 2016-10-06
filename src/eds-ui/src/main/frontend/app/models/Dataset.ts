@@ -1,9 +1,7 @@
-module app.models {
-	'use strict';
+import {Composition} from "./Composition";
 
-	export class DataSet {
-		uuid:string;
-		name:string;
-		composition : Composition[];
-	}
+export class DataSet {
+	uuid:string;
+	name:string;
+	composition : Composition[];
 }

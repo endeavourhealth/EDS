@@ -4,7 +4,8 @@
 import 'angular';
 import 'angular-ui-bootstrap';
 import 'angular-ui-router';
-import 'bootstrap-css';
+import 'angular-toastr';
+import 'bootstrap';
 
 // Internal dependencies
 import '../content/css/index.css';
@@ -33,6 +34,7 @@ import {IAdminService} from "./core/admin.service";
 import {AppRoute} from "./app.route";
 
 export let app = angular.module('app', [
+		'toastr',
 		'app.appstartup',
 		'app.models',
 		'app.core',

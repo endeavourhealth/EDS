@@ -1,8 +1,2 @@
-module app.models {
-    'use strict';
-
-    export class IsAny {
-
-
-    }
+export class IsAny {
 }
