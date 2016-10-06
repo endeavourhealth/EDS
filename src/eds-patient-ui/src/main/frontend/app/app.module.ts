@@ -34,6 +34,7 @@ import {IAdminService} from "./core/admin.service";
 import {AppRoute} from "./app.route";
 
 export let app = angular.module('app', [
+		'toastr',
 		'app.appstartup',
 		'app.models',
 		'app.core',
