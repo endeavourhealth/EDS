@@ -3,26 +3,59 @@ create keyspace audit with replication = {'class':'SimpleStrategy', 'replication
 
 USE audit;
 
+DROP MATERIALIZED VIEW IF EXISTS user_event_by_module_user_timestamp;
+DROP MATERIALIZED VIEW IF EXISTS user_event_by_module_user_organisation_timestamp;
+DROP MATERIALIZED VIEW IF EXISTS exchange_transform_by_service_and_system;
+
+DROP TABLE IF EXISTS user_event;
+DROP TABLE IF EXISTS exchange_transform;
+DROP TABLE IF EXISTS exchangeEvent; //to tidy up old tables
+DROP TABLE IF EXISTS exchange_event;
+DROP TABLE IF EXISTS exchange;
 
 CREATE TABLE exchange 
-  ( 
+( 
+    exchange_id UUID,
     timestamp TIMESTAMP,
-    exchangeId UUID,
     headers VARCHAR,
     body VARCHAR,
-    PRIMARY KEY (exchangeId) 
-  );
+    PRIMARY KEY (exchange_id) 
+);
 
-CREATE TABLE exchangeEvent 
-  ( 
+CREATE TABLE exchange_event 
+( 
+	exchange_id UUID,
     timestamp TIMESTAMP,
-    exchangeId UUID,
     event INT,
-    PRIMARY KEY (exchangeId, timestamp)
-  );
+    PRIMARY KEY (exchange_id, timestamp)
+);
+
+CREATE TABLE exchange_transform 
+( 
+	service_id UUID,
+    system_id UUID,
+    exchange_id UUID,
+    version TIMEUUID,
+    started TIMESTAMP,
+    ended TIMESTAMP,
+    error_xml TEXT,
+    PRIMARY KEY ((service_id, system_id), exchange_id, version)
+) WITH CLUSTERING ORDER BY (exchange_id ASC, version DESC);
+
+CREATE MATERIALIZED VIEW exchange_transform_by_service_and_system AS
+SELECT service_id, system_id, exchange_id, version, error_xml
+FROM audit.exchange_transform
+WHERE service_id IS NOT NULL
+AND system_id IS NOT NULL
+AND exchange_id IS NOT NULL
+AND version IS NOT NULL
+AND error_xml IS NOT NULL
+PRIMARY KEY ((service_id, system_id), version, exchange_id)
+with CLUSTERING order BY (version DESC, exchange_id ASC);
+
 
 CREATE TABLE user_event
-  (
+(
     user_id uuid,
     organisation_id uuid,
     module text,
@@ -31,7 +64,7 @@ CREATE TABLE user_event
     timestamp timestamp,
     data text,
     PRIMARY KEY (user_id, module, submodule, action, timestamp)
-  );
+);
 
 CREATE MATERIALIZED VIEW user_event_by_module_user_timestamp AS
 SELECT user_id, organisation_id, module, submodule, action, timestamp, data
