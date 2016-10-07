@@ -2,6 +2,7 @@ import Duration = moment.Duration;
 
 import {UIHumanName} from "../recordViewer/models/UIHumanName";
 import {UIAddress} from "../recordViewer/models/UIAddress";
+import {UIDate} from "../recordViewer/models/UIDate";
 
 export function cuiDate() {
     return formatCuiDate;
@@ -27,12 +28,12 @@ export function cuiGender() {
     return formatCuiGender;
 }
 
-function formatCuiDate(date: Date): string {
-    return moment(date).format("DD-MMM-YYYY");
+function formatCuiDate(date: UIDate): string {
+    return moment(date.date).format("DD-MMM-YYYY");
 }
 
-function formatCuiDateOfBirth(dateOfBirth: Date): string {
-    let age: Duration = getDurationFromNow(dateOfBirth);
+function formatCuiDateOfBirth(dateOfBirth: UIDate): string {
+    let age: Duration = getDurationFromNow(dateOfBirth.date);
     return formatCuiDate(dateOfBirth) + ' (' + age.years() + 'y ' + age.months() + 'm)';
 }
 
