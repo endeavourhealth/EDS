@@ -16,7 +16,7 @@ export class DataSetRoute {
 				config: {
 					url: '/dataSet/:itemUuid/:itemAction',
 					template: require('./dataSet.html'),
-					controller: 'dataSetController',
+					controller: 'DataSetController',
 					controllerAs: 'dataSetCtrl'
 				}
 			}
