@@ -1,8 +1,8 @@
 import Duration = moment.Duration;
 
-import {UIHumanName} from "../recordViewer/models/UIHumanName";
-import {UIAddress} from "../recordViewer/models/UIAddress";
-import {UIDate} from "../recordViewer/models/UIDate";
+import {UIHumanName} from "../recordViewer/models/types/UIHumanName";
+import {UIAddress} from "../recordViewer/models/types/UIAddress";
+import {UIDate} from "../recordViewer/models/types/UIDate";
 
 export function cuiDate() {
     return formatCuiDate;

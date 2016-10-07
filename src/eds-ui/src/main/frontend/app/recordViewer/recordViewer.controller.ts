@@ -1,9 +1,9 @@
 import IModalService = angular.ui.bootstrap.IModalService;
 
-import {UIPatient} from "./models/UIPatient";
-import {UIEncounter} from "./models/UIEncounter";
+import {UIPatient} from "./models/resources/admin/UIPatient";
+import {UIEncounter} from "./models/resources/clinical/UIEncounter";
 import {PatientFindController} from "../dialogs/patientFind/patientFind.controller";
-import {UICondition} from "./models/UICondition";
+import {UICondition} from "./models/resources/clinical/UICondition";
 import {IRecordViewerService} from "./recordViewer.service";
 
 export class RecordViewerController {

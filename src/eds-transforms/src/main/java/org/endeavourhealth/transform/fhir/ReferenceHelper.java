@@ -59,6 +59,9 @@ public class ReferenceHelper
         if (reference == null)
             return null;
 
+        if (!reference.hasReference())
+            return null;
+
         String[] parts = reference.getReference().split("\\/");
 
         if ((parts == null) || (parts.length == 0))

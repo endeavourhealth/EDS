@@ -1,7 +1,3 @@
-module app.models {
-    'use strict';
-
-    export class UIResource {
-        id: string;
-    }
+export class UIResource {
+    id: string;
 }

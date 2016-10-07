@@ -5,6 +5,7 @@ import org.hl7.fhir.instance.model.Organization;
 
 public class UIOrganisationTransform {
     public static UIOrganisation transform(Organization organization) {
-        return new UIOrganisation();
+        return new UIOrganisation()
+                .setId(organization.getId());
     }
 }

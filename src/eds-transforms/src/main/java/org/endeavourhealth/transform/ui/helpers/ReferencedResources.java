@@ -11,16 +11,17 @@ import org.endeavourhealth.transform.ui.transforms.admin.UIOrganisationTransform
 import org.endeavourhealth.transform.ui.transforms.admin.UIPractitionerTransform;
 import org.hl7.fhir.instance.model.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class ReferencedResources {
-    private List<Practitioner> practitioners;
-    private List<UIPractitioner> uiPractitioners;
-    private List<Organization> organisations;
-    private List<UIOrganisation> uiOrganisations;
-    private List<Location> locations;
-    private List<UILocation> uiLocations;
+    private List<Practitioner> practitioners = new ArrayList<>();
+    private List<UIPractitioner> uiPractitioners = new ArrayList<>();
+    private List<Organization> organisations = new ArrayList<>();
+    private List<UIOrganisation> uiOrganisations = new ArrayList<>();
+    private List<Location> locations = new ArrayList<>();
+    private List<UILocation> uiLocations = new ArrayList<>();
 
     public void setPractitioners(List<Practitioner> practitioners) {
         this.practitioners = practitioners;
@@ -40,7 +41,7 @@ public class ReferencedResources {
         return this
                 .uiPractitioners
                 .stream()
-                .filter(t -> t.getId().equals(referenceId))
+                .filter(t -> referenceId.equals(t.getId()))
                 .collect(StreamExtension.firstOrNullCollector());
     }
 

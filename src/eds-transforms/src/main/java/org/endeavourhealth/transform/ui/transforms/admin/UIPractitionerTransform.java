@@ -8,6 +8,7 @@ public class UIPractitionerTransform {
     public static UIPractitioner transform(Practitioner practitioner) {
 
         return new UIPractitioner()
+                .setId(practitioner.getId())
                 .setName(NameHelper.transform(practitioner.getName()))
                 .setActive(practitioner.getActive());
     }

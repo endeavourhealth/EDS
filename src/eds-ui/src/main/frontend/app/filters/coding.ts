@@ -1,4 +1,4 @@
-import {UICodeableConcept} from "../recordViewer/models/UICodeableConcept";
+import {UICodeableConcept} from "../recordViewer/models/types/UICodeableConcept";
 
 export function codeTerm() {
     return getCodeTerm;

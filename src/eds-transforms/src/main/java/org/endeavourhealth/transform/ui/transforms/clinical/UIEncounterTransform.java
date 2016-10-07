@@ -52,6 +52,9 @@ public class UIEncounterTransform extends UIClinicalTransform<Encounter, UIEncou
     }
 
     private static UIOrganisation getServiceProvider(Encounter encounter, ReferencedResources referencedResources) {
+        if (!encounter.hasServiceProvider())
+            return null;
+
         return referencedResources.getUIOrganisation(encounter.getServiceProvider());
     }
 

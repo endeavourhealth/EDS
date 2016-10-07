@@ -1,6 +1,6 @@
-import {UIPatient} from "./models/UIPatient";
-import {UIEncounter} from "./models/UIEncounter";
-import {UICondition} from "./models/UICondition";
+import {UIPatient} from "./models/resources/admin/UIPatient";
+import {UIEncounter} from "./models/resources/clinical/UIEncounter";
+import {UICondition} from "./models/resources/clinical/UICondition";
 import {BaseHttpService} from "../core/baseHttp.service";
 
 export interface IRecordViewerService {

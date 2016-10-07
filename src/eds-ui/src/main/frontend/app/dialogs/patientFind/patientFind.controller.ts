@@ -4,7 +4,7 @@ import IModalSettings = angular.ui.bootstrap.IModalSettings;
 
 import {BaseDialogController} from "../baseDialog.controller";
 import {ILoggerService} from "../../blocks/logger.service";
-import {UIPatient} from "../../recordViewer/models/UIPatient";
+import {UIPatient} from "../../recordViewer/models/resources/admin/UIPatient";
 import {IRecordViewerService} from "../../recordViewer/recordViewer.service";
 
 enum KeyCodes {
