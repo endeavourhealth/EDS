@@ -1,14 +1,13 @@
-import {UIPeriod} from "../../types/UIPeriod";
-import {UIPractitioner} from "../admin/UIPractitioner";
-import {UICode} from "../../types/UICode";
-import {UICodeableConcept} from "../../types/UICodeableConcept";
 import {UIClinicalResource} from "./UIClinicalResource";
+import {UIEncounter} from "./UIEncounter";
+import {UIDate} from "../../types/UIDate";
+import {UIProblem} from "./UIProblem";
 
 export class UICondition extends UIClinicalResource {
-    status: string;
-    performedBy: UIPractitioner;
-    enteredBy: UIPractitioner;
-    code: UICodeableConcept;
-    period: UIPeriod;
-    significance: UICode;
+    encounter: UIEncounter;
+    clinicalStatus: string;
+    verificationStatus: string;
+    abatementDate: UIDate;
+    hasAbated: boolean;
+    partOfProblem: UIProblem;
 }

@@ -25,8 +25,8 @@
                     </div>
                 </div>
 
-                <uib-tabset>
-                    <uib-tab index="0" active="ctrl.firstTabActive" heading="Summary">
+                <uib-tabset active="ctrl.activeTab">
+                    <uib-tab index="0" heading="Summary">
 
                         <div class="tab-panel">
                             Summary
@@ -55,23 +55,56 @@
                             Medication
                         </div>
                     </uib-tab>
-                    <uib-tab index="3" heading="Problems" ng-click="ctrl.loadConditions();">
-
+                    <uib-tab index="3" heading="Problems" ng-click="ctrl.loadProblems();">
                         <div class="tab-panel">
-                            <table class="table table-hover">
-                                <thead>
-                                    <th>Date</th>
-                                    <th>Code</th>
-                                    <th>Significance</th>
-                                </thead>
-                                <tbody>
-                                    <tr ng-repeat="condition in ctrl.conditions">
-                                        <td>{{condition.effectiveDate | cuiDate}}</td>
-                                        <td>{{condition.code | codeTerm}}</td>
-                                        <td>{{condition.significance.display}}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+
+                            <h4>Active problems</h4>
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <table class="table table-condensed table-striped table-hover">
+                                            <thead>
+                                                <th>Date</th>
+                                                <th>Code</th>
+                                            </thead>
+                                            <tbody>
+                                                <tr ng-repeat="problem in ctrl.getActiveProblems()">
+                                                    <td>{{problem.effectiveDate | cuiDate}}</td>
+                                                    <td><b>{{problem.code | codeTerm}}</b> &nbsp;<i>{{problem.significance | codeSignificance}}</i></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="panel panel-default">
+                                            <div class="panel-body">
+                                                Details view
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h4>Past problems</h4>
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <table class="table table-condensed table-striped table-hover">
+                                            <thead>
+                                                <th>Date</th>
+                                                <th>Code</th>
+                                            </thead>
+                                            <tbody>
+                                                <tr ng-repeat="problem in ctrl.getPastProblems()">
+                                                    <td>{{problem.effectiveDate | cuiDate}}</td>
+                                                    <td><b>{{problem.code | codeTerm}}</b> &nbsp;<i>{{problem.significance | codeSignificance}}</i></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </uib-tab>
                     <uib-tab index="4" heading="Investigations">

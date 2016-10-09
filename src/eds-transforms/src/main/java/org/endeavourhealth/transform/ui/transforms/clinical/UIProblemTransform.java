@@ -64,7 +64,7 @@ public class UIProblemTransform extends UIClinicalTransform<Condition, UIProblem
 
     private static UIDate getLastReviewDate(Condition condition) {
         Extension extension = ExtensionHelper.getExtension(condition, FhirExtensionUri.PROBLEM_LAST_REVIEWED);
-        DateTimeType lastReviewDate = ExtensionHelper.getExtensionValue(extension, FhirExtensionUri._PROBLEM_LAST_REVIEWED__DATE, DateTimeType.class);
+        DateType lastReviewDate = ExtensionHelper.getExtensionValue(extension, FhirExtensionUri._PROBLEM_LAST_REVIEWED__DATE, DateType.class);
 
         if (lastReviewDate == null)
             return null;

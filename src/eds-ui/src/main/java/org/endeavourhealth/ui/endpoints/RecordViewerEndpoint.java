@@ -181,7 +181,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                 .map(t -> ReferenceHelper.getReferenceId(t, resourceType))
                 .filter(t -> StringUtils.isNotEmpty(t))
                 .distinct()
-                .map(t -> UUID.fromString(t))
+                .map(t -> UUID.fromString(t.replace("{", "").replace("}", "")))
                 .collect(Collectors.toList());
     }
 }

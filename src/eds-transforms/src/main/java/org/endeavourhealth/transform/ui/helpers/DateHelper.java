@@ -24,6 +24,12 @@ public class DateHelper {
                 .setPrecision(getStringValue(dateType.getPrecision()));
     }
 
+    public static UIDate getUnknownDate() {
+        return new UIDate()
+                .setDate(null)
+                .setPrecision("unknown");
+    }
+
     private static String getStringValue(TemporalPrecisionEnum temporalPrecisionEnum) {
         switch (temporalPrecisionEnum)
         {

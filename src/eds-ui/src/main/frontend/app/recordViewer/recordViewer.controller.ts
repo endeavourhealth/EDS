@@ -5,12 +5,15 @@ import {UIEncounter} from "./models/resources/clinical/UIEncounter";
 import {PatientFindController} from "../dialogs/patientFind/patientFind.controller";
 import {UICondition} from "./models/resources/clinical/UICondition";
 import {IRecordViewerService} from "./recordViewer.service";
+import {List} from "linqts/dist/linq";
+import {UIProblem} from "./models/resources/clinical/UIProblem";
+import {linq} from "../blocks/linq";
 
 export class RecordViewerController {
     patient: UIPatient;
     encounters: UIEncounter[];
-    conditions: UICondition[];
-    firstTabActive: boolean = true;
+    problems: UIProblem[];
+    activeTab: number = 0;
 
 static $inject = ['$uibModal', 'RecordViewerService'];
 
@@ -21,15 +24,11 @@ constructor(private $modal: IModalService,
 }
 
     showPatientFind() {
-        var vm = this;
-
+        var ctrl = this;
         PatientFindController
-            .open(vm.$modal)
+            .open(ctrl.$modal)
             .result
-            .then(
-                function (result: UIPatient) {
-                    vm.setPatient(result);
-                });
+            .then((result: UIPatient) => ctrl.setPatient(result));
     }
 
     setPatient(patient: UIPatient) {
@@ -38,31 +37,44 @@ constructor(private $modal: IModalService,
     }
 
     clearPatient() {
-        this.firstTabActive = true;
+        this.activeTab = 0;
         this.patient = null;
         this.encounters = null;
-        this.conditions = null;
+        this.problems = null;
+    }
+
+    getActiveProblems(): UIProblem[] {
+        return linq(this.problems)
+            .Where(t => (!t.hasAbated))
+            .ToArray();
+    }
+
+    getPastProblems(): UIProblem[] {
+        return linq(this.problems)
+            .Where(t => t.hasAbated)
+            .ToArray();
     }
 
     loadConsultations() {
-        var vm = this;
-        vm.encounters = null;
+        this.encounters = null;
 
-        vm.recordViewerService.getEncounters(vm.patient.serviceId, vm.patient.systemId, vm.patient.patientId)
-            .then(
-                function (data: UIEncounter[]) {
-                vm.encounters = data;
-            });
+        var ctrl = this;
+        ctrl
+            .recordViewerService
+            .getEncounters(ctrl.patient.serviceId, ctrl.patient.systemId, ctrl.patient.patientId)
+            .then((result: UIEncounter[]) => ctrl.encounters = result);
     }
 
-    loadConditions() {
-        var vm = this;
-        vm.conditions = null;
+    loadProblems() {
+        this.problems = null;
 
-        vm.recordViewerService.getConditions(vm.patient.serviceId, vm.patient.systemId, vm.patient.patientId)
-            .then(
-                function (data: UICondition[]) {
-                    vm.conditions = data;
-                });
+        var ctrl = this;
+        ctrl
+            .recordViewerService
+            .getProblems(ctrl.patient.serviceId, ctrl.patient.systemId, ctrl.patient.patientId)
+            .then((result: UIProblem[]) =>
+                ctrl.problems = linq(result)
+                    .OrderByDescending(t => t.effectiveDate.date)
+                    .ToArray());
     }
 }

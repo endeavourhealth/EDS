@@ -89,7 +89,7 @@ public class UIConditionTransform extends UIClinicalTransform<Condition, UICondi
 
     private static UIDate getOnsetDateTime(Condition condition) throws Exception {
         if (!condition.hasOnsetDateTimeType())
-            return null;
+            return DateHelper.getUnknownDate();
 
         return DateHelper.convert(condition.getOnsetDateTimeType());
     }
