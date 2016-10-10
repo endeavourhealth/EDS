@@ -14,9 +14,9 @@ public class FhirUri
     public final static String IDENTIFIER_SYSTEM_EMIS_DOCUMENT_GUID = "http://emishealth.com/identifier/document-guid"; //placeholder
     public final static String IDENTIFIER_SYSTEM_TPP_PATIENT_ID = "http://tpp-uk.com/identifier/patient-id"; //placeholder
 
-    public final static String CODE_SYSTEM_READ2 = "http://endeavourhealth.org/fhir/read2";
-    public final static String CODE_SYSTEM_SNOMED_CT = "http://snomed.info/sct";
-    public final static String CODE_SYSTEM_CTV3 = "http://endeavourhealth.org/fhir/ctv3";
+    public final static String CODE_SYSTEM_READ2 = "http://read.info/readv2"; //see https://github.com/HL7-UK/System-Identifiers
+    public final static String CODE_SYSTEM_SNOMED_CT = "http://snomed.info/sct"; //see https://github.com/HL7-UK/System-Identifiers
+    public final static String CODE_SYSTEM_CTV3 = "http://read.info/ctv3"; //see https://github.com/HL7-UK/System-Identifiers
     public final static String CODE_SYSTEM_EMISSNOMED = "http://www.endeavourhealth.org/fhir/emis-snomed";
     public final static String CODE_SYSTEM_EMISPREPARATION = "http://www.endeavourhealth.org/fhir/emis-prepration";
 
