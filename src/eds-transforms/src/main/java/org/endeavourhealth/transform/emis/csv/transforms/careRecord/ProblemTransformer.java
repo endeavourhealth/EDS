@@ -127,15 +127,15 @@ public class ProblemTransformer {
     }
 
     private static ProblemSignificance convertSignificance(String significance) {
-        significance = significance.toLowerCase();
-        if (significance.indexOf("major") > -1) {
+        
+        if (significance.equalsIgnoreCase("Minor Problem")) {
             return ProblemSignificance.SIGNIFICANT;
-        } else if (significance.indexOf("minor") > -1) {
+
+        } else if (significance.equalsIgnoreCase("Significant Problem")) {
             return ProblemSignificance.NOT_SIGNIFICANT;
+
         } else {
             return ProblemSignificance.UNSPECIIED;
         }
     }
-
-
 }
