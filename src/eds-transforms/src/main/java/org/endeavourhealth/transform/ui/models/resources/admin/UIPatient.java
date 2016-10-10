@@ -5,6 +5,7 @@ import org.endeavourhealth.transform.ui.models.resources.UIResource;
 import org.endeavourhealth.transform.ui.models.types.UIAddress;
 import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.endeavourhealth.transform.ui.models.types.UIHumanName;
+import org.endeavourhealth.transform.ui.models.types.UIInternalIdentifier;
 
 import java.util.Date;
 import java.util.UUID;
@@ -12,14 +13,21 @@ import java.util.UUID;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UIPatient extends UIResource<UIPatient> {
 
-    private UUID serviceId;
-    private UUID systemId;
-    private UUID patientId;
+    private UIInternalIdentifier patientId;
     private String nhsNumber;
     private UIHumanName name;
     private UIDate dateOfBirth;
     private String gender;
     private UIAddress homeAddress;
+
+    public UIInternalIdentifier getPatientId() {
+        return patientId;
+    }
+
+    public UIPatient setPatientId(UIInternalIdentifier patientId) {
+        this.patientId = patientId;
+        return this;
+    }
 
     public UIHumanName getName() {
         return name;
@@ -45,33 +53,6 @@ public class UIPatient extends UIResource<UIPatient> {
 
     public UIPatient setGender(String gender) {
         this.gender = gender;
-        return this;
-    }
-
-    public UUID getServiceId() {
-        return serviceId;
-    }
-
-    public UIPatient setServiceId(UUID serviceId) {
-        this.serviceId = serviceId;
-        return this;
-    }
-
-    public UUID getSystemId() {
-        return systemId;
-    }
-
-    public UIPatient setSystemId(UUID systemId) {
-        this.systemId = systemId;
-        return this;
-    }
-
-    public UUID getPatientId() {
-        return patientId;
-    }
-
-    public UIPatient setPatientId(UUID patientId) {
-        this.patientId = patientId;
         return this;
     }
 

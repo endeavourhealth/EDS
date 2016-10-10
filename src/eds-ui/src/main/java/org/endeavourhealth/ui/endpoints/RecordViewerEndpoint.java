@@ -12,6 +12,7 @@ import org.endeavourhealth.transform.ui.models.resources.clinicial.UICondition;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIEncounter;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIProblem;
 import org.endeavourhealth.transform.ui.models.resources.UIResource;
+import org.endeavourhealth.transform.ui.models.types.UIInternalIdentifier;
 import org.endeavourhealth.transform.ui.transforms.clinical.UIClinicalTransform;
 import org.endeavourhealth.transform.ui.transforms.UITransform;
 import org.endeavourhealth.ui.utility.ResourceFetcher;
@@ -118,12 +119,6 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
 
         List<UIEncounter> encounters = getClinicalResources(serviceId, systemId, patientId, Encounter.class, UIEncounter.class);
 
-        // move to client
-        encounters = encounters
-                .stream()
-                .sorted(Comparator.comparing(t -> ((UIEncounter)t).getPeriod().getStart()).reversed())
-                .collect(Collectors.toList());
-
         return Response
                 .ok()
                 .entity(encounters)
@@ -141,11 +136,13 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
     private static UIPatient getPatient(UUID serviceId, UUID systemId, UUID patientId) throws Exception {
 
         Patient patient = ResourceFetcher.getSingleResourceByPatient(serviceId, systemId, patientId, Patient.class);
+        UIPatient uiPatient = UITransform.transformPatient(patient);
 
-        return UITransform.transformPatient(patient)
-                .setServiceId(serviceId)
-                .setSystemId(systemId)
-                .setPatientId(patientId);
+        return uiPatient
+                .setPatientId(new UIInternalIdentifier()
+                    .setServiceId(serviceId)
+                    .setSystemId(systemId)
+                    .setResourceId(patientId));
     }
 
     private <T extends Resource,

@@ -17,10 +17,10 @@
                 <div class="panel panel-default precis">
                     <div class="panel-body">
                         <div class="row">
-                            <div class="col-sm-5"><span class="precis-patientname">{{ctrl.patient.name | cuiName}}</span></div>
-                            <div class="col-sm-3"><span class="precis-label">Born</span> <span class="precis-value">{{ctrl.patient.dateOfBirth | cuiDateOfBirth}}</span></div>
-                            <div class="col-sm-2"><span class="precis-label">Gender</span> <span class="precis-value">{{ctrl.patient.gender | cuiGender}}</span></div>
-                            <div class="col-sm-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{ctrl.patient.nhsNumber | cuiNhsNumber}}</span></div>
+                            <div class="col-sm-5"><span class="precis-patientname">{{ctrl.patient.patient.name | cuiName}}</span></div>
+                            <div class="col-sm-3"><span class="precis-label">Born</span> <span class="precis-value">{{ctrl.patient.patient.dateOfBirth | cuiDateOfBirth}}</span></div>
+                            <div class="col-sm-2"><span class="precis-label">Gender</span> <span class="precis-value">{{ctrl.patient.patient.gender | cuiGender}}</span></div>
+                            <div class="col-sm-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{ctrl.patient.patient.nhsNumber | cuiNhsNumber}}</span></div>
                         </div>
                     </div>
                 </div>

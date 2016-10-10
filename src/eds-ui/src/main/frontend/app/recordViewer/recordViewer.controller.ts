@@ -3,25 +3,20 @@ import IModalService = angular.ui.bootstrap.IModalService;
 import {UIPatient} from "./models/resources/admin/UIPatient";
 import {UIEncounter} from "./models/resources/clinical/UIEncounter";
 import {PatientFindController} from "../dialogs/patientFind/patientFind.controller";
-import {UICondition} from "./models/resources/clinical/UICondition";
 import {IRecordViewerService} from "./recordViewer.service";
-import {List} from "linqts/dist/linq";
 import {UIProblem} from "./models/resources/clinical/UIProblem";
 import {linq} from "../blocks/linq";
+import {UIPatientRecord} from "./models/UIPatientRecord";
 
 export class RecordViewerController {
-    patient: UIPatient;
-    encounters: UIEncounter[];
-    problems: UIProblem[];
+    patient: UIPatientRecord;
     activeTab: number = 0;
 
-static $inject = ['$uibModal', 'RecordViewerService'];
+    static $inject = ['$uibModal', 'RecordViewerService'];
 
-constructor(private $modal: IModalService,
-                protected recordViewerService: IRecordViewerService) {
-
+    constructor(private $modal: IModalService, protected recordViewerService: IRecordViewerService) {
         this.showPatientFind();
-}
+    }
 
     showPatientFind() {
         var ctrl = this;
@@ -33,47 +28,53 @@ constructor(private $modal: IModalService,
 
     setPatient(patient: UIPatient) {
         this.clearPatient();
-        this.patient = patient;
+        this.patient = new UIPatientRecord(patient);
     }
 
     clearPatient() {
         this.activeTab = 0;
         this.patient = null;
-        this.encounters = null;
-        this.problems = null;
     }
 
     getActiveProblems(): UIProblem[] {
-        return linq(this.problems)
+        if ((this.patient == null) || (this.patient.problems == null))
+            return null;
+
+        return linq(this.patient.problems)
             .Where(t => (!t.hasAbated))
             .ToArray();
     }
 
     getPastProblems(): UIProblem[] {
-        return linq(this.problems)
+        if ((this.patient == null) || (this.patient.problems == null))
+            return null;
+
+        return linq(this.patient.problems)
             .Where(t => t.hasAbated)
             .ToArray();
     }
 
     loadConsultations() {
-        this.encounters = null;
+        if (this.patient.encounters != null)
+            return;
 
         var ctrl = this;
         ctrl
             .recordViewerService
-            .getEncounters(ctrl.patient.serviceId, ctrl.patient.systemId, ctrl.patient.patientId)
-            .then((result: UIEncounter[]) => ctrl.encounters = result);
+            .getEncounters(ctrl.patient.patient.patientId)
+            .then((result: UIEncounter[]) => ctrl.patient.encounters = result);
     }
 
     loadProblems() {
-        this.problems = null;
+        if (this.patient.problems != null)
+            return;
 
         var ctrl = this;
         ctrl
             .recordViewerService
-            .getProblems(ctrl.patient.serviceId, ctrl.patient.systemId, ctrl.patient.patientId)
+            .getProblems(ctrl.patient.patient.patientId)
             .then((result: UIProblem[]) =>
-                ctrl.problems = linq(result)
+                ctrl.patient.problems = linq(result)
                     .OrderByDescending(t => t.effectiveDate.date)
                     .ToArray());
     }

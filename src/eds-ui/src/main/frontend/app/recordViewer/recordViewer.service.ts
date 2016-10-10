@@ -3,59 +3,43 @@ import {UIEncounter} from "./models/resources/clinical/UIEncounter";
 import {UICondition} from "./models/resources/clinical/UICondition";
 import {BaseHttpService} from "../core/baseHttp.service";
 import {UIProblem} from "./models/resources/clinical/UIProblem";
+import {UIInternalIdentifier} from "./models/UIInternalIdentifier";
 
 export interface IRecordViewerService {
     findPatient(searchTerms: string): ng.IPromise<UIPatient[]>;
-    getPatient(serviceId: string, systemId: string, patientId: string): ng.IPromise<UIPatient>;
-    getEncounters(serviceId: string, systemId: string, patientId: string): ng.IPromise<UIEncounter[]>;
-    getProblems(serviceId: string, systemId: string, patientId: string): ng.IPromise<UIProblem[]>;
+    getPatient(patientId: UIInternalIdentifier): ng.IPromise<UIPatient>;
+    getEncounters(patientId: UIInternalIdentifier): ng.IPromise<UIEncounter[]>;
+    getProblems(patientId: UIInternalIdentifier): ng.IPromise<UIProblem[]>;
 }
 
 export class RecordViewerService extends BaseHttpService implements IRecordViewerService {
 
-			findPatient(searchTerms: string): ng.IPromise<UIPatient[]> {
-					var request = {
-							params: {
-									'searchTerms': searchTerms
-							}
-					}
-
-					return this.httpGet('api/recordViewer/findPatient', request);
-			}
-
-	getPatient(serviceId: string, systemId: string, patientId: string): ng.IPromise<UIPatient> {
-		var request = {
-			params: {
-				'serviceId': serviceId,
-				'systemId': systemId,
-				'patientId': patientId
-			}
-		};
-
-		return this.httpGet('api/recordViewer/getPatient', request);
-	}
-
-	getEncounters(serviceId: string, systemId: string, patientId: string): ng.IPromise<UIEncounter[]> {
-        var request = {
-            params: {
-                'serviceId': serviceId,
-                'systemId': systemId,
-                'patientId': patientId
-            }
-        };
-
-        return this.httpGet('api/recordViewer/getEncounters', request);
+    findPatient(searchTerms: string): ng.IPromise<UIPatient[]> {
+        var request = { params: { 'searchTerms': searchTerms } }
+        return this.httpGet('api/recordViewer/findPatient', request);
     }
 
-    getProblems(serviceId: string, systemId: string, patientId: string): ng.IPromise<UIProblem[]> {
+	getPatient(patientId: UIInternalIdentifier): ng.IPromise<UIPatient> {
+		return this.httpGet('api/recordViewer/getPatient', this.getParams(patientId));
+	}
+
+	getEncounters(patientId: UIInternalIdentifier): ng.IPromise<UIEncounter[]> {
+        return this.httpGet('api/recordViewer/getEncounters', this.getParams(patientId));
+    }
+
+    getProblems(patientId: UIInternalIdentifier): ng.IPromise<UIProblem[]> {
+        return this.httpGet('api/recordViewer/getProblems', this.getParams(patientId));
+    }
+
+    private getParams(patientId: UIInternalIdentifier): any {
         var request = {
             params: {
-                'serviceId': serviceId,
-                'systemId': systemId,
-                'patientId': patientId
+                'serviceId': patientId.serviceId,
+                'systemId': patientId.systemId,
+                'patientId': patientId.resourceId
             }
         };
 
-        return this.httpGet('api/recordViewer/getProblems', request);
+        return request;
     }
 }

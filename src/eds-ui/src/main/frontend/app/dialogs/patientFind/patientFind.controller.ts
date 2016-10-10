@@ -18,10 +18,10 @@ enum KeyCodes {
 
 export class PatientFindController extends BaseDialogController {
 
-			searchTerms: string;
-			searchedTerms: string;
-			foundPatients: UIPatient[];
-			selectedPatient: UIPatient;
+    searchTerms: string;
+    searchedTerms: string;
+    foundPatients: UIPatient[];
+    selectedPatient: UIPatient;
 
 	public static open($modal : IModalService) : IModalServiceInstance {
 		var options : IModalSettings = {
@@ -29,7 +29,7 @@ export class PatientFindController extends BaseDialogController {
 			controller: 'PatientFindController',
 			controllerAs: 'ctrl',
 			backdrop: 'static',
-							size: 'lg'
+            size: 'lg'
 		};
 
 		var dialog = $modal.open(options);
@@ -39,71 +39,65 @@ export class PatientFindController extends BaseDialogController {
 	static $inject = ['$uibModalInstance', '$uibModal', 'RecordViewerService', 'LoggerService'];
 
 	constructor(protected $uibModalInstance : IModalServiceInstance,
-							private $modal : IModalService,
-															protected recordViewerService: IRecordViewerService,
-							private log : ILoggerService) {
+                private $modal : IModalService,
+                protected recordViewerService: IRecordViewerService,
+                private log : ILoggerService) {
 		super($uibModalInstance);
 	}
 
-			ok() {
-					this.resultData = this.selectedPatient;
-					super.ok();
-			}
+    ok() {
+        this.resultData = this.selectedPatient;
+        super.ok();
+    }
 
 	findPatient() {
-					this.searchedTerms = this.searchTerms;
+        this.searchedTerms = this.searchTerms;
+        this.foundPatients = null;
 
-					var vm = this;
-					vm.foundPatients = null;
-					vm.recordViewerService.findPatient(vm.searchedTerms)
-							.then(function (data: UIPatient[]) {
-									vm.foundPatients = data;
-									if (data == null) {
-									}
-							});
-			}
+        var ctrl = this;
+        ctrl
+            .recordViewerService
+            .findPatient(ctrl.searchedTerms)
+            .then((result: UIPatient[]) => ctrl.foundPatients = result);
+    }
 
-			selectPatient(patient: UIPatient) {
-					if (this.selectedPatient == patient)
-							this.selectedPatient = null;
-					else
-							this.selectedPatient = patient;
-			}
+    selectPatient(patient: UIPatient) {
+        if (this.selectedPatient == patient)
+            this.selectedPatient = null;
+        else
+            this.selectedPatient = patient;
+    }
 
-			keydown($event: KeyboardEvent) {
-					if ($event.keyCode == KeyCodes.UpArrow) {
-							this.selectPreviousPatient();
-					}
-					else if ($event.keyCode == KeyCodes.DownArrow) {
-							this.selectNextPatient();
-					}
-			}
+    keydown($event: KeyboardEvent) {
+        if ($event.keyCode == KeyCodes.UpArrow)
+            this.selectPreviousPatient();
+        else if ($event.keyCode == KeyCodes.DownArrow)
+            this.selectNextPatient();
+    }
 
-			selectNextPatient() {
-					if (this.foundPatients == null)
-							return;
+    selectNextPatient() {
+        if (this.foundPatients == null)
+            return;
 
-					let selectedPatientIndex: number =
-							this.foundPatients.indexOf(this.selectedPatient);
+        let selectedPatientIndex: number = this.foundPatients.indexOf(this.selectedPatient);
 
-					if (++selectedPatientIndex < this.foundPatients.length)
-							this.selectedPatient = this.foundPatients[selectedPatientIndex];
-			}
+        if (++selectedPatientIndex < this.foundPatients.length)
+            this.selectedPatient = this.foundPatients[selectedPatientIndex];
+    }
 
-			selectPreviousPatient() {
-					if (this.foundPatients == null)
-							return;
+    selectPreviousPatient() {
+        if (this.foundPatients == null)
+            return;
 
-					let selectedPatientIndex: number =
-							this.foundPatients.indexOf(this.selectedPatient);
+        let selectedPatientIndex: number = this.foundPatients.indexOf(this.selectedPatient);
 
-					if (--selectedPatientIndex >= 0)
-							this.selectedPatient = this.foundPatients[selectedPatientIndex];
-			}
+        if (--selectedPatientIndex >= 0)
+            this.selectedPatient = this.foundPatients[selectedPatientIndex];
+    }
 
-			searchTermsChanged() {
-					this.searchedTerms = null;
-					this.foundPatients = null;
-					this.selectedPatient = null;
-			}
+    searchTermsChanged() {
+        this.searchedTerms = null;
+        this.foundPatients = null;
+        this.selectedPatient = null;
+    }
 }
