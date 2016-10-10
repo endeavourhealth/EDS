@@ -232,12 +232,13 @@
     margin-top: 20px;
 }
 
-#patient-find-search-results tbody tr.selected,
-#patient-find-search-results tbody tr.selected:hover {
+.table-selectable tbody tr.selected,
+.table-selectable tbody tr.selected:hover {
     background: #93c9e9;
 }
 
-#patient-find-search-results tbody tr:hover {
+.table-selectable tbody tr:hover {
     background: #d3e9f6;
     cursor: pointer;
 }
+

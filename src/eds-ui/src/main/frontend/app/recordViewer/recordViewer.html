@@ -62,13 +62,13 @@
                             <div class="container-fluid">
                                 <div class="row">
                                     <div class="col-md-8">
-                                        <table class="table table-condensed table-striped table-hover">
+                                        <table class="table table-condensed table-striped table-hover table-selectable">
                                             <thead>
                                                 <th>Date</th>
                                                 <th>Code</th>
                                             </thead>
                                             <tbody>
-                                                <tr ng-repeat="problem in ctrl.getActiveProblems()">
+                                                <tr ng-repeat="problem in ctrl.getActiveProblems()" ng-click="ctrl.activeProblemsSelectedIndex = $index" ng-class="{'selected': ctrl.activeProblemsSelectedIndex == $index}">
                                                     <td>{{problem.effectiveDate | cuiDate}}</td>
                                                     <td><b>{{problem.code | codeTerm}}</b> &nbsp;<i>{{problem.significance | codeSignificance}}</i></td>
                                                 </tr>

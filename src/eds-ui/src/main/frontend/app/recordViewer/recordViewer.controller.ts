@@ -11,6 +11,7 @@ import {UIPatientRecord} from "./models/UIPatientRecord";
 export class RecordViewerController {
     patient: UIPatientRecord;
     activeTab: number = 0;
+    activeProblemsSelectedIndex: number;
 
     static $inject = ['$uibModal', 'RecordViewerService'];
 
