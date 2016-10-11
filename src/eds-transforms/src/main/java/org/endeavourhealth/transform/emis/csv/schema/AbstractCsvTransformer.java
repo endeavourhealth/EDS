@@ -6,7 +6,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.transform.common.exceptions.FileFormatException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,31 +20,38 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 
-public abstract class AbstractCsvTransformer {
+public abstract class AbstractCsvTransformer implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractCsvTransformer.class);
 
-    private File file = null;
+    private final String version;
+    private final File file;
+    private final CSVFormat csvFormat;
+    private final DateFormat dateFormat;
+    private final DateFormat timeFormat;
+
     private CSVParser csvReader = null;
     private Iterator<CSVRecord> csvIterator = null;
     private CSVRecord csvRecord = null;
-    private DateFormat dateFormat = null;
-    private DateFormat timeFormat = null;
 
-    public AbstractCsvTransformer(String version, String folderPath, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
 
-        Package p = getClass().getPackage();
-        String[] packages = p.getName().split("\\.");
-        String domain = packages[packages.length-1];
-        String name = getClass().getSimpleName();
-        this.file = EmisCsvTransformer.getFileByPartialName(domain, name, new File(folderPath));
+    public AbstractCsvTransformer(String version, File file, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
+
+        this.version = version;
+        this.file = file;
+        this.csvFormat = csvFormat;
+        this.dateFormat = new SimpleDateFormat(dateFormat);
+        this.timeFormat = new SimpleDateFormat(timeFormat);
+
+        open();
+    }
+
+    private void open() throws Exception {
 
         //calling withHeader() on the format, forces it to read in the first row as the headers, which we can then validate against
         this.csvReader = CSVParser.parse(file, Charset.defaultCharset(), csvFormat.withHeader());
         try {
             this.csvIterator = csvReader.iterator();
-            this.dateFormat = new SimpleDateFormat(dateFormat);
-            this.timeFormat = new SimpleDateFormat(timeFormat);
 
             Map<String, Integer> headerMap = csvReader.getHeaderMap();
             String[] expectedHeaders = getCsvHeaders(version);
@@ -63,12 +70,26 @@ public abstract class AbstractCsvTransformer {
             }
         } catch (Exception e) {
             //if we get any exception thrown during the constructor, make sure to close the reader
-            if (csvReader != null) {
-                csvReader.close();
-            }
+            close();
             throw e;
         }
+    }
 
+    public void close() throws IOException {
+        if (csvRecord != null) {
+            csvReader.close();
+        }
+    }
+
+    public void reset() throws Exception {
+
+        //if we've only read the header, don't bother resetting
+        if (getCurrentLineNumber() <= 1) {
+            return;
+        }
+
+        close();
+        open();
     }
 
     protected abstract String[] getCsvHeaders(String version);
@@ -95,10 +116,17 @@ public abstract class AbstractCsvTransformer {
         }
     }
 
-    public void close() throws IOException {
-        if (csvRecord != null) {
-            csvReader.close();
-        }
+
+    public File getFile() {
+        return file;
+    }
+
+    public long getCurrentLineNumber() {
+        return csvReader.getCurrentLineNumber();
+    }
+
+    public CsvCurrentState getCurrentState() {
+        return new CsvCurrentState(file, getCurrentLineNumber());
     }
 
     public String getString(String column) {
@@ -183,7 +211,7 @@ public abstract class AbstractCsvTransformer {
     /**
      * if an error is encountered in a transform, this function is used to get detail on the line at fault
      */
-    public String getErrorLine() {
+    public String getErrorLinex() {
         return "Error processing line " + csvReader.getCurrentLineNumber() + " of " + file.getAbsolutePath();
     }
 }

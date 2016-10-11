@@ -288,9 +288,8 @@
                     <xs:element name="date_registered" type="xs:dateTime" minOccurs="0"/>
                     <xs:element name="date_registered_end" type="xs:dateTime" minOccurs="0"/>
                     <xs:element name="usual_gp_practitioner_id" type="xs:int" minOccurs="0"/>
-                    <xs:element name="registration_type_code" type="xs:string" minOccurs="0"/>
-                    <xs:element name="registration_type_desc" type="xs:string" minOccurs="0"/>
                     <xs:element name="pseudo_id" type="xs:string" minOccurs="0"/>
+                    <xs:element name="registration_type_id" type="xs:int"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>

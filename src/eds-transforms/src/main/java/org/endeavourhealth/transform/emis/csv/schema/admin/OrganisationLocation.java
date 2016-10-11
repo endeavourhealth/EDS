@@ -1,13 +1,14 @@
 package org.endeavourhealth.transform.emis.csv.schema.admin;
 
-import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
+
+import java.io.File;
 
 public class OrganisationLocation extends AbstractCsvTransformer {
 
-    public OrganisationLocation(String version, String folderPath, CSVFormat csvFormat) throws Exception {
-        super(version, folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
+    public OrganisationLocation(String version, File f) throws Exception {
+        super(version, f, EmisCsvTransformer.CSV_FORMAT, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override

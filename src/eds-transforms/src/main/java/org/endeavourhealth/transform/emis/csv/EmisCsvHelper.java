@@ -14,6 +14,7 @@ import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.transform.fhir.ReferenceComponents;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.*;
@@ -36,12 +37,12 @@ public class EmisCsvHelper {
     //some resources are referred to by others, so we cache them here for when we need them
     private Map<String, Condition> problemMap = new HashMap<>();
     private Map<String, ReferralRequest> referralMap = new HashMap<>();
-    private Map<String, List<ResourceRelationship>> observationChildMap = new HashMap<>();
-    private Map<String, List<ResourceRelationship>> problemChildMap = new HashMap<>();
+    private Map<String, List<Reference>> observationChildMap = new HashMap<>();
+    private Map<String, List<Reference>> problemChildMap = new HashMap<>();
     private Map<String, DateTimeType> issueRecordDateMap = new HashMap<>();
     private Map<String, List<Observation.ObservationComponentComponent>> bpComponentMap = new HashMap<>();
     private Map<String, SessionPractitioners> sessionPractitionerMap = new HashMap<>();
-
+    private Map<String, List<String>> organisationLocationMap = new HashMap<>();
 
     public EmisCsvHelper() {
     }
@@ -248,7 +249,7 @@ public class EmisCsvHelper {
     }
 
     public ReferralRequest findReferral(String observationGuid, String patientGuid) {
-        return referralMap.get(createUniqueId(patientGuid, observationGuid));
+        return referralMap.remove(createUniqueId(patientGuid, observationGuid));
     }
 
     public void cacheProblem(String observationGuid, String patientGuid, Condition fhirCondition) {
@@ -256,10 +257,10 @@ public class EmisCsvHelper {
     }
 
     public Condition findProblem(String observationGuid, String patientGuid) {
-        return problemMap.get(createUniqueId(patientGuid, observationGuid));
+        return problemMap.remove(createUniqueId(patientGuid, observationGuid));
     }
 
-    public List<ResourceRelationship> getAndRemoveObservationParentRelationships(String parentObservationGuid, String patientGuid) {
+    public List<Reference> getAndRemoveObservationParentRelationships(String parentObservationGuid, String patientGuid) {
         return observationChildMap.remove(createUniqueId(patientGuid, parentObservationGuid));
     }
 
@@ -269,36 +270,21 @@ public class EmisCsvHelper {
 
     public void cacheObservationParentRelationship(String parentObservationGuid, String patientGuid, String observationGuid) {
 
-        List<ResourceRelationship> list = observationChildMap.get(createUniqueId(patientGuid, parentObservationGuid));
+        List<Reference> list = observationChildMap.get(createUniqueId(patientGuid, parentObservationGuid));
         if (list == null) {
             list = new ArrayList<>();
             observationChildMap.put(createUniqueId(patientGuid, parentObservationGuid), list);
         }
-        list.add(new ResourceRelationship(patientGuid, observationGuid, ResourceType.Observation));
+        list.add(ReferenceHelper.createReference(ResourceType.Observation, createUniqueId(patientGuid, observationGuid)));
     }
 
-    /**
-     * as the end of processing all CSV files, there may be some new observations that link
-     * to past parent observations. These linkages are saved against the parent observation,
-     * so we need to retrieve them off the main repository, amend them and save them
-     */
-    public void processRemainingObservationParentChildLinks(CsvProcessor csvProcessor) throws Exception {
-
-        Iterator<String> it = observationChildMap.keySet().iterator();
-        while (it.hasNext()) {
-            String locallyUniqueId = it.next();
-            List<ResourceRelationship> childObservationIds = observationChildMap.get(locallyUniqueId);
-
-            updateExistingObservationWithNewChildLinks(locallyUniqueId, childObservationIds, csvProcessor);
-        }
-    }
 
     public Resource retrieveResource(String locallyUniqueId, ResourceType resourceType, CsvProcessor csvProcessor) throws Exception {
 
         UUID globallyUniqueId = IdHelper.getOrCreateEdsResourceId(csvProcessor.getServiceId(),
-                                                        csvProcessor.getSystemId(),
-                                                        resourceType,
-                                                        locallyUniqueId);
+                csvProcessor.getSystemId(),
+                resourceType,
+                locallyUniqueId);
 
         ResourceHistory resourceHistory = resourceRepository.getCurrentVersion(resourceType.toString(), globallyUniqueId);
         if (resourceHistory == null) {
@@ -313,38 +299,53 @@ public class EmisCsvHelper {
         return new JsonParser().parse(json);
     }
 
-    private void updateExistingObservationWithNewChildLinks(String locallyUniqueId,
-                                                            List<ResourceRelationship> childResourceRelationships,
+    /**
+     * as the end of processing all CSV files, there may be some new observations that link
+     * to past parent observations. These linkages are saved against the parent observation,
+     * so we need to retrieve them off the main repository, amend them and save them
+     */
+    public void processRemainingObservationParentChildLinks(CsvProcessor csvProcessor) throws Exception {
+
+        for (String locallyUniqueId : observationChildMap.keySet()) {
+            List<Reference> childObservationIds = observationChildMap.get(locallyUniqueId);
+
+            updateExistingObservationWithNewChildLinks(locallyUniqueId, childObservationIds, csvProcessor);
+        }
+    }
+
+
+    private void updateExistingObservationWithNewChildLinks(String locallyUniqueObservationId,
+                                                            List<Reference> childResourceRelationships,
                                                             CsvProcessor csvProcessor) throws Exception {
 
-        Observation fhirObservation = null;
+        Observation fhirObservation;
         try {
-            fhirObservation = (Observation) retrieveResource(locallyUniqueId, ResourceType.Observation, csvProcessor);
+            fhirObservation = (Observation) retrieveResource(locallyUniqueObservationId, ResourceType.Observation, csvProcessor);
         } catch (ResourceNotFoundException e) {
             //if the resource can't be found, it's because that EMIS observation record was saved as something other
             //than a FHIR Observation (example in the CSV test files is an Allergy that is linked to another Allergy)
             return;
         }
 
+        //the EMIS patient GUID is part of the locallyUnique Id of the observation, to extract from that
+        String patientGuid = getPatientGuidFromUniqueId(locallyUniqueObservationId);
+
         boolean changed = false;
-        String patientGuid = null;
 
-        for (ResourceRelationship childResourceRelationship : childResourceRelationships) {
+        for (Reference reference : childResourceRelationships) {
 
-            //all the relationships have the same patientGuid, so it's safe to just keep reassigning this
-            patientGuid = childResourceRelationship.getPatientGuid();
+            ReferenceComponents components = ReferenceHelper.getReferenceComponents(reference);
+            String locallyUniqueId = components.getId();
+            ResourceType resourceType = components.getResourceType();
 
             //the Observation resource is from the DB so has already had all its Ids mapped,
-            //so we need to convert the local ID to the globally unique ID we'll have used before
-            String locallyUniqueObservationId = createUniqueId(childResourceRelationship.getPatientGuid(), childResourceRelationship.getDependentResourceGuid());
-
+            //so we need to convert the local ID of the child observation to the globally unique ID we'll have generated
             String globallyUniqueObservationId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
                                                                             csvProcessor.getSystemId(),
-                                                                            childResourceRelationship.getDependentResourceType(),
-                                                                            locallyUniqueObservationId);
+                                                                            resourceType,
+                                                                            locallyUniqueId);
 
-            Reference globallyUniqueReference = ReferenceHelper.createReference(childResourceRelationship.getDependentResourceType(),
-                                                                                globallyUniqueObservationId);
+            Reference globallyUniqueReference = ReferenceHelper.createReference(resourceType, globallyUniqueObservationId);
 
             //check if the parent observation doesn't already have our ob linked to it
             boolean alreadyLinked = false;
@@ -367,8 +368,12 @@ public class EmisCsvHelper {
 
         if (changed) {
             //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
-            csvProcessor.savePatientResource(false, patientGuid, fhirObservation);
+            csvProcessor.savePatientResource(null, false, patientGuid, fhirObservation);
         }
+    }
+
+    public List<Reference> getAndRemoveProblemRelationships(String problemGuid, String patientGuid) {
+        return problemChildMap.remove(createUniqueId(patientGuid, problemGuid));
     }
 
     public void cacheProblemRelationship(String problemObservationGuid,
@@ -380,74 +385,40 @@ public class EmisCsvHelper {
             return;
         }
 
-        List<ResourceRelationship> list = problemChildMap.get(createUniqueId(patientGuid, problemObservationGuid));
+        List<Reference> list = problemChildMap.get(createUniqueId(patientGuid, problemObservationGuid));
         if (list == null) {
             list = new ArrayList<>();
             problemChildMap.put(createUniqueId(patientGuid, problemObservationGuid), list);
         }
-        list.add(new ResourceRelationship(patientGuid, resourceGuid, resourceType));
+        list.add(ReferenceHelper.createReference(resourceType, createUniqueId(patientGuid, resourceGuid)));
     }
 
     /**
-     * called at the end of the transform, to update Problem resources with references to all the
-     * child resources in that problem
+     * called at the end of the transform, to update pre-existing Problem resources with references to new
+     * clinical resources that are in those problems
      */
-    public void processProblemRelationships(CsvProcessor csvProcessor) throws Exception {
-        Iterator<String> it = problemChildMap.keySet().iterator();
-        while (it.hasNext()) {
-            String problemLocallyUniqueId = it.next();
-            List<ResourceRelationship> childResourceRelationships = problemChildMap.get(problemLocallyUniqueId);
+    public void processRemainingProblemRelationships(CsvProcessor csvProcessor) throws Exception {
 
-            //the problem may be one just created, or one created previously
-            Condition fhirProblem = problemMap.get(problemLocallyUniqueId);
+        for (String problemLocallyUniqueId : problemChildMap.keySet()) {
+            List<Reference> childResourceRelationships = problemChildMap.get(problemLocallyUniqueId);
 
-            //if the problem is null from the map, it means we're updating a pre-existing problem, so retrive from the DB
-            if (fhirProblem == null) {
-
-                try {
-                    Condition fhirCondition = (Condition) retrieveResource(problemLocallyUniqueId, ResourceType.Condition, csvProcessor);
-                    addRelationshipsToExistingProblem(fhirCondition, childResourceRelationships, csvProcessor);
-                } catch (ResourceNotFoundException|ResourceDeletedException ex) {
-                    //we have test data with medication items linking to non-existant and deleted problems, so don't fail if we get this
-                }
-            } else {
-
-                //updating a problem that we just created in this transform
-                addRelationshipsToNewProblem(fhirProblem, childResourceRelationships);
-            }
-        }
-
-        //make sure to save all problems now we've finished with them
-        Iterator<String> conditionIterator = problemMap.keySet().iterator();
-        while (conditionIterator.hasNext()) {
-            String locallyUniqueId = conditionIterator.next();
-            Condition fhirProblem = problemMap.get(locallyUniqueId);
-            String patientGuid = getPatientGuidFromUniqueId(locallyUniqueId);
-
-            csvProcessor.savePatientResource(patientGuid, fhirProblem);
+            addRelationshipsToExistingProblem(problemLocallyUniqueId, childResourceRelationships, csvProcessor);
         }
     }
 
-    private void addRelationshipsToNewProblem(Condition fhirProblem, List<ResourceRelationship> resourceRelationships) throws Exception {
-
-        //store the referenced resources in a List resource, which we add inline to the Condition
-        List_ list = new List_();
-
-        for (ResourceRelationship resourceRelationship : resourceRelationships) {
-
-            String uniqueId = createUniqueId(resourceRelationship.getPatientGuid(), resourceRelationship.getDependentResourceGuid());
-            Reference reference = ReferenceHelper.createReference(resourceRelationship.getDependentResourceType(), uniqueId);
-            List_.ListEntryComponent entry = list.addEntry();
-            entry.setItem(reference);
-        }
-
-        Reference listReference = ReferenceHelper.createReferenceInline(list);
-        fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, listReference));
-    }
-
-    private void addRelationshipsToExistingProblem(Condition fhirProblem,
-                                                   List<ResourceRelationship> childResourceRelationships,
+    private void addRelationshipsToExistingProblem(String problemLocallyUniqueId,
+                                                   List<Reference> childResourceRelationships,
                                                    CsvProcessor csvProcessor) throws Exception {
+
+        Condition fhirProblem;
+        try {
+            fhirProblem = (Condition) retrieveResource(problemLocallyUniqueId, ResourceType.Condition, csvProcessor);
+        } catch (ResourceNotFoundException|ResourceDeletedException ex) {
+            //we have test data with medication items linking to non-existant and deleted problems, so don't fail if we get this
+            return;
+        }
+
+        String patientGuid = getPatientGuidFromUniqueId(problemLocallyUniqueId);
 
         List_ list = new List_();
 
@@ -469,42 +440,39 @@ public class EmisCsvHelper {
         }
 
         boolean changed = false;
-        String patientGuid = null;
 
-        for (ResourceRelationship childResourceRelationship : childResourceRelationships) {
+        for (Reference reference : childResourceRelationships) {
 
-            //all the relationships have the same patientGuid, so it's safe to just keep reassigning this
-            patientGuid = childResourceRelationship.getPatientGuid();
-
-            //we're updating an already existing FHIR resource, so need to manually map the IDs here, from EMIS GUIDs to EDS IDs
-            String locallyUniqueId = createUniqueId(childResourceRelationship.getPatientGuid(), childResourceRelationship.getDependentResourceGuid());
+            ReferenceComponents components = ReferenceHelper.getReferenceComponents(reference);
+            String locallyUniqueId = components.getId();
+            ResourceType resourceType = components.getResourceType();
 
             String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
                     csvProcessor.getSystemId(),
-                    childResourceRelationship.getDependentResourceType(),
+                    resourceType,
                     locallyUniqueId);
 
-            Reference reference = ReferenceHelper.createReference(childResourceRelationship.getDependentResourceType(), globallyUniqueId);
+            Reference globallyUniqueReference = ReferenceHelper.createReference(resourceType, globallyUniqueId);
 
             //check to see if this resource is already linked to the problem
             boolean alreadyLinked = false;
             for (List_.ListEntryComponent entry: list.getEntry()) {
                 Reference entryReference = entry.getItem();
-                if (entryReference.getReference().equals(reference.getReference())) {
+                if (entryReference.getReference().equals(globallyUniqueReference.getReference())) {
                     alreadyLinked = true;
                     break;
                 }
             }
 
             if (!alreadyLinked) {
-                list.addEntry().setItem(reference);
+                list.addEntry().setItem(globallyUniqueReference);
                 changed = true;
             }
         }
 
         if (changed) {
             //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
-            csvProcessor.savePatientResource(false, patientGuid, fhirProblem);
+            csvProcessor.savePatientResource(null, false, patientGuid, fhirProblem);
         }
     }
 
@@ -617,9 +585,8 @@ public class EmisCsvHelper {
      * then we have changes to the staff in a previously saved FHIR Schedule, so we need to amend that Schedule
      */
     public void processRemainingSessionPractitioners(CsvProcessor csvProcessor) throws Exception {
-        Iterator<String> it = sessionPractitionerMap.keySet().iterator();
-        while (it.hasNext()) {
-            String sessionGuid = it.next();
+
+        for (String sessionGuid : sessionPractitionerMap.keySet()) {
             SessionPractitioners practitioners = sessionPractitionerMap.get(sessionGuid);
             if (!practitioners.isProcessedSession()) {
                 updateExistingScheduleWithNewPractitioners(sessionGuid, practitioners, csvProcessor);
@@ -692,15 +659,36 @@ public class EmisCsvHelper {
             }
         }
 
-        csvProcessor.saveAdminResource(false, fhirSchedule);
+        csvProcessor.saveAdminResource(null, false, fhirSchedule);
     }
 
+    public void cacheOrganisationLocationMap(String locationGuid, String orgGuid, boolean mainLocation) {
+
+        List<String> orgGuids = organisationLocationMap.get(locationGuid);
+        if (orgGuids == null) {
+            orgGuids = new ArrayList<>();
+            organisationLocationMap.put(locationGuid, orgGuids);
+        }
+
+        //if this location link is for the main location of an organisation, then insert that
+        //org at the start of the list, so it's used as the managing organisation for the location
+        if (mainLocation) {
+            orgGuids.add(0, orgGuid);
+        } else {
+            orgGuids.add(orgGuid);
+        }
+
+    }
+
+    public List<String> findOrganisationLocationMapping(String locationGuid) {
+        return organisationLocationMap.remove(locationGuid);
+    }
 
     /**
      * object to temporarily store relationships between resources, such as things linked to a problem
      * or observations linked to a parent observation
      */
-    public class ResourceRelationship {
+    /*public class ResourceRelationship {
         private String patientGuid = null;
         private String dependentResourceGuid = null;
         private ResourceType dependentResourceType = null;
@@ -722,7 +710,7 @@ public class EmisCsvHelper {
         public ResourceType getDependentResourceType() {
             return dependentResourceType;
         }
-    }
+    }*/
 
     public class SessionPractitioners {
         private List<String> emisUserGuidsToSave = new ArrayList<>();

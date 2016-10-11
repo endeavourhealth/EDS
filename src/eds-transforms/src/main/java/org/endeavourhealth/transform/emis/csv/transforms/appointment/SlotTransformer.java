@@ -1,45 +1,42 @@
 package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
 import com.google.common.base.Strings;
-import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.exceptions.FutureException;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.appointment.Slot;
 import org.endeavourhealth.transform.fhir.*;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class SlotTransformer {
 
     public static void transform(String version,
-                                 String folderPath,
-                                 CSVFormat csvFormat,
+                                 Map<Class, AbstractCsvTransformer> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Slot parser = new Slot(version, folderPath, csvFormat);
-        try {
-            while (parser.nextRecord()) {
+        Slot parser = (Slot)parsers.get(Slot.class);
+
+        while (parser.nextRecord()) {
+
+            try {
                 createSlotAndAppointment(parser, csvProcessor, csvHelper);
+            } catch (Exception ex) {
+                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
             }
-        } catch (FutureException fe) {
-            throw fe;
-        } catch (Exception ex) {
-            throw new TransformException(parser.getErrorLine(), ex);
-        } finally {
-            parser.close();
+
         }
     }
 
-    private static void createSlotAndAppointment(Slot slotParser,
+    private static void createSlotAndAppointment(Slot parser,
                                                  CsvProcessor csvProcessor,
                                                  EmisCsvHelper csvHelper) throws Exception {
 
-        String patientGuid = slotParser.getPatientGuid();
+        String patientGuid = parser.getPatientGuid();
 
         //the slots CSV contains data on empty slots too; ignore them
         if (Strings.isNullOrEmpty(patientGuid)) {
@@ -49,7 +46,7 @@ public class SlotTransformer {
         org.hl7.fhir.instance.model.Slot fhirSlot = new org.hl7.fhir.instance.model.Slot();
         fhirSlot.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SLOT));
 
-        String slotGuid = slotParser.getSlotGuid();
+        String slotGuid = parser.getSlotGuid();
         EmisCsvHelper.setUniqueId(fhirSlot, patientGuid, slotGuid);
 
         Appointment fhirAppointment = new Appointment();
@@ -59,20 +56,20 @@ public class SlotTransformer {
         EmisCsvHelper.setUniqueId(fhirAppointment, patientGuid, slotGuid);
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (slotParser.getDeleted()) {
-            csvProcessor.deletePatientResource(patientGuid, fhirSlot, fhirAppointment);
+        if (parser.getDeleted()) {
+            csvProcessor.deletePatientResource(parser.getCurrentState(), patientGuid, fhirSlot, fhirAppointment);
             return;
         }
 
-        String sessionGuid = slotParser.getSessionGuid();
+        String sessionGuid = parser.getSessionGuid();
         fhirSlot.setSchedule(csvHelper.createScheduleReference(sessionGuid));
 
         fhirSlot.setFreeBusyType(org.hl7.fhir.instance.model.Slot.SlotStatus.BUSY);
 
-        Date startDate = slotParser.getAppointmentStartDateTime();
+        Date startDate = parser.getAppointmentStartDateTime();
 
         //calculate expected end datetime from start, plus duration in mins
-        long endMillis = startDate.getTime() + (slotParser.getPlannedDurationInMinutes() * 60 * 1000);
+        long endMillis = startDate.getTime() + (parser.getPlannedDurationInMinutes() * 60 * 1000);
         Date endDate = new Date(endMillis);
 
         fhirSlot.setStart(startDate);
@@ -81,7 +78,7 @@ public class SlotTransformer {
         fhirAppointment.setStart(startDate);
         fhirAppointment.setEnd(new Date(endMillis));
 
-        Integer duration = slotParser.getActualDurationInMinutes();
+        Integer duration = parser.getActualDurationInMinutes();
         if (duration != null) {
             fhirAppointment.setMinutesDuration(duration.intValue());
         }
@@ -102,44 +99,44 @@ public class SlotTransformer {
             fhirParticipant.setStatus(Appointment.ParticipationStatus.ACCEPTED);
         }
 
-        if (slotParser.getDidNotAttend()) {
+        if (parser.getDidNotAttend()) {
             fhirAppointment.setStatus(Appointment.AppointmentStatus.NOSHOW);
-        } else if (slotParser.getLeftDateTime() != null) {
+        } else if (parser.getLeftDateTime() != null) {
             fhirAppointment.setStatus(Appointment.AppointmentStatus.FULFILLED);
-        } else if (slotParser.getSendInDateTime() != null) {
+        } else if (parser.getSendInDateTime() != null) {
             fhirAppointment.setStatus(Appointment.AppointmentStatus.ARRIVED);
         } else {
             fhirAppointment.setStatus(Appointment.AppointmentStatus.BOOKED);
         }
 
-        Integer patientWaitMins = slotParser.getPatientWaitInMin();
+        Integer patientWaitMins = parser.getPatientWaitInMin();
         if (patientWaitMins != null) {
             Duration fhirDuration = QuantityHelper.createDuration(patientWaitMins, "minutes");
             fhirAppointment.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.APPOINTMENT_PATIENT_WAIT, fhirDuration));
         }
 
-        Integer patientDelayMins = slotParser.getAppointmentDelayInMin();
+        Integer patientDelayMins = parser.getAppointmentDelayInMin();
         if (patientDelayMins != null) {
             Duration fhirDuration = QuantityHelper.createDuration(patientDelayMins, "minutes");
             fhirAppointment.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.APPOINTMENT_PATIENT_DELAY, fhirDuration));
         }
 
-        Long dnaReasonCode = slotParser.getDnaReasonCodeId();
+        Long dnaReasonCode = parser.getDnaReasonCodeId();
         if (dnaReasonCode != null) {
             CodeableConcept fhirCodeableConcept = CodeableConceptHelper.createCodeableConcept(FhirValueSetUri.VALUE_SET_EMIS_DNA_REASON_CODE, "", dnaReasonCode.toString());
             fhirAppointment.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.APPOINTMENT_DNA_REASON_CODE, fhirCodeableConcept));
         }
 
-        Date sentInTime = slotParser.getSendInDateTime();
+        Date sentInTime = parser.getSendInDateTime();
         if (sentInTime != null) {
             fhirAppointment.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.APPOINTMENT_SENT_IN, new DateTimeType(sentInTime)));
         }
 
-        Date leftTime = slotParser.getLeftDateTime();
+        Date leftTime = parser.getLeftDateTime();
         if (leftTime != null) {
             fhirAppointment.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.APPOINTMENT_LEFT, new DateTimeType(leftTime)));
         }
 
-        csvProcessor.savePatientResource(patientGuid, fhirSlot, fhirAppointment);
+        csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirSlot, fhirAppointment);
     }
 }

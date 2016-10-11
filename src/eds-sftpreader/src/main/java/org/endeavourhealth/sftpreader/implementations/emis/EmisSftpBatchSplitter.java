@@ -26,7 +26,7 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
 
     private static final String SPLIT_FOLDER = "Split";
 
-    private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT.withHeader();
+    private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
     private static final Set<String> FILES_TO_SPLIT_BY_PROCESSING_ID = new HashSet<>();
     private static final Set<String> FILES_TO_SPLIT_BY_ORG_ID = new HashSet<>();
     private static final Set<String> FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID = new HashSet<>();
@@ -188,7 +188,7 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
             }
         }
 
-        CSVParser csvParser = CSVParser.parse(adminCsvFile, Charset.defaultCharset(), CSV_FORMAT);
+        CSVParser csvParser = CSVParser.parse(adminCsvFile, Charset.defaultCharset(), CSV_FORMAT.withHeader());
         try {
             Iterator<CSVRecord> csvIterator = csvParser.iterator();
 

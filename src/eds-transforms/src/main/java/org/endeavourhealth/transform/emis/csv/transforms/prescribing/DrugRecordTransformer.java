@@ -1,13 +1,11 @@
 package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
 import com.google.common.base.Strings;
-import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.exceptions.FutureException;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
 import org.endeavourhealth.transform.fhir.CodingHelper;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
@@ -18,26 +16,25 @@ import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.Map;
 
 public class DrugRecordTransformer {
 
     public static void transform(String version,
-                                 String folderPath,
-                                 CSVFormat csvFormat,
+                                 Map<Class, AbstractCsvTransformer> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        DrugRecord parser = new DrugRecord(version, folderPath, csvFormat);
-        try {
-            while (parser.nextRecord()) {
+        DrugRecord parser = (DrugRecord)parsers.get(DrugRecord.class);
+
+        while (parser.nextRecord()) {
+
+            try {
                 createResource(version, parser, csvProcessor, csvHelper);
+            } catch (Exception ex) {
+                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
             }
-        } catch (FutureException fe) {
-            throw fe;
-        } catch (Exception ex) {
-            throw new TransformException(parser.getErrorLine(), ex);
-        } finally {
-            parser.close();
+
         }
     }
 
@@ -58,7 +55,7 @@ public class DrugRecordTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(patientGuid, fhirMedicationStatement);
+            csvProcessor.deletePatientResource(parser.getCurrentState(), patientGuid, fhirMedicationStatement);
             return;
         }
 
@@ -141,13 +138,13 @@ public class DrugRecordTransformer {
         Coding fhirCoding = CodingHelper.createCoding(fhirAuthorisationType);
         fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE, fhirCoding));
 
-        csvProcessor.savePatientResource(patientGuid, fhirMedicationStatement);
+        csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirMedicationStatement);
 
-        //if this record is linked to a problem, store this relationship in the helper
+/*        //if this record is linked to a problem, store this relationship in the helper
         csvHelper.cacheProblemRelationship(problemObservationGuid,
                                             patientGuid,
                                             drugRecordGuid,
-                                            fhirMedicationStatement.getResourceType());
+                                            fhirMedicationStatement.getResourceType());*/
     }
 
 }

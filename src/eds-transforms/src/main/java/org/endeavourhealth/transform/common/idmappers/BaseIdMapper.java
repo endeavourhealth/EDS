@@ -18,6 +18,10 @@ public abstract class BaseIdMapper {
      */
     protected void mapResourceId(Resource resource, UUID serviceId, UUID systemId) {
 
+        if (!resource.hasId()) {
+            return;
+        }
+
         String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, resource.getResourceType(), resource.getId());
         resource.setId(newId);
     }
@@ -26,6 +30,7 @@ public abstract class BaseIdMapper {
      * maps the IDs in any extensions of a resource
      */
     protected void mapExtensions(DomainResource resource, UUID serviceId, UUID systemId) {
+
         if (!resource.hasExtension()) {
             return;
         }
@@ -57,24 +62,33 @@ public abstract class BaseIdMapper {
             return;
         }
 
-        ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
+        if (reference.hasReference()) {
 
-        //if it's a reference to a patient resource, we perform an extra step to validate if the patient is known to us
-        //if not, it still continues, but it will log the error
-        if (comps.getResourceType() == ResourceType.Patient) {
-            UUID patientEdsId = IdHelper.getEdsResourceId(serviceId, systemId, comps.getResourceType(), comps.getId());
-            if (patientEdsId == null) {
-                LOG.error("Reference to unrecognised patient {} in {} {} for service {} and system {}",
-                        comps.getId(),
-                        resource.getResourceType(),
-                        resource.getId(),
-                        serviceId,
-                        systemId);
+            ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
+
+            //if it's a reference to a patient resource, we perform an extra step to validate if the patient is known to us
+            //if not, it still continues, but it will log the error
+            if (comps.getResourceType() == ResourceType.Patient) {
+                UUID patientEdsId = IdHelper.getEdsResourceId(serviceId, systemId, comps.getResourceType(), comps.getId());
+                if (patientEdsId == null) {
+                    LOG.error("Reference to unrecognised patient {} in {} {} for service {} and system {}",
+                            comps.getId(),
+                            resource.getResourceType(),
+                            resource.getId(),
+                            serviceId,
+                            systemId);
+                }
             }
-        }
 
-        String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, comps.getResourceType(), comps.getId());
-        reference.setReference(ReferenceHelper.createResourceReference(comps.getResourceType(), newId));
+            String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, comps.getResourceType(), comps.getId());
+            reference.setReference(ReferenceHelper.createResourceReference(comps.getResourceType(), newId));
+
+        } else {
+
+            //if the reference doesn't have an actual reference, it will have an inline resource
+            Resource referredResource = (Resource)reference.getResource();
+            IdHelper.mapIds(serviceId, systemId, referredResource);
+        }
     }
 
     /**

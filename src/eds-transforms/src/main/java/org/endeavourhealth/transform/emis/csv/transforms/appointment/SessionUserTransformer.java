@@ -1,31 +1,29 @@
 package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
-import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.exceptions.FutureException;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.appointment.SessionUser;
+
+import java.util.Map;
 
 public class SessionUserTransformer {
 
     public static void transform(String version,
-                                 String folderPath,
-                                 CSVFormat csvFormat,
+                                 Map<Class, AbstractCsvTransformer> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        SessionUser parser = new SessionUser(version, folderPath, csvFormat);
-        try {
-            while (parser.nextRecord()) {
+        SessionUser parser = (SessionUser)parsers.get(SessionUser.class);
+
+        while (parser.nextRecord()) {
+
+            try {
                 createSessionUserMapping(parser, csvProcessor, csvHelper);
+            } catch (Exception ex) {
+                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
             }
-        } catch (FutureException fe) {
-            throw fe;
-        } catch (Exception ex) {
-            throw new TransformException(parser.getErrorLine(), ex);
-        } finally {
-            parser.close();
+
         }
     }
 

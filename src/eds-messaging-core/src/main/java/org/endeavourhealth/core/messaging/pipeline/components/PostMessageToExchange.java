@@ -99,7 +99,7 @@ public class PostMessageToExchange extends PipelineComponent {
 	}
 
 	private void publishMessage(String routingKey, UUID messageUuid, Channel channel, AMQP.BasicProperties properties) throws PipelineException {
-		LOG.info("Posting exchange {} to Rabbit exchange {} with routing key {}", messageUuid, config.getExchange(), routingKey);
+		LOG.trace("Posting exchange {} to Rabbit exchange {} with routing key {}", messageUuid, config.getExchange(), routingKey);
 		try {
 			channel.basicPublish(
 					config.getExchange(),

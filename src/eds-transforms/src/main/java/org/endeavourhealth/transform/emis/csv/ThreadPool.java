@@ -1,6 +1,5 @@
 package org.endeavourhealth.transform.emis.csv;
 
-import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +17,7 @@ public class ThreadPool {
     private ExecutorService threadPool;
     private AtomicInteger threadPoolQueueSize;
     private ReentrantLock futuresLock;
-    private Map<Future, Future> futures; //need concurrency support, so can't use a set
+    private Map<Future, Callable> futures;
     private AtomicInteger futureCheckCounter;
     private int maxQueuedBeforeBlocking;
 
@@ -31,14 +30,22 @@ public class ThreadPool {
         this.maxQueuedBeforeBlocking = maxQueuedBeforeBlocking;
     }
 
-    public void submit(Callable callable) throws Exception {
+    /**
+     * submits a new callable to the thread pool, and occasionally returns a list of errors that
+     * have occured with previously submitted callables
+     */
+    public List<CallableError> submit(Callable callable) {
         threadPoolQueueSize.incrementAndGet();
         Future future = threadPool.submit(new CallableWrapper(callable));
-        futures.put(future, future);
+        futures.put(future, callable);
 
         //if our queue is now at our limit, then block the current thread before the queue is smaller
         while (threadPoolQueueSize.get() >= maxQueuedBeforeBlocking) {
-            Thread.sleep(100);
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                //if we get interrupted, don't log the error
+            }
         }
 
         //check the futures every so often to see if any are done or any exceptions were raised
@@ -48,14 +55,20 @@ public class ThreadPool {
 
             //LOG.trace("Checking {} futures with {} items in pool", futures.size(), threadPoolQueueSize);
             //LOG.trace("Free mem {} ", Runtime.getRuntime().freeMemory());
-            checkFutures(false);
+            return checkFuturesForErrors(false);
+        } else {
+            return new ArrayList<>();
         }
     }
 
-    public void waitAndStop() throws Exception {
-        waitAndStop(1, TimeUnit.MINUTES);
+    /**
+     * shuts down the thread pool, so no more callables can be added, then waits for them to complete
+     * and returns a list of errors that have happened with callables
+     */
+    public List<CallableError> waitAndStop() throws Exception {
+        return waitAndStop(1, TimeUnit.MINUTES);
     }
-    public void waitAndStop(long checkInterval, TimeUnit unit) throws Exception {
+    public List<CallableError> waitAndStop(long checkInterval, TimeUnit unit) {
 
         threadPool.shutdown();
 
@@ -67,10 +80,10 @@ public class ThreadPool {
             LOG.error("Thread interrupted", ex);
         }
 
-        checkFutures(true);
+        return checkFuturesForErrors(true);
     }
 
-    private void checkFutures(boolean forceLock) throws Exception {
+    private List<CallableError> checkFuturesForErrors(boolean forceLock) {
 
         try {
 
@@ -80,32 +93,38 @@ public class ThreadPool {
                 futuresLock.lock();
             } else {
                 if (!futuresLock.tryLock()) {
-                    return;
+                    return new ArrayList<>();
                 }
             }
 
+            List<CallableError> ret = new ArrayList<>();
+
             //check all the futures to see if any raised an error. Also, remove any futures that
             //we know have completed without error.
-            List<Future> futuresCompleted = new ArrayList<>();
-            Iterator<Future> it = futures.keySet().iterator();
+            Iterator<Map.Entry<Future, Callable>> it = futures.entrySet().iterator();
             while (it.hasNext()) {
-                Future future = it.next();
+                Map.Entry<Future, Callable> entry = it.next();
+                Future future = entry.getKey();
+
                 if (future.isDone()) {
+                    //if it's done, remove from the iterator, which will remove from the map
+                    it.remove();
+
+                    //just calling get on the future will cause any exception to be raised in this thread
                     try {
-                        //just calling get on the future will cause any exception to be raised in this thread
                         future.get();
-                        futuresCompleted.add(future);
                     } catch (Exception ex) {
+
                         //the true exception will be inside an ExecutionException, so get it out and wrap in our own exception
-                        throw new FutureException((Exception)ex.getCause());
+                        Exception cause = (Exception)ex.getCause();
+                        Callable callable = entry.getValue();
+
+                        ret.add(new CallableError(callable, cause));
                     }
                 }
             }
 
-            //remove any we know have completed
-            for (Future future: futuresCompleted) {
-                futures.remove(future);
-            }
+            return ret;
 
         } finally {
             futuresLock.unlock();
@@ -126,4 +145,9 @@ public class ThreadPool {
             return o;
         }
     }
+
 }
+
+
+
+

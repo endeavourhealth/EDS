@@ -8,6 +8,8 @@ import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.csv.CallableError;
+import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.endeavourhealth.transform.emis.csv.ThreadPool;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -55,42 +57,43 @@ public class CsvProcessor {
     }
 
 
-    public void saveAdminResource(Resource... resources) throws Exception {
-        saveAdminResource(true, resources);
+    public void saveAdminResource(CsvCurrentState parserState, Resource... resources) throws Exception {
+        saveAdminResource(parserState, true, resources);
     }
-    public void saveAdminResource(boolean mapIds, Resource... resources) throws Exception {
-        addResourceToQueue(false, mapIds, getAdminBatchId(), false, resources);
-    }
-
-    public void deleteAdminResource(Resource... resources) throws Exception {
-        deleteAdminResource(true, resources);
-    }
-    public void deleteAdminResource(boolean mapIds, Resource... resources) throws Exception {
-        addResourceToQueue(false, mapIds, getAdminBatchId(), true, resources);
+    public void saveAdminResource(CsvCurrentState parserState, boolean mapIds, Resource... resources) throws Exception {
+        addResourceToQueue(parserState, false, mapIds, getAdminBatchId(), false, resources);
     }
 
-    public void savePatientResource(String patientId, Resource... resources) throws Exception {
-        savePatientResource(true, patientId, resources);
+    public void deleteAdminResource(CsvCurrentState parserState, Resource... resources) throws Exception {
+        deleteAdminResource(parserState, true, resources);
     }
-    public void savePatientResource(boolean mapIds, String patientId, Resource... resources) throws Exception {
-        addResourceToQueue(true, mapIds, getPatientBatchId(patientId), false, resources);
-    }
-
-    public void deletePatientResource(String patientId, Resource... resources) throws Exception {
-        deletePatientResource(true, patientId, resources);
-    }
-    public void deletePatientResource(boolean mapIds, String patientId, Resource... resources) throws Exception {
-        addResourceToQueue(true, mapIds, getPatientBatchId(patientId), true, resources);
+    public void deleteAdminResource(CsvCurrentState parserState, boolean mapIds, Resource... resources) throws Exception {
+        addResourceToQueue(parserState, false, mapIds, getAdminBatchId(), true, resources);
     }
 
-    private void addResourceToQueue(boolean expectingPatientResource,
+    public void savePatientResource(CsvCurrentState parserState, String patientId, Resource... resources) throws Exception {
+        savePatientResource(parserState, true, patientId, resources);
+    }
+    public void savePatientResource(CsvCurrentState parserState, boolean mapIds, String patientId, Resource... resources) throws Exception {
+        addResourceToQueue(parserState, true, mapIds, getPatientBatchId(patientId), false, resources);
+    }
+
+    public void deletePatientResource(CsvCurrentState parserState, String patientId, Resource... resources) throws Exception {
+        deletePatientResource(parserState, true, patientId, resources);
+    }
+    public void deletePatientResource(CsvCurrentState parserState, boolean mapIds, String patientId, Resource... resources) throws Exception {
+        addResourceToQueue(parserState, true, mapIds, getPatientBatchId(patientId), true, resources);
+    }
+
+    private void addResourceToQueue(CsvCurrentState parserState,
+                                    boolean expectingPatientResource,
                                     boolean mapIds,
                                     UUID batchId,
                                     boolean toDelete,
-                                    Resource... resources) throws Exception {
+                                    Resource... resources) throws PatientResourceException {
 
         for (Resource resource: resources) {
-            //validate we're treating the resoure properly as admin / patient
+            //validate we're treating the resource properly as admin / patient
             if (isPatientResource(resource) != expectingPatientResource) {
                 throw new PatientResourceException(resource.getResourceType(), expectingPatientResource);
             }
@@ -106,7 +109,8 @@ public class CsvProcessor {
             }
         }
 
-        threadPool.submit(new MapAndSaveResourceTask(batchId, toDelete, mapIds, resources));
+        List<CallableError> errors = threadPool.submit(new MapAndSaveResourceTask(parserState, batchId, toDelete, mapIds, resources));
+        handleErrors(errors);
     }
 
     private UUID getAdminBatchId() {
@@ -167,7 +171,8 @@ public class CsvProcessor {
     public List<UUID> getBatchIdsCreated() throws Exception {
 
         //wait for all tasks to be completed
-        threadPool.waitAndStop();
+        List<CallableError> errors = threadPool.waitAndStop();
+        handleErrors(errors);
 
         //update the resource types used
         //saveResourceTypesUsed();
@@ -176,6 +181,21 @@ public class CsvProcessor {
         logResults();
 
         return getAllBatchIds();
+    }
+
+    private void handleErrors(List<CallableError> errors) {
+        if (errors == null || errors.isEmpty()) {
+            return;
+        }
+
+        for (CallableError error: errors) {
+
+            MapAndSaveResourceTask callable = (MapAndSaveResourceTask)error.getCallable();
+            Exception exception = error.getException();
+            CsvCurrentState parserState = callable.getParserState();
+
+            logTransformRecordError(exception, parserState);
+        }
     }
 
     /*private void saveResourceTypesUsed() {
@@ -288,14 +308,35 @@ public class CsvProcessor {
         return systemId;
     }
 
+    /**
+     * called when an exception occurs when processing a record in a CSV file, which stores the error in
+     * a table which can then be used to re-play the transform for just those records that were in error
+     */
+    public void logTransformRecordError(Exception ex, CsvCurrentState state) {
+//TODO - implement
+        //TODO - need to handle ones where state is NULL from CsvHelper class
+        LOG.error("Error at " + state, ex);
+    }
+
+    /**
+     * called when a fatal error occurs when parsing something critical, which stops the transform
+     */
+    public void logTransformFatalError(Exception ex, CsvCurrentState state) {
+//TODO - implement
+        LOG.error("Error at " + state, ex);
+    }
+
+
     class MapAndSaveResourceTask implements Callable {
 
+        private CsvCurrentState parserState = null;
         private Resource[] resources = null;
         private UUID batchUuid = null;
         private boolean isDelete = false;
         private boolean mapIds = false;
 
-        public MapAndSaveResourceTask(UUID batchUuid, boolean isDelete, boolean mapIds, Resource... resources) {
+        public MapAndSaveResourceTask(CsvCurrentState parserState, UUID batchUuid, boolean isDelete, boolean mapIds, Resource... resources) {
+            this.parserState = parserState;
             this.resources = resources;
             this.batchUuid = batchUuid;
             this.isDelete = isDelete;
@@ -305,7 +346,7 @@ public class CsvProcessor {
         @Override
         public Object call() throws Exception {
 
-              for (Resource resource: resources) {
+            for (Resource resource: resources) {
 
                 try {
                     if (mapIds) {
@@ -322,13 +363,19 @@ public class CsvProcessor {
                     }
 
                 } catch (Exception ex) {
-                    LOG.error("Error saving " + resource.getResourceType() + " " + resource.getId() + "but continuing", ex);
-                    //TODO - restore exception throwing
-                    //throw new TransformException("Exception mapping or storing " + resource.getResourceType() + " " + resource.getId(), ex);
+                    throw new TransformException("Exception mapping or storing " + resource.getResourceType() + " " + resource.getId(), ex);
                 }
             }
 
             return null;
         }
+
+        public CsvCurrentState getParserState() {
+            return parserState;
+        }
     }
+
+
+
+
 }

@@ -13,7 +13,7 @@ public class Exchange {
     @Column(name = "timestamp")
     private Date timestamp = null;
     @PartitionKey
-    @Column(name = "exchangeId")
+    @Column(name = "exchange_id")
     private UUID exchangeId = null;
     @Column(name = "headers")
     private String headers = null;

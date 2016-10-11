@@ -22,9 +22,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="date_registered" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
  *         &lt;element name="date_registered_end" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
  *         &lt;element name="usual_gp_practitioner_id" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
- *         &lt;element name="registration_type_code" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="registration_type_desc" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="pseudo_id" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="registration_type_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *       &lt;/sequence>
  *     &lt;/extension>
  *   &lt;/complexContent>
@@ -42,9 +41,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
     "dateRegistered",
     "dateRegisteredEnd",
     "usualGpPractitionerId",
-    "registrationTypeCode",
-    "registrationTypeDesc",
-    "pseudoId"
+    "pseudoId",
+    "registrationTypeId"
 })
 public class Patient
     extends BaseRecord
@@ -67,12 +65,10 @@ public class Patient
     protected XMLGregorianCalendar dateRegisteredEnd;
     @XmlElement(name = "usual_gp_practitioner_id")
     protected Integer usualGpPractitionerId;
-    @XmlElement(name = "registration_type_code")
-    protected String registrationTypeCode;
-    @XmlElement(name = "registration_type_desc")
-    protected String registrationTypeDesc;
     @XmlElement(name = "pseudo_id")
     protected String pseudoId;
+    @XmlElement(name = "registration_type_id")
+    protected int registrationTypeId;
 
     /**
      * Gets the value of the organizationId property.
@@ -227,54 +223,6 @@ public class Patient
     }
 
     /**
-     * Gets the value of the registrationTypeCode property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getRegistrationTypeCode() {
-        return registrationTypeCode;
-    }
-
-    /**
-     * Sets the value of the registrationTypeCode property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setRegistrationTypeCode(String value) {
-        this.registrationTypeCode = value;
-    }
-
-    /**
-     * Gets the value of the registrationTypeDesc property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getRegistrationTypeDesc() {
-        return registrationTypeDesc;
-    }
-
-    /**
-     * Sets the value of the registrationTypeDesc property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setRegistrationTypeDesc(String value) {
-        this.registrationTypeDesc = value;
-    }
-
-    /**
      * Gets the value of the pseudoId property.
      * 
      * @return
@@ -296,6 +244,22 @@ public class Patient
      */
     public void setPseudoId(String value) {
         this.pseudoId = value;
+    }
+
+    /**
+     * Gets the value of the registrationTypeId property.
+     * 
+     */
+    public int getRegistrationTypeId() {
+        return registrationTypeId;
+    }
+
+    /**
+     * Sets the value of the registrationTypeId property.
+     * 
+     */
+    public void setRegistrationTypeId(int value) {
+        this.registrationTypeId = value;
     }
 
 }

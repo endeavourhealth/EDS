@@ -132,7 +132,6 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//for EMIS CSV, the exchange body will be a list of files received
 		String decodedFileString = exchange.getBody();
-		//String[] decodedFiles = decodedFileString.split("\r\n");
 		String[] decodedFiles = decodedFileString.split(java.lang.System.lineSeparator());
 		String sharedStoragePath = config.getSharedStoragePath();
 

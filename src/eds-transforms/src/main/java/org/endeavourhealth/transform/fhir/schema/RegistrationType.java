@@ -31,4 +31,13 @@ public enum RegistrationType {
         this.code = code;
         this.description = description;
     }
+
+    public static RegistrationType fromCode(String v) {
+        for (RegistrationType c: RegistrationType.values()) {
+            if (c.getCode().equalsIgnoreCase(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
+    }
 }

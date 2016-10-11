@@ -1,65 +1,48 @@
 package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
-import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.common.exceptions.FutureException;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.admin.OrganisationLocation;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 
 public class OrganisationLocationTransformer {
 
-    public static HashMap<String, List<String>> transform(String version, String folderPath, CSVFormat csvFormat) throws Exception {
+    public static void transform(String version,
+                                 Map<Class, AbstractCsvTransformer> parsers,
+                                 CsvProcessor csvProcessor,
+                                 EmisCsvHelper csvHelper) throws Exception {
 
-        HashMap<String, List<String>> hmLocationToOrganisation = new HashMap<>();
+        OrganisationLocation parser = (OrganisationLocation)parsers.get(OrganisationLocation.class);
 
-        OrganisationLocation parser = new OrganisationLocation(version, folderPath, csvFormat);
-        try {
-            while (parser.nextRecord()) {
-                createLocationOrgansationMapping(parser, hmLocationToOrganisation);
+        while (parser.nextRecord()) {
+
+            try {
+                createLocationOrgansationMapping(parser, csvProcessor, csvHelper);
+            } catch (Exception ex) {
+                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
             }
-        } catch (FutureException fe) {
-            throw fe;
-        } catch (Exception ex) {
-            throw new TransformException(parser.getErrorLine(), ex);
-        } finally {
-            parser.close();
-        }
 
-        return hmLocationToOrganisation;
+        }
     }
 
-    private static void createLocationOrgansationMapping(OrganisationLocation organisationLocationParser,
-                                                         HashMap<String, List<String>> hmLocationToOrganisation) throws Exception {
+    private static void createLocationOrgansationMapping(OrganisationLocation parser,
+                                                         CsvProcessor csvProcessor,
+                                                         EmisCsvHelper csvHelper) throws Exception {
 
         //if an org-location link has been deleted, then either a) the location has been deleted
         //in which case we'll sort it out because we'll have the deleted row in the Location CSV or
         //b) it's now part of a new organisation, in which case we'll have a new non-deleted row
-        //in this CSV. In both cases, it's safe to simply ignore the delted records in this file.
-        if (organisationLocationParser.getDeleted()) {
+        //in this CSV. In both cases, it's safe to simply ignore the deleted records in this file.
+        if (parser.getDeleted()) {
             return;
         }
 
-        String orgGuid = organisationLocationParser.getOrgansationGuid();
-        String locationGuid = organisationLocationParser.getLocationGuid();
-        boolean mainLocation = organisationLocationParser.getIsMainLocation();
-        //the MainLocation field is duplicated from the Organisation CSV file and is processed from that file
+        String orgGuid = parser.getOrgansationGuid();
+        String locationGuid = parser.getLocationGuid();
+        boolean mainLocation = parser.getIsMainLocation();
 
-        List<String> orgGuids = hmLocationToOrganisation.get(locationGuid);
-        if (orgGuids == null) {
-            orgGuids = new ArrayList<>();
-            hmLocationToOrganisation.put(locationGuid, orgGuids);
-        }
-
-        //if this location link is for the main location of an organisation, then insert that
-        //org at the start of the list, so it's used as the managing organisation for the location
-        if (mainLocation) {
-            orgGuids.add(0, orgGuid);
-        } else {
-            orgGuids.add(orgGuid);
-        }
-
+        csvHelper.cacheOrganisationLocationMap(locationGuid, orgGuid, mainLocation);
     }
 }

@@ -9,6 +9,7 @@ import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.transform.fhir.schema.RegistrationType;
 import org.hl7.fhir.instance.model.*;
 
 import java.text.SimpleDateFormat;
@@ -76,8 +77,8 @@ public class PatientTransformer extends AbstractTransformer {
                 for (Extension extension: fhirPatient.getExtension()) {
                     if (extension.getUrl().equals(FhirExtensionUri.PATIENT_REGISTRATION_TYPE)) {
                         Coding coding = (Coding)extension.getValue();
-                        model.setRegistrationTypeCode(coding.getCode());
-                        model.setRegistrationTypeDesc(coding.getDisplay());
+                        RegistrationType fhirRegistrationType = RegistrationType.fromCode(coding.getCode());
+                        model.setRegistrationTypeId(fhirRegistrationType.ordinal());
                     }
                 }
             }

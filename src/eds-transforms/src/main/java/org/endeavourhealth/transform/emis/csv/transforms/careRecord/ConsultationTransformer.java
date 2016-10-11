@@ -1,11 +1,9 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
-import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.exceptions.FutureException;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
@@ -16,26 +14,25 @@ import org.endeavourhealth.transform.fhir.schema.EncounterParticipantType;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
+import java.util.Map;
 
 public class ConsultationTransformer {
 
     public static void transform(String version,
-                                 String folderPath,
-                                 CSVFormat csvFormat,
+                                 Map<Class, AbstractCsvTransformer> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Consultation parser = new Consultation(version, folderPath, csvFormat);
-        try {
-            while (parser.nextRecord()) {
+        Consultation parser = (Consultation)parsers.get(Consultation.class);
+
+        while (parser.nextRecord()) {
+
+            try {
                 createEncounter(parser, csvProcessor, csvHelper);
+            } catch (Exception ex) {
+                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
             }
-        } catch (FutureException fe) {
-            throw fe;
-        } catch (Exception ex) {
-            throw new TransformException(parser.getErrorLine(), ex);
-        } finally {
-            parser.close();
+
         }
     }
 
@@ -55,7 +52,7 @@ public class ConsultationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(patientGuid, fhirEncounter);
+            csvProcessor.deletePatientResource(parser.getCurrentState(), patientGuid, fhirEncounter);
             return;
         }
 
@@ -113,7 +110,7 @@ public class ConsultationTransformer {
             fhirEncounter.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ENCOUNTER_SOURCE, fhirCodeableConcept));
         }
 
-        csvProcessor.savePatientResource(patientGuid, fhirEncounter);
+        csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirEncounter);
     }
 
     private static Period createPeriod(Date date, String precision) throws Exception {

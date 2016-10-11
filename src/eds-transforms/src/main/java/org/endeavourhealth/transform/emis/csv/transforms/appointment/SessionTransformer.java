@@ -1,73 +1,70 @@
 package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
-import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMapByEdsId;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.exceptions.FutureException;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.appointment.Session;
 import org.endeavourhealth.transform.fhir.*;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class SessionTransformer {
 
     public static void transform(String version,
-                                 String folderPath,
-                                 CSVFormat csvFormat,
+                                 Map<Class, AbstractCsvTransformer> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Session parser = new Session(version, folderPath, csvFormat);
-        try {
-            while (parser.nextRecord()) {
+        Session parser = (Session)parsers.get(Session.class);
+
+        while (parser.nextRecord()) {
+
+            try {
                 createSchedule(parser, csvProcessor, csvHelper);
+            } catch (Exception ex) {
+                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
             }
-        } catch (FutureException fe) {
-            throw fe;
-        } catch (Exception ex) {
-            throw new TransformException(parser.getErrorLine(), ex);
-        } finally {
-            parser.close();
+
         }
     }
 
-    private static void createSchedule(Session sessionParser,
+    private static void createSchedule(Session parser,
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 
         Schedule fhirSchedule = new Schedule();
         fhirSchedule.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SCHEDULE));
 
-        String sessionGuid = sessionParser.getAppointmnetSessionGuid();
+        String sessionGuid = parser.getAppointmnetSessionGuid();
         fhirSchedule.setId(sessionGuid);
 
         //handle deleted sessions
-        if (sessionParser.getDeleted()) {
-            csvProcessor.deleteAdminResource(fhirSchedule);
+        if (parser.getDeleted()) {
+            csvProcessor.deleteAdminResource(parser.getCurrentState(), fhirSchedule);
             return;
         }
 
-        String locationGuid = sessionParser.getLocationGuid();
+        String locationGuid = parser.getLocationGuid();
         Reference fhirReference = csvHelper.createLocationReference(locationGuid);
         fhirSchedule.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.SCHEDULE_LOCATION, fhirReference));
 
-        Date start = sessionParser.getStartDateTime();
-        Date end = sessionParser.getEndDateTime();
+        Date start = parser.getStartDateTime();
+        Date end = parser.getEndDateTime();
         Period fhirPeriod = PeriodHelper.createPeriod(start, end);
         fhirSchedule.setPlanningHorizon(fhirPeriod);
 
-        String sessionType = sessionParser.getSessionTypeDescription();
+        String sessionType = parser.getSessionTypeDescription();
         fhirSchedule.addType(CodeableConceptHelper.createCodeableConcept(sessionType));
 
-        String category = sessionParser.getSessionCategoryDisplayName();
+        String category = parser.getSessionCategoryDisplayName();
         fhirSchedule.setComment(category); //the FHIR description of "Comment" seems approproate to store the category
 
-        String description = sessionParser.getDescription();
+        String description = parser.getDescription();
         fhirSchedule.setComment(description);
 
         List<String> userGuids = csvHelper.findSessionPractionersToSave(sessionGuid);
@@ -120,6 +117,6 @@ public class SessionTransformer {
             }
         }
 
-        csvProcessor.saveAdminResource(fhirSchedule);
+        csvProcessor.saveAdminResource(parser.getCurrentState(), fhirSchedule);
     }
 }

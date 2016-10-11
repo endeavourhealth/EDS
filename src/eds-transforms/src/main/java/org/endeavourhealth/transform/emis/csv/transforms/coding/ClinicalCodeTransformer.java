@@ -1,13 +1,14 @@
 package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
-import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.core.data.admin.CodeRepository;
 import org.endeavourhealth.core.data.admin.models.SnomedLookup;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.csv.CallableError;
+import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.ThreadPool;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCode;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
@@ -17,6 +18,8 @@ import org.hl7.fhir.instance.model.CodeableConcept;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 public abstract class ClinicalCodeTransformer {
@@ -25,28 +28,43 @@ public abstract class ClinicalCodeTransformer {
     private static CodeRepository repository = new CodeRepository();
 
     public static void transform(String version,
-                                 String folderPath,
-                               CSVFormat csvFormat,
-                               CsvProcessor csvProcessor,
-                               EmisCsvHelper csvHelper) throws Exception {
+                                 Map<Class, AbstractCsvTransformer> parsers,
+                                 CsvProcessor csvProcessor,
+                                 EmisCsvHelper csvHelper) throws Exception {
 
         //because we have to hit a third party web resource, we use a thread pool to support
         //threading these calls to improve performance
         ThreadPool threadPool = new ThreadPool(15, 50000); //15 threads seems reasonable for hits against a web service
 
-        ClinicalCode parser = new ClinicalCode(version, folderPath, csvFormat);
+        //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
+        //to parse any record in this file it a critical error
+        ClinicalCode parser = (ClinicalCode)parsers.get(ClinicalCode.class);
         try {
             while (parser.nextRecord()) {
-                transform(parser, csvProcessor, csvHelper, threadPool);
+
+                try {
+                    transform(parser, csvProcessor, csvHelper, threadPool);
+                } catch (Exception ex) {
+                    throw new TransformException(parser.getCurrentState().toString(), ex);
+                }
             }
-        } catch (FutureException fe) {
-            throw fe;
-        } catch (Exception ex) {
-            throw new TransformException(parser.getErrorLine(), ex);
         } finally {
-            parser.close();
-            threadPool.waitAndStop();
+            List<CallableError> errors = threadPool.waitAndStop();
+            handleErrors(errors);
         }
+    }
+
+    private static void handleErrors(List<CallableError> errors) throws Exception {
+        if (errors == null || errors.isEmpty()) {
+            return;
+        }
+
+        //if we've had multiple errors, just throw the first one, since they'll most-likely be the same
+        CallableError first = errors.get(0);
+        WebServiceLookup callable = (WebServiceLookup)first.getCallable();
+        Exception exception = first.getException();
+        CsvCurrentState parserState = callable.getParserState();
+        throw new TransformException(parserState.toString(), exception);
     }
 
     private static void transform(ClinicalCode parser,
@@ -68,24 +86,52 @@ public abstract class ClinicalCodeTransformer {
 
         CodeableConcept fhirConcept = null;
 
-        if (emisCode == null) {
-            fhirConcept = CodeableConceptHelper.createCodeableConcept(emisTerm);
-        } else {
-            //should ideally be able to distringuish between Read2 and EMIS codes
-            fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, emisTerm, emisCode);
-            fhirConcept.setText(emisTerm);
+        //the CSV uses a hyphen to delimit the synonym ID from the code, but since we include
+        //the original term text anyway, there's no need to carry the synonym ID into the FHIR data
+        String emisCodeNoSynonym = emisCode;
+        int index = emisCodeNoSynonym.indexOf("-");
+        if (index > -1) {
+            emisCodeNoSynonym = emisCodeNoSynonym.substring(0, index);
         }
 
+        //without a Read 2 engine, there seems to be no cast-iron way to determine whether the supplied codes
+        //are Read 2 codes or Emis local codes. Looking at the codes from the test data sets, this seems
+        //to be a reliable way to perform the same check.
+        if (emisCode.startsWith("EMIS")
+                || emisCode.startsWith("ALLERGY")
+                || emisCode.startsWith("EGTON")
+                || emisCodeNoSynonym.length() > 5) {
+
+            fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_EMIS_CODE, emisTerm, emisCode);
+
+        } else {
+
+            //Emis store Read 2 codes without the padding stops, which seems to be against Read 2 standards,
+            //so make sure all codes are padded to five chars
+            while (emisCode.length() < 5) {
+                emisCode += ".";
+            }
+
+            //should ideally be able to distringuish between Read2 and EMIS codes
+            fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, emisTerm, emisCode);
+        }
+
+        //always set the selected term as the text
+        fhirConcept.setText(emisTerm);
+
         //spin the remainder of our work off to a small thread pool, so we can perform multiple snomed term lookups in parallel
-        threadPool.submit(new WebServiceLookup(codeId, fhirConcept, codeType, emisTerm,
-                emisCode, snomedConceptId, snomedDescriptionId,
-                nationalCode, nationalCodeCategory, nationalCodeDescription,
-                csvProcessor, csvHelper));
+        List<CallableError> errors = threadPool.submit(new WebServiceLookup(parser.getCurrentState(), codeId,
+                                                            fhirConcept, codeType, emisTerm,
+                                                            emisCode, snomedConceptId, snomedDescriptionId,
+                                                            nationalCode, nationalCodeCategory, nationalCodeDescription,
+                                                            csvProcessor, csvHelper));
+        handleErrors(errors);
     }
 
 
     static class WebServiceLookup implements Callable {
 
+        private CsvCurrentState parserState = null;
         private Long codeId = null;
         private CodeableConcept fhirConcept = null;
         private ClinicalCodeType codeType = null;
@@ -99,7 +145,8 @@ public abstract class ClinicalCodeTransformer {
         private CsvProcessor csvProcessor = null;
         private EmisCsvHelper csvHelper = null;
 
-        public WebServiceLookup(Long codeId,
+        public WebServiceLookup(CsvCurrentState parserState,
+                                Long codeId,
                                 CodeableConcept fhirConcept,
                                 ClinicalCodeType codeType,
                                 String readTerm,
@@ -112,6 +159,7 @@ public abstract class ClinicalCodeTransformer {
                                 CsvProcessor csvProcessor,
                                 EmisCsvHelper csvHelper) {
 
+            this.parserState = parserState;
             this.codeId = codeId;
             this.fhirConcept = fhirConcept;
             this.codeType = codeType;
@@ -148,6 +196,10 @@ public abstract class ClinicalCodeTransformer {
                     nationalCode, nationalCodeCategory, nationalCodeDescription, csvProcessor);
 
             return null;
+        }
+
+        public CsvCurrentState getParserState() {
+            return parserState;
         }
     }
 }

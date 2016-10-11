@@ -1,12 +1,10 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
-import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.exceptions.FutureException;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
@@ -17,26 +15,31 @@ import org.endeavourhealth.transform.fhir.schema.ProblemSignificance;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
+import java.util.Map;
 
 public class ProblemTransformer {
 
-    public static void transform(String version, String folderPath, CSVFormat csvFormat, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
+    public static void transform(String version,
+                                 Map<Class, AbstractCsvTransformer> parsers,
+                                 CsvProcessor csvProcessor,
+                                 EmisCsvHelper csvHelper) throws Exception {
 
-        Problem parser = new Problem(version, folderPath, csvFormat);
-        try {
-            while (parser.nextRecord()) {
-                createProblem(parser, csvProcessor, csvHelper);
+        Problem parser = (Problem)parsers.get(Problem.class);
+
+        while (parser.nextRecord()) {
+
+            try {
+                createResource(parser, csvProcessor, csvHelper);
+            } catch (Exception ex) {
+                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
             }
-        } catch (FutureException fe) {
-            throw fe;
-        } catch (Exception ex) {
-            throw new TransformException(parser.getErrorLine(), ex);
-        } finally {
-            parser.close();
+
         }
     }
 
-    private static void createProblem(Problem problemParser, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
+    private static void createResource(Problem problemParser,
+                                       CsvProcessor csvProcessor,
+                                       EmisCsvHelper csvHelper) throws Exception {
 
         Condition fhirProblem = new Condition();
         fhirProblem.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROBLEM));
@@ -138,4 +141,16 @@ public class ProblemTransformer {
             return ProblemSignificance.UNSPECIIED;
         }
     }
+    /*private static ProblemSignificance convertSignificance(String significance) {
+        significance = significance.toLowerCase();
+        if (significance.indexOf("major") > -1) {
+            return ProblemSignificance.SIGNIFICANT;
+        } else if (significance.indexOf("minor") > -1) {
+            return ProblemSignificance.NOT_SIGNIFICANT;
+        } else {
+            return ProblemSignificance.UNSPECIIED;
+        }
+    }*/
+
+
 }

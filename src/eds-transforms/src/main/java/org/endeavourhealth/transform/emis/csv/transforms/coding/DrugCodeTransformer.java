@@ -1,24 +1,26 @@
 package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
-import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.exceptions.FutureException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.csv.CallableError;
+import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.ThreadPool;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.coding.DrugCode;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.CodeableConcept;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class DrugCodeTransformer {
 
 
     public static void transform(String version,
-                                 String folderPath,
-                               CSVFormat csvFormat,
+                                 Map<Class, AbstractCsvTransformer> parsers,
                                CsvProcessor csvProcessor,
                                EmisCsvHelper csvHelper) throws Exception {
 
@@ -26,29 +28,33 @@ public class DrugCodeTransformer {
         //file, so split up the saving over a few threads
         ThreadPool threadPool = new ThreadPool(5, 50000);
 
-        DrugCode parser = new DrugCode(version, folderPath, csvFormat);
+        //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
+        //to parse any record in this file it a critical error
+        DrugCode parser = (DrugCode)parsers.get(DrugCode.class);
         try {
             while (parser.nextRecord()) {
-                transform(parser, csvProcessor, csvHelper, threadPool);
+
+                try {
+                    transform(parser, csvProcessor, csvHelper, threadPool);
+                } catch (Exception ex) {
+                    throw new TransformException(parser.getCurrentState().toString(), ex);
+                }
+
             }
-        } catch (FutureException fe) {
-            throw fe;
-        } catch (Exception ex) {
-            throw new TransformException(parser.getErrorLine(), ex);
         } finally {
-            parser.close();
-            threadPool.waitAndStop();
+            List<CallableError> errors = threadPool.waitAndStop();
+            handleErrors(errors);
         }
     }
 
-    private static void transform(DrugCode drugParser,
+    private static void transform(DrugCode parser,
                                   CsvProcessor csvProcessor,
                                   EmisCsvHelper csvHelper,
                                   ThreadPool threadPool) throws Exception {
 
-        final Long codeId = drugParser.getCodeId();
-        final String term = drugParser.getTerm();
-        final Long dmdId = drugParser.getDmdProductCodeId();
+        final Long codeId = parser.getCodeId();
+        final String term = parser.getTerm();
+        final Long dmdId = parser.getDmdProductCodeId();
 
         final CodeableConcept fhirConcept;
         if (dmdId == null) {
@@ -58,12 +64,58 @@ public class DrugCodeTransformer {
             fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_SNOMED_CT, term, dmdId.toString());
         }
 
-        threadPool.submit(new Callable() {
-            @Override
-            public Object call() throws Exception {
-                csvHelper.addMedication(codeId, fhirConcept, dmdId, term, csvProcessor);
-                return null;
-            }
-        });
+        List<CallableError> errors = threadPool.submit(new DrugSaveCallable(parser.getCurrentState(), csvHelper, codeId, fhirConcept, dmdId, term, csvProcessor));
+        handleErrors(errors);
+    }
+
+    private static void handleErrors(List<CallableError> errors) throws Exception {
+        if (errors == null || errors.isEmpty()) {
+            return;
+        }
+
+        //if we've had multiple errors, just throw the first one, since they'll most-likely be the same
+        CallableError first = errors.get(0);
+        DrugSaveCallable callable = (DrugSaveCallable)first.getCallable();
+        Exception exception = first.getException();
+        CsvCurrentState parserState = callable.getParserState();
+        throw new TransformException(parserState.toString(), exception);
+    }
+
+    static class DrugSaveCallable implements Callable {
+
+        private CsvCurrentState parserState = null;
+        private EmisCsvHelper csvHelper = null;
+        private Long codeId = null;
+        private CodeableConcept fhirConcept = null;
+        private Long dmdId = null;
+        private String term = null;
+        private CsvProcessor csvProcessor = null;
+        
+        public DrugSaveCallable(CsvCurrentState parserState,
+                                EmisCsvHelper csvHelper,
+                                Long codeId,
+                                CodeableConcept fhirConcept,
+                                Long dmdId,
+                                String term,
+                                CsvProcessor csvProcessor) {
+
+            this.parserState = parserState;
+            this.csvHelper = csvHelper;
+            this.codeId = codeId;
+            this.fhirConcept = fhirConcept;
+            this.dmdId = dmdId;
+            this.term = term;
+            this.csvProcessor = csvProcessor;
+        }
+
+        @Override
+        public Object call() throws Exception {
+            csvHelper.addMedication(codeId, fhirConcept, dmdId, term, csvProcessor);            
+            return null;
+        }
+
+        public CsvCurrentState getParserState() {
+            return parserState;
+        }
     }
 }

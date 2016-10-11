@@ -28,6 +28,32 @@ public class CsvSplitter {
     private String[] columnHeaders = null;
     private Map<String, CSVPrinter> csvPrinterMap = new HashMap<>();
 
+    /*public static void main(String[] args) {
+
+        try {
+            javax.swing.JFileChooser f = new javax.swing.JFileChooser();
+            f.setFileSelectionMode(javax.swing.JFileChooser.FILES_ONLY);
+            f.setMultiSelectionEnabled(false);
+            f.setCurrentDirectory(new File("C:\\Users\\drewl\\Desktop\\EMIS CSV Sample"));
+
+            int r = f.showOpenDialog(null);
+            if (r == javax.swing.JFileChooser.CANCEL_OPTION) {
+                return;
+            }
+
+            File file = f.getSelectedFile();
+
+            File dst = new File("C:\\Users\\drewl\\Desktop");
+
+
+            CsvSplitter splitter = new CsvSplitter(file, dst, CSVFormat.DEFAULT, "OrganisationGuid", "ProcessingId");
+            splitter.go();
+
+        } catch (Exception ex) {
+            LOG.error("", ex);
+        }
+    }*/
+
     public CsvSplitter(File srcFile, File dstDir, CSVFormat csvFormat, String... splitColumns) {
 
         this.srcFile = srcFile;
@@ -40,7 +66,7 @@ public class CsvSplitter {
 
         //adding .withHeader() to the csvFormat forces it to treat the first row as the column headers,
         //and read them in, instead of ignoring them
-        CSVParser csvParser = CSVParser.parse(srcFile, Charset.defaultCharset(), csvFormat);
+        CSVParser csvParser = CSVParser.parse(srcFile, Charset.defaultCharset(), csvFormat.withHeader());
 
         try
         {
@@ -155,13 +181,7 @@ public class CsvSplitter {
             //LOG.debug("Creating " + f);
             FileWriter fileWriter = new FileWriter(f);
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-            csvPrinter = new CSVPrinter(bufferedWriter, csvFormat);
-
-            //write the headers
-            for (String columnHeader: columnHeaders) {
-                csvPrinter.print(columnHeader);
-            }
-            csvPrinter.println();
+            csvPrinter = new CSVPrinter(bufferedWriter, csvFormat.withHeader(columnHeaders));
 
             csvPrinterMap.put(mapKey, csvPrinter);
         }
