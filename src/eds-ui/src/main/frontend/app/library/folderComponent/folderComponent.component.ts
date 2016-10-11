@@ -8,6 +8,7 @@ export class FolderComponent implements ng.IComponentOptions {
 
 	constructor () {
 		this.bindings = {
+			id: "@",
 			onSelected: "&",
 			onActionItem: "&"
 		};

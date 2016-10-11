@@ -8,25 +8,40 @@ import {InputBoxController} from "../../dialogs/inputBox/inputBox.controller";
 import {MessageBoxController} from "../../dialogs/messageBox/messageBox.controller";
 import {FolderType} from "../../models/FolderType";
 import {ItemType} from "../../models/ItemType";
+import {IModuleStateService} from "../../core/moduleState.service";
 
 export class FolderComponentController {
 	public onSelected : Function;
 	public onActionItem : Function;
+	public id : string = 'libraryFolder';
 
 	folderType : FolderType = FolderType.Library;
 	selectedNode : FolderNode;
 	treeData : FolderNode[];
 
-	static $inject = ['LoggerService', '$uibModal', 'FolderService'];
+	static $inject = ['LoggerService', '$uibModal', 'ModuleStateService', 'FolderService'];
 
 	constructor(
 		protected logger : ILoggerService,
 		protected $modal : IModalService,
+		protected moduleStateService : IModuleStateService,
 		protected folderService : IFolderService) {
 	}
 
 	$onInit() {
 		this.getRootFolders();
+		var state = this.moduleStateService.getState(this.id);
+		if (state) {
+			this.selectNode(state.selectedNode);
+		}
+	}
+
+
+	saveState() {
+		var state = {
+			selectedNode : this.selectedNode
+		};
+		this.moduleStateService.setState(this.id, state);
 	}
 
 
@@ -78,6 +93,7 @@ export class FolderComponentController {
 
 	actionItem(uuid : string, type : ItemType, action : string) {
 		var vm = this;
+		vm.saveState();
 		vm.onActionItem({uuid : uuid, type : type, action : action});
 	}
 

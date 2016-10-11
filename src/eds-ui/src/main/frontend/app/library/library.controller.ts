@@ -43,8 +43,15 @@ export class LibraryController {
 			});
 	}
 
+	saveFolderState() {
+		var state = {
+			selectedNode : this.selectedFolder
+		};
+		this.moduleStateService.setState('protocolFolder', state);
+	}
+
 	actionItem(uuid : string, type : ItemType, action : string) {
-		this.saveState();
+		this.saveFolderState();
 		switch (type) {
 			case ItemType.System:
 				this.$state.go('app.systemAction', {itemUuid: uuid, itemAction: action});
@@ -78,14 +85,6 @@ export class LibraryController {
 			.catch(function(error) {
 				vm.logger.error('Error deleting library item', error, 'Delete item');
 			});
-	}
-
-	saveState() {
-		// var state = {
-		// 	selectedNode : this.selectedNode,
-		// 	treeData : this.treeData
-		// };
-		// this.moduleStateService.setState('library', state);
 	}
 
 	cutItem(item : FolderItem) {
