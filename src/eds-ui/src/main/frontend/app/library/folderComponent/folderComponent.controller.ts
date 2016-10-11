@@ -1,36 +1,44 @@
 import IModalService = angular.ui.bootstrap.IModalService;
 
-import {ILoggerService} from "../blocks/logger.service";
-import {FolderNode} from "../models/FolderNode";
-import {Folder} from "../models/Folder";
-import {ItemSummaryList} from "../models/ItemSummaryList";
-import {IFolderService} from "../core/folder.service";
-import {FolderType} from "../models/FolderType";
-import {InputBoxController} from "../dialogs/inputBox/inputBox.controller";
-import {MessageBoxController} from "../dialogs/messageBox/messageBox.controller";
+import {ILoggerService} from "../../blocks/logger.service";
+import {FolderNode} from "../../models/FolderNode";
+import {Folder} from "../../models/Folder";
+import {IFolderService} from "../../core/folder.service";
+import {InputBoxController} from "../../dialogs/inputBox/inputBox.controller";
+import {MessageBoxController} from "../../dialogs/messageBox/messageBox.controller";
+import {FolderType} from "../../models/FolderType";
+import {ItemType} from "../../models/ItemType";
 
-export class LibraryItemFolderModuleBase {
-	treeData : FolderNode[];
+export class FolderComponentController {
+	public onSelected : Function;
+	public onActionItem : Function;
+
+	folderType : FolderType = FolderType.Library;
 	selectedNode : FolderNode;
-	itemSummaryList : ItemSummaryList;
+	treeData : FolderNode[];
+
+	static $inject = ['LoggerService', '$uibModal', 'FolderService'];
 
 	constructor(
 		protected logger : ILoggerService,
 		protected $modal : IModalService,
-		protected folderService : IFolderService,
-		protected folderType : FolderType) {
-		this.getRootFolders(folderType);
+		protected folderService : IFolderService) {
 	}
 
-	getRootFolders(folderType : FolderType) {
+	$onInit() {
+		this.getRootFolders();
+	}
+
+
+	getRootFolders() {
 		var vm = this;
-		vm.folderService.getFolders(folderType, null)
+		vm.folderService.getFolders(vm.folderType, null)
 			.then(function (data) {
 				vm.treeData = data.folders;
 
 				if (vm.treeData && vm.treeData.length > 0) {
 					// Set folder type (not retrieved by API)
-					vm.treeData.forEach((item) => { item.folderType = folderType; } );
+					vm.treeData.forEach((item) => { item.folderType = vm.folderType; } );
 					// Expand top level by default
 					vm.toggleExpansion(vm.treeData[0]);
 				}
@@ -59,20 +67,19 @@ export class LibraryItemFolderModuleBase {
 		}
 	}
 
-	protected selectNode(node : FolderNode) {
+	selectNode(node : FolderNode) {
 		if (node === this.selectedNode) { return; }
 		var vm = this;
 
 		vm.selectedNode = node;
 		node.loading = true;
-
-		vm.folderService.getFolderContents(node.uuid)
-			.then(function(data) {
-				vm.itemSummaryList = data;
-				node.loading = false;
-			});
+		vm.onSelected({selectedFolder: node});
 	}
 
+	actionItem(uuid : string, type : ItemType, action : string) {
+		var vm = this;
+		vm.onActionItem({uuid : uuid, type : type, action : action});
+	}
 
 	addChildFolder(node : FolderNode) {
 		var vm = this;

@@ -9,7 +9,7 @@
 					<div class="row">
 
 						<div class="col-md-3">
-							<ng-include src="'libraryItemFolder.html'"></ng-include>
+							<library-folder on-selected="ctrl.folderChanged(selectedFolder)" on-action-item="ctrl.actionItem(uuid, type, action)"></library-folder>
 						</div>
 
 						<div class="col-md-9">

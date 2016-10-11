@@ -2,18 +2,20 @@ import IScope = angular.IScope;
 import IModalService = angular.ui.bootstrap.IModalService;
 import IStateService = angular.ui.IStateService;
 
-import {LibraryItemFolderModuleBase} from "../common/libraryItemFolderModuleBase";
 import {ILibraryService} from "../core/library.service";
 import {IFolderService} from "../core/folder.service";
 import {ILoggerService} from "../blocks/logger.service";
 import {IModuleStateService} from "../core/moduleState.service";
-import {FolderType} from "../models/FolderType";
 import {ItemType} from "../models/ItemType";
 import {FolderItem} from "../models/FolderContent";
 import {LibraryItem} from "../models/LibraryItem";
 import {FolderNode} from "../models/FolderNode";
+import {ItemSummaryList} from "../models/ItemSummaryList";
 
-export class LibraryController extends LibraryItemFolderModuleBase {
+export class LibraryController {
+	selectedFolder : FolderNode;
+	itemSummaryList : ItemSummaryList;
+
 	static $inject = ['LibraryService', 'FolderService', 'LoggerService', 'ModuleStateService', '$scope', '$uibModal',
 		'$state'];
 
@@ -25,13 +27,20 @@ export class LibraryController extends LibraryItemFolderModuleBase {
 		protected $scope : IScope,
 		protected $modal : IModalService,
 		protected $state : IStateService) {
-		super(logger, $modal, folderService, FolderType.Library);
+	}
 
-		var state = moduleStateService.getState('library');
-		if (state) {
-			this.treeData = state.treeData;
-			this.selectNode(state.selectedNode);
-		}
+	folderChanged(node : FolderNode) {
+		this.selectedFolder = node;
+		this.refresh();
+	}
+
+	refresh() {
+		var vm = this;
+		vm.folderService.getFolderContents(vm.selectedFolder.uuid)
+			.then(function(data) {
+				vm.itemSummaryList = data;
+				vm.selectedFolder.loading = false;
+			});
 	}
 
 	actionItem(uuid : string, type : ItemType, action : string) {
@@ -72,11 +81,11 @@ export class LibraryController extends LibraryItemFolderModuleBase {
 	}
 
 	saveState() {
-		var state = {
-			selectedNode : this.selectedNode,
-			treeData : this.treeData
-		};
-		this.moduleStateService.setState('library', state);
+		// var state = {
+		// 	selectedNode : this.selectedNode,
+		// 	treeData : this.treeData
+		// };
+		// this.moduleStateService.setState('library', state);
 	}
 
 	cutItem(item : FolderItem) {
@@ -113,9 +122,8 @@ export class LibraryController extends LibraryItemFolderModuleBase {
 				.then(function(result) {
 					vm.logger.success('Item pasted to folder', libraryItem, 'Paste');
 					// reload folder if still selection
-					if (vm.selectedNode.uuid === node.uuid) {
-						vm.selectedNode = null;
-						vm.selectNode(node);
+					if (vm.selectedFolder.uuid === node.uuid) {
+						vm.refresh();
 					}
 				})
 				.catch(function(error){
