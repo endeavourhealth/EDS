@@ -4,8 +4,9 @@ import com.datastax.driver.core.utils.UUIDs;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
-import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
+import org.endeavourhealth.core.xml.TransformErrorsSerializer;
+import org.endeavourhealth.core.xml.transformErrors.TransformError;
 import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.CallableError;
@@ -32,6 +33,7 @@ public class CsvProcessor {
     private final UUID systemId;
     private final FhirStorageService storageService;
     private final ExchangeBatchRepository exchangeBatchRepository;
+    private final TransformError transformError;
     //private final Map<String, String> resourceTypes; //although a set would be idea, a map allows safe multi-thread access
 
     //batch IDs
@@ -47,13 +49,13 @@ public class CsvProcessor {
     private Map<UUID, AtomicInteger> countResourcesDeleted = new ConcurrentHashMap<>();
 
 
-    public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId) {
+    public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId, TransformError transformError) {
         this.exchangeId = exchangeId;
         this.serviceId = serviceId;
         this.systemId = systemId;
         this.storageService = new FhirStorageService(serviceId, systemId);
         this.exchangeBatchRepository = new ExchangeBatchRepository();
-        //this.resourceTypes = new ConcurrentHashMap<>();
+        this.transformError = transformError;
     }
 
 
@@ -168,7 +170,7 @@ public class CsvProcessor {
      * called after all content has been processed. It blocks until all operations have
      * been completed in the thread pool, then returns the distinct batch IDs created
      */
-    public List<UUID> getBatchIdsCreated() throws Exception {
+    public List<UUID> getBatchIdsCreated() {
 
         //wait for all tasks to be completed
         List<CallableError> errors = threadPool.waitAndStop();
@@ -215,7 +217,7 @@ public class CsvProcessor {
     }*/
 
 
-    private void logResults() throws Exception {
+    private void logResults() {
 
         int totalSaved = 0;
         int totalDeleted = 0;
@@ -230,17 +232,8 @@ public class CsvProcessor {
 
         ResourceIdMapRepository idRepository = new ResourceIdMapRepository();
 
-        Iterator<String> it = patientBatchIdMap.keySet().iterator();
-        while (it.hasNext()) {
-            String patientId = it.next();
+        for (String patientId : patientBatchIdMap.keySet()) {
             UUID batchId = patientBatchIdMap.get(patientId);
-
-            //look up the EDS ID for the patient, so we can log that too
-            ResourceIdMap resourceMapping = idRepository.getResourceIdMap(serviceId, systemId, ResourceType.Patient.toString(), patientId);
-            if (resourceMapping == null) {
-                throw new TransformException("Failed to find EDS ID for patient " + patientId + ", service " + serviceId + " and system " + systemId + " for batch ID " + batchId);
-            }
-            UUID edsPatientId = resourceMapping.getEdsId();
 
             saved = countResourcesSaved.get(batchId).get();
             deleted = countResourcesDeleted.get(batchId).get();
@@ -313,18 +306,18 @@ public class CsvProcessor {
      * a table which can then be used to re-play the transform for just those records that were in error
      */
     public void logTransformRecordError(Exception ex, CsvCurrentState state) {
-//TODO - implement
-        //TODO - need to handle ones where state is NULL from CsvHelper class
+
+        //may as well log the error
         LOG.error("Error at " + state, ex);
+
+        //then add the error to our audit object
+        Map<String, String> args = new HashMap<>();
+        args.put(TransformErrorsSerializer.ARG_EMIS_CSV_FILE, state.getFilePath());
+        args.put(TransformErrorsSerializer.ARG_EMIS_CSV_RECORD_NUMBER, "" + state.getRecordNumber());
+
+        TransformErrorsSerializer.addError(transformError, ex, args);
     }
 
-    /**
-     * called when a fatal error occurs when parsing something critical, which stops the transform
-     */
-    public void logTransformFatalError(Exception ex, CsvCurrentState state) {
-//TODO - implement
-        LOG.error("Error at " + state, ex);
-    }
 
 
     class MapAndSaveResourceTask implements Callable {

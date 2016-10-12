@@ -5,7 +5,7 @@ import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
@@ -19,7 +19,7 @@ import java.util.Map;
 public class IssueRecordTransformer {
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvTransformer> parsers,
+                                 Map<Class, AbstractCsvParser> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 

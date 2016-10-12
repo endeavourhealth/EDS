@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.ObservationReferral;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.ReferralRequestSendMode;
@@ -17,7 +17,7 @@ import java.util.Map;
 public class ObservationReferralTransformer {
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvTransformer> parsers,
+                                 Map<Class, AbstractCsvParser> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
@@ -34,27 +34,27 @@ public class ObservationReferralTransformer {
         }
     }
 
-    private static void createResource(ObservationReferral observationParser,
+    private static void createResource(ObservationReferral parser,
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 
         ReferralRequest fhirReferral = new ReferralRequest();
         fhirReferral.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_REFERRAL_REQUEST));
 
-        String observationGuid = observationParser.getObservationGuid();
-        String patientGuid = observationParser.getPatientGuid();
+        String observationGuid = parser.getObservationGuid();
+        String patientGuid = parser.getPatientGuid();
 
         EmisCsvHelper.setUniqueId(fhirReferral, patientGuid, observationGuid);
 
         fhirReferral.setPatient(csvHelper.createPatientReference(patientGuid));
 
-        String ubrn = observationParser.getReferralUBRN();
+        String ubrn = parser.getReferralUBRN();
         fhirReferral.addIdentifier(IdentifierHelper.createUbrnIdentifier(ubrn));
 
-        String recipientOrgGuid = observationParser.getReferalTargetOrganisationGuid();
+        String recipientOrgGuid = parser.getReferalTargetOrganisationGuid();
         fhirReferral.addRecipient(csvHelper.createOrganisationReference(recipientOrgGuid));
 
-        String urgency = observationParser.getReferralUrgency();
+        String urgency = parser.getReferralUrgency();
         if (!Strings.isNullOrEmpty(urgency)) {
             DiagnosticOrder.DiagnosticOrderPriority fhirPriority = convertUrgency(urgency);
             if (fhirPriority != null) {
@@ -65,12 +65,12 @@ public class ObservationReferralTransformer {
             }
         }
 
-        String serviceType = observationParser.getReferralServiceType();
+        String serviceType = parser.getReferralServiceType();
         if (!Strings.isNullOrEmpty(serviceType)) {
             fhirReferral.addServiceRequested(CodeableConceptHelper.createCodeableConcept(serviceType));
         }
 
-        String mode = observationParser.getReferralMode();
+        String mode = parser.getReferralMode();
         if (!Strings.isNullOrEmpty(mode)) {
 
             CodeableConcept codeableConcept = null;
@@ -86,11 +86,17 @@ public class ObservationReferralTransformer {
             fhirReferral.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.REFERRAL_REQUEST_SEND_MODE, codeableConcept));
         }
 
+        //the below values are defined in the spec., but the spec also states that they'll be empty, so
+        //none of the below will probably be used
+        String sendingOrgGuid = parser.getReferralSourceOrganisationGuid();
+        if (!Strings.isNullOrEmpty(sendingOrgGuid)) {
+            fhirReferral.setRequester(csvHelper.createOrganisationReference(recipientOrgGuid));
+        }
+
         //although the columns exist in the CSV, the spec. states that they'll always be empty
         //ReferralReceivedDateTime
         //ReferralEndDate
         //ReferralSourceId
-        //ReferralSourceOrganisationGuid
         //ReferralReasonCodeId
         //ReferringCareProfessionalStaffGroupCodeId
         //ReferralEpisodeRTTMeasurmentTypeId

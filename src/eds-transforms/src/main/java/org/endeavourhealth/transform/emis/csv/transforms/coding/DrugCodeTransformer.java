@@ -6,7 +6,7 @@ import org.endeavourhealth.transform.emis.csv.CallableError;
 import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.ThreadPool;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.coding.DrugCode;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
@@ -20,7 +20,7 @@ public class DrugCodeTransformer {
 
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvTransformer> parsers,
+                                 Map<Class, AbstractCsvParser> parsers,
                                CsvProcessor csvProcessor,
                                EmisCsvHelper csvHelper) throws Exception {
 

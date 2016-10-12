@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
@@ -19,7 +19,7 @@ import java.util.Map;
 public class ConsultationTransformer {
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvTransformer> parsers,
+                                 Map<Class, AbstractCsvParser> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 

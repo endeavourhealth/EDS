@@ -306,4 +306,13 @@ public class DataLayer
 
         pgStoredProc.execute();
     }
+
+    public void deleteBatchSplits(Batch batch) throws PgStoredProcException {
+
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.delete_batch_splits")
+                .addParameter("_batch_id", batch.getBatchId());
+
+        pgStoredProc.execute();
+    }
 }

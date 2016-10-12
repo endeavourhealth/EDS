@@ -361,6 +361,9 @@ public class SftpTask extends TimerTask
 
         for (Batch batch: batches) {
 
+            //delete any pre-existing splits for this batch
+            db.deleteBatchSplits(batch);
+
             SftpBatchSplitter sftpBatchSplitter = ImplementationActivator.createSftpBatchSplitter();
             List<BatchSplit> splitBatches = sftpBatchSplitter.splitBatch(batch, db, dbConfiguration);
 

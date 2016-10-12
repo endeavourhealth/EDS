@@ -1,11 +1,11 @@
 package org.endeavourhealth.transform.emis.csv.schema.appointment;
 
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 
 import java.io.File;
 
-public class SessionUser extends AbstractCsvTransformer {
+public class SessionUser extends AbstractCsvParser {
 
     public SessionUser(String version, File f) throws Exception {
         super(version, f, EmisCsvTransformer.CSV_FORMAT, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);

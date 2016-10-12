@@ -20,9 +20,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 
-public abstract class AbstractCsvTransformer implements AutoCloseable {
+public abstract class AbstractCsvParser implements AutoCloseable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractCsvTransformer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractCsvParser.class);
 
     private final String version;
     private final File file;
@@ -35,7 +35,7 @@ public abstract class AbstractCsvTransformer implements AutoCloseable {
     private CSVRecord csvRecord = null;
 
 
-    public AbstractCsvTransformer(String version, File file, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
+    public AbstractCsvParser(String version, File file, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
 
         this.version = version;
         this.file = file;

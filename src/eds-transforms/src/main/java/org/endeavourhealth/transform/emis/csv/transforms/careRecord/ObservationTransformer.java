@@ -8,9 +8,8 @@ import org.endeavourhealth.transform.common.exceptions.FieldNotEmptyException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation;
-import org.endeavourhealth.transform.emis.csv.schema.careRecord.ObservationType;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.FamilyMember;
@@ -28,7 +27,7 @@ public class ObservationTransformer {
     private static ResourceIdMapRepository idMapRepository = new ResourceIdMapRepository();
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvTransformer> parsers,
+                                 Map<Class, AbstractCsvParser> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
@@ -86,6 +85,9 @@ public class ObservationTransformer {
                 case DiagnosticReport:
                     createOrDeleteDiagnosticReport(parser, csvProcessor, csvHelper);
                     break;
+                case Specimen:
+                    createOrDeleteSpecimen(parser, csvProcessor, csvHelper);
+                    break;
                 case ReferralRequest:
                     createOrDeleteReferralRequest(parser, csvProcessor, csvHelper);
                     break;
@@ -106,6 +108,7 @@ public class ObservationTransformer {
         }
     }
 
+
     /**
      * finds out what resource type an EMIS observation was previously saved as
      */
@@ -119,6 +122,7 @@ public class ObservationTransformer {
         potentialResourceTypes.add(ResourceType.FamilyMemberHistory);
         potentialResourceTypes.add(ResourceType.Immunization);
         potentialResourceTypes.add(ResourceType.DiagnosticOrder);
+        potentialResourceTypes.add(ResourceType.Specimen);
         potentialResourceTypes.add(ResourceType.DiagnosticReport);
         potentialResourceTypes.add(ResourceType.ReferralRequest);
         
@@ -173,6 +177,9 @@ public class ObservationTransformer {
             case DiagnosticReport:
                 createOrDeleteDiagnosticReport(parser, csvProcessor, csvHelper);
                 break;
+            case Specimen:
+                createOrDeleteSpecimen(parser, csvProcessor, csvHelper);
+                break;
             case ReferralRequest:
                 createOrDeleteReferralRequest(parser, csvProcessor, csvHelper);
                 break;
@@ -201,10 +208,127 @@ public class ObservationTransformer {
     }
 
     /**
-     * the FHIR resource type is roughly derived from the ObservationType, although the Value and ReadCode
+     * the FHIR resource type is roughly derived from the code category primarily, although the Value and ReadCode
      * are also used as it's not a perfect match.
      */
     public static ResourceType getTargetResourceType(Observation parser,
+                                                     CsvProcessor csvProcessor,
+                                                     EmisCsvHelper csvHelper) throws Exception {
+
+        Long codeId = parser.getCodeId();
+        ClinicalCodeType codeType = csvHelper.findClinicalCodeType(codeId, csvProcessor);
+        Double value = parser.getValue();
+
+        if (value != null
+            || codeType == ClinicalCodeType.Biochemistry
+            || codeType == ClinicalCodeType.Biological_Values
+            || codeType == ClinicalCodeType.Cyology_Histology
+            || codeType == ClinicalCodeType.Haematology
+            || codeType == ClinicalCodeType.Health_Management
+            || codeType == ClinicalCodeType.Immunology
+            || codeType == ClinicalCodeType.Microbiology
+            || codeType == ClinicalCodeType.Radiology
+            || codeType == ClinicalCodeType.Symptoms_Findings
+            || codeType == ClinicalCodeType.Procedure //note, the codes is this category aren't actually "procedures"
+            || codeType == ClinicalCodeType.Adminisation_Documents_Attachments
+            || codeType == ClinicalCodeType.Body_Structure //dental structures
+            || codeType == ClinicalCodeType.Care_Episode_Outcome
+            || codeType == ClinicalCodeType.Dental_Finding
+            || codeType == ClinicalCodeType.Diagnostics
+            || codeType == ClinicalCodeType.Discharged_From_Service
+            || codeType == ClinicalCodeType.EMIS_Qualifier //not really suited to any FHIR resource, but they have to go somewhere
+            || codeType == ClinicalCodeType.Ethnicity
+            || codeType == ClinicalCodeType.HMP //not necessarily suited to FHIR observations, but seems the best match
+            || codeType == ClinicalCodeType.Intervention_Category
+            || codeType == ClinicalCodeType.Intervention_Target
+            || codeType == ClinicalCodeType.KC60 //looks like these codes are a mix of procedures, conditions and vaccinations, but no way to distinguish them apart
+            || codeType == ClinicalCodeType.Marital_Status
+            || codeType == ClinicalCodeType.Nationality
+            || codeType == ClinicalCodeType.Nursing_Problem
+            || codeType == ClinicalCodeType.Nursing_Problem_Domain
+            || codeType == ClinicalCodeType.Obsteterics_Birth
+            || codeType == ClinicalCodeType.Person_Health_Social
+            || codeType == ClinicalCodeType.Planned_Dental
+            || codeType == ClinicalCodeType.Problem_Rating_Scale
+            || codeType == ClinicalCodeType.Reason_For_Care
+            || codeType == ClinicalCodeType.Referral_Activity
+            || codeType == ClinicalCodeType.Referral_Rejected
+            || codeType == ClinicalCodeType.Referral_Withdrawn
+            || codeType == ClinicalCodeType.Regiment
+            || codeType == ClinicalCodeType.Religion
+            || codeType == ClinicalCodeType.Trade_Branch
+            || codeType == ClinicalCodeType.Unset) {
+
+            if (isDiagnosticReport(parser, csvProcessor, csvHelper)) {
+                return ResourceType.DiagnosticReport;
+            } else {
+                return ResourceType.Observation;
+            }
+
+        } else if (codeType == ClinicalCodeType.Conditions_Operations_Procedures) {
+
+            if (isProcedure(codeId, csvProcessor, csvHelper)) {
+                return ResourceType.Procedure;
+            } else if (isDisorder(codeId, csvProcessor, csvHelper)) {
+                return ResourceType.Condition;
+            } else {
+                return ResourceType.Observation;
+            }
+
+        } else if (codeType == ClinicalCodeType.Allergy_Adverse_Drug_Reations
+            || codeType == ClinicalCodeType.Allergy_Adverse_Reations) {
+
+            return ResourceType.Immunization;
+
+        } else if (codeType == ClinicalCodeType.Dental_Disorder) {
+
+            return ResourceType.Condition;
+
+        } else if (codeType == ClinicalCodeType.Dental_Procedure) {
+
+            return ResourceType.Condition;
+
+        } else if (codeType == ClinicalCodeType.Family_History) {
+
+            return ResourceType.FamilyMemberHistory;
+
+        } else if (codeType == ClinicalCodeType.Immunisations) {
+
+            return ResourceType.Condition;
+
+        } else if (codeType == ClinicalCodeType.Investigation_Requests) {
+
+            return ResourceType.DiagnosticOrder;
+
+        } else if (codeType == ClinicalCodeType.Pathology_Specimen) {
+
+            return ResourceType.Specimen;
+
+        } else if (codeType == ClinicalCodeType.Referral) {
+
+            return ResourceType.ReferralRequest;
+
+        } else {
+            throw new IllegalArgumentException("Unhandled codeType " + codeType);
+        }
+    }
+
+    private static boolean isDisorder(Long codeId, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
+
+        CodeableConcept fhirConcept = csvHelper.findClinicalCode(codeId, csvProcessor);
+        for (Coding coding: fhirConcept.getCoding()) {
+
+            //would prefer to check for procedures using Snomed, but this Read2 is simple and works
+            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_READ2)) {
+                return Read2.isDisorder(coding.getCode());
+            }
+
+        }
+
+        return false;
+    }
+
+    /*public static ResourceType getTargetResourceType(Observation parser,
                                                      CsvProcessor csvProcessor,
                                                      EmisCsvHelper csvHelper) throws Exception {
 
@@ -253,7 +377,7 @@ public class ObservationTransformer {
             throw new IllegalArgumentException("Unhandled ObservationType " + observationType);
         }
     }
-
+*/
     private static boolean isDiagnosticReport(Observation parser,
                                               CsvProcessor csvProcessor,
                                               EmisCsvHelper csvHelper) throws Exception {
@@ -280,11 +404,10 @@ public class ObservationTransformer {
             || codeType == ClinicalCodeType.Health_Management;
     }
 
-    private static boolean isProcedure(Observation parser,
+    private static boolean isProcedure(Long codeId,
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 
-        Long codeId = parser.getCodeId();
         CodeableConcept fhirConcept = csvHelper.findClinicalCode(codeId, csvProcessor);
         for (Coding coding: fhirConcept.getCoding()) {
 
@@ -351,9 +474,9 @@ public class ObservationTransformer {
         fhirReferral.setDescription(associatedText);
 
         //the entered date and person are stored in extensions
-        createRecordedByExtension(fhirReferral, parser, csvHelper);
-        createRecordedDateExtension(fhirReferral, parser);
-        createDocumentExtension(fhirReferral, parser);
+        addRecordedByExtension(fhirReferral, parser, csvHelper);
+        addRecordedDateExtension(fhirReferral, parser);
+        addDocumentExtension(fhirReferral, parser);
 
         //assert that these fields are empty, as we don't stored them in this resource type,
         assertValueEmpty(fhirReferral, parser);
@@ -417,9 +540,9 @@ public class ObservationTransformer {
         diagnosticOrderEventComponent.setDateTimeElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         //the entered date and person are stored in extensions
-        createRecordedByExtension(fhirOrder, parser, csvHelper);
-        createRecordedDateExtension(fhirOrder, parser);
-        createDocumentExtension(fhirOrder, parser);
+        addRecordedByExtension(fhirOrder, parser, csvHelper);
+        addRecordedDateExtension(fhirOrder, parser);
+        addDocumentExtension(fhirOrder, parser);
 
         //assert that these cells are empty, as we don't stored them in this resource type
         assertValueEmpty(fhirOrder, parser);
@@ -436,6 +559,64 @@ public class ObservationTransformer {
 */
 
         csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirOrder);
+
+    }
+
+    private static void createOrDeleteSpecimen(Observation parser, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
+
+        Specimen fhirSpecimen = new Specimen();
+        fhirSpecimen.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SPECIMIN));
+
+        String observationGuid = parser.getObservationGuid();
+        String patientGuid = parser.getPatientGuid();
+
+        EmisCsvHelper.setUniqueId(fhirSpecimen, patientGuid, observationGuid);
+
+        fhirSpecimen.setSubject(csvHelper.createPatientReference(patientGuid));
+
+        //if the Resource is to be deleted from the data store, then stop processing the CSV row
+        if (parser.getDeleted() || parser.getIsConfidential()) {
+            csvProcessor.deletePatientResource(parser.getCurrentState(), patientGuid, fhirSpecimen);
+            return;
+        }
+
+        Specimen.SpecimenCollectionComponent fhirCollection = new Specimen.SpecimenCollectionComponent();
+        fhirSpecimen.setCollection(fhirCollection);
+
+        String clinicianGuid = parser.getClinicianUserInRoleGuid();
+        fhirCollection.setCollector(csvHelper.createPractitionerReference(clinicianGuid));
+
+        Long codeId = parser.getCodeId();
+        fhirSpecimen.setType(csvHelper.findClinicalCode(codeId, csvProcessor));
+
+        String associatedText = parser.getAssociatedText();
+        fhirCollection.addComment(associatedText);
+
+        Date effectiveDate = parser.getEffectiveDate();
+        String effectiveDatePrecision = parser.getEffectiveDatePrecision();
+        fhirCollection.setCollected(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
+
+        //the entered date and person are stored in extensions
+        addEncounterExtension(fhirSpecimen, parser, csvHelper, patientGuid);
+        addRecordedByExtension(fhirSpecimen, parser, csvHelper);
+        addRecordedDateExtension(fhirSpecimen, parser);
+        addDocumentExtension(fhirSpecimen, parser);
+
+        //assert that these cells are empty, as we don't stored them in this resource type
+        assertValueEmpty(fhirSpecimen, parser);
+        assertNumericUnitEmpty(fhirSpecimen, parser);
+        assertNumericRangeLowEmpty(fhirSpecimen, parser);
+        assertNumericRangeHighEmpty(fhirSpecimen, parser);
+
+        //if this record is linked to a problem, store this relationship in the helper
+/*
+        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
+                patientGuid,
+                observationGuid,
+                fhirOrder.getResourceType());
+*/
+
+        csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirSpecimen);
 
     }
 
@@ -466,8 +647,8 @@ public class ObservationTransformer {
         Date enteredDate = parser.getEnteredDateTime();
         fhirAllergy.setRecordedDate(enteredDate);
 
-        createRecordedByExtension(fhirAllergy, parser, csvHelper);
-        createDocumentExtension(fhirAllergy, parser);
+        addRecordedByExtension(fhirAllergy, parser, csvHelper);
+        addDocumentExtension(fhirAllergy, parser);
 
         Long codeId = parser.getCodeId();
         fhirAllergy.setSubstance(csvHelper.findClinicalCode(codeId, csvProcessor));
@@ -479,11 +660,7 @@ public class ObservationTransformer {
         String associatedText = parser.getAssociatedText();
         fhirAllergy.setNote(AnnotationHelper.createAnnotation(associatedText));
 
-        String consultationGuid = parser.getConsultationGuid();
-        if (!Strings.isNullOrEmpty(consultationGuid)) {
-            Reference reference = csvHelper.createEncounterReference(consultationGuid, patientGuid);
-            fhirAllergy.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, reference));
-        }
+        addEncounterExtension(fhirAllergy, parser, csvHelper, patientGuid);
 
         assertValueEmpty(fhirAllergy, parser);
         assertNumericUnitEmpty(fhirAllergy, parser);
@@ -555,9 +732,9 @@ public class ObservationTransformer {
         }
 
         //the entered date and person are stored in extensions
-        createRecordedByExtension(fhirReport, parser, csvHelper);
-        createRecordedDateExtension(fhirReport, parser);
-        createDocumentExtension(fhirReport, parser);
+        addRecordedByExtension(fhirReport, parser, csvHelper);
+        addRecordedDateExtension(fhirReport, parser);
+        addDocumentExtension(fhirReport, parser);
 
         //assert that these cells are empty, as we don't stored them in this resource type
         assertValueEmpty(fhirReport, parser);
@@ -617,9 +794,9 @@ public class ObservationTransformer {
         }
 
         //the entered date and person are stored in extensions
-        createRecordedByExtension(fhirProcedure, parser, csvHelper);
-        createRecordedDateExtension(fhirProcedure, parser);
-        createDocumentExtension(fhirProcedure, parser);
+        addRecordedByExtension(fhirProcedure, parser, csvHelper);
+        addRecordedDateExtension(fhirProcedure, parser);
+        addDocumentExtension(fhirProcedure, parser);
 
         //assert that these cells are empty, as we don't stored them in this resource type
         assertValueEmpty(fhirProcedure, parser);
@@ -680,8 +857,8 @@ public class ObservationTransformer {
         fhirCondition.setDateRecorded(enteredDate);
 
         //the entered by is stored in an extension
-        createRecordedByExtension(fhirCondition, parser, csvHelper);
-        createDocumentExtension(fhirCondition, parser);
+        addRecordedByExtension(fhirCondition, parser, csvHelper);
+        addDocumentExtension(fhirCondition, parser);
 
         Long codeId = parser.getCodeId();
         fhirCondition.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
@@ -822,9 +999,9 @@ public class ObservationTransformer {
         }
 
         //the entered date and person are stored in extensions
-        createRecordedByExtension(fhirObservation, parser, csvHelper);
-        createRecordedDateExtension(fhirObservation, parser);
-        createDocumentExtension(fhirObservation, parser);
+        addRecordedByExtension(fhirObservation, parser, csvHelper);
+        addRecordedDateExtension(fhirObservation, parser);
+        addDocumentExtension(fhirObservation, parser);
 
         //if this record is linked to a problem, store this relationship in the helper
 /*
@@ -879,16 +1056,11 @@ public class ObservationTransformer {
         Reference reference = csvHelper.createPractitionerReference(clinicianGuid);
         fhirFamilyHistory.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.FAMILY_MEMBER_HISTOY_REPORTED_BY, reference));
 
-        String consultationGuid = parser.getConsultationGuid();
-        if (!Strings.isNullOrEmpty(consultationGuid)) {
-            reference = csvHelper.createEncounterReference(consultationGuid, patientGuid);
-            fhirFamilyHistory.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, reference));
-        }
-
         //the entered date and person are stored in extensions
-        createRecordedByExtension(fhirFamilyHistory, parser, csvHelper);
-        createRecordedDateExtension(fhirFamilyHistory, parser);
-        createDocumentExtension(fhirFamilyHistory, parser);
+        addEncounterExtension(fhirFamilyHistory, parser, csvHelper, patientGuid);
+        addRecordedByExtension(fhirFamilyHistory, parser, csvHelper);
+        addRecordedDateExtension(fhirFamilyHistory, parser);
+        addDocumentExtension(fhirFamilyHistory, parser);
 
         //assert that these cells are empty, as we don't stored them in this resource type
         assertValueEmpty(fhirFamilyHistory, parser);
@@ -950,9 +1122,9 @@ public class ObservationTransformer {
         fhirImmunisation.addNote(AnnotationHelper.createAnnotation(associatedText));
 
         //the entered date and person are stored in extensions
-        createRecordedByExtension(fhirImmunisation, parser, csvHelper);
-        createRecordedDateExtension(fhirImmunisation, parser);
-        createDocumentExtension(fhirImmunisation, parser);
+        addRecordedByExtension(fhirImmunisation, parser, csvHelper);
+        addRecordedDateExtension(fhirImmunisation, parser);
+        addDocumentExtension(fhirImmunisation, parser);
 
         //assert that these cells are empty, as we don't stored them in this resource type
         assertValueEmpty(fhirImmunisation, parser);
@@ -969,7 +1141,7 @@ public class ObservationTransformer {
         csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirImmunisation);
     }
 
-    private static void createDocumentExtension(DomainResource resource, Observation parser) {
+    private static void addDocumentExtension(DomainResource resource, Observation parser) {
 
         String documentGuid = parser.getDocumentGuid();
         if (Strings.isNullOrEmpty(documentGuid)) {
@@ -980,7 +1152,7 @@ public class ObservationTransformer {
         resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.EXTERNAL_DOCUMENT, fhirIdentifier));
     }
 
-    private static void createRecordedByExtension(DomainResource resource, Observation parser, EmisCsvHelper emisCsvHelper) throws Exception {
+    private static void addRecordedByExtension(DomainResource resource, Observation parser, EmisCsvHelper emisCsvHelper) throws Exception {
         String enteredByGuid = parser.getEnteredByUserInRoleGuid();
         if (Strings.isNullOrEmpty(enteredByGuid)) {
             return;
@@ -990,13 +1162,24 @@ public class ObservationTransformer {
         resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
     }
 
-    private static void createRecordedDateExtension(DomainResource resource, Observation parser) throws Exception {
+    private static void addRecordedDateExtension(DomainResource resource, Observation parser) throws Exception {
         Date enteredDateTime = parser.getEnteredDateTime();
         if (enteredDateTime == null) {
             return;
         }
 
         resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(enteredDateTime)));
+    }
+
+    private static void addEncounterExtension(DomainResource resource, Observation parser, EmisCsvHelper csvHelper, String patientGuid) throws Exception {
+
+        String consultationGuid = parser.getConsultationGuid();
+        if (!Strings.isNullOrEmpty(consultationGuid)) {
+
+            Reference reference = csvHelper.createEncounterReference(consultationGuid, patientGuid);
+            resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, reference));
+        }
+
     }
 
     private static void assertValueEmpty(Resource destinationResource, Observation parser) throws Exception {

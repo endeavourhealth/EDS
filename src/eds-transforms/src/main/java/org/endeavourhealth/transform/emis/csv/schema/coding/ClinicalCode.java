@@ -1,11 +1,11 @@
 package org.endeavourhealth.transform.emis.csv.schema.coding;
 
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 
 import java.io.File;
 
-public class ClinicalCode extends AbstractCsvTransformer {
+public class ClinicalCode extends AbstractCsvParser {
 
     public ClinicalCode(String version, File f) throws Exception {
         super(version, f, EmisCsvTransformer.CSV_FORMAT, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);

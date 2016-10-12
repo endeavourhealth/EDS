@@ -65,7 +65,7 @@ public class ThreadPool {
      * shuts down the thread pool, so no more callables can be added, then waits for them to complete
      * and returns a list of errors that have happened with callables
      */
-    public List<CallableError> waitAndStop() throws Exception {
+    public List<CallableError> waitAndStop() {
         return waitAndStop(1, TimeUnit.MINUTES);
     }
     public List<CallableError> waitAndStop(long checkInterval, TimeUnit unit) {

@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.appointment.Slot;
 import org.endeavourhealth.transform.fhir.*;
 import org.hl7.fhir.instance.model.*;
@@ -15,7 +15,7 @@ import java.util.Map;
 public class SlotTransformer {
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvTransformer> parsers,
+                                 Map<Class, AbstractCsvParser> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 

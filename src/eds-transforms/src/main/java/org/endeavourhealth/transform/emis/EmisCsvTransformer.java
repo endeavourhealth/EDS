@@ -2,10 +2,13 @@ package org.endeavourhealth.transform.emis;
 
 import com.google.common.io.Files;
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.core.xml.TransformErrorsSerializer;
+import org.endeavourhealth.core.xml.transformErrors.TransformError;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.FileFormatException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.admin.*;
 import org.endeavourhealth.transform.emis.csv.schema.agreements.SharingOrganisation;
 import org.endeavourhealth.transform.emis.csv.schema.appointment.Session;
@@ -50,56 +53,103 @@ public abstract class EmisCsvTransformer {
     public static final String TIME_FORMAT = "hh:mm:ss";
     public static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
 
+
     public static List<UUID> transform(String version,
                                        String sharedStoragePath,
                                        String[] files,
                                        UUID exchangeId,
                                        UUID serviceId,
-                                       UUID systemId) throws Exception {
+                                       UUID systemId,
+                                       TransformError transformError) {
 
         LOG.info("Invoking EMIS CSV transformer for {} files", files.length);
 
-        //the files should all be in a directory structure of org folder -> processing ID folder -> CSV files
-        LOG.trace("Validating all files are in same directory");
-        File orgDirectory = validateAndFindCommonDirectory(sharedStoragePath, files);
+        try {
 
-        LOG.trace("Starting transformProcessingIdFolder for organisation {}", orgDirectory.getName());
+            //validate the version
+            validateVersion(version);
 
-        //the processor is responsible for saving FHIR resources
-        CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId);
+            //the files should all be in a directory structure of org folder -> processing ID folder -> CSV files
+            File orgDirectory = validateAndFindCommonDirectory(sharedStoragePath, files);
 
-        for (File processingIdDirectory: getProcessingIdDirectoriesInOrder(orgDirectory)) {
+            //the processor is responsible for saving FHIR resources
+            CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId, transformError);
 
-            Map<Class, AbstractCsvTransformer> parsers = new HashMap<>();
-            
-            try {
-                //validate that we've got all the files we expect
-                LOG.trace("Validating all files are present in {}", processingIdDirectory);
-                validateAndOpenParsers(processingIdDirectory, version, parsers);
+            for (File processingIdDirectory : getProcessingIdDirectoriesInOrder(orgDirectory)) {
 
-                //validate there's no additional files in the common directory
-                LOG.trace("Validating no additional files in {}", processingIdDirectory);
-                validateNoExtraFiles(processingIdDirectory, parsers);
+                Map<Class, AbstractCsvParser> parsers = new HashMap<>();
 
-                LOG.trace("Transforming EMIS CSV content in {}", processingIdDirectory);
-                transformProcessingIdFolder(version, parsers, processor);
-                
-            } catch (Exception ex) {
-//TODO - sopmething                
-            } finally {
-                
-                closeParsers(parsers); 
+                try {
+                    //validate that we've got all the files we expect
+                    LOG.trace("Validating all files are present in {}", processingIdDirectory);
+                    validateAndOpenParsers(processingIdDirectory, version, parsers);
+
+                    //validate there's no additional files in the common directory
+                    LOG.trace("Validating no additional files in {}", processingIdDirectory);
+                    validateNoExtraFiles(processingIdDirectory, parsers);
+
+                    LOG.trace("Transforming EMIS CSV content in {}", processingIdDirectory);
+                    transformProcessingIdFolder(version, parsers, processor);
+
+                } catch (Exception ex) {
+
+                    logTransformProcessingIdError(transformError, ex, processingIdDirectory.getName());
+
+                    //if we've had an error at this level, something is fundamentally wrong with the files we've
+                    //received, and it's risky to continue processing any other processing ID folders, so break out
+                    break;
+
+                } finally {
+
+                    closeParsers(parsers);
+                }
             }
+
+            LOG.trace("Completed transform for organisation {} - waiting for resources to commit to DB", orgDirectory.getName());
+            return processor.getBatchIdsCreated();
+
+        } catch (Exception ex) {
+
+            //if the version is wrong, or the files aren't where they're supposed to be, we'll
+            //have a fatal error, that means we won't have processed any data or created any batch IDs
+            logTransformFataldError(transformError, ex);
+            return null;
         }
 
-        LOG.trace("Completed transform for organisation {} - waiting for resources to commit to DB", orgDirectory.getName());
-
-        return processor.getBatchIdsCreated();
     }
 
-    private static void closeParsers(Map<Class, AbstractCsvTransformer> parsers) {
 
-        for (AbstractCsvTransformer parser: parsers.values()) {
+    /**
+     * called if we get an error within a processing ID folder (e.g. can't open a file or file columns wrong)
+     */
+    public static void logTransformFataldError(TransformError transformError, Exception ex) {
+
+        LOG.error("", ex);
+
+        //then add the error to our audit object
+        Map<String, String> args = new HashMap<>();
+        args.put(TransformErrorsSerializer.ARG_EMIS_CSV_FATAL_ERROR, ex.getMessage());
+
+        TransformErrorsSerializer.addError(transformError, ex, args);
+    }
+
+    /**
+     * called if we get an error within a processing ID folder (e.g. can't open a file or file columns wrong)
+     */
+    public static void logTransformProcessingIdError(TransformError transformError, Exception ex, String processingId) {
+
+        LOG.error("Error with processing ID " + processingId, ex);
+
+        //then add the error to our audit object
+        Map<String, String> args = new HashMap<>();
+        args.put(TransformErrorsSerializer.ARG_EMIS_CSV_PROCESSING_ID, processingId);
+
+        TransformErrorsSerializer.addError(transformError, ex, args);
+    }
+
+    private static void closeParsers(Map<Class, AbstractCsvParser> parsers) {
+
+        for (AbstractCsvParser parser: parsers.values()) {
             try {
                 parser.close();
             } catch (IOException ex) {
@@ -205,6 +255,15 @@ public abstract class EmisCsvTransformer {
         root.delete();
     }*/
 
+
+    private static void validateVersion(String version) throws Exception {
+
+        if (!version.equalsIgnoreCase(EmisCsvTransformer.VERSION_TEST_PACK)
+                && !version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_1)) {
+            throw new TransformException("Unsupported version for EMIS CSV: " + version);
+        }
+    }
+
     /**
      * validates that all the files in the array are in the expected directory structure of org folder -> processing ID folder
      */
@@ -255,7 +314,7 @@ public abstract class EmisCsvTransformer {
     /**
      * validates that the directory contains ONLY the given files
      */
-    private static void validateNoExtraFiles(File commonDir, Map<Class, AbstractCsvTransformer> parsers) throws Exception {
+    private static void validateNoExtraFiles(File commonDir, Map<Class, AbstractCsvParser> parsers) throws Exception {
 
         Set<File> expectedFiles = parsers
                 .values()
@@ -273,7 +332,7 @@ public abstract class EmisCsvTransformer {
         }
     }
     
-    private static void validateAndOpenParsers(File dir, String version, Map<Class, AbstractCsvTransformer> parsers) throws Exception {
+    private static void validateAndOpenParsers(File dir, String version, Map<Class, AbstractCsvParser> parsers) throws Exception {
 
         findFileAndOpenParser(Location.class, dir, version, parsers);
         findFileAndOpenParser(Organisation.class, dir, version, parsers);
@@ -300,7 +359,7 @@ public abstract class EmisCsvTransformer {
         }
     }
 
-    public static void findFileAndOpenParser(Class parserCls, File dir, String version, Map<Class, AbstractCsvTransformer> ret) throws Exception {
+    public static void findFileAndOpenParser(Class parserCls, File dir, String version, Map<Class, AbstractCsvParser> ret) throws Exception {
 
         Package p = parserCls.getPackage();
         String[] packages = p.getName().split("\\.");
@@ -327,8 +386,8 @@ public abstract class EmisCsvTransformer {
             }
 
             //now construct an instance of the parser for the file we've found
-            Constructor<AbstractCsvTransformer> constructor = parserCls.getConstructor(String.class, File.class);
-            AbstractCsvTransformer parser = constructor.newInstance(version, f);
+            Constructor<AbstractCsvParser> constructor = parserCls.getConstructor(String.class, File.class);
+            AbstractCsvParser parser = constructor.newInstance(version, f);
 
             ret.put(parserCls, parser);
             return;
@@ -432,7 +491,7 @@ public abstract class EmisCsvTransformer {
     }*/
 
 
-    private static void transformProcessingIdFolder(String version, Map<Class, AbstractCsvTransformer> parsers, CsvProcessor csvProcessor) throws Exception {
+    private static void transformProcessingIdFolder(String version, Map<Class, AbstractCsvParser> parsers, CsvProcessor csvProcessor) throws Exception {
 
         EmisCsvHelper csvHelper = new EmisCsvHelper();
 
@@ -444,7 +503,7 @@ public abstract class EmisCsvTransformer {
         IssueRecordPreTransformer.transform(version, parsers, csvProcessor, csvHelper);
 
         //we re-use some of the parsers after this point, so reset any that need it
-        for (AbstractCsvTransformer parser: parsers.values()) {
+        for (AbstractCsvParser parser: parsers.values()) {
             parser.reset();
         }
 
