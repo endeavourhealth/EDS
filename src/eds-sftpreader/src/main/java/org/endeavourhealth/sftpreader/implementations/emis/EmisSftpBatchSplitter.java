@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 public class EmisSftpBatchSplitter extends SftpBatchSplitter {
@@ -121,7 +122,9 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
                     if (processingDir.isDirectory()) {
 
                         File dst = new File(processingDir, fileName);
-                        Files.copy(f.toPath(), dst.toPath());
+
+                        Files.copy(f.toPath(), dst.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        //Files.copy(f.toPath(), dst.toPath());
                     }
                 }
 
