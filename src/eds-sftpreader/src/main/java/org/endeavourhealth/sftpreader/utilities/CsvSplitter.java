@@ -12,7 +12,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.nio.charset.Charset;
-import java.nio.file.FileAlreadyExistsException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -175,9 +174,9 @@ public class CsvSplitter {
 
             String fileName = srcFile.getName();
             File f = new File(folder, fileName);
-            if (f.exists()) {
+            /*if (f.exists()) {
                 throw new FileAlreadyExistsException(f.getAbsolutePath());
-            }
+            }*/
             //LOG.debug("Creating " + f);
             FileWriter fileWriter = new FileWriter(f);
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
