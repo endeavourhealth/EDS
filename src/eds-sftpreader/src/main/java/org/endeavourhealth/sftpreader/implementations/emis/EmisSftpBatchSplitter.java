@@ -53,6 +53,8 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
         FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("CareRecord_Problem");
         FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("Prescribing_DrugRecord");
         FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("Prescribing_IssueRecord");
+        FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("Audit_PatientAudit");
+        FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("Audit_RegistrationAudit");
 
         //this file only has an organisation_guid
         FILES_TO_SPLIT_BY_ORG_ID.add(("Agreements_SharingOrganisation"));

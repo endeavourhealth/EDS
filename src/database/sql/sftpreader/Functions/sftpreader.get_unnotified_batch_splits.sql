@@ -12,16 +12,20 @@ as $$
 begin
 
 	select
-		array_agg(b.batch_split_id) into _batch_split_ids
-	from sftpreader.batch_split b
+		array_agg(bs.batch_split_id) into _batch_split_ids
+	from sftpreader.batch b
+	inner join sftpreader.batch_split bs on b.batch_id = bs.batch_id
 	where b.instance_id = _instance_id
-	and b.have_notified = false;
+	and b.is_complete = true
+	and bs.have_notified = false;
 
 	select
 		array_agg(b.batch_id) into _batch_ids
-	from sftpreader.batch_split b
+	from sftpreader.batch b
+	inner join sftpreader.batch_split bs on b.batch_id = bs.batch_id
 	where b.instance_id = _instance_id
-	and b.have_notified = false;
+	and b.is_complete = true
+	and bs.have_notified = false;
 
 	return query
 	select

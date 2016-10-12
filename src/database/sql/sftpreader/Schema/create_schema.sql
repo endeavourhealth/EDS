@@ -64,8 +64,8 @@ values
 --
 -- temporarily remove as test pack does not contain these files
 --
---(1, 'Audit_RegistrationAudit'),
---(1, 'Audit_PatientAudit'),
+(1, 'Audit_RegistrationAudit'),
+(1, 'Audit_PatientAudit'),
 --(1, 'PatientAdmin_ListEntry'),
 --
 (1, 'CareRecord_Consultation'),
