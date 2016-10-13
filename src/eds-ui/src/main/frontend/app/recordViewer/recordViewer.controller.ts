@@ -9,9 +9,10 @@ import {linq} from "../blocks/linq";
 import {UIPatientRecord} from "./models/UIPatientRecord";
 
 export class RecordViewerController {
-    patient: UIPatientRecord;
-    activeTab: number = 0;
-    activeProblemsSelectedIndex: number;
+
+    public patient: UIPatientRecord;
+    public activeTab: number = 0;
+    private activeProblemSelected: UIProblem = null;
 
     static $inject = ['$uibModal', 'RecordViewerService'];
 
@@ -19,7 +20,10 @@ export class RecordViewerController {
         this.showPatientFind();
     }
 
-    showPatientFind() {
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // patient find
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    public showPatientFind(): void {
         var ctrl = this;
         PatientFindController
             .open(ctrl.$modal)
@@ -27,35 +31,21 @@ export class RecordViewerController {
             .then((result: UIPatient) => ctrl.setPatient(result));
     }
 
-    setPatient(patient: UIPatient) {
+    public setPatient(patient: UIPatient): void {
         this.clearPatient();
         this.patient = new UIPatientRecord(patient);
     }
 
-    clearPatient() {
+    public clearPatient(): void {
+        this.activeProblemSelected = null;
         this.activeTab = 0;
         this.patient = null;
     }
 
-    getActiveProblems(): UIProblem[] {
-        if ((this.patient == null) || (this.patient.problems == null))
-            return null;
-
-        return linq(this.patient.problems)
-            .Where(t => (!t.hasAbated))
-            .ToArray();
-    }
-
-    getPastProblems(): UIProblem[] {
-        if ((this.patient == null) || (this.patient.problems == null))
-            return null;
-
-        return linq(this.patient.problems)
-            .Where(t => t.hasAbated)
-            .ToArray();
-    }
-
-    loadConsultations() {
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // consultations
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    public loadConsultations(): void {
         if (this.patient.encounters != null)
             return;
 
@@ -66,7 +56,22 @@ export class RecordViewerController {
             .then((result: UIEncounter[]) => ctrl.patient.encounters = result);
     }
 
-    loadProblems() {
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // problems
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    public isActiveProblemSelected(activeProblem: UIProblem): boolean {
+        return (this.activeProblemSelected == activeProblem);
+    }
+
+    public setActiveProblemSelected(activeProblem: UIProblem): void {
+        this.activeProblemSelected = activeProblem;
+    }
+
+    public getActiveProblemSelected(): UIProblem {
+        return this.activeProblemSelected;
+    }
+
+    public loadProblems(): void {
         if (this.patient.problems != null)
             return;
 

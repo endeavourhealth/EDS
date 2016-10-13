@@ -26,12 +26,20 @@
                 </div>
 
                 <uib-tabset active="ctrl.activeTab">
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- SUMMARY -->
+                    <!------------------------------------------------------------------------------------------------->
                     <uib-tab index="0" heading="Summary">
 
                         <div class="tab-panel">
                             Summary
                         </div>
                     </uib-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- CONSULTATIONS -->
+                    <!------------------------------------------------------------------------------------------------->
                     <uib-tab index="1" heading="Consultations" ng-click="ctrl.loadConsultations();">
 
                         <div class="tab-panel">
@@ -49,55 +57,82 @@
                             </table>
                         </div>
                     </uib-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- MEDICATION -->
+                    <!------------------------------------------------------------------------------------------------->
                     <uib-tab index="2" heading="Medication">
 
                         <div class="tab-panel">
                             Medication
                         </div>
                     </uib-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- PROBLEMS -->
+                    <!------------------------------------------------------------------------------------------------->
                     <uib-tab index="3" heading="Problems" ng-click="ctrl.loadProblems();">
                         <div class="tab-panel">
 
+                            <!-- active problems -->
                             <h4>Active problems</h4>
+
                             <div class="container-fluid">
                                 <div class="row">
                                     <div class="col-md-8">
-                                        <table class="table table-condensed table-striped table-hover table-selectable">
+                                        <table id="active-problems-table" class="table table-condensed table-striped table-hover table-selectable">
                                             <thead>
                                                 <th>Date</th>
                                                 <th>Code</th>
                                             </thead>
                                             <tbody>
-                                                <tr ng-repeat="problem in ctrl.getActiveProblems()" ng-click="ctrl.activeProblemsSelectedIndex = $index" ng-class="{'selected': ctrl.activeProblemsSelectedIndex == $index}">
+                                                <tr data-ng-hide="ctrl.patient.hasActiveProblems()"><td colspan="2"><i>(no active problems)</i></td></tr>
+                                                <tr ng-repeat="problem in ctrl.patient.getActiveProblems()" ng-click="ctrl.setActiveProblemSelected(problem)" ng-class="{'selected': ctrl.isActiveProblemSelected(problem)}">
                                                     <td>{{problem.effectiveDate | cuiDate}}</td>
-                                                    <td><b>{{problem.code | codeTerm}}</b> &nbsp;<i>{{problem.significance | codeSignificance}}</i></td>
+                                                    <td><b>{{problem.code | codeReadTerm}}</b> &nbsp;<i data-ng-if="(problem.significance | codeSignificance) != ''">({{problem.significance | codeSignificance | lowercase}})</i></td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    <!-- problems detail view -->
                                     <div class="col-md-4">
-                                        <div class="panel panel-default">
+                                        <div id="active-problems-detail-panel" class="panel panel-default" data-ng-show="ctrl.getActiveProblemSelected()">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title">{{ctrl.getActiveProblemSelected().code | codeReadTerm}}</h3>
+                                            </div>
                                             <div class="panel-body">
-                                                Details view
+                                                <table id="active-problems-detail-table" class="table table-condensed">
+                                                    <tbody>
+                                                        <tr><td>Type</td><td><b>{{ctrl.getActiveProblemSelected().significance | codeSignificance}}</b></td></tr>
+                                                        <tr><td>Onset</td><td><b>{{ctrl.getActiveProblemSelected().effectiveDate | cuiDate}}</b></td></tr>
+                                                        <tr><td>Clinician</td><td><b>{{ctrl.getActiveProblemSelected().effectivePractitioner.name | cuiName}}</b></td></tr>
+                                                        <tr><td>READ code</td><td><b>{{ctrl.getActiveProblemSelected().code | codeReadCode}}</b></td></tr>
+                                                        <tr><td>SNOMED code</td><td><b><span ng-bind-html="ctrl.getActiveProblemSelected().code | codeSnomedCodeWithLink"></span></b></td></tr>
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
                                     </div>
+
                                 </div>
                             </div>
 
+                            <!-- past problems -->
                             <h4>Past problems</h4>
                             <div class="container-fluid">
                                 <div class="row">
                                     <div class="col-md-8">
-                                        <table class="table table-condensed table-striped table-hover">
+                                        <table id="past-problems-table" class="table table-condensed table-striped table-hover">
                                             <thead>
                                                 <th>Date</th>
                                                 <th>Code</th>
                                             </thead>
                                             <tbody>
-                                                <tr ng-repeat="problem in ctrl.getPastProblems()">
+                                                <tr data-ng-hide="ctrl.patient.hasPastProblems()"><td colspan="2"><i>(no past problems)</i></td></tr>
+                                                <tr ng-repeat="problem in ctrl.patient.getPastProblems()">
                                                     <td>{{problem.effectiveDate | cuiDate}}</td>
-                                                    <td><b>{{problem.code | codeTerm}}</b> &nbsp;<i>{{problem.significance | codeSignificance}}</i></td>
+                                                    <td><b>{{problem.code | codeReadTerm}}</b> &nbsp;<i>{{problem.significance | codeSignificance}}</i></td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -107,18 +142,30 @@
 
                         </div>
                     </uib-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- INVESTIGATIONS -->
+                    <!------------------------------------------------------------------------------------------------->
                     <uib-tab index="4" heading="Investigations">
 
                         <div class="tab-panel">
                             Investigations
                         </div>
                     </uib-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- CARE HISTORY -->
+                    <!------------------------------------------------------------------------------------------------->
                     <uib-tab index="5" heading="Care History">
 
                         <div class="tab-panel">
                             Care History
                         </div>
                     </uib-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- DIARY -->
+                    <!------------------------------------------------------------------------------------------------->
                     <uib-tab index="6" heading="Diary">
 
                         <div class="tab-panel">

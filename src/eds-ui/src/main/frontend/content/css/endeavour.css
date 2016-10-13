@@ -202,9 +202,11 @@
     justify-content: center;
 }
 
-/* record viewer - patient precis */
+/**********************************************************************************************************************/
+/* RECORD VIEWER */
+/**********************************************************************************************************************/
 .record-viewer .precis {
-
+    background-color: #f1f8fc;
 }
 
 .record-viewer .precis-patientname {
@@ -240,5 +242,27 @@
 .table-selectable tbody tr:hover {
     background: #d3e9f6;
     cursor: pointer;
+}
+
+#active-problems-detail-panel {
+    position: fixed;
+    margin-top: 27px;
+}
+
+#active-problems-detail-panel div.panel-heading {
+    background-color: #93c9e9;
+    background-image: linear-gradient(to bottom, #93c9e9 0%, #bedef1 100%);
+}
+
+#active-problems-table tr td:first-of-type, #past-problems-table tr td:first-of-type {
+    width: 20%;
+}
+
+#active-problems-detail-table tr:first-of-type td {
+    border-top: 0;
+}
+
+#active-problems-detail-table tr td:first-of-type {
+    width: 20%;
 }
 
