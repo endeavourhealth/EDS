@@ -12,7 +12,7 @@ export class RecordViewerController {
 
     public patient: UIPatientRecord;
     public activeTab: number = 0;
-    private activeProblemSelected: UIProblem = null;
+    private selectedProblem: UIProblem = null;
 
     static $inject = ['$uibModal', 'RecordViewerService'];
 
@@ -37,7 +37,7 @@ export class RecordViewerController {
     }
 
     public clearPatient(): void {
-        this.activeProblemSelected = null;
+        this.selectedProblem = null;
         this.activeTab = 0;
         this.patient = null;
     }
@@ -59,16 +59,16 @@ export class RecordViewerController {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // problems
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    public isActiveProblemSelected(activeProblem: UIProblem): boolean {
-        return (this.activeProblemSelected == activeProblem);
+    public isSelectedProblem(problem: UIProblem): boolean {
+        return (this.selectedProblem == problem);
     }
 
-    public setActiveProblemSelected(activeProblem: UIProblem): void {
-        this.activeProblemSelected = activeProblem;
+    public setSelectedProblem(problem: UIProblem): void {
+        this.selectedProblem = problem;
     }
 
-    public getActiveProblemSelected(): UIProblem {
-        return this.activeProblemSelected;
+    public getSelectedProblem(): UIProblem {
+        return this.selectedProblem;
     }
 
     public loadProblems(): void {

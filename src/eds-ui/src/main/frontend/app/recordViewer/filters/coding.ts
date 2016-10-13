@@ -13,8 +13,8 @@ export function codeSnomedCode() {
     return getSnomedCode;
 }
 
-export function codeSnomedCodeWithLink() {
-    return getSnomedCodeWithLink;
+export function codeSnomedLink() {
+    return getSnomedLink;
 }
 
 export function codeSignificance() {
@@ -59,17 +59,14 @@ function getSnomedCode(codeableConcept: UICodeableConcept): string {
 }
 
 
-function getSnomedCodeWithLink(codeableConcept: UICodeableConcept): string {
+function getSnomedLink(codeableConcept: UICodeableConcept): string {
     let code: string = getSnomedCode(codeableConcept);
 
     if (code == "")
         return "";
 
-    return "<a href=\"http://browser.ihtsdotools.org/?perspective=full&conceptId1="
-            + code
-            + "&edition=uk-edition&release=v20161001&server=https://browser-aws-1.ihtsdotools.org/api/snomed&langRefset=900000000000508004\" target=\"_blank\">"
-            + code
-            + "</a>";
+    return "http://browser.ihtsdotools.org/?perspective=full&conceptId1="
+            + code + "&edition=uk-edition&release=v20161001&server=https://browser-aws-1.ihtsdotools.org/api/snomed&langRefset=900000000000508004";
 }
 
 function getReadCode(codeableConcept: UICodeableConcept): string {

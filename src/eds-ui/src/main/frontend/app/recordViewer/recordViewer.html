@@ -87,7 +87,7 @@
                                             </thead>
                                             <tbody>
                                                 <tr data-ng-hide="ctrl.patient.hasActiveProblems()"><td colspan="2"><i>(no active problems)</i></td></tr>
-                                                <tr ng-repeat="problem in ctrl.patient.getActiveProblems()" ng-click="ctrl.setActiveProblemSelected(problem)" ng-class="{'selected': ctrl.isActiveProblemSelected(problem)}">
+                                                <tr ng-repeat="problem in ctrl.patient.getActiveProblems()" ng-click="ctrl.setSelectedProblem(problem)" ng-class="{'selected': ctrl.isSelectedProblem(problem)}">
                                                     <td>{{problem.effectiveDate | cuiDate}}</td>
                                                     <td><b>{{problem.code | codeReadTerm}}</b> &nbsp;<i data-ng-if="(problem.significance | codeSignificance) != ''">({{problem.significance | codeSignificance | lowercase}})</i></td>
                                                 </tr>
@@ -97,18 +97,18 @@
 
                                     <!-- problems detail view -->
                                     <div class="col-md-4">
-                                        <div id="active-problems-detail-panel" class="panel panel-default" data-ng-show="ctrl.getActiveProblemSelected()">
+                                        <div id="active-problems-detail-panel" class="panel panel-default" data-ng-show="ctrl.getSelectedProblem()">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title">{{ctrl.getActiveProblemSelected().code | codeReadTerm}}</h3>
+                                                <h3 class="panel-title">{{ctrl.getSelectedProblem().code | codeReadTerm}}</h3>
                                             </div>
                                             <div class="panel-body">
                                                 <table id="active-problems-detail-table" class="table table-condensed">
                                                     <tbody>
-                                                        <tr><td>Type</td><td><b>{{ctrl.getActiveProblemSelected().significance | codeSignificance}}</b></td></tr>
-                                                        <tr><td>Onset</td><td><b>{{ctrl.getActiveProblemSelected().effectiveDate | cuiDate}}</b></td></tr>
-                                                        <tr><td>Clinician</td><td><b>{{ctrl.getActiveProblemSelected().effectivePractitioner.name | cuiName}}</b></td></tr>
-                                                        <tr><td>READ code</td><td><b>{{ctrl.getActiveProblemSelected().code | codeReadCode}}</b></td></tr>
-                                                        <tr><td>SNOMED code</td><td><b><span ng-bind-html="ctrl.getActiveProblemSelected().code | codeSnomedCodeWithLink"></span></b></td></tr>
+                                                        <tr><td>Significance</td><td><b>{{ctrl.getSelectedProblem().significance | codeSignificance}}</b></td></tr>
+                                                        <tr><td>Onset</td><td><b>{{ctrl.getSelectedProblem().effectiveDate | cuiDate}}</b></td></tr>
+                                                        <tr><td>Clinician</td><td><b>{{ctrl.getSelectedProblem().effectivePractitioner.name | cuiName}}</b></td></tr>
+                                                        <tr><td>READ code</td><td><b>{{ctrl.getSelectedProblem().code | codeReadCode}}</b></td></tr>
+                                                        <tr><td>SNOMED code</td><td><b><a href="{{ctrl.getSelectedProblem().code | codeSnomedLink}}" target="_blank">{{ctrl.getSelectedProblem().code | codeSnomedCode}}</a></b></td></tr>
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -123,14 +123,14 @@
                             <div class="container-fluid">
                                 <div class="row">
                                     <div class="col-md-8">
-                                        <table id="past-problems-table" class="table table-condensed table-striped table-hover">
+                                        <table id="past-problems-table" class="table table-condensed table-striped table-hover table-selectable">
                                             <thead>
                                                 <th>Date</th>
                                                 <th>Code</th>
                                             </thead>
                                             <tbody>
                                                 <tr data-ng-hide="ctrl.patient.hasPastProblems()"><td colspan="2"><i>(no past problems)</i></td></tr>
-                                                <tr ng-repeat="problem in ctrl.patient.getPastProblems()">
+                                                <tr ng-repeat="problem in ctrl.patient.getPastProblems()" ng-click="ctrl.setSelectedProblem(problem)" ng-class="{'selected': ctrl.isSelectedProblem(problem)}">
                                                     <td>{{problem.effectiveDate | cuiDate}}</td>
                                                     <td><b>{{problem.code | codeReadTerm}}</b> &nbsp;<i>{{problem.significance | codeSignificance}}</i></td>
                                                 </tr>

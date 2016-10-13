@@ -258,11 +258,14 @@
     width: 20%;
 }
 
+#active-problems-detail-panel {
+}
+
 #active-problems-detail-table tr:first-of-type td {
     border-top: 0;
 }
 
 #active-problems-detail-table tr td:first-of-type {
-    width: 20%;
+    width: 40%;
 }
 
