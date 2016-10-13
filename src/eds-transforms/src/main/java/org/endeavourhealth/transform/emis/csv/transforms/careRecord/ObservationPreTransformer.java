@@ -5,13 +5,17 @@ import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation;
+import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.QuantityHelper;
 import org.hl7.fhir.instance.model.CodeableConcept;
+import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.Quantity;
 import org.hl7.fhir.instance.model.ResourceType;
 
+import java.util.Date;
 import java.util.Map;
 
 public class ObservationPreTransformer {
@@ -89,7 +93,24 @@ public class ObservationPreTransformer {
                     observationGuid,
                     resourceType);
         }
-    }
 
+        Long codeId = parser.getCodeId();
+        ClinicalCodeType codeType = csvHelper.findClinicalCodeType(codeId, csvProcessor);
+        if (codeType == ClinicalCodeType.Ethnicity) {
+
+            Date effectiveDate = parser.getEffectiveDate();
+            String effectiveDatePrecision = parser.getEffectiveDatePrecision();
+            DateTimeType fhirDate = EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision);
+
+
+        } else if (codeType == ClinicalCodeType.Marital_Status) {
+
+            Date effectiveDate = parser.getEffectiveDate();
+            String effectiveDatePrecision = parser.getEffectiveDatePrecision();
+            DateTimeType fhirDate = EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision);
+
+
+        }
+    }
 
 }

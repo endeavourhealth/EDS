@@ -23,6 +23,19 @@ public class AuditRepository extends Repository{
         //exchange will only be non-null when writing the first event for an exchange
         if (exchange != null) {
             Mapper<Exchange> mapperExchange = getMappingManager().mapper(Exchange.class);
+            mapperExchange.save(exchange);
+        }
+
+        Mapper<ExchangeEvent> mapperEvent = getMappingManager().mapper(ExchangeEvent.class);
+        mapperEvent.save(event);
+    }
+    /*public void save(Exchange exchange, ExchangeEvent event) {
+
+        BatchStatement batch = new BatchStatement();
+
+        //exchange will only be non-null when writing the first event for an exchange
+        if (exchange != null) {
+            Mapper<Exchange> mapperExchange = getMappingManager().mapper(Exchange.class);
             batch.add(mapperExchange.saveQuery(exchange));
         }
 
@@ -30,7 +43,7 @@ public class AuditRepository extends Repository{
         batch.add(mapperEvent.saveQuery(event));
 
         getSession().execute(batch);
-    }
+    }*/
 
     public void save(ExchangeTransform exchangeTransform) {
 

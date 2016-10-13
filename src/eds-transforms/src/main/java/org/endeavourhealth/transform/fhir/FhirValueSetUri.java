@@ -8,6 +8,7 @@ public class FhirValueSetUri {
     public final static String VALUE_SET_FAMILY_MEMBER = "http://hl7.org/fhir/ValueSet/v3-FamilyMember";
     public final static String VALUE_SET_JOB_ROLE_CODES = "http://fhir.nhs.net/ValueSet/sds-job-role-name-1-0";
     public final static String VALUE_SET_ENCOUNTER_PARTICIPANT_TYPE = "http://hl7.org/fhir/ValueSet/encounter-participant-type";
+    public final static String VALUE_SET_MARITAL_STATUS = "http://hl7.org/fhir/ValueSet/marital-status";
 
     //Endeavour value sets
     public final static String VALUE_SET_REGISTRATION_TYPE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-patient-registration-type";
@@ -18,6 +19,7 @@ public class FhirValueSetUri {
     public final static String VALUE_SET_MEDICATION_SUPPLY_TYPE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-medication-supply-type";
     public final static String VALUE_SET_MEDICATION_AUTHORISATION_TYPE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-medication-authorisation-type";
     public final static String VALUE_SET_REFERRAL_REQUEST_SEND_MODE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-referral-request-send-mode";
+    public final static String VALUE_SET_ETHNIC_CATEGORY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-ethnic-category-extension";
 
     //EMIS value sets
     public final static String VALUE_SET_EMIS_DNA_REASON_CODE = "http://emishealth.com/ValueSet/dna-reason-code"; //placeholder

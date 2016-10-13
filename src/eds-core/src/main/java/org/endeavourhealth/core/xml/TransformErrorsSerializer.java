@@ -23,7 +23,7 @@ public abstract class TransformErrorsSerializer {
 
 
     private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory();
-    private static final String XSD = "TransformErrors.xsd";
+    private static final String XSD = "TransformError.xsd";
 
     public static TransformError readFromXml(String xml) throws ParserConfigurationException, JAXBException, IOException, SAXException {
         return XmlSerializer.deserializeFromString(TransformError.class, xml, XSD);

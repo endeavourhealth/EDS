@@ -32,7 +32,7 @@ public enum EthnicCategory {
         return description;
     }
     public String getSystem() {
-        return FhirValueSetUri.VALUE_SET_MEDICATION_SUPPLY_TYPE;
+        return FhirValueSetUri.VALUE_SET_ETHNIC_CATEGORY;
     }
 
     EthnicCategory(String code, String description) {

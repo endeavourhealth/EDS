@@ -59,4 +59,4 @@ PRIMARY KEY ((resource_type), resource_id));
 CREATE TABLE enterprise_organisation_id_map (
 	organisation_ods_code text, 
 	enterprise_id int, 
-PRIMARY KEY (organisation_ods_code);	  
+PRIMARY KEY (organisation_ods_code));	  

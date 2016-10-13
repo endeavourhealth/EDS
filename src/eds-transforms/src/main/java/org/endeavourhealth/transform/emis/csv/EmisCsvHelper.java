@@ -11,6 +11,7 @@ import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.ClinicalCodeNotFoundException;
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
@@ -138,13 +139,13 @@ public class EmisCsvHelper {
     public CodeableConcept findClinicalCode(Long codeId, CsvProcessor csvProcessor) throws Exception {
         CodeableConcept ret = clinicalCodes.get(codeId);
         if (ret == null) {
-            retrieveClincalCode(codeId, csvProcessor);
+            retrieveClinicalCode(codeId, csvProcessor);
             ret = clinicalCodes.get(codeId);
         }
         return ret.copy();
     }
 
-    private void retrieveClincalCode(Long codeId, CsvProcessor csvProcessor) throws Exception {
+    private void retrieveClinicalCode(Long codeId, CsvProcessor csvProcessor) throws Exception {
         EmisCsvCodeMap mapping = mappingRepository.getMostRecent(csvProcessor.getServiceId(), csvProcessor.getSystemId(), false, codeId);
         if (mapping == null) {
             throw new ClinicalCodeNotFoundException(codeId, false);
@@ -162,7 +163,7 @@ public class EmisCsvHelper {
     public ClinicalCodeType findClinicalCodeType(Long codeId, CsvProcessor csvProcessor) throws Exception {
         ClinicalCodeType ret = clinicalCodeTypes.get(codeId);
         if (ret == null) {
-            retrieveClincalCode(codeId, csvProcessor);
+            retrieveClinicalCode(codeId, csvProcessor);
             ret = clinicalCodeTypes.get(codeId);
         }
         return ret;
@@ -281,10 +282,13 @@ public class EmisCsvHelper {
 
     public Resource retrieveResource(String locallyUniqueId, ResourceType resourceType, CsvProcessor csvProcessor) throws Exception {
 
-        UUID globallyUniqueId = IdHelper.getOrCreateEdsResourceId(csvProcessor.getServiceId(),
+        UUID globallyUniqueId = IdHelper.getEdsResourceId(csvProcessor.getServiceId(),
                 csvProcessor.getSystemId(),
                 resourceType,
                 locallyUniqueId);
+        if (globallyUniqueId == null) {
+            throw new TransformException("No global ID exists for " + resourceType + " with local ID " + locallyUniqueId);
+        }
 
         ResourceHistory resourceHistory = resourceRepository.getCurrentVersion(resourceType.toString(), globallyUniqueId);
         if (resourceHistory == null) {
@@ -595,7 +599,16 @@ public class EmisCsvHelper {
     }
 
     private void updateExistingScheduleWithNewPractitioners(String sessionGuid, SessionPractitioners practitioners, CsvProcessor csvProcessor) throws Exception {
-        Schedule fhirSchedule = (Schedule)retrieveResource(sessionGuid, ResourceType.Schedule, csvProcessor);
+
+        Schedule fhirSchedule = null;
+        try {
+            fhirSchedule = (Schedule)retrieveResource(sessionGuid, ResourceType.Schedule, csvProcessor);
+        } catch (TransformException ex) {
+            //because the SessionUser file doesn't have an OrganisationGuid column, we can't split that file
+            //so we will be trying to update the practitioners on sessions that don't exist. So if we get
+            //an exception here, just return out
+            return;
+        }
 
         //get the references from the existing schedule, removing them as we go
         List<Reference> references = new ArrayList<>();
