@@ -16,10 +16,19 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 public class ConnectionManager {
+	private static final String AMQP_USERNAME = "AMQP_USERNAME";
+	private static final String AMQP_PASSWORD = "AMQP_PASSWORD";
+	private static final String AMQP_NODES = "AMQP_NODES";
 	private static final Logger LOG = LoggerFactory.getLogger(ConnectionManager.class);
 	private static final Map<Integer, Connection> connectionPool = new HashMap<>();
 
 	public static Connection getConnection(String username, String password, String nodes) throws IOException, TimeoutException {
+		// Override with env vars if present
+		Map<String, String> envVars = System.getenv();
+		if (envVars.containsKey(AMQP_USERNAME)) username = envVars.get(AMQP_USERNAME);
+		if (envVars.containsKey(AMQP_PASSWORD)) password = envVars.get(AMQP_PASSWORD);
+		if (envVars.containsKey(AMQP_NODES)) nodes = envVars.get(AMQP_NODES);
+
 		Integer hash = (username + password + nodes).hashCode();
 
 		Connection connection = connectionPool.get(hash);
