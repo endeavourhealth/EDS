@@ -9,6 +9,7 @@ import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPatient;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UICondition;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UIDiary;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIEncounter;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIProblem;
 import org.endeavourhealth.transform.ui.models.resources.UIResource;
@@ -79,14 +80,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                   @QueryParam("systemId") UUID systemId,
                                   @QueryParam("patientId") UUID patientId) throws Exception {
 
-        validateIdentifiers(serviceId, systemId, patientId);
-
-        List<UICondition> conditions = getClinicalResources(serviceId, systemId, patientId, Condition.class, UICondition.class);
-
-        return Response
-                .ok()
-                .entity(conditions)
-                .build();
+        return getClinicalResourceResponse(serviceId, systemId, patientId, Condition.class, UICondition.class);
     }
 
     @GET
@@ -97,14 +91,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                   @QueryParam("systemId") UUID systemId,
                                   @QueryParam("patientId") UUID patientId) throws Exception {
 
-        validateIdentifiers(serviceId, systemId, patientId);
-
-        List<UIProblem> conditions = getClinicalResources(serviceId, systemId, patientId, Condition.class, UIProblem.class);
-
-        return Response
-                .ok()
-                .entity(conditions)
-                .build();
+        return getClinicalResourceResponse(serviceId, systemId, patientId, Condition.class, UIProblem.class);
     }
 
     @GET
@@ -115,14 +102,18 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                     @QueryParam("systemId") UUID systemId,
                                     @QueryParam("patientId") UUID patientId) throws Exception {
 
-        validateIdentifiers(serviceId, systemId, patientId);
+        return getClinicalResourceResponse(serviceId, systemId, patientId, Encounter.class, UIEncounter.class);
+    }
 
-        List<UIEncounter> encounters = getClinicalResources(serviceId, systemId, patientId, Encounter.class, UIEncounter.class);
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/getDiary")
+    public Response getDiary(@Context SecurityContext sc,
+                                  @QueryParam("serviceId") UUID serviceId,
+                                  @QueryParam("systemId") UUID systemId,
+                                  @QueryParam("patientId") UUID patientId) throws Exception {
 
-        return Response
-                .ok()
-                .entity(encounters)
-                .build();
+        return getClinicalResourceResponse(serviceId, systemId, patientId, ProcedureRequest.class, UIDiary.class);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -143,6 +134,22 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                     .setServiceId(serviceId)
                     .setSystemId(systemId)
                     .setResourceId(patientId));
+    }
+
+    private <T extends Resource,
+            U extends UIResource> Response getClinicalResourceResponse(UUID serviceId,
+                                                                       UUID systemId,
+                                                                       UUID patientId,
+                                                                       Class<T> fhirResourceType,
+                                                                       Class<U> uiResourceType) throws Exception {
+        validateIdentifiers(serviceId, systemId, patientId);
+
+        List<U> encounters = getClinicalResources(serviceId, systemId, patientId, fhirResourceType, uiResourceType);
+
+        return Response
+                .ok()
+                .entity(encounters)
+                .build();
     }
 
     private <T extends Resource,

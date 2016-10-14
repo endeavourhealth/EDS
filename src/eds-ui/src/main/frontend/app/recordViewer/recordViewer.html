@@ -33,7 +33,7 @@
                     <uib-tab index="0" heading="Summary">
 
                         <div class="tab-panel">
-                            Summary
+                            <h4>Summary</h4>
                         </div>
                     </uib-tab>
 
@@ -43,18 +43,7 @@
                     <uib-tab index="1" heading="Consultations" ng-click="ctrl.loadConsultations();">
 
                         <div class="tab-panel">
-                            <table class="table table-hover">
-                                <thead>
-                                    <th>Date</th>
-                                    <th>Doctor</th>
-                                </thead>
-                                <tbody>
-                                    <tr ng-repeat="encounter in ctrl.encounters">
-                                        <td>{{encounter.period.start | cuiDate}}</td>
-                                        <td>{{encounter.performedBy.name | cuiName}}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <h4>Consultations</h4>
                         </div>
                     </uib-tab>
 
@@ -64,7 +53,7 @@
                     <uib-tab index="2" heading="Medication">
 
                         <div class="tab-panel">
-                            Medication
+                            <h4>Medication</h4>
                         </div>
                     </uib-tab>
 
@@ -80,7 +69,7 @@
 
                                         <h4>Active problems</h4>
 
-                                        <table id="active-problems-table" class="table table-condensed table-striped table-hover table-selectable">
+                                        <table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
                                             <thead>
                                                 <th>Onset date</th>
                                                 <th>Problem</th>
@@ -92,7 +81,7 @@
                                                     <td>
                                                         <span class="problem-term-text">{{problem.code | codeReadTerm}}</span>
                                                         <span class="problem-term-significance-text">{{problem.significance | codeSignificance | lowercase | parentheses}}</span>
-                                                        <span class="problem-associated-text">{{problem.code.text}}</span>
+                                                        <span class="problem-associated-text">{{problem.notes}}</span>
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -100,7 +89,7 @@
 
                                         <h4>Past problems</h4>
 
-                                        <table id="past-problems-table" class="table table-condensed table-striped table-hover table-selectable">
+                                        <table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
                                             <thead>
                                                 <th>Onset date</th>
                                                 <th>Problem</th>
@@ -131,10 +120,13 @@
                                                     <table id="problems-detail-table" class="table table-condensed">
                                                         <tbody>
                                                             <tr><td>Significance</td><td><b>{{ctrl.getSelectedProblem().significance | codeSignificance}}</b></td></tr>
-                                                            <tr><td>Onset</td><td><b>{{ctrl.getSelectedProblem().effectiveDate | cuiDate}}</b></td></tr>
-                                                            <tr><td>Clinician</td><td><b>{{ctrl.getSelectedProblem().effectivePractitioner.name | cuiName}}</b></td></tr>
+                                                            <tr><td>Onset date</td><td><b>{{ctrl.getSelectedProblem().effectiveDate | cuiDate}}</b></td></tr>
+                                                            <tr data-ng-if="ctrl.getSelectedProblem().hasAbated"><td>Has abated?</td><td><b>Yes</b></td></tr>
+                                                            <tr data-ng-if="ctrl.getSelectedProblem().hasAbated"><td>Abatement date</td><td><b>{{ctrl.getSelectedProblem().abatementDate | cuiDate}}</b></td></tr>
                                                             <tr><td>READ code</td><td><b>{{ctrl.getSelectedProblem().code | codeReadCode}}</b></td></tr>
                                                             <tr><td>SNOMED code</td><td><b><a href="{{ctrl.getSelectedProblem().code | codeSnomedLink}}" target="_blank">{{ctrl.getSelectedProblem().code | codeSnomedCode}}</a></b></td></tr>
+                                                            <tr data-ng-if="ctrl.getSelectedProblem().lastReviewDate"><td>Last review date</td><td><b>{{ctrl.getSelectedProblem().lastReviewDate | cuiDate}}</b></td></tr>
+                                                            <tr data-ng-if="ctrl.getSelectedProblem().lastReviewer"><td>Last reviewer</td><td><b>{{ctrl.getSelectedProblem().lastReviewer.name | cuiName}}</b></td></tr>
                                                         </tbody>
                                                     </table>
                                                 </div>
@@ -153,7 +145,7 @@
                     <uib-tab index="4" heading="Investigations">
 
                         <div class="tab-panel">
-                            Investigations
+                            <h4>Investigations</h4>
                         </div>
                     </uib-tab>
 
@@ -163,17 +155,42 @@
                     <uib-tab index="5" heading="Care History">
 
                         <div class="tab-panel">
-                            Care History
+                            <h4>Care History</h4>
                         </div>
                     </uib-tab>
 
                     <!------------------------------------------------------------------------------------------------->
                     <!-- DIARY -->
                     <!------------------------------------------------------------------------------------------------->
-                    <uib-tab index="6" heading="Diary">
+                    <uib-tab index="6" heading="Diary" ng-click="ctrl.loadDiary();">
 
                         <div class="tab-panel">
-                                Diary
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-8">
+
+                                        <h4>Diary</h4>
+
+                                        <table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
+                                            <thead>
+                                                <th>Diary date</th>
+                                                <th>Description</th>
+                                            </thead>
+                                            <tbody>
+                                                <tr data-ng-hide="ctrl.patient.hasDiaryEntries()"><td colspan="2"><i>(no diary entries)</i></td></tr>
+                                                <tr ng-repeat="diary in ctrl.patient.diary" ng-click="ctrl.setSelectedDiary($event, diary)" ng-class="{'selected': ctrl.isSelectedDiary(diary)}">
+                                                    <td>{{diary.effectiveDate | cuiDate}}</td>
+                                                    <td>
+                                                        <span class="problem-term-text">{{diary.code | codeReadTerm}}</span>
+                                                        <span class="problem-associated-text">{{diary.notes}}</span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </uib-tab>
                 </uib-tabset>

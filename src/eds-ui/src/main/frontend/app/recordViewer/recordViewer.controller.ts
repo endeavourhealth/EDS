@@ -8,6 +8,7 @@ import {UIProblem} from "./models/resources/clinical/UIProblem";
 import {linq} from "../blocks/linq";
 import {UIPatientRecord} from "./models/UIPatientRecord";
 import IDocumentService = angular.IDocumentService;
+import {UIDiary} from "./models/resources/clinical/UIDiary";
 
 export class RecordViewerController {
 
@@ -94,6 +95,23 @@ export class RecordViewerController {
             .getProblems(ctrl.patient.patient.patientId)
             .then((result: UIProblem[]) =>
                 ctrl.patient.problems = linq(result)
+                    .OrderByDescending(t => t.effectiveDate.date)
+                    .ToArray());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // diary
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    public loadDiary(): void {
+        if (this.patient.diary != null)
+            return;
+
+        var ctrl = this;
+        ctrl
+            .recordViewerService
+            .getDiary(ctrl.patient.patient.patientId)
+            .then((result: UIDiary[]) =>
+                ctrl.patient.diary = linq(result)
                     .OrderByDescending(t => t.effectiveDate.date)
                     .ToArray());
     }

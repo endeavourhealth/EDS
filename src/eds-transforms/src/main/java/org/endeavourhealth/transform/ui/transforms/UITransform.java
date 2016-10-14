@@ -29,6 +29,8 @@ public class UITransform {
             return new UIImmunisationTransform();
         else if (resourceType == UIProcedure.class)
             return new UIProcedureTransform();
+        else if (resourceType == UIDiary.class)
+            return new UIDiaryTransform();
 
         throw new NotImplementedException(resourceType.getSimpleName());
     }

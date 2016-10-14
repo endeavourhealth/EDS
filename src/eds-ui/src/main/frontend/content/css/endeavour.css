@@ -274,7 +274,7 @@
     cursor: pointer;
 }
 
-#active-problems-table tr td:first-of-type, #past-problems-table tr td:first-of-type {
+.clinical-items-table tr td:first-of-type {
     width: 20%;
 }
 
