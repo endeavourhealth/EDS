@@ -23,7 +23,7 @@
 }
 
 .module {
-    padding-top: 60px;
+    padding-top: 51px;
     padding-left: 60px;
     padding-right: 0px;
 }
@@ -146,17 +146,35 @@
     cursor: pointer;
 }
 
-.logo {
+.title-text {
     font-size: 18px;
+    line-height: 50px;
     color: gray;
     margin-left:10px;
-    vertical-align: middle
+    vertical-align: middle;
 }
 
-.logo-image {
+.loggedin-text {
+    color: gray;
+    line-height: 50px;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+.nhs-logo {
     height: 50px;
-    width: 50px;
-    content: url('../img/nhs_logo.png');
+    width: 60px;
+    line-height: 50px;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 20px;
+    color: #fff;
+    float: left;
+    font-style: italic;
+    font-weight: bold;
+    background-color: #337ab7;
+    background-image: linear-gradient(to bottom, #337ab7 0%, #2e6da4 100%);
+    background-repeat: repeat-x;
 }
 
 .vcenter {
@@ -244,28 +262,37 @@
     cursor: pointer;
 }
 
-#active-problems-detail-panel {
-    position: fixed;
-    margin-top: 27px;
-}
-
-#active-problems-detail-panel div.panel-heading {
-    background-color: #93c9e9;
-    background-image: linear-gradient(to bottom, #93c9e9 0%, #bedef1 100%);
-}
-
 #active-problems-table tr td:first-of-type, #past-problems-table tr td:first-of-type {
     width: 20%;
 }
 
-#active-problems-detail-panel {
+#problems-detail-panel {
+    width: 100%;
+    height: 100%;
+    margin-top: 27px;
 }
 
-#active-problems-detail-table tr:first-of-type td {
+#problems-detail-panel div.panel-heading {
+    background-color: #93c9e9;
+    background-image: linear-gradient(to bottom, #93c9e9 0%, #bedef1 100%);
+}
+
+#problems-detail-table tr:first-of-type td {
     border-top: 0;
 }
 
-#active-problems-detail-table tr td:first-of-type {
+#problems-detail-table tr td:first-of-type {
     width: 40%;
 }
 
+.problem-term-text {
+    font-weight: bold;
+}
+
+.problem-term-significance-text {
+    font-style: italic;
+}
+
+.problem-associated-text {
+
+}

@@ -10,6 +10,7 @@
     "jquery": "github:DefinitelyTyped/DefinitelyTyped/jquery/jquery.d.ts#4ec3c5bf291bc02f49eb30c1077340b235165c67",
     "keycloak": "file:typings/local/keycloak/keycloak.d.ts",
     "moment": "github:DefinitelyTyped/DefinitelyTyped/moment/moment.d.ts#e919f89ae61ae268a19e6796b4c601173e05d1de",
-    "node": "registry:dt/node#6.0.0+20160928143418"
+    "node": "registry:dt/node#6.0.0+20160928143418",
+    "string": "registry:dt/string#0.0.0+20160316155526"
   }
 }

@@ -3,11 +3,11 @@
 		<div class="navbar navbar-default navbar-fixed-top">
 			<div class="container-fluid">
 				<div class="navbar-header">
-					<img class="logo-image">
-					<span class="logo">Data Service Manager</span>
+					<div class="nhs-logo">NHS</div>
+					<span class="title-text">Data Service Manager</span>
 				</div>
-				<div ng-controller="TopnavController as topnav" class="pull-right" style="padding: 10px;color:gray">
-					Logged in : <a ng-click="topnav.showUserAccountTab()">{{topnav.currentUser.displayName()}}</a>
+				<div ng-controller="TopnavController as topnav" class="pull-right loggedin-text">
+					Logged in: <a ng-click="topnav.showUserAccountTab()">{{topnav.currentUser.displayName()}}</a>
 
 					<!--<div class="dropdown" uib-dropdown>-->
 					<!--Organisation : <a href="#" class="dropdown-toggle" uib-dropdown-toggle>-->
