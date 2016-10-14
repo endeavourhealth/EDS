@@ -3,6 +3,7 @@ import {RecordViewerService} from "./recordViewer.service";
 import {RecordViewerRoute} from "./recordViewer.route";
 import {codeSignificance, codeReadCode, codeReadTerm, codeSnomedCode, codeSnomedLink} from "./filters/coding";
 import {cuiSingleLineAddress, cuiGender, cuiNhsNumber, cuiDateOfBirth, cuiDate, cuiName} from "./filters/cui";
+import {parentheses} from "./filters/general";
 
 angular.module('app.recordViewer', ['angularMoment'])
 	.controller('RecordViewerController', RecordViewerController)
@@ -18,4 +19,5 @@ angular.module('app.recordViewer', ['angularMoment'])
     .filter('cuiName', cuiName)
     .filter('cuiNhsNumber', cuiNhsNumber)
     .filter('cuiSingleLineAddress', cuiSingleLineAddress)
-    .filter('cuiGender', cuiGender);
+    .filter('cuiGender', cuiGender)
+    .filter('parentheses', parentheses);

@@ -7,16 +7,18 @@ import {IRecordViewerService} from "./recordViewer.service";
 import {UIProblem} from "./models/resources/clinical/UIProblem";
 import {linq} from "../blocks/linq";
 import {UIPatientRecord} from "./models/UIPatientRecord";
+import IDocumentService = angular.IDocumentService;
 
 export class RecordViewerController {
 
     public patient: UIPatientRecord;
     public activeTab: number = 0;
     private selectedProblem: UIProblem = null;
+    private problemDetailsPanelMarginTop: number = 0;
 
-    static $inject = ['$uibModal', 'RecordViewerService'];
+    static $inject = ['$document', '$uibModal', 'RecordViewerService'];
 
-    constructor(private $modal: IModalService, protected recordViewerService: IRecordViewerService) {
+    constructor(private $document: IDocumentService, private $modal: IModalService, protected recordViewerService: IRecordViewerService) {
         this.showPatientFind();
     }
 
@@ -63,8 +65,19 @@ export class RecordViewerController {
         return (this.selectedProblem == problem);
     }
 
-    public setSelectedProblem(problem: UIProblem): void {
+    public setSelectedProblem(event: Event, problem: UIProblem): void {
         this.selectedProblem = problem;
+        this.setProblemDetailsPanelMarginTop(event);
+    }
+
+    private setProblemDetailsPanelMarginTop(event: Event): void {
+        var columnHeader = this.$document.find('#problems-list-column');
+
+        if (columnHeader.length > 0) {
+            var columnHeaderTop = (columnHeader[0] as Element).getBoundingClientRect().top;
+            var tableRowTop = (event.target as Element).getBoundingClientRect().top;
+            this.problemDetailsPanelMarginTop = tableRowTop - columnHeaderTop;
+        }
     }
 
     public getSelectedProblem(): UIProblem {

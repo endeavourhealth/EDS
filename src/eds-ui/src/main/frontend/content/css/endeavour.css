@@ -57,7 +57,7 @@
 }
 
 .module-body {
-    padding-top: 70px;
+    padding-top: 65px;
     padding-left: 20px;
     padding-right: 20px;
 }
@@ -280,8 +280,10 @@
 
 #problems-detail-panel {
     width: 100%;
-    height: 100%;
-    margin-top: 27px;
+}
+
+#problems-detail-panel .panel {
+
 }
 
 #problems-detail-panel div.panel-heading {
