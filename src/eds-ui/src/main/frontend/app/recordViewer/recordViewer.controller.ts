@@ -9,6 +9,7 @@ import {linq} from "../blocks/linq";
 import {UIPatientRecord} from "./models/UIPatientRecord";
 import IDocumentService = angular.IDocumentService;
 import {UIDiary} from "./models/resources/clinical/UIDiary";
+import {UIObservation} from "./models/resources/clinical/UIObservation";
 
 export class RecordViewerController {
 
@@ -98,6 +99,24 @@ export class RecordViewerController {
                     .OrderByDescending(t => t.effectiveDate.date)
                     .ToArray());
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // observations
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    public loadObservations(): void {
+        if (this.patient.observations != null)
+            return;
+
+        var ctrl = this;
+        ctrl
+            .recordViewerService
+            .getObservations(ctrl.patient.patient.patientId)
+            .then((result: UIObservation[]) =>
+                ctrl.patient.observations = linq(result)
+                    .OrderByDescending(t => t.effectiveDate.date)
+                    .ToArray());
+    }
+
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // diary

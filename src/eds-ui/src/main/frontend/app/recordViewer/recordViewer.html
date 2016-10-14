@@ -65,7 +65,7 @@
 
                             <div class="container-fluid">
                                 <div class="row">
-                                    <div id="problems-list-column" class="col-md-8">
+                                    <div class="col-md-8">
 
                                         <h4>Active problems</h4>
 
@@ -142,10 +142,34 @@
                     <!------------------------------------------------------------------------------------------------->
                     <!-- INVESTIGATIONS -->
                     <!------------------------------------------------------------------------------------------------->
-                    <uib-tab index="4" heading="Investigations">
+                    <uib-tab index="4" heading="Investigations" ng-click="ctrl.loadObservations();">
 
                         <div class="tab-panel">
-                            <h4>Investigations</h4>
+
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-8">
+
+                                       <h4>Investigations</h4>
+
+                                        <table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
+                                            <thead>
+                                                <th>Date</th>
+                                                <th>Term</th>
+                                            </thead>
+                                            <tbody>
+                                                <tr data-ng-hide="ctrl.patient.hasObservations()"><td colspan="2"><i>(no investigations)</i></td></tr>
+                                                <tr ng-repeat="observation in ctrl.patient.observations">
+                                                    <td>{{observation.effectiveDate | cuiDate}}</td>
+                                                    <td>
+                                                        <span class="problem-term-text">{{observation.code | codeReadTerm}}</span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </uib-tab>
 

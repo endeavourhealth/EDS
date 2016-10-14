@@ -11,6 +11,7 @@ export interface IRecordViewerService {
     getEncounters(patientId: UIInternalIdentifier): ng.IPromise<UIEncounter[]>;
     getProblems(patientId: UIInternalIdentifier): ng.IPromise<UIProblem[]>;
     getDiary(patientId: UIInternalIdentifier): ng.IPromise<UIDiary[]>;
+    getObservations(patientId: UIInternalIdentifier): ng.IPromise<UIDiary[]>;
 }
 
 export class RecordViewerService extends BaseHttpService implements IRecordViewerService {
@@ -34,6 +35,10 @@ export class RecordViewerService extends BaseHttpService implements IRecordViewe
 
     getDiary(patientId: UIInternalIdentifier): ng.IPromise<UIDiary[]> {
         return this.httpGet('api/recordViewer/getDiary', this.getParams(patientId));
+    }
+
+    getObservations(patientId: UIInternalIdentifier): ng.IPromise<UIDiary[]> {
+        return this.httpGet('api/recordViewer/getObservations', this.getParams(patientId));
     }
 
     private getParams(patientId: UIInternalIdentifier): any {

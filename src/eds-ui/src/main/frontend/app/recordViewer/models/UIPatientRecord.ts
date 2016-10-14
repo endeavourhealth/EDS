@@ -4,12 +4,14 @@ import {UIEncounter} from "./resources/clinical/UIEncounter";
 import {UICondition} from "./resources/clinical/UICondition";
 import {linq} from "../../blocks/linq";
 import {UIDiary} from "./resources/clinical/UIDiary";
+import {UIObservation} from "./resources/clinical/UIObservation";
 
 export class UIPatientRecord {
     patient: UIPatient;
     conditions: UICondition[];
     problems: UIProblem[];
     encounters: UIEncounter[];
+    observations: UIObservation[];
     diary: UIDiary[];
 
     constructor()
@@ -36,6 +38,10 @@ export class UIPatientRecord {
 
     public hasPastProblems(): boolean {
         return (this.getPastProblems().length > 0);
+    }
+
+    public hasObservations(): boolean {
+        return (this.observations.length > 0);
     }
 
     public hasDiaryEntries(): boolean {

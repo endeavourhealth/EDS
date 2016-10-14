@@ -8,10 +8,7 @@ import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPatient;
-import org.endeavourhealth.transform.ui.models.resources.clinicial.UICondition;
-import org.endeavourhealth.transform.ui.models.resources.clinicial.UIDiary;
-import org.endeavourhealth.transform.ui.models.resources.clinicial.UIEncounter;
-import org.endeavourhealth.transform.ui.models.resources.clinicial.UIProblem;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.*;
 import org.endeavourhealth.transform.ui.models.resources.UIResource;
 import org.endeavourhealth.transform.ui.models.types.UIInternalIdentifier;
 import org.endeavourhealth.transform.ui.transforms.clinical.UIClinicalTransform;
@@ -114,6 +111,17 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                   @QueryParam("patientId") UUID patientId) throws Exception {
 
         return getClinicalResourceResponse(serviceId, systemId, patientId, ProcedureRequest.class, UIDiary.class);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/getObservations")
+    public Response getObservations(@Context SecurityContext sc,
+                                    @QueryParam("serviceId") UUID serviceId,
+                                    @QueryParam("systemId") UUID systemId,
+                                    @QueryParam("patientId") UUID patientId) throws Exception {
+
+        return getClinicalResourceResponse(serviceId, systemId, patientId, Observation.class, UIObservation.class);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

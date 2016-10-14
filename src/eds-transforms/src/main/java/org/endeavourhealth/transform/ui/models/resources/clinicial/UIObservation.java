@@ -13,7 +13,7 @@ public class UIObservation extends UIClinicalResource<UIObservation> {
     private UIQuantity value;
     private UIQuantity referenceRangeLow;
     private UIQuantity referenceRangeHigh;
-    private Encounter encounter;
+    private UIEncounter encounter;
 
     public String getStatus() {
         return status;
@@ -51,11 +51,11 @@ public class UIObservation extends UIClinicalResource<UIObservation> {
         return this;
     }
 
-    public Encounter getEncounter() {
+    public UIEncounter getEncounter() {
         return encounter;
     }
 
-    public UIObservation setEncounter(Encounter encounter) {
+    public UIObservation setEncounter(UIEncounter encounter) {
         this.encounter = encounter;
         return this;
     }

@@ -230,13 +230,26 @@
     justify-content: center;
 }
 
+.table-selectable {
+
+  tbody tr.selected,
+  tbody tr.selected:hover {
+    background: #93c9e9;
+  }
+
+  tbody tr:hover {
+    background: #d3e9f6;
+    cursor: pointer;
+  }
+}
+
 /**********************************************************************************************************************/
 /* RECORD VIEWER */
 /**********************************************************************************************************************/
 .record-viewer {
 
-  .precis {
-    background-color: #f1f8fc;
+    .precis {
+        background-color: #f1f8fc;
 
     .precis-patientname {
       font-weight: bold;
@@ -251,64 +264,47 @@
       font-weight: bold;
     }
   }
-}
 
-
-.record-viewer .tab-panel {
-  border-left: 1px solid #ddd;
-  border-right: 1px solid #ddd;
-  border-bottom: 1px solid #ddd;
-  border-radius: 0px 0px 5px 5px;
-  padding: 10px;
-}
-
-#patient-find-search-results {
-  margin-top: 20px;
-}
-
-.table-selectable tbody tr.selected,
-.table-selectable tbody tr.selected:hover {
-  background: #93c9e9;
-}
-
-.table-selectable tbody tr:hover {
-  background: #d3e9f6;
-  cursor: pointer;
-}
-
-.clinical-items-table tr td:first-of-type {
-  width: 20%;
+  .tab-panel {
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    border-radius: 0px 0px 5px 5px;
+    padding: 10px;
+  }
 }
 
 #problems-detail-panel {
   width: 100%;
+
+  .panel-heading {
+    background: #93c9e9 linear-gradient(to bottom, #93c9e9 0%, #bedef1 100%);
+  }
+
+  tr:first-of-type td {
+    border-top: 0;
+  }
+
+  tr td:first-of-type {
+    width: 40%;
+  }
 }
 
-#problems-detail-panel .panel {
+.clinical-items-table {
+  tr td:first-of-type {
+    width: 20%;
+  }
 
+  .problem-term-text {
+    font-weight: bold;
+  }
+
+  .problem-term-significance-text {
+    font-style: italic;
+  }
 }
 
-#problems-detail-panel div.panel-heading {
-  background: #93c9e9 linear-gradient(to bottom, #93c9e9 0%, #bedef1 100%);
-}
-
-#problems-detail-table tr:first-of-type td {
-  border-top: 0;
-}
-
-#problems-detail-table tr td:first-of-type {
-  width: 40%;
-}
-
-.problem-term-text {
-  font-weight: bold;
-}
-
-.problem-term-significance-text {
-  font-style: italic;
-}
-
-.problem-associated-text {
-
+#patient-find-search-results {
+  margin-top: 20px;
 }
 
