@@ -13,6 +13,7 @@ import 'moment';
 
 // Internal dependencies
 import '../content/css/index.css';
+import '../content/less/index.less';
 
 // Internal module dependencies
 import "./appstartup/appstartup.module";

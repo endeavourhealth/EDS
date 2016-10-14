@@ -14,7 +14,8 @@ module.exports = {
 			{ test: /\.ts$/, loader: 'ts' },
 			{ test: /\.html/, loader: 'raw' },
 			{ test: /\.css$/, loader: "style-loader!css-loader" },
-			{	test: /\.(eot|svg|ttf|woff(2)?)(\?v=\d+\.\d+\.\d+)?/, loader: 'url' },
+            { test: /\.less$/, loader: "style!css!less" },
+			{ test: /\.(eot|svg|ttf|woff(2)?)(\?v=\d+\.\d+\.\d+)?/, loader: 'url' },
 			{ test:  /\.(jpe?g|png|gif|svg)$/i, loader: 'file' }
 		]
 	},
