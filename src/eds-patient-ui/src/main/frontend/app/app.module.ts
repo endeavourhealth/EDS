@@ -1,5 +1,22 @@
 /// <reference path="../typings/index.d.ts"/>
 
+//******** ANGULAR 2 START --------
+
+require('zone.js');
+import 'reflect-metadata';
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+
+import {AuditComponent} from "./audit/audit.component";
+
+@NgModule({
+	imports: [ BrowserModule ],
+	declarations: [AuditComponent]
+})
+
+export class AppModule {}
+//-------- END ANGULAR 2 ********
+
 // Node dependencies
 import 'angular';
 import 'angular-ui-bootstrap';
@@ -95,4 +112,3 @@ export let app = angular.module('app', [
 		}]
 	)
 	.config(AppRoute);
-

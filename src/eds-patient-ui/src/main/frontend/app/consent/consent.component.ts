@@ -15,11 +15,10 @@ export class ConsentComponent implements ng.IComponentOptions {
 
 export class ConsentController {
 
-	static $inject = ['ConsentService', 'LoggerService', '$state'];
+	static $inject = ['ConsentService', 'LoggerService'];
 
 	constructor(private consentService:ConsentService,
 							private logger:ILoggerService) {
-		//this.refresh();
 	}
 }
 

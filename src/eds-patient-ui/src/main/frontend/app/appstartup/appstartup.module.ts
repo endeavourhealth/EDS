@@ -1,5 +1,6 @@
 import {Auth} from "./appstartup.auth";
 import {AuthConfig} from "../models/wellknown/AuthConfig";
+import {upgradeAdapter} from "../upgradeAdapter";
 
 angular.module('app.appstartup', []);
 
@@ -70,7 +71,7 @@ angular.element(document).ready(($http) => {
 
         Auth.factory().setOnAuthSuccess(()=> {
             // manually bootstrap angular
-            angular.bootstrap(document, ['app']);
+            upgradeAdapter.bootstrap(document.body, ['app'], {strictDi: true});
         });
 
         Auth.factory().setOnAuthError(()=> {
