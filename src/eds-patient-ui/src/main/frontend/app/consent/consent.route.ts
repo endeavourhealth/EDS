@@ -1,7 +1,9 @@
+import {StateProvider} from "angular-ui-router";
+
 export class ConsentRoute {
     static $inject = ['$stateProvider'];
 
-    constructor(stateProvider:angular.ui.IStateProvider) {
+    constructor(stateProvider:StateProvider) {
         var routes = ConsentRoute.getRoutes();
 
         routes.forEach(function (route) {

@@ -1,4 +1,4 @@
-import IStateService = angular.ui.IStateService;
+import {StateService} from "angular-ui-router";
 
 import {ILoggerService} from "../blocks/logger.service";
 import {IMedicalRecordService} from "../core/medicalRecord.service";
@@ -12,7 +12,7 @@ export class MedicalRecordController {
 
     constructor(private medicalRecordService:IMedicalRecordService,
                 private logger:ILoggerService,
-                private $state : IStateService) {
+                private $state : StateService) {
         this.loadServiceList();
     }
 

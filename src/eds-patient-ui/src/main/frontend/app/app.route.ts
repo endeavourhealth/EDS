@@ -1,9 +1,9 @@
-import IStateProvider = angular.ui.IStateProvider;
+import {StateProvider} from "angular-ui-router";
 
 export class AppRoute {
 	static $inject = ['$stateProvider'];
 
-	constructor(stateProvider:IStateProvider) {
+	constructor(stateProvider:StateProvider) {
 		var routes = AppRoute.getRoutes();
 
 		routes.forEach(function (route) {

@@ -1,7 +1,9 @@
+import {StateProvider} from "angular-ui-router";
+
 export class AuditRoute {
     static $inject = ['$stateProvider'];
 
-    constructor(stateProvider:angular.ui.IStateProvider) {
+    constructor(stateProvider:StateProvider) {
         var routes = AuditRoute.getRoutes();
 
         routes.forEach(function (route) {

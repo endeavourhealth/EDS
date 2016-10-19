@@ -1,9 +1,9 @@
-import IStateProvider = angular.ui.IStateProvider;
+import {StateProvider} from "angular-ui-router";
 
 export class MedicalRecordRoute {
     static $inject = ['$stateProvider'];
 
-    constructor(stateProvider:IStateProvider) {
+    constructor(stateProvider:StateProvider) {
         var routes = MedicalRecordRoute.getRoutes();
 
         routes.forEach(function (route) {

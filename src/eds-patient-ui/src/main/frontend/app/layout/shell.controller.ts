@@ -2,8 +2,8 @@ import IModalServiceInstance = angular.ui.bootstrap.IModalServiceInstance;
 import IModalService = angular.ui.bootstrap.IModalService;
 import IModalStackService = angular.ui.bootstrap.IModalStackService;
 import IRootScopeService = angular.IRootScopeService;
-import IStateService = angular.ui.IStateService;
 
+import {StateService} from "angular-ui-router";
 import {ISecurityService} from "../core/security.service";
 
 export class ShellController {
@@ -15,7 +15,7 @@ export class ShellController {
 	constructor($scope : IRootScopeService,
 							$modal : IModalService,
 							$modalStack : IModalStackService,
-							$state : IStateService,
+							$state : StateService,
 							securityService : ISecurityService) {
 		var vm = this;
 

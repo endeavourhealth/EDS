@@ -23,8 +23,8 @@ import "./medicalRecord/medicalRecord.module";
 import "./models/models.module";
 
 // Node module types
+import {StateService} from "angular-ui-router";
 import IModalService = angular.ui.bootstrap.IModalService;
-import IStateService = angular.ui.IStateService;
 import IRootScopeService = angular.IRootScopeService;
 
 // Internal module types
@@ -48,7 +48,7 @@ export let app = angular.module('app', [
 		'app.audit'
 	])
 	.run(['$state', '$rootScope', 'AdminService', 'SecurityService', 'LoggerService', '$uibModal',
-		function ($state:IStateService,
+		function ($state:StateService,
 							$rootScope:IRootScopeService,
 							adminService:IAdminService,
 							securityService:ISecurityService,
