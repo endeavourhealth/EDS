@@ -7,18 +7,16 @@ export class AppRoute {
 		var routes = AppRoute.getRoutes();
 
 		routes.forEach(function (route) {
-			stateProvider.state(route.state, route.config);
+			stateProvider.state(route);
 		});
 	}
 
 	static getRoutes() {
 		return [
 			{
-				state: 'app',
-				config: {
-					url: '/app',
-					template: require('./layout/shell.html'),
-				}
+				name: 'app',
+				url: '/app',
+				component: 'shellComponent',
 			}
 		];
 	}

@@ -30,7 +30,7 @@ import IRootScopeService = angular.IRootScopeService;
 // Internal module types
 import {ISecurityService} from "./core/security.service";
 import {ILoggerService} from "./blocks/logger.service";
-import {IAdminService} from "./core/admin.service";
+import {AdminService} from "./core/admin.service";
 import {AppRoute} from "./app.route";
 
 export let app = angular.module('app', [
@@ -50,7 +50,7 @@ export let app = angular.module('app', [
 	.run(['$state', '$rootScope', 'AdminService', 'SecurityService', 'LoggerService', '$uibModal',
 		function ($state:StateService,
 							$rootScope:IRootScopeService,
-							adminService:IAdminService,
+							adminService:AdminService,
 							securityService:ISecurityService,
 							logger:ILoggerService,
 							$modal:IModalService) {

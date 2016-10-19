@@ -6,17 +6,27 @@ import IRootScopeService = angular.IRootScopeService;
 import {StateService} from "angular-ui-router";
 import {ISecurityService} from "../core/security.service";
 
+export class ShellComponent implements ng.IComponentOptions {
+	template : string;
+	controller : string;
+	controllerAs : string;
+
+	constructor () {
+		this.template = require('./shell.html');
+		this.controller = 'ShellController';
+		this.controllerAs = '$ctrl';
+	}
+}
+
 export class ShellController {
 	warning : IModalServiceInstance;
 	timedout : IModalServiceInstance;
 
-	static $inject = ['$scope', '$uibModal', '$uibModalStack', '$state', 'SecurityService'];
+	static $inject = ['$scope', '$uibModal', '$uibModalStack'];
 
 	constructor($scope : IRootScopeService,
 							$modal : IModalService,
-							$modalStack : IModalStackService,
-							$state : StateService,
-							securityService : ISecurityService) {
+							$modalStack : IModalStackService) {
 		var vm = this;
 
 		function closeModals() {

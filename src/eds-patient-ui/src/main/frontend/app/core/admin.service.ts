@@ -1,15 +1,7 @@
 import {BaseHttpService} from "./baseHttp.service";
 import {MenuOption} from "../models/MenuOption";
 
-export interface IAdminService {
-	getMenuOptions() : MenuOption[];
-
-	setPendingChanges() : void;
-	clearPendingChanges() : void;
-	getPendingChanges() : boolean;
-}
-
-export class AdminService extends BaseHttpService implements IAdminService {
+export class AdminService extends BaseHttpService {
 	pendingChanges : boolean;
 
 	getMenuOptions():MenuOption[] {

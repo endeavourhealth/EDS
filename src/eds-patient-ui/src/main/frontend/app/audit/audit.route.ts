@@ -7,20 +7,16 @@ export class AuditRoute {
         var routes = AuditRoute.getRoutes();
 
         routes.forEach(function (route) {
-            stateProvider.state(route.state, route.config);
+            stateProvider.state(route);
         });
     }
 
     static getRoutes() {
         return [
             {
-                state: 'app.audit',
-                config: {
-                    url: '/audit',
-                    template: require('./audit.html'),
-                    controller: 'AuditController',
-                    controllerAs: 'ctrl'
-                }
+                name: 'app.audit',
+                url: '/audit',
+                component: 'auditComponent'
             }
         ];
     }

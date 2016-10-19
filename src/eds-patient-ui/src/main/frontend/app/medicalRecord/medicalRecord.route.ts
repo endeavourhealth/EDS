@@ -7,20 +7,16 @@ export class MedicalRecordRoute {
         var routes = MedicalRecordRoute.getRoutes();
 
         routes.forEach(function (route) {
-            stateProvider.state(route.state, route.config);
+            stateProvider.state(route);
         });
     }
 
     static getRoutes() {
         return [
             {
-                state: 'app.medicalRecord',
-                config: {
-                    url: '/medicalRecord',
-                    template: require('./medicalRecord.html'),
-                    controller: 'MedicalRecordController',
-                    controllerAs: 'ctrl'
-                }
+                name: 'app.medicalRecord',
+                url: '/medicalRecord',
+                component: 'medicalRecordComponent'
             }
         ];
     }

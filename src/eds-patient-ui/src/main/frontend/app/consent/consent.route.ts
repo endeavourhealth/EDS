@@ -7,20 +7,16 @@ export class ConsentRoute {
         var routes = ConsentRoute.getRoutes();
 
         routes.forEach(function (route) {
-            stateProvider.state(route.state, route.config);
+            stateProvider.state(route);
         });
     }
 
     static getRoutes() {
         return [
             {
-                state: 'app.consent',
-                config: {
-                    url: '/consent',
-                    template: require('./consent.html'),
-                    controller: 'ConsentController',
-                    controllerAs: 'ctrl'
-                }
+                name: 'app.consent',
+                url: '/consent',
+                component: 'consentComponent'
             }
         ];
     }
