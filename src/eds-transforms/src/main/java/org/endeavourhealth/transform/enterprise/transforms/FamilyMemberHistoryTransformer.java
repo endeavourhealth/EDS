@@ -44,7 +44,7 @@ public class FamilyMemberHistoryTransformer extends AbstractTransformer {
                         Integer enterpriseEncounterUuid = findEnterpriseId(encounterReference);
                         model.setEncounterId(enterpriseEncounterUuid);
 
-                    } else if (extension.getUrl().equals(FhirExtensionUri.FAMILY_MEMBER_HISTOY_REPORTED_BY)) {
+                    } else if (extension.getUrl().equals(FhirExtensionUri.FAMILY_MEMBER_HISTORY_REPORTED_BY)) {
                         Reference practitionerReference = (Reference)extension.getValue();
                         Integer enterprisePractitionerUuid = findEnterpriseId(practitionerReference);
                         model.setPractitionerId(enterprisePractitionerUuid);

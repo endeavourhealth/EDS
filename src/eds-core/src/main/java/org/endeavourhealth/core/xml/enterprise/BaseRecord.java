@@ -45,6 +45,7 @@ import javax.xml.bind.annotation.*;
     Immunization.class,
     Patient.class,
     Organization.class,
+    Specimen.class,
     ReferralRequest.class,
     DiagnosticOrder.class,
     ProcedureRequest.class

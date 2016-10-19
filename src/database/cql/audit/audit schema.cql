@@ -5,13 +5,19 @@ USE audit;
 
 DROP MATERIALIZED VIEW IF EXISTS user_event_by_module_user_timestamp;
 DROP MATERIALIZED VIEW IF EXISTS user_event_by_module_user_organisation_timestamp;
-DROP MATERIALIZED VIEW IF EXISTS exchange_transform_by_service_and_system;
 
 DROP TABLE IF EXISTS user_event;
-DROP TABLE IF EXISTS exchange_transform;
-DROP TABLE IF EXISTS exchangeEvent; //to tidy up old tables
+DROP TABLE IF EXISTS exchange_transform_error_state;
+DROP TABLE IF EXISTS exchange_transform_error_to_re_process;
+DROP TABLE IF EXISTS exchange_transform_audit;
 DROP TABLE IF EXISTS exchange_event;
 DROP TABLE IF EXISTS exchange;
+
+//no longer used - but tidy up old tables
+DROP MATERIALIZED VIEW IF EXISTS exchange_transform_by_service_and_system; 
+DROP TABLE IF EXISTS exchange_transform; 
+DROP TABLE IF EXISTS exchangeEvent; 
+
 
 CREATE TABLE exchange 
 ( 
@@ -30,7 +36,7 @@ CREATE TABLE exchange_event
     PRIMARY KEY (exchange_id, timestamp)
 );
 
-CREATE TABLE exchange_transform 
+CREATE TABLE exchange_transform_audit 
 ( 
 	service_id UUID,
     system_id UUID,
@@ -42,17 +48,21 @@ CREATE TABLE exchange_transform
     PRIMARY KEY ((service_id, system_id), exchange_id, version)
 ) WITH CLUSTERING ORDER BY (exchange_id ASC, version DESC);
 
-CREATE MATERIALIZED VIEW exchange_transform_by_service_and_system AS
-SELECT service_id, system_id, exchange_id, version, error_xml
-FROM audit.exchange_transform
-WHERE service_id IS NOT NULL
-AND system_id IS NOT NULL
-AND exchange_id IS NOT NULL
-AND version IS NOT NULL
-AND error_xml IS NOT NULL
-PRIMARY KEY ((service_id, system_id), version, exchange_id)
-with CLUSTERING order BY (version DESC, exchange_id ASC);
+CREATE TABLE exchange_transform_error_state 
+( 
+	service_id UUID,
+    system_id UUID,
+    exchange_ids_in_error LIST<UUID>,
+    PRIMARY KEY (service_id, system_id)
+);
 
+CREATE TABLE exchange_transform_error_to_re_process
+( 
+	service_id UUID,
+    system_id UUID,
+    exchange_id UUID,
+    PRIMARY KEY ((service_id, system_id), exchange_id)
+);
 
 CREATE TABLE user_event
 (

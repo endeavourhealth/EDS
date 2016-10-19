@@ -85,6 +85,19 @@ public class CodingHelper {
                 .setCode(referralRequestSendMode.getCode());
     }
 
+    public static Coding createCoding(EthnicCategory ethnicCategory) {
+        return new Coding()
+                .setSystem(ethnicCategory.getSystem())
+                .setDisplay(ethnicCategory.getDescription())
+                .setCode(ethnicCategory.getCode());
+    }
+
+    public static Coding createCoding(MaritalStatus maritalStatus) {
+        return new Coding()
+                .setSystem(maritalStatus.getSystem())
+                .setDisplay(maritalStatus.getDescription())
+                .setCode(maritalStatus.getCode());
+    }
 
     public static Coding createCoding(String system, String term, String code) {
         return new Coding()

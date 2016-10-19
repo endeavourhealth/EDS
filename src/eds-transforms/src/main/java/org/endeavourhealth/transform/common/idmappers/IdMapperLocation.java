@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public class IdMapperLocation extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
         Location location = (Location)resource;
 
         super.mapResourceId(location, serviceId, systemId);

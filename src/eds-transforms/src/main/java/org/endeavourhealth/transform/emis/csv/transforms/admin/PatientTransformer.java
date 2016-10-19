@@ -207,6 +207,8 @@ public class PatientTransformer {
             }
         }
 
+        transformEthnicityAndMaritalStatus(fhirPatient, patientGuid, csvHelper, csvProcessor);
+
         String orgUuid = parser.getOrganisationGuid();
         fhirEpisode.setManagingOrganization(csvHelper.createOrganisationReference(orgUuid));
 
@@ -229,6 +231,46 @@ public class PatientTransformer {
 
         //save both resources together, so the patient is defintiely saved before the episode
         csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirPatient, fhirEpisode);
+    }
+
+    private static void transformEthnicityAndMaritalStatus(org.hl7.fhir.instance.model.Patient fhirPatient,
+                                                        String patientGuid,
+                                                        EmisCsvHelper csvHelper,
+                                                        CsvProcessor csvProcessor) throws Exception {
+
+        CodeableConcept fhirEthnicity = csvHelper.findEthnicity(patientGuid);
+        CodeableConcept fhirMaritalStatus = csvHelper.findMaritalStatus(patientGuid);
+
+        //if we don't have an ethnicity or marital status already cached, we may be performing a delta transform
+        //so need to see if we have one previously saved that we should carry over
+        if (fhirEthnicity == null || fhirMaritalStatus == null) {
+            try {
+                org.hl7.fhir.instance.model.Patient oldFhirPatient = (org.hl7.fhir.instance.model.Patient)csvHelper.retrieveResource(patientGuid, ResourceType.Patient, csvProcessor);
+
+                if (fhirEthnicity == null) {
+                    for (Extension extension: oldFhirPatient.getExtension()) {
+                        if (extension.getUrl().equals(FhirExtensionUri.PATIENT_ETHNICITY)) {
+                            fhirEthnicity = (CodeableConcept)extension.getValue();
+                        }
+                    }
+                }
+
+                if (fhirMaritalStatus == null) {
+                    fhirMaritalStatus = oldFhirPatient.getMaritalStatus();
+                }
+
+            } catch (Exception ex) {
+                //if the patient didn't previously exist, then we'll get an exception
+            }
+        }
+
+        if (fhirEthnicity != null) {
+            fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_ETHNICITY, fhirEthnicity));
+        }
+
+        if (fhirMaritalStatus != null) {
+            fhirPatient.setMaritalStatus(fhirMaritalStatus);
+        }
     }
 
     /**

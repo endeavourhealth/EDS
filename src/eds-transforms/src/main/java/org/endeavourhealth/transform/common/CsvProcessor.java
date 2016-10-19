@@ -1,12 +1,12 @@
 package org.endeavourhealth.transform.common;
 
 import com.datastax.driver.core.utils.UUIDs;
+import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
-import org.endeavourhealth.core.xml.TransformErrorsSerializer;
-import org.endeavourhealth.core.xml.transformErrors.TransformError;
+import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.CallableError;
@@ -33,7 +33,7 @@ public class CsvProcessor {
     private final UUID systemId;
     private final FhirStorageService storageService;
     private final ExchangeBatchRepository exchangeBatchRepository;
-    private final TransformError transformError;
+    private final ExchangeTransformAudit transformAudit;
     //private final Map<String, String> resourceTypes; //although a set would be idea, a map allows safe multi-thread access
 
     //batch IDs
@@ -49,13 +49,13 @@ public class CsvProcessor {
     private Map<UUID, AtomicInteger> countResourcesDeleted = new ConcurrentHashMap<>();
 
 
-    public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId, TransformError transformError) {
+    public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId, ExchangeTransformAudit transformAudit) {
         this.exchangeId = exchangeId;
         this.serviceId = serviceId;
         this.systemId = systemId;
         this.storageService = new FhirStorageService(serviceId, systemId);
         this.exchangeBatchRepository = new ExchangeBatchRepository();
-        this.transformError = transformError;
+        this.transformAudit = transformAudit;
     }
 
 
@@ -312,10 +312,10 @@ public class CsvProcessor {
 
         //then add the error to our audit object
         Map<String, String> args = new HashMap<>();
-        args.put(TransformErrorsSerializer.ARG_EMIS_CSV_FILE, state.getFilePath());
-        args.put(TransformErrorsSerializer.ARG_EMIS_CSV_RECORD_NUMBER, "" + state.getRecordNumber());
+        args.put(TransformErrorUtility.ARG_EMIS_CSV_FILE, state.getFileName());
+        args.put(TransformErrorUtility.ARG_EMIS_CSV_RECORD_NUMBER, "" + state.getRecordNumber());
 
-        TransformErrorsSerializer.addError(transformError, ex, args);
+        TransformErrorUtility.addTransformError(transformAudit, ex, args);
     }
 
 

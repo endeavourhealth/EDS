@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public class IdMapperCondition extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
         Condition condition = (Condition)resource;
 
         super.mapResourceId(condition, serviceId, systemId);

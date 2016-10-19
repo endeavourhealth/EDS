@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.core.xml.transformErrors;
+package org.endeavourhealth.core.xml.transformError;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

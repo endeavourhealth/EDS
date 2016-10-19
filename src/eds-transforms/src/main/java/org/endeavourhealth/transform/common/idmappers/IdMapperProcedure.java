@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public class IdMapperProcedure extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
         Procedure procedure = (Procedure)resource;
 
         super.mapResourceId(procedure, serviceId, systemId);

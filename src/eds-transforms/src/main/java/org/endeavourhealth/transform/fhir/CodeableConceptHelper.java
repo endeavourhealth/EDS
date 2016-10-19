@@ -48,6 +48,14 @@ public class CodeableConceptHelper {
         return new CodeableConcept().addCoding(CodingHelper.createCoding(referralRequestSendMode));
     }
 
+    public static CodeableConcept createCodeableConcept(EthnicCategory ethnicCategory) {
+        return new CodeableConcept().addCoding(CodingHelper.createCoding(ethnicCategory));
+    }
+
+    public static CodeableConcept createCodeableConcept(MaritalStatus maritalStatus) {
+        return new CodeableConcept().addCoding(CodingHelper.createCoding(maritalStatus));
+    }
+
     public static CodeableConcept createCodeableConcept(String text) {
         return new CodeableConcept().setText(text);
     }

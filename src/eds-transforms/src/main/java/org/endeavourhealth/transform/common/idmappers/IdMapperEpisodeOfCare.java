@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public class IdMapperEpisodeOfCare extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
         EpisodeOfCare episodeOfCare = (EpisodeOfCare)resource;
 
         super.mapResourceId(episodeOfCare, serviceId, systemId);

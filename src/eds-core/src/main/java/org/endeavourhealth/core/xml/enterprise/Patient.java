@@ -16,7 +16,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *     &lt;extension base="{}baseRecord">
  *       &lt;sequence>
  *         &lt;element name="organization_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
- *         &lt;element name="date_of_birth" type="{http://www.w3.org/2001/XMLSchema}dateTime"/>
+ *         &lt;element name="year_of_birth" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *         &lt;element name="year_of_death" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *         &lt;element name="patient_gender_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *         &lt;element name="date_registered" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
@@ -35,7 +35,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "patient", propOrder = {
     "organizationId",
-    "dateOfBirth",
+    "yearOfBirth",
     "yearOfDeath",
     "patientGenderId",
     "dateRegistered",
@@ -50,9 +50,8 @@ public class Patient
 
     @XmlElement(name = "organization_id")
     protected int organizationId;
-    @XmlElement(name = "date_of_birth", required = true)
-    @XmlSchemaType(name = "dateTime")
-    protected XMLGregorianCalendar dateOfBirth;
+    @XmlElement(name = "year_of_birth")
+    protected int yearOfBirth;
     @XmlElement(name = "year_of_death")
     protected Integer yearOfDeath;
     @XmlElement(name = "patient_gender_id")
@@ -87,27 +86,19 @@ public class Patient
     }
 
     /**
-     * Gets the value of the dateOfBirth property.
+     * Gets the value of the yearOfBirth property.
      * 
-     * @return
-     *     possible object is
-     *     {@link XMLGregorianCalendar }
-     *     
      */
-    public XMLGregorianCalendar getDateOfBirth() {
-        return dateOfBirth;
+    public int getYearOfBirth() {
+        return yearOfBirth;
     }
 
     /**
-     * Sets the value of the dateOfBirth property.
+     * Sets the value of the yearOfBirth property.
      * 
-     * @param value
-     *     allowed object is
-     *     {@link XMLGregorianCalendar }
-     *     
      */
-    public void setDateOfBirth(XMLGregorianCalendar value) {
-        this.dateOfBirth = value;
+    public void setYearOfBirth(int value) {
+        this.yearOfBirth = value;
     }
 
     /**

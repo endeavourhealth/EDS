@@ -50,12 +50,15 @@ public class PatientTransformer extends AbstractTransformer {
 
             model.setOrganizationId(enterpriseOrganisationUuid);
 
+            Calendar cal = Calendar.getInstance();
+
             Date dob = fhirPatient.getBirthDate();
-            model.setDateOfBirth(convertDate(dob));
+            cal.setTime(dob);
+            int yearOfBirth = cal.get(Calendar.YEAR);
+            model.setYearOfBirth(yearOfBirth);
 
             if (fhirPatient.hasDeceasedDateTimeType()) {
                 Date dod = fhirPatient.getDeceasedDateTimeType().getValue();
-                Calendar cal = Calendar.getInstance();
                 cal.setTime(dod);
                 int yearOfDeath = cal.get(Calendar.YEAR);
                 model.setYearOfDeath(new Integer(yearOfDeath));

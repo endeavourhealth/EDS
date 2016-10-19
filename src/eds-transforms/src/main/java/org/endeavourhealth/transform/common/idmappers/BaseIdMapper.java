@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.common.idmappers;
 
 import org.endeavourhealth.transform.common.IdHelper;
+import org.endeavourhealth.transform.common.exceptions.UnknownPatientException;
 import org.endeavourhealth.transform.fhir.ReferenceComponents;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
@@ -12,6 +13,9 @@ import java.util.UUID;
 
 public abstract class BaseIdMapper {
     private static final Logger LOG = LoggerFactory.getLogger(BaseIdMapper.class);
+
+
+    public abstract void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception;
 
     /**
      * maps the main ID of any resource
@@ -29,7 +33,7 @@ public abstract class BaseIdMapper {
     /**
      * maps the IDs in any extensions of a resource
      */
-    protected void mapExtensions(DomainResource resource, UUID serviceId, UUID systemId) {
+    protected void mapExtensions(DomainResource resource, UUID serviceId, UUID systemId) throws Exception {
 
         if (!resource.hasExtension()) {
             return;
@@ -46,7 +50,7 @@ public abstract class BaseIdMapper {
     /**
      * maps the IDs in any identifiers of a resource
      */
-    protected void mapIdentifiers(List<Identifier> identifiers, Resource resource, UUID serviceId, UUID systemId) {
+    protected void mapIdentifiers(List<Identifier> identifiers, Resource resource, UUID serviceId, UUID systemId) throws Exception {
         for (Identifier identifier: identifiers) {
             if (identifier.hasAssigner()) {
                 mapReference(identifier.getAssigner(), resource, serviceId, systemId);
@@ -57,7 +61,7 @@ public abstract class BaseIdMapper {
     /**
      * maps the ID within any reference
      */
-    protected void mapReference(Reference reference, Resource resource, UUID serviceId, UUID systemId) {
+    protected void mapReference(Reference reference, Resource resource, UUID serviceId, UUID systemId) throws Exception {
         if (reference == null) {
             return;
         }
@@ -70,13 +74,19 @@ public abstract class BaseIdMapper {
             //if not, it still continues, but it will log the error
             if (comps.getResourceType() == ResourceType.Patient) {
                 UUID patientEdsId = IdHelper.getEdsResourceId(serviceId, systemId, comps.getResourceType(), comps.getId());
+
                 if (patientEdsId == null) {
-                    LOG.error("Reference to unrecognised patient {} in {} {} for service {} and system {}",
+                    throw new UnknownPatientException(comps.getId(),
+                                                    resource.getResourceType(),
+                                                    resource.getId(),
+                                                    serviceId,
+                                                    systemId);
+                    /*LOG.error("Reference to unrecognised patient {} in {} {} for service {} and system {}",
                             comps.getId(),
                             resource.getResourceType(),
                             resource.getId(),
                             serviceId,
-                            systemId);
+                            systemId);*/
                 }
             }
 
@@ -94,7 +104,7 @@ public abstract class BaseIdMapper {
     /**
      * maps the ID within any reference
      */
-    protected void mapReferences(List<Reference> references, Resource resource, UUID serviceId, UUID systemId) {
+    protected void mapReferences(List<Reference> references, Resource resource, UUID serviceId, UUID systemId) throws Exception {
         if (references == null
                 || references.isEmpty()) {
             return;
@@ -105,7 +115,7 @@ public abstract class BaseIdMapper {
         }
     }
 
-    public abstract void mapIds(Resource resource, UUID serviceId, UUID systemId);
+
 
 
 }

@@ -8,7 +8,7 @@ import java.util.UUID;
 public class IdMapperAllergyIntolerance extends BaseIdMapper {
 
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
         AllergyIntolerance allergyIntolerance = (AllergyIntolerance)resource;
 
         super.mapResourceId(allergyIntolerance, serviceId, systemId);

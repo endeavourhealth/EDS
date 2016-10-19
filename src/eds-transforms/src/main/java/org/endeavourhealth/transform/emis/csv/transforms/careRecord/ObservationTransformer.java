@@ -1054,7 +1054,7 @@ public class ObservationTransformer {
 
         String clinicianGuid = parser.getClinicianUserInRoleGuid();
         Reference reference = csvHelper.createPractitionerReference(clinicianGuid);
-        fhirFamilyHistory.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.FAMILY_MEMBER_HISTOY_REPORTED_BY, reference));
+        fhirFamilyHistory.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.FAMILY_MEMBER_HISTORY_REPORTED_BY, reference));
 
         //the entered date and person are stored in extensions
         addEncounterExtension(fhirFamilyHistory, parser, csvHelper, patientGuid);

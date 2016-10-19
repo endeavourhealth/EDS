@@ -35,7 +35,7 @@ public class FhirExtensionUri {
     public final static String CONDITION_PART_OF_PROBLEM = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-condition-partofproblemepisode-extension";
 
     //extensions specific to FamilyMemberHistory resources
-    public final static String FAMILY_MEMBER_HISTOY_REPORTED_BY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-family-member-history-reporter-extension";
+    public final static String FAMILY_MEMBER_HISTORY_REPORTED_BY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-family-member-history-reporter-extension";
 
     //extensions specific to ReferralRequest resources
     public final static String REFERRAL_REQUEST_SEND_MODE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-referral-request-send-mode-extension";

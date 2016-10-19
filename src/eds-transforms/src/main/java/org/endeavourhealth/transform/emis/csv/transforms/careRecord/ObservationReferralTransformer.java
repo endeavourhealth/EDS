@@ -51,9 +51,6 @@ public class ObservationReferralTransformer {
         String ubrn = parser.getReferralUBRN();
         fhirReferral.addIdentifier(IdentifierHelper.createUbrnIdentifier(ubrn));
 
-        String recipientOrgGuid = parser.getReferalTargetOrganisationGuid();
-        fhirReferral.addRecipient(csvHelper.createOrganisationReference(recipientOrgGuid));
-
         String urgency = parser.getReferralUrgency();
         if (!Strings.isNullOrEmpty(urgency)) {
             DiagnosticOrder.DiagnosticOrderPriority fhirPriority = convertUrgency(urgency);
@@ -86,11 +83,22 @@ public class ObservationReferralTransformer {
             fhirReferral.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.REFERRAL_REQUEST_SEND_MODE, codeableConcept));
         }
 
+        String recipientOrgGuid = parser.getReferalTargetOrganisationGuid();
+        fhirReferral.addRecipient(csvHelper.createOrganisationReference(recipientOrgGuid));
+
         //the below values are defined in the spec., but the spec also states that they'll be empty, so
         //none of the below will probably be used
         String sendingOrgGuid = parser.getReferralSourceOrganisationGuid();
+        if (Strings.isNullOrEmpty(sendingOrgGuid)) {
+
+            //in the absence of any data, treat the referral as though it was FROM this service so long as it wasn't TO this service
+            if (!parser.getOrganisationGuid().equals(recipientOrgGuid)) {
+                sendingOrgGuid = parser.getOrganisationGuid();
+            }
+        }
+
         if (!Strings.isNullOrEmpty(sendingOrgGuid)) {
-            fhirReferral.setRequester(csvHelper.createOrganisationReference(recipientOrgGuid));
+            fhirReferral.setRequester(csvHelper.createOrganisationReference(sendingOrgGuid));
         }
 
         //although the columns exist in the CSV, the spec. states that they'll always be empty

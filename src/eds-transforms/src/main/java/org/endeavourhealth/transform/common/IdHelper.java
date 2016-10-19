@@ -4,6 +4,7 @@ import org.apache.jcs.JCS;
 import org.apache.jcs.access.exception.CacheException;
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.common.idmappers.BaseIdMapper;
 import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -88,7 +89,7 @@ public class IdHelper {
         return edsId;
     }
 
-    public static void mapIds(UUID serviceId, UUID systemId, Resource resource) {
+    public static void mapIds(UUID serviceId, UUID systemId, Resource resource) throws Exception {
 
         BaseIdMapper mapper = idMappers.get(resource.getClass());
         if (mapper == null) {
@@ -98,7 +99,7 @@ public class IdHelper {
                 mapper = (BaseIdMapper)cls.newInstance();
                 idMappers.put(resource.getClass(), mapper);
             } catch (Exception ex) {
-                throw new RuntimeException("Exception creating ID Mapper for " + clsName, ex);
+                throw new TransformException("Exception creating ID Mapper for " + clsName, ex);
             }
         }
 

@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public class IdMapperSchedule extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
         Schedule schedule = (Schedule)resource;
 
         super.mapResourceId(schedule, serviceId, systemId);

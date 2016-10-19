@@ -16,7 +16,10 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class EmisSftpBatchSplitter extends SftpBatchSplitter {
 
@@ -28,7 +31,8 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
     private static final String SPLIT_FOLDER = "Split";
 
     private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
-    private static final Set<String> FILES_TO_SPLIT_BY_PROCESSING_ID = new HashSet<>();
+
+    /*private static final Set<String> FILES_TO_SPLIT_BY_PROCESSING_ID = new HashSet<>();
     private static final Set<String> FILES_TO_SPLIT_BY_ORG_ID = new HashSet<>();
     private static final Set<String> FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID = new HashSet<>();
 
@@ -58,7 +62,7 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
 
         //this file only has an organisation_guid
         FILES_TO_SPLIT_BY_ORG_ID.add(("Agreements_SharingOrganisation"));
-    }
+    }*/
 
     /**
      * splits the 17 EMIS extract files we use by org GUID and processing ID, so
@@ -91,7 +95,7 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
         List<String> processingIdFiles = new ArrayList<>();
         List<String> orgAndProcessingIdFiles = new ArrayList<>();
         List<String> orgIdFiles = new ArrayList<>();
-        identifyFiles(batch, orgAndProcessingIdFiles, processingIdFiles, orgIdFiles, dbConfiguration);
+        identifyFiles(batch, srcDir, orgAndProcessingIdFiles, processingIdFiles, orgIdFiles, dbConfiguration);
 
         //split the clinical files by org and processing ID, which creates the org ID -> processing ID folder structure
         for (String fileName: orgAndProcessingIdFiles) {
@@ -174,6 +178,7 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
         return ret;
     }
 
+
     private static String findOdsCode(String emisOrgGuid, DataLayer db, DbConfiguration dbConfiguration, Batch batch) throws Exception {
 
         //first look in our key-value-pair table, as any previously encountered orgs will have been stored in there
@@ -225,7 +230,44 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
     /**
      * scans through the files in the folder and works out which are admin and which are clinical
      */
-    private static void identifyFiles(Batch batch, List<String> orgAndProcessingIdFiles, List<String> processingIdFiles,
+    private static void identifyFiles(Batch batch, File srcDir, List<String> orgAndProcessingIdFiles, List<String> processingIdFiles,
+                                      List<String> orgIdFiles, DbConfiguration dbConfiguration) throws Exception {
+
+        for (BatchFile batchFile: batch.getBatchFiles()) {
+
+            String fileName = batchFile.getDecryptedFilename();
+            EmisSftpFilenameParser nameParser = new EmisSftpFilenameParser(fileName, dbConfiguration, ".csv");
+            String fileType = nameParser.generateFileTypeIdentifier();
+
+            //we work out what columns to split by, by looking at the CSV file headers
+            File f = new File(srcDir, fileName);
+            CSVParser csvParser = CSVParser.parse(f, Charset.defaultCharset(), CSV_FORMAT.withHeader());
+            Map<String, Integer> headers = csvParser.getHeaderMap();
+            csvParser.close();
+
+            boolean splitByOrgId = headers.containsKey(SPLIT_COLUMN_ORG)
+                    && !fileType.equals("Admin_Organisation") //these three files have an OrganisationGuid column, but don't want splitting by it
+                    && !fileType.equals("Admin_OrganisationLocation")
+                    && !fileType.equals("Admin_UserInRole");
+
+            boolean splitByProcessingId = headers.containsKey(SPLIT_COLUMN_PROCESSING_ID);
+
+            if (splitByOrgId && splitByProcessingId) {
+                orgAndProcessingIdFiles.add(fileName);
+
+            } else if (splitByOrgId) {
+                orgIdFiles.add(fileName);
+
+            } else if (splitByProcessingId) {
+                processingIdFiles.add(fileName);
+
+            } else {
+                throw new SftpFilenameParseException("Unknown EMIS CSV file type for " + fileName);
+            }
+        }
+
+    }
+    /*private static void identifyFiles(Batch batch, List<String> orgAndProcessingIdFiles, List<String> processingIdFiles,
                                       List<String> orgIdFiles, DbConfiguration dbConfiguration) throws Exception {
 
         for (BatchFile batchFile: batch.getBatchFiles()) {
@@ -244,7 +286,7 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
             }
         }
 
-    }
+    }*/
 
     private static void createMissingFiles(File srcFile, File dstDir) throws Exception {
 
@@ -313,17 +355,5 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
     }
 
 
-    /*private static void copyFile(String partialFileName, File srcDir, File dstDir) throws Exception {
-
-        String[] arr = partialFileName.split("_");
-        String domain = arr[0];
-        String name = arr[1];
-
-        File srcFile = EmisCsvTransformer.getFileByPartialName(domain, name, srcDir);
-        File dstFile = new File(dstDir, srcFile.getName());
-
-        //this uses a 4k buffer for copying. This may prove too slow, and need re-implementing to use a larger buffer
-        Files.copy(srcFile, dstFile);
-    }*/
 
 }

@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public class IdMapperReferralRequest extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
         ReferralRequest referralRequest = (ReferralRequest)resource;
 
         super.mapResourceId(referralRequest, serviceId, systemId);

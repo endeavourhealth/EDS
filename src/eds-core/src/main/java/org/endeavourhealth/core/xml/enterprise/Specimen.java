@@ -6,12 +6,12 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 
 /**
- * <p>Java class for referral_request complex type.
+ * <p>Java class for specimen complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="referral_request">
+ * &lt;complexType name="specimen">
  *   &lt;complexContent>
  *     &lt;extension base="{}baseRecord">
  *       &lt;sequence>
@@ -22,12 +22,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *         &lt;element name="clinical_effective_date" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
  *         &lt;element name="date_precision_id" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
  *         &lt;element name="snomed_concept_id" type="{http://www.w3.org/2001/XMLSchema}long" minOccurs="0"/>
- *         &lt;element name="requester_organization_id" type="{http://www.w3.org/2001/XMLSchema}int" minOccurs="0"/>
- *         &lt;element name="recipient_organization_id" type="{http://www.w3.org/2001/XMLSchema}int"/>
- *         &lt;element name="priority" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="service_requested" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="mode" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="outgoing_referral" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/extension>
  *   &lt;/complexContent>
@@ -37,22 +31,16 @@ import javax.xml.datatype.XMLGregorianCalendar;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "referral_request", propOrder = {
+@XmlType(name = "specimen", propOrder = {
     "organizationId",
     "patientId",
     "encounterId",
     "practitionerId",
     "clinicalEffectiveDate",
     "datePrecisionId",
-    "snomedConceptId",
-    "requesterOrganizationId",
-    "recipientOrganizationId",
-    "priority",
-    "serviceRequested",
-    "mode",
-    "outgoingReferral"
+    "snomedConceptId"
 })
-public class ReferralRequest
+public class Specimen
     extends BaseRecord
 {
 
@@ -71,16 +59,6 @@ public class ReferralRequest
     protected Integer datePrecisionId;
     @XmlElement(name = "snomed_concept_id")
     protected Long snomedConceptId;
-    @XmlElement(name = "requester_organization_id")
-    protected Integer requesterOrganizationId;
-    @XmlElement(name = "recipient_organization_id")
-    protected int recipientOrganizationId;
-    protected String priority;
-    @XmlElement(name = "service_requested")
-    protected String serviceRequested;
-    protected String mode;
-    @XmlElement(name = "outgoing_referral")
-    protected Boolean outgoingReferral;
 
     /**
      * Gets the value of the organizationId property.
@@ -232,142 +210,6 @@ public class ReferralRequest
      */
     public void setSnomedConceptId(Long value) {
         this.snomedConceptId = value;
-    }
-
-    /**
-     * Gets the value of the requesterOrganizationId property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Integer }
-     *     
-     */
-    public Integer getRequesterOrganizationId() {
-        return requesterOrganizationId;
-    }
-
-    /**
-     * Sets the value of the requesterOrganizationId property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Integer }
-     *     
-     */
-    public void setRequesterOrganizationId(Integer value) {
-        this.requesterOrganizationId = value;
-    }
-
-    /**
-     * Gets the value of the recipientOrganizationId property.
-     * 
-     */
-    public int getRecipientOrganizationId() {
-        return recipientOrganizationId;
-    }
-
-    /**
-     * Sets the value of the recipientOrganizationId property.
-     * 
-     */
-    public void setRecipientOrganizationId(int value) {
-        this.recipientOrganizationId = value;
-    }
-
-    /**
-     * Gets the value of the priority property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getPriority() {
-        return priority;
-    }
-
-    /**
-     * Sets the value of the priority property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setPriority(String value) {
-        this.priority = value;
-    }
-
-    /**
-     * Gets the value of the serviceRequested property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getServiceRequested() {
-        return serviceRequested;
-    }
-
-    /**
-     * Sets the value of the serviceRequested property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setServiceRequested(String value) {
-        this.serviceRequested = value;
-    }
-
-    /**
-     * Gets the value of the mode property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getMode() {
-        return mode;
-    }
-
-    /**
-     * Sets the value of the mode property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setMode(String value) {
-        this.mode = value;
-    }
-
-    /**
-     * Gets the value of the outgoingReferral property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Boolean }
-     *     
-     */
-    public Boolean isOutgoingReferral() {
-        return outgoingReferral;
-    }
-
-    /**
-     * Sets the value of the outgoingReferral property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Boolean }
-     *     
-     */
-    public void setOutgoingReferral(Boolean value) {
-        this.outgoingReferral = value;
     }
 
 }

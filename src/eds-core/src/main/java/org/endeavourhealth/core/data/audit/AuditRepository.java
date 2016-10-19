@@ -1,60 +1,84 @@
 package org.endeavourhealth.core.data.audit;
 
-import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.mapping.Mapper;
 import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
-import org.endeavourhealth.core.data.audit.accessors.ExchangeAccessor;
-import org.endeavourhealth.core.data.audit.models.Exchange;
-import org.endeavourhealth.core.data.audit.models.ExchangeEvent;
-import org.endeavourhealth.core.data.audit.models.ExchangeTransform;
-import org.endeavourhealth.core.data.audit.models.ExchangeTransformByServiceAndSystem;
+import org.endeavourhealth.core.data.audit.accessors.TransformAccessor;
+import org.endeavourhealth.core.data.audit.models.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
 public class AuditRepository extends Repository{
 
-    public void save(Exchange exchange, ExchangeEvent event) {
+    private static final Logger LOG = LoggerFactory.getLogger(AuditRepository.class);
 
-        BatchStatement batch = new BatchStatement();
+
+    public void save(Exchange exchange, ExchangeEvent event) {
 
         //exchange will only be non-null when writing the first event for an exchange
         if (exchange != null) {
+            //NOTE: the exchanges can be large, so don't use a batch to save it, as it will fail
             Mapper<Exchange> mapperExchange = getMappingManager().mapper(Exchange.class);
             mapperExchange.save(exchange);
         }
 
+
         Mapper<ExchangeEvent> mapperEvent = getMappingManager().mapper(ExchangeEvent.class);
         mapperEvent.save(event);
     }
-    /*public void save(Exchange exchange, ExchangeEvent event) {
 
-        BatchStatement batch = new BatchStatement();
+    public void save(ExchangeTransformAudit exchangeTransformAudit) {
 
-        //exchange will only be non-null when writing the first event for an exchange
-        if (exchange != null) {
-            Mapper<Exchange> mapperExchange = getMappingManager().mapper(Exchange.class);
-            batch.add(mapperExchange.saveQuery(exchange));
-        }
-
-        Mapper<ExchangeEvent> mapperEvent = getMappingManager().mapper(ExchangeEvent.class);
-        batch.add(mapperEvent.saveQuery(event));
-
-        getSession().execute(batch);
-    }*/
-
-    public void save(ExchangeTransform exchangeTransform) {
-
-        Mapper<ExchangeTransform> mapper = getMappingManager().mapper(ExchangeTransform.class);
-        mapper.save(exchangeTransform);
+        Mapper<ExchangeTransformAudit> mapper = getMappingManager().mapper(ExchangeTransformAudit.class);
+        mapper.save(exchangeTransformAudit);
     }
 
-    public ExchangeTransform getMostRecentExchangeTransform(UUID serviceId, UUID systemId, UUID exchangeId) {
+    public void save(ExchangeTransformErrorState errorState) {
 
-        ExchangeAccessor accessor = getMappingManager().createAccessor(ExchangeAccessor.class);
-        Iterator<ExchangeTransform> iterator = accessor.getMostRecentExchangeTransform(serviceId, systemId, exchangeId).iterator();
+        Mapper<ExchangeTransformErrorState> mapper = getMappingManager().mapper(ExchangeTransformErrorState .class);
+        mapper.save(errorState);
+    }
+
+    public void delete(ExchangeTransformErrorState errorState) {
+
+        Mapper<ExchangeTransformErrorState> mapper = getMappingManager().mapper(ExchangeTransformErrorState .class);
+        mapper.delete(errorState);
+    }
+
+    public void save(ExchangeTransformErrorToReProcess toReProcess) {
+
+        Mapper<ExchangeTransformErrorToReProcess> mapper = getMappingManager().mapper(ExchangeTransformErrorToReProcess.class);
+        mapper.save(toReProcess);
+    }
+
+    public void delete(ExchangeTransformErrorToReProcess toReProcess) {
+
+        Mapper<ExchangeTransformErrorToReProcess> mapper = getMappingManager().mapper(ExchangeTransformErrorToReProcess.class);
+        mapper.delete(toReProcess);
+    }
+
+    public List<UUID> getExchangeUuidsToReProcess(ExchangeTransformErrorState errorState) {
+        TransformAccessor accessor = getMappingManager().createAccessor(TransformAccessor.class);
+        Iterator<ExchangeTransformErrorToReProcess> iterator = accessor.getErrorsToReProcess(errorState.getServiceId(), errorState.getSystemId()).iterator();
+
+        List<UUID> ret = new ArrayList<>();
+        while (iterator.hasNext()) {
+            ExchangeTransformErrorToReProcess o = iterator.next();
+            ret.add(o.getExchangeId());
+        }
+        return ret;
+    }
+
+
+    public ExchangeTransformAudit getMostRecentExchangeTransform(UUID serviceId, UUID systemId, UUID exchangeId) {
+
+        TransformAccessor accessor = getMappingManager().createAccessor(TransformAccessor.class);
+        Iterator<ExchangeTransformAudit> iterator = accessor.getMostRecentExchangeTransform(serviceId, systemId, exchangeId).iterator();
         if (iterator.hasNext()) {
             return iterator.next();
         } else {
@@ -62,16 +86,16 @@ public class AuditRepository extends Repository{
         }
     }
 
-    public List<ExchangeTransform> getAllExchangeTransform(UUID serviceId, UUID systemId, UUID exchangeId) {
+    public List<ExchangeTransformAudit> getAllExchangeTransform(UUID serviceId, UUID systemId, UUID exchangeId) {
 
-        ExchangeAccessor accessor = getMappingManager().createAccessor(ExchangeAccessor.class);
+        TransformAccessor accessor = getMappingManager().createAccessor(TransformAccessor.class);
         return Lists.newArrayList(accessor.getAllExchangeTransform(serviceId, systemId, exchangeId));
     }
 
-    public ExchangeTransformByServiceAndSystem getMostRecentExchangeTransform(UUID serviceId, UUID systemId) {
+    public ExchangeTransformErrorState getErrorState(UUID serviceId, UUID systemId) {
 
-        ExchangeAccessor accessor = getMappingManager().createAccessor(ExchangeAccessor.class);
-        Iterator<ExchangeTransformByServiceAndSystem> iterator = accessor.getMostRecentExchangeTransformByServiceAndSystem(serviceId, systemId).iterator();
+        TransformAccessor accessor = getMappingManager().createAccessor(TransformAccessor.class);
+        Iterator<ExchangeTransformErrorState> iterator = accessor.getErrorState(serviceId, systemId).iterator();
         if (iterator.hasNext()) {
             return iterator.next();
         } else {
@@ -79,9 +103,17 @@ public class AuditRepository extends Repository{
         }
     }
 
-    public List<ExchangeTransformByServiceAndSystem> getAllExchangeTransform(UUID serviceId, UUID systemId) {
+    public List<ExchangeTransformErrorState> getAllErrorStates() {
 
-        ExchangeAccessor accessor = getMappingManager().createAccessor(ExchangeAccessor.class);
-        return Lists.newArrayList(accessor.getAllExchangeTransformByServiceAndSystem(serviceId, systemId));
+        TransformAccessor accessor = getMappingManager().createAccessor(TransformAccessor.class);
+        return Lists.newArrayList(accessor.getAllErrorStates());
+    }
+
+    public void deleteExchangeIdToReProcess(ExchangeTransformErrorState errorState, UUID exchangeId) {
+        ExchangeTransformErrorToReProcess o = new ExchangeTransformErrorToReProcess();
+        o.setServiceId(errorState.getServiceId());
+        o.setSystemId(errorState.getSystemId());
+        o.setExchangeId(exchangeId);
+        delete(o);
     }
 }

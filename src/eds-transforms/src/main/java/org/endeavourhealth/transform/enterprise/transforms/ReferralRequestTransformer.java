@@ -57,12 +57,36 @@ public class ReferralRequestTransformer extends AbstractTransformer {
             Long snomedConceptId = findSnomedConceptId(fhir.getType());
             model.setSnomedConceptId(snomedConceptId);
 
+            if (fhir.hasRequester()) {
+                Reference requesterReference = fhir.getRequester();
+                ResourceType resourceType = ReferenceHelper.getResourceType(requesterReference);
+
+                //the requester can be an organisation or practitioner
+                if (resourceType == ResourceType.Organization) {
+
+                    Integer enterpriseId = findEnterpriseId(requesterReference);
+                    model.setRecipientOrganizationId(enterpriseId);
+
+                } else if (resourceType == ResourceType.Practitioner) {
+
+                    Practitioner fhirPractitioner = (Practitioner)findResource(requesterReference, otherResources);
+                    Practitioner.PractitionerPractitionerRoleComponent role = fhirPractitioner.getPractitionerRole().get(0);
+                    Reference organisationReference = role.getManagingOrganization();
+                    Integer enterpriseId = findEnterpriseId(organisationReference);
+                    if (enterpriseId != null) {
+                        model.setRecipientOrganizationId(enterpriseId);
+                    }
+                }
+            }
+
             if (fhir.hasRecipient()) {
                 if (fhir.getRecipient().size() > 1) {
                     throw new TransformException("Cannot handle referral requests with more than one recipient " + fhir.getId());
                 }
                 Reference recipientReference = fhir.getRecipient().get(0);
                 ResourceType resourceType = ReferenceHelper.getResourceType(recipientReference);
+
+                //the recipient can be an organisation or practitioner
                 if (resourceType == ResourceType.Organization) {
 
                     //the EMIS test pack contains referrals that point to recipient organisations that don't exist,

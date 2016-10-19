@@ -59,7 +59,5 @@ public class RabbitConsumer extends DefaultConsumer {
 			this.getChannel().basicReject(envelope.getDeliveryTag(), true);
 			LOG.info("Have sent REJECT for exchange {}", exchange.getExchangeId());
 		}
-
-
 	}
 }

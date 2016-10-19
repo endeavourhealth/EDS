@@ -22,6 +22,7 @@
             <xs:element name="allergy_intolerance" type="allergy_intolerance" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="diagnostic_order" type="diagnostic_order" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="diagnostic_report" type="diagnostic_report" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="specimen" type="specimen" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -168,6 +169,22 @@
         </xs:complexContent>
     </xs:complexType>
 
+    <xs:complexType name="specimen">
+        <xs:complexContent>
+            <xs:extension base="baseRecord">
+                <xs:sequence>
+                    <xs:element name="organization_id" type="xs:int"/>
+                    <xs:element name="patient_id" type="xs:int"/>
+                    <xs:element name="encounter_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="practitioner_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
+                    <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
+                    <xs:element name="snomed_concept_id" type="xs:long" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
     <xs:complexType name="encounter">
         <xs:complexContent>
             <xs:extension base="baseRecord">
@@ -282,7 +299,7 @@
             <xs:extension base="baseRecord">
                 <xs:sequence>
                     <xs:element name="organization_id" type="xs:int"/>
-                    <xs:element name="date_of_birth" type="xs:dateTime"/>
+                    <xs:element name="year_of_birth" type="xs:int"/>
                     <xs:element name="year_of_death" type="xs:int" minOccurs="0"/>
                     <xs:element name="patient_gender_id" type="xs:int"/>
                     <xs:element name="date_registered" type="xs:dateTime" minOccurs="0"/>
@@ -339,6 +356,7 @@
                     <xs:element name="clinical_effective_date" type="xs:dateTime" minOccurs="0"/>
                     <xs:element name="date_precision_id" type="xs:int" minOccurs="0"/>
                     <xs:element name="snomed_concept_id" type="xs:long" minOccurs="0"/>
+                    <xs:element name="requester_organization_id" type="xs:int" minOccurs="0"/>
                     <xs:element name="recipient_organization_id" type="xs:int"/>
                     <xs:element name="priority" type="xs:string" minOccurs="0"/>
                     <xs:element name="service_requested" type="xs:string" minOccurs="0"/>

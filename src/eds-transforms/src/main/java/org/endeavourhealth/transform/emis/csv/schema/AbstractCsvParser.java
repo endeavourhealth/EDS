@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class AbstractCsvParser implements AutoCloseable {
 
@@ -33,6 +34,7 @@ public abstract class AbstractCsvParser implements AutoCloseable {
     private CSVParser csvReader = null;
     private Iterator<CSVRecord> csvIterator = null;
     private CSVRecord csvRecord = null;
+    private Set<Long> recordNumbersToProcess = null;
 
 
     public AbstractCsvParser(String version, File file, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
@@ -101,19 +103,27 @@ public abstract class AbstractCsvParser implements AutoCloseable {
             return false;
         }
 
-        if (csvIterator.hasNext()) {
+        while (csvIterator.hasNext()) {
             this.csvRecord = csvIterator.next();
 
             if (csvReader.getCurrentLineNumber() % 20000 == 0) {
                 LOG.info("Starting line {} of {}", csvReader.getCurrentLineNumber(), file.getAbsolutePath());
             }
 
-            return true;
-        } else {
-            this.csvRecord = null;
-            LOG.info("Completed file {}", file.getAbsolutePath());
-            return false;
+            //if we're restricting the record numbers to process, then check if the new line we're on is one we want to process
+            if (recordNumbersToProcess == null
+                || recordNumbersToProcess.contains(new Long(getCurrentLineNumber()))) {
+                return true;
+
+            } else {
+                continue;
+
+            }
         }
+
+        this.csvRecord = null;
+        LOG.info("Completed file {}", file.getAbsolutePath());
+        return false;
     }
 
 
@@ -128,6 +138,14 @@ public abstract class AbstractCsvParser implements AutoCloseable {
     public CsvCurrentState getCurrentState() {
         return new CsvCurrentState(file, getCurrentLineNumber());
     }
+
+    /**
+     * called to restrict this parser to only processing specific rows
+     */
+    public void setRecordNumbersToProcess(Set<Long> recordNumbersToProcess) {
+        this.recordNumbersToProcess = recordNumbersToProcess;
+    }
+
 
     public String getString(String column) {
         return csvRecord.get(column);
@@ -208,10 +226,4 @@ public abstract class AbstractCsvParser implements AutoCloseable {
         return Boolean.parseBoolean(s);
     }
 
-    /**
-     * if an error is encountered in a transform, this function is used to get detail on the line at fault
-     */
-    public String getErrorLinex() {
-        return "Error processing line " + csvReader.getCurrentLineNumber() + " of " + file.getAbsolutePath();
-    }
 }

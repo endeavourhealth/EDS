@@ -4,20 +4,16 @@ import java.io.File;
 
 public class CsvCurrentState {
 
-    private String filePath;
+    private String fileName;
     private Long recordNumber;
 
-    public CsvCurrentState(File file) {
-        this.filePath = file.getAbsolutePath();
-    }
-
     public CsvCurrentState(File file, long recordNumber) {
-        this.filePath = file.getAbsolutePath();
+        this.fileName = file.getName();
         this.recordNumber = new Long(recordNumber);
     }
 
-    public String getFilePath() {
-        return filePath;
+    public String getFileName() {
+        return fileName;
     }
 
     public Long getRecordNumber() {
@@ -26,9 +22,9 @@ public class CsvCurrentState {
 
     public String toString() {
         if (recordNumber == null) {
-            return filePath;
+            return fileName;
         } else {
-            return filePath + " line: " + recordNumber;
+            return fileName + " line: " + recordNumber;
         }
     }
 }

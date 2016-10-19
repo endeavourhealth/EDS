@@ -170,6 +170,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link Specimen }
+     * 
+     */
+    public Specimen createSpecimen() {
+        return new Specimen();
+    }
+
+    /**
      * Create an instance of {@link ReferralRequest }
      * 
      */

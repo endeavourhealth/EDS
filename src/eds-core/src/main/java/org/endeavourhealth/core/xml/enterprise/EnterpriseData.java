@@ -37,6 +37,7 @@ import java.util.List;
  *         &lt;element name="allergy_intolerance" type="{}allergy_intolerance" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="diagnostic_order" type="{}diagnostic_order" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="diagnostic_report" type="{}diagnostic_report" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="specimen" type="{}specimen" maxOccurs="unbounded" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -64,7 +65,8 @@ import java.util.List;
     "familyMemberHistory",
     "allergyIntolerance",
     "diagnosticOrder",
-    "diagnosticReport"
+    "diagnosticReport",
+    "specimen"
 })
 public class EnterpriseData {
 
@@ -94,6 +96,7 @@ public class EnterpriseData {
     protected List<DiagnosticOrder> diagnosticOrder;
     @XmlElement(name = "diagnostic_report")
     protected List<DiagnosticReport> diagnosticReport;
+    protected List<Specimen> specimen;
 
     /**
      * Gets the value of the organization property.
@@ -615,6 +618,35 @@ public class EnterpriseData {
             diagnosticReport = new ArrayList<DiagnosticReport>();
         }
         return this.diagnosticReport;
+    }
+
+    /**
+     * Gets the value of the specimen property.
+     * 
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the specimen property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getSpecimen().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link Specimen }
+     * 
+     * 
+     */
+    public List<Specimen> getSpecimen() {
+        if (specimen == null) {
+            specimen = new ArrayList<Specimen>();
+        }
+        return this.specimen;
     }
 
 }

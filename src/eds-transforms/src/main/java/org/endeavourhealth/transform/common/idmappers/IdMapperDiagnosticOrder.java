@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public class IdMapperDiagnosticOrder extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
         DiagnosticOrder order = (DiagnosticOrder)resource;
 
         super.mapResourceId(order, serviceId, systemId);

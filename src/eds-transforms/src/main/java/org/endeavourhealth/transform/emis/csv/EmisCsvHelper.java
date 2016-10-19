@@ -13,10 +13,9 @@ import org.endeavourhealth.transform.common.exceptions.ClinicalCodeNotFoundExcep
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.ReferenceComponents;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.fhir.schema.EthnicCategory;
+import org.endeavourhealth.transform.fhir.schema.MaritalStatus;
 import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.*;
 
@@ -44,6 +43,8 @@ public class EmisCsvHelper {
     private Map<String, List<Observation.ObservationComponentComponent>> bpComponentMap = new HashMap<>();
     private Map<String, SessionPractitioners> sessionPractitionerMap = new HashMap<>();
     private Map<String, List<String>> organisationLocationMap = new HashMap<>();
+    private Map<String, DateAndCode> ethnicityMap = new HashMap<>();
+    private Map<String, DateAndCode> maritalStatusMap = new HashMap<>();
 
     public EmisCsvHelper() {
     }
@@ -697,6 +698,81 @@ public class EmisCsvHelper {
         return organisationLocationMap.remove(locationGuid);
     }
 
+    public void cacheEthnicity(String patientGuid, DateTimeType fhirDate, EthnicCategory ethnicCategory) {
+        DateAndCode dc = ethnicityMap.get(createUniqueId(patientGuid, null));
+        if (dc == null
+            || dc.isBefore(fhirDate)) {
+            ethnicityMap.put(createUniqueId(patientGuid, null), new DateAndCode(fhirDate, CodeableConceptHelper.createCodeableConcept(ethnicCategory)));
+        }
+    }
+
+    public CodeableConcept findEthnicity(String patientGuid) {
+        DateAndCode dc = ethnicityMap.remove(createUniqueId(patientGuid, null));
+        if (dc != null) {
+            return dc.getCodeableConcept();
+        } else {
+            return null;
+        }
+    }
+
+    public void cacheMaritalStatus(String patientGuid, DateTimeType fhirDate, MaritalStatus maritalStatus) {
+        DateAndCode dc = maritalStatusMap.get(createUniqueId(patientGuid, null));
+        if (dc == null
+                || dc.isBefore(fhirDate)) {
+            maritalStatusMap.put(createUniqueId(patientGuid, null), new DateAndCode(fhirDate, CodeableConceptHelper.createCodeableConcept(maritalStatus)));
+        }
+    }
+
+    public CodeableConcept findMaritalStatus(String patientGuid) {
+        DateAndCode dc = maritalStatusMap.remove(createUniqueId(patientGuid, null));
+        if (dc != null) {
+            return dc.getCodeableConcept();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * when the transform is complete, if there's any values left in the ethnicity and marital status maps,
+     * then we need to update pre-existing patients with new data
+     */
+    public void processRemainingEthnicitiesAndMartialStatuses(CsvProcessor csvProcessor) throws Exception {
+
+        HashSet<String> patientGuids = new HashSet<>(ethnicityMap.keySet());
+        patientGuids.addAll(new HashSet<>(maritalStatusMap.keySet()));
+
+        for (String patientGuid: patientGuids) {
+
+            DateAndCode ethnicity = ethnicityMap.get(patientGuid);
+            DateAndCode maritalStatus = maritalStatusMap.get(patientGuid);
+
+            Patient fhirPatient = (Patient)retrieveResource(createUniqueId(patientGuid, null), ResourceType.Patient, csvProcessor);
+
+            if (ethnicity != null) {
+
+                //make to use the extension if it's already present
+                boolean done = false;
+                for (Extension extension: fhirPatient.getExtension()) {
+                    if (extension.getUrl().equals(FhirExtensionUri.PATIENT_ETHNICITY)) {
+                        extension.setValue(ethnicity.getCodeableConcept());
+                        done = true;
+                        break;
+                    }
+                }
+                if (!done) {
+                    fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_ETHNICITY, ethnicity.getCodeableConcept()));
+                }
+            }
+
+            if (maritalStatus != null) {
+                fhirPatient.setMaritalStatus(maritalStatus.getCodeableConcept());
+            }
+
+            csvProcessor.savePatientResource(null, false, patientGuid, fhirPatient);
+        }
+    }
+
+
     /**
      * object to temporarily store relationships between resources, such as things linked to a problem
      * or observations linked to a parent observation
@@ -752,6 +828,28 @@ public class EmisCsvHelper {
 
         public void setProcessedSession(boolean processedSession) {
             this.processedSession = processedSession;
+        }
+    }
+
+    public class DateAndCode {
+        private DateTimeType date = null;
+        private CodeableConcept codeableConcept = null;
+
+        public DateAndCode(DateTimeType date, CodeableConcept codeableConcept) {
+            this.date = date;
+            this.codeableConcept = codeableConcept;
+        }
+
+        public DateTimeType getDate() {
+            return date;
+        }
+
+        public CodeableConcept getCodeableConcept() {
+            return codeableConcept;
+        }
+
+        public boolean isBefore(DateTimeType other) {
+            return date.before(other);
         }
     }
 }
