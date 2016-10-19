@@ -11,9 +11,9 @@
 							<label>Display data in</label>
 							<div class="input-group">
 								<span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
-								<select id="service" class="form-control" ng-model="$ctrl.selectedService" ng-change="$ctrl.refresh()">
-									<option value="">All Services</option>
-									<option ng-repeat="item in $ctrl.services" value="{{item.serviceId}}">{{item.organisationName}}</option>
+								<select id="service" class="form-control" [(ngModel)]="selectedService" ng-change="refresh()">
+									<option value="" disabled>All Services</option>
+									<option *ngFor="let item of services" value="{{item.serviceId}}">{{item.organisationName}}</option>
 								</select>
 							</div>
 						</div>

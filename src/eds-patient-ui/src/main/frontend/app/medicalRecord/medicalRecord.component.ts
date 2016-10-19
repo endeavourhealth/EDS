@@ -1,41 +1,24 @@
-import {StateService} from "angular-ui-router";
-
-import {ILoggerService} from "../blocks/logger.service";
 import {PatientService} from "../models/PatientService";
 import {MedicalRecordService} from "./medicalRecord.service";
+import {Component} from "@angular/core";
+import 'rxjs/add/operator/toPromise';
 
-export class MedicalRecordComponent implements ng.IComponentOptions {
-	template : string;
-	controller : string;
-	controllerAs : string;
-
-	constructor () {
-		this.template = require('./medicalRecord.html');
-		this.controller = 'MedicalRecordController';
-		this.controllerAs = '$ctrl';
-	}
-}
-
-export class MedicalRecordController {
-	static $inject = ['MedicalRecordService', 'LoggerService', '$state'];
-
+@Component({
+	selector: 'medical-record-component',
+	template: require('./medicalRecord.html')
+})
+export class MedicalRecordComponent {
 	services : PatientService[];
-	selectedService : string;
+	selectedService : string = "";
 
-	constructor(private medicalRecordService:MedicalRecordService,
-							private logger:ILoggerService,
-							private $state : StateService) {
+	constructor(private medicalRecordService:MedicalRecordService) {
 		this.loadServiceList();
 	}
 
 	loadServiceList() {
-		var vm = this;
-		vm.services = null;
-		vm.medicalRecordService.getServices()
-			.then(function(data : PatientService[])
-				{
-					vm.services = data;
-				}
-			);
+		this.medicalRecordService.getServices()
+			.subscribe((services : PatientService[]) => {
+				this.services = services;
+			});
 	}
 }

@@ -4,21 +4,40 @@
 
 require('zone.js');
 import 'reflect-metadata';
+import 'angular';
+
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
+import {HttpModule, RequestOptions, XHRBackend, Http} from '@angular/http';
 
+import {AuthHttp} from "./core/httpInterceptor";
 import {AuditComponent} from "./audit/audit.component";
+import {ConsentComponent} from "./consent/consent.component";
+import {MedicalRecordComponent} from "./medicalRecord/medicalRecord.component";
+import {MedicalRecordService} from "./medicalRecord/medicalRecord.service";
 
 @NgModule({
-	imports: [ BrowserModule ],
-	declarations: [AuditComponent]
+	imports: [
+		BrowserModule,
+		FormsModule,
+		HttpModule,
+	],
+	declarations: [AuditComponent, ConsentComponent, MedicalRecordComponent],
+	providers: [
+		MedicalRecordService,
+		{
+			provide: Http,
+			useFactory: (backend: XHRBackend, defaultOptions: RequestOptions) => new AuthHttp(backend, defaultOptions),
+			deps: [XHRBackend, RequestOptions]
+		}
+	]
 })
 
 export class AppModule {}
 //-------- END ANGULAR 2 ********
 
 // Node dependencies
-import 'angular';
 import 'angular-ui-bootstrap';
 import 'angular-ui-router';
 import 'angular-toastr';
