@@ -16,25 +16,27 @@ import org.endeavourhealth.transform.fhir.schema.MaritalStatus;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 public class ObservationPreTransformer {
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvParser> parsers,
+                                 Map<Class, List<AbstractCsvParser>> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
         //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
         //to parse any record in this file it a critical error
-        Observation parser = (Observation)parsers.get(Observation.class);
+        for (AbstractCsvParser parser: parsers.get(Observation.class)) {
 
-        while (parser.nextRecord()) {
+            while (parser.nextRecord()) {
 
-            try {
-                processLine(parser, csvHelper, csvProcessor, version);
-            } catch (Exception ex) {
-                throw new TransformException(parser.getCurrentState().toString(), ex);
+                try {
+                    processLine((Observation)parser, csvHelper, csvProcessor, version);
+                } catch (Exception ex) {
+                    throw new TransformException(parser.getCurrentState().toString(), ex);
+                }
             }
         }
     }

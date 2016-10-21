@@ -16,32 +16,33 @@ import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 public class DrugRecordTransformer {
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvParser> parsers,
+                                 Map<Class, List<AbstractCsvParser>> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        DrugRecord parser = (DrugRecord)parsers.get(DrugRecord.class);
+        for (AbstractCsvParser parser: parsers.get(DrugRecord.class)) {
 
-        while (parser.nextRecord()) {
+            while (parser.nextRecord()) {
 
-            try {
-                createResource(version, parser, csvProcessor, csvHelper);
-            } catch (Exception ex) {
-                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                try {
+                    createResource((DrugRecord)parser, csvProcessor, csvHelper, version);
+                } catch (Exception ex) {
+                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                }
             }
-
         }
     }
 
-    private static void createResource(String version,
-                                       DrugRecord parser,
+    private static void createResource(DrugRecord parser,
                                        CsvProcessor csvProcessor,
-                                       EmisCsvHelper csvHelper) throws Exception {
+                                       EmisCsvHelper csvHelper,
+                                       String version) throws Exception {
 
         MedicationStatement fhirMedicationStatement = new MedicationStatement();
         fhirMedicationStatement.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_AUTHORISATION));

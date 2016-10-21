@@ -21,27 +21,27 @@ import java.util.Map;
 public class PatientTransformer {
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvParser> parsers,
+                                 Map<Class, List<AbstractCsvParser>> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Patient parser = (Patient)parsers.get(Patient.class);
+        for (AbstractCsvParser parser: parsers.get(Patient.class)) {
 
-        while (parser.nextRecord()) {
+            while (parser.nextRecord()) {
 
-            try {
-                createPatient(version, parser, csvProcessor, csvHelper);
-            } catch (Exception ex) {
-                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                try {
+                    createResource((Patient)parser, csvProcessor, csvHelper, version);
+                } catch (Exception ex) {
+                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                }
             }
-
         }
     }
 
-    private static void createPatient(String version,
-                                      Patient parser,
+    private static void createResource(Patient parser,
                                       CsvProcessor csvProcessor,
-                                      EmisCsvHelper csvHelper) throws Exception {
+                                      EmisCsvHelper csvHelper,
+                                       String version) throws Exception {
 
         //create Patient Resource
         org.hl7.fhir.instance.model.Patient fhirPatient = new org.hl7.fhir.instance.model.Patient();

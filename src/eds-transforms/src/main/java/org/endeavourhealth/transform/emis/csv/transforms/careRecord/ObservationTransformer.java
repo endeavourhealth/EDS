@@ -27,28 +27,28 @@ public class ObservationTransformer {
     private static ResourceIdMapRepository idMapRepository = new ResourceIdMapRepository();
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvParser> parsers,
+                                 Map<Class, List<AbstractCsvParser>> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Observation parser = (Observation)parsers.get(Observation.class);
+        for (AbstractCsvParser parser: parsers.get(Observation.class)) {
 
-        while (parser.nextRecord()) {
+            while (parser.nextRecord()) {
 
-            try {
+                try {
 
-                //depending whether deleting or saving, we go through a different path to find what
-                //the target resource type should be
-                if (parser.getDeleted() || parser.getIsConfidential()) {
-                    deleteResource(version, parser, csvProcessor, csvHelper);
-                } else {
-                    createResource(version, parser, csvProcessor, csvHelper);
+                    //depending whether deleting or saving, we go through a different path to find what
+                    //the target resource type should be
+                    Observation observationParser = (Observation)parser;
+                    if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
+                        deleteResource(version, observationParser, csvProcessor, csvHelper);
+                    } else {
+                        createResource(version, observationParser, csvProcessor, csvHelper);
+                    }
+                } catch (Exception ex) {
+                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
                 }
-
-            } catch (Exception ex) {
-                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
             }
-
         }
     }
 

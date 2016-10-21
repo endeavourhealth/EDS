@@ -3,9 +3,7 @@ package org.endeavourhealth.transform.emis;
 import com.google.common.io.Files;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
-import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
-import org.endeavourhealth.core.xml.transformError.Arg;
 import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.CsvProcessor;
@@ -77,6 +75,66 @@ public abstract class EmisCsvTransformer {
         //the processor is responsible for saving FHIR resources
         CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId, transformAudit);
 
+        Map<Class, List<AbstractCsvParser>> allParsers = new HashMap<>();
+
+        try {
+
+            List<File> processingIdDirectories = getProcessingIdDirectoriesInOrder(orgDirectory);
+            for (int i = 0; i < processingIdDirectories.size(); i++) {
+                File processingIdDirectory = processingIdDirectories.get(i);
+
+                Map<Class, AbstractCsvParser> parsers = new HashMap<>();
+
+                //validate that we've got all the files we expect
+                LOG.trace("Validating all files are present in {}", processingIdDirectory);
+                validateAndOpenParsers(processingIdDirectory, version, parsers);
+
+                //validate there's no additional files in the common directory
+                LOG.trace("Validating no additional files in {}", processingIdDirectory);
+                validateNoExtraFiles(processingIdDirectory, parsers);
+
+                for (Class cls : parsers.keySet()) {
+                    AbstractCsvParser parser = parsers.get(cls);
+                    List list = allParsers.get(cls);
+                    if (list == null) {
+                        list = new ArrayList<>();
+                        allParsers.put(cls, list);
+                    }
+                    list.add(parser);
+                }
+            }
+
+            LOG.trace("Transforming EMIS CSV content in {}", orgDirectory);
+            transformParsers(version, allParsers, processor, previousErrors);
+
+        } finally {
+
+            closeParsers(allParsers);
+        }
+
+        LOG.trace("Completed transform for organisation {} - waiting for resources to commit to DB", orgDirectory.getName());
+        return processor.getBatchIdsCreated();
+    }
+    /*public static List<UUID> transform(String version,
+                                       String sharedStoragePath,
+                                       String[] files,
+                                       UUID exchangeId,
+                                       UUID serviceId,
+                                       UUID systemId,
+                                       ExchangeTransformAudit transformAudit,
+                                       TransformError previousErrors) throws Exception {
+
+        LOG.info("Invoking EMIS CSV transformer for {} files", files.length);
+
+        //validate the version
+        validateVersion(version);
+
+        //the files should all be in a directory structure of org folder -> processing ID folder -> CSV files
+        File orgDirectory = validateAndFindCommonDirectory(sharedStoragePath, files);
+
+        //the processor is responsible for saving FHIR resources
+        CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId, transformAudit);
+
         List<File> processingIdDirectories = getProcessingIdDirectoriesInOrder(orgDirectory);
         for (int i=0; i<processingIdDirectories.size(); i++) {
             File processingIdDirectory = processingIdDirectories.get(i);
@@ -124,13 +182,13 @@ public abstract class EmisCsvTransformer {
 
         LOG.trace("Completed transform for organisation {} - waiting for resources to commit to DB", orgDirectory.getName());
         return processor.getBatchIdsCreated();
-    }
+    }*/
 
     /**
      * when we have a record-level error, we know the file and row number, but not the processing ID
      * folder, so we need to update those errors with the processing ID
      */
-    private static void updateRecordErrors(ExchangeTransformAudit transformAudit, String processingIdStr) {
+    /*private static void updateRecordErrors(ExchangeTransformAudit transformAudit, String processingIdStr) {
 
         //if there haven't been any errors, this'll be null
         if (transformAudit.getErrorXml() == null) {
@@ -164,12 +222,12 @@ public abstract class EmisCsvTransformer {
         if (changed) {
             TransformErrorUtility.save(transformAudit, container);
         }
-    }
+    }*/
 
     /**
      * tests if we should process the given processing ID, given any previous errors we may have had
      */
-    private static boolean shouldProcessProcessingId(String processingIdStr, TransformError previousErrors) {
+    /*private static boolean shouldProcessProcessingId(String processingIdStr, TransformError previousErrors) {
 
         //if this is the first time we running this
         if (previousErrors == null) {
@@ -193,12 +251,12 @@ public abstract class EmisCsvTransformer {
 
         //if we didn't have an error with this processing ID previously, then we want to skip it
         return false;
-    }
+    }*/
 
     /**
      * called if we get an error within a processing ID folder (e.g. can't open a file or file columns wrong)
      */
-    public static void logProcessingIdError(ExchangeTransformAudit transformAudit, Exception ex, String processingId) {
+    /*public static void logProcessingIdError(ExchangeTransformAudit transformAudit, Exception ex, String processingId) {
 
         if (ex != null) {
             LOG.error("Error with processing ID " + processingId, ex);
@@ -211,18 +269,20 @@ public abstract class EmisCsvTransformer {
         args.put(TransformErrorUtility.ARG_EMIS_CSV_PROCESSING_ID, processingId);
 
         TransformErrorUtility.addTransformError(transformAudit, ex, args);
-    }
+    }*/
 
-    private static void closeParsers(Map<Class, AbstractCsvParser> parsers) {
+    private static void closeParsers(Map<Class, List<AbstractCsvParser>> allParsers) {
 
-        for (AbstractCsvParser parser: parsers.values()) {
-            try {
-                parser.close();
-            } catch (IOException ex) {
-                //don't worry if this fails, as we're done anyway
+        for (Class cls: allParsers.keySet()) {
+            List<AbstractCsvParser> parsers = allParsers.get(cls);
+            for (AbstractCsvParser parser : parsers) {
+                try {
+                    parser.close();
+                } catch (IOException ex) {
+                    //don't worry if this fails, as we're done anyway
+                }
             }
         }
-
     }
 
     private static List<File> getProcessingIdDirectoriesInOrder(File rootDir) {
@@ -555,31 +615,30 @@ public abstract class EmisCsvTransformer {
 
         throw new FileNotFoundException("Failed to find CSV file for " + domain + "_" + name + " in " + dir);
     }*/
-    private static void transformProcessingIdFolder(String version,
-                                                    Map<Class, AbstractCsvParser> parsers,
-                                                    CsvProcessor csvProcessor,
-                                                    String processingIdStr,
-                                                    TransformError previousErrors) throws Exception {
+    private static void transformParsers(String version,
+                                        Map<Class, List<AbstractCsvParser>> parsers,
+                                        CsvProcessor csvProcessor,
+                                        TransformError previousErrors) throws Exception {
 
         EmisCsvHelper csvHelper = new EmisCsvHelper();
 
         //these transforms don't create resources themselves, but cache data that the subsequent ones rely on
         ClinicalCodeTransformer.transform(version, parsers, csvProcessor, csvHelper);
         DrugCodeTransformer.transform(version, parsers, csvProcessor, csvHelper);
+        OrganisationLocationTransformer.transform(version, parsers, csvProcessor, csvHelper);
+        SessionUserTransformer.transform(version, parsers, csvProcessor, csvHelper);
         ObservationPreTransformer.transform(version, parsers, csvProcessor, csvHelper);
         DrugRecordPreTransformer.transform(version, parsers, csvProcessor, csvHelper);
         IssueRecordPreTransformer.transform(version, parsers, csvProcessor, csvHelper);
 
         //before getting onto the files that actually create FHIR resources, we need to
         //work out what record numbers to process, if we're re-running a transform
-        findRecordsToProcess(parsers, processingIdStr, previousErrors);
+        findRecordsToProcess(parsers, previousErrors);
 
         //run the transforms for non-patient resources
-        OrganisationLocationTransformer.transform(version, parsers, csvProcessor, csvHelper);
         LocationTransformer.transform(version, parsers, csvProcessor, csvHelper);
         OrganisationTransformer.transform(version, parsers, csvProcessor, csvHelper);
         UserInRoleTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        SessionUserTransformer.transform(version, parsers, csvProcessor, csvHelper);
         SessionTransformer.transform(version, parsers, csvProcessor, csvHelper);
 
         //note the order of these transforms is important, as consultations should be before obs etc.
@@ -607,18 +666,22 @@ public abstract class EmisCsvTransformer {
     }
 
 
-    public static void findRecordsToProcess(Map<Class,AbstractCsvParser> parsers, String processingIdStr, TransformError previousErrors) throws Exception {
+    public static void findRecordsToProcess(Map<Class, List<AbstractCsvParser>> allParsers, TransformError previousErrors) throws Exception {
 
-        for (AbstractCsvParser parser : parsers.values()) {
+        for (Class cls: allParsers.keySet()) {
+            List<AbstractCsvParser> parsers = allParsers.get(cls);
+            for (AbstractCsvParser parser: parsers) {
 
-            //we've already used some of the parsers already, so reset them to the start
-            parser.reset();
+                //we've already used some of the parsers already, so reset them to the start
+                parser.reset();
 
-            String fileName = parser.getFile().getName();
-            Set<Long> recordNumbers = findRecordNumbersToProcess(fileName, processingIdStr, previousErrors);
-            parser.setRecordNumbersToProcess(recordNumbers);
+                String fileName = parser.getFile().getName();
+                String processingIdStr = parser.getFile().getParent();
+
+                Set<Long> recordNumbers = findRecordNumbersToProcess(fileName, processingIdStr, previousErrors);
+                parser.setRecordNumbersToProcess(recordNumbers);
+            }
         }
-
     }
 
     private static Set<Long> findRecordNumbersToProcess(String fileName, String processingIdStr, TransformError previousErrors) {
@@ -635,14 +698,14 @@ public abstract class EmisCsvTransformer {
         }
 
         //if we previously had a processing ID-level error, then we want to process the full file
-        for (Error error: previousErrors.getError()) {
+        /*for (Error error: previousErrors.getError()) {
 
             String errorProcessingId = TransformErrorUtility.findArgumentValue(error, TransformErrorUtility.ARG_EMIS_CSV_PROCESSING_ID);
             if (errorProcessingId.equals(processingIdStr)
                     && !TransformErrorUtility.containsArgument(error, TransformErrorUtility.ARG_EMIS_CSV_FILE)) {
                 return null;
             }
-        }
+        }*/
 
         //if we make it to here, we only want to process specific record numbers in our file, or even none, if there were
         //no previous errors processing this specific file

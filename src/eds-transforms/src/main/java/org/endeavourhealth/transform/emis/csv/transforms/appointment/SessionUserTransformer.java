@@ -1,29 +1,33 @@
 package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.appointment.SessionUser;
 
+import java.util.List;
 import java.util.Map;
 
 public class SessionUserTransformer {
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvParser> parsers,
+                                 Map<Class, List<AbstractCsvParser>> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        SessionUser parser = (SessionUser)parsers.get(SessionUser.class);
+        //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
+        //to parse any record in this file it a critical error
+        for (AbstractCsvParser parser: parsers.get(SessionUser.class)) {
 
-        while (parser.nextRecord()) {
+            while (parser.nextRecord()) {
 
-            try {
-                createSessionUserMapping(parser, csvProcessor, csvHelper);
-            } catch (Exception ex) {
-                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                try {
+                    createSessionUserMapping((SessionUser)parser, csvProcessor, csvHelper);
+                } catch (Exception ex) {
+                    throw new TransformException(parser.getCurrentState().toString(), ex);
+                }
             }
-
         }
     }
 

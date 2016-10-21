@@ -20,7 +20,7 @@ public class DrugCodeTransformer {
 
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvParser> parsers,
+                                 Map<Class, List<AbstractCsvParser>> parsers,
                                CsvProcessor csvProcessor,
                                EmisCsvHelper csvHelper) throws Exception {
 
@@ -30,17 +30,19 @@ public class DrugCodeTransformer {
 
         //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
         //to parse any record in this file it a critical error
-        DrugCode parser = (DrugCode)parsers.get(DrugCode.class);
         try {
-            while (parser.nextRecord()) {
+            for (AbstractCsvParser parser: parsers.get(DrugCode.class)) {
 
-                try {
-                    transform(parser, csvProcessor, csvHelper, threadPool);
-                } catch (Exception ex) {
-                    throw new TransformException(parser.getCurrentState().toString(), ex);
+                while (parser.nextRecord()) {
+
+                    try {
+                        transform((DrugCode)parser, csvProcessor, csvHelper, threadPool);
+                    } catch (Exception ex) {
+                        throw new TransformException(parser.getCurrentState().toString(), ex);
+                    }
                 }
-
             }
+
         } finally {
             List<CallableError> errors = threadPool.waitAndStop();
             handleErrors(errors);
