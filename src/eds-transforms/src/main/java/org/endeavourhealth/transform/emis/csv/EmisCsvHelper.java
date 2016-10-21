@@ -701,7 +701,7 @@ public class EmisCsvHelper {
     public void cacheEthnicity(String patientGuid, DateTimeType fhirDate, EthnicCategory ethnicCategory) {
         DateAndCode dc = ethnicityMap.get(createUniqueId(patientGuid, null));
         if (dc == null
-            || dc.isBefore(fhirDate)) {
+            || (fhirDate != null && dc.isBefore(fhirDate))) {
             ethnicityMap.put(createUniqueId(patientGuid, null), new DateAndCode(fhirDate, CodeableConceptHelper.createCodeableConcept(ethnicCategory)));
         }
     }
@@ -718,7 +718,7 @@ public class EmisCsvHelper {
     public void cacheMaritalStatus(String patientGuid, DateTimeType fhirDate, MaritalStatus maritalStatus) {
         DateAndCode dc = maritalStatusMap.get(createUniqueId(patientGuid, null));
         if (dc == null
-                || dc.isBefore(fhirDate)) {
+                || (fhirDate != null && dc.isBefore(fhirDate))) {
             maritalStatusMap.put(createUniqueId(patientGuid, null), new DateAndCode(fhirDate, CodeableConceptHelper.createCodeableConcept(maritalStatus)));
         }
     }
