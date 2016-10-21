@@ -8,7 +8,8 @@ public enum ReferralRequestSendMode {
     ACUTE("T", "Telephone"),
     REPEAT("W", "Written"),
     REPEAT_DISPENSING("V", "Verbal"),
-    AUTOMATIC("C", "Choose and Book");
+    ERS("E", "NHS e-Referral"),
+    MANAGED("M", "Managed");
 
     private String code = null;
     private String description = null;

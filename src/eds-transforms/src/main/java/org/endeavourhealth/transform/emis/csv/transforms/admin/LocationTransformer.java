@@ -15,20 +15,21 @@ import java.util.Map;
 public class LocationTransformer {
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvParser> parsers,
+                                 Map<Class, List<AbstractCsvParser>> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Location parser = (Location)parsers.get(Location.class);
 
-        while (parser.nextRecord()) {
+        for (AbstractCsvParser parser: parsers.get(Location.class)) {
 
-            try {
-                createResource(parser, csvProcessor, csvHelper);
-            } catch (Exception ex) {
-                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+            while (parser.nextRecord()) {
+
+                try {
+                    createResource((Location)parser, csvProcessor, csvHelper);
+                } catch (Exception ex) {
+                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                }
             }
-
         }
     }
 

@@ -28,7 +28,7 @@ public abstract class ClinicalCodeTransformer {
     private static CodeRepository repository = new CodeRepository();
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvParser> parsers,
+                                 Map<Class, List<AbstractCsvParser>> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
@@ -38,16 +38,19 @@ public abstract class ClinicalCodeTransformer {
 
         //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
         //to parse any record in this file it a critical error
-        ClinicalCode parser = (ClinicalCode)parsers.get(ClinicalCode.class);
         try {
-            while (parser.nextRecord()) {
+            for (AbstractCsvParser parser: parsers.get(ClinicalCode.class)) {
 
-                try {
-                    transform(parser, csvProcessor, csvHelper, threadPool);
-                } catch (Exception ex) {
-                    throw new TransformException(parser.getCurrentState().toString(), ex);
+                while (parser.nextRecord()) {
+
+                    try {
+                        transform((ClinicalCode) parser, csvProcessor, csvHelper, threadPool);
+                    } catch (Exception ex) {
+                        throw new TransformException(parser.getCurrentState().toString(), ex);
+                    }
                 }
             }
+
         } finally {
             List<CallableError> errors = threadPool.waitAndStop();
             handleErrors(errors);

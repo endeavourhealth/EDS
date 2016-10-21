@@ -14,29 +14,30 @@ import org.endeavourhealth.transform.fhir.schema.EncounterParticipantType;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 public class ConsultationTransformer {
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvParser> parsers,
+                                 Map<Class, List<AbstractCsvParser>> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Consultation parser = (Consultation)parsers.get(Consultation.class);
+        for (AbstractCsvParser parser: parsers.get(Consultation.class)) {
 
-        while (parser.nextRecord()) {
+            while (parser.nextRecord()) {
 
-            try {
-                createEncounter(parser, csvProcessor, csvHelper);
-            } catch (Exception ex) {
-                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                try {
+                    createResource((Consultation)parser, csvProcessor, csvHelper);
+                } catch (Exception ex) {
+                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                }
             }
-
         }
     }
 
-    private static void createEncounter(Consultation parser,
+    private static void createResource(Consultation parser,
                                         CsvProcessor csvProcessor,
                                         EmisCsvHelper csvHelper) throws Exception {
 

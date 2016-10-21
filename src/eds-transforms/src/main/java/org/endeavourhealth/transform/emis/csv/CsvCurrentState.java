@@ -5,15 +5,21 @@ import java.io.File;
 public class CsvCurrentState {
 
     private String fileName;
+    private String fileDir;
     private Long recordNumber;
 
     public CsvCurrentState(File file, long recordNumber) {
         this.fileName = file.getName();
+        this.fileDir = file.getParent();
         this.recordNumber = new Long(recordNumber);
     }
 
     public String getFileName() {
         return fileName;
+    }
+
+    public String getFileDir() {
+        return fileDir;
     }
 
     public Long getRecordNumber() {

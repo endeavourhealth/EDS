@@ -56,6 +56,10 @@ public class CodeableConceptHelper {
         return new CodeableConcept().addCoding(CodingHelper.createCoding(maritalStatus));
     }
 
+    public static CodeableConcept createCodeableConcept(ReferralPriority referralPriority) {
+        return new CodeableConcept().addCoding(CodingHelper.createCoding(referralPriority));
+    }
+
     public static CodeableConcept createCodeableConcept(String text) {
         return new CodeableConcept().setText(text);
     }

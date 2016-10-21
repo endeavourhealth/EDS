@@ -14,32 +14,33 @@ import org.endeavourhealth.transform.fhir.QuantityHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 public class IssueRecordTransformer {
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvParser> parsers,
+                                 Map<Class, List<AbstractCsvParser>> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        IssueRecord parser = (IssueRecord)parsers.get(IssueRecord.class);
+        for (AbstractCsvParser parser: parsers.get(IssueRecord.class)) {
 
-        while (parser.nextRecord()) {
+            while (parser.nextRecord()) {
 
-            try {
-                createResource(version, parser, csvProcessor, csvHelper);
-            } catch (Exception ex) {
-                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                try {
+                    createResource((IssueRecord)parser, csvProcessor, csvHelper, version);
+                } catch (Exception ex) {
+                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                }
             }
-
         }
     }
 
-    private static void createResource(String version,
-                                       IssueRecord parser,
+    private static void createResource(IssueRecord parser,
                                        CsvProcessor csvProcessor,
-                                       EmisCsvHelper csvHelper) throws Exception {
+                                       EmisCsvHelper csvHelper,
+                                       String version) throws Exception {
 
         MedicationOrder fhirMedication = new MedicationOrder();
         fhirMedication.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_ORDER));

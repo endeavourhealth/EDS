@@ -46,6 +46,7 @@ import "./patientIdentity/patientIdentity.module";
 import "./recordViewer/recordViewer.module";
 import "./resources/resources.module";
 import "./audit/audit.module";
+import "./transformErrors/transformErrors.module";
 
 // Node module types
 import IModalService = angular.ui.bootstrap.IModalService;
@@ -92,6 +93,7 @@ angular.module('app', [
 		'app.recordViewer',
 		'app.resources',
 		'app.audit',
+		'app.transformErrors',
 		'flowChart',
 		'dragging',
 		'mouseCapture'

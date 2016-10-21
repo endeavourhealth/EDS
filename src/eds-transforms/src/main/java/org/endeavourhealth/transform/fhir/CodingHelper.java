@@ -99,6 +99,13 @@ public class CodingHelper {
                 .setCode(maritalStatus.getCode());
     }
 
+    public static Coding createCoding(ReferralPriority referralPriority) {
+        return new Coding()
+                .setSystem(referralPriority.getSystem())
+                .setDisplay(referralPriority.getDescription())
+                .setCode(referralPriority.getCode());
+    }
+
     public static Coding createCoding(String system, String term, String code) {
         return new Coding()
                 .setSystem(system)

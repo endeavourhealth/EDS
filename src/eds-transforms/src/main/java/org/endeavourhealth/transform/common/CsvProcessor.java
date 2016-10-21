@@ -4,7 +4,6 @@ import com.datastax.driver.core.utils.UUIDs;
 import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
-import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
@@ -224,13 +223,16 @@ public class CsvProcessor {
 
         LOG.info("CSV processing completed");
 
-        int saved = countResourcesSaved.get(adminBatchId).get();
-        int deleted = countResourcesDeleted.get(adminBatchId).get();
+        int saved = 0;
+        int deleted = 0;
+        if (adminBatchId != null) {
+            countResourcesSaved.get(adminBatchId).get();
+            countResourcesDeleted.get(adminBatchId).get();
+        }
+
         LOG.info("Saved {} and deleted {} non-patient resources", saved, deleted);
         totalSaved += saved;
         totalDeleted += deleted;
-
-        ResourceIdMapRepository idRepository = new ResourceIdMapRepository();
 
         for (String patientId : patientBatchIdMap.keySet()) {
             UUID batchId = patientBatchIdMap.get(patientId);
@@ -313,6 +315,7 @@ public class CsvProcessor {
         //then add the error to our audit object
         Map<String, String> args = new HashMap<>();
         args.put(TransformErrorUtility.ARG_EMIS_CSV_FILE, state.getFileName());
+        args.put(TransformErrorUtility.ARG_EMIS_CSV_PROCESSING_ID, state.getFileDir());
         args.put(TransformErrorUtility.ARG_EMIS_CSV_RECORD_NUMBER, "" + state.getRecordNumber());
 
         TransformErrorUtility.addTransformError(transformAudit, ex, args);

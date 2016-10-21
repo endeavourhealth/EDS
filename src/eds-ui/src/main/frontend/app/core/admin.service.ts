@@ -27,10 +27,11 @@ export class AdminService extends BaseHttpService implements IAdminService {
 			{caption: 'Queueing', state: 'app.routeGroup', icon: 'fa fa-tasks'},
 
 			{caption: 'Patients', state: 'app.patientIdentity', icon: 'fa fa-user'},
-							{caption: 'Record viewer', state: 'app.recordViewer', icon: 'fa fa-heart'},
+			{caption: 'Record Viewer', state: 'app.recordViewer', icon: 'fa fa-heart'},
 			{caption: 'Resources', state: 'app.resources', icon: 'fa fa-fire'},
 
 			{caption: 'Monitoring', state: 'app.logging', icon: 'fa fa-list-alt'},
+			{caption: 'Transform Errors', state: 'app.transformErrors', icon: 'fa fa-exchange'},
 			{caption: 'Statistics', state: 'app.stats', icon: 'fa fa-line-chart'},
 			{caption: 'Audit', state: 'app.audit', icon: 'fa fa-list-ul'}
 		];

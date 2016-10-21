@@ -17,32 +17,33 @@ import org.hl7.fhir.instance.model.ProcedureRequest;
 import org.hl7.fhir.instance.model.StringType;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 public class DiaryTransformer {
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvParser> parsers,
+                                 Map<Class, List<AbstractCsvParser>> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Diary parser = (Diary)parsers.get(Diary.class);
+        for (AbstractCsvParser parser: parsers.get(Diary.class)) {
 
-        while (parser.nextRecord()) {
+            while (parser.nextRecord()) {
 
-            try {
-                createResource(version, parser, csvProcessor, csvHelper);
-            } catch (Exception ex) {
-                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                try {
+                    createResource((Diary)parser, csvProcessor, csvHelper, version);
+                } catch (Exception ex) {
+                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                }
             }
-
         }
     }
 
-    private static void createResource(String version,
-                                       Diary parser,
+    private static void createResource(Diary parser,
                                        CsvProcessor csvProcessor,
-                                       EmisCsvHelper csvHelper) throws Exception {
+                                       EmisCsvHelper csvHelper,
+                                       String version) throws Exception {
 
         ProcedureRequest fhirRequest = new ProcedureRequest();
         fhirRequest.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROCEDURE_REQUEST));

@@ -10,27 +10,28 @@ import org.endeavourhealth.transform.fhir.schema.OrganisationType;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 public class OrganisationTransformer {
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvParser> parsers,
+                                 Map<Class, List<AbstractCsvParser>> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Organisation parser = (Organisation)parsers.get(Organisation.class);
+        for (AbstractCsvParser parser: parsers.get(Organisation.class)) {
 
-        while (parser.nextRecord()) {
+            while (parser.nextRecord()) {
 
-            try {
-                createResource(parser, csvProcessor, csvHelper);
-            } catch (Exception ex) {
-                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                try {
+                    createResource((Organisation)parser, csvProcessor, csvHelper);
+                } catch (Exception ex) {
+                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                }
             }
-
         }
-    }
+     }
 
     private static void createResource(Organisation parser,
                                        CsvProcessor csvProcessor,

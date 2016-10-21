@@ -11,25 +11,26 @@ import org.hl7.fhir.instance.model.Period;
 import org.hl7.fhir.instance.model.Practitioner;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 public class UserInRoleTransformer {
 
     public static void transform(String version,
-                                 Map<Class, AbstractCsvParser> parsers,
+                                 Map<Class, List<AbstractCsvParser>> parsers,
                                  CsvProcessor csvProcessor,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        UserInRole parser = (UserInRole)parsers.get(UserInRole.class);
+        for (AbstractCsvParser parser: parsers.get(UserInRole.class)) {
 
-        while (parser.nextRecord()) {
+            while (parser.nextRecord()) {
 
-            try {
-                createResource(parser, csvProcessor, csvHelper);
-            } catch (Exception ex) {
-                csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                try {
+                    createResource((UserInRole)parser, csvProcessor, csvHelper);
+                } catch (Exception ex) {
+                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                }
             }
-
         }
     }
 

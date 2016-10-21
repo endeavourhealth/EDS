@@ -75,13 +75,15 @@ public class TransformAuditEndpoint extends AbstractEndpoint {
                 .findFirst()
                 .get();
 
+        int exchanges = errorState.getExchangeIdsInError().size();
+        exchanges -= exchangeIdsToReProcess.size();
+
         JsonTransformErrorSummary summary = new JsonTransformErrorSummary();
         summary.setServiceId(errorState.getServiceId());
         summary.setSystemName(getServiceNameForId(errorState.getServiceId()));
         summary.setSystemId(errorState.getSystemId());
         summary.setSystemName(getSystemNameForId(errorState.getSystemId()));
-        summary.setCountExchanges(errorState.getExchangeIdsInError().size());
-        summary.setCountExchangesReQueued(exchangeIdsToReProcess.size());
+        summary.setCountExchanges(exchanges);
         summary.setFirstExchangeIdInError(firstExchangeInError);
         return summary;
     }
@@ -181,9 +183,9 @@ public class TransformAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/requeueTransforms")
+    @Path("/reQueueTransforms")
     @RequiresAdmin
-    public Response requeueTransforms(@Context SecurityContext sc, JsonTransformRequeueRequest request) throws Exception {
+    public Response reQueueTransforms(@Context SecurityContext sc, JsonTransformRequeueRequest request) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
                 "Requeue Transforms", request);
@@ -211,6 +213,7 @@ public class TransformAuditEndpoint extends AbstractEndpoint {
             auditRepository.save(o);
 
             //then re-submit the exchange to Rabbit MQ for the queue reader to pick up
+            postToRabbit(exchangeId);
 
             //TODO - re-post the transform(s) to RABBIT!!!
 
@@ -229,6 +232,52 @@ public class TransformAuditEndpoint extends AbstractEndpoint {
         return Response
                 .ok(ret)
                 .build();
+    }
+
+    private void postToRabbit(UUID exchangeId) {
+      /*  String routingKey = getRoutingKey(exchange);
+
+        // Generate message identifier and store message in db
+        UUID messageUuid = exchange.getExchangeId();
+        new QueuedMessageRepository().save(messageUuid, exchange.getBody());
+
+        Connection connection = getConnection();
+        Channel channel = getChannel(connection);
+
+        Map<String, Object> headers = new HashMap<>();
+        for (String key : exchange.getHeaders().keySet())
+            headers.put(key, exchange.getHeader(key));
+
+        AMQP.BasicProperties properties = new AMQP.BasicProperties()
+                .builder()
+                .deliveryMode(2)    // Persistent message
+                .headers(headers)
+                .build();
+
+        // Handle multicast
+        String multicastHeader = config.getMulticastHeader();
+        if (multicastHeader == null || multicastHeader.isEmpty() || exchange.getHeader(multicastHeader) == null) {
+            publishMessage(routingKey, messageUuid, channel, properties);
+        } else {
+            String multicastData = exchange.getHeader(multicastHeader);
+            try {
+                Object[] multicastItems = ObjectMapperPool.getInstance().readValue(multicastData, Object[].class);
+
+                for (Object multicastItem : multicastItems) {
+                    String itemData = ObjectMapperPool.getInstance().writeValueAsString(multicastItem);
+                    // Replace header list with individual value
+                    headers.put(multicastHeader, itemData);
+                    properties = properties.builder().headers(headers).build();
+                    publishMessage(routingKey, messageUuid, channel, properties);
+                }
+            } catch (IOException e) {
+                throw new PipelineException("Could not parse multicast data", e);
+            }
+
+        }
+
+        waitForConfirmations(channel);
+        closeChannel(channel);*/
     }
 
 
