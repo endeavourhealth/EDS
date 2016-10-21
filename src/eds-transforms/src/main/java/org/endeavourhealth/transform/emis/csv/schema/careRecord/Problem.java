@@ -15,23 +15,45 @@ public class Problem extends AbstractCsvParser {
 
     @Override
     protected String[] getCsvHeaders(String version) {
-        return new String[]{
-                "ObservationGuid",
-                "PatientGuid",
-                "OrganisationGuid",
-                "ParentProblemObservationGuid",
-                "Comment",
-                "EndDate",
-                "EndDatePrecision",
-                "ExpectedDuration",
-                "LastReviewDate",
-                "LastReviewDatePrecision",
-                "LastReviewUserInRoleGuid",
-                "ParentProblemRelationship",
-                "ProblemStatusDescription",
-                "SignificanceDescription",
-                "ProcessingId"
-        };
+
+        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+            return new String[]{
+                    "ObservationGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "ParentProblemObservationGuid",
+                    "Comment",
+                    "EndDate",
+                    "EndDatePrecision",
+                    "ExpectedDuration",
+                    "LastReviewDate",
+                    "LastReviewDatePrecision",
+                    "LastReviewUserInRoleGuid",
+                    "ParentProblemRelationship",
+                    "ProblemStatusDescription",
+                    "SignificanceDescription",
+                    "ProcessingId"
+            };
+        } else {
+            return new String[]{
+                    "ObservationGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "ParentProblemObservationGuid",
+                    "Deleted",
+                    "Comment",
+                    "EndDate",
+                    "EndDatePrecision",
+                    "ExpectedDuration",
+                    "LastReviewDate",
+                    "LastReviewDatePrecision",
+                    "LastReviewUserInRoleGuid",
+                    "ParentProblemRelationship",
+                    "ProblemStatusDescription",
+                    "SignificanceDescription",
+                    "ProcessingId"
+            };
+        }
     }
 
     public String getObservationGuid() {

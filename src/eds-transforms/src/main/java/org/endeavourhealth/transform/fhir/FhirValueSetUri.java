@@ -20,11 +20,5 @@ public class FhirValueSetUri {
     public final static String VALUE_SET_MEDICATION_AUTHORISATION_TYPE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-medication-authorisation-type";
     public final static String VALUE_SET_REFERRAL_REQUEST_SEND_MODE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-referral-request-send-mode";
     public final static String VALUE_SET_ETHNIC_CATEGORY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-ethnic-category-extension";
-
-    //EMIS value sets
-    public final static String VALUE_SET_EMIS_DNA_REASON_CODE = "http://emishealth.com/ValueSet/dna-reason-code"; //placeholder
-
-
-
-
+    public final static String VALUE_SET_REFERRAL_PRIORITY = "http://endeavourhealth.org/fhir/ValueSet/primarycare-referral-request-priority";
 }

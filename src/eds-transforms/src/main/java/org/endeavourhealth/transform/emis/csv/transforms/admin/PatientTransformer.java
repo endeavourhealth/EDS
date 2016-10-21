@@ -125,11 +125,18 @@ public class PatientTransformer {
 
         String nhsNumberStatus = parser.getNHSNumberStatus();
         if (!Strings.isNullOrEmpty(nhsNumberStatus)) {
+            CodeableConcept fhirCodeableConcept = null;
+
+            //convert the String to one of the official statuses. If it can't be converted, insert free-text in the codeable concept
             NhsNumberVerificationStatus verificationStatus = convertNhsNumberVeriticationStatus(nhsNumberStatus);
             if (verificationStatus != null) {
-                CodeableConcept fhirCodeableConcept = CodeableConceptHelper.createCodeableConcept(verificationStatus);
-                fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_NHS_NUMBER_VERIFICATION_STATUS, fhirCodeableConcept));
+                fhirCodeableConcept = CodeableConceptHelper.createCodeableConcept(verificationStatus);
+
+            } else {
+                fhirCodeableConcept = CodeableConceptHelper.createCodeableConcept(nhsNumberStatus);
             }
+
+            fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_NHS_NUMBER_VERIFICATION_STATUS, fhirCodeableConcept));
         }
 
         String homePhone = parser.getHomePhone();
@@ -277,7 +284,8 @@ public class PatientTransformer {
      * converts free-text NHS number status to one of the official NHS statuses
      */
     private static NhsNumberVerificationStatus convertNhsNumberVeriticationStatus(String nhsNumberStatus) {
-        //TODO - not sure what the actual EMIS values will be for NHS number status, until we get real data
+        //note: no idea what possible values will come from EMIS in this field, and there's no content
+        //in the column on the two live extracts seen. So this is more of a placeholder until we get some more info.
         if (nhsNumberStatus.equalsIgnoreCase("Verified")) {
             return NhsNumberVerificationStatus.PRESENT_AND_VERIFIED;
         } else {
@@ -291,7 +299,7 @@ public class PatientTransformer {
      */
     private static RegistrationType convertRegistrationType(String csvRegType, boolean dummyRecord) {
 
-        //EMIS test data has leading spaces
+        //EMIS both test and Live data has leading spaces
         csvRegType = csvRegType.trim();
 
         if (dummyRecord || csvRegType.equalsIgnoreCase("Dummy")) {

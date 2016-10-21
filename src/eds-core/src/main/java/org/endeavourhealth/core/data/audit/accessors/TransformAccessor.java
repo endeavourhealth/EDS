@@ -31,7 +31,7 @@ public interface TransformAccessor {
     Result<ExchangeTransformErrorState> getAllErrorStates();
 
 
-    @Query("SELECT * FROM audit.exchange_transform_errors_to_re_process WHERE service_id = :service_id AND system_id = :system_id")
+    @Query("SELECT * FROM audit.exchange_transform_error_to_re_process WHERE service_id = :service_id AND system_id = :system_id")
     Result<ExchangeTransformErrorToReProcess> getErrorsToReProcess(@Param("service_id") UUID serviceId,
                                                                    @Param("system_id") UUID systemId);
 }

@@ -6,9 +6,9 @@ import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.ObservationReferral;
 import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.fhir.schema.ReferralPriority;
 import org.endeavourhealth.transform.fhir.schema.ReferralRequestSendMode;
 import org.hl7.fhir.instance.model.CodeableConcept;
-import org.hl7.fhir.instance.model.DiagnosticOrder;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.ReferralRequest;
 
@@ -53,7 +53,7 @@ public class ObservationReferralTransformer {
 
         String urgency = parser.getReferralUrgency();
         if (!Strings.isNullOrEmpty(urgency)) {
-            DiagnosticOrder.DiagnosticOrderPriority fhirPriority = convertUrgency(urgency);
+            ReferralPriority fhirPriority = convertUrgency(urgency);
             if (fhirPriority != null) {
                 fhirReferral.setPriority(CodeableConceptHelper.createCodeableConcept(fhirPriority));
             } else {
@@ -90,7 +90,6 @@ public class ObservationReferralTransformer {
         //none of the below will probably be used
         String sendingOrgGuid = parser.getReferralSourceOrganisationGuid();
         if (Strings.isNullOrEmpty(sendingOrgGuid)) {
-
             //in the absence of any data, treat the referral as though it was FROM this service so long as it wasn't TO this service
             if (!parser.getOrganisationGuid().equals(recipientOrgGuid)) {
                 sendingOrgGuid = parser.getOrganisationGuid();
@@ -104,13 +103,13 @@ public class ObservationReferralTransformer {
         //although the columns exist in the CSV, the spec. states that they'll always be empty
         //ReferralReceivedDateTime
         //ReferralEndDate
-        //ReferralSourceId
-        //ReferralReasonCodeId
-        //ReferringCareProfessionalStaffGroupCodeId
-        //ReferralEpisodeRTTMeasurmentTypeId
+        //ReferralSourceId - links to Coding_ClinicalCode
+        //ReferralReasonCodeId - links to Coding_ClinicalCode
+        //ReferringCareProfessionalStaffGroupCodeId - links to Coding_ClinicalCode
+        //ReferralEpisodeRTTMeasurementTypeId - links to Coding_ClinicalCode
         //ReferralEpisodeClosureDate
         //ReferralEpisideDischargeLetterIssuedDate
-        //ReferralClosureReasonCodeId
+        //ReferralClosureReasonCodeId - links to Coding_ClinicalCode
 
         //unlike other resources, we don't save the Referral immediately, as there's data we
         //require on the corresponding row in the Observation file. So cache in the helper
@@ -119,17 +118,17 @@ public class ObservationReferralTransformer {
 
     }
 
-    private static DiagnosticOrder.DiagnosticOrderPriority convertUrgency(String urgency) throws Exception {
+    private static ReferralPriority convertUrgency(String urgency) throws Exception {
 
         //EMIS urgencies based on EMIS Open format (VocReferralUrgency)
         if (urgency.equalsIgnoreCase("Routine")) {
-            return DiagnosticOrder.DiagnosticOrderPriority.ROUTINE;
-
-        } else if (urgency.equalsIgnoreCase("Soon")) {
-            return DiagnosticOrder.DiagnosticOrderPriority.ASAP;
+            return ReferralPriority.ROUTINE;
 
         } else if (urgency.equalsIgnoreCase("Urgent")) {
-            return DiagnosticOrder.DiagnosticOrderPriority.URGENT;
+            return ReferralPriority.URGENT;
+
+        } else if (urgency.equalsIgnoreCase("2 Week Wait")) {
+            return ReferralPriority.TWO_WEEK_WAIT;
 
         } else {
             return null;

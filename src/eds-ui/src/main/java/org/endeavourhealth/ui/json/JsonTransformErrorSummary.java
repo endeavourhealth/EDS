@@ -12,7 +12,6 @@ public class JsonTransformErrorSummary {
     private UUID systemId = null;
     private String systemName = null;
     private int countExchanges = -1;
-    private int countExchangesReQueued = -1;
     private UUID firstExchangeIdInError = null;
 
     public JsonTransformErrorSummary() {
@@ -57,14 +56,6 @@ public class JsonTransformErrorSummary {
 
     public void setCountExchanges(int countExchanges) {
         this.countExchanges = countExchanges;
-    }
-
-    public int getCountExchangesReQueued() {
-        return countExchangesReQueued;
-    }
-
-    public void setCountExchangesReQueued(int countExchangesReQueued) {
-        this.countExchangesReQueued = countExchangesReQueued;
     }
 
     public UUID getFirstExchangeIdInError() {
