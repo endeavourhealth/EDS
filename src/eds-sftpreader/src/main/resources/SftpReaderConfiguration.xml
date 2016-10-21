@@ -10,7 +10,7 @@
             <Port>5432</Port>
             <Database>sftpreader</Database>
             <Username>postgres</Username>
-            <Password>greyarmy1</Password>
+            <Password></Password>
         </SftpReader>
         <!-- also set database connection in logback.cml -->
     </DatabaseConnections>

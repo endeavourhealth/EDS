@@ -13,7 +13,7 @@ begin
 		array_agg(b.batch_id) into _batch_ids
 	from sftpreader.batch b
 	where b.instance_id = _instance_id
-	and batch_id =
+	and sequence_number =
 	(
 		select max(sequence_number)
 		from sftpreader.batch
