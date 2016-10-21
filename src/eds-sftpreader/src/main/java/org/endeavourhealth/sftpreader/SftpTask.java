@@ -53,10 +53,12 @@ public class SftpTask extends TimerTask
             initialise();
 
             LOG.trace(">>>Downloading and decrypting files");
-            downloadAndProcessFiles();
+            if (!downloadAndProcessFiles())
+                throw new SftpReaderException("Exception occurred downloading and processing files - halting to prevent incorrect ordering of batches.");
 
             LOG.trace(">>>Validating and sequencing batches");
-            validateAndSequenceBatches();
+            if (!validateAndSequenceBatches())
+                throw new SftpReaderException("Exception occurred validating and sequencing batches - halting to prevent incorrect ordering of batches.");
 
             LOG.trace(">>>Notifying EDS");
             notifyEds();
@@ -76,7 +78,7 @@ public class SftpTask extends TimerTask
     }
 
 
-    private void downloadAndProcessFiles()
+    private boolean downloadAndProcessFiles()
     {
         SftpConnection sftpConnection = null;
 
@@ -86,11 +88,8 @@ public class SftpTask extends TimerTask
 
             String remotePath = dbConfiguration.getDbConfigurationSftp().getRemotePath();
 
-            //rather than list the files in the remote directory, change to it and list from there
-            //as downloading the files without changing to the folder seems to fail sometimes
             sftpConnection.cd(remotePath);
             List<SftpRemoteFile> sftpRemoteFiles = getFileList(sftpConnection, "\\");
-            //List<SftpRemoteFile> sftpRemoteFiles = getFileList(sftpConnection, remotePath);
 
             int countAlreadyProcessed = 0;
 
@@ -98,8 +97,6 @@ public class SftpTask extends TimerTask
 
             for (SftpRemoteFile sftpRemoteFile : sftpRemoteFiles)
             {
-                //LOG.trace("  Processing remote file: {}", sftpRemoteFile.getFilename());
-
                 SftpFile batchFile = instantiateSftpBatchFile(sftpRemoteFile);
 
                 if (!batchFile.isFilenameValid())
@@ -114,7 +111,6 @@ public class SftpTask extends TimerTask
                 if (addFileResult.isFileAlreadyProcessed())
                 {
                     countAlreadyProcessed ++;
-                    //LOG.trace("   Already processed, skipping: " + batchFile.getFilename());
                     continue;
                 }
 
@@ -128,21 +124,23 @@ public class SftpTask extends TimerTask
                     decryptFile(batchFile);
             }
 
-            //logging out a count of how many were already processed, as we've got 400,000 lines of logging on AWS
-            if (countAlreadyProcessed > 0) {
+            if (countAlreadyProcessed > 0)
                 LOG.trace("Skipped {} files as already processed them", new Integer(countAlreadyProcessed));
-            }
 
             LOG.info("Completed processing {} files", Integer.toString(sftpRemoteFiles.size()));
+
+            return true;
         }
         catch (Exception e)
         {
-            LOG.error("Exception occurred while processing files", e);
+            LOG.error("Exception occurred while processing files - cannot continue or may process batches out of order", e);
         }
         finally
         {
             closeConnection(sftpConnection);
         }
+
+        return false;
     }
 
     private static SftpConnection openSftpConnection(DbConfigurationSftp configurationSftp) throws SftpConnectionException, JSchException, IOException
@@ -173,13 +171,8 @@ public class SftpTask extends TimerTask
 
     private static void closeConnection(SftpConnection sftpConnection) {
 
-        //only attempt to close it, if it was opened
-        if (sftpConnection == null) {
-            return;
-        }
-        //LOG.trace("Closing SFTP connection");
-
-        sftpConnection.close();
+        if (sftpConnection != null)
+            sftpConnection.close();
     }
 
     private static List<SftpRemoteFile> getFileList(SftpConnection sftpConnection, String remotePath) throws SftpException
@@ -189,9 +182,7 @@ public class SftpTask extends TimerTask
 
     private void downloadFile(SftpConnection sftpConnection, SftpFile batchFile) throws Exception
     {
-        //the connection has already changed to the remote directory, so download using just the filename, not the full path
         downloadFile(sftpConnection, batchFile.getFilename(), batchFile.getLocalFilePath());
-        //downloadFile(sftpConnection, batchFile.getRemoteFilePath(), batchFile.getLocalFilePath());
 
         batchFile.setLocalFileSizeBytes(getFileSizeBytes(batchFile.getLocalFilePath()));
 
@@ -263,44 +254,39 @@ public class SftpTask extends TimerTask
         return file.length();
     }
 
-    private void validateAndSequenceBatches() throws PgStoredProcException, SftpValidationException, SftpFilenameParseException
+    private boolean validateAndSequenceBatches()
     {
         try
         {
             List<UnknownFile> unknownFiles = getUnknownFiles();
 
             if (unknownFiles.size() > 0)
-                return;
+                throw new SftpValidationException("There are " + Integer.toString(unknownFiles.size()) + " unknown files present.");
 
             List<Batch> incompleteBatches = getIncompleteBatches();
 
-            if (incompleteBatches.size() == 0)
-                return;
+            if (incompleteBatches.size() > 0) {
 
-            Batch lastCompleteBatch = db.getLastCompleteBatch(dbConfiguration.getInstanceId());
+                Batch lastCompleteBatch = db.getLastCompleteBatch(dbConfiguration.getInstanceId());
 
-            validateBatches(incompleteBatches, lastCompleteBatch);
-            splitBatches(incompleteBatches);
-            sequenceBatches(incompleteBatches, lastCompleteBatch);
+                validateBatches(incompleteBatches, lastCompleteBatch);
+                splitBatches(incompleteBatches);
+                sequenceBatches(incompleteBatches, lastCompleteBatch);
+            }
 
+            return true;
         }
         catch (Exception e)
         {
             LOG.error("Error occurred during validation and sequencing", e);
         }
+
+        return false;
     }
 
     private List<UnknownFile> getUnknownFiles() throws PgStoredProcException
     {
-        LOG.trace(" Checking for unknown files");
-
-        List<UnknownFile> unknownFiles = db.getUnknownFiles(dbConfiguration.getInstanceId());
-
-        if (!unknownFiles.isEmpty()) {
-            LOG.error(" There are {} unknown files", unknownFiles.size());
-        }
-
-        return unknownFiles;
+        return db.getUnknownFiles(dbConfiguration.getInstanceId());
     }
 
     private List<Batch> getIncompleteBatches() throws PgStoredProcException
@@ -475,8 +461,6 @@ public class SftpTask extends TimerTask
         }
         catch (Exception e)
         {
-            //LOG.error("Error notifying EDS for batch split " + unnotifiedBatchSplit.getBatchSplitId(), e);
-
             String inboundMessage = e.getMessage();
 
             db.addBatchNotification(unnotifiedBatchSplit.getBatchId(),

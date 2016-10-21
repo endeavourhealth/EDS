@@ -12,6 +12,8 @@ import java.util.UUID;
 
 public class EmisSftpFilenameParser extends SftpFilenameParser
 {
+                                                                        // same as ISO pattern but switch : for . so can be used as filename
+    private static final DateTimeFormatter BATCH_IDENTIFIER_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH'.'mm'.'ss");
     private static final String SHARING_AGREEMENT_UUID_KEY = "SharingAgreementGuid";
 
     private ProcessingIdSet processingIds;
@@ -33,7 +35,12 @@ public class EmisSftpFilenameParser extends SftpFilenameParser
     @Override
     public String generateBatchIdentifier()
     {
-        return this.processingIds.getBatchIdentifier();
+        return this.extractDateTime.format(BATCH_IDENTIFIER_FORMAT);
+    }
+
+    public static LocalDateTime parseBatchIdentifier(String batchIdentifier)
+    {
+        return LocalDateTime.parse(batchIdentifier, BATCH_IDENTIFIER_FORMAT);
     }
 
     @Override
