@@ -8,7 +8,7 @@ DROP MATERIALIZED VIEW IF EXISTS user_event_by_module_user_organisation_timestam
 
 DROP TABLE IF EXISTS user_event;
 DROP TABLE IF EXISTS exchange_transform_error_state;
-DROP TABLE IF EXISTS exchange_transform_error_to_re_process;
+DROP TABLE IF EXISTS exchange_transform_error_to_reprocess;
 DROP TABLE IF EXISTS exchange_transform_audit;
 DROP TABLE IF EXISTS exchange_event;
 DROP TABLE IF EXISTS exchange;
@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS exchange;
 DROP MATERIALIZED VIEW IF EXISTS exchange_transform_by_service_and_system; 
 DROP TABLE IF EXISTS exchange_transform; 
 DROP TABLE IF EXISTS exchangeEvent; 
+DROP TABLE IF EXISTS exchange_transform_error_to_re_process;
 
 
 CREATE TABLE exchange 
@@ -56,7 +57,7 @@ CREATE TABLE exchange_transform_error_state
     PRIMARY KEY (service_id, system_id)
 );
 
-CREATE TABLE exchange_transform_error_to_re_process
+CREATE TABLE exchange_transform_error_to_reprocess
 ( 
 	service_id UUID,
     system_id UUID,

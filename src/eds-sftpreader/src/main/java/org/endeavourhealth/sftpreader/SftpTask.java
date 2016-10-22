@@ -393,13 +393,24 @@ public class SftpTask extends TimerTask
             LOG.trace("Keycloak is not enabled");
         }
 
-        //hash the split batches by organisation ID
+        //sort the batch splits by sequence ID
+        unnotifiedBatchSplits = unnotifiedBatchSplits
+                .stream()
+                .sorted(Comparator.comparing(t -> t.getBatch().getSequenceNumber()))
+                .collect(Collectors.toList());
+
+        //hash the split batches by organisation ID and keep an ordered list of the organisations,
+        //so we notify the earliest received organisations first
         HashMap<String, List<BatchSplit>> hmByOrg = new HashMap<>();
+        List<String> organisationIds = new ArrayList<>();
+
         for (BatchSplit batchSplit: unnotifiedBatchSplits) {
+
             List<BatchSplit> list = hmByOrg.get(batchSplit.getOrganisationId());
             if (list == null) {
                 list = new ArrayList<>();
                 hmByOrg.put(batchSplit.getOrganisationId(), list);
+                organisationIds.add(batchSplit.getOrganisationId());
             }
             list.add(batchSplit);
         }
@@ -408,18 +419,11 @@ public class SftpTask extends TimerTask
         int countSuccess = 0;
         int countFail = 0;
 
-        for (String organisationId: hmByOrg.keySet()) {
+        for (String organisationId: organisationIds) {
             List<BatchSplit> batchSplits = hmByOrg.get(organisationId);
 
             try
             {
-                //sort by sequence ID
-                batchSplits = batchSplits
-                        .stream()
-                        .sorted(Comparator.comparing(t -> t.getBatch().getSequenceNumber()))
-                        .collect(Collectors.toList());
-
-
                 for (BatchSplit batchSplit: batchSplits) {
 
                     LOG.trace("Notifying EDS for batch split: {}", batchSplit.getBatchSplitId());

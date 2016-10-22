@@ -13,8 +13,6 @@ DROP TABLE IF EXISTS enterprise_id_map;
 DROP TABLE IF EXISTS enterprise_organisation_id_map;
 
 CREATE TABLE emis_csv_code_map (
-	service_id uuid,
-	system_id uuid,
 	medication boolean,
 	code_id bigint,
 	time_uuid timeuuid,
@@ -28,8 +26,8 @@ CREATE TABLE emis_csv_code_map (
 	national_code TEXT,
 	national_code_category TEXT,
 	national_code_description TEXT,
-PRIMARY KEY ((service_id), system_id, medication, code_id, time_uuid))
-WITH CLUSTERING ORDER BY (system_id ASC, medication ASC, code_id ASC, time_uuid DESC);
+PRIMARY KEY ((medication, code_id), time_uuid))
+WITH CLUSTERING ORDER BY (time_uuid DESC);
 
 CREATE TABLE resource_id_map (
 	service_id UUID, 

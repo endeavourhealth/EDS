@@ -7,7 +7,7 @@ import com.datastax.driver.mapping.annotations.Table;
 
 import java.util.UUID;
 
-@Table(keyspace = "audit", name = "exchange_transform_error_to_re_process")
+@Table(keyspace = "audit", name = "exchange_transform_error_to_reprocess")
 public class ExchangeTransformErrorToReProcess {
 
     @PartitionKey(0)

@@ -66,7 +66,7 @@ public class DrugCodeTransformer {
             fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_SNOMED_CT, term, dmdId.toString());
         }
 
-        List<CallableError> errors = threadPool.submit(new DrugSaveCallable(parser.getCurrentState(), csvHelper, codeId, fhirConcept, dmdId, term, csvProcessor));
+        List<CallableError> errors = threadPool.submit(new DrugSaveCallable(parser.getCurrentState(), csvHelper, codeId, fhirConcept, dmdId, term));
         handleErrors(errors);
     }
 
@@ -91,15 +91,13 @@ public class DrugCodeTransformer {
         private CodeableConcept fhirConcept = null;
         private Long dmdId = null;
         private String term = null;
-        private CsvProcessor csvProcessor = null;
-        
+
         public DrugSaveCallable(CsvCurrentState parserState,
                                 EmisCsvHelper csvHelper,
                                 Long codeId,
                                 CodeableConcept fhirConcept,
                                 Long dmdId,
-                                String term,
-                                CsvProcessor csvProcessor) {
+                                String term) {
 
             this.parserState = parserState;
             this.csvHelper = csvHelper;
@@ -107,12 +105,11 @@ public class DrugCodeTransformer {
             this.fhirConcept = fhirConcept;
             this.dmdId = dmdId;
             this.term = term;
-            this.csvProcessor = csvProcessor;
         }
 
         @Override
         public Object call() throws Exception {
-            csvHelper.addMedication(codeId, fhirConcept, dmdId, term, csvProcessor);            
+            csvHelper.addMedication(codeId, fhirConcept, dmdId, term);
             return null;
         }
 

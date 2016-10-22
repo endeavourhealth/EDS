@@ -10,19 +10,13 @@ import java.util.UUID;
 @Table(keyspace = "transform", name = "emis_csv_code_map")
 public class EmisCsvCodeMap {
 
-    @PartitionKey
-    @Column(name = "service_id")
-    private UUID serviceId = null;
-    @ClusteringColumn(0)
-    @Column(name = "system_id")
-    private UUID systemId = null;
-    @ClusteringColumn(1)
+    @PartitionKey(0)
     @Column(name = "medication")
     private boolean medication = false;
-    @ClusteringColumn(2)
+    @PartitionKey(1)
     @Column(name = "code_id")
     private Long codeId = null;
-    @ClusteringColumn(3)
+    @ClusteringColumn(0)
     @Column(name = "time_uuid")
     private UUID timeUuid = null;
     @Column(name = "code_type")
@@ -45,23 +39,6 @@ public class EmisCsvCodeMap {
     private String nationalCodeCategory = null;
     @Column(name = "national_code_description")
     private String nationalCodeDescription = null;
-
-
-    public UUID getServiceId() {
-        return serviceId;
-    }
-
-    public void setServiceId(UUID serviceId) {
-        this.serviceId = serviceId;
-    }
-
-    public UUID getSystemId() {
-        return systemId;
-    }
-
-    public void setSystemId(UUID systemId) {
-        this.systemId = systemId;
-    }
 
     public boolean isMedication() {
         return medication;

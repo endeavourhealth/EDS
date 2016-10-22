@@ -127,7 +127,7 @@ public abstract class ClinicalCodeTransformer {
                                                             fhirConcept, codeType, emisTerm,
                                                             emisCode, snomedConceptId, snomedDescriptionId,
                                                             nationalCode, nationalCodeCategory, nationalCodeDescription,
-                                                            csvProcessor, csvHelper));
+                                                            csvHelper));
         handleErrors(errors);
     }
 
@@ -145,7 +145,6 @@ public abstract class ClinicalCodeTransformer {
         private String nationalCode = null;
         private String nationalCodeCategory = null;
         private String nationalCodeDescription = null;
-        private CsvProcessor csvProcessor = null;
         private EmisCsvHelper csvHelper = null;
 
         public WebServiceLookup(CsvCurrentState parserState,
@@ -159,7 +158,6 @@ public abstract class ClinicalCodeTransformer {
                                 String nationalCode,
                                 String nationalCodeCategory,
                                 String nationalCodeDescription,
-                                CsvProcessor csvProcessor,
                                 EmisCsvHelper csvHelper) {
 
             this.parserState = parserState;
@@ -173,7 +171,6 @@ public abstract class ClinicalCodeTransformer {
             this.nationalCode = nationalCode;
             this.nationalCodeCategory = nationalCodeCategory;
             this.nationalCodeDescription = nationalCodeDescription;
-            this.csvProcessor = csvProcessor;
             this.csvHelper = csvHelper;
         }
 
@@ -196,7 +193,7 @@ public abstract class ClinicalCodeTransformer {
             //store the coding in Cassandra
             csvHelper.addClinicalCode(codeId, fhirConcept, codeType, readTerm,
                     readCode, snomedConceptId, snomedDescriptionId, snomedTerm,
-                    nationalCode, nationalCodeCategory, nationalCodeDescription, csvProcessor);
+                    nationalCode, nationalCodeCategory, nationalCodeDescription);
 
             return null;
         }

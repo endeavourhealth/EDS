@@ -79,16 +79,13 @@ public class EmisCsvHelper {
     public void addMedication(Long codeId,
                               CodeableConcept codeableConcept,
                               Long snomedConceptId,
-                              String snomedTerm,
-                              CsvProcessor csvProcessor) throws Exception {
+                              String snomedTerm) throws Exception {
         medication.put(codeId, codeableConcept);
 
         //store the medication in the DB
         String json = new JsonParser().composeString(codeableConcept, CODEABLE_CONCEPT);
 
         EmisCsvCodeMap mapping = new EmisCsvCodeMap();
-        mapping.setServiceId(csvProcessor.getServiceId());
-        mapping.setSystemId(csvProcessor.getSystemId());
         mapping.setMedication(true);
         mapping.setCodeId(codeId);
         mapping.setTimeUuid(UUIDs.timeBased());
@@ -109,8 +106,7 @@ public class EmisCsvHelper {
                                 String snomedTerm,
                                 String nationalCode,
                                 String nationalCodeCategory,
-                                String nationalCodeDescription,
-                                CsvProcessor csvProcessor) throws Exception {
+                                String nationalCodeDescription) throws Exception {
         clinicalCodes.put(codeId, codeableConcept);
         clinicalCodeTypes.put(codeId, type);
 
@@ -118,8 +114,6 @@ public class EmisCsvHelper {
         String json = new JsonParser().composeString(codeableConcept, CODEABLE_CONCEPT);
 
         EmisCsvCodeMap mapping = new EmisCsvCodeMap();
-        mapping.setServiceId(csvProcessor.getServiceId());
-        mapping.setSystemId(csvProcessor.getSystemId());
         mapping.setMedication(false);
         mapping.setCodeId(codeId);
         mapping.setTimeUuid(UUIDs.timeBased());
@@ -701,7 +695,7 @@ public class EmisCsvHelper {
     public void cacheEthnicity(String patientGuid, DateTimeType fhirDate, EthnicCategory ethnicCategory) {
         DateAndCode dc = ethnicityMap.get(createUniqueId(patientGuid, null));
         if (dc == null
-            || (fhirDate != null && dc.isBefore(fhirDate))) {
+            || dc.isBefore(fhirDate)) {
             ethnicityMap.put(createUniqueId(patientGuid, null), new DateAndCode(fhirDate, CodeableConceptHelper.createCodeableConcept(ethnicCategory)));
         }
     }
@@ -718,7 +712,7 @@ public class EmisCsvHelper {
     public void cacheMaritalStatus(String patientGuid, DateTimeType fhirDate, MaritalStatus maritalStatus) {
         DateAndCode dc = maritalStatusMap.get(createUniqueId(patientGuid, null));
         if (dc == null
-                || (fhirDate != null && dc.isBefore(fhirDate))) {
+                || dc.isBefore(fhirDate)) {
             maritalStatusMap.put(createUniqueId(patientGuid, null), new DateAndCode(fhirDate, CodeableConceptHelper.createCodeableConcept(maritalStatus)));
         }
     }
@@ -849,7 +843,14 @@ public class EmisCsvHelper {
         }
 
         public boolean isBefore(DateTimeType other) {
-            return date.before(other);
+            if (date == null) {
+                return true;
+            } else if (other == null) {
+                return false;
+            } else {
+                return date.before(other);
+            }
+
         }
     }
 }
