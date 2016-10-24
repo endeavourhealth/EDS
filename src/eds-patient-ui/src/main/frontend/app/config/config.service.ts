@@ -1,12 +1,7 @@
 import {ConfigurationResource} from "./ConfigurationResource";
 import {BaseHttpService} from "../core/baseHttp.service";
 
-export interface IConfigService {
-	getConfig(configurationId : string):ng.IPromise<ConfigurationResource>;
-	saveConfig(configResource : ConfigurationResource):ng.IPromise<ConfigurationResource>;
-}
-
-export class ConfigService extends BaseHttpService implements IConfigService {
+export class ConfigService extends BaseHttpService {
 
 	getConfig(configurationId : string):ng.IPromise<ConfigurationResource> {
 		var request = {

@@ -4,20 +4,7 @@ import {BaseHttpService} from "./baseHttp.service";
 import {Auth} from "../appstartup/appstartup.auth";
 import {User} from "../models/User";
 
-export interface ISecurityService {
-	getCurrentUser() : User;
-	// switchUserInRole(userInRoleUuid:string) : IPromise<app.models.UserInRole>;
-	isAuthenticated() : boolean;
-	login() : void;
-	logout() : void;
-	openUserAccountTab() : void;
-	onAuthSuccess(callback:any) : void;
-	onAuthError(callback:any) : void;
-	onAuthLogout(callback:any) : void;
-	onAuthReady(callback:any) : void;
-}
-
-export class SecurityService extends BaseHttpService implements ISecurityService {
+export class SecurityService extends BaseHttpService {
 	currentUser:User;
 
 	static $inject = ['$http', '$q', '$rootScope'];

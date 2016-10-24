@@ -1,4 +1,4 @@
-import {ISecurityService} from "../core/security.service";
+import {SecurityService} from "../core/security.service";
 import {User} from "../models/User";
 
 export class TopnavComponent implements ng.IComponentOptions {
@@ -18,7 +18,7 @@ export class TopnavController {
 
 	static $inject = ['SecurityService'];
 
-	constructor(private securityService:ISecurityService) {
+	constructor(private securityService:SecurityService) {
 		this.getCurrentUser();
 	}
 

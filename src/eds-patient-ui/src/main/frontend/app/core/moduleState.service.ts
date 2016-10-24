@@ -1,9 +1,4 @@
-export interface IModuleStateService {
-	setState(moduleName : string, state : any) : void;
-	getState(moduleName : string) : any;
-}
-
-export class ModuleStateService implements IModuleStateService {
+export class ModuleStateService {
 	states : any = {};
 
 	setState(moduleName : string, state : any) {

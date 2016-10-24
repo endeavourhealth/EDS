@@ -64,8 +64,8 @@ import IModalService = angular.ui.bootstrap.IModalService;
 import IRootScopeService = angular.IRootScopeService;
 
 // Internal module types
-import {ISecurityService} from "./core/security.service";
-import {ILoggerService} from "./blocks/logger.service";
+import {SecurityService} from "./core/security.service";
+import {LoggerService} from "./blocks/logger.service";
 import {AdminService} from "./core/admin.service";
 import {AppRoute} from "./app.route";
 
@@ -87,8 +87,8 @@ export let app = angular.module('app', [
 		function ($state:StateService,
 							$rootScope:IRootScopeService,
 							adminService:AdminService,
-							securityService:ISecurityService,
-							logger:ILoggerService,
+							securityService:SecurityService,
+							logger:LoggerService,
 							$modal:IModalService) {
 
 

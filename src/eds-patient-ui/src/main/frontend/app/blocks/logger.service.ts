@@ -1,15 +1,7 @@
 import IToastrConfig = angular.toastr.IToastrConfig;
 import IToastrService = angular.toastr.IToastrService;
 
-export interface ILoggerService {
-	info: (message:string, data?:{}, title?:string) => void;
-	error: (message:string, data?:{}, title?:string) => void;
-	success: (message:string, data?:{}, title?:string) => void;
-	warning: (message:string, data?:{}, title?:string) => void;
-	log: (...args:any[]) => void;
-}
-
-export class LoggerService implements ILoggerService {
+export class LoggerService {
 	static $inject:Array<string> = ['$log', 'toastr', 'toastrConfig'];
 
 	constructor(private $log:ng.ILogService, private toastr : IToastrService, private toastrConfig : IToastrConfig) {

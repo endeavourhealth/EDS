@@ -3,9 +3,6 @@ import IModalService = angular.ui.bootstrap.IModalService;
 import IModalStackService = angular.ui.bootstrap.IModalStackService;
 import IRootScopeService = angular.IRootScopeService;
 
-import {StateService} from "angular-ui-router";
-import {ISecurityService} from "../core/security.service";
-
 export class ShellComponent implements ng.IComponentOptions {
 	template : string;
 	controller : string;

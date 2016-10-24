@@ -4,13 +4,9 @@ import {upgradeAdapter} from "../upgradeAdapter";
 
 angular.module('app.appstartup', []);
 
-export interface IWellKnownConfig {
-    getAuthConfig() : AuthConfig;
-}
-
 // configuration that is obtained from 'well known' endpoints, i.e. on the same
 // base url as this app
-export class WellKnownConfig implements IWellKnownConfig{
+export class WellKnownConfig {
 
     private authConfig:AuthConfig;
 

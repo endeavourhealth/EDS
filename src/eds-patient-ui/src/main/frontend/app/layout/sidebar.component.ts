@@ -1,5 +1,5 @@
 import {MenuOption} from "../models/MenuOption";
-import {ISecurityService} from "../core/security.service";
+import {SecurityService} from "../core/security.service";
 import {AdminService} from "../core/admin.service";
 
 export class SidebarComponent implements ng.IComponentOptions {
@@ -20,7 +20,7 @@ export class SidebarController {
 
 	static $inject = ['AdminService', 'SecurityService'];
 
-	constructor(adminService:AdminService, private securityService:ISecurityService) {
+	constructor(adminService:AdminService, private securityService:SecurityService) {
 		this.menuOptions = adminService.getMenuOptions();
 	}
 

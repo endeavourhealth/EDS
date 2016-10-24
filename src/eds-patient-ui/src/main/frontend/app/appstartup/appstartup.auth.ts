@@ -3,14 +3,7 @@ import Keycloak = require('keycloak');
 import {AuthConfig} from "../models/wellknown/AuthConfig";
 import {WellKnownConfig} from "./appstartup.module";
 
-export interface IAuth {
-    init() : void;
-    getAuthz() : any;
-    getLogoutUrl() : string;
-    getRedirectUrl() : string;
-}
-
-export class Auth implements IAuth {
+export class Auth {
 
     private static instance:Auth;
     public static factory():Auth {
