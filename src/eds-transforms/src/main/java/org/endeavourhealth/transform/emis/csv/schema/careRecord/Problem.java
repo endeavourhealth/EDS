@@ -95,6 +95,9 @@ public class Problem extends AbstractCsvParser {
     public String getParentProblemRelationship() {
         return super.getString("ParentProblemRelationship");
     }
+    public boolean getDeleted() {
+        return super.getBoolean("Deleted");
+    }
     public String getComment() {
         return super.getString("Comment");
     }

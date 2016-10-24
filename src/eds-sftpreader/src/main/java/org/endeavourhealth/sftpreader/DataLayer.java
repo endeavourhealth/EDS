@@ -315,4 +315,32 @@ public class DataLayer
 
         pgStoredProc.execute();
     }
+
+    public void addEmisOrganisationMap(EmisOrganisationMap mapping) throws PgStoredProcException {
+
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.add_emis_organisation_map")
+                .addParameter("_guid", mapping.getGuid())
+                .addParameter("_name", mapping.getName())
+                .addParameter("_ods_code", mapping.getOdsCode());
+
+        pgStoredProc.execute();
+    }
+
+    public EmisOrganisationMap getEmisOrganisationMap(String guid) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("sftpreader.get_emis_organisation_map")
+                .addParameter("_guid", guid);
+
+        List<EmisOrganisationMap> mappings = pgStoredProc.executeQuery(resultSet -> new EmisOrganisationMap()
+                .setGuid(resultSet.getString("guid"))
+                .setName(resultSet.getString("name"))
+                .setOdsCode(resultSet.getString("ods_code")));
+        if (mappings.isEmpty()) {
+            return null;
+        } else {
+            return mappings.get(0);
+        }
+    }
 }

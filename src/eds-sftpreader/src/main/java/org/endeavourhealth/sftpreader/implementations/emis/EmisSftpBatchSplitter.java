@@ -154,18 +154,21 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
 
         LOG.trace("Completed CSV file splitting from {} to {}", srcDir, dstDir);
 
+        //we need to parse the organisation file, to store the mappings for later
+        saveAllOdsCodes(db, dbConfiguration, batch);
+
         //build a list of the folders containing file sets, to return
         List<BatchSplit> ret = new ArrayList<>();
 
         for (File orgDir : dstDir.listFiles()) {
 
-            String orgId = orgDir.getName();
+            String orgGuid = orgDir.getName();
             String localPath = FilenameUtils.concat(batch.getLocalRelativePath(), SPLIT_FOLDER);
-            localPath = FilenameUtils.concat(localPath, orgId);
+            localPath = FilenameUtils.concat(localPath, orgGuid);
 
             //we need to find the ODS code for the EMIS org GUID. When we have a full extract, we can find that mapping
             //in the Organisation CSV file, but for deltas, we use the key-value-pair table which is populated when we get the deltas
-            String odsCode = findOdsCode(orgId, db, dbConfiguration, batch);
+            String odsCode = findOdsCode(orgGuid, db);
 
             BatchSplit batchSplit = new BatchSplit();
             batchSplit.setBatchId(batch.getBatchId());
@@ -178,8 +181,54 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
         return ret;
     }
 
+    private static void saveAllOdsCodes(DataLayer db, DbConfiguration dbConfiguration, Batch batch) throws Exception {
 
-    private static String findOdsCode(String emisOrgGuid, DataLayer db, DbConfiguration dbConfiguration, Batch batch) throws Exception {
+        //go through our Admin_Organisation file, saving all new org details to our PostgreSQL DB
+        File adminCsvFile = null;
+        for (BatchFile batchFile: batch.getBatchFiles()) {
+            if (batchFile.getFileTypeIdentifier().equalsIgnoreCase("Admin_Organisation")) {
+                String path = FilenameUtils.concat(dbConfiguration.getLocalRootPath(), batch.getLocalRelativePath());
+                path = FilenameUtils.concat(path, batchFile.getDecryptedFilename());
+                adminCsvFile = new File(path);
+            }
+        }
+
+        CSVParser csvParser = CSVParser.parse(adminCsvFile, Charset.defaultCharset(), CSV_FORMAT.withHeader());
+        try {
+            Iterator<CSVRecord> csvIterator = csvParser.iterator();
+
+            while (csvIterator.hasNext()) {
+                CSVRecord csvRecord = csvIterator.next();
+
+                String orgGuid = csvRecord.get("OrganisationGuid");
+                String orgName = csvRecord.get("OrganisationName");
+                String orgOds = csvRecord.get("ODSCode");
+
+                EmisOrganisationMap mapping = new EmisOrganisationMap();
+                mapping.setGuid(orgGuid);
+                mapping.setName(orgName);
+                mapping.setOdsCode(orgOds);
+
+                db.addEmisOrganisationMap(mapping);
+            }
+        } finally {
+            csvParser.close();
+        }
+
+
+    }
+
+    private static String findOdsCode(String emisOrgGuid, DataLayer db) throws Exception {
+
+        //look in our mapping table to find the ODS code for our org GUID
+        EmisOrganisationMap mapping = db.getEmisOrganisationMap(emisOrgGuid);
+        if (mapping != null) {
+            return mapping.getOdsCode();
+        }
+
+        throw new RuntimeException("Failed to find ODS code for EMIS Org GUID " + emisOrgGuid);
+    }
+    /*private static String findOdsCode(String emisOrgGuid, DataLayer db, DbConfiguration dbConfiguration, Batch batch) throws Exception {
 
         //first look in our key-value-pair table, as any previously encountered orgs will have been stored in there
         for (DbConfigurationKvp kvp: dbConfiguration.getDbConfigurationKvp()) {
@@ -225,7 +274,7 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
         }
 
         throw new RuntimeException("Failed to find ODS code for EMIS Org GUID " + emisOrgGuid);
-    }
+    }*/
 
     /**
      * scans through the files in the folder and works out which are admin and which are clinical

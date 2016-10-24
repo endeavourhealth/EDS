@@ -211,8 +211,11 @@ public class PgStoredProc
     {
         if ((value instanceof Integer) || (value instanceof Long))
             return value.toString();
-        else if ((value instanceof Character) || (value instanceof String))
+        else if (value instanceof Character)
             return "'" + value + "'";
+        else if (value instanceof String)
+            //return "'" + value + "'";
+            return "'" + ((String)value).replace("'", "''") + "'";
         else if ((value instanceof Boolean))
             return value.toString();
         else if (value instanceof java.time.LocalDate)
