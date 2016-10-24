@@ -2,7 +2,9 @@ import {ConfigurationResource} from "./ConfigurationResource";
 import {Http} from "@angular/http";
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 import {Observable} from "rxjs";
+import {Injectable} from "@angular/core";
 
+@Injectable()
 export class ConfigService extends BaseHttp2Service {
 
 	constructor(http : Http) { super (http); }

@@ -1,4 +1,6 @@
-import {LoggerService} from "./logger.service";
+import {EdsLoggerService} from "./logger.service";
+import {upgradeAdapter} from "../upgradeAdapter";
 
 angular.module('app.blocks', [])
-	.service('LoggerService', LoggerService);
+	.service('EdsLoggerService', EdsLoggerService);
+upgradeAdapter.upgradeNg1Provider('EdsLoggerService');

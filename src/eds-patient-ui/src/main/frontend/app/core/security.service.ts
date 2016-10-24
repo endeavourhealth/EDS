@@ -1,6 +1,8 @@
 import {Auth} from "../appstartup/appstartup.auth";
 import {User} from "../models/User";
+import {Injectable} from "@angular/core";
 
+@Injectable()
 export class SecurityService {
 	currentUser:User;
 

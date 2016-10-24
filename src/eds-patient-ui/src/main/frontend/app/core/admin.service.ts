@@ -1,5 +1,7 @@
 import {MenuOption} from "../models/MenuOption";
+import {Injectable} from "@angular/core";
 
+@Injectable()
 export class AdminService {
 	pendingChanges : boolean;
 
