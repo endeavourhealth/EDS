@@ -14,7 +14,6 @@ export class SidebarComponent implements ng.IComponentOptions {
 	}
 }
 
-
 export class SidebarController {
 	menuOptions:MenuOption[];
 

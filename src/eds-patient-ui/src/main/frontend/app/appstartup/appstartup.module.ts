@@ -4,8 +4,6 @@ import {Auth} from "./appstartup.auth";
 import {AuthConfig} from "../models/wellknown/AuthConfig";
 import {upgradeAdapter} from "../upgradeAdapter";
 
-angular.module('app.appstartup', []);
-
 // configuration that is obtained from 'well known' endpoints, i.e. on the same
 // base url as this app
 export class WellKnownConfig {
@@ -42,7 +40,7 @@ export class WellKnownConfig {
 //
 angular.element(document).ready(($http) => {
 
-    var $injector = angular.injector(['ng', 'app.appstartup']);
+    var $injector = angular.injector(['ng']);
     var promise:ng.IQService = $injector.get('$q') as ng.IQService;
     var wellKnownConfig:WellKnownConfig = WellKnownConfig.factory();
 

@@ -1,7 +1,7 @@
 require('zone.js');
 import 'reflect-metadata';
 
-import { NgModule } from '@angular/core';
+import {NgModule, OnInit} from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import {HttpModule, RequestOptions, XHRBackend, Http} from '@angular/http';
@@ -53,6 +53,13 @@ import {EdsLoggerService} from "./blocks/logger.service";
 	]
 })
 
-export class AppModule {}
+export class AppModule implements OnInit {
+	constructor(private log : EdsLoggerService) {}
+
+	ngOnInit(): void {
+		this.log.info("Initialized");
+	}
+
+}
 
 import './app.module';

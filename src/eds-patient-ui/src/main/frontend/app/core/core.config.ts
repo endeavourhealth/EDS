@@ -1,23 +1,19 @@
 import IHttpProvider = angular.IHttpProvider;
 import IIdleProvider = angular.idle.IIdleProvider;
 import IKeepAliveProvider = angular.idle.IKeepAliveProvider;
-import IToastrConfig = angular.toastr.IToastrConfig;
 
 export class Config {
 
-	static $inject = ['$httpProvider', 'IdleProvider', 'KeepaliveProvider', 'toastrConfig'];
+	static $inject = ['$httpProvider', 'IdleProvider', 'KeepaliveProvider'];
 
 	constructor(
 		$httpProvider:IHttpProvider,
 		IdleProvider:IIdleProvider,
-		KeepaliveProvider:IKeepAliveProvider,
-		toastrConfig : IToastrConfig) {
+		KeepaliveProvider:IKeepAliveProvider) {
 		$httpProvider.defaults.headers.post['Accept'] = 'application/json';
 		$httpProvider.defaults.headers.post['Content-Type'] = 'application/json; charset=utf-8';
 		$httpProvider.defaults.withCredentials = true;
 
-		toastrConfig.timeOut = 4000;
-		toastrConfig.positionClass = 'toast-bottom-right';
 		IdleProvider.idle(300);
 		IdleProvider.timeout(10);
 		KeepaliveProvider.interval(10);

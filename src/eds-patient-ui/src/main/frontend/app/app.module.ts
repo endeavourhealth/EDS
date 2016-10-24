@@ -31,8 +31,6 @@ import {AdminService} from "./core/admin.service";
 import {SecurityService} from "./core/security.service";
 
 export let app = angular.module('app', [
-		'toastr',
-		'app.appstartup',
 		'app.models',
 		'app.core',
 		'app.config',

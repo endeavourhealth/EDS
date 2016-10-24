@@ -8,4 +8,3 @@ angular.module('app.medicalRecord', ['ui.router'])
 
 	// Hybrid
 	.directive('medicalRecordComponent', <angular.IDirectiveFactory>upgradeAdapter.downgradeNg2Component(MedicalRecordComponent));
-upgradeAdapter.upgradeNg1Provider('MedicalRecordService');

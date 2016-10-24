@@ -1,6 +1,6 @@
 import {ConsentService} from "./consent.service";
 
-import {Component, Inject} from '@angular/core'
+import {Component} from '@angular/core'
 
 @Component({
 	selector: 'consent-component',
@@ -8,7 +8,7 @@ import {Component, Inject} from '@angular/core'
 })
 export class ConsentComponent {
 
-	constructor(@Inject('ConsentService') consentService:ConsentService) {
+	constructor(private consentService:ConsentService) {
 	}
 }
 
