@@ -1,7 +1,6 @@
-import {BaseHttpService} from "./baseHttp.service";
 import {MenuOption} from "../models/MenuOption";
 
-export class AdminService extends BaseHttpService {
+export class AdminService {
 	pendingChanges : boolean;
 
 	getMenuOptions():MenuOption[] {

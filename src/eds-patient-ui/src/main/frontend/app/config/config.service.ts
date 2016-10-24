@@ -1,9 +1,13 @@
 import {ConfigurationResource} from "./ConfigurationResource";
-import {BaseHttpService} from "../core/baseHttp.service";
+import {Http} from "@angular/http";
+import {BaseHttp2Service} from "../core/baseHttp2.service";
+import {Observable} from "rxjs";
 
-export class ConfigService extends BaseHttpService {
+export class ConfigService extends BaseHttp2Service {
 
-	getConfig(configurationId : string):ng.IPromise<ConfigurationResource> {
+	constructor(http : Http) { super (http); }
+
+	getConfig(configurationId : string):Observable<ConfigurationResource> {
 		var request = {
 			params: {
 				'configurationId': configurationId
@@ -13,7 +17,7 @@ export class ConfigService extends BaseHttpService {
 		return this.httpGet('api/config/getConfig', request);
 	}
 
-	saveConfig(configResource : ConfigurationResource):ng.IPromise<ConfigurationResource> {
+	saveConfig(configResource : ConfigurationResource):Observable<ConfigurationResource> {
 		return this.httpPost('api/config/saveConfig', configResource);
 	}
 }

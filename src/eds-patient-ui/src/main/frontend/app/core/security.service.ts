@@ -1,17 +1,8 @@
-import IRootScopeService = angular.IRootScopeService;
-
-import {BaseHttpService} from "./baseHttp.service";
 import {Auth} from "../appstartup/appstartup.auth";
 import {User} from "../models/User";
 
-export class SecurityService extends BaseHttpService {
+export class SecurityService {
 	currentUser:User;
-
-	static $inject = ['$http', '$q', '$rootScope'];
-
-	constructor(protected http:ng.IHttpService, protected promise:ng.IQService, protected $rootScope:IRootScopeService) {
-		super(http, promise);
-	}
 
 	getAuthz() : any {
 		return Auth.factory().getAuthz();
