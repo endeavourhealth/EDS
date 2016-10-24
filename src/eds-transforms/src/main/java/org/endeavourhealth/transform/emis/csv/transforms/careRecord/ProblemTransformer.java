@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
@@ -30,7 +31,7 @@ public class ProblemTransformer {
             while (parser.nextRecord()) {
 
                 try {
-                    createResource((Problem)parser, csvProcessor, csvHelper);
+                    createResource((Problem)parser, csvProcessor, csvHelper, version);
                 } catch (Exception ex) {
                     csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
                 }
@@ -39,48 +40,56 @@ public class ProblemTransformer {
 
     }
 
-    private static void createResource(Problem problemParser,
+    private static void createResource(Problem parser,
                                        CsvProcessor csvProcessor,
-                                       EmisCsvHelper csvHelper) throws Exception {
+                                       EmisCsvHelper csvHelper,
+                                       String version) throws Exception {
 
         Condition fhirProblem = new Condition();
         fhirProblem.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROBLEM));
 
-        String observationGuid = problemParser.getObservationGuid();
-        String patientGuid = problemParser.getPatientGuid();
+        String observationGuid = parser.getObservationGuid();
+        String patientGuid = parser.getPatientGuid();
 
         EmisCsvHelper.setUniqueId(fhirProblem, patientGuid, observationGuid);
 
         fhirProblem.setPatient(csvHelper.createPatientReference(patientGuid));
 
-        String comments = problemParser.getComment();
+        //the deleted fields isn't present in the test pack, so need to check the version first
+        if (!version.equals(EmisCsvTransformer.VERSION_TEST_PACK)
+            && parser.getDeleted()) {
+            //the problem is actually saved in the ObservationTransformer, so just cache for later
+            csvHelper.cacheProblem(observationGuid, patientGuid, fhirProblem);
+            return;
+        }
+
+        String comments = parser.getComment();
         fhirProblem.setNotes(comments);
 
-        Date endDate = problemParser.getEndDate();
+        Date endDate = parser.getEndDate();
         if (endDate != null) {
-            String endDatePrecision = problemParser.getEndDatePrecision(); //NOTE; documentation refers to this as EffectiveDate, but this should be EndDate
+            String endDatePrecision = parser.getEndDatePrecision(); //NOTE; documentation refers to this as EffectiveDate, but this should be EndDate
             fhirProblem.setAbatement(EmisDateTimeHelper.createDateType(endDate, endDatePrecision));
         } else {
 
             //if there's no end date, the problem may still be ended, which is in the status description
-            String problemStatus = problemParser.getProblemStatusDescription();
+            String problemStatus = parser.getProblemStatusDescription();
             if (problemStatus.equalsIgnoreCase("Past Problem")) {
                 fhirProblem.setAbatement(new BooleanType(true));
             }
         }
 
-
         fhirProblem.setVerificationStatus(Condition.ConditionVerificationStatus.CONFIRMED);
 
-        Integer expectedDuration = problemParser.getExpectedDuration();
+        Integer expectedDuration = parser.getExpectedDuration();
         if (expectedDuration != null) {
             fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_EXPECTED_DURATION, new IntegerType(expectedDuration.intValue())));
         }
 
-        Date lastReviewDate = problemParser.getLastReviewDate();
-        String lastReviewPrecision = problemParser.getLastReviewDatePrecision();
+        Date lastReviewDate = parser.getLastReviewDate();
+        String lastReviewPrecision = parser.getLastReviewDatePrecision();
         DateType lastReviewDateType = EmisDateTimeHelper.createDateType(lastReviewDate, lastReviewPrecision);
-        String lastReviewedByGuid = problemParser.getLastReviewUserInRoleGuid();
+        String lastReviewedByGuid = parser.getLastReviewUserInRoleGuid();
         if (lastReviewDateType != null
                 || !Strings.isNullOrEmpty(lastReviewedByGuid)) {
 
@@ -96,12 +105,12 @@ public class ProblemTransformer {
             fhirProblem.addExtension(fhirExtension);
         }
 
-        ProblemSignificance fhirSignificance = convertSignificance(problemParser.getSignificanceDescription());
+        ProblemSignificance fhirSignificance = convertSignificance(parser.getSignificanceDescription());
         CodeableConcept fhirConcept = CodeableConceptHelper.createCodeableConcept(fhirSignificance);
         fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_SIGNIFICANCE, fhirConcept));
 
-        String parentProblemGuid = problemParser.getParentProblemObservationGuid();
-        String parentRelationship = problemParser.getParentProblemRelationship();
+        String parentProblemGuid = parser.getParentProblemObservationGuid();
+        String parentRelationship = parser.getParentProblemRelationship();
         if (!Strings.isNullOrEmpty(parentProblemGuid)) {
             ProblemRelationshipType fhirRelationshipType = convertRelationshipType(parentRelationship);
 
@@ -111,8 +120,7 @@ public class ProblemTransformer {
             fhirProblem.addExtension(ExtensionConverter.createCompoundExtension(FhirExtensionUri.PROBLEM_RELATED, typeExtension, referenceExtension));
         }
 
-        //until the Observation, DrugIssue and DrugRecord files are completed, we can't
-        //save the problem, so cache it in the helper to finish later
+        //the problem is actually saved in the ObservationTransformer, so just cache for later
         csvHelper.cacheProblem(observationGuid, patientGuid, fhirProblem);
     }
 
