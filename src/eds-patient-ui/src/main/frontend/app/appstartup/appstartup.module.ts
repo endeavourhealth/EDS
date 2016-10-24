@@ -1,3 +1,5 @@
+import 'angular';
+
 import {Auth} from "./appstartup.auth";
 import {AuthConfig} from "../models/wellknown/AuthConfig";
 import {upgradeAdapter} from "../upgradeAdapter";
