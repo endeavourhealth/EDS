@@ -113,7 +113,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		List<UUID> batchIds = null;
 
 		//create the object that audits the transform and stores any errors
-		ExchangeTransformAudit transformAudit = createTransformAudit(serviceId, systemId, exchange.getExchangeId());
+		Date transformStarted = new Date();
 		TransformError currentErrors = new TransformError();
 
 		//find the current error state for the source of our data
@@ -167,14 +167,10 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//if we had any errors with the transform, update the error state for this service and system, so
 		//we don't attempt to run any further exchanges from the same source until the error is resolved
-		updateErrorState(errorState, serviceId, systemId, exchange.getExchangeId(), transformAudit);
+		updateErrorState(errorState, serviceId, systemId, exchange.getExchangeId(), currentErrors);
 
-		//save our audit of the transform
-		if (currentErrors.getError().size() > 0) {
-			transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(currentErrors));
-		}
-		transformAudit.setEnded(new Date());
-		new AuditRepository().save(transformAudit);
+		//save the audit of this transform, including errors
+		createTransformAudit(serviceId, systemId, exchange.getExchangeId(), transformStarted, currentErrors);
 
 		return batchIds;
 	}
@@ -187,9 +183,9 @@ public class MessageTransformInbound extends PipelineComponent {
 								  UUID serviceId,
 								  UUID systemId,
 								  UUID exchangeId,
-								  ExchangeTransformAudit transformAudit) {
+								  TransformError currentErrors) {
 
-		boolean hadError = transformAudit.getErrorXml() != null;
+		boolean hadError = currentErrors.getError().size() > 0;
 
 		if (errorState == null) {
 
@@ -270,14 +266,20 @@ public class MessageTransformInbound extends PipelineComponent {
 		return false;
 	}
 
-	private static ExchangeTransformAudit createTransformAudit(UUID serviceId, UUID systemId, UUID exchangeId) {
+	private static void createTransformAudit(UUID serviceId, UUID systemId, UUID exchangeId, Date transformStarted, TransformError transformError) {
 		ExchangeTransformAudit transformAudit = new ExchangeTransformAudit();
 		transformAudit.setServiceId(serviceId);
 		transformAudit.setSystemId(systemId);
 		transformAudit.setExchangeId(exchangeId);
 		transformAudit.setVersion(UUIDs.timeBased());
-		transformAudit.setStarted(new Date());
-		return transformAudit;
+		transformAudit.setStarted(transformStarted);
+		transformAudit.setEnded(new Date());
+
+		if (transformError.getError().size() > 0) {
+			transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(transformError));
+		}
+
+		new AuditRepository().save(transformAudit);
 	}
 
 	private static String convertUUidsToStrings(List<UUID> uuids) throws PipelineException {
