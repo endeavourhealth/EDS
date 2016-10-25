@@ -85,11 +85,19 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
         path = FilenameUtils.concat(path, SPLIT_FOLDER);
         File dstDir = new File(path);
 
-        if (!dstDir.exists()) {
-            if (!dstDir.mkdirs()) {
-                throw new FileNotFoundException("Failed to create destination directory " + dstDir);
-            }
+        if (dstDir.exists()) {
+            //if the folder does exist, delete all content within it, since if we're re-splitting a file
+            //we want to make sure that all previous content is deleted
+            deleteRecursive(dstDir);
         }
+
+        if (!dstDir.mkdirs()) {
+            throw new FileNotFoundException("Failed to create destination directory " + dstDir);
+        }
+
+        //even if there's no clinical content (e.g. observations), we want a sub-folder for each organisation in our
+        //sharing agreement, so we apply any changes to orgs, staff or locations
+        createOrgFolders(dstDir, dbConfiguration, batch);
 
         //scan through the files in the folder and works out which are admin and which are clinical
         List<String> processingIdFiles = new ArrayList<>();
@@ -179,6 +187,54 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
         }
 
         return ret;
+    }
+
+    private void createOrgFolders(File dstDir, DbConfiguration dbConfiguration, Batch batch) throws Exception {
+
+        File sharingAgreementFile = null;
+        for (BatchFile batchFile: batch.getBatchFiles()) {
+            if (batchFile.getFileTypeIdentifier().equalsIgnoreCase("Agreements_SharingOrganisation")) {
+                String path = FilenameUtils.concat(dbConfiguration.getLocalRootPath(), batch.getLocalRelativePath());
+                path = FilenameUtils.concat(path, batchFile.getDecryptedFilename());
+                sharingAgreementFile = new File(path);
+            }
+        }
+
+        CSVParser csvParser = CSVParser.parse(sharingAgreementFile, Charset.defaultCharset(), CSV_FORMAT.withHeader());
+        try {
+            Iterator<CSVRecord> csvIterator = csvParser.iterator();
+
+            while (csvIterator.hasNext()) {
+                CSVRecord csvRecord = csvIterator.next();
+
+                String orgGuid = csvRecord.get("OrganisationGuid");
+                String activated = csvRecord.get("IsActivated");
+                if (activated.equalsIgnoreCase("true")) {
+
+                    File orgDir = new File(dstDir, orgGuid);
+                    if (!orgDir.exists()) {
+                        orgDir.mkdirs();
+                    }
+                }
+            }
+        } finally {
+            csvParser.close();
+        }
+
+    }
+
+    /**
+     * file.delete() only works on empty directories, so we need to make sure they're empty first
+     */
+    private static void deleteRecursive(File f) throws Exception {
+        if (f.isDirectory()) {
+            for (File child: f.listFiles()) {
+                deleteRecursive(child);
+            }
+        }
+        if (!f.delete()) {
+            throw new IOException("Failed to delete " + f);
+        }
     }
 
     private static void saveAllOdsCodes(DataLayer db, DbConfiguration dbConfiguration, Batch batch) throws Exception {

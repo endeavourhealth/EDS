@@ -82,7 +82,7 @@ public class DrugRecordTransformer {
         }
 
         Long codeId = parser.getCodeId();
-        fhirMedicationStatement.setMedication(csvHelper.findMedication(codeId, csvProcessor));
+        fhirMedicationStatement.setMedication(csvHelper.findMedication(codeId));
 
         String dose = parser.getDosage();
         MedicationStatement.MedicationStatementDosageComponent fhirDose = fhirMedicationStatement.addDosage();

@@ -41,7 +41,7 @@ public class CsvProcessor {
     private UUID adminBatchId = null;
 
     //threading
-    private ThreadPool threadPool = new ThreadPool(10, 100000); //allow 10 threads for saving, but limit to allowing 200,000 things to be queued
+    private ThreadPool threadPool = new ThreadPool(10, 100000); //allow 10 threads for saving
 
     //counts
     private Map<UUID, AtomicInteger> countResourcesSaved = new ConcurrentHashMap<>();
@@ -244,7 +244,7 @@ public class CsvProcessor {
             totalDeleted += deleted;
         }
 
-        LOG.info("CSV processing completed, saving {} resources, deleting {} for {} distinct patients", totalSaved, totalDeleted, patientBatchIdMap.size());
+        LOG.info("CSV processing completed, saving {} resources and deleting {} over {} distinct patients", totalSaved, totalDeleted, patientBatchIdMap.size());
     }
 
     private List<UUID> getAllBatchIds() {

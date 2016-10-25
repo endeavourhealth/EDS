@@ -62,7 +62,7 @@ public class DiaryTransformer {
         }
 
         Long codeId = parser.getCodeId();
-        fhirRequest.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
+        fhirRequest.setCode(csvHelper.findClinicalCode(codeId));
 
         String originalTerm = parser.getOriginalTerm();
         if (!Strings.isNullOrEmpty(originalTerm)) {

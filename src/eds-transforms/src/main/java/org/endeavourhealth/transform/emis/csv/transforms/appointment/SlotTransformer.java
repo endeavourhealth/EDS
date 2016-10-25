@@ -124,7 +124,7 @@ public class SlotTransformer {
         Long dnaReasonCode = parser.getDnaReasonCodeId();
         if (dnaReasonCode != null) {
 
-            CodeableConcept fhirCodeableConcept = csvHelper.findClinicalCode(dnaReasonCode, csvProcessor);
+            CodeableConcept fhirCodeableConcept = csvHelper.findClinicalCode(dnaReasonCode);
             fhirAppointment.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.APPOINTMENT_DNA_REASON_CODE, fhirCodeableConcept));
         }
 

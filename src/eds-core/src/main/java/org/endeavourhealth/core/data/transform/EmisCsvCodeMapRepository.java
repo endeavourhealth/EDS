@@ -6,7 +6,6 @@ import org.endeavourhealth.core.data.transform.accessors.EmisCsvCodeMapAccessor;
 import org.endeavourhealth.core.data.transform.models.EmisCsvCodeMap;
 
 import java.util.Iterator;
-import java.util.UUID;
 
 public class EmisCsvCodeMapRepository extends Repository {
 
@@ -19,10 +18,10 @@ public class EmisCsvCodeMapRepository extends Repository {
         mapper.save(mapping);
     }
 
-    public EmisCsvCodeMap getMostRecent(UUID serviceId, UUID systemId, boolean medication, Long codeId) {
+    public EmisCsvCodeMap getMostRecent(boolean medication, Long codeId) {
 
         EmisCsvCodeMapAccessor accessor = getMappingManager().createAccessor(EmisCsvCodeMapAccessor.class);
-        Iterator<EmisCsvCodeMap> iterator = accessor.getMostRecent(serviceId, systemId, medication, codeId).iterator();
+        Iterator<EmisCsvCodeMap> iterator = accessor.getMostRecent(medication, codeId).iterator();
         if (iterator.hasNext()) {
             return iterator.next();
         } else {

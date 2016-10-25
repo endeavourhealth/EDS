@@ -57,7 +57,7 @@ public class ObservationTransformer {
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 
-        ResourceType resourceType = findOriginalTargetResourceType(parser, csvProcessor);
+        ResourceType resourceType = findOriginalTargetResourceType(csvProcessor, csvHelper, parser);
         if (resourceType != null) {
             switch (resourceType) {
                 case Observation:
@@ -103,7 +103,7 @@ public class ObservationTransformer {
         //a FHIR Condition (for the problem) as well as the FHIR FamilyMemberHistory. The above code will
         //sort out deleting the FamilyMemberHistory, so we also need to see if the same EMIS observation
         //was saved as a condition too
-        if (wasSavedAsResourceType(csvProcessor, ResourceType.Condition, parser)) {
+        if (wasSavedAsResourceType(csvProcessor, csvHelper, parser, ResourceType.Condition)) {
             createOrDeleteCondition(parser, csvProcessor, csvHelper, true);
         }
     }
@@ -112,7 +112,7 @@ public class ObservationTransformer {
     /**
      * finds out what resource type an EMIS observation was previously saved as
      */
-    private static ResourceType findOriginalTargetResourceType(Observation parser, CsvProcessor csvProcessor) {
+    private static ResourceType findOriginalTargetResourceType(CsvProcessor csvProcessor, EmisCsvHelper csvHelper, Observation parser) {
 
         List<ResourceType> potentialResourceTypes = new ArrayList<>();
         potentialResourceTypes.add(ResourceType.Observation);
@@ -127,15 +127,16 @@ public class ObservationTransformer {
         potentialResourceTypes.add(ResourceType.ReferralRequest);
         
         for (ResourceType resourceType: potentialResourceTypes) {
-            if (wasSavedAsResourceType(csvProcessor, resourceType, parser)) {
+            if (wasSavedAsResourceType(csvProcessor, csvHelper, parser, resourceType)) {
                 return resourceType;
             }
         }
         return null;
     }
 
-    private static boolean wasSavedAsResourceType(CsvProcessor csvProcessor, ResourceType resourceType, Observation parser) {
-        ResourceIdMap mapping = idMapRepository.getResourceIdMap(csvProcessor.getServiceId(), csvProcessor.getSystemId(), resourceType.toString(), parser.getObservationGuid());
+    private static boolean wasSavedAsResourceType(CsvProcessor csvProcessor, EmisCsvHelper csvHelper, Observation parser, ResourceType resourceType) {
+        String uniqueId = csvHelper.createUniqueId(parser.getPatientGuid(), parser.getObservationGuid());
+        ResourceIdMap mapping = idMapRepository.getResourceIdMap(csvProcessor.getServiceId(), csvProcessor.getSystemId(), resourceType.toString(), uniqueId);
         return mapping != null;
     }
     
@@ -216,7 +217,7 @@ public class ObservationTransformer {
                                                      EmisCsvHelper csvHelper) throws Exception {
 
         Long codeId = parser.getCodeId();
-        ClinicalCodeType codeType = csvHelper.findClinicalCodeType(codeId, csvProcessor);
+        ClinicalCodeType codeType = csvHelper.findClinicalCodeType(codeId);
         Double value = parser.getValue();
 
         if (value != null
@@ -315,7 +316,7 @@ public class ObservationTransformer {
 
     private static boolean isDisorder(Long codeId, CsvProcessor csvProcessor, EmisCsvHelper csvHelper) throws Exception {
 
-        CodeableConcept fhirConcept = csvHelper.findClinicalCode(codeId, csvProcessor);
+        CodeableConcept fhirConcept = csvHelper.findClinicalCode(codeId);
         for (Coding coding: fhirConcept.getCoding()) {
 
             //would prefer to check for procedures using Snomed, but this Read2 is simple and works
@@ -394,7 +395,7 @@ public class ObservationTransformer {
 
         //if we pass the above checks, then check what kind of code it is. If one of the below types, then store as a report.
         Long codeId = parser.getCodeId();
-        ClinicalCodeType codeType = csvHelper.findClinicalCodeType(codeId, csvProcessor);
+        ClinicalCodeType codeType = csvHelper.findClinicalCodeType(codeId);
         return codeType == ClinicalCodeType.Biochemistry
             || codeType == ClinicalCodeType.Cyology_Histology
             || codeType == ClinicalCodeType.Haematology
@@ -408,7 +409,7 @@ public class ObservationTransformer {
                                        CsvProcessor csvProcessor,
                                        EmisCsvHelper csvHelper) throws Exception {
 
-        CodeableConcept fhirConcept = csvHelper.findClinicalCode(codeId, csvProcessor);
+        CodeableConcept fhirConcept = csvHelper.findClinicalCode(codeId);
         for (Coding coding: fhirConcept.getCoding()) {
 
             //would prefer to check for procedures using Snomed, but this Read2 is simple and works
@@ -465,7 +466,7 @@ public class ObservationTransformer {
         }
 
         Long codeId = parser.getCodeId();
-        fhirReferral.setType(csvHelper.findClinicalCode(codeId, csvProcessor));
+        fhirReferral.setType(csvHelper.findClinicalCode(codeId));
 
         String clinicianGuid = parser.getClinicianUserInRoleGuid();
         fhirReferral.setRequester(csvHelper.createPractitionerReference(clinicianGuid));
@@ -527,7 +528,7 @@ public class ObservationTransformer {
 
         Long codeId = parser.getCodeId();
         DiagnosticOrder.DiagnosticOrderItemComponent diagnosticOrderItemComponent = fhirOrder.addItem();
-        diagnosticOrderItemComponent.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
+        diagnosticOrderItemComponent.setCode(csvHelper.findClinicalCode(codeId));
 
         String associatedText = parser.getAssociatedText();
         fhirOrder.addNote(AnnotationHelper.createAnnotation(associatedText));
@@ -587,7 +588,7 @@ public class ObservationTransformer {
         fhirCollection.setCollector(csvHelper.createPractitionerReference(clinicianGuid));
 
         Long codeId = parser.getCodeId();
-        fhirSpecimen.setType(csvHelper.findClinicalCode(codeId, csvProcessor));
+        fhirSpecimen.setType(csvHelper.findClinicalCode(codeId));
 
         String associatedText = parser.getAssociatedText();
         fhirCollection.addComment(associatedText);
@@ -651,7 +652,7 @@ public class ObservationTransformer {
         addDocumentExtension(fhirAllergy, parser);
 
         Long codeId = parser.getCodeId();
-        fhirAllergy.setSubstance(csvHelper.findClinicalCode(codeId, csvProcessor));
+        fhirAllergy.setSubstance(csvHelper.findClinicalCode(codeId));
 
         Date effectiveDate = parser.getEffectiveDate();
         String effectiveDatePrecision = parser.getEffectiveDatePrecision();
@@ -712,7 +713,7 @@ public class ObservationTransformer {
         }
 
         Long codeId = parser.getCodeId();
-        fhirReport.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
+        fhirReport.setCode(csvHelper.findClinicalCode(codeId));
 
         String associatedText = parser.getAssociatedText();
         if (!Strings.isNullOrEmpty(associatedText)) {
@@ -775,7 +776,7 @@ public class ObservationTransformer {
         fhirProcedure.setStatus(Procedure.ProcedureStatus.COMPLETED);
 
         Long codeId = parser.getCodeId();
-        fhirProcedure.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
+        fhirProcedure.setCode(csvHelper.findClinicalCode(codeId));
 
         Date effectiveDate = parser.getEffectiveDate();
         String effectiveDatePrecision = parser.getEffectiveDatePrecision();
@@ -861,7 +862,7 @@ public class ObservationTransformer {
         addDocumentExtension(fhirCondition, parser);
 
         Long codeId = parser.getCodeId();
-        fhirCondition.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
+        fhirCondition.setCode(csvHelper.findClinicalCode(codeId));
 
         fhirCondition.setClinicalStatus("active"); //if we have a Problem record for this condition, this status may be changed
 
@@ -947,7 +948,7 @@ public class ObservationTransformer {
         fhirObservation.setEffective(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         Long codeId = parser.getCodeId();
-        fhirObservation.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
+        fhirObservation.setCode(csvHelper.findClinicalCode(codeId));
 
         String clinicianGuid = parser.getClinicianUserInRoleGuid();
         fhirObservation.addPerformer(csvHelper.createPractitionerReference(clinicianGuid));
@@ -1047,7 +1048,7 @@ public class ObservationTransformer {
         FamilyMemberHistory.FamilyMemberHistoryConditionComponent fhirCondition = fhirFamilyHistory.addCondition();
 
         Long codeId = parser.getCodeId();
-        fhirCondition.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
+        fhirCondition.setCode(csvHelper.findClinicalCode(codeId));
 
         String associatedText = parser.getAssociatedText();
         fhirCondition.setNote(AnnotationHelper.createAnnotation(associatedText));
@@ -1106,7 +1107,7 @@ public class ObservationTransformer {
         fhirImmunisation.setDateElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         Long codeId = parser.getCodeId();
-        fhirImmunisation.setVaccineCode(csvHelper.findClinicalCode(codeId, csvProcessor));
+        fhirImmunisation.setVaccineCode(csvHelper.findClinicalCode(codeId));
 
         String clinicianGuid = parser.getClinicianUserInRoleGuid();
         Reference reference = csvHelper.createPractitionerReference(clinicianGuid);

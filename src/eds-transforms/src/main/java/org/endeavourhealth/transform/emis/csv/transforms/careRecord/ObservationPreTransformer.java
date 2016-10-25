@@ -71,7 +71,7 @@ public class ObservationPreTransformer {
                     Long codeId = parser.getCodeId();
                     Double value = parser.getValue();
                     Quantity quantity = QuantityHelper.createQuantity(value, unit);
-                    CodeableConcept codeableConcept = csvHelper.findClinicalCode(codeId, csvProcessor);
+                    CodeableConcept codeableConcept = csvHelper.findClinicalCode(codeId);
 
                     org.hl7.fhir.instance.model.Observation.ObservationComponentComponent component = new org.hl7.fhir.instance.model.Observation.ObservationComponentComponent();
                     component.setCode(codeableConcept);
@@ -97,14 +97,14 @@ public class ObservationPreTransformer {
         }
 
         Long codeId = parser.getCodeId();
-        ClinicalCodeType codeType = csvHelper.findClinicalCodeType(codeId, csvProcessor);
+        ClinicalCodeType codeType = csvHelper.findClinicalCodeType(codeId);
         if (codeType == ClinicalCodeType.Ethnicity) {
 
             Date effectiveDate = parser.getEffectiveDate();
             String effectiveDatePrecision = parser.getEffectiveDatePrecision();
             DateTimeType fhirDate = EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision);
 
-            CodeableConcept codeableConcept = csvHelper.findClinicalCode(codeId, csvProcessor);
+            CodeableConcept codeableConcept = csvHelper.findClinicalCode(codeId);
             EthnicCategory ethnicCategory = findEthnicityCode(codeableConcept);
             if (ethnicCategory != null) {
 
@@ -118,7 +118,7 @@ public class ObservationPreTransformer {
             String effectiveDatePrecision = parser.getEffectiveDatePrecision();
             DateTimeType fhirDate = EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision);
 
-            CodeableConcept codeableConcept = csvHelper.findClinicalCode(codeId, csvProcessor);
+            CodeableConcept codeableConcept = csvHelper.findClinicalCode(codeId);
             MaritalStatus maritalStatus = findMaritalStatus(codeableConcept);
             if (maritalStatus != null) {
 

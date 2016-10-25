@@ -98,7 +98,7 @@ public class ConsultationTransformer {
 
             CodeableConcept fhirCodeableConcept = null;
             if (codeId != null) {
-                fhirCodeableConcept = csvHelper.findClinicalCode(codeId, csvProcessor);
+                fhirCodeableConcept = csvHelper.findClinicalCode(codeId);
             }
             if (!Strings.isNullOrEmpty(term)) {
                 if (fhirCodeableConcept == null) {

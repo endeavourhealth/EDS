@@ -53,7 +53,7 @@ public class EmisCsvHelper {
      * to ensure globally unique IDs for all resources, a new ID is created
      * from the patientGuid and sourceGuid (e.g. observationGuid)
      */
-    private static String createUniqueId(String patientGuid, String sourceGuid) {
+    public static String createUniqueId(String patientGuid, String sourceGuid) {
         if (sourceGuid == null) {
             return patientGuid;
         } else {
@@ -131,17 +131,17 @@ public class EmisCsvHelper {
         mappingRepository.save(mapping);
     }
 
-    public CodeableConcept findClinicalCode(Long codeId, CsvProcessor csvProcessor) throws Exception {
+    public CodeableConcept findClinicalCode(Long codeId) throws Exception {
         CodeableConcept ret = clinicalCodes.get(codeId);
         if (ret == null) {
-            retrieveClinicalCode(codeId, csvProcessor);
+            retrieveClinicalCode(codeId);
             ret = clinicalCodes.get(codeId);
         }
         return ret.copy();
     }
 
-    private void retrieveClinicalCode(Long codeId, CsvProcessor csvProcessor) throws Exception {
-        EmisCsvCodeMap mapping = mappingRepository.getMostRecent(csvProcessor.getServiceId(), csvProcessor.getSystemId(), false, codeId);
+    private void retrieveClinicalCode(Long codeId) throws Exception {
+        EmisCsvCodeMap mapping = mappingRepository.getMostRecent(false, codeId);
         if (mapping == null) {
             throw new ClinicalCodeNotFoundException(codeId, false);
         }
@@ -155,26 +155,26 @@ public class EmisCsvHelper {
         clinicalCodeTypes.put(codeId, type);
     }
 
-    public ClinicalCodeType findClinicalCodeType(Long codeId, CsvProcessor csvProcessor) throws Exception {
+    public ClinicalCodeType findClinicalCodeType(Long codeId) throws Exception {
         ClinicalCodeType ret = clinicalCodeTypes.get(codeId);
         if (ret == null) {
-            retrieveClinicalCode(codeId, csvProcessor);
+            retrieveClinicalCode(codeId);
             ret = clinicalCodeTypes.get(codeId);
         }
         return ret;
     }
 
-    public CodeableConcept findMedication(Long codeId, CsvProcessor csvProcessor) throws Exception {
+    public CodeableConcept findMedication(Long codeId) throws Exception {
         CodeableConcept ret = medication.get(codeId);
         if (ret == null) {
-            retrieveMedication(codeId, csvProcessor);
+            retrieveMedication(codeId);
             ret = medication.get(codeId);
         }
         return ret.copy();
     }
 
-    private void retrieveMedication(Long codeId, CsvProcessor csvProcessor) throws Exception {
-        EmisCsvCodeMap mapping = mappingRepository.getMostRecent(csvProcessor.getServiceId(), csvProcessor.getSystemId(), true, codeId);
+    private void retrieveMedication(Long codeId) throws Exception {
+        EmisCsvCodeMap mapping = mappingRepository.getMostRecent(true, codeId);
         if (mapping == null) {
             throw new ClinicalCodeNotFoundException(codeId, true);
         }
@@ -545,6 +545,7 @@ public class EmisCsvHelper {
         List<Observation.ObservationComponentComponent> list = bpComponentMap.get(key);
         if (list == null) {
             list = new ArrayList<>();
+            bpComponentMap.put(key, list);
         }
         list.add(component);
     }

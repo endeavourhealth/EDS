@@ -78,7 +78,7 @@ public abstract class AbstractCsvParser implements AutoCloseable {
     }
 
     public void close() throws IOException {
-        if (csvRecord != null) {
+        if (csvReader != null) {
             csvReader.close();
         }
     }

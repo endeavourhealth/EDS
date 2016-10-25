@@ -79,7 +79,7 @@ public class IssueRecordTransformer {
         fhirMedication.setPrescriber(csvHelper.createPractitionerReference(clinicianGuid));
 
         Long codeId = parser.getCodeId();
-        fhirMedication.setMedication(csvHelper.findMedication(codeId, csvProcessor));
+        fhirMedication.setMedication(csvHelper.findMedication(codeId));
 
         String dose = parser.getDosage();
         MedicationOrder.MedicationOrderDosageInstructionComponent fhirDose = fhirMedication.addDosageInstruction();
