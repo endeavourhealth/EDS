@@ -42,8 +42,8 @@
   "scripts": {
     "typings": "typings",
     "clean": "rm -rf ./dist",
-    "build": "node ./node_modules/webpack/bin/webpack.js --config webpack.dist.config.js --progress --profile --colors",
-    "build-dev": "node ./node_modules/webpack/bin/webpack.js --config webpack.dev.config.js --progress --profile --colors",
+    "build": "node ./node_modules/webpack/bin/webpack.js --config webpack.dist.config.js",
+    "build-dev": "node ./node_modules/webpack/bin/webpack.js --config webpack.dev.config.js",
     "dev": "node ./node_modules/webpack-dev-server/bin/webpack-dev-server.js --config webpack.dev.config.js --progress --colors"
   }
 }
