@@ -1,7 +1,8 @@
+import {WellKnownConfig} from "./appstartup/appstartup.module";
 require('zone.js');
 import 'reflect-metadata';
 
-import {NgModule, OnInit} from '@angular/core';
+import {NgModule, OnInit, AfterViewInit} from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import {HttpModule, RequestOptions, XHRBackend, Http} from '@angular/http';
@@ -53,13 +54,56 @@ import {EdsLoggerService} from "./blocks/logger.service";
 	]
 })
 
-export class AppModule implements OnInit {
-	constructor(private log : EdsLoggerService) {}
+export class AppModule implements OnInit, AfterViewInit {
+	constructor(private $http:Http, private log : EdsLoggerService) {}
 
 	ngOnInit(): void {
 		this.log.info("Initialized");
 	}
 
+	ngAfterViewInit() {
+
+		var $injector = angular.injector(['ng']);
+		var promise:ng.IQService = $injector.get('$q') as ng.IQService;
+		var wellKnownConfig:WellKnownConfig = WellKnownConfig.factory();
+
+		var defer = promise.defer();
+
+		// try to read the auth configuration from local storage, if not found, get it from the public API and store it
+		var path: string = 'eds.config.auth';
+		var text: string = localStorage.getItem(path);
+		if (text === null || typeof text === "undefined" || text === "undefined") {
+			// use jQuery to avoid angular http interceptors
+			jQuery.getJSON("/public/wellknown/authconfig", (data:any, textStatus:string, jqXHR:any) => {
+				var authConfig = data as AuthConfig;
+				localStorage.setItem(path, JSON.stringify(authConfig));
+				defer.resolve(authConfig);
+			});
+		}
+		else {
+			defer.resolve(<AuthConfig>JSON.parse(text));
+		}
+
+		defer.promise.then((authConfig:AuthConfig) => {
+			// set the config
+			wellKnownConfig.setAuthConfig(authConfig);
+
+			Auth.factory().setOnAuthSuccess(()=> {
+				// manually bootstrap angular
+				upgradeAdapter.bootstrap(document.body, ['app'], {strictDi: true});
+			});
+
+			Auth.factory().setOnAuthError(()=> {
+				console.log('Failed to start app as not authenticated, check the well known auth configuration.')
+			});
+
+			Auth.factory().init();
+		});
+	}
+
 }
 
 import './app.module';
+import {AuthConfig} from "./models/wellknown/AuthConfig";
+import {Auth} from "./appstartup/appstartup.auth";
+import {upgradeAdapter} from "./upgradeAdapter";

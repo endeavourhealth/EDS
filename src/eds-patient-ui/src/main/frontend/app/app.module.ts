@@ -12,7 +12,6 @@ import '../content/css/index.css';
 import "./appstartup/appstartup.module";
 import "./audit/audit.module";
 import "./blocks/blocks.module";
-import "./config/config.module";
 import "./consent/consent.module";
 import "./core/core.module";
 import "./dialogs/dialogs.module";
@@ -33,7 +32,6 @@ import {SecurityService} from "./core/security.service";
 export let app = angular.module('app', [
 		'app.models',
 		'app.core',
-		'app.config',
 		'app.blocks',
 		'app.layout',
 		'app.dialogs',
