@@ -42,7 +42,7 @@ public class ThreadPool {
         //if our queue is now at our limit, then block the current thread before the queue is smaller
         while (threadPoolQueueSize.get() >= maxQueuedBeforeBlocking) {
             try {
-                Thread.sleep(100);
+                Thread.sleep(250);
             } catch (InterruptedException ex) {
                 //if we get interrupted, don't log the error
             }

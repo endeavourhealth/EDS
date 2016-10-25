@@ -5,6 +5,7 @@ CREATE KEYSPACE transform WITH REPLICATION = { 'class' : 'SimpleStrategy', 'repl
 USE transform; 
  
 DROP TABLE IF EXISTS emis_csv_code_map;
+DROP TABLE IF EXISTS emis_admin_resource_cache;
 
 DROP MATERIALIZED VIEW IF EXISTS resource_id_map_by_eds_id;
 DROP TABLE IF EXISTS resource_id_map;
@@ -13,6 +14,7 @@ DROP TABLE IF EXISTS enterprise_id_map;
 DROP TABLE IF EXISTS enterprise_organisation_id_map;
 
 CREATE TABLE emis_csv_code_map (
+	data_sharing_agreement_guid TEXT,
 	medication boolean,
 	code_id bigint,
 	time_uuid timeuuid,
@@ -26,8 +28,15 @@ CREATE TABLE emis_csv_code_map (
 	national_code TEXT,
 	national_code_category TEXT,
 	national_code_description TEXT,
-PRIMARY KEY ((medication, code_id), time_uuid))
-WITH CLUSTERING ORDER BY (time_uuid DESC);
+PRIMARY KEY ((data_sharing_agreement_guid), medication, code_id, time_uuid))
+WITH CLUSTERING ORDER BY (medication ASC, code_id ASC, time_uuid DESC);
+
+CREATE TABLE emis_admin_resource_cache (
+	data_sharing_agreement_guid TEXT,
+	emis_guid TEXT,
+	resource_type TEXT,
+	resource_data TEXT,
+PRIMARY KEY ((data_sharing_agreement_guid), emis_guid, resource_type));
 
 CREATE TABLE resource_id_map (
 	service_id UUID, 

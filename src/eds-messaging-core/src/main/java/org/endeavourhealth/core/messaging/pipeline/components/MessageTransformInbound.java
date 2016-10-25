@@ -114,6 +114,7 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//create the object that audits the transform and stores any errors
 		ExchangeTransformAudit transformAudit = createTransformAudit(serviceId, systemId, exchange.getExchangeId());
+		TransformError currentErrors = new TransformError();
 
 		//find the current error state for the source of our data
 		ExchangeTransformErrorState errorState = new AuditRepository().getErrorState(serviceId, systemId);
@@ -126,21 +127,23 @@ public class MessageTransformInbound extends PipelineComponent {
 			try {
 
 				if (software.equalsIgnoreCase("EMISCSV")) {
-					batchIds = processEmisCsvTransform(exchange, serviceId, systemId, messageVersion, software, transformAudit, previousErrors);
+					batchIds = processEmisCsvTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, previousErrors);
 
 				} else if (software.equalsIgnoreCase("EmisOpen")) {
-					batchIds = processEmisOpenTransform(exchange, serviceId, systemId, messageVersion, software, transformAudit, previousErrors);
+					batchIds = processEmisOpenTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, previousErrors);
 
 				} else if (software.equalsIgnoreCase("OpenHR")) {
-					batchIds = processEmisOpenHrTransform(exchange, serviceId, systemId, messageVersion, software, transformAudit, previousErrors);
+					batchIds = processEmisOpenHrTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, previousErrors);
 
 				} else if (software.equalsIgnoreCase("TPPExtractService")) {
-					batchIds = processTppXmlTransform(exchange, serviceId, systemId, messageVersion, software, transformAudit, previousErrors);
+					batchIds = processTppXmlTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, previousErrors);
 
 				} else {
 					throw new SoftwareNotSupportedException(software, messageVersion);
 				}
 
+				//need to record that a service has now started
+				new AuditRepository().startServiceIfRequired(serviceId, systemId);
 			}
 			catch (Exception ex) {
 
@@ -149,7 +152,7 @@ public class MessageTransformInbound extends PipelineComponent {
 				//record the exception as a fatal error with the exchange
 				Map<String, String> args = new HashMap<>();
 				args.put(TransformErrorUtility.ARG_FATAL_ERROR, ex.getMessage());
-				TransformErrorUtility.addTransformError(transformAudit, ex, args);
+				TransformErrorUtility.addTransformError(currentErrors, ex, args);
 			}
 
 
@@ -159,7 +162,7 @@ public class MessageTransformInbound extends PipelineComponent {
 			//record the exception as a fatal error with the exchange
 			Map<String, String> args = new HashMap<>();
 			args.put(TransformErrorUtility.ARG_WAITING, null);
-			TransformErrorUtility.addTransformError(transformAudit, null, args);
+			TransformErrorUtility.addTransformError(currentErrors, null, args);
 		}
 
 		//if we had any errors with the transform, update the error state for this service and system, so
@@ -167,6 +170,9 @@ public class MessageTransformInbound extends PipelineComponent {
 		updateErrorState(errorState, serviceId, systemId, exchange.getExchangeId(), transformAudit);
 
 		//save our audit of the transform
+		if (currentErrors.getError().size() > 0) {
+			transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(currentErrors));
+		}
 		transformAudit.setEnded(new Date());
 		new AuditRepository().save(transformAudit);
 
@@ -289,7 +295,7 @@ public class MessageTransformInbound extends PipelineComponent {
 	}
 
 	private List<UUID> processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-											   String software, ExchangeTransformAudit transformAudit,
+											   String software, TransformError currentErrors,
 											   TransformError previousErrors) throws Exception {
 
 		//for EMIS CSV, the exchange body will be a list of files received
@@ -299,25 +305,25 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		return EmisCsvTransformer.transform(version, sharedStoragePath, decodedFiles,
 											exchange.getExchangeId(), serviceId, systemId,
-											transformAudit, previousErrors);
+											currentErrors, previousErrors);
 	}
 
 	private List<UUID> processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-											  String software, ExchangeTransformAudit transformAudit,
+											  String software, TransformError currentErrors,
 											  TransformError previousErrors) throws Exception {
 		//TODO - plug in TPP XML transform
 		return null;
 	}
 
 	private List<UUID> processEmisOpenTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-												String software, ExchangeTransformAudit transformAudit,
+												String software, TransformError currentErrors,
 												TransformError previousErrors) throws Exception {
 		//TODO - plug in EMIS OPEN transform
 		return null;
 	}
 
 	private List<UUID> processEmisOpenHrTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-												  String software, ExchangeTransformAudit transformAudit,
+												  String software, TransformError currentErrors,
 												  TransformError previousErrors) throws Exception {
 		//TODO - plug in OpenHR transform
 		return null;

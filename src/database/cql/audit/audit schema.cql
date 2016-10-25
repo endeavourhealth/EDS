@@ -6,6 +6,7 @@ USE audit;
 DROP MATERIALIZED VIEW IF EXISTS user_event_by_module_user_timestamp;
 DROP MATERIALIZED VIEW IF EXISTS user_event_by_module_user_organisation_timestamp;
 
+DROP TABLE IF EXISTS service_start;
 DROP TABLE IF EXISTS user_event;
 DROP TABLE IF EXISTS exchange_transform_error_state;
 DROP TABLE IF EXISTS exchange_transform_error_to_reprocess;
@@ -19,6 +20,13 @@ DROP TABLE IF EXISTS exchange_transform;
 DROP TABLE IF EXISTS exchangeEvent; 
 DROP TABLE IF EXISTS exchange_transform_error_to_re_process;
 
+CREATE TABLE service_start 
+( 
+	service_id UUID,
+    system_id UUID,
+	started TIMESTAMP,
+    PRIMARY KEY ((service_id, system_id))
+);
 
 CREATE TABLE exchange 
 ( 

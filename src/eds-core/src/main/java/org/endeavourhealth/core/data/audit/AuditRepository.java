@@ -3,15 +3,12 @@ package org.endeavourhealth.core.data.audit;
 import com.datastax.driver.mapping.Mapper;
 import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
-import org.endeavourhealth.core.data.audit.accessors.TransformAccessor;
+import org.endeavourhealth.core.data.audit.accessors.AuditAccessor;
 import org.endeavourhealth.core.data.audit.models.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class AuditRepository extends Repository{
 
@@ -63,7 +60,7 @@ public class AuditRepository extends Repository{
     }
 
     public List<UUID> getExchangeUuidsToReProcess(ExchangeTransformErrorState errorState) {
-        TransformAccessor accessor = getMappingManager().createAccessor(TransformAccessor.class);
+        AuditAccessor accessor = getMappingManager().createAccessor(AuditAccessor.class);
         Iterator<ExchangeTransformErrorToReProcess> iterator = accessor.getErrorsToReProcess(errorState.getServiceId(), errorState.getSystemId()).iterator();
 
         List<UUID> ret = new ArrayList<>();
@@ -77,7 +74,7 @@ public class AuditRepository extends Repository{
 
     public ExchangeTransformAudit getMostRecentExchangeTransform(UUID serviceId, UUID systemId, UUID exchangeId) {
 
-        TransformAccessor accessor = getMappingManager().createAccessor(TransformAccessor.class);
+        AuditAccessor accessor = getMappingManager().createAccessor(AuditAccessor.class);
         Iterator<ExchangeTransformAudit> iterator = accessor.getMostRecentExchangeTransform(serviceId, systemId, exchangeId).iterator();
         if (iterator.hasNext()) {
             return iterator.next();
@@ -88,13 +85,13 @@ public class AuditRepository extends Repository{
 
     public List<ExchangeTransformAudit> getAllExchangeTransform(UUID serviceId, UUID systemId, UUID exchangeId) {
 
-        TransformAccessor accessor = getMappingManager().createAccessor(TransformAccessor.class);
+        AuditAccessor accessor = getMappingManager().createAccessor(AuditAccessor.class);
         return Lists.newArrayList(accessor.getAllExchangeTransform(serviceId, systemId, exchangeId));
     }
 
     public ExchangeTransformErrorState getErrorState(UUID serviceId, UUID systemId) {
 
-        TransformAccessor accessor = getMappingManager().createAccessor(TransformAccessor.class);
+        AuditAccessor accessor = getMappingManager().createAccessor(AuditAccessor.class);
         Iterator<ExchangeTransformErrorState> iterator = accessor.getErrorState(serviceId, systemId).iterator();
         if (iterator.hasNext()) {
             return iterator.next();
@@ -105,7 +102,7 @@ public class AuditRepository extends Repository{
 
     public List<ExchangeTransformErrorState> getAllErrorStates() {
 
-        TransformAccessor accessor = getMappingManager().createAccessor(TransformAccessor.class);
+        AuditAccessor accessor = getMappingManager().createAccessor(AuditAccessor.class);
         return Lists.newArrayList(accessor.getAllErrorStates());
     }
 
@@ -115,5 +112,32 @@ public class AuditRepository extends Repository{
         o.setSystemId(errorState.getSystemId());
         o.setExchangeId(exchangeId);
         delete(o);
+    }
+
+    public void startServiceIfRequired(UUID serviceId, UUID systemId) {
+
+        if (!isServiceStarted(serviceId, systemId)) {
+            ServiceStart serviceStart = new ServiceStart();
+            serviceStart.setServiceId(serviceId);
+            serviceStart.setSystemId(systemId);
+            serviceStart.setStarted(new Date());
+            save(serviceStart);
+        }
+    }
+
+    public void save(ServiceStart serviceStart) {
+
+        Mapper<ServiceStart> mapperEvent = getMappingManager().mapper(ServiceStart.class);
+        mapperEvent.save(serviceStart);
+    }
+
+    public boolean isServiceStarted(UUID serviceId, UUID systemId) {
+        AuditAccessor accessor = getMappingManager().createAccessor(AuditAccessor.class);
+        Iterator<ServiceStart> iterator = accessor.getServiceStart(serviceId, systemId).iterator();
+        if (iterator.hasNext()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

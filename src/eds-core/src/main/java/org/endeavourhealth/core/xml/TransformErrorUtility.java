@@ -27,8 +27,11 @@ public class TransformErrorUtility {
     public static final String ARG_EMIS_CSV_RECORD_NUMBER = "Record";
 
 
+    public static void addTransformError(TransformError transformError, Throwable ex, Map<String, String> args) {
+        transformError.getError().add(createError(ex, args));
+    }
 
-    public static void addTransformError(ExchangeTransformAudit transformAudit, Throwable ex, Map<String, String> args) {
+    /*public static void addTransformError(ExchangeTransformAudit transformAudit, Throwable ex, Map<String, String> args) {
 
         TransformError container = null;
         if (transformAudit.getErrorXml() == null) {
@@ -44,7 +47,7 @@ public class TransformErrorUtility {
         container.getError().add(createError(ex, args));
 
         transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(container));
-    }
+    }*/
 
     public static void save(ExchangeTransformAudit transformAudit, TransformError errors) {
 
