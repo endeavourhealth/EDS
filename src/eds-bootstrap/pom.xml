@@ -13,10 +13,6 @@
     <artifactId>eds-bootstrap</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <properties>
-        <resteasy.version>3.0.14.Final</resteasy.version>
-    </properties>
-
     <dependencies>
 
         <!-- keycloak -->
