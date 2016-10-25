@@ -4,10 +4,6 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.endeavourhealth</groupId>
-    <artifactId>eds-subscriber</artifactId>
-    <version>1.0-SNAPSHOT</version>
-
     <parent>
         <groupId>org.endeavourhealth</groupId>
         <artifactId>eds</artifactId>
@@ -15,9 +11,12 @@
         <relativePath>../../</relativePath>
     </parent>
 
+    <artifactId>eds-subscriber</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
     <dependencies>
         <dependency>
-            <groupId>org.apache.commons</groupId>
+            <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons-io.version}</version>
         </dependency>
