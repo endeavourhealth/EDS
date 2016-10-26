@@ -1,5 +1,6 @@
 /// <reference path="../typings/index.d.ts"/>
 // Node dependencies
+import 'angular';
 import 'angular-ui-bootstrap';
 import 'angular-ui-router';
 import 'angular-toastr';

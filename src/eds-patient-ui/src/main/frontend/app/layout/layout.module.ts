@@ -1,13 +1,15 @@
 import '../../content/css/sidebar.css';
 
 import {ShellController, ShellComponent} from "./shell.component";
-import {SidebarController, SidebarComponent} from "./sidebar.component";
-import {TopnavController, TopnavComponent} from "./topnav.component";
+import {SidebarComponent, SidebarController} from "./sidebar.component";
+import {TopnavComponent} from "./topnav.component";
+import {upgradeAdapter} from "../upgradeAdapter";
 
 angular.module('app.layout', [])
 	.controller('ShellController', ShellController)
 	.component('shellComponent',  new ShellComponent())
+
 	.controller('SidebarController', SidebarController)
 	.component('sidebarComponent', new SidebarComponent())
-	.controller('TopnavController', TopnavController)
-	.component('topnavComponent', new TopnavComponent());
+
+	.directive('topnavComponent', <angular.IDirectiveFactory>upgradeAdapter.downgradeNg2Component(TopnavComponent));

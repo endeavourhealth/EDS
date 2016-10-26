@@ -1,4 +1,3 @@
-import {WellKnownConfig} from "./appstartup/appstartup.module";
 require('zone.js');
 import 'reflect-metadata';
 
@@ -9,11 +8,18 @@ import {HttpModule, RequestOptions, XHRBackend, Http} from '@angular/http';
 import { Logger } from "angular2-logger/core";
 import {ToastModule} from "ng2-toastr";
 
+import './app.module';
+import {upgradeAdapter} from "./upgradeAdapter";
+
+import {Auth} from "./appstartup/appstartup.auth";
 import {AuthHttp} from "./core/httpInterceptor";
+import {WellKnownConfig} from "./appstartup/appstartup.module";
+import {AuthConfig} from "./models/wellknown/AuthConfig";
 
 import {AuditComponent} from "./audit/audit.component";
 import {ConsentComponent} from "./consent/consent.component";
 import {MedicalRecordComponent} from "./medicalRecord/medicalRecord.component";
+import {TopnavComponent} from "./layout/topnav.component";
 
 import {MedicalRecordService} from "./medicalRecord/medicalRecord.service";
 import {ConfigService} from "./config/config.service";
@@ -22,7 +28,6 @@ import {AuditService} from "./audit/audit.service";
 import {AdminService} from "./core/admin.service";
 import {SecurityService} from "./core/security.service";
 import {EdsLoggerService} from "./blocks/logger.service";
-
 
 @NgModule({
 	imports: [
@@ -34,7 +39,8 @@ import {EdsLoggerService} from "./blocks/logger.service";
 	declarations: [
 		AuditComponent,
 		ConsentComponent,
-		MedicalRecordComponent
+		MedicalRecordComponent,
+		TopnavComponent,
 	],
 	providers: [
 		Logger,
@@ -103,7 +109,3 @@ export class AppModule implements OnInit, AfterViewInit {
 
 }
 
-import './app.module';
-import {AuthConfig} from "./models/wellknown/AuthConfig";
-import {Auth} from "./appstartup/appstartup.auth";
-import {upgradeAdapter} from "./upgradeAdapter";

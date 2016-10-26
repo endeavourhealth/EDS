@@ -1,30 +1,20 @@
 import {SecurityService} from "../core/security.service";
 import {User} from "../models/User";
+import {Component} from "@angular/core";
 
-export class TopnavComponent implements ng.IComponentOptions {
-	template : string;
-	controller : string;
-	controllerAs : string;
-
-	constructor () {
-		this.template = require('./topnav.html');
-		this.controller = 'TopnavController';
-		this.controllerAs = '$ctrl';
-	}
-}
-
-export class TopnavController {
+@Component({
+	selector: 'topnav-component',
+	template: require('./topnav.html')
+})
+export class TopnavComponent {
 	currentUser:User;
-
-	static $inject = ['SecurityService'];
 
 	constructor(private securityService:SecurityService) {
 		this.getCurrentUser();
 	}
 
 	getCurrentUser() {
-		var vm:TopnavController = this;
-		vm.currentUser = vm.securityService.getCurrentUser();
+		this.currentUser = this.securityService.getCurrentUser();
 		//vm.updateRole(vm.currentUser.currentUserInRoleUuid);
 	}
 
