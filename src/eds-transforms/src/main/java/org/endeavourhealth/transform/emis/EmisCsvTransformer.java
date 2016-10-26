@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.emis;
 
 import com.google.common.io.Files;
 import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
+import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.TransformError;
@@ -61,7 +61,7 @@ public abstract class EmisCsvTransformer {
                                        UUID exchangeId,
                                        UUID serviceId,
                                        UUID systemId,
-                                       ExchangeTransformAudit transformAudit,
+                                       TransformError transformError,
                                        TransformError previousErrors) throws Exception {
 
         LOG.info("Invoking EMIS CSV transformer for {} files", files.length);
@@ -73,7 +73,7 @@ public abstract class EmisCsvTransformer {
         File orgDirectory = validateAndFindCommonDirectory(sharedStoragePath, files);
 
         //the processor is responsible for saving FHIR resources
-        CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId, transformAudit);
+        CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId, transformError);
 
         Map<Class, List<AbstractCsvParser>> allParsers = new HashMap<>();
 
@@ -615,12 +615,38 @@ public abstract class EmisCsvTransformer {
 
         throw new FileNotFoundException("Failed to find CSV file for " + domain + "_" + name + " in " + dir);
     }*/
+
+
+    private static String findDataSharingAgreementGuid(Map<Class, List<AbstractCsvParser>> parsers) throws Exception {
+
+        //we need a file name to work out the data sharing agreement ID, so just the first file we can find
+        File f = parsers
+                .values()
+                .iterator()
+                .next()
+                .get(0)
+                .getFile();
+
+        String name = Files.getNameWithoutExtension(f.getName());
+        String[] toks = name.split("_");
+        if (toks.length != 5) {
+            throw new TransformException("Failed to extract data sharing agreement GUID from filename " + f.getName());
+        }
+        return toks[4];
+    }
+
+
     private static void transformParsers(String version,
                                         Map<Class, List<AbstractCsvParser>> parsers,
                                         CsvProcessor csvProcessor,
                                         TransformError previousErrors) throws Exception {
 
-        EmisCsvHelper csvHelper = new EmisCsvHelper();
+        EmisCsvHelper csvHelper = new EmisCsvHelper(findDataSharingAgreementGuid(parsers));
+
+        //if this is the first extract for this organisation, we need to apply all the content of the admin resource cache
+        if (!new AuditRepository().isServiceStarted(csvProcessor.getServiceId(), csvProcessor.getSystemId())) {
+            csvHelper.applyAdminResourceCache(csvProcessor);
+        }
 
         //these transforms don't create resources themselves, but cache data that the subsequent ones rely on
         ClinicalCodeTransformer.transform(version, parsers, csvProcessor, csvHelper);
@@ -664,6 +690,8 @@ public abstract class EmisCsvTransformer {
 
         csvHelper.processRemainingEthnicitiesAndMartialStatuses(csvProcessor);
     }
+
+
 
 
     public static void findRecordsToProcess(Map<Class, List<AbstractCsvParser>> allParsers, TransformError previousErrors) throws Exception {

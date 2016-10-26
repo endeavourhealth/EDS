@@ -1,11 +1,11 @@
 package org.endeavourhealth.transform.common;
 
 import com.datastax.driver.core.utils.UUIDs;
-import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
+import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.CallableError;
@@ -32,7 +32,8 @@ public class CsvProcessor {
     private final UUID systemId;
     private final FhirStorageService storageService;
     private final ExchangeBatchRepository exchangeBatchRepository;
-    private final ExchangeTransformAudit transformAudit;
+    private final TransformError transformError;
+    //private final ExchangeTransformAudit transformAudit;
     //private final Map<String, String> resourceTypes; //although a set would be idea, a map allows safe multi-thread access
 
     //batch IDs
@@ -41,20 +42,21 @@ public class CsvProcessor {
     private UUID adminBatchId = null;
 
     //threading
-    private ThreadPool threadPool = new ThreadPool(10, 100000); //allow 10 threads for saving
+    private ThreadPool threadPool = new ThreadPool(5, 50000); //lower the limits
+    //private ThreadPool threadPool = new ThreadPool(10, 100000); //allow 10 threads for saving
 
     //counts
     private Map<UUID, AtomicInteger> countResourcesSaved = new ConcurrentHashMap<>();
     private Map<UUID, AtomicInteger> countResourcesDeleted = new ConcurrentHashMap<>();
 
 
-    public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId, ExchangeTransformAudit transformAudit) {
+    public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId, TransformError transformError) {
         this.exchangeId = exchangeId;
         this.serviceId = serviceId;
         this.systemId = systemId;
         this.storageService = new FhirStorageService(serviceId, systemId);
         this.exchangeBatchRepository = new ExchangeBatchRepository();
-        this.transformAudit = transformAudit;
+        this.transformError = transformError;
     }
 
 
@@ -91,7 +93,7 @@ public class CsvProcessor {
                                     boolean mapIds,
                                     UUID batchId,
                                     boolean toDelete,
-                                    Resource... resources) throws PatientResourceException {
+                                    Resource... resources) throws Exception {
 
         for (Resource resource: resources) {
             //validate we're treating the resource properly as admin / patient
@@ -169,7 +171,7 @@ public class CsvProcessor {
      * called after all content has been processed. It blocks until all operations have
      * been completed in the thread pool, then returns the distinct batch IDs created
      */
-    public List<UUID> getBatchIdsCreated() {
+    public List<UUID> getBatchIdsCreated() throws Exception {
 
         //wait for all tasks to be completed
         List<CallableError> errors = threadPool.waitAndStop();
@@ -184,7 +186,7 @@ public class CsvProcessor {
         return getAllBatchIds();
     }
 
-    private void handleErrors(List<CallableError> errors) {
+    private void handleErrors(List<CallableError> errors) throws Exception {
         if (errors == null || errors.isEmpty()) {
             return;
         }
@@ -194,6 +196,12 @@ public class CsvProcessor {
             MapAndSaveResourceTask callable = (MapAndSaveResourceTask)error.getCallable();
             Exception exception = error.getException();
             CsvCurrentState parserState = callable.getParserState();
+
+            //if we had an error that doesn't have a CSV state, then it's not something that can be attributed
+            //to a specific row in a CSV file, and so should be treated as a fatal exception
+            if (parserState == null) {
+                throw exception;
+            }
 
             logTransformRecordError(exception, parserState);
         }
@@ -226,8 +234,8 @@ public class CsvProcessor {
         int saved = 0;
         int deleted = 0;
         if (adminBatchId != null) {
-            countResourcesSaved.get(adminBatchId).get();
-            countResourcesDeleted.get(adminBatchId).get();
+            saved += countResourcesSaved.get(adminBatchId).get();
+            deleted += countResourcesDeleted.get(adminBatchId).get();
         }
 
         LOG.info("Saved {} and deleted {} non-patient resources", saved, deleted);
@@ -309,8 +317,14 @@ public class CsvProcessor {
      */
     public void logTransformRecordError(Exception ex, CsvCurrentState state) {
 
-        //may as well log the error
-        LOG.error("Error at " + state, ex);
+        //if we've had more than 100 errors, don't bother logging or adding any more exceptions to the audit trail
+        if (transformError.getError().size() > 100) {
+            LOG.error("Error at " + state + ": " + ex.getMessage() + " (had over 100 exceptions, so not logging any more)");
+            ex = null;
+
+        } else {
+            LOG.error("Error at " + state, ex);
+        }
 
         //then add the error to our audit object
         Map<String, String> args = new HashMap<>();
@@ -318,7 +332,7 @@ public class CsvProcessor {
         args.put(TransformErrorUtility.ARG_EMIS_CSV_PROCESSING_ID, state.getFileDir());
         args.put(TransformErrorUtility.ARG_EMIS_CSV_RECORD_NUMBER, "" + state.getRecordNumber());
 
-        TransformErrorUtility.addTransformError(transformAudit, ex, args);
+        TransformErrorUtility.addTransformError(transformError, ex, args);
     }
 
 

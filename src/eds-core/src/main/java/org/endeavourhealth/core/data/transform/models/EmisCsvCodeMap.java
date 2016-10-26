@@ -11,12 +11,15 @@ import java.util.UUID;
 public class EmisCsvCodeMap {
 
     @PartitionKey(0)
+    @Column(name = "data_sharing_agreement_guid")
+    private String dataSharingAgreementGuid = null;
+    @ClusteringColumn(0)
     @Column(name = "medication")
     private boolean medication = false;
-    @PartitionKey(1)
+    @ClusteringColumn(1)
     @Column(name = "code_id")
     private Long codeId = null;
-    @ClusteringColumn(0)
+    @ClusteringColumn(2)
     @Column(name = "time_uuid")
     private UUID timeUuid = null;
     @Column(name = "code_type")
@@ -39,6 +42,16 @@ public class EmisCsvCodeMap {
     private String nationalCodeCategory = null;
     @Column(name = "national_code_description")
     private String nationalCodeDescription = null;
+
+    public EmisCsvCodeMap() {}
+
+    public String getDataSharingAgreementGuid() {
+        return dataSharingAgreementGuid;
+    }
+
+    public void setDataSharingAgreementGuid(String dataSharingAgreementGuid) {
+        this.dataSharingAgreementGuid = dataSharingAgreementGuid;
+    }
 
     public boolean isMedication() {
         return medication;

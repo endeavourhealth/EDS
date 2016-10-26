@@ -81,5 +81,9 @@ public class UserInRoleTransformer {
         fhirRole.setRole(CodeableConceptHelper.createCodeableConcept(FhirValueSetUri.VALUE_SET_JOB_ROLE_CODES, roleName, roleCode));
 
         csvProcessor.saveAdminResource(parser.getCurrentState(), fhirPractitioner);
+
+        //this resource exists in our admin resource cache, so we can populate the
+        //main database when new practices come on, so we need to update that too
+        csvHelper.saveAdminResourceToCache(fhirPractitioner);
     }
 }

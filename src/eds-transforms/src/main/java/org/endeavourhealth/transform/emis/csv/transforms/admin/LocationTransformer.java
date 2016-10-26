@@ -45,6 +45,10 @@ public class LocationTransformer {
 
         if (parser.getDeleted()) {
             csvProcessor.deleteAdminResource(parser.getCurrentState(), fhirLocation);
+
+            //this resource exists in our admin resource cache, so we can populate the
+            //main database when new practices come on, so we need to update that too
+            csvHelper.deleteAdminResourceFromCache(fhirLocation);
             return;
         }
 
@@ -110,5 +114,9 @@ public class LocationTransformer {
         }
 
         csvProcessor.saveAdminResource(parser.getCurrentState(), fhirLocation);
+
+        //this resource exists in our admin resource cache, so we can populate the
+        //main database when new practices come on, so we need to update that too
+        csvHelper.saveAdminResourceToCache(fhirLocation);
     }
 }

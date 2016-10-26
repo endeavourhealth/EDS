@@ -5,7 +5,8 @@ import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
-import org.endeavourhealth.core.data.transform.EmisCsvCodeMapRepository;
+import org.endeavourhealth.core.data.transform.EmisRepository;
+import org.endeavourhealth.core.data.transform.models.EmisAdminResourceCache;
 import org.endeavourhealth.core.data.transform.models.EmisCsvCodeMap;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.IdHelper;
@@ -27,11 +28,13 @@ public class EmisCsvHelper {
     private static final String CODEABLE_CONCEPT = "CodeableConcept";
     private static final String ID_DELIMITER = ":";
 
+    private String dataSharingAgreementGuid = null;
+
     //metadata, not relating to patients
     private Map<Long, CodeableConcept> clinicalCodes = new ConcurrentHashMap<>();
     private Map<Long, ClinicalCodeType> clinicalCodeTypes = new ConcurrentHashMap<>();
     private Map<Long, CodeableConcept> medication = new ConcurrentHashMap<>();
-    private EmisCsvCodeMapRepository mappingRepository = new EmisCsvCodeMapRepository();
+    private EmisRepository mappingRepository = new EmisRepository();
     private ResourceRepository resourceRepository = new ResourceRepository();
 
     //some resources are referred to by others, so we cache them here for when we need them
@@ -46,7 +49,8 @@ public class EmisCsvHelper {
     private Map<String, DateAndCode> ethnicityMap = new HashMap<>();
     private Map<String, DateAndCode> maritalStatusMap = new HashMap<>();
 
-    public EmisCsvHelper() {
+    public EmisCsvHelper(String dataSharingAgreementGuid) {
+        this.dataSharingAgreementGuid = dataSharingAgreementGuid;
     }
 
     /**
@@ -86,6 +90,7 @@ public class EmisCsvHelper {
         String json = new JsonParser().composeString(codeableConcept, CODEABLE_CONCEPT);
 
         EmisCsvCodeMap mapping = new EmisCsvCodeMap();
+        mapping.setDataSharingAgreementGuid(dataSharingAgreementGuid);
         mapping.setMedication(true);
         mapping.setCodeId(codeId);
         mapping.setTimeUuid(UUIDs.timeBased());
@@ -114,6 +119,7 @@ public class EmisCsvHelper {
         String json = new JsonParser().composeString(codeableConcept, CODEABLE_CONCEPT);
 
         EmisCsvCodeMap mapping = new EmisCsvCodeMap();
+        mapping.setDataSharingAgreementGuid(dataSharingAgreementGuid);
         mapping.setMedication(false);
         mapping.setCodeId(codeId);
         mapping.setTimeUuid(UUIDs.timeBased());
@@ -141,7 +147,7 @@ public class EmisCsvHelper {
     }
 
     private void retrieveClinicalCode(Long codeId) throws Exception {
-        EmisCsvCodeMap mapping = mappingRepository.getMostRecent(false, codeId);
+        EmisCsvCodeMap mapping = mappingRepository.getMostRecentCode(dataSharingAgreementGuid, false, codeId);
         if (mapping == null) {
             throw new ClinicalCodeNotFoundException(codeId, false);
         }
@@ -174,7 +180,7 @@ public class EmisCsvHelper {
     }
 
     private void retrieveMedication(Long codeId) throws Exception {
-        EmisCsvCodeMap mapping = mappingRepository.getMostRecent(true, codeId);
+        EmisCsvCodeMap mapping = mappingRepository.getMostRecentCode(dataSharingAgreementGuid, true, codeId);
         if (mapping == null) {
             throw new ClinicalCodeNotFoundException(codeId, true);
         }
@@ -767,6 +773,45 @@ public class EmisCsvHelper {
         }
     }
 
+    /**
+     * we store a copy of all Organisations, Locations and Practitioner resources in a separate
+     * table so that when new organisations are added to the extract, we can populate the db with
+     * all those resources for the new org
+     */
+    public void saveAdminResourceToCache(Resource fhirResource) throws Exception {
+        EmisAdminResourceCache cache = new EmisAdminResourceCache();
+        cache.setDataSharingAgreementGuid(dataSharingAgreementGuid);
+        cache.setResourceType(fhirResource.getResourceType().toString());
+        cache.setEmisGuid(fhirResource.getId());
+        cache.setResourceData(new JsonParser().composeString(fhirResource));
+
+        mappingRepository.save(cache);
+    }
+
+    public void deleteAdminResourceFromCache(Resource fhirResource) throws Exception {
+        EmisAdminResourceCache cache = new EmisAdminResourceCache();
+        cache.setDataSharingAgreementGuid(dataSharingAgreementGuid);
+        cache.setResourceType(fhirResource.getResourceType().toString());
+        cache.setEmisGuid(fhirResource.getId());
+
+        mappingRepository.delete(cache);
+    }
+
+    /**
+     * when we receive the first extract for an organisation, we need to copy all the contents of the admin
+     * resource cache and save them against the new organisation. This is because EMIS only send most Organisations,
+     * Locations and Staff once, with the very first organisation, and when a second organisation is added to
+     * the extract, none of that data is re-sent, so we have to create those resources for the new org
+     */
+    public void applyAdminResourceCache(CsvProcessor csvProcessor) throws Exception {
+
+        List<EmisAdminResourceCache> cachedResources = mappingRepository.getCachedResources(dataSharingAgreementGuid);
+        for (EmisAdminResourceCache cachedResource: cachedResources) {
+
+            Resource fhirResource = new JsonParser().parse(cachedResource.getResourceData());
+            csvProcessor.saveAdminResource(null, fhirResource);
+        }
+    }
 
     /**
      * object to temporarily store relationships between resources, such as things linked to a problem
