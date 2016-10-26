@@ -140,9 +140,11 @@ public class ThreadPool {
 
         @Override
         public Object call() throws Exception {
-            Object o = callable.call();
-            threadPoolQueueSize.decrementAndGet();
-            return o;
+            try {
+                return callable.call();
+            } finally {
+                threadPoolQueueSize.decrementAndGet();
+            }
         }
     }
 
