@@ -231,7 +231,8 @@ public class MessageTransformInbound extends PipelineComponent {
 	private TransformError findPreviousErrors(UUID serviceId, UUID systemId, UUID exchangeId) {
 
 		ExchangeTransformAudit previous = new AuditRepository().getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
-		if (previous == null) {
+		if (previous == null
+				|| previous.getErrorXml() == null) {
 			return null;
 		}
 

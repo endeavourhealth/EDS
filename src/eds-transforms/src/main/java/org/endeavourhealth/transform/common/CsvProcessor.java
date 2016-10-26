@@ -319,8 +319,8 @@ public class CsvProcessor {
 
         //if we've had more than 100 errors, don't bother logging or adding any more exceptions to the audit trail
         if (transformError.getError().size() > 100) {
-            ex = null;
             LOG.error("Error at " + state + ": " + ex.getMessage() + " (had over 100 exceptions, so not logging any more)");
+            ex = null;
 
         } else {
             LOG.error("Error at " + state, ex);
