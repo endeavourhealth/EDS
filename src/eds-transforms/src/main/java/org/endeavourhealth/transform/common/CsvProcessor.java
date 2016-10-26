@@ -42,7 +42,8 @@ public class CsvProcessor {
     private UUID adminBatchId = null;
 
     //threading
-    private ThreadPool threadPool = new ThreadPool(5, 50000); //lower the limits
+    private ThreadPool threadPool = new ThreadPool(1, 50000); //lower the limits
+    //private ThreadPool threadPool = new ThreadPool(5, 50000); //lower the limits
     //private ThreadPool threadPool = new ThreadPool(10, 100000); //allow 10 threads for saving
 
     //counts
