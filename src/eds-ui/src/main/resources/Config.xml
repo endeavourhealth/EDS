@@ -15,7 +15,7 @@
 		<!--<cookieDomain>37.48.245.69</cookieDomain>-->
 
 		<appConfigId>804e0ab5-f314-4e0e-a53c-fe117a4e85d4</appConfigId>
-		<authConfigId>f48c8bf3-a03d-411e-baf1-8712569ed67f</authConfigId>
+		<authConfigId>c865eb28-58dd-4ec4-9ca9-fda1273566bf</authConfigId>
 	</webServer>
 
 	<rabbitmqManagement>
