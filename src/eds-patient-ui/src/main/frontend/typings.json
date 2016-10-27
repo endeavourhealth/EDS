@@ -7,6 +7,6 @@
     "angular-ui-bootstrap": "github:DefinitelyTyped/DefinitelyTyped/angular-ui-bootstrap/angular-ui-bootstrap.d.ts#e69fe60f2d6377ea4fae539493997b098f52cad1",
     "jquery": "github:DefinitelyTyped/DefinitelyTyped/jquery/jquery.d.ts#4ec3c5bf291bc02f49eb30c1077340b235165c67",
     "keycloak": "file:typings/local/keycloak/keycloak.d.ts",
-    "node": "registry:dt/node#6.0.0+20160928143418"
+    "node": "registry:dt/node#6.0.0+20161019125345"
   }
 }
