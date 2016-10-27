@@ -6,6 +6,7 @@ import org.endeavourhealth.core.data.config.ConfigurationRepository;
 import org.endeavourhealth.core.data.config.models.ConfigurationResource;
 import org.endeavourhealth.coreui.framework.config.models.AppConfig;
 import org.endeavourhealth.coreui.framework.config.models.AuthConfig;
+import org.endeavourhealth.coreui.framework.config.models.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,8 +15,6 @@ import java.util.UUID;
 public class ConfigService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigService.class);
-
-    private static String EDS_PATIENT_APP_CONFIG = "c865eb28-58dd-4ec4-9ca9-fda1273566bf";
 
     private static ConfigService instance;
 
@@ -33,7 +32,8 @@ public class ConfigService {
 
         if(appConfig == null) {
             try {
-                ConfigurationResource configurationResource = new ConfigurationRepository().getByKey(UUID.fromString(ConfigService.EDS_PATIENT_APP_CONFIG));
+                Config config = ConfigSerializer.getConfig();
+                ConfigurationResource configurationResource = new ConfigurationRepository().getByKey(UUID.fromString(config.getWebServer().getAppConfigId()));
                 appConfig = ObjectMapperPool.getInstance().readValue(configurationResource.getConfigurationData(), AppConfig.class);
 
             } catch (Exception e) {
@@ -59,7 +59,8 @@ public class ConfigService {
             ConfigurationResource keycloakConfig = null;
 
             try {
-                keycloakConfig = new ConfigurationRepository().getByKey(ConfigurationRepository.KEYCLOAK_CONFIG);
+                Config config = ConfigSerializer.getConfig();
+                keycloakConfig = new ConfigurationRepository().getByKey(UUID.fromString(config.getWebServer().getAuthConfigId()));
 
                 JsonNode json = ObjectMapperPool.getInstance().readTree(keycloakConfig.getConfigurationData());
 
@@ -80,7 +81,8 @@ public class ConfigService {
                 LOG.warn("Falling back to default AuthConfig properties...");
                 authConfig = new AuthConfig(
                         "endeavour",
-                        "https://keycloak.eds.c.healthforge.io/auth",
+                        //"https://keycloak.eds.c.healthforge.io/auth",
+                        "http://localhost:9080/auth",
                         "eds-ui",
                         "http://localhost:8080"
                 );

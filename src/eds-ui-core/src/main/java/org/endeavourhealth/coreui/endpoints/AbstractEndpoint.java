@@ -71,7 +71,7 @@ public abstract class AbstractEndpoint {
     }
 
     protected boolean isAdminFromSession(SecurityContext sc) throws Exception {
-        return RoleUtils.isAdmin(sc);       // TODO: should this be ADMIN or SUPERUSER??
+        return RoleUtils.isEDSAdmin(sc);       // TODO: should this be ADMIN or SUPERUSER??
     }
 
 }

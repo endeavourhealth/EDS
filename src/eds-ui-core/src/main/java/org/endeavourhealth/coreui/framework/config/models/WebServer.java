@@ -18,6 +18,8 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="cookieDomain" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="appConfigId" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="authConfigId" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -28,12 +30,18 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "webServer", propOrder = {
-    "cookieDomain"
+    "cookieDomain",
+    "appConfigId",
+    "authConfigId"
 })
 public class WebServer {
 
     @XmlElement(required = true)
     protected String cookieDomain;
+    @XmlElement(required = true)
+    protected String appConfigId;
+    @XmlElement(required = true)
+    protected String authConfigId;
 
     /**
      * Gets the value of the cookieDomain property.
@@ -57,6 +65,54 @@ public class WebServer {
      */
     public void setCookieDomain(String value) {
         this.cookieDomain = value;
+    }
+
+    /**
+     * Gets the value of the appConfigId property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getAppConfigId() {
+        return appConfigId;
+    }
+
+    /**
+     * Sets the value of the appConfigId property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setAppConfigId(String value) {
+        this.appConfigId = value;
+    }
+
+    /**
+     * Gets the value of the authConfigId property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getAuthConfigId() {
+        return authConfigId;
+    }
+
+    /**
+     * Sets the value of the authConfigId property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setAuthConfigId(String value) {
+        this.authConfigId = value;
     }
 
 }

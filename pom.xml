@@ -41,6 +41,7 @@
         <javax.annotation-api.version>1.2</javax.annotation-api.version>
         <postgresql.version>9.4.1211.jre7</postgresql.version>
         <junit.version>4.12</junit.version>
+        <swagger.version>1.5.10</swagger.version>
     </properties>
 
 
@@ -55,7 +56,9 @@
         <module>src/eds-sftpreader</module>
         <module>src/eds-transforms</module>
         <module>src/eds-ui</module>
+        <module>src/eds-keycloak-providers</module>
         <module>src/eds-keycloak-theme</module>
         <module>src/eds-bootstrap</module>
+        <module>src/eds-ui-integration-test</module>
     </modules>
 </project>

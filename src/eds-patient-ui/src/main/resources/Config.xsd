@@ -5,6 +5,8 @@
 	<xs:complexType name="webServer">
 		<xs:sequence>
 			<xs:element name="cookieDomain" type="xs:string"/>
+			<xs:element name="appConfigId" type="xs:string"/>
+			<xs:element name="authConfigId" type="xs:string"/>
 		</xs:sequence>
 	</xs:complexType>
 

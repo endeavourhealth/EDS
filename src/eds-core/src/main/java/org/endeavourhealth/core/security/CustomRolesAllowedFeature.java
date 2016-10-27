@@ -1,5 +1,6 @@
 package org.endeavourhealth.core.security;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,11 +89,22 @@ public class CustomRolesAllowedFeature implements DynamicFeature {
                     throw new ForbiddenException("Not Authorized");
                 }
 
-                for (final String role : rolesAllowed) {
+                // DEPRECATED: this has been remove in favour of organisation group roles, see below
+                /*for (final String role : rolesAllowed) {
                     if (SecurityUtils.hasRole(requestContext.getSecurityContext(), role)) {
                         return;
                     }
+                }*/
+
+                // get the currently selected organisation
+                String organisationId = SecurityUtils.getCurrentUserOrganisationId(requestContext);
+                if(StringUtils.isBlank(organisationId)) {
+                    // fallback to the root organisation
+                    organisationId = OrgRoles.ROOT_ORGANISATION_ID;
                 }
+
+                if(SecurityUtils.hasOrganisationRole(requestContext.getSecurityContext(), organisationId, rolesAllowed))
+                    return;
             }
 
             throw new ForbiddenException("Not Authorized");

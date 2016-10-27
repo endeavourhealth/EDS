@@ -14,6 +14,8 @@ import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.util.JsonSerialization;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -25,6 +27,8 @@ import java.util.List;
 
 public class KeycloakClient {
 
+    protected static final Logger LOG = LoggerFactory.getLogger(KeycloakClient.class);
+
     private static KeycloakClient instance;
     private String baseUrl;
     private String realm;
@@ -33,6 +37,7 @@ public class KeycloakClient {
     private String clientId;
     private AccessTokenResponse currentToken;
     private Date expirationTime;
+    private Date refreshTokenExpirationTime;
 
     public KeycloakClient(String baseUrl, String realm, String username, String password, String clientId) {
         this.baseUrl = baseUrl;
@@ -51,11 +56,14 @@ public class KeycloakClient {
     }
 
     public AccessTokenResponse getToken() throws IOException {
-        if(currentToken == null) {
+        if(currentToken == null || refreshTokenExpired()) {
+            LOG.trace("No token set or refresh token has expired, getting a new one...");
             currentToken = getTokenInternal();
             setExpirationTime();
+            setRefreshExpirationTime();
         } else {
-            if (tokenExpired()) {
+            if(tokenExpired()) {
+                LOG.trace("Token has expired, refreshing now...");
                 currentToken = refreshToken();
                 setExpirationTime();
             }
@@ -67,6 +75,22 @@ public class KeycloakClient {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.SECOND, (int) currentToken.getExpiresIn());
         expirationTime = cal.getTime();
+        if(LOG.isTraceEnabled()) {
+            LOG.trace("Access token expires: '{}'", expirationTime.toString());
+        }
+    }
+
+    private void setRefreshExpirationTime() {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.SECOND, (int) this.currentToken.getRefreshExpiresIn());
+        refreshTokenExpirationTime = cal.getTime();
+        if(LOG.isTraceEnabled()) {
+            LOG.trace("Refresh token expires: '{}'", refreshTokenExpirationTime.toString());
+        }
+    }
+
+    private boolean refreshTokenExpired() {
+        return new Date().after(refreshTokenExpirationTime);
     }
 
     private boolean tokenExpired() {
@@ -98,9 +122,11 @@ public class KeycloakClient {
             HttpEntity entity = response.getEntity();
             if (status != 200) {
                 String json = getContent(entity);
+                LOG.trace("Failed to log in: '{}'", json);
                 throw new IOException("Bad status: " + status + " response: " + json);
             }
             if (entity == null) {
+                LOG.trace("Failed to log in, no entity");
                 throw new IOException("No Entity");
             }
             String json = getContent(entity);

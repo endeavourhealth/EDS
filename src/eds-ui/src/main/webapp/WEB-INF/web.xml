@@ -10,11 +10,16 @@
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
         <init-param>
             <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>org.endeavourhealth.coreui.endpoints,org.endeavourhealth.ui.endpoints</param-value>
+            <param-value>io.swagger.jaxrs.listing,org.endeavourhealth.coreui.endpoints,org.endeavourhealth.ui.endpoints</param-value>
         </init-param>
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
-            <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.core.security.CustomRolesAllowedFeature,org.endeavourhealth.ui.framework.exceptions.BaseExceptionMapper</param-value>
+            <param-value>org.glassfish.jersey.jackson.JacksonFeature,
+                io.swagger.jaxrs.listing.ApiListingResource,
+                io.swagger.jaxrs.listing.SwaggerSerializers,
+                org.endeavourhealth.core.security.CustomRolesAllowedFeature,
+                org.endeavourhealth.ui.framework.exceptions.BaseExceptionMapper
+                </param-value>
         </init-param>
 
         <!-- enable directory listings -->
@@ -37,11 +42,12 @@
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
         <init-param>
             <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>org.endeavourhealth.coreui.endpoints_public</param-value>
+            <param-value>org.endeavourhealth.coreui.endpoints_public,org.endeavourhealth.ui.endpoints_public</param-value>
         </init-param>
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
-            <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.ui.framework.exceptions.BaseExceptionMapper</param-value>
+            <param-value>org.glassfish.jersey.jackson.JacksonFeature,
+                org.endeavourhealth.ui.framework.exceptions.BaseExceptionMapper</param-value>
         </init-param>
 
         <load-on-startup>1</load-on-startup>
@@ -85,6 +91,15 @@
     </filter-mapping>
 
     <!-- ============================================ -->
+    <!--                    Swagger                   -->
+    <!-- ============================================ -->
+    <servlet>
+        <servlet-name>swaggerBootstrap</servlet-name>
+        <servlet-class>org.endeavourhealth.ui.framework.SwaggerBootstrap</servlet-class>
+        <load-on-startup>2</load-on-startup>
+    </servlet>
+
+    <!-- ============================================ -->
     <!-- JEE security settings - Keycloak integration -->
     <!-- ============================================ -->
 
@@ -101,9 +116,21 @@
             <url-pattern>/api/*</url-pattern>
         </web-resource-collection>
         <auth-constraint>
-            <role-name>eds_user_professional</role-name>
+            <role-name>eds_user</role-name>
         </auth-constraint>
     </security-constraint>
+
+    <!-- API docs require an admin user -->
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>api-docs</web-resource-name>
+            <url-pattern>/api-docs/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>eds_user</role-name>
+        </auth-constraint>
+    </security-constraint>
+
 
     <!-- use Keycloak authentication valve installed in the container -->
     <login-config>
@@ -113,6 +140,6 @@
 
     <!-- all roles in the system MUST be specified here -->
     <security-role>
-        <role-name>eds_user_professional</role-name>
+        <role-name>eds_user</role-name>
     </security-role>
 </web-app>
