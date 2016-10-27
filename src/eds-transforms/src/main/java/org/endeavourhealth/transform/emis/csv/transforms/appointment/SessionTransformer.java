@@ -67,7 +67,7 @@ public class SessionTransformer {
         String description = parser.getDescription();
         fhirSchedule.setComment(description);
 
-        List<String> userGuids = csvHelper.findSessionPractionersToSave(sessionGuid);
+        List<String> userGuids = csvHelper.findSessionPractionersToSave(sessionGuid, true);
 
         //if we don't have any practitioners in the helper, then this may be a DELTA record from EMIS,
         //and we need to carry over the practitioners from our previous instance

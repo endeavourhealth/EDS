@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.appointment.Slot;
@@ -11,6 +12,7 @@ import org.hl7.fhir.instance.model.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class SlotTransformer {
 
@@ -40,6 +42,13 @@ public class SlotTransformer {
 
         //the slots CSV contains data on empty slots too; ignore them
         if (Strings.isNullOrEmpty(patientGuid)) {
+            return;
+        }
+
+        //the EMIS data contains thousands of appointments that refer to patients we don't have, so I'm explicitly
+        //handling this here, and ignoring any Slot record that is in this state
+        UUID patientEdsId = IdHelper.getEdsResourceId(csvProcessor.getServiceId(), csvProcessor.getSystemId(), ResourceType.Patient, patientGuid);
+        if (patientEdsId == null) {
             return;
         }
 
@@ -91,7 +100,7 @@ public class SlotTransformer {
         fhirParticipant.setStatus(Appointment.ParticipationStatus.ACCEPTED);
 
         //the helper class has a list of our practitioners
-        List<String> userGuids = csvHelper.findSessionPractionersToSave(sessionGuid);
+        List<String> userGuids = csvHelper.findSessionPractionersToSave(sessionGuid, false);
         for (String userGuid: userGuids) {
 
             fhirParticipant = fhirAppointment.addParticipant();

@@ -288,7 +288,7 @@ public class EmisCsvHelper {
                 resourceType,
                 locallyUniqueId);
         if (globallyUniqueId == null) {
-            throw new TransformException("No global ID exists for " + resourceType + " with local ID " + locallyUniqueId);
+            throw new ResourceNotFoundException(resourceType, globallyUniqueId);
         }
 
         ResourceHistory resourceHistory = resourceRepository.getCurrentVersion(resourceType.toString(), globallyUniqueId);
@@ -326,7 +326,7 @@ public class EmisCsvHelper {
         Observation fhirObservation;
         try {
             fhirObservation = (Observation) retrieveResource(locallyUniqueObservationId, ResourceType.Observation, csvProcessor);
-        } catch (ResourceNotFoundException e) {
+        } catch (ResourceNotFoundException|ResourceDeletedException e) {
             //if the resource can't be found, it's because that EMIS observation record was saved as something other
             //than a FHIR Observation (example in the CSV test files is an Allergy that is linked to another Allergy)
             return;
@@ -576,12 +576,19 @@ public class EmisCsvHelper {
         }
     }
 
-    public List<String> findSessionPractionersToSave(String sessionGuid) {
-        SessionPractitioners obj = sessionPractitionerMap.remove(sessionGuid);
+    public List<String> findSessionPractionersToSave(String sessionGuid, boolean creatingScheduleResource) {
+        //unlike the other maps, we don't remove from this map, since we need to be able to look up
+        //the staff for a session when creating Schedule resources and Appointment ones
+        SessionPractitioners obj = sessionPractitionerMap.get(sessionGuid);
         if (obj == null) {
             return new ArrayList<>();
         } else {
-            obj.setProcessedSession(true);
+            //since we're not removing from the map, like elsewhere, we need to set a flag to say we've
+            //used this entry when creating a schedule resource, so we know to not process it at the end of the transform
+            if (creatingScheduleResource) {
+                obj.setProcessedSession(true);
+            }
+
             return obj.getEmisUserGuidsToSave();
         }
     }
@@ -638,8 +645,11 @@ public class EmisCsvHelper {
                     csvProcessor.getSystemId(),
                     ResourceType.Practitioner,
                     emisUserGuid);
+            Reference referenceToAdd = ReferenceHelper.createReference(ResourceType.Practitioner, globallyUniqueId);
 
-            references.add(ReferenceHelper.createReference(ResourceType.Practitioner, globallyUniqueId));
+            if (!ReferenceHelper.contains(references, referenceToAdd)) {
+                references.add(referenceToAdd);
+            }
         }
 
         for (String emisUserGuid: practitioners.getEmisUserGuidsToDelete()) {
@@ -651,14 +661,7 @@ public class EmisCsvHelper {
                     emisUserGuid);
 
             Reference referenceToDelete = ReferenceHelper.createReference(ResourceType.Practitioner, globallyUniqueId);
-
-            for (Reference existing: references) {
-                //the FHIR objects don't implement an equals(..) override, so we must manually iterate check the reference internal String
-                if (referenceToDelete.getReference().equals(existing.getReference())) {
-                    references.remove(existing);
-                    break;
-                }
-            }
+            ReferenceHelper.remove(references, referenceToDelete);
         }
 
         //save the references back into the schedule, treating the first as the main practitioner

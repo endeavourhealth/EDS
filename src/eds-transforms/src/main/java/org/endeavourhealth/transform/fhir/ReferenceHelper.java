@@ -98,4 +98,33 @@ public class ReferenceHelper
     }
 
 
+    /**
+     * the Reference class doesn't override the equals(..) function, so we have these utility functions for doing what
+     * should be otherwise easy
+     */
+    public static boolean equals(Reference reference1, Reference reference2) {
+        return reference1.getReference().equals(reference2.getReference());
+    }
+
+    public static boolean contains(List<Reference> references, Reference reference) {
+        for (Reference listReference: references) {
+            if (equals(listReference, reference)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void remove(List<Reference> references, Reference reference) {
+        for (int i=0; i<references.size(); i++) {
+            Reference listReference = references.get(i);
+            if (equals(listReference, reference)) {
+                references.remove(i);
+                return;
+            }
+        }
+    }
+
+
+
 }

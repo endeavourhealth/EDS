@@ -645,6 +645,7 @@ public abstract class EmisCsvTransformer {
 
         //if this is the first extract for this organisation, we need to apply all the content of the admin resource cache
         if (!new AuditRepository().isServiceStarted(csvProcessor.getServiceId(), csvProcessor.getSystemId())) {
+            LOG.trace("Applying admin resource cache for service {} and system {}", csvProcessor.getServiceId(), csvProcessor.getSystemId());
             csvHelper.applyAdminResourceCache(csvProcessor);
         }
 
