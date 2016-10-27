@@ -70,6 +70,7 @@
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.keycloak:keycloak-common:2.0.0.Final" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.bouncycastle:bcpkix-jdk15on:1.52" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.keycloak:keycloak-core:2.0.0.Final" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.keycloak:keycloak-authz-client:2.0.0.Final" level="project" />
     <orderEntry type="library" name="Maven: javax.ws.rs:javax.ws.rs-api:2.0.1" level="project" />
     <orderEntry type="library" name="Maven: javax.annotation:javax.annotation-api:1.2" level="project" />
   </component>
