@@ -1,6 +1,5 @@
 package org.endeavourhealth.core.data.ehr;
 
-import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.mapping.Mapper;
@@ -28,6 +27,63 @@ public class ResourceRepository extends Repository {
     }
 
     public void save(ResourceEntry resourceEntry, UUID exchangeId, UUID batchId){
+        if (resourceEntry == null) throw new IllegalArgumentException("resourceEntry is null");
+
+        ResourceHistory resourceHistory = new ResourceHistory();
+        resourceHistory.setResourceId(resourceEntry.getResourceId());
+        resourceHistory.setResourceType(resourceEntry.getResourceType());
+        resourceHistory.setVersion(resourceEntry.getVersion());
+        resourceHistory.setCreatedAt(resourceEntry.getCreatedAt());
+        resourceHistory.setServiceId(resourceEntry.getServiceId());
+        resourceHistory.setSystemId(resourceEntry.getSystemId());
+        resourceHistory.setIsDeleted(false);
+        resourceHistory.setSchemaVersion(resourceEntry.getSchemaVersion());
+        resourceHistory.setResourceData(resourceEntry.getResourceData());
+        Mapper<ResourceHistory> mapperResourceHistory = getMappingManager().mapper(ResourceHistory.class);
+        mapperResourceHistory.save(resourceHistory);
+
+        ResourceHistoryByService resourceHistoryByService = new ResourceHistoryByService();
+        resourceHistoryByService.setResourceId(resourceEntry.getResourceId());
+        resourceHistoryByService.setResourceType(resourceEntry.getResourceType());
+        resourceHistoryByService.setVersion(resourceEntry.getVersion());
+        resourceHistoryByService.setCreatedAt(resourceEntry.getCreatedAt());
+        resourceHistoryByService.setServiceId(resourceEntry.getServiceId());
+        resourceHistoryByService.setSystemId(resourceEntry.getSystemId());
+        resourceHistoryByService.setIsDeleted(false);
+        resourceHistoryByService.setSchemaVersion(resourceEntry.getSchemaVersion());
+        resourceHistoryByService.setResourceData(resourceEntry.getResourceData());
+        Mapper<ResourceHistoryByService> mapperResourceHistoryByService = getMappingManager().mapper(ResourceHistoryByService.class);
+        mapperResourceHistoryByService.save(resourceHistoryByService);
+
+        ResourceByService resourceByService = new ResourceByService();
+        resourceByService.setServiceId(resourceEntry.getServiceId());
+        resourceByService.setSystemId(resourceEntry.getSystemId());
+        resourceByService.setResourceType(resourceEntry.getResourceType());
+        resourceByService.setResourceId(resourceEntry.getResourceId());
+        resourceByService.setCurrentVersion(resourceEntry.getVersion());
+        resourceByService.setUpdatedAt(resourceEntry.getCreatedAt());
+        resourceByService.setPatientId(resourceEntry.getPatientId());
+        resourceByService.setSchemaVersion(resourceEntry.getSchemaVersion());
+        resourceByService.setResourceMetadata(resourceEntry.getResourceMetadata());
+        resourceByService.setResourceData(resourceEntry.getResourceData());
+        Mapper<ResourceByService> mapperResourceByService = getMappingManager().mapper(ResourceByService.class);
+        mapperResourceByService.save(resourceByService);
+
+        if (exchangeId != null && batchId != null) {
+            ResourceByExchangeBatch resourceByExchangeBatch = new ResourceByExchangeBatch();
+            resourceByExchangeBatch.setBatchId(batchId);
+            resourceByExchangeBatch.setExchangeId(exchangeId);
+            resourceByExchangeBatch.setResourceType(resourceEntry.getResourceType());
+            resourceByExchangeBatch.setResourceId(resourceEntry.getResourceId());
+            resourceByExchangeBatch.setVersion(resourceEntry.getVersion());
+            resourceByExchangeBatch.setIsDeleted(false);
+            resourceByExchangeBatch.setSchemaVersion(resourceEntry.getSchemaVersion());
+            resourceByExchangeBatch.setResourceData(resourceEntry.getResourceData());
+            Mapper<ResourceByExchangeBatch> mapperResourceByExchangeBatch = getMappingManager().mapper(ResourceByExchangeBatch.class);
+            mapperResourceByExchangeBatch.save(resourceByExchangeBatch);
+        }
+    }
+    /*public void save(ResourceEntry resourceEntry, UUID exchangeId, UUID batchId){
         if (resourceEntry == null) throw new IllegalArgumentException("resourceEntry is null");
 
         BatchStatement batch = new BatchStatement();
@@ -87,13 +143,58 @@ public class ResourceRepository extends Repository {
         }
 
         getSession().execute(batch);
-    }
+    }*/
 
     public void delete(ResourceEntry resourceEntry){
         delete(resourceEntry, null, null);
     }
 
     public void delete(ResourceEntry resourceEntry, UUID exchangeId, UUID batchId){
+        if (resourceEntry == null) throw new IllegalArgumentException("resourceEntry is null");
+
+        ResourceHistory resourceHistory = new ResourceHistory();
+        resourceHistory.setResourceId(resourceEntry.getResourceId());
+        resourceHistory.setResourceType(resourceEntry.getResourceType());
+        resourceHistory.setVersion(resourceEntry.getVersion());
+        resourceHistory.setCreatedAt(resourceEntry.getCreatedAt());
+        resourceHistory.setServiceId(resourceEntry.getServiceId());
+        resourceHistory.setSystemId(resourceEntry.getSystemId());
+        resourceHistory.setIsDeleted(true);
+        Mapper<ResourceHistory> mapperResourceHistory = getMappingManager().mapper(ResourceHistory.class);
+        mapperResourceHistory.save(resourceHistory);
+
+        ResourceHistoryByService resourceHistoryByService = new ResourceHistoryByService();
+        resourceHistoryByService.setResourceId(resourceEntry.getResourceId());
+        resourceHistoryByService.setResourceType(resourceEntry.getResourceType());
+        resourceHistoryByService.setVersion(resourceEntry.getVersion());
+        resourceHistoryByService.setCreatedAt(resourceEntry.getCreatedAt());
+        resourceHistoryByService.setServiceId(resourceEntry.getServiceId());
+        resourceHistoryByService.setSystemId(resourceEntry.getSystemId());
+        resourceHistoryByService.setIsDeleted(true);
+        Mapper<ResourceHistoryByService> mapperResourceHistoryByService = getMappingManager().mapper(ResourceHistoryByService.class);
+        mapperResourceHistoryByService.save(resourceHistoryByService);
+
+        ResourceByService resourceByService = new ResourceByService();
+        resourceByService.setServiceId(resourceEntry.getServiceId());
+        resourceByService.setSystemId(resourceEntry.getSystemId());
+        resourceByService.setResourceType(resourceEntry.getResourceType());
+        resourceByService.setResourceId(resourceEntry.getResourceId());
+        Mapper<ResourceByService> mapperResourceMetadata = getMappingManager().mapper(ResourceByService.class);
+        mapperResourceMetadata.save(resourceByService);
+
+        if (exchangeId != null && batchId != null) {
+            ResourceByExchangeBatch resourceByExchangeBatch = new ResourceByExchangeBatch();
+            resourceByExchangeBatch.setBatchId(batchId);
+            resourceByExchangeBatch.setExchangeId(exchangeId);
+            resourceByExchangeBatch.setResourceType(resourceEntry.getResourceType());
+            resourceByExchangeBatch.setResourceId(resourceEntry.getResourceId());
+            resourceByExchangeBatch.setVersion(resourceEntry.getVersion());
+            resourceByExchangeBatch.setIsDeleted(true);
+            Mapper<ResourceByExchangeBatch> mapperResourceByExchangeBatch = getMappingManager().mapper(ResourceByExchangeBatch.class);
+            mapperResourceByExchangeBatch.save(resourceByExchangeBatch);
+        }
+    }
+    /*public void delete(ResourceEntry resourceEntry, UUID exchangeId, UUID batchId){
         if (resourceEntry == null) throw new IllegalArgumentException("resourceEntry is null");
 
         BatchStatement batch = new BatchStatement();
@@ -141,7 +242,7 @@ public class ResourceRepository extends Repository {
         }
 
         getSession().execute(batch);
-    }
+    }*/
 
     /*public void save(ResourceTypesUsed resourceTypesUsed) {
         if (resourceTypesUsed == null) {
