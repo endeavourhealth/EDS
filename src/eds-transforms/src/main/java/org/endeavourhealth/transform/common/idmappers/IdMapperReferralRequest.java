@@ -7,11 +7,10 @@ import java.util.UUID;
 
 public class IdMapperReferralRequest extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         ReferralRequest referralRequest = (ReferralRequest)resource;
 
-        super.mapResourceId(referralRequest, serviceId, systemId);
-        super.mapExtensions(referralRequest, serviceId, systemId);
+        super.mapCommonResourceFields(referralRequest, serviceId, systemId, mapResourceId);
 
         if (referralRequest.hasIdentifier()) {
             super.mapIdentifiers(referralRequest.getIdentifier(), resource, serviceId, systemId);

@@ -1,7 +1,9 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
@@ -118,6 +120,31 @@ public class ProblemTransformer {
             Extension typeExtension = ExtensionConverter.createExtension("type", new StringType(fhirRelationshipType.getCode()));
             Extension referenceExtension = ExtensionConverter.createExtension("target", csvHelper.createProblemReference(parentProblemGuid, patientGuid));
             fhirProblem.addExtension(ExtensionConverter.createCompoundExtension(FhirExtensionUri.PROBLEM_RELATED, typeExtension, referenceExtension));
+        }
+
+        //carry over linked items if we're amending the problem
+        try {
+            Condition previousVersion = (Condition)csvHelper.retrieveResource(fhirProblem.getId(), ResourceType.Condition, csvProcessor);
+
+            //carry over the container resource
+            if (previousVersion.hasContained()) {
+                for (Resource contained: previousVersion.getContained()) {
+                    if (contained instanceof List_) {
+                        fhirProblem.getContained().add(contained);
+                    }
+                }
+            }
+
+            //then carry over the extension that points to it
+            for (Extension extension: previousVersion.getExtension()) {
+                if (extension.getUrl().equals(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE)) {
+                    Reference reference = (Reference)extension.getValue();
+                    fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, reference));
+                }
+            }
+
+        } catch (ResourceNotFoundException|ResourceDeletedException ex) {
+            //if this is the first time, then we'll get this exception raised
         }
 
         //the problem is actually saved in the ObservationTransformer, so just cache for later

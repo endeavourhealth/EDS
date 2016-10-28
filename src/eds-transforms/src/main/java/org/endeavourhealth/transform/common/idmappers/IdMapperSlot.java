@@ -7,11 +7,10 @@ import java.util.UUID;
 
 public class IdMapperSlot extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         Slot slot = (Slot)resource;
 
-        super.mapResourceId(slot, serviceId, systemId);
-        super.mapExtensions(slot, serviceId, systemId);
+        super.mapCommonResourceFields(slot, serviceId, systemId, mapResourceId);
 
         if (slot.hasIdentifier()) {
             super.mapIdentifiers(slot.getIdentifier(), resource, serviceId, systemId);

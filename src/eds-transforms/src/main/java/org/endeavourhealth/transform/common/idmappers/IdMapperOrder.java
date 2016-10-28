@@ -7,11 +7,10 @@ import java.util.UUID;
 
 public class IdMapperOrder extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         Order order = (Order)resource;
 
-        super.mapResourceId(order, serviceId, systemId);
-        super.mapExtensions(order, serviceId, systemId);
+        super.mapCommonResourceFields(order, serviceId, systemId, mapResourceId);
 
         if (order.hasIdentifier()) {
             super.mapIdentifiers(order.getIdentifier(), resource, serviceId, systemId);

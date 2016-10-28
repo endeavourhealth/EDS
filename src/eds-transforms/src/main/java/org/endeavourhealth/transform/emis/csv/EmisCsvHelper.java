@@ -27,6 +27,7 @@ public class EmisCsvHelper {
 
     private static final String CODEABLE_CONCEPT = "CodeableConcept";
     private static final String ID_DELIMITER = ":";
+    private static final String PROBLEM_LIST_ID = "Items";
 
     private String dataSharingAgreementGuid = null;
 
@@ -425,26 +426,8 @@ public class EmisCsvHelper {
 
         String patientGuid = getPatientGuidFromUniqueId(problemLocallyUniqueId);
 
-        List_ list = new List_();
-
-        //find the existing list of child resource references
-        if (fhirProblem.hasExtension()) {
-            for (Extension extension: fhirProblem.getExtension()) {
-                if (extension.getUrl().equals(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE)) {
-                    Reference reference = (Reference)extension.getValue();
-                    list = (List_)reference.getResource();
-                }
-            }
-        }
-
-        //if the extension wasn't there before, create and add it
-        if (list == null) {
-            list = new List_();
-            Reference listReference = ReferenceHelper.createReferenceInline(list);
-            fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, listReference));
-        }
-
-        boolean changed = false;
+        //since our resource
+        List<Reference> references = new ArrayList<>();
 
         for (Reference reference : childResourceRelationships) {
 
@@ -458,28 +441,67 @@ public class EmisCsvHelper {
                     locallyUniqueId);
 
             Reference globallyUniqueReference = ReferenceHelper.createReference(resourceType, globallyUniqueId);
+            references.add(globallyUniqueReference);
+        }
+
+        if (addLinkedItemsToProblem(fhirProblem, references)) {
+
+            //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
+            csvProcessor.savePatientResource(null, false, patientGuid, fhirProblem);
+        }
+    }
+
+    /**
+     * adds linked references to a FHIR problem, that may or may not already have linked references
+     * returns true if any change was actually made, false otherwise
+     */
+    public boolean addLinkedItemsToProblem(Condition fhirProblem, List<Reference> references) {
+
+        //see if we already have a list in the problem
+        List_ list = null;
+
+        if (fhirProblem.hasContained()) {
+            for (Resource contained: fhirProblem.getContained()) {
+                if (contained.getId().equals(PROBLEM_LIST_ID)) {
+                    list = (List_)contained;
+                }
+            }
+        }
+
+        //if the list wasn't there before, create and add it
+        if (list == null) {
+            list = new List_();
+            list.setId(PROBLEM_LIST_ID);
+            fhirProblem.getContained().add(list);
+
+            //add the reference to the list too
+            Reference listReference = ReferenceHelper.createInternalReference(PROBLEM_LIST_ID);
+            fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, listReference));
+        }
+
+        boolean changed = false;
+
+        for (Reference reference : references) {
 
             //check to see if this resource is already linked to the problem
             boolean alreadyLinked = false;
             for (List_.ListEntryComponent entry: list.getEntry()) {
                 Reference entryReference = entry.getItem();
-                if (entryReference.getReference().equals(globallyUniqueReference.getReference())) {
+                if (entryReference.getReference().equals(reference.getReference())) {
                     alreadyLinked = true;
                     break;
                 }
             }
 
             if (!alreadyLinked) {
-                list.addEntry().setItem(globallyUniqueReference);
+                list.addEntry().setItem(reference);
                 changed = true;
             }
         }
 
-        if (changed) {
-            //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
-            csvProcessor.savePatientResource(null, false, patientGuid, fhirProblem);
-        }
+        return changed;
     }
+
 
     /*private void addRelationshipsToNewProblem(Condition fhirProblem, List<ResourceRelationship> resourceRelationships) throws Exception {
 
@@ -750,29 +772,35 @@ public class EmisCsvHelper {
             DateAndCode ethnicity = ethnicityMap.get(patientGuid);
             DateAndCode maritalStatus = maritalStatusMap.get(patientGuid);
 
-            Patient fhirPatient = (Patient)retrieveResource(createUniqueId(patientGuid, null), ResourceType.Patient, csvProcessor);
+            try {
+                Patient fhirPatient = (Patient) retrieveResource(createUniqueId(patientGuid, null), ResourceType.Patient, csvProcessor);
 
-            if (ethnicity != null) {
+                if (ethnicity != null) {
 
-                //make to use the extension if it's already present
-                boolean done = false;
-                for (Extension extension: fhirPatient.getExtension()) {
-                    if (extension.getUrl().equals(FhirExtensionUri.PATIENT_ETHNICITY)) {
-                        extension.setValue(ethnicity.getCodeableConcept());
-                        done = true;
-                        break;
+                    //make to use the extension if it's already present
+                    boolean done = false;
+                    for (Extension extension : fhirPatient.getExtension()) {
+                        if (extension.getUrl().equals(FhirExtensionUri.PATIENT_ETHNICITY)) {
+                            extension.setValue(ethnicity.getCodeableConcept());
+                            done = true;
+                            break;
+                        }
+                    }
+                    if (!done) {
+                        fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_ETHNICITY, ethnicity.getCodeableConcept()));
                     }
                 }
-                if (!done) {
-                    fhirPatient.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_ETHNICITY, ethnicity.getCodeableConcept()));
+
+                if (maritalStatus != null) {
+                    fhirPatient.setMaritalStatus(maritalStatus.getCodeableConcept());
                 }
+
+                csvProcessor.savePatientResource(null, false, patientGuid, fhirPatient);
+
+            } catch (ResourceDeletedException ex) {
+                //if we try to update the ethnicity on a deleted patient, we'll get this exception, which is fine to ignore
             }
 
-            if (maritalStatus != null) {
-                fhirPatient.setMaritalStatus(maritalStatus.getCodeableConcept());
-            }
-
-            csvProcessor.savePatientResource(null, false, patientGuid, fhirPatient);
         }
     }
 

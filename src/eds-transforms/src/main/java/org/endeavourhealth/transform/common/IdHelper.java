@@ -90,6 +90,10 @@ public class IdHelper {
     }
 
     public static void mapIds(UUID serviceId, UUID systemId, Resource resource) throws Exception {
+        mapIds(serviceId, systemId, resource, true);
+    }
+
+    public static void mapIds(UUID serviceId, UUID systemId, Resource resource, boolean mapResourceId) throws Exception {
 
         BaseIdMapper mapper = idMappers.get(resource.getClass());
         if (mapper == null) {
@@ -103,6 +107,6 @@ public class IdHelper {
             }
         }
 
-        mapper.mapIds(resource, serviceId, systemId);
+        mapper.mapIds(resource, serviceId, systemId, mapResourceId);
     }
 }

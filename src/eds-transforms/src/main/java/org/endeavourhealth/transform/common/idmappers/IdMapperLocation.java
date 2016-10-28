@@ -7,11 +7,10 @@ import java.util.UUID;
 
 public class IdMapperLocation extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         Location location = (Location)resource;
 
-        super.mapResourceId(location, serviceId, systemId);
-        super.mapExtensions(location, serviceId, systemId);
+        super.mapCommonResourceFields(location, serviceId, systemId, mapResourceId);
 
         if (location.hasIdentifier()) {
             super.mapIdentifiers(location.getIdentifier(), resource, serviceId, systemId);

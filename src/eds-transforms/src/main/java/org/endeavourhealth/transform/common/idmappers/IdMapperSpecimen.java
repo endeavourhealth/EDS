@@ -7,11 +7,10 @@ import java.util.UUID;
 
 public class IdMapperSpecimen extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         Specimen specimen = (Specimen)resource;
 
-        super.mapResourceId(specimen, serviceId, systemId);
-        super.mapExtensions(specimen, serviceId, systemId);
+        super.mapCommonResourceFields(specimen, serviceId, systemId, mapResourceId);
 
         if (specimen.hasIdentifier()) {
             super.mapIdentifiers(specimen.getIdentifier(), resource, serviceId, systemId);

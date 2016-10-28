@@ -7,11 +7,10 @@ import java.util.UUID;
 
 public class IdMapperSchedule extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         Schedule schedule = (Schedule)resource;
 
-        super.mapResourceId(schedule, serviceId, systemId);
-        super.mapExtensions(schedule, serviceId, systemId);
+        super.mapCommonResourceFields(schedule, serviceId, systemId, mapResourceId);
 
         if (schedule.hasIdentifier()) {
             super.mapIdentifiers(schedule.getIdentifier(), resource, serviceId, systemId);

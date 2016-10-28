@@ -8,8 +8,10 @@ import org.hl7.fhir.instance.model.ResourceType;
 
 import java.util.List;
 
-public class ReferenceHelper
-{
+public class ReferenceHelper {
+
+    private static final String INTERNAL_REFERENCE_PREFIX = "#";
+
     public static String createResourceReference(ResourceType resourceType, String id)
     {
         return resourceType.toString() + "/" + id;
@@ -25,19 +27,13 @@ public class ReferenceHelper
 
     public static Reference createInternalReference(String id)
     {
-        return new Reference().setReference("#" + id);
+        return new Reference().setReference(INTERNAL_REFERENCE_PREFIX + id);
     }
 
 
     public static Reference createReferenceExternal(Resource resource) throws TransformException {
         return createReference(resource.getResourceType(), resource.getId());
     }
-
-    public static Reference createReferenceInline(Resource resource) throws TransformException {
-        return new Reference(resource);
-    }
-
-
 
     public static String getReferenceId(Reference reference) {
         return getReferenceId(reference, null);
@@ -56,11 +52,17 @@ public class ReferenceHelper
     }
 
     public static ReferenceComponents getReferenceComponents(Reference reference) {
-        if (reference == null)
+        if (reference == null) {
             return null;
+        }
 
-        if (!reference.hasReference())
+        if (!reference.hasReference()) {
             return null;
+        }
+
+        if (reference.getReference().startsWith(INTERNAL_REFERENCE_PREFIX)) {
+            return null;
+        }
 
         String[] parts = reference.getReference().split("\\/");
 

@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.common.idmappers;
 
 import org.endeavourhealth.transform.common.IdHelper;
-import org.endeavourhealth.transform.common.exceptions.UnknownPatientException;
+import org.endeavourhealth.transform.common.exceptions.UnknownResourceException;
 import org.endeavourhealth.transform.fhir.ReferenceComponents;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
@@ -15,12 +15,20 @@ public abstract class BaseIdMapper {
     private static final Logger LOG = LoggerFactory.getLogger(BaseIdMapper.class);
 
 
-    public abstract void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception;
+    public abstract void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception;
+
+    protected void mapCommonResourceFields(DomainResource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
+        if (mapResourceId) {
+            mapResourceId(resource, serviceId, systemId);
+        }
+        mapExtensions(resource, serviceId, systemId);
+        mapContainedResources(resource, serviceId, systemId);
+    }
 
     /**
      * maps the main ID of any resource
      */
-    protected void mapResourceId(Resource resource, UUID serviceId, UUID systemId) {
+    private void mapResourceId(Resource resource, UUID serviceId, UUID systemId) {
 
         if (!resource.hasId()) {
             return;
@@ -33,7 +41,7 @@ public abstract class BaseIdMapper {
     /**
      * maps the IDs in any extensions of a resource
      */
-    protected void mapExtensions(DomainResource resource, UUID serviceId, UUID systemId) throws Exception {
+    private void mapExtensions(DomainResource resource, UUID serviceId, UUID systemId) throws Exception {
 
         if (!resource.hasExtension()) {
             return;
@@ -48,6 +56,22 @@ public abstract class BaseIdMapper {
     }
 
     /**
+     * maps the IDs in any extensions of a resource
+     */
+    private void mapContainedResources(DomainResource resource, UUID serviceId, UUID systemId) throws Exception {
+
+        if (!resource.hasContained()) {
+            return;
+        }
+
+        for (Resource contained: resource.getContained()) {
+            //pass in false so we don't map the ID of the contained resource, since it's not supposed to be a global ID
+            IdHelper.mapIds(serviceId, systemId, contained, false);
+        }
+    }
+
+
+    /**
      * maps the IDs in any identifiers of a resource
      */
     protected void mapIdentifiers(List<Identifier> identifiers, Resource resource, UUID serviceId, UUID systemId) throws Exception {
@@ -57,6 +81,7 @@ public abstract class BaseIdMapper {
             }
         }
     }
+
 
     /**
      * maps the ID within any reference
@@ -70,28 +95,23 @@ public abstract class BaseIdMapper {
 
             ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
 
-            //if it's a reference to a patient resource, we perform an extra step to validate if the patient is known to us
-            //if not, it still continues, but it will log the error
-            if (comps.getResourceType() == ResourceType.Patient) {
-                UUID patientEdsId = IdHelper.getEdsResourceId(serviceId, systemId, comps.getResourceType(), comps.getId());
+            //if the reference is to an internal contained resource, the above will return null
+            if (comps != null) {
 
-                if (patientEdsId == null) {
-                    throw new UnknownPatientException(comps.getId(),
-                                                    resource.getResourceType(),
-                                                    resource.getId(),
-                                                    serviceId,
-                                                    systemId);
-                    /*LOG.error("Reference to unrecognised patient {} in {} {} for service {} and system {}",
+                //validate that the resource the reference points to is valid and something we've encountered before
+                UUID existingEdsId = IdHelper.getEdsResourceId(serviceId, systemId, comps.getResourceType(), comps.getId());
+                if (existingEdsId == null) {
+                    throw new UnknownResourceException(comps.getResourceType(),
                             comps.getId(),
                             resource.getResourceType(),
                             resource.getId(),
                             serviceId,
-                            systemId);*/
+                            systemId);
                 }
-            }
 
-            String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, comps.getResourceType(), comps.getId());
-            reference.setReference(ReferenceHelper.createResourceReference(comps.getResourceType(), newId));
+                String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, comps.getResourceType(), comps.getId());
+                reference.setReference(ReferenceHelper.createResourceReference(comps.getResourceType(), newId));
+            }
 
         } else {
 

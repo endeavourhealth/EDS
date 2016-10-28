@@ -8,11 +8,10 @@ import java.util.UUID;
 public class IdMapperList_ extends BaseIdMapper {
 
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         List_ list = (List_)resource;
 
-        super.mapResourceId(list, serviceId, systemId);
-        super.mapExtensions(list, serviceId, systemId);
+        super.mapCommonResourceFields(list, serviceId, systemId, mapResourceId);
 
         if (list.hasIdentifier()) {
             super.mapIdentifiers(list.getIdentifier(), resource, serviceId, systemId);

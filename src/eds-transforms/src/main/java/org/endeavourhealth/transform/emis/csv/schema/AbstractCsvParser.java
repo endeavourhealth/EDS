@@ -106,8 +106,8 @@ public abstract class AbstractCsvParser implements AutoCloseable {
         while (csvIterator.hasNext()) {
             this.csvRecord = csvIterator.next();
 
-            if (csvReader.getCurrentLineNumber() % 20000 == 0) {
-                LOG.info("Starting line {} of {}", csvReader.getCurrentLineNumber(), file.getAbsolutePath());
+            if (csvReader.getCurrentLineNumber() % 50000 == 0) {
+                LOG.trace("Starting line {} of {}", csvReader.getCurrentLineNumber(), file.getAbsolutePath());
             }
 
             //if we're restricting the record numbers to process, then check if the new line we're on is one we want to process

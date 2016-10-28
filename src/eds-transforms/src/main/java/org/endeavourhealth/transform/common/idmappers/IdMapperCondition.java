@@ -7,11 +7,10 @@ import java.util.UUID;
 
 public class IdMapperCondition extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         Condition condition = (Condition)resource;
 
-        super.mapResourceId(condition, serviceId, systemId);
-        super.mapExtensions(condition, serviceId, systemId);
+        super.mapCommonResourceFields(condition, serviceId, systemId, mapResourceId);
 
         if (condition.hasIdentifier()) {
             super.mapIdentifiers(condition.getIdentifier(), resource, serviceId, systemId);

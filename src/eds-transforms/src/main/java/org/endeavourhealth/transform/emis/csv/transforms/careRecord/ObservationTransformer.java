@@ -279,7 +279,7 @@ public class ObservationTransformer {
         } else if (codeType == ClinicalCodeType.Allergy_Adverse_Drug_Reations
             || codeType == ClinicalCodeType.Allergy_Adverse_Reations) {
 
-            return ResourceType.Immunization;
+            return ResourceType.AllergyIntolerance;
 
         } else if (codeType == ClinicalCodeType.Dental_Disorder) {
 
@@ -295,7 +295,7 @@ public class ObservationTransformer {
 
         } else if (codeType == ClinicalCodeType.Immunisations) {
 
-            return ResourceType.Condition;
+            return ResourceType.Immunization;
 
         } else if (codeType == ClinicalCodeType.Investigation_Requests) {
 
@@ -888,18 +888,7 @@ public class ObservationTransformer {
 
         List<Reference> linkedResources = csvHelper.getAndRemoveProblemRelationships(observationGuid, patientGuid);
         if (linkedResources != null) {
-
-            //store the referenced resources in a List resource, which we add inline to the Condition
-            List_ list = new List_();
-
-            for (Reference reference : linkedResources) {
-
-                List_.ListEntryComponent entry = list.addEntry();
-                entry.setItem(reference);
-            }
-
-            Reference listReference = ReferenceHelper.createReferenceInline(list);
-            fhirCondition.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, listReference));
+            csvHelper.addLinkedItemsToProblem(fhirCondition, linkedResources);
         }
 
         //assert that these cells are empty, as we don't stored them in this resource type

@@ -7,11 +7,10 @@ import java.util.UUID;
 
 public class IdMapperObservation extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) throws Exception {
+    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         Observation observation = (Observation)resource;
 
-        super.mapResourceId(observation, serviceId, systemId);
-        super.mapExtensions(observation, serviceId, systemId);
+        super.mapCommonResourceFields(observation, serviceId, systemId, mapResourceId);
 
         if (observation.hasIdentifier()) {
             super.mapIdentifiers(observation.getIdentifier(), resource, serviceId, systemId);
