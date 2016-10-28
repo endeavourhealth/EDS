@@ -1,7 +1,6 @@
 package org.endeavourhealth.transform.common.idmappers;
 
 import org.endeavourhealth.transform.common.IdHelper;
-import org.endeavourhealth.transform.common.exceptions.UnknownResourceException;
 import org.endeavourhealth.transform.fhir.ReferenceComponents;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
@@ -101,12 +100,14 @@ public abstract class BaseIdMapper {
                 //validate that the resource the reference points to is valid and something we've encountered before
                 UUID existingEdsId = IdHelper.getEdsResourceId(serviceId, systemId, comps.getResourceType(), comps.getId());
                 if (existingEdsId == null) {
-                    throw new UnknownResourceException(comps.getResourceType(),
+                    //TODO - restore exception when EMIS data is fixed
+                    LOG.error("Reference to unknown " + comps.getResourceType() + " " + comps.getId() + " from " + resource.getResourceType() + " " + resource.getId());
+                    /*throw new UnknownResourceException(comps.getResourceType(),
                             comps.getId(),
                             resource.getResourceType(),
                             resource.getId(),
                             serviceId,
-                            systemId);
+                            systemId);*/
                 }
 
                 String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, comps.getResourceType(), comps.getId());
