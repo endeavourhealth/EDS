@@ -101,7 +101,7 @@ public abstract class BaseIdMapper {
                 UUID existingEdsId = IdHelper.getEdsResourceId(serviceId, systemId, comps.getResourceType(), comps.getId());
                 if (existingEdsId == null) {
                     //TODO - restore exception when EMIS data is fixed
-                    LOG.error("Reference to unknown " + comps.getResourceType() + " " + comps.getId() + " from " + resource.getResourceType() + " " + resource.getId());
+//                    LOG.error("Reference to unknown " + comps.getResourceType() + " " + comps.getId() + " from " + resource.getResourceType() + " " + resource.getId());
                     /*throw new UnknownResourceException(comps.getResourceType(),
                             comps.getId(),
                             resource.getResourceType(),
