@@ -65,7 +65,7 @@ public abstract class EmisCsvTransformer {
                                        TransformError previousErrors,
                                        int maxFilingThreads) throws Exception {
 
-        LOG.info("Invoking EMIS CSV transformer for {} files", files.length);
+        LOG.info("Invoking EMIS CSV transformer for {} files using {} threads", files.length, maxFilingThreads);
 
         //validate the version
         validateVersion(version);
