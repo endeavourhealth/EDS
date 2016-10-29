@@ -62,7 +62,8 @@ public abstract class EmisCsvTransformer {
                                        UUID serviceId,
                                        UUID systemId,
                                        TransformError transformError,
-                                       TransformError previousErrors) throws Exception {
+                                       TransformError previousErrors,
+                                       int maxFilingThreads) throws Exception {
 
         LOG.info("Invoking EMIS CSV transformer for {} files", files.length);
 
@@ -73,7 +74,7 @@ public abstract class EmisCsvTransformer {
         File orgDirectory = validateAndFindCommonDirectory(sharedStoragePath, files);
 
         //the processor is responsible for saving FHIR resources
-        CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId, transformError);
+        CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId, transformError, maxFilingThreads);
 
         Map<Class, List<AbstractCsvParser>> allParsers = new HashMap<>();
 

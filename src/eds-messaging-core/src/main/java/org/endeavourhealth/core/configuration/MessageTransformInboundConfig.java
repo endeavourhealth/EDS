@@ -17,7 +17,8 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;extension base="{}ComponentConfig">
  *       &lt;sequence>
- *         &lt;element name="SharedStoragePath" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="SharedStoragePath" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="FilingThreadLimit" type="{http://www.w3.org/2001/XMLSchema}int"/>
  *       &lt;/sequence>
  *     &lt;/extension>
  *   &lt;/complexContent>
@@ -28,14 +29,17 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "MessageTransformInboundConfig", propOrder = {
-    "sharedStoragePath"
+    "sharedStoragePath",
+    "filingThreadLimit"
 })
 public class MessageTransformInboundConfig
     extends ComponentConfig
 {
 
-    @XmlElement(name = "SharedStoragePath")
+    @XmlElement(name = "SharedStoragePath", required = true)
     protected String sharedStoragePath;
+    @XmlElement(name = "FilingThreadLimit")
+    protected int filingThreadLimit;
 
     /**
      * Gets the value of the sharedStoragePath property.
@@ -59,6 +63,22 @@ public class MessageTransformInboundConfig
      */
     public void setSharedStoragePath(String value) {
         this.sharedStoragePath = value;
+    }
+
+    /**
+     * Gets the value of the filingThreadLimit property.
+     * 
+     */
+    public int getFilingThreadLimit() {
+        return filingThreadLimit;
+    }
+
+    /**
+     * Sets the value of the filingThreadLimit property.
+     * 
+     */
+    public void setFilingThreadLimit(int value) {
+        this.filingThreadLimit = value;
     }
 
 }

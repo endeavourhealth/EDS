@@ -42,23 +42,21 @@ public class CsvProcessor {
     private UUID adminBatchId = null;
 
     //threading
-    private ThreadPool threadPool = new ThreadPool(4, 50000); //lower the limits
-    //private ThreadPool threadPool = new ThreadPool(1, 50000); //lower the limits
-    //private ThreadPool threadPool = new ThreadPool(5, 50000); //lower the limits
-    //private ThreadPool threadPool = new ThreadPool(10, 100000); //allow 10 threads for saving
+    private ThreadPool threadPool = null;
 
     //counts
     private Map<UUID, AtomicInteger> countResourcesSaved = new ConcurrentHashMap<>();
     private Map<UUID, AtomicInteger> countResourcesDeleted = new ConcurrentHashMap<>();
 
 
-    public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId, TransformError transformError) {
+    public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId, TransformError transformError, int maxFilingThreads) {
         this.exchangeId = exchangeId;
         this.serviceId = serviceId;
         this.systemId = systemId;
         this.storageService = new FhirStorageService(serviceId, systemId);
         this.exchangeBatchRepository = new ExchangeBatchRepository();
         this.transformError = transformError;
+        this.threadPool = new ThreadPool(maxFilingThreads, 50000);
     }
 
 

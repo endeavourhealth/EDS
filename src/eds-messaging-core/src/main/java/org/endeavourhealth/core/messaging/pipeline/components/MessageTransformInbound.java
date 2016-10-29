@@ -236,12 +236,16 @@ public class MessageTransformInbound extends PipelineComponent {
 			return null;
 		}
 
-		try {
+		//if our service and system are in error, but our exchange hasn't been re-submitted,
+		//then we can't process any further exchanges from that source, until the first error is fixed
+		//TODO - revert this, EMIS integrity errors are fixed
+		return null;
+		/*try {
 			return TransformErrorSerializer.readFromXml(previous.getErrorXml());
 		} catch (Exception ex) {
 			LOG.error("Error parsing XML " + previous.getErrorXml(), ex);
 			return null;
-		}
+		}*/
 	}
 
 	/**
@@ -264,7 +268,9 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//if our service and system are in error, but our exchange hasn't been re-submitted,
 		//then we can't process any further exchanges from that source, until the first error is fixed
-		return false;
+		//TODO - revert this, EMIS integrity errors are fixed
+		return true;
+		//return false;
 	}
 
 	private static void createTransformAudit(UUID serviceId, UUID systemId, UUID exchangeId, Date transformStarted, TransformError transformError) {
@@ -304,11 +310,14 @@ public class MessageTransformInbound extends PipelineComponent {
 		//for EMIS CSV, the exchange body will be a list of files received
 		String decodedFileString = exchange.getBody();
 		String[] decodedFiles = decodedFileString.split(java.lang.System.lineSeparator());
+
+		//get our configuration options
 		String sharedStoragePath = config.getSharedStoragePath();
+		int maxFilingThreads = config.getFilingThreadLimit();
 
 		return EmisCsvTransformer.transform(version, sharedStoragePath, decodedFiles,
 											exchange.getExchangeId(), serviceId, systemId,
-											currentErrors, previousErrors);
+											currentErrors, previousErrors, maxFilingThreads);
 	}
 
 	private List<UUID> processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
