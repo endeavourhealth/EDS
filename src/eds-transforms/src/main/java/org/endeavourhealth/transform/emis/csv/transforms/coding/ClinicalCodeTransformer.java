@@ -30,11 +30,12 @@ public abstract class ClinicalCodeTransformer {
     public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
                                  CsvProcessor csvProcessor,
-                                 EmisCsvHelper csvHelper) throws Exception {
+                                 EmisCsvHelper csvHelper,
+                                 int maxFilingThreads) throws Exception {
 
         //because we have to hit a third party web resource, we use a thread pool to support
         //threading these calls to improve performance
-        ThreadPool threadPool = new ThreadPool(15, 50000); //15 threads seems reasonable for hits against a web service
+        ThreadPool threadPool = new ThreadPool(maxFilingThreads, 50000);
 
         //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
         //to parse any record in this file it a critical error

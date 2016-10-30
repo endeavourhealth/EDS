@@ -27,10 +27,10 @@ public class CsvCurrentState {
     }
 
     public String toString() {
-        if (recordNumber == null) {
-            return fileName;
-        } else {
-            return fileName + " line: " + recordNumber;
+        String ret = fileDir + "/" + fileName;
+        if (recordNumber != null) {
+            ret += " line: " + recordNumber;
         }
+        return ret;
     }
 }

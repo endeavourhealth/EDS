@@ -12,7 +12,6 @@ import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.ClinicalCodeNotFoundException;
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.EthnicCategory;
@@ -634,7 +633,7 @@ public class EmisCsvHelper {
         Schedule fhirSchedule = null;
         try {
             fhirSchedule = (Schedule)retrieveResource(sessionGuid, ResourceType.Schedule, csvProcessor);
-        } catch (TransformException ex) {
+        } catch (ResourceDeletedException|ResourceNotFoundException ex) {
             //because the SessionUser file doesn't have an OrganisationGuid column, we can't split that file
             //so we will be trying to update the practitioners on sessions that don't exist. So if we get
             //an exception here, just return out

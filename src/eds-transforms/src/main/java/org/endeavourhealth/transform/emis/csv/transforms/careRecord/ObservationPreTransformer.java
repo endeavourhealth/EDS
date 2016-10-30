@@ -3,7 +3,6 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
@@ -43,9 +42,7 @@ public class ObservationPreTransformer {
 
     private static void processLine(Observation parser, EmisCsvHelper csvHelper, CsvProcessor csvProcessor, String version) throws Exception {
 
-        //the code ID should NEVER be null, but the test data has nulls, so adding this to handle those rows gracefully
-        if (version.equalsIgnoreCase(EmisCsvTransformer.VERSION_TEST_PACK)
-                && parser.getCodeId() == null) {
+        if (parser.getDeleted() || parser.getIsConfidential()) {
             return;
         }
 

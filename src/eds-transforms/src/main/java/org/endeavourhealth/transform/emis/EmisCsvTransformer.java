@@ -87,11 +87,11 @@ public abstract class EmisCsvTransformer {
                 Map<Class, AbstractCsvParser> parsers = new HashMap<>();
 
                 //validate that we've got all the files we expect
-                LOG.trace("Validating all files are present in {}", processingIdDirectory);
+                //LOG.trace("Validating all files are present in {}", processingIdDirectory);
                 validateAndOpenParsers(processingIdDirectory, version, parsers);
 
                 //validate there's no additional files in the common directory
-                LOG.trace("Validating no additional files in {}", processingIdDirectory);
+                //LOG.trace("Validating no additional files in {}", processingIdDirectory);
                 validateNoExtraFiles(processingIdDirectory, parsers);
 
                 for (Class cls : parsers.keySet()) {
@@ -106,7 +106,7 @@ public abstract class EmisCsvTransformer {
             }
 
             LOG.trace("Transforming EMIS CSV content in {}", orgDirectory);
-            transformParsers(version, allParsers, processor, previousErrors);
+            transformParsers(version, allParsers, processor, previousErrors, maxFilingThreads);
 
         } finally {
 
@@ -640,7 +640,8 @@ public abstract class EmisCsvTransformer {
     private static void transformParsers(String version,
                                         Map<Class, List<AbstractCsvParser>> parsers,
                                         CsvProcessor csvProcessor,
-                                        TransformError previousErrors) throws Exception {
+                                        TransformError previousErrors,
+                                         int maxFilingThreads) throws Exception {
 
         EmisCsvHelper csvHelper = new EmisCsvHelper(findDataSharingAgreementGuid(parsers));
 
@@ -651,8 +652,8 @@ public abstract class EmisCsvTransformer {
         }
 
         //these transforms don't create resources themselves, but cache data that the subsequent ones rely on
-        ClinicalCodeTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        DrugCodeTransformer.transform(version, parsers, csvProcessor, csvHelper);
+        ClinicalCodeTransformer.transform(version, parsers, csvProcessor, csvHelper, maxFilingThreads);
+        DrugCodeTransformer.transform(version, parsers, csvProcessor, csvHelper, maxFilingThreads);
         OrganisationLocationTransformer.transform(version, parsers, csvProcessor, csvHelper);
         SessionUserTransformer.transform(version, parsers, csvProcessor, csvHelper);
         ObservationPreTransformer.transform(version, parsers, csvProcessor, csvHelper);

@@ -22,11 +22,12 @@ public class DrugCodeTransformer {
     public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
                                CsvProcessor csvProcessor,
-                               EmisCsvHelper csvHelper) throws Exception {
+                               EmisCsvHelper csvHelper,
+                                 int maxFilingThreads) throws Exception {
 
         //inserting the entries into the IdCodeMap table is a lot slower than the rest of this
         //file, so split up the saving over a few threads
-        ThreadPool threadPool = new ThreadPool(5, 50000);
+        ThreadPool threadPool = new ThreadPool(maxFilingThreads, 50000);
 
         //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
         //to parse any record in this file it a critical error

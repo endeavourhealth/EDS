@@ -121,8 +121,12 @@ public abstract class AbstractCsvParser implements AutoCloseable {
             }
         }
 
+        //only log out we "completed" the file if we read any rows from it
+        if (csvReader.getCurrentLineNumber() > 1) {
+            LOG.info("Completed file {}", file.getAbsolutePath());
+        }
+
         this.csvRecord = null;
-        LOG.info("Completed file {}", file.getAbsolutePath());
         return false;
     }
 
