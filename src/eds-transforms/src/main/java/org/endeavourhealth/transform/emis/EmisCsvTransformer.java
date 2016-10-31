@@ -113,7 +113,7 @@ public abstract class EmisCsvTransformer {
             closeParsers(allParsers);
         }
 
-        LOG.trace("Completed transform for organisation {} - waiting for resources to commit to DB", orgDirectory.getName());
+        LOG.trace("Completed transform for service {} - waiting for resources to commit to DB", serviceId);
         return processor.getBatchIdsCreated();
     }
     /*public static List<UUID> transform(String version,
@@ -692,6 +692,8 @@ public abstract class EmisCsvTransformer {
         csvHelper.processRemainingSessionPractitioners(csvProcessor);
 
         csvHelper.processRemainingEthnicitiesAndMartialStatuses(csvProcessor);
+
+        csvHelper.processRemainingOrganisationLocationMappings(csvProcessor);
     }
 
 

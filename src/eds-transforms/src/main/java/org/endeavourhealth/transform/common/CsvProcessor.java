@@ -238,7 +238,7 @@ public class CsvProcessor {
             deleted += countResourcesDeleted.get(adminBatchId).get();
         }
 
-        LOG.info("Saved {} and deleted {} non-patient resources", saved, deleted);
+        LOG.info("Saved {} and deleted {} non-patient resources for service {}", saved, deleted, serviceId);
         totalSaved += saved;
         totalDeleted += deleted;
 
@@ -252,7 +252,7 @@ public class CsvProcessor {
             totalDeleted += deleted;
         }
 
-        LOG.info("CSV processing completed, saving {} resources and deleting {} over {} distinct patients", totalSaved, totalDeleted, patientBatchIdMap.size());
+        LOG.info("CSV processing completed, saving {} resources and deleting {} over {} distinct patients for service {}", totalSaved, totalDeleted, patientBatchIdMap.size(), serviceId);
     }
 
     private List<UUID> getAllBatchIds() {

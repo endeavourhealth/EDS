@@ -10,6 +10,7 @@
     <Pipeline>
         <MessageTransformInbound>
             <SharedStoragePath>C:\SFTPData</SharedStoragePath>
+            <FilingThreadLimit>10</FilingThreadLimit>
         </MessageTransformInbound>
         <PostMessageToExchange>
             <Credentials>

@@ -723,6 +723,41 @@ public class EmisCsvHelper {
         return organisationLocationMap.remove(locationGuid);
     }
 
+    /**
+     * called at the end of the transform to handle any changes to location/organisation mappings
+     * that weren't handled when we went through the Location file (i.e. changes in the OrganisationLocation file
+     * with no corresponding changes in the Location file)
+     */
+    public void processRemainingOrganisationLocationMappings(CsvProcessor csvProcessor) throws Exception {
+
+        for (String locationGuid: organisationLocationMap.keySet()) {
+
+            Location fhirLocation = null;
+            try {
+                fhirLocation = (Location) retrieveResource(locationGuid, ResourceType.Location, csvProcessor);
+            } catch (ResourceDeletedException|ResourceNotFoundException ex) {
+                //if the location has been deleted, it doesn't matter, and the emis data integrity issues
+                //mean we may have references to unknown locations
+                continue;
+            }
+
+            List<String> organisationGuids = organisationLocationMap.get(locationGuid);
+
+            String organisationGuid = organisationGuids.get(0);
+
+            //the resource has already been through the ID mapping process, so we need to manually map the organisation ID
+            String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
+                    csvProcessor.getSystemId(),
+                    ResourceType.Organization,
+                    organisationGuid);
+
+            Reference reference = ReferenceHelper.createReference(ResourceType.Organization, globallyUniqueId);
+            fhirLocation.setManagingOrganization(reference);
+
+            csvProcessor.saveAdminResource(null, false, fhirLocation);
+        }
+    }
+
     public void cacheEthnicity(String patientGuid, DateTimeType fhirDate, EthnicCategory ethnicCategory) {
         DateAndCode dc = ethnicityMap.get(createUniqueId(patientGuid, null));
         if (dc == null

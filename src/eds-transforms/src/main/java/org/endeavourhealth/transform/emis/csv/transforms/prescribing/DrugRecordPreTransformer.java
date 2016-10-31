@@ -37,6 +37,10 @@ public class DrugRecordPreTransformer {
                                     CsvProcessor csvProcessor,
                                     EmisCsvHelper csvHelper) throws Exception {
 
+        if (parser.getDeleted() || parser.getIsConfidential()) {
+            return;
+        }
+
         String problemGuid = parser.getProblemObservationGuid();
         if (!Strings.isNullOrEmpty(problemGuid)) {
 

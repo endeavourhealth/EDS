@@ -873,7 +873,12 @@ public class ObservationTransformer {
         fhirCondition.setOnset(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         String associatedText = parser.getAssociatedText();
-        fhirCondition.setNotes(associatedText);
+        //if the condition is a problem, there may already be text in the note variable, from the Comment field on the problem table
+        if (fhirCondition.hasNotes()) {
+            fhirCondition.setNotes(associatedText + "\n" + fhirCondition.getNotes());
+        } else {
+            fhirCondition.setNotes(associatedText);
+        }
 
         String consultationGuid = parser.getConsultationGuid();
         if (!Strings.isNullOrEmpty(consultationGuid)) {

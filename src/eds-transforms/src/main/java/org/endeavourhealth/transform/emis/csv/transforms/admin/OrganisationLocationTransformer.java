@@ -23,7 +23,7 @@ public class OrganisationLocationTransformer {
             while (parser.nextRecord()) {
 
                 try {
-                    createLocationOrgansationMapping((OrganisationLocation)parser, csvProcessor, csvHelper);
+                    createLocationOrganisationMapping((OrganisationLocation)parser, csvProcessor, csvHelper);
                 } catch (Exception ex) {
                     throw new TransformException(parser.getCurrentState().toString(), ex);
                 }
@@ -32,9 +32,9 @@ public class OrganisationLocationTransformer {
 
     }
 
-    private static void createLocationOrgansationMapping(OrganisationLocation parser,
-                                                         CsvProcessor csvProcessor,
-                                                         EmisCsvHelper csvHelper) throws Exception {
+    private static void createLocationOrganisationMapping(OrganisationLocation parser,
+                                                          CsvProcessor csvProcessor,
+                                                          EmisCsvHelper csvHelper) throws Exception {
 
         //if an org-location link has been deleted, then either a) the location has been deleted
         //in which case we'll sort it out because we'll have the deleted row in the Location CSV or
