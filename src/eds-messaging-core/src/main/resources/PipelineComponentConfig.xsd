@@ -6,6 +6,9 @@
     <xs:complexType name="ForEachConfig">
         <xs:complexContent>
             <xs:extension base="ComponentConfig">
+                <xs:sequence>
+                    <xs:element name="Pipeline" type="Pipeline" minOccurs="1" maxOccurs="1"/>
+                </xs:sequence>
                 <xs:attribute name="Header" type="xs:string"/>
                 <xs:attribute name="InList" type="xs:string"/>
                 <xs:attribute name="InCsv" type="xs:string"/>
