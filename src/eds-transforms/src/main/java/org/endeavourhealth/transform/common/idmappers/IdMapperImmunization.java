@@ -7,10 +7,8 @@ import java.util.UUID;
 
 public class IdMapperImmunization extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
+    public boolean mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         Immunization immunization = (Immunization)resource;
-
-        super.mapCommonResourceFields(immunization, serviceId, systemId, mapResourceId);
 
         if (immunization.hasIdentifier()) {
             super.mapIdentifiers(immunization.getIdentifier(), resource, serviceId, systemId);
@@ -48,5 +46,6 @@ public class IdMapperImmunization extends BaseIdMapper {
             }
         }
 
+        return super.mapCommonResourceFields(immunization, serviceId, systemId, mapResourceId);
     }
 }

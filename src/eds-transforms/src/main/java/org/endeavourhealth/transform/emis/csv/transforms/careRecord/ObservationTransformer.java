@@ -891,11 +891,6 @@ public class ObservationTransformer {
             fhirCondition.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.CONDITION_PART_OF_PROBLEM, problemReference));
         }
 
-        List<Reference> linkedResources = csvHelper.getAndRemoveProblemRelationships(observationGuid, patientGuid);
-        if (linkedResources != null) {
-            csvHelper.addLinkedItemsToProblem(fhirCondition, linkedResources);
-        }
-
         //assert that these cells are empty, as we don't stored them in this resource type
         //but only if we've passed in the boolean to say so - if this is false, we've already processed this
         //row in the CSV into a different resource type, so will have used the values and don't need to worry we're ignoring them now
@@ -905,12 +900,6 @@ public class ObservationTransformer {
             assertNumericRangeLowEmpty(fhirCondition, parser);
             assertNumericRangeHighEmpty(fhirCondition, parser);
         }
-
-        //if this record is linked to a problem, store this relationship in the helper
-        /*csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
-                patientGuid,
-                observationGuid,
-                fhirCondition.getResourceType());*/
 
         csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirCondition);
     }

@@ -89,11 +89,15 @@ public class IdHelper {
         return edsId;
     }
 
-    public static void mapIds(UUID serviceId, UUID systemId, Resource resource) throws Exception {
-        mapIds(serviceId, systemId, resource, true);
+    public static boolean mapIds(UUID serviceId, UUID systemId, Resource resource) throws Exception {
+        return mapIds(serviceId, systemId, resource, true);
     }
 
-    public static void mapIds(UUID serviceId, UUID systemId, Resource resource, boolean mapResourceId) throws Exception {
+    /**
+     * maps the ID and all IDs within references in a FHIR resource to unique ones in the EDS space
+     * returns true to indicate the resource is new to us, false otherwise
+     */
+    public static boolean mapIds(UUID serviceId, UUID systemId, Resource resource, boolean mapResourceId) throws Exception {
 
         BaseIdMapper mapper = idMappers.get(resource.getClass());
         if (mapper == null) {
@@ -107,6 +111,6 @@ public class IdHelper {
             }
         }
 
-        mapper.mapIds(resource, serviceId, systemId, mapResourceId);
+        return mapper.mapIds(resource, serviceId, systemId, mapResourceId);
     }
 }

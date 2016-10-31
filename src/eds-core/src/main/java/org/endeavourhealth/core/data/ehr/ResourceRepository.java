@@ -42,6 +42,7 @@ public class ResourceRepository extends Repository {
         Mapper<ResourceHistory> mapperResourceHistory = getMappingManager().mapper(ResourceHistory.class);
         mapperResourceHistory.save(resourceHistory);
 
+/*
         ResourceHistoryByService resourceHistoryByService = new ResourceHistoryByService();
         resourceHistoryByService.setResourceId(resourceEntry.getResourceId());
         resourceHistoryByService.setResourceType(resourceEntry.getResourceType());
@@ -54,6 +55,7 @@ public class ResourceRepository extends Repository {
         resourceHistoryByService.setResourceData(resourceEntry.getResourceData());
         Mapper<ResourceHistoryByService> mapperResourceHistoryByService = getMappingManager().mapper(ResourceHistoryByService.class);
         mapperResourceHistoryByService.save(resourceHistoryByService);
+*/
 
         ResourceByService resourceByService = new ResourceByService();
         resourceByService.setServiceId(resourceEntry.getServiceId());
@@ -163,6 +165,7 @@ public class ResourceRepository extends Repository {
         Mapper<ResourceHistory> mapperResourceHistory = getMappingManager().mapper(ResourceHistory.class);
         mapperResourceHistory.save(resourceHistory);
 
+/*
         ResourceHistoryByService resourceHistoryByService = new ResourceHistoryByService();
         resourceHistoryByService.setResourceId(resourceEntry.getResourceId());
         resourceHistoryByService.setResourceType(resourceEntry.getResourceType());
@@ -173,6 +176,7 @@ public class ResourceRepository extends Repository {
         resourceHistoryByService.setIsDeleted(true);
         Mapper<ResourceHistoryByService> mapperResourceHistoryByService = getMappingManager().mapper(ResourceHistoryByService.class);
         mapperResourceHistoryByService.save(resourceHistoryByService);
+*/
 
         ResourceByService resourceByService = new ResourceByService();
         resourceByService.setServiceId(resourceEntry.getServiceId());

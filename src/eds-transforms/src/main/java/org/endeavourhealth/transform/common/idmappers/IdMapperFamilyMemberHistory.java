@@ -7,10 +7,8 @@ import java.util.UUID;
 
 public class IdMapperFamilyMemberHistory extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
+    public boolean mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         FamilyMemberHistory familyHistory = (FamilyMemberHistory)resource;
-
-        super.mapCommonResourceFields(familyHistory, serviceId, systemId, mapResourceId);
 
         if (familyHistory.hasIdentifier()) {
             super.mapIdentifiers(familyHistory.getIdentifier(), resource, serviceId, systemId);
@@ -18,5 +16,7 @@ public class IdMapperFamilyMemberHistory extends BaseIdMapper {
         if (familyHistory.hasPatient()) {
             super.mapReference(familyHistory.getPatient(), resource, serviceId, systemId);
         }
+
+        return super.mapCommonResourceFields(familyHistory, serviceId, systemId, mapResourceId);
     }
 }

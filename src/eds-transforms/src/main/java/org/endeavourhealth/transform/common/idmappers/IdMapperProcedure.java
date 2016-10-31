@@ -7,10 +7,8 @@ import java.util.UUID;
 
 public class IdMapperProcedure extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
+    public boolean mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         Procedure procedure = (Procedure)resource;
-
-        super.mapCommonResourceFields(procedure, serviceId, systemId, mapResourceId);
 
         if (procedure.hasIdentifier()) {
             super.mapIdentifiers(procedure.getIdentifier(), resource, serviceId, systemId);
@@ -32,5 +30,6 @@ public class IdMapperProcedure extends BaseIdMapper {
             super.mapReference(procedure.getLocation(), resource, serviceId, systemId);
         }
 
+        return super.mapCommonResourceFields(procedure, serviceId, systemId, mapResourceId);
     }
 }

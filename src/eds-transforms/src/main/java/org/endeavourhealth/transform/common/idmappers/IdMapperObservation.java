@@ -7,10 +7,8 @@ import java.util.UUID;
 
 public class IdMapperObservation extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
+    public boolean mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         Observation observation = (Observation)resource;
-
-        super.mapCommonResourceFields(observation, serviceId, systemId, mapResourceId);
 
         if (observation.hasIdentifier()) {
             super.mapIdentifiers(observation.getIdentifier(), resource, serviceId, systemId);
@@ -37,5 +35,7 @@ public class IdMapperObservation extends BaseIdMapper {
                 }
             }
         }
+
+        return super.mapCommonResourceFields(observation, serviceId, systemId, mapResourceId);
     }
 }

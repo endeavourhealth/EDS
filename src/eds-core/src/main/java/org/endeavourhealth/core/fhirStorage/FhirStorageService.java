@@ -16,7 +16,6 @@ import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.Resource;
 
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 public class FhirStorageService {
@@ -41,13 +40,17 @@ public class FhirStorageService {
         return new FhirResponse(resource);
     }
 
-    public FhirResponse exchangeBatchUpdate(UUID exchangeId, UUID batchId, List<Resource> resources) throws UnprocessableEntityException, SerializationException {
+    public FhirResponse exchangeBatchUpdate(UUID exchangeId, UUID batchId, Resource resource) throws UnprocessableEntityException, SerializationException {
+        store(resource, exchangeId, batchId);
+        return new FhirResponse(resource);
+    }
+    /*public FhirResponse exchangeBatchUpdate(UUID exchangeId, UUID batchId, List<Resource> resources) throws UnprocessableEntityException, SerializationException {
         for (Resource resource :resources) {
             store(resource, exchangeId, batchId);
         }
 
         return new FhirResponse(resources);
-    }
+    }*/
 
     public FhirResponse versionSpecificUpdate(UUID versionkey, Resource resource) throws VersionConflictException, UnprocessableEntityException, SerializationException {
         Validate.resourceId(resource);
@@ -74,13 +77,18 @@ public class FhirStorageService {
         return new FhirResponse(resource);
     }
 
-    public FhirResponse exchangeBatchDelete(UUID exchangeId, UUID batchId, List<Resource> resources) throws UnprocessableEntityException, SerializationException {
+    public FhirResponse exchangeBatchDelete(UUID exchangeId, UUID batchId, Resource resource) throws UnprocessableEntityException, SerializationException {
+        delete(resource, exchangeId, batchId);
+        return new FhirResponse(resource);
+    }
+
+    /*public FhirResponse exchangeBatchDelete(UUID exchangeId, UUID batchId, List<Resource> resources) throws UnprocessableEntityException, SerializationException {
         for (Resource resource :resources) {
             delete(resource, exchangeId, batchId);
         }
 
         return new FhirResponse(resources);
-    }
+    }*/
 
     private void store(Resource resource, UUID exchangeId, UUID batchId) throws UnprocessableEntityException, SerializationException {
         Validate.resourceId(resource);

@@ -7,10 +7,8 @@ import java.util.UUID;
 
 public class IdMapperMedicationOrder extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
+    public boolean mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         MedicationOrder medicationOrder = (MedicationOrder)resource;
-
-        super.mapCommonResourceFields(medicationOrder, serviceId, systemId, mapResourceId);
 
         if (medicationOrder.hasIdentifier()) {
             super.mapIdentifiers(medicationOrder.getIdentifier(), resource, serviceId, systemId);
@@ -59,5 +57,7 @@ public class IdMapperMedicationOrder extends BaseIdMapper {
         if (medicationOrder.hasPriorPrescription()) {
             super.mapReference(medicationOrder.getPriorPrescription(), resource, serviceId, systemId);
         }
+
+        return super.mapCommonResourceFields(medicationOrder, serviceId, systemId, mapResourceId);
     }
 }

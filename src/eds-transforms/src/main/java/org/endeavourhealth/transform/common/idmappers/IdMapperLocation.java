@@ -7,10 +7,8 @@ import java.util.UUID;
 
 public class IdMapperLocation extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
+    public boolean mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         Location location = (Location)resource;
-
-        super.mapCommonResourceFields(location, serviceId, systemId, mapResourceId);
 
         if (location.hasIdentifier()) {
             super.mapIdentifiers(location.getIdentifier(), resource, serviceId, systemId);
@@ -21,5 +19,7 @@ public class IdMapperLocation extends BaseIdMapper {
         if (location.hasPartOf()) {
             super.mapReference(location.getPartOf(), resource, serviceId, systemId);
         }
+
+        return super.mapCommonResourceFields(location, serviceId, systemId, mapResourceId);
     }
 }

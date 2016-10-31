@@ -2,6 +2,8 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
+import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
+import org.endeavourhealth.core.data.transform.models.ResourceIdMapByEdsId;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
@@ -9,14 +11,12 @@ import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem;
-import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.ProblemRelationshipType;
 import org.endeavourhealth.transform.fhir.schema.ProblemSignificance;
 import org.hl7.fhir.instance.model.*;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -122,33 +122,57 @@ public class ProblemTransformer {
             fhirProblem.addExtension(ExtensionConverter.createCompoundExtension(FhirExtensionUri.PROBLEM_RELATED, typeExtension, referenceExtension));
         }
 
-        //carry over linked items if we're amending the problem
-        try {
-            Condition previousVersion = (Condition)csvHelper.retrieveResource(fhirProblem.getId(), ResourceType.Condition, csvProcessor);
+        //apply any linked items from this extract
+        List<Reference> linkedResources = csvHelper.getAndRemoveProblemRelationships(observationGuid, patientGuid);
+        if (linkedResources != null) {
+            csvHelper.addLinkedItemsToProblem(fhirProblem, linkedResources);
+        }
 
-            //carry over the container resource
-            if (previousVersion.hasContained()) {
-                for (Resource contained: previousVersion.getContained()) {
-                    if (contained instanceof List_) {
-                        fhirProblem.getContained().add(contained);
-                    }
-                }
-            }
-
-            //then carry over the extension that points to it
-            for (Extension extension: previousVersion.getExtension()) {
-                if (extension.getUrl().equals(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE)) {
-                    Reference reference = (Reference)extension.getValue();
-                    fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, reference));
-                }
-            }
-
-        } catch (ResourceNotFoundException|ResourceDeletedException ex) {
-            //if this is the first time, then we'll get this exception raised
+        //carry over linked items from any previous instance of this problem
+        List<Reference> previousReferences = findPreviousLinkedReferences(csvHelper, csvProcessor, fhirProblem.getId());
+        if (previousReferences != null && !previousReferences.isEmpty()) {
+            csvHelper.addLinkedItemsToProblem(fhirProblem, previousReferences);
         }
 
         //the problem is actually saved in the ObservationTransformer, so just cache for later
         csvHelper.cacheProblem(observationGuid, patientGuid, fhirProblem);
+    }
+
+    private static List<Reference> findPreviousLinkedReferences(EmisCsvHelper csvHelper, CsvProcessor csvProcessor, String problemId) throws Exception {
+        try {
+
+            List<Reference> ret = new ArrayList<>();
+            Condition previousVersion = (Condition)csvHelper.retrieveResource(problemId, ResourceType.Condition, csvProcessor);
+
+            ResourceIdMapRepository repository = new ResourceIdMapRepository();
+
+            if (previousVersion.hasContained()) {
+                for (Resource contained: previousVersion.getContained()) {
+                    if (contained instanceof List_) {
+                        List_ list = (List_)contained;
+                        for (List_.ListEntryComponent entry: list.getEntry()) {
+                            Reference previousReference = entry.getItem();
+
+                            //the reference we have has already been mapped to an EDS ID, so we need to un-map it
+                            //back to the source ID, so the ID mapper can safely map it when we save the resource
+                            ReferenceComponents components = ReferenceHelper.getReferenceComponents(previousReference);
+                            ResourceType resourceType = components.getResourceType();
+                            ResourceIdMapByEdsId mapping = repository.getResourceIdMapByEdsId(resourceType.toString(), components.getId());
+                            String emisId = mapping.getSourceId();
+
+                            Reference unmappedReference = ReferenceHelper.createReference(resourceType, emisId);
+                            ret.add(unmappedReference);
+                        }
+                    }
+                }
+            }
+
+            return ret;
+
+        } catch (ResourceNotFoundException|ResourceDeletedException ex) {
+            //if this is the first time, then we'll get this exception raised
+            return null;
+        }
     }
 
     private static ProblemRelationshipType convertRelationshipType(String relationshipType) throws Exception {

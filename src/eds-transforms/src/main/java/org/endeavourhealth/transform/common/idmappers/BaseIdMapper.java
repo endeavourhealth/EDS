@@ -14,27 +14,44 @@ public abstract class BaseIdMapper {
     private static final Logger LOG = LoggerFactory.getLogger(BaseIdMapper.class);
 
 
-    public abstract void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception;
+    public abstract boolean mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception;
 
-    protected void mapCommonResourceFields(DomainResource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
+    /**
+     * maps the ID, extensions and contained resources in a FHIR resource
+     * returns true to indicate the resource is new to EDS, false if not new or we didn't map it's ID
+     */
+    protected boolean mapCommonResourceFields(DomainResource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
+        boolean isNewResource = false;
         if (mapResourceId) {
-            mapResourceId(resource, serviceId, systemId);
+            isNewResource = mapResourceId(resource, serviceId, systemId);
         }
         mapExtensions(resource, serviceId, systemId);
         mapContainedResources(resource, serviceId, systemId);
+
+        return isNewResource;
     }
 
     /**
      * maps the main ID of any resource
+     * returns true if the resource is new to EDS
      */
-    private void mapResourceId(Resource resource, UUID serviceId, UUID systemId) {
+    private boolean mapResourceId(Resource resource, UUID serviceId, UUID systemId) {
 
         if (!resource.hasId()) {
-            return;
+            return false;
         }
 
-        String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, resource.getResourceType(), resource.getId());
-        resource.setId(newId);
+        UUID existingEdsId = IdHelper.getEdsResourceId(serviceId, systemId, resource.getResourceType(), resource.getId());
+        if (existingEdsId == null) {
+            //if no existing ID was found, create a new one and return true
+            String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, resource.getResourceType(), resource.getId());
+            resource.setId(newId);
+            return true;
+
+        } else {
+            resource.setId(existingEdsId.toString());
+            return false;
+        }
     }
 
     /**

@@ -7,10 +7,8 @@ import java.util.UUID;
 
 public class IdMapperOrder extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
+    public boolean mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         Order order = (Order)resource;
-
-        super.mapCommonResourceFields(order, serviceId, systemId, mapResourceId);
 
         if (order.hasIdentifier()) {
             super.mapIdentifiers(order.getIdentifier(), resource, serviceId, systemId);
@@ -34,5 +32,7 @@ public class IdMapperOrder extends BaseIdMapper {
         if (order.hasDetail()) {
             super.mapReferences(order.getDetail(), resource, serviceId, systemId);
         }
+
+        return super.mapCommonResourceFields(order, serviceId, systemId, mapResourceId);
     }
 }

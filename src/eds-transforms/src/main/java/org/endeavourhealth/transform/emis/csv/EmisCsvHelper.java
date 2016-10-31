@@ -419,7 +419,8 @@ public class EmisCsvHelper {
         try {
             fhirProblem = (Condition) retrieveResource(problemLocallyUniqueId, ResourceType.Condition, csvProcessor);
         } catch (ResourceNotFoundException|ResourceDeletedException ex) {
-            //we have test data with medication items linking to non-existant and deleted problems, so don't fail if we get this
+            //it's possible to create medication items that are linked to non-existent problems in Emis Web,
+            //so ignore any data
             return;
         }
 

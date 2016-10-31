@@ -363,13 +363,10 @@ public class CsvProcessor {
                         IdHelper.mapIds(serviceId, systemId, resource);
                     }
 
-                    List<Resource> list = new ArrayList<>();
-                    list.add(resource);
-
                     if (isDelete) {
-                        storageService.exchangeBatchDelete(exchangeId, batchUuid, list);
+                        storageService.exchangeBatchDelete(exchangeId, batchUuid, resource);
                     } else {
-                        storageService.exchangeBatchUpdate(exchangeId, batchUuid, list);
+                        storageService.exchangeBatchUpdate(exchangeId, batchUuid, resource);
                     }
 
                 } catch (Exception ex) {

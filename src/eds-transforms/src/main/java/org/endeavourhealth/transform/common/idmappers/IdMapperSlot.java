@@ -7,10 +7,8 @@ import java.util.UUID;
 
 public class IdMapperSlot extends BaseIdMapper {
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
+    public boolean mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         Slot slot = (Slot)resource;
-
-        super.mapCommonResourceFields(slot, serviceId, systemId, mapResourceId);
 
         if (slot.hasIdentifier()) {
             super.mapIdentifiers(slot.getIdentifier(), resource, serviceId, systemId);
@@ -18,5 +16,7 @@ public class IdMapperSlot extends BaseIdMapper {
         if (slot.hasSchedule()) {
             super.mapReference(slot.getSchedule(), resource, serviceId, systemId);
         }
+
+        return super.mapCommonResourceFields(slot, serviceId, systemId, mapResourceId);
     }
 }
