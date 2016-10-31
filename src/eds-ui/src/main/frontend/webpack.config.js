@@ -1,10 +1,12 @@
 var webpack = require("webpack");
 var HtmlWebpackPlugin = require('html-webpack-plugin');
+var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
 	entry: './app/app.module.ts',
 	output: {
-		filename: './bundle.js'
+		filename: './bundle.js',
+		path: '../webapp'
 	},
 	resolve: {
 		extensions: ['', '.webpack.js', '.web.js', '.ts', '.js']
@@ -25,6 +27,10 @@ module.exports = {
 			template: 'index.ejs',
 			inject: 'body'
 		}),
+		new CopyWebpackPlugin([
+			{ from: './api-docs', to: './api-docs' },
+			{ from: './node_modules/swagger-ui/dist', to: './api-docs/swagger-ui' }
+			]),
 		new webpack.optimize.DedupePlugin(),
 		new webpack.ProvidePlugin({
 			'moment': 'moment'

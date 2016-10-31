@@ -1,6 +1,7 @@
 {
   "name": "eds-ui",
   "devDependencies": {
+    "copy-webpack-plugin": "^4.0.0",
     "css-loader": "^0.25.0",
     "file-loader": "^0.9.0",
     "html-webpack-plugin": "^2.22.0",
@@ -31,7 +32,8 @@
     "linqts": "^1.6.0",
     "moment": "^2.15.1",
     "ng-idle": "^1.3.1",
-    "string": "^3.3.3"
+    "string": "^3.3.3",
+    "swagger-ui": "^2.2.6"
   },
   "scripts": {
     "typings": "typings",

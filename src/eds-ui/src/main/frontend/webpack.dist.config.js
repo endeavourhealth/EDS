@@ -1,7 +1,6 @@
 // var webpack = require('webpack');
 var config  = require('./webpack.config');
 
-config.output.path = '../webapp';
 config.devtool = 'false';
 
 // config.plugins = config.plugins.concat([
