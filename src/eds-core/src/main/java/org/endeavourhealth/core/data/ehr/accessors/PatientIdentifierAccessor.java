@@ -24,7 +24,6 @@ public interface PatientIdentifierAccessor {
                                                                @Param("system_id") UUID systemId,
                                                                @Param("local_id") String localId);
 
-
     @Query("SELECT * FROM ehr.patient_identifier_by_nhs_number WHERE nhs_number = :nhs_number")
     Result<PatientIdentifierByNhsNumber> getForNhsNumber(@Param("nhs_number") String nhsNumber);
 
@@ -32,7 +31,22 @@ public interface PatientIdentifierAccessor {
     @Query("SELECT * FROM ehr.patient_identifier_by_patient_id WHERE patient_id = :patient_id LIMIT 1")
     Result<PatientIdentifierByPatientId> getMostRecentForPatientId(@Param("patient_id") UUID patientId);
 
-    // temporary call to populate patient find with five patients
-    @Query("SELECT * FROM ehr.patient_identifier_by_local_id LIMIT 5")
-    Result<PatientIdentifierByLocalId> getFivePatients();
+
+    // temporary call while we build a proper patient find index
+    @Query("SELECT * FROM ehr.patient_identifier_by_local_id WHERE service_id = :service_id AND system_id = :system_id AND nhs_number = :nhsNumber ALLOW FILTERING;")
+    Result<PatientIdentifierByLocalId> getForNhsNumberTemporary(@Param("service_id") UUID serviceId,
+                                                     @Param("system_id") UUID systemId,
+                                                     @Param("nhsNumber") String nhsNumber);
+
+    // temporary call while we build a proper patient find index
+    @Query("SELECT * FROM ehr.patient_identifier_by_local_id WHERE service_id = :service_id AND system_id = :system_id AND surname = :surname ALLOW FILTERING;")
+    Result<PatientIdentifierByLocalId> getForSurnameTemporary(@Param("service_id") UUID serviceId,
+                                                     @Param("system_id") UUID systemId,
+                                                     @Param("surname") String surname);
+
+    // temporary call while we build a proper patient find index
+    @Query("SELECT * FROM ehr.patient_identifier_by_local_id WHERE service_id = :service_id AND system_id = :system_id AND forenames = :forenames ALLOW FILTERING;")
+    Result<PatientIdentifierByLocalId> getForForenamesTemporary(@Param("service_id") UUID serviceId,
+                                                       @Param("system_id") UUID systemId,
+                                                       @Param("forenames") String forenames);
 }

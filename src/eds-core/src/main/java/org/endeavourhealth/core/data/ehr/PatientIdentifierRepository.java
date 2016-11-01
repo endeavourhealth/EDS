@@ -163,9 +163,21 @@ public class PatientIdentifierRepository extends Repository {
         }
     }
 
-    // temporary call to populate patient find with five patients
-    public List<PatientIdentifierByLocalId> getFivePatients() {
+    // temporary call while we build a proper patient find index
+    public List<PatientIdentifierByLocalId> getForNhsNumberTemporary(UUID serviceId, UUID systemId, String nhsNumber) {
         PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
-        return Lists.newArrayList(accessor.getFivePatients());
+        return Lists.newArrayList(accessor.getForNhsNumberTemporary(serviceId, systemId, nhsNumber));
+    }
+
+    // temporary call while we build a proper patient find index
+    public List<PatientIdentifierByLocalId> getForSurnameTemporary(UUID serviceId, UUID systemId, String surname) {
+        PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
+        return Lists.newArrayList(accessor.getForSurnameTemporary(serviceId, systemId, surname));
+    }
+
+    // temporary call while we build a proper patient find index
+    public List<PatientIdentifierByLocalId> getForForenamesTemporary(UUID serviceId, UUID systemId, String forenames) {
+        PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
+        return Lists.newArrayList(accessor.getForForenamesTemporary(serviceId, systemId, forenames));
     }
 }

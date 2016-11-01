@@ -7,6 +7,7 @@ import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByLocalId;
+import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
@@ -18,6 +19,7 @@ import org.endeavourhealth.transform.ui.models.types.UIService;
 import org.endeavourhealth.transform.ui.transforms.clinical.UIClinicalTransform;
 import org.endeavourhealth.transform.ui.transforms.UITransform;
 import org.endeavourhealth.ui.utility.ResourceFetcher;
+import org.endeavourhealth.ui.utility.SearchTermsParser;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,14 +44,9 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
     @Path("/getServices")
     public Response getServices(@Context SecurityContext sc) throws Exception {
 
-        List<UIService> result = new ArrayList<>();
+        List<UIService> uiServices = UITransform.transformServices(Lists.newArrayList(serviceRepository.getAll()));
 
-        List<Service> services = Lists.newArrayList(serviceRepository.getAll());
-
-        for (Service service : services)
-            result.add(UITransform.transformService(service));
-
-        return buildResponse(result);
+        return buildResponse(uiServices);
     }
 
     @GET
@@ -62,13 +59,39 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
 
         List<UIPatient> result = new ArrayList<>();
 
-        List<PatientIdentifierByLocalId> patientIds = identifierRepository.getFivePatients();
+        if (!StringUtils.isEmpty(searchTerms)) {
 
-        for (PatientIdentifierByLocalId patientId : patientIds)
-            result.add(getPatient(patientId.getServiceId(), patientId.getSystemId(), patientId.getPatientId()));
+            SearchTermsParser parser = new SearchTermsParser(searchTerms);
+
+            List<PatientIdentifierByLocalId> patientsFound = new ArrayList<>();
+
+            if (parser.hasNhsNumber())
+                 patientsFound.addAll(identifierRepository.getForNhsNumberTemporary(serviceId, systemId, parser.getNhsNumber()));
+
+            if (parser.hasEmisNumber())
+                patientsFound.addAll(identifierRepository.getForLocalId(serviceId, systemId, parser.getEmisNumber()));
+
+            for (String name : parser.getNames()) {
+                if (StringUtils.isNotBlank(name)) {
+                    patientsFound.addAll(identifierRepository.getForForenamesTemporary(serviceId, systemId, name));
+                    patientsFound.addAll(identifierRepository.getForSurnameTemporary(serviceId, systemId, name));
+                }
+            }
+
+            List<UIInternalIdentifier> uiInternalIdentifiers = patientsFound
+                    .stream()
+                    .map(t -> new UIInternalIdentifier()
+                                .setServiceId(t.getServiceId())
+                                .setSystemId(t.getSystemId())
+                                .setResourceId(t.getPatientId()))
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            for (UIInternalIdentifier identifier : uiInternalIdentifiers)
+                result.add(getPatient(identifier.getServiceId(), identifier.getSystemId(), identifier.getResourceId()));
+        }
 
         return buildResponse(result);
-
     }
 
     @GET
