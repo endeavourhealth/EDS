@@ -81,7 +81,8 @@ export class PatientFindController extends BaseDialogController {
         ctrl
             .recordViewerService
             .findPatient(ctrl.selectedService, ctrl.searchedTerms)
-            .then((result: UIPatient[]) => ctrl.foundPatients = result);
+            .then((result: UIPatient[]) =>
+                ctrl.foundPatients = linq(result).OrderBy(t => t.name.familyName).ToArray());
     }
 
     selectPatient(patient: UIPatient) {

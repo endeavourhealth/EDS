@@ -29,7 +29,8 @@
                     <th>NHS number</th>
                 </thead>
                 <tbody>
-                    <tr ng-repeat="patient in ctrl.foundPatients" ng-click="ctrl.selectPatient(patient)" ng-class="{'selected': ctrl.selectedPatient == patient}">
+                <tr data-ng-hide="ctrl.foundPatients.length > 0"><td colspan="3"><i>(no patients found)</i></td></tr>
+                <tr ng-repeat="patient in ctrl.foundPatients" ng-click="ctrl.selectPatient(patient)" ng-class="{'selected': ctrl.selectedPatient == patient}">
                         <td><b>{{patient.name | cuiName}}</b><br/>{{patient.homeAddress | cuiSingleLineAddress}}</td>
                         <td>{{patient.dateOfBirth | cuiDateOfBirth}}<br/>{{patient.gender | cuiGender}}</td>
                         <td>{{patient.nhsNumber | cuiNhsNumber}}</td>
