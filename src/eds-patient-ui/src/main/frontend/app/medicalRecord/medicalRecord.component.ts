@@ -1,11 +1,9 @@
+import {Component} from "@angular/core";
+import {EdsLoggerService} from "../blocks/logger.service";
 import {PatientService} from "../models/PatientService";
 import {MedicalRecordService} from "./medicalRecord.service";
-import {Component} from "@angular/core";
-import 'rxjs/add/operator/toPromise';
-import {EdsLoggerService} from "../blocks/logger.service";
 
 @Component({
-	selector: 'medical-record-component',
 	template: require('./medicalRecord.html')
 })
 export class MedicalRecordComponent {

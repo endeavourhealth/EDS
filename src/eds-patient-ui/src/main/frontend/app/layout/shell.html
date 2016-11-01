@@ -2,16 +2,4 @@
 	<topnav-component></topnav-component>
 
 	<sidebar-component></sidebar-component>
-
-	<section>
-		<script type="text/ng-template" id="warning-dialog.html">
-			<div class="modal-header">
-				<h3>Session Idle.</h3>
-			</div>
-			<div idle-countdown="$ctrl.countdown" ng-init="$ctrl.countdown=10" class="modal-body">
-				You'll be logged out in {{$ctrl.countdown}} second(s).
-				<uib-progressbar max="10" value="$ctrl.countdown" animate="true" class="progress-striped active"/>
-			</div>
-		</script>
-	</section>
 </div>

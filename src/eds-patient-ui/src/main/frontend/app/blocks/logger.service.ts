@@ -19,17 +19,17 @@ export class EdsLoggerService {
 	}
 
 	info(message:string, data?:{}, title?:string) {
-		// this.toastr.info(message, title);
+		this.toastr.info(message, title);
 		this.$log.info('Info: ' + message, '\nSummary:', title, '\nDetails:', data);
 	}
 
 	success(message:string, data?:{}, title?:string) {
-		// this.toastr.success(message, title);
+		this.toastr.success(message, title);
 		this.$log.info('Success: ' + message, '\nSummary:', title, '\nDetails:', data);
 	}
 
 	warning(message:string, data?:{}, title?:string) {
-		// this.toastr.warning(message, title);
+		this.toastr.warning(message, title);
 		this.$log.warn('Warning: ' + message, '\nSummary:', title, '\nDetails:', data);
 	}
 }

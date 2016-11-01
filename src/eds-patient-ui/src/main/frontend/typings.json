@@ -1,11 +1,7 @@
 {
   "name": "enterprise",
   "globalDependencies": {
-    "angular": "github:DefinitelyTyped/DefinitelyTyped/angularjs/angular.d.ts#4ec3c5bf291bc02f49eb30c1077340b235165c67",
-    "angular-idle": "github:DefinitelyTyped/DefinitelyTyped/angular-idle/angular-idle.d.ts#86dbea8fc37d9473fee465da4f0a21bea4f8cbd9",
-    "angular-toastr": "registry:dt/angular-toastr#1.6.0+20160330162121",
-    "angular-ui-bootstrap": "github:DefinitelyTyped/DefinitelyTyped/angular-ui-bootstrap/angular-ui-bootstrap.d.ts#e69fe60f2d6377ea4fae539493997b098f52cad1",
-    "jquery": "github:DefinitelyTyped/DefinitelyTyped/jquery/jquery.d.ts#4ec3c5bf291bc02f49eb30c1077340b235165c67",
+    "jquery": "registry:dt/jquery#1.10.0+20160929162922",
     "keycloak": "file:typings/local/keycloak/keycloak.d.ts",
     "node": "registry:dt/node#6.0.0+20161019125345"
   }

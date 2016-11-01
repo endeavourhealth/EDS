@@ -1,12 +1,12 @@
 <section id="content" class="content">
 	<nav class="sidebar">
 		<ul>
-			<li ng-repeat="menuItem in $ctrl.menuOptions">
-				<div ui-sref="{{menuItem.state}}" class="menuItem">
+			<li *ngFor="let menuItem of menuOptions">
+				<div uiSref="{{menuItem.state}}" class="menuItem">
 					<span class="fa fa-2x {{menuItem.icon}}"></span>
 					<span style="cursor:pointer" class="nav-text">
 						{{menuItem.caption}}
-				</span>
+					</span>
 				</div>
 			</li>
 		</ul>
@@ -22,5 +22,5 @@
 		</ul>
 	</nav>
 
-	<div ui-view></div>
+	<ui-view></ui-view>
 </section>

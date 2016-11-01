@@ -1,23 +1,15 @@
 import {MenuOption} from "../models/MenuOption";
 import {SecurityService} from "../core/security.service";
 import {AdminService} from "../core/admin.service";
+import {Component} from "@angular/core";
 
-export class SidebarComponent implements ng.IComponentOptions {
-	template : string;
-	controller : string;
-	controllerAs : string;
+@Component({
+	selector: 'sidebar-component',
+	template: require('./sidebar.html')
+})
 
-	constructor () {
-		this.template = require('./sidebar.html');
-		this.controller = 'SidebarController';
-		this.controllerAs = '$ctrl';
-	}
-}
-
-export class SidebarController {
+export class SidebarComponent {
 	menuOptions:MenuOption[];
-
-	static $inject = ['AdminService', 'SecurityService'];
 
 	constructor(adminService:AdminService, private securityService:SecurityService) {
 		this.menuOptions = adminService.getMenuOptions();
