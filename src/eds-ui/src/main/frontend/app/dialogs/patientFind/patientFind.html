@@ -5,12 +5,21 @@
 <div class="modal-body" ng-keydown="ctrl.keydown($event)">
 
     <div class="container-fluid">
-        <div class="input-group">
-            <input type="text" class="form-control" ng-model="ctrl.searchTerms" ng-change="ctrl.searchTermsChanged()" autofocus placeholder="Enter search terms...">
-            <span class="input-group-btn">
-                <button class="btn btn-primary" type="button" ng-click="ctrl.findPatient()">Find patient</button>
-            </span>
-        </div>
+
+        <form id="patient-find-search-criteria">
+            <div id="patient-find-service-chooser" class="btn-group" uib-dropdown>
+                <button id="single-button" type="button" class="btn btn-default" uib-dropdown-toggle ng-disabled="disabled">{{ ctrl.selectedService == null ? 'Please choose a service...' : ctrl.selectedService.name }}<span class="caret"></span></button>
+                <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                    <li ng-repeat="service in ctrl.services" role="menuitem"><a href="#" data-ng-click="ctrl.selectService(service)">[{{service.localIdentifier}}] {{service.name}}</a></li>
+                </ul>
+            </div>
+            <div data-ng-show="ctrl.selectedService" class="input-group">
+                <input type="text" class="form-control" ng-model="ctrl.searchTerms" ng-change="ctrl.searchTermsChanged()" autofocus placeholder="Enter search terms...">
+                <span class="input-group-btn">
+                    <button class="btn btn-primary" type="button" ng-click="ctrl.findPatient()">Find patient</button>
+                </span>
+            </div>
+        </form>
 
         <div class="table-selectable" ng-show="ctrl.foundPatients">
             <table class="table table-hover">

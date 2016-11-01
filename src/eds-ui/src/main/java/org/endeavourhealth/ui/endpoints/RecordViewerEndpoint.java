@@ -1,7 +1,10 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.endeavourhealth.core.data.admin.ServiceRepository;
+import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByLocalId;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
@@ -11,6 +14,7 @@ import org.endeavourhealth.transform.ui.models.resources.admin.UIPatient;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.*;
 import org.endeavourhealth.transform.ui.models.resources.UIResource;
 import org.endeavourhealth.transform.ui.models.types.UIInternalIdentifier;
+import org.endeavourhealth.transform.ui.models.types.UIService;
 import org.endeavourhealth.transform.ui.transforms.clinical.UIClinicalTransform;
 import org.endeavourhealth.transform.ui.transforms.UITransform;
 import org.endeavourhealth.ui.utility.ResourceFetcher;
@@ -30,13 +34,31 @@ import java.util.stream.Collectors;
 public final class RecordViewerEndpoint extends AbstractEndpoint {
 
     private static final Logger LOG = LoggerFactory.getLogger(RecordViewerEndpoint.class);
+    private static final ServiceRepository serviceRepository = new ServiceRepository();
     private static final PatientIdentifierRepository identifierRepository = new PatientIdentifierRepository();
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/getServices")
+    public Response getServices(@Context SecurityContext sc) throws Exception {
+
+        List<UIService> result = new ArrayList<>();
+
+        List<Service> services = Lists.newArrayList(serviceRepository.getAll());
+
+        for (Service service : services)
+            result.add(UITransform.transformService(service));
+
+        return buildResponse(result);
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/findPatient")
     public Response findPatient(@Context SecurityContext sc,
-                                    @QueryParam("searchTerms") String searchTerms) throws Exception {
+                                @QueryParam("serviceId") UUID serviceId,
+                                @QueryParam("systemId") UUID systemId,
+                                @QueryParam("searchTerms") String searchTerms) throws Exception {
 
         List<UIPatient> result = new ArrayList<>();
 
@@ -45,10 +67,8 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
         for (PatientIdentifierByLocalId patientId : patientIds)
             result.add(getPatient(patientId.getServiceId(), patientId.getSystemId(), patientId.getPatientId()));
 
-        return Response
-                .ok()
-                .entity(result)
-                .build();
+        return buildResponse(result);
+
     }
 
     @GET
@@ -62,11 +82,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
         validateIdentifiers(serviceId, systemId, patientId);
 
         UIPatient patient = getPatient(serviceId, systemId, patientId);
-
-        return Response
-                .ok()
-                .entity(patient)
-                .build();
+        return buildResponse(patient);
     }
 
     @GET
@@ -154,10 +170,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
 
         List<U> encounters = getClinicalResources(serviceId, systemId, patientId, fhirResourceType, uiResourceType);
 
-        return Response
-                .ok()
-                .entity(encounters)
-                .build();
+        return buildResponse(encounters);
     }
 
     private <T extends Resource,
@@ -195,5 +208,12 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                 .distinct()
                 .map(t -> UUID.fromString(t.replace("{", "").replace("}", "")))
                 .collect(Collectors.toList());
+    }
+
+    private Response buildResponse(Object entity) {
+        return Response
+                .ok()
+                .entity(entity)
+                .build();
     }
 }

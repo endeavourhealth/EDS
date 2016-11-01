@@ -6,6 +6,8 @@ import {BaseDialogController} from "../baseDialog.controller";
 import {ILoggerService} from "../../blocks/logger.service";
 import {UIPatient} from "../../recordViewer/models/resources/admin/UIPatient";
 import {IRecordViewerService} from "../../recordViewer/recordViewer.service";
+import {UIService} from "../../recordViewer/models/UIService";
+import {linq} from "../../blocks/linq";
 
 enum KeyCodes {
 		ReturnKey = 13,
@@ -18,6 +20,8 @@ enum KeyCodes {
 
 export class PatientFindController extends BaseDialogController {
 
+    services: UIService[];
+    selectedService: UIService;
     searchTerms: string;
     searchedTerms: string;
     foundPatients: UIPatient[];
@@ -42,12 +46,31 @@ export class PatientFindController extends BaseDialogController {
                 private $modal : IModalService,
                 protected recordViewerService: IRecordViewerService,
                 private log : ILoggerService) {
-		super($uibModalInstance);
+
+        super($uibModalInstance);
+
+        this.loadServices();
 	}
 
     ok() {
         this.resultData = this.selectedPatient;
         super.ok();
+    }
+
+    private loadServices(): void {
+        var ctrl = this;
+        ctrl
+            .recordViewerService
+            .getServices()
+            .then((result: UIService[]) => ctrl.services = linq(result).OrderBy(t => t.name).ToArray());
+    }
+
+    private selectService(service: UIService): void {
+
+        if (service != this.selectedService)
+            this.searchTermsChanged();
+
+        this.selectedService = service;
     }
 
 	findPatient() {
@@ -57,7 +80,7 @@ export class PatientFindController extends BaseDialogController {
         var ctrl = this;
         ctrl
             .recordViewerService
-            .findPatient(ctrl.searchedTerms)
+            .findPatient(ctrl.selectedService, ctrl.searchedTerms)
             .then((result: UIPatient[]) => ctrl.foundPatients = result);
     }
 

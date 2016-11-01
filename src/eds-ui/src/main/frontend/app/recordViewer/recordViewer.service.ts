@@ -4,9 +4,11 @@ import {BaseHttpService} from "../core/baseHttp.service";
 import {UIProblem} from "./models/resources/clinical/UIProblem";
 import {UIInternalIdentifier} from "./models/UIInternalIdentifier";
 import {UIDiary} from "./models/resources/clinical/UIDiary";
+import {UIService} from "./models/UIService";
 
 export interface IRecordViewerService {
-    findPatient(searchTerms: string): ng.IPromise<UIPatient[]>;
+    getServices(): ng.IPromise<UIService[]>;
+    findPatient(service: UIService, searchTerms: string): ng.IPromise<UIPatient[]>;
     getPatient(patientId: UIInternalIdentifier): ng.IPromise<UIPatient>;
     getEncounters(patientId: UIInternalIdentifier): ng.IPromise<UIEncounter[]>;
     getProblems(patientId: UIInternalIdentifier): ng.IPromise<UIProblem[]>;
@@ -16,8 +18,19 @@ export interface IRecordViewerService {
 
 export class RecordViewerService extends BaseHttpService implements IRecordViewerService {
 
-    findPatient(searchTerms: string): ng.IPromise<UIPatient[]> {
-        var request = { params: { 'searchTerms': searchTerms } }
+    getServices(): ng.IPromise<UIService[]> {
+        return this.httpGet('api/recordViewer/getServices');
+    }
+
+    findPatient(service: UIService, searchTerms: string): ng.IPromise<UIPatient[]> {
+        var request = {
+            params: {
+                'serviceId': service.serviceId,
+                'systemId': service.systemId,
+                'searchTerms': searchTerms
+            }
+        };
+
         return this.httpGet('api/recordViewer/findPatient', request);
     }
 
