@@ -53,6 +53,7 @@ public class SftpTask extends TimerTask
             initialise();
 
             LOG.trace(">>>Downloading and decrypting files");
+
             if (!downloadAndProcessFiles())
                 throw new SftpReaderException("Exception occurred downloading and processing files - halting to prevent incorrect ordering of batches.");
 

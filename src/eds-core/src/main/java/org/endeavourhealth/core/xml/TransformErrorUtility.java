@@ -88,7 +88,7 @@ public class TransformErrorUtility {
 
         for (StackTraceElement element: ex.getStackTrace()) {
             ExceptionLine line = new ExceptionLine();
-            ret.getLines().add(line);
+            ret.getLine().add(line);
 
             line.setClazz(element.getClassName());
             line.setMethod(element.getMethodName());

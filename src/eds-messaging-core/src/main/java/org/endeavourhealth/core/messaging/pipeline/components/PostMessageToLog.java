@@ -20,7 +20,7 @@ public class PostMessageToLog extends PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
-		AuditEvent auditEvent = getAuditEvent();
+		AuditEvent auditEvent = AuditEvent.fromString(config.getEventType());
 
 		try {
 			AuditWriter.writeAuditEvent(exchange, auditEvent);
@@ -31,13 +31,4 @@ public class PostMessageToLog extends PipelineComponent {
 		}
 	}
 
-	private AuditEvent getAuditEvent() {
-		if ("Receive".equals(config.getEventType()))
-			return AuditEvent.RECEIVE;
-		if ("Validate".equals(config.getEventType()))
-			return AuditEvent.VALIDATE;
-		if ("Send".equals(config.getEventType()))
-			return AuditEvent.SEND;
-		throw new IllegalArgumentException("Unknown audit event type");
-	}
 }

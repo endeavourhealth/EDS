@@ -14,6 +14,7 @@ public class ResourceEntry {
     private String schemaVersion;
     private String resourceMetadata;
     private String resourceData;
+    private long resourceChecksum;
 
     public UUID getResourceId() {
         return resourceId;
@@ -93,5 +94,13 @@ public class ResourceEntry {
 
     public void setResourceData(String resourceData) {
         this.resourceData = resourceData;
+    }
+
+    public long getResourceChecksum() {
+        return resourceChecksum;
+    }
+
+    public void setResourceChecksum(long resourceChecksum) {
+        this.resourceChecksum = resourceChecksum;
     }
 }

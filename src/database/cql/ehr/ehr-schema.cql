@@ -32,6 +32,7 @@ CREATE TABLE resource_history (
   is_deleted boolean,
   schema_version text,
   resource_data text,
+  resource_checksum bigint,
   PRIMARY KEY ((resource_id, resource_type), version)
 ) WITH CLUSTERING ORDER BY (version DESC);
 

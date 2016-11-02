@@ -7,7 +7,6 @@ import org.endeavourhealth.core.data.ehr.models.ResourceEntry;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.fhirStorage.exceptions.SerializationException;
 import org.endeavourhealth.core.fhirStorage.exceptions.UnprocessableEntityException;
-import org.endeavourhealth.core.fhirStorage.exceptions.VersionConflictException;
 import org.endeavourhealth.core.fhirStorage.metadata.MetadataFactory;
 import org.endeavourhealth.core.fhirStorage.metadata.PatientCompartment;
 import org.endeavourhealth.core.fhirStorage.metadata.ResourceMetadata;
@@ -17,6 +16,8 @@ import org.hl7.fhir.instance.model.Resource;
 
 import java.util.Date;
 import java.util.UUID;
+import java.util.zip.CRC32;
+import java.util.zip.Checksum;
 
 public class FhirStorageService {
     private static final String SCHEMA_VERSION = "0.1";
@@ -34,25 +35,12 @@ public class FhirStorageService {
         identifierRepository = new PatientIdentifierRepository();
     }
 
-    public FhirResponse update(Resource resource) throws UnprocessableEntityException, SerializationException {
-        store(resource, null, null);
-
+    public FhirResponse exchangeBatchUpdate(UUID exchangeId, UUID batchId, Resource resource, boolean isNewResource) throws Exception {
+        store(resource, exchangeId, batchId, isNewResource);
         return new FhirResponse(resource);
     }
 
-    public FhirResponse exchangeBatchUpdate(UUID exchangeId, UUID batchId, Resource resource) throws UnprocessableEntityException, SerializationException {
-        store(resource, exchangeId, batchId);
-        return new FhirResponse(resource);
-    }
-    /*public FhirResponse exchangeBatchUpdate(UUID exchangeId, UUID batchId, List<Resource> resources) throws UnprocessableEntityException, SerializationException {
-        for (Resource resource :resources) {
-            store(resource, exchangeId, batchId);
-        }
-
-        return new FhirResponse(resources);
-    }*/
-
-    public FhirResponse versionSpecificUpdate(UUID versionkey, Resource resource) throws VersionConflictException, UnprocessableEntityException, SerializationException {
+    /*public FhirResponse versionSpecificUpdate(UUID versionkey, Resource resource) throws Exception {
         Validate.resourceId(resource);
         Validate.hasVersion(versionkey);
 
@@ -69,7 +57,7 @@ public class FhirStorageService {
         store(resource, null, null);
 
         return new FhirResponse(resource);
-    }
+    }*/
 
     public FhirResponse delete(Resource resource) throws UnprocessableEntityException, SerializationException {
         delete(resource, null, null);
@@ -82,18 +70,17 @@ public class FhirStorageService {
         return new FhirResponse(resource);
     }
 
-    /*public FhirResponse exchangeBatchDelete(UUID exchangeId, UUID batchId, List<Resource> resources) throws UnprocessableEntityException, SerializationException {
-        for (Resource resource :resources) {
-            delete(resource, exchangeId, batchId);
-        }
 
-        return new FhirResponse(resources);
-    }*/
-
-    private void store(Resource resource, UUID exchangeId, UUID batchId) throws UnprocessableEntityException, SerializationException {
+    private void store(Resource resource, UUID exchangeId, UUID batchId, boolean isNewResource) throws Exception {
         Validate.resourceId(resource);
 
         ResourceEntry entry = createResourceEntry(resource);
+
+        //if we're updating a resource but there's no change, don't commit the save
+        //this is because Emis send us up to thousands of duplicated resources each day
+        if (!shouldSaveResource(entry, isNewResource)) {
+            return;
+        }
 
         FhirResourceHelper.updateMetaTags(resource, entry.getVersion(), entry.getCreatedAt());
 
@@ -102,6 +89,36 @@ public class FhirStorageService {
         if (resource instanceof Patient) {
             identifierRepository.savePatientIdentity((Patient)resource, serviceId, systemId);
         }
+    }
+
+    private boolean shouldSaveResource(ResourceEntry entry, boolean isNewResource) throws Exception {
+
+        //if it's a brand new resource, we always want to save it
+        if (isNewResource) {
+            return true;
+        }
+
+        //check the checksum first, so we only do a very small read from the DB
+        long previousChecksum = repository.getResourceChecksum(entry.getResourceType(), entry.getResourceId());
+        if (previousChecksum != Long.MIN_VALUE
+                && previousChecksum != entry.getResourceChecksum()) {
+            return true;
+        }
+
+        //if the checksum is the same, we need to do a full compare
+        ResourceHistory previousVersion = repository.getCurrentVersion(entry.getResourceType(), entry.getResourceId());
+        if (previousVersion != null) {
+            if (previousVersion.getIsDeleted()) {
+                return true;
+            }
+
+            String previousData = previousVersion.getResourceData();
+            if (!previousData.equals(entry.getResourceData())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void delete(Resource resource, UUID exchangeId, UUID batchId) throws UnprocessableEntityException, SerializationException {
@@ -115,6 +132,7 @@ public class FhirStorageService {
     private ResourceEntry createResourceEntry(Resource resource) throws UnprocessableEntityException, SerializationException {
         ResourceMetadata metadata = MetadataFactory.createMetadata(resource);
         Date entryDate = new Date();
+        String resourceJson = FhirSerializationHelper.serializeResource(resource);
 
         ResourceEntry entry = new ResourceEntry();
         entry.setResourceId(FhirResourceHelper.getResourceId(resource));
@@ -125,7 +143,8 @@ public class FhirStorageService {
         entry.setSystemId(systemId);
         entry.setSchemaVersion(SCHEMA_VERSION);
         entry.setResourceMetadata(JsonSerializer.serialize(metadata));
-        entry.setResourceData(FhirSerializationHelper.serializeResource(resource));
+        entry.setResourceData(resourceJson);
+        entry.setResourceChecksum(generateChecksum(resourceJson));
 
         if (metadata instanceof PatientCompartment) {
             entry.setPatientId(((PatientCompartment) metadata).getPatientId());
@@ -137,4 +156,12 @@ public class FhirStorageService {
     private UUID createTimeBasedVersion() {
         return UUIDs.timeBased();
     }
+
+    public static long generateChecksum(String data) {
+        byte[] bytes = data.getBytes();
+        Checksum checksum = new CRC32();
+        checksum.update(bytes, 0, bytes.length);
+        return checksum.getValue();
+    }
+
 }

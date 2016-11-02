@@ -359,14 +359,15 @@ public class CsvProcessor {
             for (Resource resource: resources) {
 
                 try {
+                    boolean isNewResource = false;
                     if (mapIds) {
-                        IdHelper.mapIds(serviceId, systemId, resource);
+                        isNewResource = IdHelper.mapIds(serviceId, systemId, resource);
                     }
 
                     if (isDelete) {
                         storageService.exchangeBatchDelete(exchangeId, batchUuid, resource);
                     } else {
-                        storageService.exchangeBatchUpdate(exchangeId, batchUuid, resource);
+                        storageService.exchangeBatchUpdate(exchangeId, batchUuid, resource, isNewResource);
                     }
 
                 } catch (Exception ex) {

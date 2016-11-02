@@ -19,11 +19,14 @@
     <PostMessageAsync>
         <Pipeline>
             <OpenEnvelope/>
+            <PostMessageToLog>
+                <EventType>Receive</EventType>
+            </PostMessageToLog>
             <DetermineRelevantProtocolIds/>
             <ValidateSender/>
             <ValidateMessageType/>
             <PostMessageToLog>
-                <EventType>Receive</EventType>
+                <EventType>Validate</EventType>
             </PostMessageToLog>
             <PostMessageToExchange>
                 <Credentials>

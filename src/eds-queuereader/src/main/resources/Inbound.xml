@@ -8,10 +8,16 @@
     <Queue>EdsInbound-GPs_Eng_Wls</Queue>
     <!--<Queue>EdsInbound-A-M</Queue>-->
     <Pipeline>
+        <PostMessageToLog>
+            <EventType>Transform_Start</EventType>
+        </PostMessageToLog>
         <MessageTransformInbound>
             <SharedStoragePath>C:\SFTPData</SharedStoragePath>
             <FilingThreadLimit>10</FilingThreadLimit>
         </MessageTransformInbound>
+        <PostMessageToLog>
+            <EventType>Transform_End</EventType>
+        </PostMessageToLog>
         <PostMessageToExchange>
             <Credentials>
                 <Username>guest</Username>

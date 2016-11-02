@@ -49,6 +49,8 @@
                             <xs:restriction base="xs:string">
                                 <xs:enumeration value="Receive"/>
                                 <xs:enumeration value="Validate"/>
+                                <xs:enumeration value="Transform_Start"/>
+                                <xs:enumeration value="Transform_End"/>
                                 <xs:enumeration value="Send"/>
                             </xs:restriction>
                         </xs:simpleType>

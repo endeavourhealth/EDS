@@ -29,6 +29,11 @@ public class AuditRepository extends Repository{
         mapperEvent.save(event);
     }
 
+    public Exchange getExchange(UUID exchangeId) {
+        Mapper<Exchange> mapper = getMappingManager().mapper(Exchange.class);
+        return mapper.get(exchangeId);
+    }
+
     public void save(ExchangeTransformAudit exchangeTransformAudit) {
 
         Mapper<ExchangeTransformAudit> mapper = getMappingManager().mapper(ExchangeTransformAudit.class);

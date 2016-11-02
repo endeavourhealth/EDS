@@ -39,9 +39,11 @@ public class ResourceRepository extends Repository {
         resourceHistory.setIsDeleted(false);
         resourceHistory.setSchemaVersion(resourceEntry.getSchemaVersion());
         resourceHistory.setResourceData(resourceEntry.getResourceData());
+        resourceHistory.setResourceChecksum(resourceEntry.getResourceChecksum());
         Mapper<ResourceHistory> mapperResourceHistory = getMappingManager().mapper(ResourceHistory.class);
         mapperResourceHistory.save(resourceHistory);
 
+        //speed test without this table
 /*
         ResourceHistoryByService resourceHistoryByService = new ResourceHistoryByService();
         resourceHistoryByService.setResourceId(resourceEntry.getResourceId());
@@ -57,7 +59,8 @@ public class ResourceRepository extends Repository {
         mapperResourceHistoryByService.save(resourceHistoryByService);
 */
 
-        ResourceByService resourceByService = new ResourceByService();
+        //speed test without this table
+/*        ResourceByService resourceByService = new ResourceByService();
         resourceByService.setServiceId(resourceEntry.getServiceId());
         resourceByService.setSystemId(resourceEntry.getSystemId());
         resourceByService.setResourceType(resourceEntry.getResourceType());
@@ -69,7 +72,22 @@ public class ResourceRepository extends Repository {
         resourceByService.setResourceMetadata(resourceEntry.getResourceMetadata());
         resourceByService.setResourceData(resourceEntry.getResourceData());
         Mapper<ResourceByService> mapperResourceByService = getMappingManager().mapper(ResourceByService.class);
-        mapperResourceByService.save(resourceByService);
+        mapperResourceByService.save(resourceByService);*/
+
+        //test manual insert rather than materialised view
+        if (resourceEntry.getPatientId() != null) {
+            ResourceByPatient resourceByPatient = new ResourceByPatient();
+            resourceByPatient.setServiceId(resourceEntry.getServiceId());
+            resourceByPatient.setSystemId(resourceEntry.getSystemId());
+            resourceByPatient.setPatientId(resourceEntry.getPatientId());
+            resourceByPatient.setResourceType(resourceEntry.getResourceType());
+            resourceByPatient.setResourceId(resourceEntry.getResourceId());
+            resourceByPatient.setSchemaVersion(resourceEntry.getSchemaVersion());
+            resourceByPatient.setResourceMetadata(resourceEntry.getResourceMetadata());
+            resourceByPatient.setResourceData(resourceEntry.getResourceData());
+            Mapper<ResourceByPatient> mapperResourceByPatient = getMappingManager().mapper(ResourceByPatient.class);
+            mapperResourceByPatient.save(resourceByPatient);
+        }
 
         if (exchangeId != null && batchId != null) {
             ResourceByExchangeBatch resourceByExchangeBatch = new ResourceByExchangeBatch();
@@ -178,6 +196,7 @@ public class ResourceRepository extends Repository {
         mapperResourceHistoryByService.save(resourceHistoryByService);
 */
 
+/*
         ResourceByService resourceByService = new ResourceByService();
         resourceByService.setServiceId(resourceEntry.getServiceId());
         resourceByService.setSystemId(resourceEntry.getSystemId());
@@ -185,6 +204,19 @@ public class ResourceRepository extends Repository {
         resourceByService.setResourceId(resourceEntry.getResourceId());
         Mapper<ResourceByService> mapperResourceMetadata = getMappingManager().mapper(ResourceByService.class);
         mapperResourceMetadata.save(resourceByService);
+*/
+
+        //test manual insert rather than materialised view
+        if (resourceEntry.getPatientId() != null) {
+            ResourceByPatient resourceByPatient = new ResourceByPatient();
+            resourceByPatient.setServiceId(resourceEntry.getServiceId());
+            resourceByPatient.setSystemId(resourceEntry.getSystemId());
+            resourceByPatient.setPatientId(resourceEntry.getPatientId());
+            resourceByPatient.setResourceType(resourceEntry.getResourceType());
+            resourceByPatient.setResourceId(resourceEntry.getResourceId());
+            Mapper<ResourceByPatient> mapperResourceByPatient = getMappingManager().mapper(ResourceByPatient.class);
+            mapperResourceByPatient.save(resourceByPatient);
+        }
 
         if (exchangeId != null && batchId != null) {
             ResourceByExchangeBatch resourceByExchangeBatch = new ResourceByExchangeBatch();
@@ -248,14 +280,6 @@ public class ResourceRepository extends Repository {
         getSession().execute(batch);
     }*/
 
-    /*public void save(ResourceTypesUsed resourceTypesUsed) {
-        if (resourceTypesUsed == null) {
-            throw new IllegalArgumentException("resourceTypesUsed is null");
-        }
-
-        Mapper<ResourceTypesUsed> mapper = getMappingManager().mapper(ResourceTypesUsed.class);
-        mapper.save(resourceTypesUsed);
-    }*/
 
     public ResourceHistory getByKey(String resourceType, UUID resourceId, UUID version) {
         Mapper<ResourceHistory> mapperResourceStore = getMappingManager().mapper(ResourceHistory.class);
@@ -304,11 +328,6 @@ public class ResourceRepository extends Repository {
         return Lists.newArrayList(accessor.getResourcesByService(serviceId, systemId, resourceType, resourceIds));
     }
 
-    /*public List<ResourceTypesUsed> getResourcesTypesUsed(UUID serviceId, UUID systemId) {
-        ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
-        return Lists.newArrayList(accessor.getResourceTypesUsed(serviceId, systemId));
-    }*/
-
     public List<ResourceByExchangeBatch> getResourcesForBatch(UUID batchId) {
         ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
         return Lists.newArrayList(accessor.getResourcesForBatch(batchId));
@@ -326,4 +345,16 @@ public class ResourceRepository extends Repository {
         ResultSet result = accessor.getMetadataByService(serviceId, systemId, resourceType);
         return new ResourceMetadataIterator<>(result.iterator(), classOfT);
     }
+
+    public long getResourceChecksum(String resourceType, UUID resourceId) {
+        ResourceHistoryAccessor accessor = getMappingManager().createAccessor(ResourceHistoryAccessor.class);
+        ResultSet resultSet = accessor.getCurrentChecksum(resourceType, resourceId);
+        Row row = resultSet.one();
+        if (row != null) {
+            return row.getLong(0);
+        } else {
+            return Long.MIN_VALUE;
+        }
+    }
+
 }

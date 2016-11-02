@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-
-	<database>
-		<url></url>
-		<username></username>
-		<password></password>
-	</database>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../eds-ui/src/main/resources/Config.xsd">
 
 	<webServer>
 		<!--local host cookie-->
@@ -23,5 +17,12 @@
 		<password>guest</password>
 	</rabbitmqManagement>
 
+	<rePostMessageToExchangeConfig>
+		<username>guest</username>
+		<password>guest</password>
+		<nodes>localhost:5672</nodes>
+		<exchange>EdsInbound</exchange>
+		<routingHeader>SenderLocalIdentifier</routingHeader>
+	</rePostMessageToExchangeConfig>
 
 </config>

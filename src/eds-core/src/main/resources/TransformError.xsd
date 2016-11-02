@@ -26,7 +26,7 @@
     <xs:complexType name="exception">
         <xs:sequence>
             <xs:element name="message" type="xs:string" minOccurs="0"/>
-            <xs:element name="lines" type="exceptionLine" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="line" type="exceptionLine" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="cause" type="exception" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>

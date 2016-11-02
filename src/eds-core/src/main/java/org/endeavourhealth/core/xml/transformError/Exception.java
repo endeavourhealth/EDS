@@ -19,7 +19,7 @@ import java.util.List;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="message" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
- *         &lt;element name="lines" type="{}exceptionLine" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="line" type="{}exceptionLine" maxOccurs="unbounded" minOccurs="0"/>
  *         &lt;element name="cause" type="{}exception" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -32,13 +32,13 @@ import java.util.List;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "exception", propOrder = {
     "message",
-    "lines",
+    "line",
     "cause"
 })
 public class Exception {
 
     protected String message;
-    protected List<ExceptionLine> lines;
+    protected List<ExceptionLine> line;
     protected Exception cause;
 
     /**
@@ -66,18 +66,18 @@ public class Exception {
     }
 
     /**
-     * Gets the value of the lines property.
+     * Gets the value of the line property.
      * 
      * <p>
      * This accessor method returns a reference to the live list,
      * not a snapshot. Therefore any modification you make to the
      * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the lines property.
+     * This is why there is not a <CODE>set</CODE> method for the line property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
      * <pre>
-     *    getLines().add(newItem);
+     *    getLine().add(newItem);
      * </pre>
      * 
      * 
@@ -87,11 +87,11 @@ public class Exception {
      * 
      * 
      */
-    public List<ExceptionLine> getLines() {
-        if (lines == null) {
-            lines = new ArrayList<ExceptionLine>();
+    public List<ExceptionLine> getLine() {
+        if (line == null) {
+            line = new ArrayList<ExceptionLine>();
         }
-        return this.lines;
+        return this.line;
     }
 
     /**

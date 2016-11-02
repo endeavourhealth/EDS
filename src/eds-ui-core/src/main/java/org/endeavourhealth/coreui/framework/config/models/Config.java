@@ -17,10 +17,9 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="database" type="{}database"/>
  *         &lt;element name="webServer" type="{}webServer"/>
- *         &lt;element name="messagingQueue" type="{}messagingQueue" minOccurs="0"/>
- *         &lt;element name="email" type="{}email" minOccurs="0"/>
+ *         &lt;element name="rabbitmqManagement" type="{}rabbitmqManagement"/>
+ *         &lt;element name="rePostMessageToExchangeConfig" type="{}rePostMessageToExchangeConfig"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -31,46 +30,18 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "config", propOrder = {
-    "database",
     "webServer",
     "rabbitmqManagement",
-    "messagingQueue",
-    "email"
+    "rePostMessageToExchangeConfig"
 })
 public class Config {
 
     @XmlElement(required = true)
-    protected Database database;
-    @XmlElement(required = true)
     protected WebServer webServer;
     @XmlElement(required = true)
     protected RabbitmqManagement rabbitmqManagement;
-    protected MessagingQueue messagingQueue;
-    protected Email email;
-
-    /**
-     * Gets the value of the database property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Database }
-     *     
-     */
-    public Database getDatabase() {
-        return database;
-    }
-
-    /**
-     * Sets the value of the database property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Database }
-     *     
-     */
-    public void setDatabase(Database value) {
-        this.database = value;
-    }
+    @XmlElement(required = true)
+    protected RePostMessageToExchangeConfig rePostMessageToExchangeConfig;
 
     /**
      * Gets the value of the webServer property.
@@ -98,11 +69,11 @@ public class Config {
 
     /**
      * Gets the value of the rabbitmqManagement property.
-     *
+     * 
      * @return
      *     possible object is
      *     {@link RabbitmqManagement }
-     *
+     *     
      */
     public RabbitmqManagement getRabbitmqManagement() {
         return rabbitmqManagement;
@@ -110,62 +81,38 @@ public class Config {
 
     /**
      * Sets the value of the rabbitmqManagement property.
-     *
+     * 
      * @param value
      *     allowed object is
      *     {@link RabbitmqManagement }
-     *
+     *     
      */
     public void setRabbitmqManagement(RabbitmqManagement value) {
         this.rabbitmqManagement = value;
     }
 
     /**
-     * Gets the value of the messagingQueue property.
+     * Gets the value of the rePostMessageToExchangeConfig property.
      * 
      * @return
      *     possible object is
-     *     {@link MessagingQueue }
+     *     {@link RePostMessageToExchangeConfig }
      *     
      */
-    public MessagingQueue getMessagingQueue() {
-        return messagingQueue;
+    public RePostMessageToExchangeConfig getRePostMessageToExchangeConfig() {
+        return rePostMessageToExchangeConfig;
     }
 
     /**
-     * Sets the value of the messagingQueue property.
+     * Sets the value of the rePostMessageToExchangeConfig property.
      * 
      * @param value
      *     allowed object is
-     *     {@link MessagingQueue }
+     *     {@link RePostMessageToExchangeConfig }
      *     
      */
-    public void setMessagingQueue(MessagingQueue value) {
-        this.messagingQueue = value;
-    }
-
-    /**
-     * Gets the value of the email property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Email }
-     *     
-     */
-    public Email getEmail() {
-        return email;
-    }
-
-    /**
-     * Sets the value of the email property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Email }
-     *     
-     */
-    public void setEmail(Email value) {
-        this.email = value;
+    public void setRePostMessageToExchangeConfig(RePostMessageToExchangeConfig value) {
+        this.rePostMessageToExchangeConfig = value;
     }
 
 }

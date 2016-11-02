@@ -39,6 +39,9 @@ public class ResourceHistory {
     @Column(name = "resource_data")
     private String resourceData;
 
+    @Column(name = "resource_checksum")
+    private long resourceChecksum;
+
     public String getResourceType() {
         return resourceType;
     }
@@ -109,5 +112,13 @@ public class ResourceHistory {
 
     public void setResourceData(String resourceData) {
         this.resourceData = resourceData;
+    }
+
+    public long getResourceChecksum() {
+        return resourceChecksum;
+    }
+
+    public void setResourceChecksum(long resourceChecksum) {
+        this.resourceChecksum = resourceChecksum;
     }
 }

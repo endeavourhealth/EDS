@@ -8,18 +8,18 @@ import javax.xml.namespace.QName;
 
 
 /**
- * This object contains factory methods for each
- * Java content interface and Java element interface
- * generated in the org.endeavourhealth.ui.framework.config.models package.
- * <p>An ObjectFactory allows you to programatically
- * construct new instances of the Java representation
- * for XML content. The Java representation of XML
- * content can consist of schema derived interfaces
- * and classes representing the binding of schema
- * type definitions, element declarations and model
- * groups.  Factory methods for each of these are
+ * This object contains factory methods for each 
+ * Java content interface and Java element interface 
+ * generated in the org.endeavourhealth.coreui.framework.config.models package. 
+ * <p>An ObjectFactory allows you to programatically 
+ * construct new instances of the Java representation 
+ * for XML content. The Java representation of XML 
+ * content can consist of schema derived interfaces 
+ * and classes representing the binding of schema 
+ * type definitions, element declarations and model 
+ * groups.  Factory methods for each of these are 
  * provided in this class.
- *
+ * 
  */
 @XmlRegistry
 public class ObjectFactory {
@@ -27,63 +27,47 @@ public class ObjectFactory {
     private final static QName _Config_QNAME = new QName("", "config");
 
     /**
-     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.endeavourhealth.ui.framework.config.models
-     *
+     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.endeavourhealth.coreui.framework.config.models
+     * 
      */
     public ObjectFactory() {
     }
 
     /**
      * Create an instance of {@link Config }
-     *
+     * 
      */
     public Config createConfig() {
         return new Config();
     }
 
     /**
-     * Create an instance of {@link Template }
-     *
-     */
-    public Template createTemplate() {
-        return new Template();
-    }
-
-    /**
-     * Create an instance of {@link Database }
-     *
-     */
-    public Database createDatabase() {
-        return new Database();
-    }
-
-    /**
-     * Create an instance of {@link MessagingQueue }
-     *
-     */
-    public MessagingQueue createMessagingQueue() {
-        return new MessagingQueue();
-    }
-
-    /**
      * Create an instance of {@link WebServer }
-     *
+     * 
      */
     public WebServer createWebServer() {
         return new WebServer();
     }
 
     /**
-     * Create an instance of {@link Email }
-     *
+     * Create an instance of {@link RePostMessageToExchangeConfig }
+     * 
      */
-    public Email createEmail() {
-        return new Email();
+    public RePostMessageToExchangeConfig createRePostMessageToExchangeConfig() {
+        return new RePostMessageToExchangeConfig();
+    }
+
+    /**
+     * Create an instance of {@link RabbitmqManagement }
+     * 
+     */
+    public RabbitmqManagement createRabbitmqManagement() {
+        return new RabbitmqManagement();
     }
 
     /**
      * Create an instance of {@link JAXBElement }{@code <}{@link Config }{@code >}}
-     *
+     * 
      */
     @XmlElementDecl(namespace = "", name = "config")
     public JAXBElement<Config> createConfig(Config value) {

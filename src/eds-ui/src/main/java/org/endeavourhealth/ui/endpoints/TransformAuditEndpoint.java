@@ -1,5 +1,8 @@
 package org.endeavourhealth.ui.endpoints;
 
+import org.endeavourhealth.core.cache.ObjectMapperPool;
+import org.endeavourhealth.core.configuration.Credentials;
+import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
@@ -8,6 +11,7 @@ import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.*;
+import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
@@ -16,6 +20,8 @@ import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
+import org.endeavourhealth.coreui.framework.config.ConfigSerializer;
+import org.endeavourhealth.coreui.framework.config.models.RePostMessageToExchangeConfig;
 import org.endeavourhealth.ui.json.JsonTransformErrorDetail;
 import org.endeavourhealth.ui.json.JsonTransformErrorSummary;
 import org.endeavourhealth.ui.json.JsonTransformRequeueRequest;
@@ -28,6 +34,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -129,7 +136,7 @@ public class TransformAuditEndpoint extends AbstractEndpoint {
                     lines.add(exception.getMessage());
                 }
 
-                for (ExceptionLine line: exception.getLines()) {
+                for (ExceptionLine line: exception.getLine()) {
                     String cls = line.getClazz();
                     String method = line.getMethod();
                     Integer lineNumber = line.getLine();
@@ -215,9 +222,6 @@ public class TransformAuditEndpoint extends AbstractEndpoint {
             //then re-submit the exchange to Rabbit MQ for the queue reader to pick up
             postToRabbit(exchangeId);
 
-            //TODO - re-post the transform(s) to RABBIT!!!
-
-
             //if we only want to re-queue the first exchange, then break out
             if (request.isFirstExchangeOnly()) {
                 break;
@@ -234,56 +238,34 @@ public class TransformAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private void postToRabbit(UUID exchangeId) {
-      /*  String routingKey = getRoutingKey(exchange);
+    private void postToRabbit(UUID exchangeId) throws Exception {
 
-        // Generate message identifier and store message in db
-        UUID messageUuid = exchange.getExchangeId();
-        new QueuedMessageRepository().save(messageUuid, exchange.getBody());
+        Exchange exchangeAudit = new AuditRepository().getExchange(exchangeId);
+        String body = exchangeAudit.getBody();
+        String headerJson = exchangeAudit.getHeaders();
+        HashMap<String, String> headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
 
-        Connection connection = getConnection();
-        Channel channel = getChannel(connection);
-
-        Map<String, Object> headers = new HashMap<>();
-        for (String key : exchange.getHeaders().keySet())
-            headers.put(key, exchange.getHeader(key));
-
-        AMQP.BasicProperties properties = new AMQP.BasicProperties()
-                .builder()
-                .deliveryMode(2)    // Persistent message
-                .headers(headers)
-                .build();
-
-        // Handle multicast
-        String multicastHeader = config.getMulticastHeader();
-        if (multicastHeader == null || multicastHeader.isEmpty() || exchange.getHeader(multicastHeader) == null) {
-            publishMessage(routingKey, messageUuid, channel, properties);
-        } else {
-            String multicastData = exchange.getHeader(multicastHeader);
-            try {
-                Object[] multicastItems = ObjectMapperPool.getInstance().readValue(multicastData, Object[].class);
-
-                for (Object multicastItem : multicastItems) {
-                    String itemData = ObjectMapperPool.getInstance().writeValueAsString(multicastItem);
-                    // Replace header list with individual value
-                    headers.put(multicastHeader, itemData);
-                    properties = properties.builder().headers(headers).build();
-                    publishMessage(routingKey, messageUuid, channel, properties);
-                }
-            } catch (IOException e) {
-                throw new PipelineException("Could not parse multicast data", e);
-            }
-
+        org.endeavourhealth.core.messaging.exchange.Exchange exchange = new org.endeavourhealth.core.messaging.exchange.Exchange(exchangeId, body);
+        for (String header: headers.keySet()) {
+            exchange.setHeader(header, headers.get(header));
         }
 
-        waitForConfirmations(channel);
-        closeChannel(channel);*/
+        RePostMessageToExchangeConfig c = ConfigSerializer.getConfig().getRePostMessageToExchangeConfig();
+
+        Credentials credentials = new Credentials();
+        credentials.setUsername(c.getUsername());
+        credentials.setPassword(c.getPassword());
+
+        PostMessageToExchangeConfig config = new PostMessageToExchangeConfig();
+        config.setCredentials(credentials);
+        config.setMulticastHeader(c.getMulticastHeader());
+        config.setNodes(c.getNodes());
+        config.setRoutingHeader(c.getRoutingHeader());
+        config.setExchange(c.getExchange());
+
+        //re-post back into Rabbit using the same pipeline component as used by the messaging API
+        PostMessageToExchange component = new PostMessageToExchange(config);
+        component.process(exchange);
     }
-
-
-    //get Errors
-    //get Details about first exchange
-    //re-queue first exchange
-    //re-queue all exchanges
 
 }
