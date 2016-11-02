@@ -9,19 +9,19 @@ import {IRecordViewerService} from "../../recordViewer/recordViewer.service";
 import {UIService} from "../../recordViewer/models/UIService";
 import {linq} from "../../blocks/linq";
 
-enum KeyCodes {
-		ReturnKey = 13,
-		Escape = 27,
-		LeftArrow = 37,
-		UpArrow = 38,
-		RightArrow = 39,
-		DownArrow = 40
-}
+// enum KeyCodes {
+// 		ReturnKey = 13,
+// 		Escape = 27,
+// 		LeftArrow = 37,
+// 		UpArrow = 38,
+// 		RightArrow = 39,
+// 		DownArrow = 40
+// }
 
 export class PatientFindController extends BaseDialogController {
 
     services: UIService[];
-    selectedService: UIService;
+    static selectedService: UIService;
     searchTerms: string;
     searchedTerms: string;
     foundPatients: UIPatient[];
@@ -67,10 +67,14 @@ export class PatientFindController extends BaseDialogController {
 
     private selectService(service: UIService): void {
 
-        if (service != this.selectedService)
+        if (service != PatientFindController.selectedService)
             this.searchTermsChanged();
 
-        this.selectedService = service;
+        PatientFindController.selectedService = service;
+    }
+
+    private getSelectedService(): UIService {
+        return PatientFindController.selectedService;
     }
 
 	findPatient() {
@@ -80,24 +84,30 @@ export class PatientFindController extends BaseDialogController {
         var ctrl = this;
         ctrl
             .recordViewerService
-            .findPatient(ctrl.selectedService, ctrl.searchedTerms)
+            .findPatient(PatientFindController.selectedService, ctrl.searchedTerms)
             .then((result: UIPatient[]) =>
                 ctrl.foundPatients = linq(result).OrderBy(t => t.name.familyName).ToArray());
     }
 
-    selectPatient(patient: UIPatient) {
-        if (this.selectedPatient == patient)
-            this.selectedPatient = null;
-        else
+    selectPatient(patient: UIPatient, close: boolean) {
+        if (close) {
             this.selectedPatient = patient;
+            this.ok();
+        }
+        else {
+            if (this.selectedPatient == patient)
+                this.selectedPatient = null;
+            else
+                this.selectedPatient = patient;
+        }
     }
 
-    keydown($event: KeyboardEvent) {
-        if ($event.keyCode == KeyCodes.UpArrow)
-            this.selectPreviousPatient();
-        else if ($event.keyCode == KeyCodes.DownArrow)
-            this.selectNextPatient();
-    }
+    // keydown($event: KeyboardEvent) {
+    //     if ($event.keyCode == KeyCodes.UpArrow)
+    //         this.selectPreviousPatient();
+    //     else if ($event.keyCode == KeyCodes.DownArrow)
+    //         this.selectNextPatient();
+    // }
 
     selectNextPatient() {
         if (this.foundPatients == null)
