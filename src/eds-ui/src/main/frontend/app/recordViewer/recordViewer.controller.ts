@@ -16,7 +16,6 @@ export class RecordViewerController {
     public patient: UIPatientRecord;
     public activeTab: number = 0;
     private selectedProblem: UIProblem = null;
-    private problemDetailsPanelMarginTop: number = 0;
 
     static $inject = ['$document', '$uibModal', 'RecordViewerService'];
 
@@ -69,17 +68,6 @@ export class RecordViewerController {
 
     public setSelectedProblem(event: Event, problem: UIProblem): void {
         this.selectedProblem = problem;
-        this.setProblemDetailsPanelMarginTop(event);
-    }
-
-    private setProblemDetailsPanelMarginTop(event: Event): void {
-        var columnHeader = this.$document.find('#problems-list-column');
-
-        if (columnHeader.length > 0) {
-            var columnHeaderTop = (columnHeader[0] as Element).getBoundingClientRect().top;
-            var tableRowTop = (event.target as Element).getBoundingClientRect().top;
-            this.problemDetailsPanelMarginTop = tableRowTop - columnHeaderTop;
-        }
     }
 
     public getSelectedProblem(): UIProblem {

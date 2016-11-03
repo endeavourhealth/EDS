@@ -64,89 +64,64 @@
                         <div class="tab-panel">
 
                             <div class="container-fluid">
-                                <div class="row">
-                                    <!-- id="problems-list-column" must remain on the div below as it is referenced by the controller -->
-                                    <div id="problems-list-column" class="col-md-8">
+                                <h4 style="color: green;">Active problems</h4>
 
-                                        <h4 style="color: green;">Active problems</h4>
+                                <table class="table table-hover table-selectable clinical-items-table">
+                                    <thead>
+                                        <th>Onset date</th>
+                                        <th>Problem</th>
+                                    </thead>
+                                    <tbody>
+                                        <tr data-ng-hide="ctrl.patient.hasActiveProblems()"><td colspan="2"><i>(no active problems)</i></td></tr>
+                                        <tr data-toggle="collapse" data-target="#active-problem-{{$index}}" class="accordion-toggle showing-row" data-ng-repeat="problem in ctrl.patient.getActiveProblems()"> <!--ng-click="ctrl.setSelectedProblem($event, problem)" ng-class="{'selected': ctrl.isSelectedProblem(problem)}"-->
+                                            <td>{{problem.effectiveDate | cuiDate}}</td>
+                                            <td>
+                                                <span class="problem-term-text">{{problem.code | codeReadTerm}}</span>
+                                                <span class="problem-term-significance-text">{{problem.significance | codeSignificance | lowercase | parentheses}}</span>
+                                                <span class="problem-associated-text">{{problem.notes}}</span>
 
-                                        <table class="table table-hover table-selectable clinical-items-table">
-                                            <thead>
-                                                <th>Onset date</th>
-                                                <th>Problem</th>
-                                            </thead>
-                                            <tbody>
-                                                <tr data-ng-hide="ctrl.patient.hasActiveProblems()"><td colspan="2"><i>(no active problems)</i></td></tr>
-                                                <tr data-toggle="collapse" data-target="#active-problem-{{$index}}" class="accordion-toggle showing-row" data-ng-repeat-start="problem in ctrl.patient.getActiveProblems()" ng-click="ctrl.setSelectedProblem($event, problem)" ng-class="{'selected': ctrl.isSelectedProblem(problem)}">
-                                                    <td>{{problem.effectiveDate | cuiDate}}</td>
-                                                    <td>
-                                                        <span class="problem-term-text">{{problem.code | codeReadTerm}}</span>
-                                                        <span class="problem-term-significance-text">{{problem.significance | codeSignificance | lowercase | parentheses}}</span>
-                                                        <span class="problem-associated-text">{{problem.notes}}</span>
-                                                    </td>
-                                                </tr>
-                                                <tr data-ng-repeat-end class="hidden-row">
-                                                    <td></td>
-                                                    <td>
-                                                        <div id="active-problem-{{$index}}" class="accordian-body collapse">
-                                                            <div class="problem-detail">
-                                                                <table id="problems-detail-table" class="table table-condensed">
-                                                                    <tbody>
-                                                                        <tr><td>Significance</td><td><b>{{problem.significance | codeSignificance}}</b></td></tr>
-                                                                        <tr><td>Onset date</td><td><b>{{problem.effectiveDate | cuiDate}}</b></td></tr>
-                                                                        <tr data-ng-if="problem.hasAbated"><td>Has abated?</td><td><b>Yes</b></td></tr>
-                                                                        <tr data-ng-if="problem.hasAbated"><td>Abatement date</td><td><b>{{problem.abatementDate | cuiDate}}</b></td></tr>
-                                                                        <tr><td>READ code</td><td><b>{{problem.code | codeReadCode}}</b></td></tr>
-                                                                        <tr><td>SNOMED code</td><td><b><a href="{{problem.code | codeSnomedLink}}" target="_blank">{{problem.code | codeSnomedCode}}</a></b></td></tr>
-                                                                        <tr data-ng-if="problem.lastReviewDate"><td>Last review date</td><td><b>{{problem.lastReviewDate | cuiDate}}</b></td></tr>
-                                                                        <tr data-ng-if="problem.lastReviewer"><td>Last reviewer</td><td><b>{{problem.lastReviewer.name | cuiName}}</b></td></tr>
-                                                                    </tbody>
-                                                                </table>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-
-                                        <h4>Past problems</h4>
-
-                                        <table class="table table-striped table-hover table-selectable clinical-items-table">
-                                            <thead>
-                                                <th>Onset date</th>
-                                                <th>Problem</th>
-                                            </thead>
-                                            <tbody>
-                                                <tr data-ng-hide="ctrl.patient.hasPastProblems()"><td colspan="2"><i>(no past problems)</i></td></tr>
-                                                <tr data-ng-repeat="problem in ctrl.patient.getPastProblems()" ng-click="ctrl.setSelectedProblem($event, problem)" ng-class="{'selected': ctrl.isSelectedProblem(problem)}">
-                                                    <td>{{problem.effectiveDate | cuiDate}}</td>
-                                                    <td>
-                                                        <span class="problem-term-text">{{problem.code | codeReadTerm}}</span>
-                                                        <span class="problem-term-significance-text">{{problem.significance | codeSignificance | lowercase | parentheses}}</span>
-                                                        <span class="problem-associated-text">{{problem.code.text}}</span>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-
-                                    </div>
-
-                                    <!-- problems detail view
-                                    <div class="col-md-4">
-                                        <div id="problems-detail-panel" data-ng-style="{'margin-top': ctrl.problemDetailsPanelMarginTop + 'px'}">
-                                            <div class="panel panel-default" data-ng-show="ctrl.getSelectedProblem()">
-                                                <div class="panel-heading">
-                                                    <h3 class="panel-title">{{ctrl.getSelectedProblem().code | codeReadTerm}}</h3>
+                                                <div id="active-problem-{{$index}}" class="accordian-body collapse">
+                                                    <div class="problem-detail">
+                                                        <table>
+                                                            <tbody>
+                                                                <tr><td>Significance</td><td><b>{{problem.significance | codeSignificance}}</b></td></tr>
+                                                                <tr><td>Onset date</td><td><b>{{problem.effectiveDate | cuiDate}}</b></td></tr>
+                                                                <tr data-ng-if="problem.hasAbated"><td>Has abated?</td><td><b>Yes</b></td></tr>
+                                                                <tr data-ng-if="problem.hasAbated"><td>Abatement date</td><td><b>{{problem.abatementDate | cuiDate}}</b></td></tr>
+                                                                <tr><td>READ code</td><td><b>{{problem.code | codeReadCode}}</b></td></tr>
+                                                                <tr><td>SNOMED code</td><td><b><a href="{{problem.code | codeSnomedLink}}" target="_blank">{{problem.code | codeSnomedCode}}</a></b></td></tr>
+                                                                <tr data-ng-if="problem.lastReviewDate"><td>Last review date</td><td><b>{{problem.lastReviewDate | cuiDate}}</b></td></tr>
+                                                                <tr data-ng-if="problem.lastReviewer"><td>Last reviewer</td><td><b>{{problem.lastReviewer.name | cuiName}}</b></td></tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
                                                 </div>
-                                                <div class="panel-body">
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
 
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>-->
-                                </div>
+                                <h4>Past problems</h4>
+
+                                <table class="table table-striped table-hover table-selectable clinical-items-table">
+                                    <thead>
+                                        <th>Onset date</th>
+                                        <th>Problem</th>
+                                    </thead>
+                                    <tbody>
+                                        <tr data-ng-hide="ctrl.patient.hasPastProblems()"><td colspan="2"><i>(no past problems)</i></td></tr>
+                                        <tr data-ng-repeat="problem in ctrl.patient.getPastProblems()" ng-click="ctrl.setSelectedProblem($event, problem)" ng-class="{'selected': ctrl.isSelectedProblem(problem)}">
+                                            <td>{{problem.effectiveDate | cuiDate}}</td>
+                                            <td>
+                                                <span class="problem-term-text">{{problem.code | codeReadTerm}}</span>
+                                                <span class="problem-term-significance-text">{{problem.significance | codeSignificance | lowercase | parentheses}}</span>
+                                                <span class="problem-associated-text">{{problem.code.text}}</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
                             </div>
-
                         </div>
                     </uib-tab>
 
