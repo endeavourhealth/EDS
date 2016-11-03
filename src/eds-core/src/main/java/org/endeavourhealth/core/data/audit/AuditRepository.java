@@ -4,11 +4,16 @@ import com.datastax.driver.mapping.Mapper;
 import com.google.common.collect.Lists;
 import org.endeavourhealth.core.data.Repository;
 import org.endeavourhealth.core.data.audit.accessors.AuditAccessor;
-import org.endeavourhealth.core.data.audit.models.*;
+import org.endeavourhealth.core.data.audit.models.Exchange;
+import org.endeavourhealth.core.data.audit.models.ExchangeEvent;
+import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
+import org.endeavourhealth.core.data.audit.models.ExchangeTransformErrorState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
 
 public class AuditRepository extends Repository{
 
@@ -52,31 +57,6 @@ public class AuditRepository extends Repository{
         mapper.delete(errorState);
     }
 
-    public void save(ExchangeTransformErrorToReProcess toReProcess) {
-
-        Mapper<ExchangeTransformErrorToReProcess> mapper = getMappingManager().mapper(ExchangeTransformErrorToReProcess.class);
-        mapper.save(toReProcess);
-    }
-
-    public void delete(ExchangeTransformErrorToReProcess toReProcess) {
-
-        Mapper<ExchangeTransformErrorToReProcess> mapper = getMappingManager().mapper(ExchangeTransformErrorToReProcess.class);
-        mapper.delete(toReProcess);
-    }
-
-    public List<UUID> getExchangeUuidsToReProcess(ExchangeTransformErrorState errorState) {
-        AuditAccessor accessor = getMappingManager().createAccessor(AuditAccessor.class);
-        Iterator<ExchangeTransformErrorToReProcess> iterator = accessor.getErrorsToReProcess(errorState.getServiceId(), errorState.getSystemId()).iterator();
-
-        List<UUID> ret = new ArrayList<>();
-        while (iterator.hasNext()) {
-            ExchangeTransformErrorToReProcess o = iterator.next();
-            ret.add(o.getExchangeId());
-        }
-        return ret;
-    }
-
-
     public ExchangeTransformAudit getMostRecentExchangeTransform(UUID serviceId, UUID systemId, UUID exchangeId) {
 
         AuditAccessor accessor = getMappingManager().createAccessor(AuditAccessor.class);
@@ -111,38 +91,31 @@ public class AuditRepository extends Repository{
         return Lists.newArrayList(accessor.getAllErrorStates());
     }
 
-    public void deleteExchangeIdToReProcess(ExchangeTransformErrorState errorState, UUID exchangeId) {
-        ExchangeTransformErrorToReProcess o = new ExchangeTransformErrorToReProcess();
-        o.setServiceId(errorState.getServiceId());
-        o.setSystemId(errorState.getSystemId());
-        o.setExchangeId(exchangeId);
-        delete(o);
-    }
-
-    public void startServiceIfRequired(UUID serviceId, UUID systemId) {
-
-        if (!isServiceStarted(serviceId, systemId)) {
-            ServiceStart serviceStart = new ServiceStart();
-            serviceStart.setServiceId(serviceId);
-            serviceStart.setSystemId(systemId);
-            serviceStart.setStarted(new Date());
-            save(serviceStart);
-        }
-    }
-
-    public void save(ServiceStart serviceStart) {
-
-        Mapper<ServiceStart> mapperEvent = getMappingManager().mapper(ServiceStart.class);
-        mapperEvent.save(serviceStart);
-    }
-
     public boolean isServiceStarted(UUID serviceId, UUID systemId) {
+
+        //find the FIRST exchange we received for the parameters
         AuditAccessor accessor = getMappingManager().createAccessor(AuditAccessor.class);
-        Iterator<ServiceStart> iterator = accessor.getServiceStart(serviceId, systemId).iterator();
-        if (iterator.hasNext()) {
-            return true;
-        } else {
+        Iterator<ExchangeTransformAudit> iterator = accessor.getFirstExchange(serviceId, systemId).iterator();
+
+        //if we've never transformed an exchange for this service/system before, then it's definitely not started
+        if (!iterator.hasNext()) {
             return false;
         }
+
+        //if we have processed an exchange for the service/system, then make sure it was processed ok
+        ExchangeTransformAudit firstExchangeAudit = iterator.next();
+        if (firstExchangeAudit.getErrorXml() == null) {
+            return true;
+        }
+
+        //if it wasn't processed ok, then make sure there was a subsequent audit of that same exchange being processed ok
+        iterator = accessor.getMostRecentExchangeTransform(serviceId, systemId, firstExchangeAudit.getExchangeId()).iterator();
+        ExchangeTransformAudit subsequentExchangeAudit = iterator.next();
+        if (subsequentExchangeAudit.getErrorXml() == null) {
+            return true;
+        }
+
+        //if the first exchange for our service/system was never processed OK, we've not properly started receiving for this service
+        return false;
     }
 }

@@ -6,8 +6,6 @@ import com.datastax.driver.mapping.annotations.Param;
 import com.datastax.driver.mapping.annotations.Query;
 import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.data.audit.models.ExchangeTransformErrorState;
-import org.endeavourhealth.core.data.audit.models.ExchangeTransformErrorToReProcess;
-import org.endeavourhealth.core.data.audit.models.ServiceStart;
 
 import java.util.UUID;
 
@@ -31,12 +29,7 @@ public interface AuditAccessor {
     @Query("SELECT * FROM audit.exchange_transform_error_state")
     Result<ExchangeTransformErrorState> getAllErrorStates();
 
-
-    @Query("SELECT * FROM audit.exchange_transform_error_to_reprocess WHERE service_id = :service_id AND system_id = :system_id")
-    Result<ExchangeTransformErrorToReProcess> getErrorsToReProcess(@Param("service_id") UUID serviceId,
-                                                                   @Param("system_id") UUID systemId);
-
-    @Query("SELECT * FROM audit.service_start WHERE service_id = :service_id AND system_id = :system_id")
-    Result<ServiceStart> getServiceStart(@Param("service_id") UUID serviceId,
-                                         @Param("system_id") UUID systemId);
+    @Query("SELECT * FROM audit.exchange_transform_audit WHERE service_id = :service_id AND system_id = :system_id LIMIT 1")
+    Result<ExchangeTransformAudit> getFirstExchange(@Param("service_id") UUID serviceId,
+                                                    @Param("system_id") UUID systemId);
 }

@@ -725,8 +725,7 @@ public abstract class EmisCsvTransformer {
         }
 
         //if we previously had a fatal exception, then we want to process the full file
-        if (TransformErrorUtility.containsArgument(previousErrors, TransformErrorUtility.ARG_FATAL_ERROR)
-                || TransformErrorUtility.containsArgument(previousErrors, TransformErrorUtility.ARG_FORCE_RE_RUN)) {
+        if (TransformErrorUtility.containsArgument(previousErrors, TransformErrorUtility.ARG_FATAL_ERROR)) {
             return null;
         }
 

@@ -51,10 +51,10 @@ export class TransformErrorsController {
 		var systemId = vm.selectedSummary.systemId;
 
 		vm.transformErrorService.rerunFirst(serviceId, systemId)
-			.then(function () {
+			.then(function (replacement:TransformErrorSummary) {
 
 				//after re-running, refresh all our data
-				vm.refreshSummariesKeepingSelection();
+				vm.refreshSummariesKeepingSelection(summary, replacement);
 			});
 	}
 
@@ -67,15 +67,25 @@ export class TransformErrorsController {
 			.then(function () {
 
 				//after re-running, refresh all our data
-				vm.refreshSummariesKeepingSelection();
+				vm.refreshSummariesKeepingSelection(summary, null);
 			});
 	}
 
-	private refreshSummariesKeepingSelection() {
+	private refreshSummariesKeepingSelection(original:TransformErrorSummary, replacement:TransformErrorSummary) {
 		var vm = this;
-		var previouslySelectedSummary = vm.selectedSummary;
 
-		vm.refreshSummaries();
+		//if we have a replacement, swap it into the array, otherwise remove from the array
+		var index = vm.transformErrorSummaries.indexOf(original);
+		if (replacement) {
+			vm.transformErrorSummaries[index] = replacement;
+
+		} else {
+			vm.transformErrorSummaries.splice(index, 1);
+
+		}
+
+		var previouslySelectedSummary = vm.selectedSummary;
+		vm.selectedSummary = null;
 
 		//if we had a selected summary, re-select it
 		if (previouslySelectedSummary) {

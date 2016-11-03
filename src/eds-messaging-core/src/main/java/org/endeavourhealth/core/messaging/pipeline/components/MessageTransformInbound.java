@@ -141,9 +141,6 @@ public class MessageTransformInbound extends PipelineComponent {
 				} else {
 					throw new SoftwareNotSupportedException(software, messageVersion);
 				}
-
-				//need to record that a service has now started
-				new AuditRepository().startServiceIfRequired(serviceId, systemId);
 			}
 			catch (Exception ex) {
 
@@ -203,10 +200,6 @@ public class MessageTransformInbound extends PipelineComponent {
 			}
 
 		} else {
-
-			//whether we had an error or not we need to say we re-processed this exchange (if this was a brand
-			//new exchange, then this won't hurt)
-			new AuditRepository().deleteExchangeIdToReProcess(errorState, exchangeId);
 
 			if (!hadError) {
 				//if we didn't have an error, remove our exchange ID from the error state object

@@ -36,6 +36,10 @@ public class ExchangeTransformAudit {
     @Column(name = "error_xml")
     private String errorXml = null;
 
+    @Column(name = "resubmitted")
+    private boolean resubmitted = false;
+
+
     public UUID getServiceId() {
         return serviceId;
     }
@@ -90,5 +94,13 @@ public class ExchangeTransformAudit {
 
     public void setErrorXml(String errorXml) {
         this.errorXml = errorXml;
+    }
+
+    public boolean isResubmitted() {
+        return resubmitted;
+    }
+
+    public void setResubmitted(boolean resubmitted) {
+        this.resubmitted = resubmitted;
     }
 }

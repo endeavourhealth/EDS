@@ -23,7 +23,7 @@ import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.framework.config.ConfigSerializer;
 import org.endeavourhealth.coreui.framework.config.models.RePostMessageToExchangeConfig;
 import org.endeavourhealth.ui.json.JsonTransformExchangeError;
-import org.endeavourhealth.ui.json.JsonTransformRequeueRequest;
+import org.endeavourhealth.ui.json.JsonTransformRerunRequest;
 import org.endeavourhealth.ui.json.JsonTransformServiceErrorSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Path("/transformErrors")
 public class TransformErrorsEndpoint extends AbstractEndpoint {
@@ -60,7 +59,10 @@ public class TransformErrorsEndpoint extends AbstractEndpoint {
         List<JsonTransformServiceErrorSummary> ret = new ArrayList<>();
 
         for (ExchangeTransformErrorState errorState: auditRepository.getAllErrorStates()) {
-            ret.add(convertErrorStateToJson(errorState));
+            JsonTransformServiceErrorSummary summary = convertErrorStateToJson(errorState);
+            if (summary != null) {
+                ret.add(summary);
+            }
         }
 
         clearLogbackMarkers();
@@ -74,13 +76,24 @@ public class TransformErrorsEndpoint extends AbstractEndpoint {
 
     private static JsonTransformServiceErrorSummary convertErrorStateToJson(ExchangeTransformErrorState errorState) {
 
-        List<UUID> exchangeIdsToReProcess = auditRepository.getExchangeUuidsToReProcess(errorState);
+        if (errorState == null) {
+            return null;
+        }
 
-        List<UUID> exchangeIdsInError = errorState
-                .getExchangeIdsInError()
-                .stream()
-                .filter(T -> !exchangeIdsToReProcess.contains(T))
-                .collect(Collectors.toList());
+        //the error state has a list of all exchange IDs that are currently in error, but we only
+        //want to return to EDS UI those that haven't yet been resubmitted
+        List<UUID> exchangeIdsInError = new ArrayList<>();
+        for (UUID exchangeId: errorState.getExchangeIdsInError()) {
+            ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(errorState.getServiceId(), errorState.getSystemId(), exchangeId);
+            if (!audit.isResubmitted()) {
+                exchangeIdsInError.add(exchangeId);
+            }
+        }
+
+        //if all of the exchanges have been resubmitted, then the error state is effectively cleared for now
+        if (exchangeIdsInError.isEmpty()) {
+            return null;
+        }
 
         JsonTransformServiceErrorSummary summary = new JsonTransformServiceErrorSummary();
         summary.setServiceId(errorState.getServiceId());
@@ -128,11 +141,11 @@ public class TransformErrorsEndpoint extends AbstractEndpoint {
                     lines.add(argName);
                 }
             }
+            lines.add("");
 
             org.endeavourhealth.core.xml.transformError.Exception exception = error.getException();
             while (exception != null) {
 
-                lines.add("");
                 if (exception.getMessage() != null) {
                     lines.add(exception.getMessage());
                 }
@@ -142,15 +155,20 @@ public class TransformErrorsEndpoint extends AbstractEndpoint {
                     String method = line.getMethod();
                     Integer lineNumber = line.getLine();
 
-                    lines.add("    at " + cls + "." + method + ":" + lineNumber);
+                    lines.add("\u00a0\u00a0\u00a0\u00a0at " + cls + "." + method + ":" + lineNumber);
+
+                    //lines.add("&nbsp;&nbsp;&nbsp;&nbsp;at " + cls + "." + method + ":" + lineNumber);
                 }
 
                 exception = exception.getCause();
+                if (exception != null) {
+                    lines.add("Caused by:");
+                }
             }
 
             //add some space between the separate errors in the audit
             lines.add("");
-            lines.add("");
+            lines.add("------------------------------------------------------------------------");
         }
 
         JsonTransformExchangeError ret = new JsonTransformExchangeError();
@@ -193,18 +211,22 @@ public class TransformErrorsEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/rerunFirstExchange")
     @RequiresAdmin
-    public Response rerunFirstExchange(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr,
-                                                                    @QueryParam("systemId") String systemIdStr) throws Exception {
+    public Response rerunFirstExchange(@Context SecurityContext sc, JsonTransformRerunRequest request) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
-                "rerunFirstExchange", serviceIdStr, systemIdStr);
-
-        super.setLogbackMarkers(sc);
+                "rerunFirstExchange", request);
 
         LOG.info("Rerun first");
+        rerunExchanges(request, true);
+
+        //we return the updated error state, so the UI can replace its old content
+        ExchangeTransformErrorState errorState = auditRepository.getErrorState(request.getServiceId(), request.getSystemId());
+        JsonTransformServiceErrorSummary ret = convertErrorStateToJson(errorState);
+
+        clearLogbackMarkers();
 
         return Response
-                .ok()
+                .ok(ret)
                 .build();
     }
 
@@ -214,15 +236,15 @@ public class TransformErrorsEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/rerunAllExchanges")
     @RequiresAdmin
-    public Response rerunAllExchanges(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr,
-                                       @QueryParam("systemId") String systemIdStr) throws Exception {
+    public Response rerunAllExchanges(@Context SecurityContext sc, JsonTransformRerunRequest request) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
-                "rerunAllExchanges", serviceIdStr, systemIdStr);
-
-        super.setLogbackMarkers(sc);
+                "rerunAllExchanges", request);
 
         LOG.info("rerunAllExchanges");
+        rerunExchanges(request, false);
+
+        clearLogbackMarkers();
 
         return Response
                 .ok()
@@ -230,56 +252,35 @@ public class TransformErrorsEndpoint extends AbstractEndpoint {
     }
 
 
-
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/returnFirstTransform")
-    @RequiresAdmin
-    public Response reQueueTransforms(@Context SecurityContext sc, JsonTransformRequeueRequest request) throws Exception {
-        super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
-                "Requeue Transforms", request);
-
-        super.setLogbackMarkers(sc);
+    private void rerunExchanges(JsonTransformRerunRequest request, boolean firstOnly) throws Exception {
 
         UUID serviceId = request.getServiceId();
         UUID systemId = request.getSystemId();
 
         ExchangeTransformErrorState errorState = auditRepository.getErrorState(serviceId, systemId);
-        List<UUID> exchangesReQueued = auditRepository.getExchangeUuidsToReProcess(errorState);
 
         for (UUID exchangeId: errorState.getExchangeIdsInError()) {
 
+            //update the transform audit, so EDS UI knows we've re-queued this exchange
+            ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+
             //skip any exchange IDs we've already re-queued up to be processed again
-            if (exchangesReQueued.contains(exchangeId)) {
+            if (audit.isResubmitted()) {
                 continue;
             }
 
-            //save the entity, so EDS UI knows we've re-queued this exchange
-            ExchangeTransformErrorToReProcess o = new ExchangeTransformErrorToReProcess();
-            o.setServiceId(errorState.getServiceId());
-            o.setSystemId(errorState.getSystemId());
-            o.setExchangeId(exchangeId);
-            auditRepository.save(o);
+            audit.setResubmitted(true);
+            auditRepository.save(audit);
 
             //then re-submit the exchange to Rabbit MQ for the queue reader to pick up
             postToRabbit(exchangeId);
 
             //if we only want to re-queue the first exchange, then break out
-            if (request.isFirstExchangeOnly()) {
+            if (firstOnly) {
                 break;
             }
         }
 
-        //we return the updated error state, so the UI can replace its old content
-        JsonTransformServiceErrorSummary ret = convertErrorStateToJson(errorState);
-
-        clearLogbackMarkers();
-
-        return Response
-                .ok(ret)
-                .build();
     }
 
     private void postToRabbit(UUID exchangeId) throws Exception {

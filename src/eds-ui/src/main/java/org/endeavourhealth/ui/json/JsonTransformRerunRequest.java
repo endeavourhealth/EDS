@@ -5,13 +5,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class JsonTransformRequeueRequest {
+public class JsonTransformRerunRequest {
 
     private UUID serviceId = null;
     private UUID systemId = null;
-    private boolean firstExchangeOnly = false;
 
-    public JsonTransformRequeueRequest() {
+    public JsonTransformRerunRequest() {
 
     }
 
@@ -31,11 +30,4 @@ public class JsonTransformRequeueRequest {
         this.systemId = systemId;
     }
 
-    public boolean isFirstExchangeOnly() {
-        return firstExchangeOnly;
-    }
-
-    public void setFirstExchangeOnly(boolean firstExchangeOnly) {
-        this.firstExchangeOnly = firstExchangeOnly;
-    }
 }

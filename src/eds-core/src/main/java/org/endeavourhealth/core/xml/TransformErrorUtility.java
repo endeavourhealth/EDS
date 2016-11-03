@@ -18,7 +18,6 @@ public class TransformErrorUtility {
 
     //general-purpose arguments
     public static final String ARG_FATAL_ERROR = "FatalError";
-    public static final String ARG_FORCE_RE_RUN = "ForcedReRun";
     public static final String ARG_WAITING = "WaitingForPreviousErrorToClear";
 
     //transform-specific arguments

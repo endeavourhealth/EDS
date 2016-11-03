@@ -6,10 +6,8 @@ USE audit;
 DROP MATERIALIZED VIEW IF EXISTS user_event_by_module_user_timestamp;
 DROP MATERIALIZED VIEW IF EXISTS user_event_by_module_user_organisation_timestamp;
 
-DROP TABLE IF EXISTS service_start;
 DROP TABLE IF EXISTS user_event;
 DROP TABLE IF EXISTS exchange_transform_error_state;
-DROP TABLE IF EXISTS exchange_transform_error_to_reprocess;
 DROP TABLE IF EXISTS exchange_transform_audit;
 DROP TABLE IF EXISTS exchange_event;
 DROP TABLE IF EXISTS exchange;
@@ -19,14 +17,9 @@ DROP MATERIALIZED VIEW IF EXISTS exchange_transform_by_service_and_system;
 DROP TABLE IF EXISTS exchange_transform; 
 DROP TABLE IF EXISTS exchangeEvent; 
 DROP TABLE IF EXISTS exchange_transform_error_to_re_process;
+DROP TABLE IF EXISTS exchange_transform_error_to_reprocess;
+DROP TABLE IF EXISTS service_start;
 
-CREATE TABLE service_start 
-( 
-	service_id UUID,
-    system_id UUID,
-	started TIMESTAMP,
-    PRIMARY KEY ((service_id, system_id))
-);
 
 CREATE TABLE exchange 
 ( 
@@ -49,11 +42,12 @@ CREATE TABLE exchange_transform_audit
 ( 
 	service_id UUID,
     system_id UUID,
-    exchange_id UUID,
+    exchange_id TIMEUUID, //timeuuid, so we can get the FIRST exchange out easily
     version TIMEUUID,
     started TIMESTAMP,
     ended TIMESTAMP,
     error_xml TEXT,
+	resubmitted BOOLEAN,
     PRIMARY KEY ((service_id, system_id), exchange_id, version)
 ) WITH CLUSTERING ORDER BY (exchange_id ASC, version DESC);
 
@@ -63,14 +57,6 @@ CREATE TABLE exchange_transform_error_state
     system_id UUID,
     exchange_ids_in_error LIST<UUID>,
     PRIMARY KEY (service_id, system_id)
-);
-
-CREATE TABLE exchange_transform_error_to_reprocess
-( 
-	service_id UUID,
-    system_id UUID,
-    exchange_id UUID,
-    PRIMARY KEY ((service_id, system_id), exchange_id)
 );
 
 CREATE TABLE user_event
