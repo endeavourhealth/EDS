@@ -27,6 +27,9 @@ export class UIPatientRecord {
     }
 
     public hasActiveProblems(): boolean {
+        if (this.getActiveProblems() == null)
+            return false;
+
         return (this.getActiveProblems().length > 0);
     }
 
@@ -37,14 +40,23 @@ export class UIPatientRecord {
     }
 
     public hasPastProblems(): boolean {
+        if (this.getPastProblems() == null)
+            return false;
+
         return (this.getPastProblems().length > 0);
     }
 
     public hasObservations(): boolean {
+        if (this.observations == null)
+            return false;
+
         return (this.observations.length > 0);
     }
 
     public hasDiaryEntries(): boolean {
+        if (this.diary == null)
+            return false;
+
         return (this.diary.length > 0);
     }
 }
