@@ -746,7 +746,7 @@ public abstract class EmisCsvTransformer {
 
         for (Error error: previousErrors.getError()) {
 
-            String errorProcessingId = TransformErrorUtility.findArgumentValue(error, TransformErrorUtility.ARG_EMIS_CSV_PROCESSING_ID);
+            String errorProcessingId = TransformErrorUtility.findArgumentValue(error, TransformErrorUtility.ARG_EMIS_CSV_DIRECTORY);
             if (errorProcessingId.equals(processingIdStr)) {
 
                 String errorFileName = TransformErrorUtility.findArgumentValue(error, TransformErrorUtility.ARG_EMIS_CSV_FILE);

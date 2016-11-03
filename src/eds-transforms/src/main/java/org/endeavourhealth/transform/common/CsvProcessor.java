@@ -328,8 +328,8 @@ public class CsvProcessor {
 
         //then add the error to our audit object
         Map<String, String> args = new HashMap<>();
+        args.put(TransformErrorUtility.ARG_EMIS_CSV_DIRECTORY, state.getFileDir());
         args.put(TransformErrorUtility.ARG_EMIS_CSV_FILE, state.getFileName());
-        args.put(TransformErrorUtility.ARG_EMIS_CSV_PROCESSING_ID, state.getFileDir());
         args.put(TransformErrorUtility.ARG_EMIS_CSV_RECORD_NUMBER, "" + state.getRecordNumber());
 
         TransformErrorUtility.addTransformError(transformError, ex, args);

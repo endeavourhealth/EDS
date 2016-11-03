@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class JsonTransformErrorDetail {
+public class JsonTransformExchangeError {
 
     private UUID exchangeId = null;
     private Date transformStart = null;

@@ -85,7 +85,10 @@ public class ObservationReferralTransformer {
         }
 
         String recipientOrgGuid = parser.getReferalTargetOrganisationGuid();
-        fhirReferral.addRecipient(csvHelper.createOrganisationReference(recipientOrgGuid));
+        //the spec. states that this value will always be present, but there's some live data with a missing value
+        if (!Strings.isNullOrEmpty(recipientOrgGuid)) {
+            fhirReferral.addRecipient(csvHelper.createOrganisationReference(recipientOrgGuid));
+        }
 
         //the below values are defined in the spec., but the spec also states that they'll be empty, so
         //none of the below will probably be used

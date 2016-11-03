@@ -2,19 +2,20 @@ package org.endeavourhealth.ui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.List;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class JsonTransformErrorSummary {
+public class JsonTransformServiceErrorSummary {
 
     private UUID serviceId = null;
     private String serviceName = null;
     private UUID systemId = null;
     private String systemName = null;
     private int countExchanges = -1;
-    private UUID firstExchangeIdInError = null;
+    private List<UUID> exchangeIds = null;
 
-    public JsonTransformErrorSummary() {
+    public JsonTransformServiceErrorSummary() {
 
     }
 
@@ -58,11 +59,11 @@ public class JsonTransformErrorSummary {
         this.countExchanges = countExchanges;
     }
 
-    public UUID getFirstExchangeIdInError() {
-        return firstExchangeIdInError;
+    public List<UUID> getExchangeIds() {
+        return exchangeIds;
     }
 
-    public void setFirstExchangeIdInError(UUID firstExchangeIdInError) {
-        this.firstExchangeIdInError = firstExchangeIdInError;
+    public void setExchangeIds(List<UUID> exchangeIds) {
+        this.exchangeIds = exchangeIds;
     }
 }

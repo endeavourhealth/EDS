@@ -4,6 +4,5 @@ export class TransformErrorSummary {
     systemId: string;
     systemName: string;
     countExchanges: number;
-    firstExchangeIdInError: string;
-
+    exchangeIds: string[];
 }

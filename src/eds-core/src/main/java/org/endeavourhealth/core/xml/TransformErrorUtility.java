@@ -22,7 +22,7 @@ public class TransformErrorUtility {
     public static final String ARG_WAITING = "WaitingForPreviousErrorToClear";
 
     //transform-specific arguments
-    public static final String ARG_EMIS_CSV_PROCESSING_ID = "ProcessingId";
+    public static final String ARG_EMIS_CSV_DIRECTORY= "CsvDirectory";
     public static final String ARG_EMIS_CSV_FILE = "CsvFile";
     public static final String ARG_EMIS_CSV_RECORD_NUMBER = "Record";
 

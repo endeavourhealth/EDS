@@ -122,16 +122,16 @@ public class ProblemTransformer {
             fhirProblem.addExtension(ExtensionConverter.createCompoundExtension(FhirExtensionUri.PROBLEM_RELATED, typeExtension, referenceExtension));
         }
 
-        //apply any linked items from this extract
-        List<Reference> linkedResources = csvHelper.getAndRemoveProblemRelationships(observationGuid, patientGuid);
-        if (linkedResources != null) {
-            csvHelper.addLinkedItemsToProblem(fhirProblem, linkedResources);
-        }
-
         //carry over linked items from any previous instance of this problem
         List<Reference> previousReferences = findPreviousLinkedReferences(csvHelper, csvProcessor, fhirProblem.getId());
         if (previousReferences != null && !previousReferences.isEmpty()) {
             csvHelper.addLinkedItemsToProblem(fhirProblem, previousReferences);
+        }
+
+        //apply any linked items from this extract
+        List<Reference> linkedResources = csvHelper.getAndRemoveProblemRelationships(observationGuid, patientGuid);
+        if (linkedResources != null) {
+            csvHelper.addLinkedItemsToProblem(fhirProblem, linkedResources);
         }
 
         //the problem is actually saved in the ObservationTransformer, so just cache for later
@@ -141,10 +141,10 @@ public class ProblemTransformer {
     private static List<Reference> findPreviousLinkedReferences(EmisCsvHelper csvHelper, CsvProcessor csvProcessor, String problemId) throws Exception {
         try {
 
-            List<Reference> ret = new ArrayList<>();
-            Condition previousVersion = (Condition)csvHelper.retrieveResource(problemId, ResourceType.Condition, csvProcessor);
-
             ResourceIdMapRepository repository = new ResourceIdMapRepository();
+            List<Reference> ret = new ArrayList<>();
+
+            Condition previousVersion = (Condition)csvHelper.retrieveResource(problemId, ResourceType.Condition, csvProcessor);
 
             if (previousVersion.hasContained()) {
                 for (Resource contained: previousVersion.getContained()) {

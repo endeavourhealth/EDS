@@ -17,6 +17,7 @@ import {SecurityService} from "./security.service";
 import {StatsService} from "./stats.service";
 // import {EkbCodingService} from "./ekbCoding.service";
 import {TermlexCodingService} from "./termlexCoding.service";
+import {TransformErrorsService} from "./transformErrors.service";
 
 angular.module('app.core', ['ngIdle', 'toastr'])
 	.service('AdminService', AdminService)
@@ -35,6 +36,7 @@ angular.module('app.core', ['ngIdle', 'toastr'])
 	.service('AuthInterceptor', AuthInterceptor)
 	// .service('CodingService', EkbCodingService)
 	.service('CodingService', TermlexCodingService)
+	.service('TransformErrorsService', TransformErrorsService)
 	.config(['$httpProvider', function ($httpProvider: ng.IHttpProvider) {
 		$httpProvider.interceptors.push('AuthInterceptor');
 	}])

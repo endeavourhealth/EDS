@@ -6,13 +6,15 @@ export interface ITransformErrorsService {
 
     getTransformErrorSummaries():ng.IPromise<TransformErrorSummary[]>;
     getTransformErrorDetail(serviceId: string, systemId: string, exchangeId: string):ng.IPromise<TransformErrorDetail>;
+    rerunFirst(serviceId: string, systemId: string);
+    rerunAll(serviceId: string, systemId: string);
 }
 
 export class TransformErrorsService extends BaseHttpService implements ITransformErrorsService {
 
 
     getTransformErrorSummaries():angular.IPromise<TransformErrorSummary[]> {
-        return this.httpGet('api/transformAudit/getErrors');
+        return this.httpGet('api/transformErrors/getErrorSummaries');
     }
 
     getTransformErrorDetail(serviceId:string, systemId:string, exchangeId:string):angular.IPromise<TransformErrorDetail> {
@@ -24,14 +26,27 @@ export class TransformErrorsService extends BaseHttpService implements ITransfor
             }
         };
 
-        return this.httpGet('api/transformAudit/getErrorDetails', request);
+        return this.httpGet('api/transformErrors/getErrorDetails', request);
     }
 
-   /* reQueueFirstTransform(serviceId:string, systemId:string):angular.IPromise<TransformErrorSummary> {
-
+    rerunFirst(serviceId: string, systemId: string) {
+        var request = {
+            params: {
+                'serviceId': serviceId,
+                'systemId': systemId
+            }
+        };
+        return this.httpPost('api/transformErrors/rerunFirstExchange', request);
     }
 
-    reQueueAllTransforms(serviceId:string, systemId:string):angular.IPromise<TransformErrorSummary> {
+    rerunAll(serviceId: string, systemId: string) {
+        var request = {
+            params: {
+                'serviceId': serviceId,
+                'systemId': systemId
+            }
+        };
+        return this.httpPost('api/transformErrors/rerunAllExchanges', request);
+    }
 
-    }*/
 }

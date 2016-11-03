@@ -22,9 +22,9 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.framework.config.ConfigSerializer;
 import org.endeavourhealth.coreui.framework.config.models.RePostMessageToExchangeConfig;
-import org.endeavourhealth.ui.json.JsonTransformErrorDetail;
-import org.endeavourhealth.ui.json.JsonTransformErrorSummary;
+import org.endeavourhealth.ui.json.JsonTransformExchangeError;
 import org.endeavourhealth.ui.json.JsonTransformRequeueRequest;
+import org.endeavourhealth.ui.json.JsonTransformServiceErrorSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,10 +37,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-@Path("/transformAudit")
-public class TransformAuditEndpoint extends AbstractEndpoint {
-    private static final Logger LOG = LoggerFactory.getLogger(TransformAuditEndpoint.class);
+@Path("/transformErrors")
+public class TransformErrorsEndpoint extends AbstractEndpoint {
+    private static final Logger LOG = LoggerFactory.getLogger(TransformErrorsEndpoint.class);
 
     private static final AuditRepository auditRepository = new AuditRepository();
     private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Organisation);
@@ -50,13 +51,13 @@ public class TransformAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/getErrors")
-    public Response getErrors(@Context SecurityContext sc) throws Exception {
+    @Path("/getErrorSummaries")
+    public Response getErrorSummaries(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
 
         LOG.trace("getErrors");
 
-        List<JsonTransformErrorSummary> ret = new ArrayList<>();
+        List<JsonTransformServiceErrorSummary> ret = new ArrayList<>();
 
         for (ExchangeTransformErrorState errorState: auditRepository.getAllErrorStates()) {
             ret.add(convertErrorStateToJson(errorState));
@@ -71,27 +72,23 @@ public class TransformAuditEndpoint extends AbstractEndpoint {
     }
 
 
-    private static JsonTransformErrorSummary convertErrorStateToJson(ExchangeTransformErrorState errorState) {
+    private static JsonTransformServiceErrorSummary convertErrorStateToJson(ExchangeTransformErrorState errorState) {
 
         List<UUID> exchangeIdsToReProcess = auditRepository.getExchangeUuidsToReProcess(errorState);
 
-        UUID firstExchangeInError = errorState
+        List<UUID> exchangeIdsInError = errorState
                 .getExchangeIdsInError()
                 .stream()
                 .filter(T -> !exchangeIdsToReProcess.contains(T))
-                .findFirst()
-                .get();
+                .collect(Collectors.toList());
 
-        int exchanges = errorState.getExchangeIdsInError().size();
-        exchanges -= exchangeIdsToReProcess.size();
-
-        JsonTransformErrorSummary summary = new JsonTransformErrorSummary();
+        JsonTransformServiceErrorSummary summary = new JsonTransformServiceErrorSummary();
         summary.setServiceId(errorState.getServiceId());
-        summary.setSystemName(getServiceNameForId(errorState.getServiceId()));
+        summary.setServiceName(getServiceNameForId(errorState.getServiceId()));
         summary.setSystemId(errorState.getSystemId());
         summary.setSystemName(getSystemNameForId(errorState.getSystemId()));
-        summary.setCountExchanges(exchanges);
-        summary.setFirstExchangeIdInError(firstExchangeInError);
+        summary.setCountExchanges(exchangeIdsInError.size());
+        summary.setExchangeIds(exchangeIdsInError);
         return summary;
     }
 
@@ -125,7 +122,11 @@ public class TransformAuditEndpoint extends AbstractEndpoint {
             for (Arg arg: error.getArg()) {
                 String argName = arg.getName();
                 String argValue = arg.getValue();
-                lines.add(argName + " = " + argValue);
+                if (argValue != null) {
+                    lines.add(argName + " = " + argValue);
+                } else {
+                    lines.add(argName);
+                }
             }
 
             org.endeavourhealth.core.xml.transformError.Exception exception = error.getException();
@@ -152,7 +153,7 @@ public class TransformAuditEndpoint extends AbstractEndpoint {
             lines.add("");
         }
 
-        JsonTransformErrorDetail ret = new JsonTransformErrorDetail();
+        JsonTransformExchangeError ret = new JsonTransformExchangeError();
         ret.setExchangeId(exchangeId);
         ret.setTransformStart(transformAudit.getStarted());
         ret.setTransformEnd(transformAudit.getEnded());
@@ -190,7 +191,50 @@ public class TransformAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/reQueueTransforms")
+    @Path("/rerunFirstExchange")
+    @RequiresAdmin
+    public Response rerunFirstExchange(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr,
+                                                                    @QueryParam("systemId") String systemIdStr) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "rerunFirstExchange", serviceIdStr, systemIdStr);
+
+        super.setLogbackMarkers(sc);
+
+        LOG.info("Rerun first");
+
+        return Response
+                .ok()
+                .build();
+    }
+
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/rerunAllExchanges")
+    @RequiresAdmin
+    public Response rerunAllExchanges(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr,
+                                       @QueryParam("systemId") String systemIdStr) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "rerunAllExchanges", serviceIdStr, systemIdStr);
+
+        super.setLogbackMarkers(sc);
+
+        LOG.info("rerunAllExchanges");
+
+        return Response
+                .ok()
+                .build();
+    }
+
+
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/returnFirstTransform")
     @RequiresAdmin
     public Response reQueueTransforms(@Context SecurityContext sc, JsonTransformRequeueRequest request) throws Exception {
         super.setLogbackMarkers(sc);
@@ -229,7 +273,7 @@ public class TransformAuditEndpoint extends AbstractEndpoint {
         }
 
         //we return the updated error state, so the UI can replace its old content
-        JsonTransformErrorSummary ret = convertErrorStateToJson(errorState);
+        JsonTransformServiceErrorSummary ret = convertErrorStateToJson(errorState);
 
         clearLogbackMarkers();
 

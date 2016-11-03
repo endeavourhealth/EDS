@@ -2,101 +2,110 @@ import IStateService = angular.ui.IStateService;
 
 import {TransformErrorSummary} from "../models/TransformErrorSummary";
 import {TransformErrorDetail} from "../models/TransformErrorDetail";
-import {Service} from "../models/Service";
-import {System} from "../models/System";
 import {ITransformErrorsService} from "../core/transformErrors.service";
 import {ILoggerService} from "../blocks/logger.service";
-import {IServiceService} from "../services/service/service.service";
 
 export class TransformErrorsController {
 	transformErrorSummaries:TransformErrorSummary[];
-	transformErrorDetail:TransformErrorDetail;
+	selectedSummary:TransformErrorSummary;
+	selectedExchangeIndex:number;
 
-	services : Service[];
-	serviceId : string;
-	systems : System[];
-	systemId : string;
-	localId : string;
-	nhsNumber : string;
-	patientId : string;
+	selectExchangeErrorDetail:TransformErrorDetail;
 
-	static $inject = ['TransformErrorsService', 'LoggerService', 'ServiceService', '$state'];
+
+	static $inject = ['TransformErrorsService', 'LoggerService', '$state'];
 
 	constructor(protected transformErrorService:ITransformErrorsService,
 				protected logger:ILoggerService,
-				protected serviceService : IServiceService,
 				protected $state : IStateService) {
-		this.loadServices();
-		this.refresh();
+
+		this.refreshSummaries();
 	}
 
-	refresh() {
-		/*var vm = this;
-		 var serviceName = $("#service>option:selected").html()
-		 this.getPatientIdentityEvents(vm.serviceId);*/
-	}
-
-	loadServices() {
+	refreshSummaries() {
 		var vm = this;
-		vm.serviceService.getAll()
-			.then(function(result) {
-				vm.services = result;
-			})
-			.catch(function (error) {
-				vm.logger.error('Failed to load services', error, 'Load services');
+		vm.transformErrorSummaries = null;
+		vm.selectedSummary = null;
+
+		vm.transformErrorService.getTransformErrorSummaries()
+			.then(function (data:TransformErrorSummary[]) {
+				vm.transformErrorSummaries = data;
+				if (data.length == 0) {
+					vm.logger.success('No transform errors found');
+				}
 			});
 	}
 
-	loadSystems() {
+	selectSummary(summary:TransformErrorSummary) {
+
 		var vm = this;
-		vm.serviceService.getSystemsForService(vm.serviceId)
-			.then(function(result) {
-				vm.systems = result;
-			})
-			.catch(function (error) {
-				vm.logger.error('Failed to load systems', error, 'Load systems');
+		vm.selectedSummary = summary;
+		vm.selectedExchangeIndex = 1;
+
+		vm.loadExchange();
+	}
+
+	rerunFirst(summary:TransformErrorSummary) {
+		var vm = this;
+		var serviceId = vm.selectedSummary.serviceId;
+		var systemId = vm.selectedSummary.systemId;
+
+		vm.transformErrorService.rerunFirst(serviceId, systemId)
+			.then(function () {
+
+				//after re-running, refresh all our data
+				vm.refreshSummariesKeepingSelection();
 			});
 	}
 
-	getPatientIdentitiesByPatientId() {
-		/*var vm = this;
-		 vm.patientIdentities = null;
-		 vm.patientIdentityService.getByPatientId(vm.patientId)
-		 .then(function (data:PatientIdentity[]) {
-		 vm.patientIdentities = data;
-		 if (data.length == 0) {
-		 vm.logger.error('No results found');
-		 }
-		 });*/
+	rerunAll(summary:TransformErrorSummary) {
+		var vm = this;
+		var serviceId = vm.selectedSummary.serviceId;
+		var systemId = vm.selectedSummary.systemId;
+
+		vm.transformErrorService.rerunAll(serviceId, systemId)
+			.then(function () {
+
+				//after re-running, refresh all our data
+				vm.refreshSummariesKeepingSelection();
+			});
 	}
 
-	getPatientIdentitiedByNhsNumber() {
-		/*var vm = this;
-		 vm.patientIdentities = null;
-		 vm.patientIdentityService.getByNhsNumber(vm.nhsNumber)
-		 .then(function (data:PatientIdentity[]) {
-		 vm.patientIdentities = data;
-		 if (data.length == 0) {
-		 vm.logger.error('No results found');
-		 }
-		 });*/
+	private refreshSummariesKeepingSelection() {
+		var vm = this;
+		var previouslySelectedSummary = vm.selectedSummary;
+
+		vm.refreshSummaries();
+
+		//if we had a selected summary, re-select it
+		if (previouslySelectedSummary) {
+			var serviceId = previouslySelectedSummary.serviceId;
+			var systemId = previouslySelectedSummary.systemId;
+
+			for (var i=0; i<vm.transformErrorSummaries.length; i++) {
+				var summary = vm.transformErrorSummaries[i];
+				if (summary.serviceId == serviceId
+					&& summary.systemId == systemId) {
+
+					vm.selectedSummary = summary;
+					break;
+				}
+			}
+		}
 	}
 
-	getPatientIdentitiesByLocalIdentifier() {
-		/*var vm = this;
-		 vm.patientIdentities = null;
-		 vm.patientIdentityService.getByLocalIdentifier(vm.serviceId, vm.systemId, vm.localId)
-		 .then(function (data:PatientIdentity[]) {
-		 vm.patientIdentities = data;
-		 if (data.length == 0) {
-		 vm.logger.error('No results found');
-		 }
-		 });*/
-	}
+	loadExchange() {
 
-	/*actionItem(event : PatientIdentityEvent, action : string) {
-	 alert(action+" : "+event.loggerName);
-	 }*/
+		var vm = this;
+		var serviceId = vm.selectedSummary.serviceId;
+		var systemId = vm.selectedSummary.systemId;
+		var exchangeId = vm.selectedSummary.exchangeIds[vm.selectedExchangeIndex-1];
+
+		vm.transformErrorService.getTransformErrorDetail(serviceId, systemId, exchangeId)
+			.then(function (data:TransformErrorDetail) {
+				vm.selectExchangeErrorDetail = data;
+			});
+	}
 
 	actionItem(uuid : string, action : string) {
 		this.$state.go('app.resources', {itemUuid: uuid, itemAction: action});

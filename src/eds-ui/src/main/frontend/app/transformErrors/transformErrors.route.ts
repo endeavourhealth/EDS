@@ -17,7 +17,7 @@ export class TransformErrorsRoute {
 					url: '/transformErrors',
 					template: require('./transformErrors.html'),
 					controller: 'TransformErrorsController',
-					controllerAs: 'TransformErrorsCtrl'
+					controllerAs: 'ctrl'
 				}
 			}
 		];

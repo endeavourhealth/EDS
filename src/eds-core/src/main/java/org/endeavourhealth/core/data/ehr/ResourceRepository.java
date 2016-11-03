@@ -43,8 +43,6 @@ public class ResourceRepository extends Repository {
         Mapper<ResourceHistory> mapperResourceHistory = getMappingManager().mapper(ResourceHistory.class);
         mapperResourceHistory.save(resourceHistory);
 
-        //speed test without this table
-/*
         ResourceHistoryByService resourceHistoryByService = new ResourceHistoryByService();
         resourceHistoryByService.setResourceId(resourceEntry.getResourceId());
         resourceHistoryByService.setResourceType(resourceEntry.getResourceType());
@@ -57,10 +55,8 @@ public class ResourceRepository extends Repository {
         resourceHistoryByService.setResourceData(resourceEntry.getResourceData());
         Mapper<ResourceHistoryByService> mapperResourceHistoryByService = getMappingManager().mapper(ResourceHistoryByService.class);
         mapperResourceHistoryByService.save(resourceHistoryByService);
-*/
 
-        //speed test without this table
-/*        ResourceByService resourceByService = new ResourceByService();
+        ResourceByService resourceByService = new ResourceByService();
         resourceByService.setServiceId(resourceEntry.getServiceId());
         resourceByService.setSystemId(resourceEntry.getSystemId());
         resourceByService.setResourceType(resourceEntry.getResourceType());
@@ -72,7 +68,7 @@ public class ResourceRepository extends Repository {
         resourceByService.setResourceMetadata(resourceEntry.getResourceMetadata());
         resourceByService.setResourceData(resourceEntry.getResourceData());
         Mapper<ResourceByService> mapperResourceByService = getMappingManager().mapper(ResourceByService.class);
-        mapperResourceByService.save(resourceByService);*/
+        mapperResourceByService.save(resourceByService);
 
         //test manual insert rather than materialised view
         if (resourceEntry.getPatientId() != null) {
@@ -183,7 +179,6 @@ public class ResourceRepository extends Repository {
         Mapper<ResourceHistory> mapperResourceHistory = getMappingManager().mapper(ResourceHistory.class);
         mapperResourceHistory.save(resourceHistory);
 
-/*
         ResourceHistoryByService resourceHistoryByService = new ResourceHistoryByService();
         resourceHistoryByService.setResourceId(resourceEntry.getResourceId());
         resourceHistoryByService.setResourceType(resourceEntry.getResourceType());
@@ -194,9 +189,7 @@ public class ResourceRepository extends Repository {
         resourceHistoryByService.setIsDeleted(true);
         Mapper<ResourceHistoryByService> mapperResourceHistoryByService = getMappingManager().mapper(ResourceHistoryByService.class);
         mapperResourceHistoryByService.save(resourceHistoryByService);
-*/
 
-/*
         ResourceByService resourceByService = new ResourceByService();
         resourceByService.setServiceId(resourceEntry.getServiceId());
         resourceByService.setSystemId(resourceEntry.getSystemId());
@@ -204,7 +197,6 @@ public class ResourceRepository extends Repository {
         resourceByService.setResourceId(resourceEntry.getResourceId());
         Mapper<ResourceByService> mapperResourceMetadata = getMappingManager().mapper(ResourceByService.class);
         mapperResourceMetadata.save(resourceByService);
-*/
 
         //test manual insert rather than materialised view
         if (resourceEntry.getPatientId() != null) {
