@@ -44,13 +44,16 @@ public class StorageStatisticsService {
         while(patientMetadataIterator.hasNext()) {
             PatientMetadata patientMetadata = patientMetadataIterator.next();
 
-            if (patientMetadata.isDeceased()) {
-                deceasedCount++;
+            if (patientMetadata != null) {
+                if (patientMetadata.isDeceased()) {
+                    deceasedCount++;
+                }
+                else if (patientMetadata.isActive()) {
+                    activeCount++;
+                }
+                totalCount++;
             }
-            else if (patientMetadata.isActive()) {
-                activeCount++;
-            }
-            totalCount++;
+
         }
 
         PatientStatistics statistics = new PatientStatistics();
