@@ -71,7 +71,7 @@ public class ResourceRepository extends Repository {
         mapperResourceByService.save(resourceByService);
 
         //test manual insert rather than materialised view
-        if (resourceEntry.getPatientId() != null) {
+        /*if (resourceEntry.getPatientId() != null) {
             ResourceByPatient resourceByPatient = new ResourceByPatient();
             resourceByPatient.setServiceId(resourceEntry.getServiceId());
             resourceByPatient.setSystemId(resourceEntry.getSystemId());
@@ -83,7 +83,7 @@ public class ResourceRepository extends Repository {
             resourceByPatient.setResourceData(resourceEntry.getResourceData());
             Mapper<ResourceByPatient> mapperResourceByPatient = getMappingManager().mapper(ResourceByPatient.class);
             mapperResourceByPatient.save(resourceByPatient);
-        }
+        }*/
 
         if (exchangeId != null && batchId != null) {
             ResourceByExchangeBatch resourceByExchangeBatch = new ResourceByExchangeBatch();
@@ -199,7 +199,7 @@ public class ResourceRepository extends Repository {
         mapperResourceMetadata.save(resourceByService);
 
         //test manual insert rather than materialised view
-        if (resourceEntry.getPatientId() != null) {
+        /*if (resourceEntry.getPatientId() != null) {
             ResourceByPatient resourceByPatient = new ResourceByPatient();
             resourceByPatient.setServiceId(resourceEntry.getServiceId());
             resourceByPatient.setSystemId(resourceEntry.getSystemId());
@@ -208,7 +208,7 @@ public class ResourceRepository extends Repository {
             resourceByPatient.setResourceId(resourceEntry.getResourceId());
             Mapper<ResourceByPatient> mapperResourceByPatient = getMappingManager().mapper(ResourceByPatient.class);
             mapperResourceByPatient.save(resourceByPatient);
-        }
+        }*/
 
         if (exchangeId != null && batchId != null) {
             ResourceByExchangeBatch resourceByExchangeBatch = new ResourceByExchangeBatch();
