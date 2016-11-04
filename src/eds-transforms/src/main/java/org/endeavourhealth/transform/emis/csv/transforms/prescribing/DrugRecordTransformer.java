@@ -140,12 +140,6 @@ public class DrugRecordTransformer {
         fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE, fhirCoding));
 
         csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirMedicationStatement);
-
-/*        //if this record is linked to a problem, store this relationship in the helper
-        csvHelper.cacheProblemRelationship(problemObservationGuid,
-                                            patientGuid,
-                                            drugRecordGuid,
-                                            fhirMedicationStatement.getResourceType());*/
     }
 
 }

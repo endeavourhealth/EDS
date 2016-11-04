@@ -158,9 +158,6 @@ public class ProblemTransformer {
                             ReferenceComponents components = ReferenceHelper.getReferenceComponents(previousReference);
                             ResourceType resourceType = components.getResourceType();
                             ResourceIdMapByEdsId mapping = repository.getResourceIdMapByEdsId(resourceType.toString(), components.getId());
-                            if (mapping == null) {
-                                String s = "";
-                            }
                             String emisId = mapping.getSourceId();
 
                             Reference unmappedReference = ReferenceHelper.createReference(resourceType, emisId);

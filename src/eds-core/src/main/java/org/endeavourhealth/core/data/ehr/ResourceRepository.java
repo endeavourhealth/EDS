@@ -338,14 +338,14 @@ public class ResourceRepository extends Repository {
         return new ResourceMetadataIterator<>(result.iterator(), classOfT);
     }
 
-    public long getResourceChecksum(String resourceType, UUID resourceId) {
+    public Long getResourceChecksum(String resourceType, UUID resourceId) {
         ResourceHistoryAccessor accessor = getMappingManager().createAccessor(ResourceHistoryAccessor.class);
         ResultSet resultSet = accessor.getCurrentChecksum(resourceType, resourceId);
         Row row = resultSet.one();
         if (row != null) {
-            return row.getLong(0);
+            return new Long(row.getLong(0));
         } else {
-            return Long.MIN_VALUE;
+            return null;
         }
     }
 

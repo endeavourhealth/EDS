@@ -43,10 +43,10 @@ jcs.region.SnomedDescendantsForConcept.elementattributes.IsEternal=true
 # MEMORY ONLY CACHE FOR THIRD-PARTY to EDS ID MAPPING
 jcs.region.ResourceIdentifiers=
 jcs.region.ResourceIdentifiers.cacheattributes=org.apache.jcs.engine.CompositeCacheAttributes
-jcs.region.ResourceIdentifiers.cacheattributes.MaxObjects=1000000
+jcs.region.ResourceIdentifiers.cacheattributes.MaxObjects=10000000
 jcs.region.ResourceIdentifiers.cacheattributes.MemoryCacheName=org.apache.jcs.engine.memory.lru.LRUMemoryCache
 jcs.region.ResourceIdentifiers.cacheattributes.UseMemoryShrinker=true
-jcs.region.ResourceIdentifiers.cacheattributes.MaxMemoryIdleTimeSeconds=3600
+jcs.region.ResourceIdentifiers.cacheattributes.MaxMemoryIdleTimeSeconds=10800
 jcs.region.ResourceIdentifiers.cacheattributes.ShrinkerIntervalSeconds=60
 jcs.region.ResourceIdentifiers.cacheattributes.MaxSpoolPerRun=500
 jcs.region.ResourceIdentifiers.cacheattributes.DiskUsagePatternName=UPDATE

@@ -99,25 +99,31 @@ public class FhirStorageService {
         }
 
         //check the checksum first, so we only do a very small read from the DB
-        long previousChecksum = repository.getResourceChecksum(entry.getResourceType(), entry.getResourceId());
-        if (previousChecksum != Long.MIN_VALUE
-                && previousChecksum != entry.getResourceChecksum()) {
+        Long previousChecksum = repository.getResourceChecksum(entry.getResourceType(), entry.getResourceId());
+        if (previousChecksum == null
+                || previousChecksum.longValue() != entry.getResourceChecksum()) {
+            //if we don't have a previous checksum (which can happen if we keep re-running transforms
+            //that fail, because it thinks it's not a new resource when it actually is) or the checksum differs,
+            //then we want to save this resource
             return true;
         }
 
         //if the checksum is the same, we need to do a full compare
         ResourceHistory previousVersion = repository.getCurrentVersion(entry.getResourceType(), entry.getResourceId());
-        if (previousVersion != null) {
-            if (previousVersion.getIsDeleted()) {
-                return true;
-            }
 
-            String previousData = previousVersion.getResourceData();
-            if (!previousData.equals(entry.getResourceData())) {
-                return true;
-            }
+        //if it was previously deleted, or for some reason we didn't
+        if (previousVersion == null
+            || previousVersion.getIsDeleted()) {
+            return true;
         }
 
+        String previousData = previousVersion.getResourceData();
+        if (!previousData.equals(entry.getResourceData())) {
+            return true;
+        }
+
+        //if we get here, then the resource we're trying to save is completely identical to the last instance
+        //of that same resource we previously saved to the DB, so don't save it again
         return false;
     }
 
