@@ -213,14 +213,6 @@ public abstract class AbstractCsvParser implements AutoCloseable {
             return new Date(d.getTime() + t.getTime());
         }
     }
-    /*public UUID getUniqueIdentifier(int index) {
-        String s = csvRecord.get(index);
-        if (Strings.isNullOrEmpty(s)) {
-            return null;
-        }
-
-        return UUID.fromString(s);
-    }*/
     public boolean getBoolean(String column) {
         String s = csvRecord.get(column);
         if (Strings.isNullOrEmpty(s)) {

@@ -339,18 +339,7 @@ public class EmisCsvHelper {
 
         for (Reference reference : childResourceRelationships) {
 
-            ReferenceComponents components = ReferenceHelper.getReferenceComponents(reference);
-            String locallyUniqueId = components.getId();
-            ResourceType resourceType = components.getResourceType();
-
-            //the Observation resource is from the DB so has already had all its Ids mapped,
-            //so we need to convert the local ID of the child observation to the globally unique ID we'll have generated
-            String globallyUniqueObservationId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
-                                                                            csvProcessor.getSystemId(),
-                                                                            resourceType,
-                                                                            locallyUniqueId);
-
-            Reference globallyUniqueReference = ReferenceHelper.createReference(resourceType, globallyUniqueObservationId);
+            Reference globallyUniqueReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, csvProcessor);
 
             //check if the parent observation doesn't already have our ob linked to it
             boolean alreadyLinked = false;
@@ -431,16 +420,7 @@ public class EmisCsvHelper {
 
         for (Reference reference : childResourceRelationships) {
 
-            ReferenceComponents components = ReferenceHelper.getReferenceComponents(reference);
-            String locallyUniqueId = components.getId();
-            ResourceType resourceType = components.getResourceType();
-
-            String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
-                    csvProcessor.getSystemId(),
-                    resourceType,
-                    locallyUniqueId);
-
-            Reference globallyUniqueReference = ReferenceHelper.createReference(resourceType, globallyUniqueId);
+            Reference globallyUniqueReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, csvProcessor);
             references.add(globallyUniqueReference);
         }
 
@@ -473,8 +453,20 @@ public class EmisCsvHelper {
             list = new List_();
             list.setId(PROBLEM_LIST_ID);
             fhirProblem.getContained().add(list);
+        }
 
-            //add the reference to the list too
+        //add the extension, unless it's already there
+        boolean addExtension = true;
+        if (fhirProblem.hasExtension()) {
+            for (Extension extension: fhirProblem.getExtension()) {
+                if (extension.getUrl().equals(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE)) {
+                    addExtension = false;
+                    break;
+                }
+            }
+        }
+
+        if (addExtension) {
             Reference listReference = ReferenceHelper.createInternalReference(PROBLEM_LIST_ID);
             fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, listReference));
         }
@@ -503,58 +495,6 @@ public class EmisCsvHelper {
     }
 
 
-    /*private void addRelationshipsToNewProblem(Condition fhirProblem, List<ResourceRelationship> resourceRelationships) throws Exception {
-
-        for (ResourceRelationship resourceRelationship : resourceRelationships) {
-
-            String uniqueId = createUniqueId(resourceRelationship.getPatientGuid(), resourceRelationship.getDependentResourceGuid());
-            Reference reference = ReferenceHelper.findAndCreateReference(resourceRelationship.getDependentResourceType(), uniqueId);
-            fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, reference));
-        }
-    }
-
-    private void addRelationshipsToExistingProblem(Condition fhirCondition,
-                                                 List<ResourceRelationship> childResourceRelationships,
-                                                 CsvProcessor csvProcessor) throws Exception {
-
-        boolean changed = false;
-        String patientGuid = null;
-
-        for (ResourceRelationship childResourceRelationship : childResourceRelationships) {
-
-            //all the relationships have the same patientGuid, so it's safe to just keep reassigning this
-            patientGuid = childResourceRelationship.getPatientGuid();
-
-            String locallyUniqueId = createUniqueId(childResourceRelationship.getPatientGuid(), childResourceRelationship.getDependentResourceGuid());
-
-            String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
-                    csvProcessor.getSystemId(),
-                    ResourceType.Observation,
-                    locallyUniqueId);
-
-            Reference globallyUniqueReference = ReferenceHelper.findAndCreateReference(ResourceType.Observation, globallyUniqueId);
-
-            //check to see if this resource is already linked to the problem
-            boolean alreadyLinked = false;
-            for (Extension extension: fhirCondition.getExtension()) {
-                if (extension.getUrl().equals(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE)
-                        && extension.getValue().equalsShallow(globallyUniqueReference)) {
-                    alreadyLinked = true;
-                    break;
-                }
-            }
-
-            if (!alreadyLinked) {
-                fhirCondition.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, globallyUniqueReference));
-                changed = true;
-            }
-        }
-
-        if (changed) {
-            //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
-            csvProcessor.savePatientResource(false, patientGuid, fhirCondition);
-        }
-    }*/
 
     public void cacheDrugRecordDate(String drugRecordGuid, String patientGuid, DateTimeType dateTime) {
         String uniqueId = createUniqueId(patientGuid, drugRecordGuid);
@@ -880,33 +820,155 @@ public class EmisCsvHelper {
     }
 
     /**
-     * object to temporarily store relationships between resources, such as things linked to a problem
-     * or observations linked to a parent observation
+     * in some cases, we get a row in the CareRecord_Problem file but not in the CareRecord_Observation file,
+     * when something about the problem only has changed (e.g. ending a problem). This is called at the end
+     * of the transform to handle those changes to problems that weren't handled when we processed the Observation file.
      */
-    /*public class ResourceRelationship {
-        private String patientGuid = null;
-        private String dependentResourceGuid = null;
-        private ResourceType dependentResourceType = null;
+    public void processRemainingProblems(CsvProcessor csvProcessor) throws Exception {
 
-        public ResourceRelationship(String patientGuid, String dependentResourceGuid, ResourceType dependantResourceType) {
-            this.patientGuid = patientGuid;
-            this.dependentResourceGuid = dependentResourceGuid;
-            this.dependentResourceType = dependantResourceType;
+        for (String locallyUniqueId: problemMap.keySet()) {
+            Condition fhirProblem = problemMap.get(locallyUniqueId);
+
+            //if the resource has the Condition profile URI, then it means we have a pre-existing problem
+            //that's now been deleted from being a problem, but the root Obervation itself has not (i.e.
+            //the problem has been down-graded from being a problem to just an observation)
+            if (isCondition(fhirProblem)) {
+                downgradeExistingProblemToCondition(locallyUniqueId, csvProcessor);
+
+            } else {
+                updateExistingProblem(fhirProblem, csvProcessor);
+
+            }
+
+        }
+    }
+
+    /**
+     * updates an existing problem with new data we've received, when we didn't also get an update in the Observation file
+     */
+    private void updateExistingProblem(Condition updatedProblem, CsvProcessor csvProcessor) throws Exception {
+
+        String locallyUniqueId = updatedProblem.getId();
+
+        Condition existingProblem = null;
+        try {
+            existingProblem = (Condition)retrieveResource(locallyUniqueId, ResourceType.Condition, csvProcessor);
+        } catch (ResourceDeletedException|ResourceNotFoundException ex) {
+            //emis seem to send bulk data containing deleted records, so ignore any attempt to downgrade
+            //a problem that doesn't actually exist
+            return;
         }
 
-        public String getPatientGuid() {
-            return patientGuid;
+        //first remove all the problem extensions etc. from the existing resource
+        removeAllProblemSpecificFields(existingProblem);
+
+        //then carry over all the new data from the updated resource
+        if (updatedProblem.hasAbatement()) {
+            existingProblem.setAbatement(updatedProblem.getAbatement());
         }
 
-        public String getDependentResourceGuid() {
-            return dependentResourceGuid;
+        if (updatedProblem.hasExtension()) {
+            for (Extension extension: updatedProblem.getExtension()) {
+                updatedProblem.addExtension(extension);
+            }
         }
 
-        public ResourceType getDependentResourceType() {
-            return dependentResourceType;
-        }
-    }*/
+        if (updatedProblem.hasContained()) {
+            for (Resource contained: updatedProblem.getContained()) {
+                if (contained instanceof List_) {
 
+                    List<Reference> globalReferences = new ArrayList<>();
+
+                    List_ list = (List_)contained;
+                    for (List_.ListEntryComponent entry: list.getEntry()) {
+                        Reference previousReference = entry.getItem();
+
+                        //the references in our updated problem are only locally unique references, so we need
+                        //to manually convert them to globally unique ones, since we're saving an existing resource
+                        //that's already been ID mapped
+                        Reference globallyUniqueReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(previousReference, csvProcessor);
+                        globalReferences.add(globallyUniqueReference);
+                    }
+
+                    addLinkedItemsToProblem(existingProblem, globalReferences);
+                }
+            }
+        }
+
+        String patientId = getPatientGuidFromUniqueId(locallyUniqueId);
+        csvProcessor.savePatientResource(null, false, patientId, existingProblem);
+    }
+
+    /**
+     * down-grades an existing problem to a regular condition, by changing the profile URI and removing all
+     * the problem-specific data, leaving just the original condition
+     */
+    private void downgradeExistingProblemToCondition(String locallyUniqueId, CsvProcessor csvProcessor) throws Exception {
+
+        Condition existingProblem = null;
+        try {
+            existingProblem = (Condition)retrieveResource(locallyUniqueId, ResourceType.Condition, csvProcessor);
+        } catch (ResourceDeletedException|ResourceNotFoundException ex) {
+            //emis seem to send bulk data containing deleted records, so ignore any attempt to downgrade
+            //a problem that doesn't actually exist
+            return;
+        }
+
+        existingProblem.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_CONDITION));
+
+        removeAllProblemSpecificFields(existingProblem);
+
+        String patientId = getPatientGuidFromUniqueId(locallyUniqueId);
+        csvProcessor.savePatientResource(null, false, patientId, existingProblem);
+    }
+    private void removeAllProblemSpecificFields(Condition fhirProblem) {
+
+        if (fhirProblem.hasAbatement()) {
+            fhirProblem.setAbatement(null);
+        }
+
+        if (fhirProblem.hasExtension()) {
+            List<Extension> extensions = fhirProblem.getExtension();
+
+            //iterate backwards, so we can safely remove as we go
+            for (int i=extensions.size()-1; i>=0; i--) {
+                Extension extension = extensions.get(i);
+                String url = extension.getUrl();
+                if (url.equals(FhirExtensionUri.PROBLEM_EXPECTED_DURATION)
+                        || url.equals(FhirExtensionUri.PROBLEM_LAST_REVIEWED)
+                        || url.equals(FhirExtensionUri.PROBLEM_SIGNIFICANCE)
+                        || url.equals(FhirExtensionUri.PROBLEM_RELATED)
+                        || url.equals(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE)) {
+                    extensions.remove(i);
+                }
+            }
+        }
+
+        if (fhirProblem.hasContained()) {
+            for (Resource contained: fhirProblem.getContained()) {
+                if (contained.getId().equals(PROBLEM_LIST_ID)) {
+                    fhirProblem.getContained().remove(contained);
+                    break;
+                }
+            }
+        }
+    }
+
+    private static boolean isCondition(Condition condition) {
+
+        Meta meta = condition.getMeta();
+        for (UriType profileUri: meta.getProfile()) {
+            if (profileUri.getValue().equals(FhirUri.PROFILE_URI_CONDITION)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * temporary storage class for changes to the practitioners involved in a session
+     */
     public class SessionPractitioners {
         private List<String> emisUserGuidsToSave = new ArrayList<>();
         private List<String> emisUserGuidsToDelete = new ArrayList<>();
@@ -937,6 +999,9 @@ public class EmisCsvHelper {
         }
     }
 
+    /**
+     * temporary storage class for a CodeableConcept and Date
+     */
     public class DateAndCode {
         private DateTimeType date = null;
         private CodeableConcept codeableConcept = null;

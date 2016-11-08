@@ -4,8 +4,12 @@ import org.apache.jcs.JCS;
 import org.apache.jcs.access.exception.CacheException;
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
+import org.endeavourhealth.core.data.transform.models.ResourceIdMapByEdsId;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.common.idmappers.BaseIdMapper;
+import org.endeavourhealth.transform.fhir.ReferenceComponents;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
@@ -112,5 +116,29 @@ public class IdHelper {
         }
 
         return mapper.mapIds(resource, serviceId, systemId, mapResourceId);
+    }
+
+
+
+    public static Reference convertLocallyUniqueReferenceToEdsReference(Reference localReference, CsvProcessor csvProcessor) {
+        ReferenceComponents components = ReferenceHelper.getReferenceComponents(localReference);
+        String locallyUniqueId = components.getId();
+        ResourceType resourceType = components.getResourceType();
+
+        String globallyUniqueId = getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
+                csvProcessor.getSystemId(),
+                resourceType,
+                locallyUniqueId);
+
+        return ReferenceHelper.createReference(resourceType, globallyUniqueId);
+    }
+
+    public static Reference convertEdsReferenceToLocallyUniqueReference(Reference edsReference, CsvProcessor csvProcessor) {
+        ReferenceComponents components = ReferenceHelper.getReferenceComponents(edsReference);
+        ResourceType resourceType = components.getResourceType();
+        ResourceIdMapByEdsId mapping = repository.getResourceIdMapByEdsId(resourceType.toString(), components.getId());
+        String emisId = mapping.getSourceId();
+
+        return ReferenceHelper.createReference(resourceType, emisId);
     }
 }

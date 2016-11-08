@@ -113,20 +113,6 @@ public abstract class BaseIdMapper {
 
             //if the reference is to an internal contained resource, the above will return null
             if (comps != null) {
-
-                //validate that the resource the reference points to is valid and something we've encountered before
-                UUID existingEdsId = IdHelper.getEdsResourceId(serviceId, systemId, comps.getResourceType(), comps.getId());
-                if (existingEdsId == null) {
-                    //TODO - restore exception when EMIS data is fixed
-//                    LOG.error("Reference to unknown " + comps.getResourceType() + " " + comps.getId() + " from " + resource.getResourceType() + " " + resource.getId());
-                    /*throw new UnknownResourceException(comps.getResourceType(),
-                            comps.getId(),
-                            resource.getResourceType(),
-                            resource.getId(),
-                            serviceId,
-                            systemId);*/
-                }
-
                 String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, comps.getResourceType(), comps.getId());
                 reference.setReference(ReferenceHelper.createResourceReference(comps.getResourceType(), newId));
             }

@@ -486,7 +486,7 @@ public class SftpTask extends TimerTask
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build())
         {
             HttpPost httpPost = new HttpPost(dbConfiguration.getDbConfigurationEds().getEdsUrl());
-            LOG.trace("Performing POST to {}", dbConfiguration.getDbConfigurationEds().getEdsUrl());
+            //LOG.trace("Performing POST to {}", dbConfiguration.getDbConfigurationEds().getEdsUrl());
 
             if (dbConfiguration.getDbConfigurationEds().isUseKeycloak()) {
                 Header keycloakHeader = KeycloakClient.instance().getAuthorizationHeader();
@@ -497,7 +497,7 @@ public class SftpTask extends TimerTask
             //the bundle is being sent as XML, so we need to declare this
             httpPost.addHeader("Content-Type", "text/xml");
             httpPost.setEntity(new ByteArrayEntity(outboundMessage.getBytes()));
-            LOG.trace("Set payload to {} bytes", outboundMessage.getBytes().length);
+            //LOG.trace("Set payload to {} bytes", outboundMessage.getBytes().length);
             HttpResponse response = httpClient.execute(httpPost);
 
             int statusCode = response.getStatusLine().getStatusCode();
@@ -513,7 +513,11 @@ public class SftpTask extends TimerTask
                     BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(instream, "UTF-8"));
                     String line = bufferedReader.readLine();
                     while (line != null){
-                        LOG.trace(line);
+
+                        if (statusCode != HttpStatus.SC_OK) {
+                            LOG.info(line);
+                        }
+
                         line = bufferedReader.readLine();
                         lines.add(line);
                     }

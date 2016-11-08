@@ -685,15 +685,20 @@ public abstract class EmisCsvTransformer {
         //then we need to retrieve the existing resources and update them
         csvHelper.processRemainingObservationParentChildLinks(csvProcessor);
 
-        //if we have any new Obs etc. that refer to pre-existing problems, we need to update the existing FHIR problem
+        //if we have any new Obs etc. that refer to pre-existing problems, we need to update the existing FHIR Problem
         csvHelper.processRemainingProblemRelationships(csvProcessor);
 
         //if we have any changes to the staff in pre-existing sessions, we need to update the existing FHIR Schedules
         csvHelper.processRemainingSessionPractitioners(csvProcessor);
 
+        //process any changes to ethnicity or marital status, without a change to the Patient
         csvHelper.processRemainingEthnicitiesAndMartialStatuses(csvProcessor);
 
+        //process any changes to Org-Location links without a change to the Location itself
         csvHelper.processRemainingOrganisationLocationMappings(csvProcessor);
+
+        //process any changes to Problems that didn't have an associated Observation change too
+        csvHelper.processRemainingProblems(csvProcessor);
     }
 
 

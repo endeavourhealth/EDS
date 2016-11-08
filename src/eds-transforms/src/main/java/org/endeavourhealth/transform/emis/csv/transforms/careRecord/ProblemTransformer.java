@@ -3,15 +3,18 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
-import org.endeavourhealth.core.data.transform.models.ResourceIdMapByEdsId;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem;
-import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.transform.fhir.ExtensionConverter;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.schema.ProblemRelationshipType;
 import org.endeavourhealth.transform.fhir.schema.ProblemSignificance;
 import org.hl7.fhir.instance.model.*;
@@ -60,6 +63,12 @@ public class ProblemTransformer {
         //the deleted fields isn't present in the test pack, so need to check the version first
         if (!version.equals(EmisCsvTransformer.VERSION_TEST_PACK)
             && parser.getDeleted()) {
+
+            //if we have a row in the Problem file that's deleted but the row in the Observation file
+            //isn't being deleted, then the Problem needs to be down-graded to just a Condition, so set
+            //the profile URI accordingly
+            fhirProblem.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_CONDITION));
+
             //the problem is actually saved in the ObservationTransformer, so just cache for later
             csvHelper.cacheProblem(observationGuid, patientGuid, fhirProblem);
             return;
@@ -80,8 +89,6 @@ public class ProblemTransformer {
                 fhirProblem.setAbatement(new BooleanType(true));
             }
         }
-
-        fhirProblem.setVerificationStatus(Condition.ConditionVerificationStatus.CONFIRMED);
 
         Integer expectedDuration = parser.getExpectedDuration();
         if (expectedDuration != null) {
@@ -155,12 +162,7 @@ public class ProblemTransformer {
 
                             //the reference we have has already been mapped to an EDS ID, so we need to un-map it
                             //back to the source ID, so the ID mapper can safely map it when we save the resource
-                            ReferenceComponents components = ReferenceHelper.getReferenceComponents(previousReference);
-                            ResourceType resourceType = components.getResourceType();
-                            ResourceIdMapByEdsId mapping = repository.getResourceIdMapByEdsId(resourceType.toString(), components.getId());
-                            String emisId = mapping.getSourceId();
-
-                            Reference unmappedReference = ReferenceHelper.createReference(resourceType, emisId);
+                            Reference unmappedReference = IdHelper.convertEdsReferenceToLocallyUniqueReference(previousReference, csvProcessor);
                             ret.add(unmappedReference);
                         }
                     }
