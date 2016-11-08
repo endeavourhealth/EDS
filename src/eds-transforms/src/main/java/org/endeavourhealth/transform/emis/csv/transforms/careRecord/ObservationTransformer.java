@@ -724,10 +724,10 @@ public class ObservationTransformer {
         String effectiveDatePrecision = parser.getEffectiveDatePrecision();
         fhirReport.setEffective(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
-        List<Reference> childObservations = csvHelper.getAndRemoveObservationParentRelationships(observationGuid, patientGuid);
+        List<String> childObservations = csvHelper.getAndRemoveObservationParentRelationships(observationGuid, patientGuid);
         if (childObservations != null) {
-            for (Reference reference : childObservations) {
-
+            List<Reference> references = ReferenceHelper.createReferences(childObservations);
+            for (Reference reference : references) {
                 fhirReport.getResult().add(reference);
             }
         }
@@ -964,10 +964,10 @@ public class ObservationTransformer {
             fhirObservation.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
 
-        List<Reference> childObservations = csvHelper.getAndRemoveObservationParentRelationships(observationGuid, patientGuid);
+        List<String> childObservations = csvHelper.getAndRemoveObservationParentRelationships(observationGuid, patientGuid);
         if (childObservations != null) {
-            for (Reference reference : childObservations) {
-
+            List<Reference> references = ReferenceHelper.createReferences(childObservations);
+            for (Reference reference : references) {
                 org.hl7.fhir.instance.model.Observation.ObservationRelatedComponent fhirRelation = fhirObservation.addRelated();
                 fhirRelation.setType(org.hl7.fhir.instance.model.Observation.ObservationRelationshipType.HASMEMBER);
                 fhirRelation.setTarget(reference);
@@ -986,14 +986,6 @@ public class ObservationTransformer {
         addRecordedByExtension(fhirObservation, parser, csvHelper);
         addRecordedDateExtension(fhirObservation, parser);
         addDocumentExtension(fhirObservation, parser);
-
-        //if this record is linked to a problem, store this relationship in the helper
-/*
-        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
-                patientGuid,
-                observationGuid,
-                fhirObservation.getResourceType());
-*/
 
         csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirObservation);
     }

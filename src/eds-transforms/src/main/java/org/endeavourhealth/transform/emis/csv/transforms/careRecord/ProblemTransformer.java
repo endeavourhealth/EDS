@@ -11,10 +11,7 @@ import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem;
-import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.ProblemRelationshipType;
 import org.endeavourhealth.transform.fhir.schema.ProblemSignificance;
 import org.hl7.fhir.instance.model.*;
@@ -136,9 +133,10 @@ public class ProblemTransformer {
         }
 
         //apply any linked items from this extract
-        List<Reference> linkedResources = csvHelper.getAndRemoveProblemRelationships(observationGuid, patientGuid);
+        List<String> linkedResources = csvHelper.getAndRemoveProblemRelationships(observationGuid, patientGuid);
         if (linkedResources != null) {
-            csvHelper.addLinkedItemsToProblem(fhirProblem, linkedResources);
+            List<Reference> references = ReferenceHelper.createReferences(linkedResources);
+            csvHelper.addLinkedItemsToProblem(fhirProblem, references);
         }
 
         //the problem is actually saved in the ObservationTransformer, so just cache for later

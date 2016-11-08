@@ -6,6 +6,7 @@ import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.ResourceType;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ReferenceHelper {
@@ -22,12 +23,24 @@ public class ReferenceHelper {
         if (StringUtils.isBlank(id))
             throw new IllegalArgumentException("Blank id when creating reference for " + resourceType.toString());
 
-        return new Reference().setReference(createResourceReference(resourceType, id));
+        return createReference(createResourceReference(resourceType, id));
     }
 
     public static Reference createInternalReference(String id)
     {
-        return new Reference().setReference(INTERNAL_REFERENCE_PREFIX + id);
+        return createReference(INTERNAL_REFERENCE_PREFIX + id);
+    }
+
+    public static Reference createReference(String referenceValue) {
+        return new Reference().setReference(referenceValue);
+    }
+
+    public static List<Reference> createReferences(List<String> referenceValues) {
+        List<Reference> ret = new ArrayList<>();
+        for (String referenceValue: referenceValues) {
+            ret.add(createReference(referenceValue));
+        }
+        return ret;
     }
 
 

@@ -40,8 +40,8 @@ public class EmisCsvHelper {
     //some resources are referred to by others, so we cache them here for when we need them
     private Map<String, Condition> problemMap = new HashMap<>();
     private Map<String, ReferralRequest> referralMap = new HashMap<>();
-    private Map<String, List<Reference>> observationChildMap = new HashMap<>();
-    private Map<String, List<Reference>> problemChildMap = new HashMap<>();
+    private Map<String, List<String>> observationChildMap = new HashMap<>();
+    private Map<String, List<String>> problemChildMap = new HashMap<>();
     private Map<String, DateTimeType> issueRecordDateMap = new HashMap<>();
     private Map<String, List<Observation.ObservationComponentComponent>> bpComponentMap = new HashMap<>();
     private Map<String, SessionPractitioners> sessionPractitionerMap = new HashMap<>();
@@ -262,7 +262,7 @@ public class EmisCsvHelper {
         return problemMap.remove(createUniqueId(patientGuid, observationGuid));
     }
 
-    public List<Reference> getAndRemoveObservationParentRelationships(String parentObservationGuid, String patientGuid) {
+    public List<String> getAndRemoveObservationParentRelationships(String parentObservationGuid, String patientGuid) {
         return observationChildMap.remove(createUniqueId(patientGuid, parentObservationGuid));
     }
 
@@ -272,12 +272,12 @@ public class EmisCsvHelper {
 
     public void cacheObservationParentRelationship(String parentObservationGuid, String patientGuid, String observationGuid) {
 
-        List<Reference> list = observationChildMap.get(createUniqueId(patientGuid, parentObservationGuid));
+        List<String> list = observationChildMap.get(createUniqueId(patientGuid, parentObservationGuid));
         if (list == null) {
             list = new ArrayList<>();
             observationChildMap.put(createUniqueId(patientGuid, parentObservationGuid), list);
         }
-        list.add(ReferenceHelper.createReference(ResourceType.Observation, createUniqueId(patientGuid, observationGuid)));
+        list.add(ReferenceHelper.createResourceReference(ResourceType.Observation, createUniqueId(patientGuid, observationGuid)));
     }
 
 
@@ -312,7 +312,7 @@ public class EmisCsvHelper {
     public void processRemainingObservationParentChildLinks(CsvProcessor csvProcessor) throws Exception {
 
         for (String locallyUniqueId : observationChildMap.keySet()) {
-            List<Reference> childObservationIds = observationChildMap.get(locallyUniqueId);
+            List<String> childObservationIds = observationChildMap.get(locallyUniqueId);
 
             updateExistingObservationWithNewChildLinks(locallyUniqueId, childObservationIds, csvProcessor);
         }
@@ -320,7 +320,7 @@ public class EmisCsvHelper {
 
 
     private void updateExistingObservationWithNewChildLinks(String locallyUniqueObservationId,
-                                                            List<Reference> childResourceRelationships,
+                                                            List<String> childResourceRelationships,
                                                             CsvProcessor csvProcessor) throws Exception {
 
         Observation fhirObservation;
@@ -337,8 +337,9 @@ public class EmisCsvHelper {
 
         boolean changed = false;
 
-        for (Reference reference : childResourceRelationships) {
+        for (String referenceValue : childResourceRelationships) {
 
+            Reference reference = ReferenceHelper.createReference(referenceValue);
             Reference globallyUniqueReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, csvProcessor);
 
             //check if the parent observation doesn't already have our ob linked to it
@@ -366,7 +367,7 @@ public class EmisCsvHelper {
         }
     }
 
-    public List<Reference> getAndRemoveProblemRelationships(String problemGuid, String patientGuid) {
+    public List<String> getAndRemoveProblemRelationships(String problemGuid, String patientGuid) {
         return problemChildMap.remove(createUniqueId(patientGuid, problemGuid));
     }
 
@@ -379,12 +380,12 @@ public class EmisCsvHelper {
             return;
         }
 
-        List<Reference> list = problemChildMap.get(createUniqueId(patientGuid, problemObservationGuid));
+        List<String> list = problemChildMap.get(createUniqueId(patientGuid, problemObservationGuid));
         if (list == null) {
             list = new ArrayList<>();
             problemChildMap.put(createUniqueId(patientGuid, problemObservationGuid), list);
         }
-        list.add(ReferenceHelper.createReference(resourceType, createUniqueId(patientGuid, resourceGuid)));
+        list.add(ReferenceHelper.createResourceReference(resourceType, createUniqueId(patientGuid, resourceGuid)));
     }
 
     /**
@@ -394,14 +395,14 @@ public class EmisCsvHelper {
     public void processRemainingProblemRelationships(CsvProcessor csvProcessor) throws Exception {
 
         for (String problemLocallyUniqueId : problemChildMap.keySet()) {
-            List<Reference> childResourceRelationships = problemChildMap.get(problemLocallyUniqueId);
+            List<String> childResourceRelationships = problemChildMap.get(problemLocallyUniqueId);
 
             addRelationshipsToExistingProblem(problemLocallyUniqueId, childResourceRelationships, csvProcessor);
         }
     }
 
     private void addRelationshipsToExistingProblem(String problemLocallyUniqueId,
-                                                   List<Reference> childResourceRelationships,
+                                                   List<String> childResourceRelationships,
                                                    CsvProcessor csvProcessor) throws Exception {
 
         Condition fhirProblem;
@@ -418,8 +419,8 @@ public class EmisCsvHelper {
         //since our resource
         List<Reference> references = new ArrayList<>();
 
-        for (Reference reference : childResourceRelationships) {
-
+        for (String referenceValue : childResourceRelationships) {
+            Reference reference = ReferenceHelper.createReference(referenceValue);
             Reference globallyUniqueReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, csvProcessor);
             references.add(globallyUniqueReference);
         }
