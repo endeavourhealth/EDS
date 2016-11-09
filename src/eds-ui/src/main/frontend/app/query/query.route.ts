@@ -17,7 +17,7 @@ export class QueryRoute {
 					url: '/query',
 					template: require('./query.html'),
 					controller: 'QueryController',
-					controllerAs: 'query'
+					controllerAs: 'ctrl'
 				}
 			},
 			{
@@ -26,7 +26,7 @@ export class QueryRoute {
 					url: '/query/:itemUuid/:itemAction',
 					template: require('./query.html'),
 					controller: 'QueryController',
-					controllerAs: 'query'
+					controllerAs: 'ctrl'
 				}
 			}
 		];
