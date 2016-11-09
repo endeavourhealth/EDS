@@ -12,6 +12,7 @@ export class FlowChartDirective implements ng.IDirective {
 						chart: "=chart",
 					},
 					controller: 'FlowChartController',
+					controllerAs : 'ctrl'
 				};
 			}
 		}

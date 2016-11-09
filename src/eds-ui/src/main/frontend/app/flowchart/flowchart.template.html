@@ -2,7 +2,7 @@
         class="chart-container"
         xmlns="http://www.w3.org/2000/svg"
         ng-mousedown="mouseDown($event)"
-        ng-mousemove="mouseMove($event)">
+        ng-mousemove="ctrl.mouseMove($event)">
     <defs>
         <linearGradient spreadMethod="pad" y2="0" x2="0" y1="1" x1="0" id="ruleBackgroundGradient">
             <stop
@@ -30,7 +30,7 @@
     </defs>
     <g
             ng-repeat="rule in chart.rule"
-            ng-mousedown="ruleMouseDown($event, rule)"
+            ng-mousedown="ctrl.ruleMouseDown($event, rule)"
             ng-attr-transform="translate({{rule.x()}}, {{rule.y()}})">
 
         <circle ng-if="rule.description()=='START'"
@@ -101,7 +101,7 @@
             QUERY
         </text>
 
-        <text ng-click="editTest($event, rule)"
+        <text ng-click="ctrl.editTest($event, rule)"
               ng-if="rule.description()!='START' && rule.description().length<=30"
               class="rule-text"
               ng-attr-x="{{rule.width()/2}}"
@@ -112,30 +112,30 @@
             <title>{{rule.extendedDescription()}}</title>
         </text>
 
-        <text ng-click="editTest($event, rule)"
+        <text ng-click="ctrl.editTest($event, rule)"
               ng-if="rule.description()!='START' && rule.description().length>30"
               class="rule-text"
               ng-attr-x="{{rule.width()/2}}"
               y="50"
               text-anchor="middle"
               alignment-baseline="middle">
-            {{firstString(rule.description(), 30)}}
+            {{ctrl.firstString(rule.description(), 30)}}
             <title>{{rule.extendedDescription()}}</title>
         </text>
 
-        <text ng-click="editTest($event, rule)"
+        <text ng-click="ctrl.editTest($event, rule)"
               ng-if="rule.description()!='START' && rule.description().length>30"
               class="rule-text"
               ng-attr-x="{{rule.width()/2}}"
               y="70"
               text-anchor="middle"
               alignment-baseline="middle">
-            {{secondString(rule.description(), 30)}}
+            {{ctrl.secondString(rule.description(), 30)}}
             <title>{{rule.extendedDescription()}}</title>
         </text>
 
         <g ng-if="rule.description()!='START'"
-           ng-mouseup="connectorMouseUp($event, rule, 0, 0, true)"
+           ng-mouseup="ctrl.connectorMouseUp($event, rule, 0, 0, true)"
            class="connector input-connector">
 
             <circle
@@ -147,7 +147,7 @@
         </g>
 
         <g
-                ng-mousedown="connectorMouseDown($event, rule, 1, 0, false)"
+                ng-mousedown="ctrl.connectorMouseDown($event, rule, 1, 0, false)"
                 class="connector output-connector">
             <text ng-if="rule.description()!='START'"
                   class="connector-text-out-pass"
@@ -193,7 +193,7 @@
             </text>
         </g>
         <g
-                ng-mousedown="connectorMouseDown($event, rule, 2, 1, false)"
+                ng-mousedown="ctrl.connectorMouseDown($event, rule, 2, 1, false)"
                 class="connector output-connector">
             <text ng-if="rule.description()!='START'"
                   class="connector-text-out-fail"
@@ -238,22 +238,22 @@
         <g ng-repeat="rule in chart.rule" class="connection">
             <g ng-repeat="startingrules in chart.startingRules">
                 <path ng-if="rule.description()=='START' &&
-                            rule.y() > findDestRuleY(startingrules.ruleId())"
+                            rule.y() > ctrl.findDestRuleY(startingrules.ruleId())"
                       class="connection-line"
                       ng-attr-d="M {{rule.x()+250}}, {{rule.y()+30}}
-                     L {{findDestRuleX(startingrules.ruleId())-35}}, {{rule.y()+30}},
-                     {{findDestRuleX(startingrules.ruleId())-35}}, {{findDestRuleY(startingrules.ruleId())+50}},
-                     {{findDestRuleX(startingrules.ruleId())-20}}, {{findDestRuleY(startingrules.ruleId())+50}}"
+                     L {{ctrl.findDestRuleX(startingrules.ruleId())-35}}, {{rule.y()+30}},
+                     {{ctrl.findDestRuleX(startingrules.ruleId())-35}}, {{ctrl.findDestRuleY(startingrules.ruleId())+50}},
+                     {{ctrl.findDestRuleX(startingrules.ruleId())-20}}, {{ctrl.findDestRuleY(startingrules.ruleId())+50}}"
                       style="marker-end: url(#markerArrow);">
                 </path>
 
                 <path ng-if="rule.description()=='START' &&
-                            rule.y() < findDestRuleY(startingrules.ruleId())"
+                            rule.y() < ctrl.findDestRuleY(startingrules.ruleId())"
                       class="connection-line"
                       ng-attr-d="M {{rule.x()+250}}, {{rule.y()+30}}
-                     L {{findDestRuleX(startingrules.ruleId())-35}}, {{rule.y()+30}},
-                     {{findDestRuleX(startingrules.ruleId())-35}}, {{findDestRuleY(startingrules.ruleId())+50}},
-                     {{findDestRuleX(startingrules.ruleId())-20}}, {{findDestRuleY(startingrules.ruleId())+50}}"
+                     L {{ctrl.findDestRuleX(startingrules.ruleId())-35}}, {{rule.y()+30}},
+                     {{ctrl.findDestRuleX(startingrules.ruleId())-35}}, {{ctrl.findDestRuleY(startingrules.ruleId())+50}},
+                     {{ctrl.findDestRuleX(startingrules.ruleId())-20}}, {{ctrl.findDestRuleY(startingrules.ruleId())+50}}"
                       style="marker-end: url(#markerArrow);">
                 </path>
 
@@ -267,55 +267,55 @@
                 <circle
                         class="connection-endpoint"
                         r="5"
-                        ng-attr-cx="{{findDestRuleX(startingrules.ruleId())}}"
-                        ng-attr-cy="{{findDestRuleY(startingrules.ruleId())+50}}">
+                        ng-attr-cx="{{ctrl.findDestRuleX(startingrules.ruleId())}}"
+                        ng-attr-cy="{{ctrl.findDestRuleY(startingrules.ruleId())+50}}">
                 </circle>
 
                 <g>
 
                     <g ng-repeat="nextrule in rule.onPassRuleId()">
 
-                        <path ng-if="rule.x()+300 > findDestRuleX(nextrule) &&
-              rule.y() > findDestRuleY(nextrule) && nextrule>0"
+                        <path ng-if="rule.x()+300 > ctrl.findDestRuleX(nextrule) &&
+              rule.y() > ctrl.findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
                               ng-attr-d="M {{rule.x()+250}}, {{rule.y()+30}}
                          L {{rule.x()+280}}, {{rule.y()+30}},
                          {{rule.x()+280}}, {{rule.y()-30}},
-                         {{findDestRuleX(nextrule)-40}}, {{rule.y()-30}},
-                         {{findDestRuleX(nextrule)-40}}, {{findDestRuleY(nextrule)+50}}
-                         {{findDestRuleX(nextrule)-20}}, {{findDestRuleY(nextrule)+50}}"
+                         {{ctrl.findDestRuleX(nextrule)-40}}, {{rule.y()-30}},
+                         {{ctrl.findDestRuleX(nextrule)-40}}, {{ctrl.findDestRuleY(nextrule)+50}}
+                         {{ctrl.findDestRuleX(nextrule)-20}}, {{ctrl.findDestRuleY(nextrule)+50}}"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
-                        <path ng-if="rule.x()+335 > findDestRuleX(nextrule) &&
-              rule.y() < findDestRuleY(nextrule) && nextrule>0"
+                        <path ng-if="rule.x()+335 > ctrl.findDestRuleX(nextrule) &&
+              rule.y() < ctrl.findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
                               ng-attr-d="M {{rule.x()+250}}, {{rule.y()+30}}
                        L {{rule.x()+315}}, {{rule.y()+30}},
                        {{rule.x()+315}}, {{rule.y()+145}},
-                       {{findDestRuleX(nextrule)-40}}, {{rule.y()+145}},
-                       {{findDestRuleX(nextrule)-40}}, {{findDestRuleY(nextrule)+50}}
-                       {{findDestRuleX(nextrule)-20}}, {{findDestRuleY(nextrule)+50}}"
+                       {{ctrl.findDestRuleX(nextrule)-40}}, {{rule.y()+145}},
+                       {{ctrl.findDestRuleX(nextrule)-40}}, {{ctrl.findDestRuleY(nextrule)+50}}
+                       {{ctrl.findDestRuleX(nextrule)-20}}, {{ctrl.findDestRuleY(nextrule)+50}}"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
-                        <path ng-if="rule.x()+300 < findDestRuleX(nextrule) &&
-              rule.y() > findDestRuleY(nextrule) && nextrule>0"
+                        <path ng-if="rule.x()+300 < ctrl.findDestRuleX(nextrule) &&
+              rule.y() > ctrl.findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
                               ng-attr-d="M {{rule.x()+250}}, {{rule.y()+30}}
-                         L {{findDestRuleX(nextrule)-50}}, {{rule.y()+30}},
-                         {{findDestRuleX(nextrule)-50}}, {{findDestRuleY(nextrule)+50}},
-                         {{findDestRuleX(nextrule)-20}}, {{findDestRuleY(nextrule)+50}}"
+                         L {{ctrl.findDestRuleX(nextrule)-50}}, {{rule.y()+30}},
+                         {{ctrl.findDestRuleX(nextrule)-50}}, {{ctrl.findDestRuleY(nextrule)+50}},
+                         {{ctrl.findDestRuleX(nextrule)-20}}, {{ctrl.findDestRuleY(nextrule)+50}}"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
-                        <path ng-if="rule.x()+335 < findDestRuleX(nextrule) &&
-              rule.y() < findDestRuleY(nextrule) && nextrule>0"
+                        <path ng-if="rule.x()+335 < ctrl.findDestRuleX(nextrule) &&
+              rule.y() < ctrl.findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
                               ng-attr-d="M {{rule.x()+250}}, {{rule.y()+30}}
-                         L {{findDestRuleX(nextrule)-35}}, {{rule.y()+30}},
-                         {{findDestRuleX(nextrule)-35}}, {{findDestRuleY(nextrule)+50}},
-                         {{findDestRuleX(nextrule)-20}}, {{findDestRuleY(nextrule)+50}}"
+                         L {{ctrl.findDestRuleX(nextrule)-35}}, {{rule.y()+30}},
+                         {{ctrl.findDestRuleX(nextrule)-35}}, {{ctrl.findDestRuleY(nextrule)+50}},
+                         {{ctrl.findDestRuleX(nextrule)-20}}, {{ctrl.findDestRuleY(nextrule)+50}}"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
@@ -329,54 +329,54 @@
                         <circle ng-if="nextrule>0"
                                 class="connection-endpoint"
                                 r="5"
-                                ng-attr-cx="{{findDestRuleX(nextrule)}}"
-                                ng-attr-cy="{{findDestRuleY(nextrule)+50}}">
+                                ng-attr-cx="{{ctrl.findDestRuleX(nextrule)}}"
+                                ng-attr-cy="{{ctrl.findDestRuleY(nextrule)+50}}">
                         </circle>
 
                     </g>
                     <g ng-repeat="nextrule in rule.onFailRuleId()">
 
-                        <path ng-if="rule.x()+335 > findDestRuleX(nextrule) &&
-          rule.y() > findDestRuleY(nextrule) && nextrule>0"
+                        <path ng-if="rule.x()+335 > ctrl.findDestRuleX(nextrule) &&
+          rule.y() > ctrl.findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
                               ng-attr-d="M {{rule.x()+250}}, {{rule.y()+85}}
                    L {{rule.x()+315}}, {{rule.y()+85}},
                    {{rule.x()+315}}, {{rule.y()-45}},
-                   {{findDestRuleX(nextrule)-50}}, {{rule.y()-45}},
-                   {{findDestRuleX(nextrule)-50}}, {{findDestRuleY(nextrule)+50}}
-                   {{findDestRuleX(nextrule)-20}}, {{findDestRuleY(nextrule)+50}}"
+                   {{ctrl.findDestRuleX(nextrule)-50}}, {{rule.y()-45}},
+                   {{ctrl.findDestRuleX(nextrule)-50}}, {{ctrl.findDestRuleY(nextrule)+50}}
+                   {{ctrl.findDestRuleX(nextrule)-20}}, {{ctrl.findDestRuleY(nextrule)+50}}"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
-                        <path ng-if="rule.x()+300 > findDestRuleX(nextrule) &&
-          rule.y() < findDestRuleY(nextrule) && nextrule>0"
+                        <path ng-if="rule.x()+300 > ctrl.findDestRuleX(nextrule) &&
+          rule.y() < ctrl.findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
                               ng-attr-d="M {{rule.x()+250}}, {{rule.y()+85}}
                      L {{rule.x()+280}}, {{rule.y()+85}},
                      {{rule.x()+280}}, {{rule.y()+130}},
-                     {{findDestRuleX(nextrule)-50}}, {{rule.y()+130}},
-                     {{findDestRuleX(nextrule)-50}}, {{findDestRuleY(nextrule)+50}}
-                     {{findDestRuleX(nextrule)-20}}, {{findDestRuleY(nextrule)+50}}"
+                     {{ctrl.findDestRuleX(nextrule)-50}}, {{rule.y()+130}},
+                     {{ctrl.findDestRuleX(nextrule)-50}}, {{ctrl.findDestRuleY(nextrule)+50}}
+                     {{ctrl.findDestRuleX(nextrule)-20}}, {{ctrl.findDestRuleY(nextrule)+50}}"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
-                        <path ng-if="rule.x()+335 < findDestRuleX(nextrule) &&
-          rule.y() > findDestRuleY(nextrule) && nextrule>0"
+                        <path ng-if="rule.x()+335 < ctrl.findDestRuleX(nextrule) &&
+          rule.y() > ctrl.findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
                               ng-attr-d="M {{rule.x()+250}}, {{rule.y()+85}}
-                     L {{findDestRuleX(nextrule)-35}}, {{rule.y()+85}},
-                     {{findDestRuleX(nextrule)-35}}, {{findDestRuleY(nextrule)+50}},
-                     {{findDestRuleX(nextrule)-20}}, {{findDestRuleY(nextrule)+50}}"
+                     L {{ctrl.findDestRuleX(nextrule)-35}}, {{rule.y()+85}},
+                     {{ctrl.findDestRuleX(nextrule)-35}}, {{ctrl.findDestRuleY(nextrule)+50}},
+                     {{ctrl.findDestRuleX(nextrule)-20}}, {{ctrl.findDestRuleY(nextrule)+50}}"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
-                        <path ng-if="rule.x()+300 < findDestRuleX(nextrule) &&
-          rule.y() < findDestRuleY(nextrule) && nextrule>0"
+                        <path ng-if="rule.x()+300 < ctrl.findDestRuleX(nextrule) &&
+          rule.y() < ctrl.findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
                               ng-attr-d="M {{rule.x()+250}}, {{rule.y()+85}}
-                     L {{findDestRuleX(nextrule)-50}}, {{rule.y()+85}},
-                     {{findDestRuleX(nextrule)-50}}, {{findDestRuleY(nextrule)+50}},
-                     {{findDestRuleX(nextrule)-20}}, {{findDestRuleY(nextrule)+50}}"
+                     L {{ctrl.findDestRuleX(nextrule)-50}}, {{rule.y()+85}},
+                     {{ctrl.findDestRuleX(nextrule)-50}}, {{ctrl.findDestRuleY(nextrule)+50}},
+                     {{ctrl.findDestRuleX(nextrule)-20}}, {{ctrl.findDestRuleY(nextrule)+50}}"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
@@ -390,8 +390,8 @@
                         <circle ng-if="nextrule>0"
                                 class="connection-endpoint"
                                 r="5"
-                                ng-attr-cx="{{findDestRuleX(nextrule)}}"
-                                ng-attr-cy="{{findDestRuleY(nextrule)+50}}">
+                                ng-attr-cx="{{ctrl.findDestRuleX(nextrule)}}"
+                                ng-attr-cy="{{ctrl.findDestRuleY(nextrule)+50}}">
                         </circle>
                     </g>
                 </g>
