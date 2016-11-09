@@ -4,23 +4,24 @@ import {SvgHelper, SvgElement} from "../blocks/svg.helper";
 export class FlowChartController {
 	static $inject = ['$scope', 'dragging', '$element']
 	private ruleClass;
+	private destRuleId : number;
+	private draggingConnection : boolean;
+	private connectorSize : number;
+	private mouseOverRule : any;
 
 	constructor(private $scope: any, private dragging: any, private $element: any) {
 
-		var controller = this;
-
-		$scope.destRuleId = 0;
+		this.destRuleId = 0;
 		//
 		// Init data-model variables.
 		//
-		$scope.draggingConnection = false;
-		$scope.connectorSize = 10;
+		this.draggingConnection = false;
+		this.connectorSize = 10;
 
 		//
 		// Reference to the connection, connector or rule that the mouse is currently over.
 		//
-		$scope.mouseOverConnection = null;
-		$scope.mouseOverRule = null;
+		this.mouseOverRule = null;
 
 		this.ruleClass = 'rule';
 
@@ -114,8 +115,7 @@ export class FlowChartController {
 		//
 		// Clear out all cached mouse over elements.
 		//
-		this.$scope.mouseOverConnection = null;
-		this.$scope.mouseOverRule = null;
+		this.mouseOverRule = null;
 
 		var mouseOverElement = this.hitTest(evt.clientX, evt.clientY);
 		if (mouseOverElement == null) {
@@ -125,7 +125,7 @@ export class FlowChartController {
 
 		// Figure out if the mouse is over a rule.
 		var scope: any = this.checkForHit(mouseOverElement, this.ruleClass);
-		this.$scope.mouseOverRule = (scope && scope.rule) ? scope.rule : null;
+		this.mouseOverRule = (scope && scope.rule) ? scope.rule : null;
 	}
 
 	// Handle mousedown on a rule.
@@ -187,7 +187,7 @@ export class FlowChartController {
 	};
 
 	connectorMouseUp(evt, rule, connector, connectorIndex, isInputConnector) {
-		this.$scope.destRuleId = rule.id();
+		this.destRuleId = rule.id();
 	}
 
 	// Handle mousedown on an input connector.
@@ -206,7 +206,7 @@ export class FlowChartController {
 
 				var curCoords = vm.translateCoordinates(x, y);
 
-				vm.$scope.draggingConnection = true;
+				vm.draggingConnection = true;
 				vm.$scope.dragPoint1 = flowchart.computeConnectorPos(rule, connectorIndex, isInputConnector);
 				vm.$scope.dragPoint2 = {
 					x: curCoords.x,
@@ -232,7 +232,7 @@ export class FlowChartController {
 			dragEnded: function () {
 
 				var sourceRuleId = rule.id();
-				var destRuleId = vm.$scope.destRuleId;
+				var destRuleId = vm.destRuleId;
 
 				if (destRuleId > 0) {
 
@@ -248,10 +248,10 @@ export class FlowChartController {
 					else if (connectorIndex == 1) {
 						vm.$scope.$emit('ruleFailAction', 'GOTO_RULES');
 					}
-					vm.$scope.destRuleId = 0;
+					vm.destRuleId = 0;
 				}
 
-				vm.$scope.draggingConnection = false;
+				vm.draggingConnection = false;
 				delete vm.$scope.dragPoint1;
 				delete vm.$scope.dragPoint2;
 			}

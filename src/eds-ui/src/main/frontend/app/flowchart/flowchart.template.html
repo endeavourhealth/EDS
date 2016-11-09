@@ -35,13 +35,13 @@
 
         <circle ng-if="rule.description()=='START'"
                 ng-attr-class="{{rule.selected() && 'selected-rule-start'
-                || (rule == mouseOverRule && 'mouseover-rule-start' || 'rule-start')}}"
+                || (rule == ctrl.mouseOverRule && 'mouseover-rule-start' || 'rule-start')}}"
                 r="40" cx="212" cy="30"
                 fill="url(#startRuleBackgroundGradient)"/>
 
         <rect ng-if="rule.description()!='START' && !rule.expression() && !rule.queryLibraryItemUUID()"
               ng-attr-class="{{rule.selected() && 'selected-rule-rect'
-                      || (rule == mouseOverRule && 'mouseover-rule-rect' || 'rule-rect')}}"
+                      || (rule == ctrl.mouseOverRule && 'mouseover-rule-rect' || 'rule-rect')}}"
               ry="10" rx="10" x="0" y="0"
               ng-attr-width="{{rule.width()}}"
               ng-attr-height="{{110}}"
@@ -50,7 +50,7 @@
 
         <rect ng-if="rule.description()!='START' && rule.expression()"
               ng-attr-class="{{rule.selected() && 'selected-rule-rect'
-                      || (rule == mouseOverRule && 'mouseover-rule-rect' || 'rule-rect')}}"
+                      || (rule == ctrl.mouseOverRule && 'mouseover-rule-rect' || 'rule-rect')}}"
               ry="10" rx="10" x="0" y="0"
               ng-attr-width="{{rule.width()}}"
               ng-attr-height="{{110}}"
@@ -59,7 +59,7 @@
 
         <rect ng-if="rule.description()!='START' && rule.queryLibraryItemUUID()"
               ng-attr-class="{{rule.selected() && 'selected-rule-rect'
-                      || (rule == mouseOverRule && 'mouseover-rule-rect' || 'rule-rect')}}"
+                      || (rule == ctrl.mouseOverRule && 'mouseover-rule-rect' || 'rule-rect')}}"
               ry="10" rx="10" x="0" y="0"
               ng-attr-width="{{rule.width()}}"
               ng-attr-height="{{110}}"
@@ -140,7 +140,7 @@
 
             <circle
                     class="connector-circle"
-                    ng-attr-r="{{connectorSize}}"
+                    ng-attr-r="{{ctrl.connectorSize}}"
                     cx="0"
                     cy="50"
             />
@@ -160,7 +160,7 @@
 
             <circle ng-if="rule.description()!='START'"
                     class="connector-circle"
-                    ng-attr-r="{{connectorSize}}"
+                    ng-attr-r="{{ctrl.connectorSize}}"
                     cx="250"
                     cy="30"/>
 
@@ -206,7 +206,7 @@
 
             <circle ng-if="rule.description()!='START'"
                     class="connector-circle"
-                    ng-attr-r="{{connectorSize}}"
+                    ng-attr-r="{{ctrl.connectorSize}}"
                     cx="250"
                     cy="85"/>
 
@@ -397,7 +397,7 @@
                 </g>
             </g>
 
-            <g ng-if="draggingConnection">
+            <g ng-if="ctrl.draggingConnection">
 
                 <path ng-if="dragPoint1.x > dragPoint2.x && dragPoint1.y > dragPoint2.y"
                       class="dragging-connection dragging-connection-line"
