@@ -37,40 +37,19 @@
                     <i class="fa fa-times"></i> Delete Selected
                 </button>
                 <button class="btn btn-sm btn-danger"
-                        ng-click="toggleClearQuery()"
+                        ng-click="clearQuery()"
                         title="Clear the rules in this this query without saving">
                     <i class="fa fa-eraser"></i> Clear Rules
                 </button>
                 &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
                 <button type="button" class="btn btn-sm btn-success" data-ng-click="save(false)"><i class="fa fa-save"></i> Save</button>
                 <button type="button" class="btn btn-sm btn-warning" data-ng-click="save(true)"><i class="fa fa-save"></i> Save & Close</button>
-                <button type="button" class="btn btn-sm btn-danger" data-ng-click="toggleCancelChanges()"><i class="fa fa-undo"></i> Cancel</button>
+                <button type="button" class="btn btn-sm btn-danger" data-ng-click="cancelChanges()"><i class="fa fa-undo"></i> Cancel</button>
             </div></div>
         <div class="module-body">
             <div id="queryPage">
                 <section class="query-section">
-                    <clear-query title="Clear Rules" ng-show="showClearQuery">
-                        <div class="modal-body">
-                            <p>Are you sure you want to clear the rules in this query (changes will not be saved) ?</p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="submit" ng-click="toggleClearQuery()" class="btn btn-default">No</button>
-                            <button type="submit" ng-click="clearQueryYes()" class="btn btn-default">Yes</button>
-                        </div>
-
-                    </clear-query>
-                    <cancel-changes title="Cancel Changes" ng-show="showCancelChanges">
-                        <div class="modal-body">
-                            <p>Are you sure you want to cancel the editing of this query (changes will not be saved) ?</p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="submit" ng-click="toggleCancelChanges()" class="btn btn-default">No</button>
-                            <button type="submit" ng-click="cancelChangesYes()" class="btn btn-default">Yes</button>
-                        </div>
-
-                    </cancel-changes>
-
-                    <flow-chart id="flowChart" ng-style="{'zoom': zoomPercent}"
+                     <flow-chart id="flowChart" ng-style="{'zoom': zoomPercent}"
                             mouse-capture
                             chart="chartViewModel">
                     </flow-chart>
