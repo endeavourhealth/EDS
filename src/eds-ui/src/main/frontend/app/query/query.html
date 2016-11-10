@@ -51,7 +51,11 @@
                 <section class="query-section">
                      <flow-chart id="flowChart" ng-style="{'zoom': ctrl.zoomPercent}"
                             mouse-capture
-                            chart="ctrl.chartViewModel">
+                                 on-rule-description="ctrl.onRuleDescription(description)"
+                                 on-rule-pass-action="ctrl.onRulePassAction(action)"
+                                 on-rule-fail-action="ctrl.onRuleFailAction(action)"
+                                 on-edit-test="ctrl.onEditTest(ruleId)"
+                                 chart="ctrl.chartViewModel">
                     </flow-chart>
                 </section>
 

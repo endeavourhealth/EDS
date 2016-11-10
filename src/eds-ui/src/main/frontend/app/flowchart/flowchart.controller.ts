@@ -1,15 +1,42 @@
 import {flowchart} from "./flowchart.viewmodel";
 import {SvgHelper, SvgElement} from "../blocks/svg.helper";
 
+export class FlowChartComponent implements ng.IComponentOptions {
+	public bindings : any;
+	public controller : any;
+	public template : string;
+
+	constructor () {
+		this.bindings = {
+			chart : '=chart',
+			onRuleDescription : '&',
+			onRulePassAction : '&',
+			onRuleFailAction : '&',
+			onEditTest : '&'
+		};
+		this.controller = FlowChartController;
+		this.template = require('./flowchart.template.html')
+	}
+}
+
 export class FlowChartController {
-	static $inject = ['$scope', 'dragging', '$element']
+	chart : any;
+	onRuleDescription : Function;
+	onRulePassAction : Function;
+	onRuleFailAction : Function;
+	onEditTest : Function;
+
 	private ruleClass;
 	private destRuleId : number;
 	private draggingConnection : boolean;
 	private connectorSize : number;
 	private mouseOverRule : any;
+	private dragPoint1 : any;
+	private dragPoint2 : any;
 
-	constructor(private $scope: any, private dragging: any, private $element: any) {
+
+	static $inject = ['dragging', '$element'];
+	constructor(private dragging: any, private $element: any) {
 
 		this.destRuleId = 0;
 		//
@@ -131,7 +158,7 @@ export class FlowChartController {
 	// Handle mousedown on a rule.
 	ruleMouseDown(evt, rule) {
 		var vm = this;
-		var chart = this.$scope.chart;
+		var chart = this.chart;
 		var lastMouseCoords;
 
 		this.dragging.startDrag(evt, {
@@ -174,16 +201,16 @@ export class FlowChartController {
 			clicked: function () {
 				chart.handleRuleClicked(rule, evt.ctrlKey);
 
-				vm.$scope.$emit('ruleDescription', rule.description());
-				vm.$scope.$emit('rulePassAction', rule.onPassAction());
-				vm.$scope.$emit('ruleFailAction', rule.onFailAction());
+				vm.onRuleDescription({description : rule.description()});
+				vm.onRulePassAction({action : rule.onPassAction()});
+				vm.onRuleFailAction({action : rule.onFailAction()});
 			},
 
 		});
 	}
 
 	editTest(evt, rule) {
-		this.$scope.$emit('editTest', rule.id());
+		this.onEditTest({ruleId : rule.id()});
 	};
 
 	connectorMouseUp(evt, rule, connector, connectorIndex, isInputConnector) {
@@ -207,8 +234,8 @@ export class FlowChartController {
 				var curCoords = vm.translateCoordinates(x, y);
 
 				vm.draggingConnection = true;
-				vm.$scope.dragPoint1 = flowchart.computeConnectorPos(rule, connectorIndex, isInputConnector);
-				vm.$scope.dragPoint2 = {
+				vm.dragPoint1 = flowchart.computeConnectorPos(rule, connectorIndex, isInputConnector);
+				vm.dragPoint2 = {
 					x: curCoords.x,
 					y: curCoords.y
 				};
@@ -219,8 +246,8 @@ export class FlowChartController {
 			//
 			dragging: function (x, y, evt) {
 				var startCoords = vm.translateCoordinates(x, y);
-				vm.$scope.dragPoint1 = flowchart.computeConnectorPos(rule, connectorIndex, isInputConnector);
-				vm.$scope.dragPoint2 = {
+				vm.dragPoint1 = flowchart.computeConnectorPos(rule, connectorIndex, isInputConnector);
+				vm.dragPoint2 = {
 					x: startCoords.x,
 					y: startCoords.y
 				};
@@ -241,26 +268,26 @@ export class FlowChartController {
 					// The mouse is over a valid connector...
 					// Create a new connection.
 					//
-					vm.$scope.chart.createNewConnection(rule, sourceRuleId, destRuleId, connectorIndex);
+					vm.chart.createNewConnection(rule, sourceRuleId, destRuleId, connectorIndex);
 					if (connectorIndex == 0) {
-						vm.$scope.$emit('rulePassAction', 'GOTO_RULES');
+						vm.onRulePassAction({action : 'GOTO_RULES'});
 					}
 					else if (connectorIndex == 1) {
-						vm.$scope.$emit('ruleFailAction', 'GOTO_RULES');
+						vm.onRuleFailAction({action : 'GOTO_RULES'});
 					}
 					vm.destRuleId = 0;
 				}
 
 				vm.draggingConnection = false;
-				delete vm.$scope.dragPoint1;
-				delete vm.$scope.dragPoint2;
+				delete vm.dragPoint1;
+				delete vm.dragPoint2;
 			}
 
 		});
 	}
 
 	findDestRuleX(ruleId) {
-		var chart = this.$scope.chart;
+		var chart = this.chart;
 		var x = 0;
 		for (var i = 0; i < chart.rule.length; ++i) {
 			var rule = chart.rule[i];
@@ -272,7 +299,7 @@ export class FlowChartController {
 	}
 
 	findDestRuleY(ruleId) {
-		var chart = this.$scope.chart;
+		var chart = this.chart;
 		var y = 0;
 		for (var i = 0; i < chart.rule.length; ++i) {
 			var rule = chart.rule[i];

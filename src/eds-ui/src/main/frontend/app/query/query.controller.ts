@@ -75,65 +75,6 @@ export class QueryController {
 		this.createModel(this.libraryItem);
 
 		this.performAction($stateParams.itemAction, $stateParams.itemUuid);
-		this.subscribeFlowchartEvents($scope);
-	}
-
-	private subscribeFlowchartEvents(scope : any) {
-		var vm = this;
-		scope.$on('ruleDescription', function (event: any, description: any) {
-			if (description == "START") {
-				vm.disableRuleProps = true;
-			}
-			else {
-				vm.disableRuleProps = false;
-			}
-			vm.ruleDescription = description;
-		});
-		scope.$on('rulePassAction', function (event: any, action: any) {
-			vm.rulePassAction = action;
-		});
-		scope.$on('ruleFailAction', function (event: any, action: any) {
-			vm.ruleFailAction = action;
-		});
-		scope.$on('editTest', function (event: any, ruleId: any) {
-			if (ruleId != "0") {
-				vm.ruleId = ruleId;
-
-				var selectedRule = vm.chartViewModel.getSelectedRule();
-				if (selectedRule.data.expression) {
-					var rules = <any>[];
-
-					for (var i = 0; i < vm.chartViewModel.data.query.rule.length; ++i) {
-						if (vm.chartViewModel.data.query.rule[i].description != "START" && !vm.chartViewModel.data.query.rule[i].expression) {
-							var rule = {
-								value: vm.chartViewModel.data.query.rule[i].id,
-								displayName: vm.chartViewModel.data.query.rule[i].description
-							}
-							rules.push(rule);
-						}
-
-					}
-					var expression: ExpressionType = selectedRule.data.expression;
-
-					ExpressionEditorController.open(vm.$modal, expression, rules)
-						.result.then(function (resultData: ExpressionType) {
-
-						selectedRule.data.expression = resultData;
-					});
-				}
-				else if (!selectedRule.data.queryLibraryItemUUID) {
-					var test: Test = selectedRule.data.test;
-
-					var originalResultData = jQuery.extend(true, {}, test);
-
-					TestEditorController.open(vm.$modal, originalResultData, false)
-						.result.then(function (resultData: Test) {
-
-						selectedRule.data.test = resultData;
-					});
-				}
-			}
-		});
 	}
 
 	private createModel(libraryItem : LibraryItem) {
@@ -490,4 +431,64 @@ export class QueryController {
 					vm.logger.error('Error saving query', data, 'Error');
 				});
 		}
+
+	onRuleDescription(description: any) {
+		if (description == "START") {
+			this.disableRuleProps = true;
+		}
+		else {
+			this.disableRuleProps = false;
+		}
+		this.ruleDescription = description;
+	}
+
+	onRulePassAction(action: any) {
+		this.rulePassAction = action;
+	}
+
+	onRuleFailAction(action: any) {
+		this.ruleFailAction = action;
+	}
+
+	onEditTest(ruleId: any) {
+		var vm = this;
+		if (ruleId != "0") {
+			vm.ruleId = ruleId;
+
+			var selectedRule = vm.chartViewModel.getSelectedRule();
+			if (selectedRule.data.expression) {
+				var rules = <any>[];
+
+				for (var i = 0; i < vm.chartViewModel.data.query.rule.length; ++i) {
+					if (vm.chartViewModel.data.query.rule[i].description != "START" && !vm.chartViewModel.data.query.rule[i].expression) {
+						var rule = {
+							value: vm.chartViewModel.data.query.rule[i].id,
+							displayName: vm.chartViewModel.data.query.rule[i].description
+						}
+						rules.push(rule);
+					}
+
+				}
+				var expression: ExpressionType = selectedRule.data.expression;
+
+				ExpressionEditorController.open(vm.$modal, expression, rules)
+					.result.then(function (resultData: ExpressionType) {
+
+					selectedRule.data.expression = resultData;
+				});
+			}
+			else if (!selectedRule.data.queryLibraryItemUUID) {
+				var test: Test = selectedRule.data.test;
+
+				var originalResultData = jQuery.extend(true, {}, test);
+
+				TestEditorController.open(vm.$modal, originalResultData, false)
+					.result.then(function (resultData: Test) {
+
+					selectedRule.data.test = resultData;
+				});
+			}
+		}
+	}
+
 }

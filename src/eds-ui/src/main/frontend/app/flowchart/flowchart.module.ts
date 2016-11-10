@@ -1,6 +1,5 @@
-import {FlowChartController} from "./flowchart.controller";
-import {FlowChartDirective} from "./flowchart.directives";
+import {FlowChartController, FlowChartComponent} from "./flowchart.controller";
 
 angular.module('flowChart', ['dragging'])
 	.controller('FlowChartController', FlowChartController)
-	.directive('flowChart', FlowChartDirective.factory());
+	.component('flowChart', new FlowChartComponent());
