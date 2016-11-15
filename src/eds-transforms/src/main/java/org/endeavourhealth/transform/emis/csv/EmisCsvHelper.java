@@ -84,7 +84,10 @@ public class EmisCsvHelper {
                               CodeableConcept codeableConcept,
                               Long snomedConceptId,
                               String snomedTerm) throws Exception {
-        medication.put(codeId, codeableConcept);
+
+        //don't add to the caches. A large percentage of codes aren't ever used, so let them be lazily loaded when
+        //required, so we don't chew up memory needlessly
+        //medication.put(codeId, codeableConcept);
 
         //store the medication in the DB
         String json = new JsonParser().composeString(codeableConcept, CODEABLE_CONCEPT);
@@ -112,8 +115,11 @@ public class EmisCsvHelper {
                                 String nationalCode,
                                 String nationalCodeCategory,
                                 String nationalCodeDescription) throws Exception {
-        clinicalCodes.put(codeId, codeableConcept);
-        clinicalCodeTypes.put(codeId, type);
+
+        //don't add to the caches. A large percentage of codes aren't ever used, so let them be lazily loaded when
+        //required, so we don't chew up memory needlessly
+        /*clinicalCodes.put(codeId, codeableConcept);
+        clinicalCodeTypes.put(codeId, type);*/
 
         //store the code in the DB
         String json = new JsonParser().composeString(codeableConcept, CODEABLE_CONCEPT);
