@@ -1,23 +1,21 @@
-FLOW CHART
 <svg
-        class="chart-container"
-        xmlns="http://www.w3.org/2000/svg"
-        ng-mousedown="mouseDown($event)"
-        ng-mousemove="$ctrl.mouseMove($event)">
+  class="chart-container"
+  xmlns="http://www.w3.org/2000/svg"
+  mousecapture>
     <defs>
         <linearGradient spreadMethod="pad" y2="0" x2="0" y1="1" x1="0" id="ruleBackgroundGradient">
             <stop
-                    offset="0" stop-opacity="0.99609" stop-color="#80bdff"/>
+              offset="0" stop-opacity="0.99609" stop-color="#80bdff"/>
             <stop offset="0.63934" stop-opacity="0.99219" stop-color="#cce5ff"/>
         </linearGradient>
         <linearGradient spreadMethod="pad" y2="0" x2="0" y1="1" x1="0" id="expressionRuleBackgroundGradient">
             <stop
-                    offset="0" stop-opacity="0.99609" stop-color="#B1EAFF"/>
+              offset="0" stop-opacity="0.99609" stop-color="#B1EAFF"/>
             <stop offset="0.63934" stop-opacity="0.99219" stop-color="#D7F5FF"/>
         </linearGradient>
         <linearGradient spreadMethod="pad" y2="0" x2="0" y1="1" x1="0" id="queryRuleBackgroundGradient">
             <stop
-                    offset="0" stop-opacity="0.99609" stop-color="gainsboro"/>
+              offset="0" stop-opacity="0.99609" stop-color="gainsboro"/>
             <stop offset="0.63934" stop-opacity="0.99219" stop-color="whitesmoke"/>
         </linearGradient>
         <linearGradient spreadMethod="pad" y2="0" x2="0" y1="1" x1="0" id="startRuleBackgroundGradient">
@@ -30,44 +28,46 @@ FLOW CHART
         </marker>
     </defs>
     <g
-            ng-repeat="rule in $ctrl.chart.rule"
-            ng-mousedown="$ctrl.ruleMouseDown($event, rule)"
-            ng-attr-transform="translate({{rule.x()}}, {{rule.y()}})">
+      *ngFor="let rule of chart.rule"
+      (mousedown)="ruleMouseDown($event, rule)"
+      (mouseover)="mouseOverRule = rule"
+      (mouseout)="mouseOverRule = null"
+      [attr.transform]="'translate(' + rule.x() + ',' + rule.y()+')'">
 
-        <circle ng-if="rule.description()=='START'"
-                ng-attr-class="{{rule.selected() && 'selected-rule-start'
-                || (rule == $ctrl.mouseOverRule && 'mouseover-rule-start' || 'rule-start')}}"
+        <circle *ngIf="rule.description()=='START'"
+                [attr.class]="rule.selected() && 'selected-rule-start'
+                || (rule == mouseOverRule && 'mouseover-rule-start' || 'rule-start')"
                 r="40" cx="212" cy="30"
                 fill="url(#startRuleBackgroundGradient)"/>
 
-        <rect ng-if="rule.description()!='START' && !rule.expression() && !rule.queryLibraryItemUUID()"
-              ng-attr-class="{{rule.selected() && 'selected-rule-rect'
-                      || (rule == $ctrl.mouseOverRule && 'mouseover-rule-rect' || 'rule-rect')}}"
+        <rect *ngIf="rule.description()!='START' && !rule.expression() && !rule.queryLibraryItemUUID()"
+              [attr.class]="rule.selected() && 'selected-rule-rect'
+                      || (rule == mouseOverRule && 'mouseover-rule-rect' || 'rule-rect')"
               ry="10" rx="10" x="0" y="0"
-              ng-attr-width="{{rule.width()}}"
-              ng-attr-height="{{110}}"
+              [attr.width]="rule.width()"
+              [attr.height]="110"
               fill="url(#ruleBackgroundGradient)">
         </rect>
 
-        <rect ng-if="rule.description()!='START' && rule.expression()"
-              ng-attr-class="{{rule.selected() && 'selected-rule-rect'
-                      || (rule == $ctrl.mouseOverRule && 'mouseover-rule-rect' || 'rule-rect')}}"
+        <rect *ngIf="rule.description()!='START' && rule.expression()"
+              [attr.class]="rule.selected() && 'selected-rule-rect'
+                      || (rule == mouseOverRule && 'mouseover-rule-rect' || 'rule-rect')"
               ry="10" rx="10" x="0" y="0"
-              ng-attr-width="{{rule.width()}}"
-              ng-attr-height="{{110}}"
+              [attr.width]="rule.width()"
+              [attr.height]="110"
               fill="url(#expressionRuleBackgroundGradient)">
         </rect>
 
-        <rect ng-if="rule.description()!='START' && rule.queryLibraryItemUUID()"
-              ng-attr-class="{{rule.selected() && 'selected-rule-rect'
-                      || (rule == $ctrl.mouseOverRule && 'mouseover-rule-rect' || 'rule-rect')}}"
+        <rect *ngIf="rule.description()!='START' && rule.queryLibraryItemUUID()"
+              [attr.class]="rule.selected() && 'selected-rule-rect'
+                      || (rule == mouseOverRule && 'mouseover-rule-rect' || 'rule-rect')"
               ry="10" rx="10" x="0" y="0"
-              ng-attr-width="{{rule.width()}}"
-              ng-attr-height="{{110}}"
+              [attr.width]="rule.width()"
+              [attr.height]="110"
               fill="url(#queryRuleBackgroundGradient)">
         </rect>
 
-        <text ng-if="rule.description()=='START'"
+        <text *ngIf="rule.description()=='START'"
               class="rule-text-start"
               x="210" y="31"
               text-anchor="middle"
@@ -75,7 +75,7 @@ FLOW CHART
             {{rule.description()}}
         </text>
 
-        <text ng-if="rule.description()!='START' && !rule.expression() && !rule.queryLibraryItemUUID()"
+        <text *ngIf="rule.description()!='START' && !rule.expression() && !rule.queryLibraryItemUUID()"
               class="rule-type-text"
               x="18"
               y="20"
@@ -84,7 +84,7 @@ FLOW CHART
             RULE
         </text>
 
-        <text ng-if="rule.description()!='START' && rule.expression()"
+        <text *ngIf="rule.description()!='START' && rule.expression()"
               class="rule-type-text"
               x="18"
               y="20"
@@ -93,7 +93,7 @@ FLOW CHART
             EXPRESSION
         </text>
 
-        <text ng-if="rule.description()!='START' && rule.queryLibraryItemUUID()"
+        <text *ngIf="rule.description()!='START' && rule.queryLibraryItemUUID()"
               class="rule-type-text"
               x="18"
               y="20"
@@ -102,10 +102,10 @@ FLOW CHART
             QUERY
         </text>
 
-        <text ng-click="$ctrl.editTest($event, rule)"
-              ng-if="rule.description()!='START' && rule.description().length<=30"
+        <text (click)="editTest($event, rule)"
+              *ngIf="rule.description()!='START' && rule.description().length<=30"
               class="rule-text"
-              ng-attr-x="{{rule.width()/2}}"
+              [attr.x]="rule.width()/2"
               y="60"
               text-anchor="middle"
               alignment-baseline="middle">
@@ -113,44 +113,44 @@ FLOW CHART
             <title>{{rule.extendedDescription()}}</title>
         </text>
 
-        <text ng-click="$ctrl.editTest($event, rule)"
-              ng-if="rule.description()!='START' && rule.description().length>30"
+        <text (click)="editTest($event, rule)"
+              *ngIf="rule.description()!='START' && rule.description().length>30"
               class="rule-text"
-              ng-attr-x="{{rule.width()/2}}"
+              [attr.x]="rule.width()/2"
               y="50"
               text-anchor="middle"
               alignment-baseline="middle">
-            {{$ctrl.firstString(rule.description(), 30)}}
+            {{firstString(rule.description(), 30)}}
             <title>{{rule.extendedDescription()}}</title>
         </text>
 
-        <text ng-click="$ctrl.editTest($event, rule)"
-              ng-if="rule.description()!='START' && rule.description().length>30"
+        <text (click)="editTest($event, rule)"
+              *ngIf="rule.description()!='START' && rule.description().length>30"
               class="rule-text"
-              ng-attr-x="{{rule.width()/2}}"
+              [attr.x]="rule.width()/2"
               y="70"
               text-anchor="middle"
               alignment-baseline="middle">
-            {{$ctrl.secondString(rule.description(), 30)}}
+            {{secondString(rule.description(), 30)}}
             <title>{{rule.extendedDescription()}}</title>
         </text>
 
-        <g ng-if="rule.description()!='START'"
-           ng-mouseup="$ctrl.connectorMouseUp($event, rule, 0, 0, true)"
+        <g *ngIf="rule.description()!='START'"
+           (mouseup)="connectorMouseUp($event, rule, 0, 0, true)"
            class="connector input-connector">
 
             <circle
-                    class="connector-circle"
-                    ng-attr-r="{{$ctrl.connectorSize}}"
-                    cx="0"
-                    cy="50"
+              class="connector-circle"
+              [attr.r]="connectorSize"
+              cx="0"
+              cy="50"
             />
         </g>
 
         <g
-                ng-mousedown="$ctrl.connectorMouseDown($event, rule, 1, 0, false)"
-                class="connector output-connector">
-            <text ng-if="rule.description()!='START'"
+          (mousedown)="connectorMouseDown($event, rule, 1, 0, false)"
+          class="connector output-connector">
+            <text *ngIf="rule.description()!='START'"
                   class="connector-text-out-pass"
                   x="230"
                   y="30"
@@ -159,19 +159,19 @@ FLOW CHART
                 PASS
             </text>
 
-            <circle ng-if="rule.description()!='START'"
+            <circle *ngIf="rule.description()!='START'"
                     class="connector-circle"
-                    ng-attr-r="{{$ctrl.connectorSize}}"
+                    [attr.r]="connectorSize"
                     cx="250"
                     cy="30"/>
 
-            <circle ng-if="rule.description()=='START'"
+            <circle *ngIf="rule.description()=='START'"
                     class="connector-circle"
                     r="9"
                     cx="250"
                     cy="30"/>
 
-            <path ng-if="rule.description()!='START' && rule.onPassAction() == 'NO_ACTION'"
+            <path *ngIf="rule.description()!='START' && rule.onPassAction() == 'NO_ACTION'"
                   class="connection-line-noaction"
                   d="M 260, 30
                      L 280, 30,
@@ -179,13 +179,13 @@ FLOW CHART
                      280, 45">
             </path>
 
-            <path ng-if="rule.description()!='START' && rule.onPassAction() == 'INCLUDE'"
+            <path *ngIf="rule.description()!='START' && rule.onPassAction() == 'INCLUDE'"
                   class="connection-line-noaction"
                   d="M 260, 30
                  L 280, 30">
             </path>
 
-            <text ng-if="rule.description()!='START' && rule.onPassAction() == 'INCLUDE'"
+            <text *ngIf="rule.description()!='START' && rule.onPassAction() == 'INCLUDE'"
                   class="connector-text-out-include-tick"
                   x="285"
                   y="30"
@@ -194,9 +194,9 @@ FLOW CHART
             </text>
         </g>
         <g
-                ng-mousedown="$ctrl.connectorMouseDown($event, rule, 2, 1, false)"
-                class="connector output-connector">
-            <text ng-if="rule.description()!='START'"
+          (mousedown)="connectorMouseDown($event, rule, 2, 1, false)"
+          class="connector output-connector">
+            <text *ngIf="rule.description()!='START'"
                   class="connector-text-out-fail"
                   x="230"
                   y="85"
@@ -205,13 +205,13 @@ FLOW CHART
                 FAIL
             </text>
 
-            <circle ng-if="rule.description()!='START'"
+            <circle *ngIf="rule.description()!='START'"
                     class="connector-circle"
-                    ng-attr-r="{{$ctrl.connectorSize}}"
+                    [attr.r]="connectorSize"
                     cx="250"
                     cy="85"/>
 
-            <path ng-if="rule.description()!='START' && rule.onFailAction() == 'NO_ACTION'"
+            <path *ngIf="rule.description()!='START' && rule.onFailAction() == 'NO_ACTION'"
                   class="connection-line-noaction"
                   d="M 260, 85
                      L 280, 85,
@@ -219,13 +219,13 @@ FLOW CHART
                      280, 100">
             </path>
 
-            <path ng-if="rule.description()!='START' && rule.onFailAction() == 'INCLUDE'"
+            <path *ngIf="rule.description()!='START' && rule.onFailAction() == 'INCLUDE'"
                   class="connection-line-noaction"
                   d="M 260, 85
                  L 280, 85">
             </path>
 
-            <text ng-if="rule.description()!='START' && rule.onFailAction() == 'INCLUDE'"
+            <text *ngIf="rule.description()!='START' && rule.onFailAction() == 'INCLUDE'"
                   class="connector-text-out-include-tick"
                   x="285"
                   y="85"
@@ -236,230 +236,231 @@ FLOW CHART
     </g>
 
     <g>
-        <g ng-repeat="rule in $ctrl.chart.rule" class="connection">
-            <g ng-repeat="startingrules in $ctrl.chart.startingRules">
-                <path ng-if="rule.description()=='START' &&
-                            rule.y() > $ctrl.findDestRuleY(startingrules.ruleId())"
+        <g *ngFor="let rule of chart.rule" class="connection">
+            <g *ngFor="let startingrules of chart.startingRules">
+                <path *ngIf="rule.description()=='START' &&
+                            rule.y() > findDestRuleY(startingrules.ruleId())"
                       class="connection-line"
-                      ng-attr-d="M {{rule.x()+250}}, {{rule.y()+30}}
-                     L {{$ctrl.findDestRuleX(startingrules.ruleId())-35}}, {{rule.y()+30}},
-                     {{$ctrl.findDestRuleX(startingrules.ruleId())-35}}, {{$ctrl.findDestRuleY(startingrules.ruleId())+50}},
-                     {{$ctrl.findDestRuleX(startingrules.ruleId())-20}}, {{$ctrl.findDestRuleY(startingrules.ruleId())+50}}"
+                      [attr.d]="'M ' + (rule.x()+250) +', '+(rule.y()+30) +' ' +
+                     'L '+(findDestRuleX(startingrules.ruleId())-35) + ', '+ (rule.y()+30) + ' '+
+                     (findDestRuleX(startingrules.ruleId())-35) + ', ' + (findDestRuleY(startingrules.ruleId())+50) + ' ' +
+                     (findDestRuleX(startingrules.ruleId())-20) + ', ' + (findDestRuleY(startingrules.ruleId())+50)"
                       style="marker-end: url(#markerArrow);">
                 </path>
 
-                <path ng-if="rule.description()=='START' &&
-                            rule.y() < $ctrl.findDestRuleY(startingrules.ruleId())"
+                <path *ngIf="rule.description()=='START' &&
+                            rule.y() < findDestRuleY(startingrules.ruleId())"
                       class="connection-line"
-                      ng-attr-d="M {{rule.x()+250}}, {{rule.y()+30}}
-                     L {{$ctrl.findDestRuleX(startingrules.ruleId())-35}}, {{rule.y()+30}},
-                     {{$ctrl.findDestRuleX(startingrules.ruleId())-35}}, {{$ctrl.findDestRuleY(startingrules.ruleId())+50}},
-                     {{$ctrl.findDestRuleX(startingrules.ruleId())-20}}, {{$ctrl.findDestRuleY(startingrules.ruleId())+50}}"
+                      [attr.d]="'M ' + (rule.x()+250) +', '+(rule.y()+30) +' ' +
+                     'L '+(findDestRuleX(startingrules.ruleId())-35) + ', '+ (rule.y()+30) + ' '+
+                     (findDestRuleX(startingrules.ruleId())-35) + ', ' + (findDestRuleY(startingrules.ruleId())+50) + ' ' +
+                     (findDestRuleX(startingrules.ruleId())-20) + ', ' + (findDestRuleY(startingrules.ruleId())+50)"
                       style="marker-end: url(#markerArrow);">
                 </path>
 
-                <circle ng-if="rule.description()=='START'"
+                <circle *ngIf="rule.description()=='START'"
                         class="connection-endpoint"
                         r="5"
-                        ng-attr-cx="{{rule.x()+250}}"
-                        ng-attr-cy="{{rule.y()+30}}">
+                        [attr.cx]="rule.x()+250"
+                        [attr.cy]="rule.y()+30">
                 </circle>
 
                 <circle
-                        class="connection-endpoint"
-                        r="5"
-                        ng-attr-cx="{{$ctrl.findDestRuleX(startingrules.ruleId())}}"
-                        ng-attr-cy="{{$ctrl.findDestRuleY(startingrules.ruleId())+50}}">
+                  class="connection-endpoint"
+                  r="5"
+                  [attr.cx]="findDestRuleX(startingrules.ruleId())"
+                  [attr.cy]="findDestRuleY(startingrules.ruleId())+50">
                 </circle>
 
                 <g>
 
-                    <g ng-repeat="nextrule in rule.onPassRuleId()">
+                    <g *ngFor="let nextrule of rule.onPassRuleId()">
 
-                        <path ng-if="rule.x()+300 > $ctrl.findDestRuleX(nextrule) &&
-              rule.y() > $ctrl.findDestRuleY(nextrule) && nextrule>0"
+                        <path *ngIf="rule.x()+300 > findDestRuleX(nextrule) &&
+              rule.y() > findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
-                              ng-attr-d="M {{rule.x()+250}}, {{rule.y()+30}}
-                         L {{rule.x()+280}}, {{rule.y()+30}},
-                         {{rule.x()+280}}, {{rule.y()-30}},
-                         {{$ctrl.findDestRuleX(nextrule)-40}}, {{rule.y()-30}},
-                         {{$ctrl.findDestRuleX(nextrule)-40}}, {{$ctrl.findDestRuleY(nextrule)+50}}
-                         {{$ctrl.findDestRuleX(nextrule)-20}}, {{$ctrl.findDestRuleY(nextrule)+50}}"
+                              [attr.d]="'M '+(rule.x()+250)+', '+(rule.y()+30)+' '+
+                         'L '+(rule.x()+280)+', '+(rule.y()+30)+' '+
+                         (rule.x()+280)+', '+(rule.y()-30)+' '+
+                         (findDestRuleX(nextrule)-40)+', '+(rule.y()-30)+' '+
+                         (findDestRuleX(nextrule)-40)+', '+(findDestRuleY(nextrule)+50)+' ' +
+                         (findDestRuleX(nextrule)-20)+', '+(findDestRuleY(nextrule)+50)"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
-                        <path ng-if="rule.x()+335 > $ctrl.findDestRuleX(nextrule) &&
-              rule.y() < $ctrl.findDestRuleY(nextrule) && nextrule>0"
+                        <path *ngIf="rule.x()+335 > findDestRuleX(nextrule) &&
+              rule.y() < findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
-                              ng-attr-d="M {{rule.x()+250}}, {{rule.y()+30}}
-                       L {{rule.x()+315}}, {{rule.y()+30}},
-                       {{rule.x()+315}}, {{rule.y()+145}},
-                       {{$ctrl.findDestRuleX(nextrule)-40}}, {{rule.y()+145}},
-                       {{$ctrl.findDestRuleX(nextrule)-40}}, {{$ctrl.findDestRuleY(nextrule)+50}}
-                       {{$ctrl.findDestRuleX(nextrule)-20}}, {{$ctrl.findDestRuleY(nextrule)+50}}"
+                              [attr.d]="'M '+(rule.x()+250)+', '+(rule.y()+30)+' '+
+                       'L '+(rule.x()+315)+', '+(rule.y()+30)+' '+
+                       (rule.x()+315)+', '+(rule.y()+145)+' '+
+                       (findDestRuleX(nextrule)-40)+', '+(rule.y()+145)+' '+
+                       (findDestRuleX(nextrule)-40)+', '+(findDestRuleY(nextrule)+50) + ' ' +
+                       (findDestRuleX(nextrule)-20)+', '+(findDestRuleY(nextrule)+50)"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
-                        <path ng-if="rule.x()+300 < $ctrl.findDestRuleX(nextrule) &&
-              rule.y() > $ctrl.findDestRuleY(nextrule) && nextrule>0"
+                        <path *ngIf="rule.x()+300 < findDestRuleX(nextrule) &&
+              rule.y() > findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
-                              ng-attr-d="M {{rule.x()+250}}, {{rule.y()+30}}
-                         L {{$ctrl.findDestRuleX(nextrule)-50}}, {{rule.y()+30}},
-                         {{$ctrl.findDestRuleX(nextrule)-50}}, {{$ctrl.findDestRuleY(nextrule)+50}},
-                         {{$ctrl.findDestRuleX(nextrule)-20}}, {{$ctrl.findDestRuleY(nextrule)+50}}"
+                              [attr.d]="'M '+(rule.x()+250)+', '+(rule.y()+30)+' '+
+                         'L '+(findDestRuleX(nextrule)-50)+', '+(rule.y()+30)+' '+
+                         (findDestRuleX(nextrule)-50)+', '+(findDestRuleY(nextrule)+50)+' '+
+                         (findDestRuleX(nextrule)-20)+', '+(findDestRuleY(nextrule)+50)"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
-                        <path ng-if="rule.x()+335 < $ctrl.findDestRuleX(nextrule) &&
-              rule.y() < $ctrl.findDestRuleY(nextrule) && nextrule>0"
+                        <path *ngIf="rule.x()+335 < findDestRuleX(nextrule) &&
+              rule.y() < findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
-                              ng-attr-d="M {{rule.x()+250}}, {{rule.y()+30}}
-                         L {{$ctrl.findDestRuleX(nextrule)-35}}, {{rule.y()+30}},
-                         {{$ctrl.findDestRuleX(nextrule)-35}}, {{$ctrl.findDestRuleY(nextrule)+50}},
-                         {{$ctrl.findDestRuleX(nextrule)-20}}, {{$ctrl.findDestRuleY(nextrule)+50}}"
+                              [attr.d]="'M '+(rule.x()+250)+', '+(rule.y()+30) + ' ' +
+                         'L '+(findDestRuleX(nextrule)-35)+', '+(rule.y()+30)+' '+
+                         (findDestRuleX(nextrule)-35)+', '+(findDestRuleY(nextrule)+50)+' '+
+                         (findDestRuleX(nextrule)-20)+', '+(findDestRuleY(nextrule)+50)"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
-                        <circle ng-if="nextrule>0"
+                        <circle *ngIf="nextrule>0"
                                 class="connection-endpoint"
                                 r="5"
-                                ng-attr-cx="{{rule.x()+250}}"
-                                ng-attr-cy="{{rule.y()+30}}">
+                                [attr.cx]="rule.x()+250"
+                                [attr.cy]="rule.y()+30">
                         </circle>
 
-                        <circle ng-if="nextrule>0"
+                        <circle *ngIf="nextrule>0"
                                 class="connection-endpoint"
                                 r="5"
-                                ng-attr-cx="{{$ctrl.findDestRuleX(nextrule)}}"
-                                ng-attr-cy="{{$ctrl.findDestRuleY(nextrule)+50}}">
+                                [attr.cx]="findDestRuleX(nextrule)"
+                                [attr.cy]="findDestRuleY(nextrule)+50">
                         </circle>
 
                     </g>
-                    <g ng-repeat="nextrule in rule.onFailRuleId()">
+                    <g *ngFor="let nextrule of rule.onFailRuleId()">
 
-                        <path ng-if="rule.x()+335 > $ctrl.findDestRuleX(nextrule) &&
-          rule.y() > $ctrl.findDestRuleY(nextrule) && nextrule>0"
+                        <path *ngIf="rule.x()+335 > findDestRuleX(nextrule) &&
+          rule.y() > findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
-                              ng-attr-d="M {{rule.x()+250}}, {{rule.y()+85}}
-                   L {{rule.x()+315}}, {{rule.y()+85}},
-                   {{rule.x()+315}}, {{rule.y()-45}},
-                   {{$ctrl.findDestRuleX(nextrule)-50}}, {{rule.y()-45}},
-                   {{$ctrl.findDestRuleX(nextrule)-50}}, {{$ctrl.findDestRuleY(nextrule)+50}}
-                   {{$ctrl.findDestRuleX(nextrule)-20}}, {{$ctrl.findDestRuleY(nextrule)+50}}"
+                              [attr.d]="'M '+(rule.x()+250)+', '+(rule.y()+85)+' '+
+                   'L '+(rule.x()+315)+', '+(rule.y()+85)+' '+
+                   (rule.x()+315)+', '+(rule.y()-45)+' '+
+                   (findDestRuleX(nextrule)-50)+', '+(rule.y()-45)+', '+
+                   (findDestRuleX(nextrule)-50)+', '+(findDestRuleY(nextrule)+50)+' '+
+                   (findDestRuleX(nextrule)-20)+', '+(findDestRuleY(nextrule)+50)"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
-                        <path ng-if="rule.x()+300 > $ctrl.findDestRuleX(nextrule) &&
-          rule.y() < $ctrl.findDestRuleY(nextrule) && nextrule>0"
+                        <path *ngIf="rule.x()+300 > findDestRuleX(nextrule) &&
+          rule.y() < findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
-                              ng-attr-d="M {{rule.x()+250}}, {{rule.y()+85}}
-                     L {{rule.x()+280}}, {{rule.y()+85}},
-                     {{rule.x()+280}}, {{rule.y()+130}},
-                     {{$ctrl.findDestRuleX(nextrule)-50}}, {{rule.y()+130}},
-                     {{$ctrl.findDestRuleX(nextrule)-50}}, {{$ctrl.findDestRuleY(nextrule)+50}}
-                     {{$ctrl.findDestRuleX(nextrule)-20}}, {{$ctrl.findDestRuleY(nextrule)+50}}"
+                              [attr.d]="'M '+(rule.x()+250)+', '+(rule.y()+85)+' '+
+                     'L '+(rule.x()+280)+', '+(rule.y()+85)+' '+
+                     (rule.x()+280)+', '+(rule.y()+130)+' '+
+                     (findDestRuleX(nextrule)-50)+', '+(rule.y()+130)+' '+
+                     (findDestRuleX(nextrule)-50)+', '+(findDestRuleY(nextrule)+50) + ' ' +
+                     (findDestRuleX(nextrule)-20)+', '+(findDestRuleY(nextrule)+50)"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
-                        <path ng-if="rule.x()+335 < $ctrl.findDestRuleX(nextrule) &&
-          rule.y() > $ctrl.findDestRuleY(nextrule) && nextrule>0"
+                        <path *ngIf="rule.x()+335 < findDestRuleX(nextrule) &&
+          rule.y() > findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
-                              ng-attr-d="M {{rule.x()+250}}, {{rule.y()+85}}
-                     L {{$ctrl.findDestRuleX(nextrule)-35}}, {{rule.y()+85}},
-                     {{$ctrl.findDestRuleX(nextrule)-35}}, {{$ctrl.findDestRuleY(nextrule)+50}},
-                     {{$ctrl.findDestRuleX(nextrule)-20}}, {{$ctrl.findDestRuleY(nextrule)+50}}"
+                              [attr.d]="'M '+(rule.x()+250)+', '+(rule.y()+85)+ ' '+
+                     'L '+(findDestRuleX(nextrule)-35)+', '+(rule.y()+85)+' '+
+                     (findDestRuleX(nextrule)-35)+', '+(findDestRuleY(nextrule)+50)+' '+
+                     (findDestRuleX(nextrule)-20)+', '+(findDestRuleY(nextrule)+50)"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
-                        <path ng-if="rule.x()+300 < $ctrl.findDestRuleX(nextrule) &&
-          rule.y() < $ctrl.findDestRuleY(nextrule) && nextrule>0"
+                        <path *ngIf="rule.x()+300 < findDestRuleX(nextrule) &&
+          rule.y() < findDestRuleY(nextrule) && nextrule>0"
                               class="connection-line"
-                              ng-attr-d="M {{rule.x()+250}}, {{rule.y()+85}}
-                     L {{$ctrl.findDestRuleX(nextrule)-50}}, {{rule.y()+85}},
-                     {{$ctrl.findDestRuleX(nextrule)-50}}, {{$ctrl.findDestRuleY(nextrule)+50}},
-                     {{$ctrl.findDestRuleX(nextrule)-20}}, {{$ctrl.findDestRuleY(nextrule)+50}}"
+                              [attr.d]="'M '+(rule.x()+250)+', '+(rule.y()+85)+' '+
+                     'L '+(findDestRuleX(nextrule)-50)+', '+(rule.y()+85)+' '+
+                     (findDestRuleX(nextrule)-50)+', '+(findDestRuleY(nextrule)+50)+' '+
+                     (findDestRuleX(nextrule)-20)+', '+(findDestRuleY(nextrule)+50)"
                               style="marker-end: url(#markerArrow);">
                         </path>
 
-                        <circle ng-if="nextrule>0"
+                        <circle *ngIf="nextrule>0"
                                 class="connection-endpoint"
                                 r="5"
-                                ng-attr-cx="{{rule.x()+250}}"
-                                ng-attr-cy="{{rule.y()+85}}">
+                                [attr.cx]="rule.x()+250"
+                                [attr.cy]="rule.y()+85">
                         </circle>
 
-                        <circle ng-if="nextrule>0"
+                        <circle *ngIf="nextrule>0"
                                 class="connection-endpoint"
                                 r="5"
-                                ng-attr-cx="{{$ctrl.findDestRuleX(nextrule)}}"
-                                ng-attr-cy="{{$ctrl.findDestRuleY(nextrule)+50}}">
+                                [attr.cx]="findDestRuleX(nextrule)"
+                                [attr.cy]="findDestRuleY(nextrule)+50">
                         </circle>
                     </g>
                 </g>
             </g>
 
-            <g ng-if="$ctrl.draggingConnection">
+            <g *ngIf="draggingConnection">
 
-                <path ng-if="$ctrl.dragPoint1.x > $ctrl.dragPoint2.x && $ctrl.dragPoint1.y > $ctrl.dragPoint2.y"
+                <path *ngIf="dragPoint1.x > dragPoint2.x && dragPoint1.y > dragPoint2.y"
                       class="dragging-connection dragging-connection-line"
-                      ng-attr-d="M {{$ctrl.dragPoint1.x}}, {{$ctrl.dragPoint1.y-30}}
-                 L {{$ctrl.dragPoint1.x+65}}, {{$ctrl.dragPoint1.y-30}},
-                 {{$ctrl.dragPoint1.x+65}}, {{$ctrl.dragPoint1.y-125}},
-                 {{$ctrl.dragPoint2.x-40}}, {{$ctrl.dragPoint1.y-125}},
-                 {{$ctrl.dragPoint2.x-40}}, {{$ctrl.dragPoint2.y}}
-                 {{$ctrl.dragPoint2.x-20}}, {{$ctrl.dragPoint2.y}}"
-                      style="marker-end: url(#markerArrow);">
-                </path>
-
-                <path ng-if="$ctrl.dragPoint1.x > $ctrl.dragPoint2.x && $ctrl.dragPoint1.y < $ctrl.dragPoint2.y"
-                      class="dragging-connection dragging-connection-line"
-                      ng-attr-d="M {{$ctrl.dragPoint1.x}}, {{$ctrl.dragPoint1.y-30}}
-                 L {{$ctrl.dragPoint1.x+65}}, {{$ctrl.dragPoint1.y-30}},
-                 {{$ctrl.dragPoint1.x+65}}, {{$ctrl.dragPoint1.y+55}},
-                 {{$ctrl.dragPoint2.x-40}}, {{$ctrl.dragPoint1.y+55}},
-                 {{$ctrl.dragPoint2.x-40}}, {{$ctrl.dragPoint2.y}}
-                 {{$ctrl.dragPoint2.x-20}}, {{$ctrl.dragPoint2.y}}"
+                      [attr.d]="'M '+dragPoint1.x+', '+(dragPoint1.y-30)+' '+
+                 'L '+(dragPoint1.x+65)+', '+(dragPoint1.y-30)+', '+
+                 (dragPoint1.x+65)+', '+(dragPoint1.y-125)+', '+
+                 (dragPoint2.x-40)+', '+(dragPoint1.y-125)+', '+
+                 (dragPoint2.x-40)+', '+dragPoint2.y+' '+
+                 (dragPoint2.x-20)+', '+dragPoint2.y"
                       style="marker-end: url(#markerArrow);">
                 </path>
 
-                <path ng-if="($ctrl.dragPoint1.x < $ctrl.dragPoint2.x) && (($ctrl.dragPoint1.y > $ctrl.dragPoint2.y) && ($ctrl.dragPoint1.y - $ctrl.dragPoint2.y >= 20 ))"
+                <path *ngIf="dragPoint1.x > dragPoint2.x && dragPoint1.y < dragPoint2.y"
                       class="dragging-connection dragging-connection-line"
-                      ng-attr-d="M {{$ctrl.dragPoint1.x}}, {{$ctrl.dragPoint1.y-30}}
-                   L {{$ctrl.dragPoint2.x-20}}, {{$ctrl.dragPoint2.y}}"
+                      [attr.d]="'M '+dragPoint1.x+', '+(dragPoint1.y-30)+' '+
+                 'L '+(dragPoint1.x+65)+', '+(dragPoint1.y-30)+', '+
+                 (dragPoint1.x+65)+', '+(dragPoint1.y+55)+', '+
+                 (dragPoint2.x-40)+', '+(dragPoint1.y+55)+', '+
+                 (dragPoint2.x-40)+', '+dragPoint2.y+' '+
+                 (dragPoint2.x-20)+', '+dragPoint2.y"
                       style="marker-end: url(#markerArrow);">
                 </path>
-                <path ng-if="($ctrl.dragPoint1.x < $ctrl.dragPoint2.x) && (($ctrl.dragPoint1.y < $ctrl.dragPoint2.y) && ($ctrl.dragPoint2.y - $ctrl.dragPoint1.y >= 20 ))"
+
+                <path *ngIf="(dragPoint1.x < dragPoint2.x) && ((dragPoint1.y > dragPoint2.y) && (dragPoint1.y - dragPoint2.y >= 20 ))"
                       class="dragging-connection dragging-connection-line"
-                      ng-attr-d="M {{$ctrl.dragPoint1.x}}, {{$ctrl.dragPoint1.y-30}}
-                     L {{$ctrl.dragPoint2.x-20}}, {{$ctrl.dragPoint2.y-10}}"
+                      [attr.d]="'M '+dragPoint1.x+', '+(dragPoint1.y-30)+' '+
+                   'L '+(dragPoint2.x-20)+', '+dragPoint2.y"
                       style="marker-end: url(#markerArrow);">
                 </path>
-                <path ng-if="($ctrl.dragPoint1.x < $ctrl.dragPoint2.x) && ($ctrl.dragPoint1.y - $ctrl.dragPoint2.y < 20 ) && ($ctrl.dragPoint1.y - $ctrl.dragPoint2.y >= 0 )"
+                <path *ngIf="(dragPoint1.x < dragPoint2.x) && ((dragPoint1.y < dragPoint2.y) && (dragPoint2.y - dragPoint1.y >= 20 ))"
                       class="dragging-connection dragging-connection-line"
-                      ng-attr-d="M {{$ctrl.dragPoint1.x}}, {{$ctrl.dragPoint1.y-30}}
-                       L {{$ctrl.dragPoint2.x-20}}, {{$ctrl.dragPoint2.y-5}}"
+                      [attr.d]="'M '+dragPoint1.x+', '+(dragPoint1.y-30)+' '+
+                     'L '+(dragPoint2.x-20)+', '+(dragPoint2.y-10)"
                       style="marker-end: url(#markerArrow);">
                 </path>
-                <path ng-if="($ctrl.dragPoint1.x < $ctrl.dragPoint2.x) && ($ctrl.dragPoint2.y - $ctrl.dragPoint1.y < 20 ) && ($ctrl.dragPoint2.y - $ctrl.dragPoint1.y >= 0 )"
+                <path *ngIf="(dragPoint1.x < dragPoint2.x) && (dragPoint1.y - dragPoint2.y < 20 ) && (dragPoint1.y - dragPoint2.y >= 0 )"
                       class="dragging-connection dragging-connection-line"
-                      ng-attr-d="M {{$ctrl.dragPoint1.x}}, {{$ctrl.dragPoint1.y-30}}
-                         L {{$ctrl.dragPoint2.x-20}}, {{$ctrl.dragPoint2.y-5}}"
+                      [attr.d]="'M '+dragPoint1.x+', '+(dragPoint1.y-30)+' '+
+                       'L '+(dragPoint2.x-20)+', '+(dragPoint2.y-5)"
+                      style="marker-end: url(#markerArrow);">
+                </path>
+                <path *ngIf="(dragPoint1.x < dragPoint2.x) && (dragPoint2.y - dragPoint1.y < 20 ) && (dragPoint2.y - dragPoint1.y >= 0 )"
+                      class="dragging-connection dragging-connection-line"
+                      [attr.d]="'M '+dragPoint1.x+', '+(dragPoint1.y-30)+' '+
+                         'L '+(dragPoint2.x-20)+', '+(dragPoint2.y-5)"
                       style="marker-end: url(#markerArrow);">
                 </path>
 
                 <circle
-                        class="dragging-connection dragging-connection-endpoint"
-                        r="4"
-                        ng-attr-cx="{{$ctrl.dragPoint1.x}}"
-                        ng-attr-cy="{{$ctrl.dragPoint1.y-30}}">
+                  class="dragging-connection dragging-connection-endpoint"
+                  r="4"
+                  [attr.cx]="dragPoint1.x"
+                  [attr.cy]="dragPoint1.y-30">
                 </circle>
 
                 <circle
-                        class="dragging-connection dragging-connection-endpoint"
-                        r="4"
-                        ng-attr-cx="{{$ctrl.dragPoint2.x}}"
-                        ng-attr-cy="{{$ctrl.dragPoint2.y}}">
+                  class="dragging-connection dragging-connection-endpoint"
+                  r="4"
+                  [attr.cx]="dragPoint2.x"
+                  [attr.cy]="dragPoint2.y">
                 </circle>
             </g>
-
+        </g>
+    </g>
 </svg>

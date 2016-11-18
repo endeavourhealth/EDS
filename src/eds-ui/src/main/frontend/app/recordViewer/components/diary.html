@@ -1,0 +1,24 @@
+<div class="row">
+	<div class="col-md-8">
+
+		<h4>Diary</h4>
+
+		<table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
+			<thead>
+				<th>Diary date</th>
+				<th>Description</th>
+			</thead>
+			<tbody>
+				<tr *ngIf="!diaries || diaries.length == 0"><td colspan="2"><i>(no diary entries)</i></td></tr>
+				<tr *ngFor="let diary of diaries"> <!-- (click)="setSelectedDiary($event, diary)" [ngClass]="{'selected': isSelectedDiary(diary)}"> -->
+					<td>{{diary.effectiveDate | cuiDate}}</td>
+					<td>
+						<span class="problem-term-text">{{diary.code | codeReadTerm}}</span>
+						<span class="problem-associated-text">{{diary.notes}}</span>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
+	</div>
+</div>

@@ -3,7 +3,7 @@
         Transform Errors
         <div class="pull-right">
             <button class="btn btn-sm btn-success"
-                    ng-click="ctrl.refreshSummaries()"
+                    (click)="refreshSummaries()"
                     title="Refresh">
                 Refresh
             </button>
@@ -27,16 +27,16 @@
                             </thead>
                             <tbody>
                                 <tr class="hover-box show-child-on-hover"
-                                    ng-repeat="summary in ctrl.transformErrorSummaries"
-                                    ng-click="ctrl.selectSummary(summary);"
-                                    ng-class="{'selection': summary == ctrl.selectedSummary}">
+                                    *ngFor="let summary of transformErrorSummaries"
+                                    (click)="selectSummary(summary);"
+                                    [ngClass]="{'selection': summary == selectedSummary}">
 
                                     <td>{{summary.serviceName}}</td>
                                     <td>{{summary.systemName}}</td>
                                     <td>{{summary.countExchanges}}</td>
                                     <td>
-                                        <button type="button" class="btn btn-primary btn-xs child-to-show" ng-click="ctrl.rerunFirst(summary)">First</button>
-                                        <button type="button" class="btn btn-primary btn-xs child-to-show" ng-click="ctrl.rerunAll(summary)">All</button>
+                                        <button type="button" class="btn btn-primary btn-xs child-to-show" (click)="rerunFirst(summary)">First</button>
+                                        <button type="button" class="btn btn-primary btn-xs child-to-show" (click)="rerunAll(summary)">All</button>
                                     </td>
                                 </tr>
 
@@ -46,18 +46,18 @@
                 </div>
             </div>
 
-            <div class="row" ng-show="ctrl.selectedSummary">
+            <div class="row" *ngIf="selectedSummary">
                 <div class="col-md-12">
                     <div class="panel panel-primary">
-                        <div class="panel-heading">Errors for {{ctrl.selectedSummary.serviceName}}
+                        <div class="panel-heading">Errors for {{selectedSummary.serviceName}}
                             <div class="pull-right">
                                 <button class="btn btn-xs btn-default"
-                                        ng-click="ctrl.rerunFirst(ctrl.selectedSummary)"
+                                        (click)="rerunFirst(selectedSummary)"
                                         title="Rerun First Exchange">
                                     Re-run First Exchange
                                 </button>
                                 <button class="btn btn-xs btn-default"
-                                        ng-click="ctrl.rerunAll(ctrl.selectedSummary)"
+                                        (click)="rerunAll(selectedSummary)"
                                         title="Rerun All Exchanges">
                                     Re-run All Exchanges
                                 </button>
@@ -65,17 +65,17 @@
                         </div>
                         <div class="panel-body" style="overflow:hidden; height:100%;">
 
-                            <ul uib-pagination max-size="10" boundary-links="true" total-items="ctrl.selectedSummary.countExchanges" items-per-page="1" ng-model="ctrl.selectedExchangeIndex" ng-change="ctrl.loadExchange()"></ul>
+                            <ul uib-pagination max-size="10" boundary-links="true" total-items="selectedSummary.countExchanges" items-per-page="1" [(ngModel)]="selectedExchangeIndex" (ngModelChange)="loadExchange()"></ul>
 
-                            <h4>Exchange {{ctrl.selectExchangeErrorDetail.exchangeId}}, transformed on {{ctrl.selectExchangeErrorDetail.transformStart | date:'dd-MMM-yyyy HH:mm:ss'}}</h4>
+                            <h4>Exchange {{selectExchangeErrorDetail.exchangeId}}, transformed on {{selectExchangeErrorDetail.transformStart | date:'dd-MMM-yyyy HH:mm:ss'}}</h4>
 
                             <code>
-                                <div ng-repeat="line in ctrl.selectExchangeErrorDetail.lines track by $index">
-                                    <div ng-if="line.length > 0">
+                                <div *ngFor="let line of selectExchangeErrorDetail.lines">
+                                    <div *ngIf="line.length > 0">
                                         {{line}}
                                     </div>
 
-                                    <div ng-if="line.length == 0">
+                                    <div *ngIf="line.length == 0">
                                         &nbsp;
                                     </div>
 

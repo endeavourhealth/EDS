@@ -1,0 +1,135 @@
+<div class="module">
+	<div class="container-fluid">
+		<div class="module-heading">
+			Data set
+			<div class="pull-right">
+				<button type="button" class="btn btn-sm btn-success" (click)="save(false)">Save</button>
+				<button type="button" class="btn btn-sm btn-warning" (click)="save(true)">Save & Close</button>
+				<button type="button" class="btn btn-sm btn-danger" (click)="close()">Cancel</button>
+			</div>
+		</div>
+		<div class="module-body">
+			<form>
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label for="name">Name</label>
+						<input type="text" class="form-control" id="name" [(ngModel)]="libraryItem.name" name="name">
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-12">
+						<label for="description">Description</label>
+						<textarea class="form-control" id="description" [(ngModel)]="libraryItem.description" name="description"></textarea>
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-4">
+						<label>FHIR Compositions</label>
+						&nbsp;&nbsp;<button type="button" class="btn btn-xs btn-success" (click)="addComposition()">
+						<span class="fa fa-plus"></span>
+						</button>
+						<div class="scroll-box-450">
+							<table class="table table-striped">
+								<tbody>
+								<tr class="hover-box show-child-on-hover"
+									*ngFor="let item of libraryItem.dataSet.composition"
+									(click)="selectedComposition = item; selectedSection = null; selectedResource = null;"
+									[ngClass]="{'selection': item == selectedComposition}">
+									<td>
+											<input type="text"
+														 class="form-control"
+														 style="width: 300px"
+														 [value]="item.heading"
+														 (input)="item.heading = $event.target.value">
+									</td>
+									<td>
+										<div class="pull-right">
+											<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="removeComposition(item)">
+												<span class="fa fa-remove"></span>
+											</button>
+										</div>
+									</td>
+								</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="form-group col-md-4">
+						<label>Sections (PRSB headings)</label>
+						&nbsp;&nbsp;<button *ngIf="selectedComposition" type="button" class="btn btn-xs btn-success" (click)="addSection()">
+						<span class="fa fa-plus"></span>
+						</button>
+						<div class="scroll-box-450">
+							<table class="table table-striped">
+								<tbody>
+								<tr class="hover-box show-child-on-hover"
+									*ngFor="let item of getCompositionSections()"
+									(click)="selectedSection = item;"
+									[ngClass]="{'selection': item == selectedSection}">
+									<td>
+										<span class="child-to-hide">{{ item.heading }}</span>
+										<div class="btn-group child-to-show" role="group" ngbDropdown>
+											<button type="button" class="btn btn-sm btn-default" ngbDropdownToggle id="sectionHeading">
+												{{ item.heading }}
+												<span class="caret"></span>
+											</button>
+											<ul class="dropdown-menu" aria-labelledby="sectionHeading">
+												<li *ngFor="let section of sections"><a (click)="setSectionHeading(section)">{{ section }}</a></li>
+											</ul>
+										</div>
+									</td>
+									<td>
+										<div class="pull-right">
+											<button type="button" class="btn btn-danger btn-xs child-to-show" (click)="removeSection(item)">
+												<span class="fa fa-remove"></span>
+											</button>
+										</div>
+									</td>
+								</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="form-group col-md-4">
+						<label>FHIR Resources</label>
+						&nbsp;&nbsp;<button type="button" class="btn btn-xs btn-success" (click)="addResource()" *ngIf="selectedSection">
+						<span class="fa fa-plus"></span>
+						</button>
+						<div class="scroll-box-450">
+							<table class="table table-striped table-condensed">
+								<tbody>
+								<tr class="hover-box show-child-on-hover"
+									*ngFor="let item of getSectionResources()"
+									(click)="selectedResource = item;"
+									[ngClass]="{'selection': item == selectedResource}">
+									<td>
+										<div class="input-group">
+											<input type="text"
+												   class="form-control"
+												   style="width: 250px"
+												   value="{{item.heading}}" disabled>
+											<span class="input-group-addon" (click)="selectResource(item, $index)" style="cursor: pointer">
+												<i class="fa fa-database" aria-hidden="true"></i>
+											</span>
+										</div>
+									</td>
+									<td>
+										<div class="child-to-show">
+											<button type="button" class="btn btn-danger btn-xs pull-right" (click)="removeResource(item)">
+												<span class="fa fa-remove"></span>
+											</button>
+										</div>
+									</td>
+								</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+

@@ -1,24 +1,21 @@
-import {BaseHttpService} from "../core/baseHttp.service";
-import {ConfigurationResource} from "../models/ConfigurationResource";
+import {BaseHttp2Service} from "../core/baseHttp2.service";
+import {ConfigurationResource} from "./ConfigurationResource";
+import {Injectable} from "@angular/core";
+import {Http, URLSearchParams} from "@angular/http";
+import {Observable} from "rxjs";
 
-export interface IConfigService {
-	getConfig(configurationId : string):ng.IPromise<ConfigurationResource>;
-	saveConfig(configResource : ConfigurationResource):ng.IPromise<ConfigurationResource>;
-}
+@Injectable()
+export class ConfigService extends BaseHttp2Service {
+	constructor(http : Http) { super (http); }
 
-export class ConfigService extends BaseHttpService implements IConfigService {
+	getConfig(configurationId : string) : Observable<ConfigurationResource> {
+		let params = new URLSearchParams();
+		params.set('configurationId',configurationId);
 
-	getConfig(configurationId : string):ng.IPromise<ConfigurationResource> {
-		var request = {
-			params: {
-				'configurationId': configurationId
-			}
-		};
-
-		return this.httpGet('api/config/getConfig', request);
+		return this.httpGet('api/config/getConfig', { search : params });
 	}
 
-	saveConfig(configResource : ConfigurationResource):ng.IPromise<ConfigurationResource> {
+	saveConfig(configResource : ConfigurationResource):Observable<ConfigurationResource> {
 		return this.httpPost('api/config/saveConfig', configResource);
 	}
 }

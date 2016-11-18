@@ -1,5 +1,21 @@
-import {FlowChartController, FlowChartComponent} from "./flowchart.controller";
+import {NgModule} from "@angular/core";
+import {BrowserModule} from "@angular/platform-browser";
+import {FormsModule} from "@angular/forms";
 
-angular.module('flowChart', ['dragging'])
-	.controller('FlowChartController', FlowChartController)
-	.component('flowChart', new FlowChartComponent());
+import {FlowChartComponent} from "./flowchart.component";
+import {MouseCaptureModule} from "../mouseCapture/mouseCapture.module";
+
+@NgModule({
+	imports : [
+		BrowserModule,
+		FormsModule,
+		MouseCaptureModule
+	],
+	declarations : [
+		FlowChartComponent,
+	],
+	exports : [
+		FlowChartComponent
+	]
+})
+export class FlowchartModule {}

@@ -1,11 +1,27 @@
-import '../../content/css/sidebar.css';
+import {NgModule} from "@angular/core";
+import {BrowserModule} from "@angular/platform-browser";
+import {FormsModule} from "@angular/forms";
+import {UIRouterModule} from "ui-router-ng2";
+import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 
-import {ShellController} from "./shell.controller";
-import {SidebarController} from "./sidebar.controller";
-import {TopnavController} from "./topnav.controller";
+import {ShellComponent} from "./shell.component";
+import {SidebarComponent} from "./sidebar.component";
+import {TopnavComponent} from "./topnav.component";
+import {SecurityModule} from "../security/security.module";
 
-angular.module('app.layout', ['ngIdle', 'ui.bootstrap'])
-	.controller('ShellController', ShellController)
-	.controller('SidebarController', SidebarController)
-	.controller('TopnavController', TopnavController);
+@NgModule({
+	imports : [
+		BrowserModule,
+		FormsModule,
+		UIRouterModule,
+		NgbModule,
 
+		SecurityModule
+	],
+	declarations : [
+		ShellComponent,
+		SidebarComponent,
+		TopnavComponent,
+	],
+})
+export class LayoutModule {}

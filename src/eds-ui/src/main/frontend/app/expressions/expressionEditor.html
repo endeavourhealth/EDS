@@ -1,0 +1,187 @@
+<style>
+    .form-group {
+        margin-bottom: 10px;
+    }
+</style>
+<div class="modal-header">
+    <button type="button" class="close" (click)="cancel()" aria-hidden="true">&times;</button>
+    <h4 class="modal-title">Expression Editor</h4>
+</div>
+<div class="modal-body">
+    <form role="form">
+        <table class="expressionTable">
+            <tr>
+                <td colspan="2">
+                    <div class="editorSection">Data Source Calculations and Comparisons</div>
+                </td>
+            </tr>
+            <tr>
+                <td style="width: 50%; padding-right: 15px; padding-left: 15px; vertical-align: top; border-right: 1px solid gainsboro">
+                    <div class='row'>
+                        <div class="col-xs-12">
+                            <div class="form-group">
+                                <label>Data Source A.</label>
+                                <select class="form-control" [(ngModel)]="expressionRuleId1" name="expressionRuleId1">
+                                    <option *ngFor="let rule of rules" value="{{rule.value}}">{{rule.displayName}}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class='row' >
+                        <div class="col-xs-5">
+                            <div class="form-group">
+                                <label>Sort Field</label>
+                                <select class="form-control" [(ngModel)]="expressionRestrictionFieldName1" name="expressionRestrictionFieldName1">
+                                    <option *ngFor="let field of fields" value="{{field}}">{{field}}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-xs-4">
+                            <div class="form-group">
+                                <label>Sort Order</label>
+                                <select class="form-control" [(ngModel)]="expressionRestrictionOrderDirection1" name="expressionRestrictionOrderDirection1">
+                                    <option *ngFor="let sortorder of sortorders" value="{{sortorder}}">{{sortorder}}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-xs-3">
+                            <div class="form-group">
+                                <label>Count</label>
+                                <input type="text" class="form-control" [(ngModel)]="expressionRestrictionCount1" name="expressionRestrictionCount1">
+                            </div>
+                        </div>
+                    </div>
+                    <div class='row'>
+                        <div class="col-xs-6">
+                            <div class="form-group">
+                                <label>Test Field</label>
+                                <select class="form-control" [(ngModel)]="expressionTestField1" name="expressionTestField1">
+                                    <option *ngFor="let field of fields" value="{{field}}">{{field}}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-xs-6">
+                            <div class="form-group">
+                                <label>Function</label>
+                                <select class="form-control" [(ngModel)]="expressionFunction1" name="expressionFunction1">
+                                    <option *ngFor="let function of functions" value="{{function}}">{{function}}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <td style="width: 50%; padding-right: 15px; padding-left: 15px; vertical-align: top">
+                    <div class='row'>
+                        <div class="col-xs-12">
+                            <div class="form-group">
+                                <label>Data Source B.</label>
+                                <select class="form-control" [(ngModel)]="expressionRuleId2" name="expressionRuleId2">
+                                    <option *ngFor="let rule of rules" value="{{rule.value}}">{{rule.displayName}}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class='row' >
+                        <div class="col-xs-5">
+                            <div class="form-group">
+                                <label>Sort Field</label>
+                                <select class="form-control" [(ngModel)]="expressionRestrictionFieldName2" name="expressionRestrictionFieldName2">
+                                    <option *ngFor="let field of fields" value="{{field}}">{{field}}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-xs-4">
+                            <div class="form-group">
+                                <label>Sort Order</label>
+                                <select class="form-control" [(ngModel)]="expressionRestrictionOrderDirection2" name="expressionRestrictionOrderDirection2">
+                                    <option *ngFor="let sortorder of sortorders" value="{{sortorder}}">{{sortorder}}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-xs-3">
+                            <div class="form-group">
+                                <label>Count</label>
+                                <input type="text" class="form-control" [(ngModel)]="expressionRestrictionCount2" name="expressionRestrictionCount2">
+                            </div>
+                        </div>
+                    </div>
+                    <div class='row' >
+                       <div class="col-xs-6">
+                            <div class="form-group">
+                                <label>Test Field</label>
+                                <select class="form-control" [(ngModel)]="expressionTestField2" name="expressionTestField2">
+                                    <option *ngFor="let field of fields" value="{{field}}">{{field}}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-xs-6">
+                            <div class="form-group">
+                                <label>Function</label>
+                                <select class="form-control" [(ngModel)]="expressionFunction2" name="expressionFunction2">
+                                    <option *ngFor="let function of functions" value="{{function}}">{{function}}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            <tr><td colspan="2">&nbsp;</td></tr>
+            <tr>
+                <td colspan="2">
+                    <div class="editorSection" >Expression Calculator&nbsp;&nbsp;&nbsp;
+                        <span style="font-weight: normal; color: silver">(examples: A &lt; B + 28 DAYS, A &lt;= B + 2 WEEKS, A - 6 MONTHS &gt; B, A &lt;= B, A + 10 &lt; B)</span></div>
+                    <div class='row' >
+
+                        <div class="col-xs-2">
+                            <div class="form-group">
+                                <label>Pick Data Source</label>
+                                <select class="form-control" [(ngModel)]="variableLabel" style="height: 50px;" multiple (click)="variableLabelChange()" [disabled]="variableLabelDisabled" name="variableLabel">
+                                    <option *ngFor="let label of labels" value="{{label}}">{{label}}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-xs-2">
+                            <div class="form-group">
+                                <label>Pick Operator</label>
+                                <select class="form-control" [(ngModel)]="operator" style="height: 150px;" multiple (click)="operatorChange()" [disabled]="operatorDisabled" name="operator">
+                                    <option *ngFor="let operator of operators" value="{{operator}}">{{operator}}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-xs-2">
+                            <div class="form-group">
+                                <label>Enter Number</label>
+                                <input type="text" class="form-control" [(ngModel)]="numberInPeriod" (blur)="numberInPeriodChange()" [disabled]="numberInPeriodDisabled" name="numberInPeriod">
+                            </div>
+                        </div>
+                        <div class="col-xs-2">
+                            <div class="form-group">
+                                <label>Pick Period</label>
+                                <select class="form-control" [(ngModel)]="period" multiple (click)="periodChange()" [disabled]="periodDisabled" name="period">
+                                    <option *ngFor="let period of periods" value="{{period}}">{{period}}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-xs-4">
+                            <div class="form-group">
+                                <label>Expression Calculation</label>
+                                <input type="text" class="form-control" [(ngModel)]="expressionText" [disabled]="true" name="expressionText">
+                                <br/>
+                                <button type="button" class="btn btn-sm btn-warning"
+                                        (click)="backSpace()">Backspace</button>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+    </form>
+
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-default"
+            (click)="cancel()">Cancel</button>
+    <button type="button" class="btn btn-primary"
+            (click)="save();">Ok</button>
+</div>

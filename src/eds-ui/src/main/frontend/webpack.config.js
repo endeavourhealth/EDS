@@ -3,9 +3,12 @@ var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-	entry: './app/app.module.ts',
+	entry: {
+		'app' : './app/main.ts',
+		'vendor' : './app/vendor.ts'
+	},
 	output: {
-		filename: './bundle.js',
+		filename: './[name].bundle.js',
 		path: '../webapp'
 	},
 	resolve: {
@@ -16,10 +19,13 @@ module.exports = {
 			{ test: /\.ts$/, loader: 'ts' },
 			{ test: /\.html/, loader: 'raw' },
 			{ test: /\.css$/, loader: "style-loader!css-loader" },
-            { test: /\.less$/, loader: "style!css!less" },
-			{ test: /\.(eot|svg|ttf|woff(2)?)(\?v=\d+\.\d+\.\d+)?/, loader: 'url' },
+			{ test: /\.less$/, loader: "style!css!less" },
+			{	test: /\.(eot|svg|ttf|woff(2)?)(\?v=\d+\.\d+\.\d+)?/, loader: 'url' },
 			{ test:  /\.(jpe?g|png|gif|svg)$/i, loader: 'file' }
 		]
+	},
+	externals: {
+		"jquery": "jQuery"
 	},
 	plugins: [
 		new HtmlWebpackPlugin(
@@ -30,7 +36,7 @@ module.exports = {
 		new CopyWebpackPlugin([
 			{ from: './api-docs', to: './api-docs' },
 			{ from: './node_modules/swagger-ui/dist', to: './api-docs/swagger-ui' }
-			]),
+		]),
 		new webpack.optimize.DedupePlugin(),
 		new webpack.ProvidePlugin({
 			'moment': 'moment'
