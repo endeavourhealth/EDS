@@ -1,6 +1,16 @@
-import {DataSetController} from "./dataSet.controller";
-import {DataSetRoute} from "./dataSet.route";
+import {NgModule} from "@angular/core";
+import {BrowserModule} from "@angular/platform-browser";
+import {FormsModule} from "@angular/forms";
 
-angular.module('app.dataSet', [])
-	.controller('DataSetController', DataSetController)
-	.config(DataSetRoute);
+import {DataSetEditComponent} from "./dataSetEditor.component";
+
+@NgModule({
+	imports : [
+		BrowserModule,
+		FormsModule,
+	],
+	declarations : [
+		DataSetEditComponent,
+	]
+})
+export class DataSetModule {}

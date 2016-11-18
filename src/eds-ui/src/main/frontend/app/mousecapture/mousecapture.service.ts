@@ -1,103 +1,40 @@
+import {Injectable, Renderer, ElementRef} from "@angular/core";
+
+@Injectable()
 export class MouseCaptureService {
-	static $inject = ['$rootScope'];
+	private id : number;
+	private $element : ElementRef;
+	private renderer : Renderer;
+	private unbindMouseMove;
+	private unbindMouseUp;
 
-	public registerElement : Function;
-	public acquire : Function;
-	public release : Function;
+	constructor() {
+		this.id = Math.floor(Math.random() * 100000) + 1;
+	}
 
-	constructor(public $rootScope) {
+	mouseMove(evt, config) {
+		if (config && config.mouseMove) {
+			config.mouseMove(evt);
+		}
+	}
 
-		//
-		// Element that the mouse capture applies to, defaults to 'document'
-		// unless the 'mouse-capture' directive is used.
-		//
-		var $element : any = document;
+	mouseUp(evt, config) {
+		if (config && config.mouseUp) {
+			config.mouseUp(evt);
+			config.unbindMouseMove();
+			config.unbindMouseUp();
+		}
+	}
 
-		//
-		// Set when mouse capture is acquired to an object that contains
-		// handlers for 'mousemove' and 'mouseup' events.
-		//
-		var mouseCaptureConfig = null;
+	registerElement(element : ElementRef, renderer : Renderer) {
+		this.renderer = renderer;
+		this.$element = element;
+	}
 
-		//
-		// Handler for mousemove events while the mouse is 'captured'.
-		//
-		var mouseMove = function (evt) {
+	acquire(evt, config) {
+		var vm = this;
 
-			if (mouseCaptureConfig && mouseCaptureConfig.mouseMove) {
-
-				mouseCaptureConfig.mouseMove(evt);
-
-				$rootScope.$digest();
-			}
-		};
-
-		//
-		// Handler for mouseup event while the mouse is 'captured'.
-		//
-		var mouseUp = function (evt) {
-
-			if (mouseCaptureConfig && mouseCaptureConfig.mouseUp) {
-
-				mouseCaptureConfig.mouseUp(evt);
-
-				$rootScope.$digest();
-			}
-		};
-
-		return {
-			$rootScope : this.$rootScope,
-			//
-			// Register an element to use as the mouse capture element instead of
-			// the default which is the document.
-			//
-			registerElement: function(element) {
-
-				$element = element;
-			},
-
-			//
-			// Acquire the 'mouse capture'.
-			// After acquiring the mouse capture mousemove and mouseup events will be
-			// forwarded to callbacks in 'config'.
-			//
-			acquire: function (evt, config) {
-
-				//
-				// Release any prior mouse capture.
-				//
-				this.release();
-
-				mouseCaptureConfig = config;
-
-				//
-				// In response to the mousedown event register handlers for mousemove and mouseup
-				// during 'mouse capture'.
-				//
-				$element.on("mousemove", mouseMove);
-				$element.on("mouseup", mouseUp);
-			},
-
-			//
-			// Release the 'mouse capture'.
-			//
-			release: function () {
-
-				if (mouseCaptureConfig) {
-
-					if (mouseCaptureConfig.released) {
-						//
-						// Let the client know that their 'mouse capture' has been released.
-						//
-						mouseCaptureConfig.released();
-					}
-
-					mouseCaptureConfig = null;
-				}
-
-				$element.unbind("mousemove", mouseMove);
-				$element.unbind("mouseup", mouseUp);
-			},
-		};
+		config.unbindMouseMove = vm.renderer.listen(vm.$element.nativeElement, 'mousemove', (event) => vm.mouseMove(event, config));
+		config.unbindMouseUp = vm.renderer.listen(vm.$element.nativeElement, 'mouseup', (event) => vm.mouseUp(event, config));
 	}
 }
