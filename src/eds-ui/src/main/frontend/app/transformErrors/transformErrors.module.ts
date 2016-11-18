@@ -1,6 +1,19 @@
-import {TransformErrorsController} from "./transformErrors.controller";
-import {TransformErrorsRoute} from "./transformErrors.route";
+import {NgModule} from "@angular/core";
+import {BrowserModule} from "@angular/platform-browser";
+import {FormsModule} from "@angular/forms";
+import {TransformErrorsComponent} from "./transformErrors.component";
+import {TransformErrorsService} from "./transformErrors.service";
 
-angular.module('app.transformErrors', [])
-	.controller('TransformErrorsController', TransformErrorsController)
-	.config(TransformErrorsRoute);
+@NgModule({
+	imports : [
+		BrowserModule,
+		FormsModule
+	],
+	declarations : [
+		TransformErrorsComponent
+	],
+	providers : [
+		TransformErrorsService
+	]
+})
+export class TransformErrorsModule {}

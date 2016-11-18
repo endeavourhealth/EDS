@@ -8,59 +8,59 @@
             <div class="row">
                 <div class="col-md-4">
 
-                    <uib-tabset active="activeForm">
-                        <uib-tab index="0" heading="NHS Number">
+                    <ngb-tabset active="activeForm">
+                        <ngb-tab id="0" title="NHS Number">
+                            <template ngbTabContent>
+                                <div class="panel panel-primary">
+                                    <div class="panel-heading">Trace Patient by NHS Number</div>
+                                    <div class="panel-body">
 
-                            <div class="panel panel-primary">
-                                <div class="panel-heading">Trace Patient by NHS Number</div>
-                                <div class="panel-body">
+                                        <form name="nhsNumberForm" #nhsNumberForm="ngForm">
+                                            <div class="form-group">
+                                                <label>NHS#</label>
+                                                <input name="nhsNumber" type="text" class="form-control" [(ngModel)]="nhsNumber" required #nhsNumberCtrl="ngModel">
+                                            </div>
+                                            <button type="button" class="btn btn-default" [disabled]="!nhsNumberForm.valid" (click)="getPatientIdentitiedByNhsNumber()">Search</button>
+                                            <span *ngIf="!nhsNumberCtrl.pristine && !nhsNumberCtrl.valid">You must enter an NHS number</span>
+                                        </form>
 
-                                    <form name="nhsNumberForm">
-                                        <div class="form-group">
-                                            <label>NHS#</label>
-                                            <input name="nhsNumber" type="text" class="form-control" ng-model="patientIdentityCtrl.nhsNumber" required>
-                                        </div>
-                                        <button type="button" class="btn btn-default" ng-disabled="nhsNumberForm.$invalid" ng-click="patientIdentityCtrl.getPatientIdentitiedByNhsNumber()">Search</button>
-                                        <span ng-show="nhsNumberForm.nhsNumber.$touched && nhsNumberForm.nhsNumber.$invalid">You must enter an NHS number</span>
-                                    </form>
-
+                                    </div>
                                 </div>
-                            </div>
+                            </template>
+                        </ngb-tab>
+                        <ngb-tab id="1" title="EDS ID">
+                            <template ngbTabContent>
+                                <div class="panel panel-primary">
+                                    <div class="panel-heading">Trace Patient by EDS Patient ID</div>
+                                    <div class="panel-body">
 
-                        </uib-tab>
-                        <uib-tab index="1" heading="EDS ID">
+                                        <form name="edsIdForm" #edsIdForm="ngForm">
+                                            <div class="form-group">
+                                                <label>Patient ID</label>
+                                                <input name="patientId" type="text" class="form-control" [(ngModel)]="patientId" required #patientIdCtrl="ngModel">
+                                            </div>
 
-                            <div class="panel panel-primary">
-                                <div class="panel-heading">Trace Patient by EDS Patient ID</div>
-                                <div class="panel-body">
-
-                                    <form name="edsIdForm">
-                                        <div class="form-group">
-                                            <label>Patient ID</label>
-                                            <input name="patientId" type="text" class="form-control" ng-model="patientIdentityCtrl.patientId" required>
-                                        </div>
-
-                                        <button type="button" class="btn btn-default" ng-disabled="edsIdForm.$invalid" ng-click="patientIdentityCtrl.getPatientIdentitiesByPatientId()">Search</button>
-                                        <span ng-show="edsIdForm.patientId.$touched && edsIdForm.patientId.$invalid">You must enter an EDS Patient ID</span>
-                                    </form>
+                                            <button type="button" class="btn btn-default" [disabled]="!edsIdForm.valid" (click)="getPatientIdentitiesByPatientId()">Search</button>
+                                            <span *ngIf="!patientIdCtrl.pristine && !patientIdCtrl.valid">You must enter an EDS Patient ID</span>
+                                        </form>
+                                    </div>
                                 </div>
-                            </div>
-
-                        </uib-tab>
-                        <uib-tab index="2" heading="Local ID">
-
-                            <div class="panel panel-primary">
+                            </template>
+                        </ngb-tab>
+                        <ngb-tab id="2" title="Local ID">
+                            <template ngbTabContent>
+                                <div class="panel panel-primary">
                                 <div class="panel-heading">Trace Patient by Local System ID</div>
                                 <div class="panel-body">
 
-                                    <form name="localIdForm">
+                                    <form name="localIdForm" #localIdForm="ngForm">
 
                                         <div class="form-group">
                                             <label>Service</label>
                                             <div class="input-group">
                                                 <span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
-                                                <select name="service" class="form-control" ng-model="patientIdentityCtrl.serviceId" ng-change="patientIdentityCtrl.loadSystems()" required>
-                                                    <option ng-repeat="item in patientIdentityCtrl.services" value="{{item.uuid}}">{{item.name}}</option>
+                                                <select name="service" class="form-control" [(ngModel)]="serviceId" (ngModelChange)="loadSystems()" required #serviceCtrl="ngModel">
+                                                    <option *ngFor="let item of services" value="{{item.uuid}}">{{item.name}}</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -69,27 +69,27 @@
                                             <label>System</label>
                                             <div class="input-group">
                                                 <span class="input-group-addon"><i class="fa fa-laptop fa-lg fa-fw"></i></span>
-                                                <select name="system" class="form-control" ng-model="patientIdentityCtrl.systemId" required>
-                                                    <option ng-repeat="item in patientIdentityCtrl.systems" value="{{item.uuid}}">{{item.name}}</option>
+                                                <select name="system" class="form-control" [(ngModel)]="systemId" required #systemIdCrtl="ngModel">
+                                                    <option *ngFor="let item of systems" value="{{item.uuid}}">{{item.name}}</option>
                                                 </select>
                                             </div>
                                         </div>
 
                                         <div class="form-group">
                                             <label>Local ID</label>
-                                            <input name="localId" type="text" class="form-control" ng-model="patientIdentityCtrl.localId" required>
+                                            <input name="localId" type="text" class="form-control" [(ngModel)]="localId" required #localIdCtrl="ngModel">
                                         </div>
 
-                                        <button type="button" class="btn btn-default" ng-disabled="localIdForm.$invalid" ng-click="patientIdentityCtrl.getPatientIdentitiesByLocalIdentifier()">Search</button>
-                                        <span ng-show="localIdForm.service.$touched && localIdForm.service.$invalid">You must select a service</span>
-                                        <span ng-show="localIdForm.system.$touched && localIdForm.system.$invalid">You must select a system</span>
-                                        <span ng-show="localIdForm.localId.$touched && localIdForm.localId.$invalid">You must enter a local ID</span>
+                                        <button type="button" class="btn btn-default" [disabled]="!localIdForm.valid" (click)="getPatientIdentitiesByLocalIdentifier()">Search</button>
+                                        <span *ngIf="!serviceCtrl.pristine && !serviceCtrl.valid">You must select a service</span>
+                                        <span *ngIf="!systemIdCrtl.pristine && !systemIdCrtl.valid">You must select a system</span>
+                                        <span *ngIf="!localIdCtrl.pristine && !localIdCtrl.valid">You must enter a local ID</span>
                                     </form>
                                 </div>
                             </div>
-
-                        </uib-tab>
-                    </uib-tabset>
+                            </template>
+                        </ngb-tab>
+                    </ngb-tabset>
 
                 </div>
             </div>
@@ -115,8 +115,8 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr ng-repeat="id in patientIdentityCtrl.patientIdentities">
-                                <td><a style="cursor: pointer" ng-click="patientIdentityCtrl.actionItem(id.patientId,'patient')">{{id.patientId}}</a></td>
+                            <tr *ngFor="let id of patientIdentities">
+                                <td><a style="cursor: pointer" (click)="actionItem(id.patientId,'patient')">{{id.patientId}}</a></td>
                                 <td>{{id.serviceName}}</td>
                                 <td>{{id.systemName}}</td>
                                 <td>{{id.nhsNumber}}</td>

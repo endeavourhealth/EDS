@@ -1,6 +1,22 @@
-import {ResourcesController} from "./resources.controller";
-import {ResourcesRoute} from "./resources.route";
+import {NgModule} from "@angular/core";
+import {BrowserModule} from "@angular/platform-browser";
+import {FormsModule} from "@angular/forms";
+import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 
-angular.module('app.resources', [])
-	.controller('ResourcesController', ResourcesController)
-	.config(ResourcesRoute);
+import {ResourcesComponent} from "./resources.component";
+import {ResourcesService} from "./resources.service";
+
+@NgModule({
+	imports : [
+		BrowserModule,
+		FormsModule,
+		NgbModule,
+	],
+	declarations : [
+		ResourcesComponent
+	],
+	providers : [
+		ResourcesService
+	]
+})
+export class ResourcesModule {}

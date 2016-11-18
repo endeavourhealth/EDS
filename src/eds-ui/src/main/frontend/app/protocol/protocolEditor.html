@@ -1,0 +1,179 @@
+<div class="module">
+	<div class="container-fluid">
+		<div class="module-heading">
+			Data Distribution Protocols
+			<div class="pull-right">
+				<button type="button" class="btn btn-sm btn-success" (click)="save(false)">Save</button>
+				<button type="button" class="btn btn-sm btn-warning" (click)="save(true)">Save & Close</button>
+				<button type="button" class="btn btn-sm btn-danger" (click)="close()">Cancel</button>
+			</div>
+		</div>
+		<div class="module-body">
+			<form>
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label for="name">Protocol Name</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-edit fa-lg fa-fw"></i></span>
+							<input type="text" class="form-control" id="name" [(ngModel)]="libraryItem.name" placeholder="Please enter a data protocol name" name="name">
+						</div>
+					</div>
+					<div class="form-group col-md-6">
+						<label for="description">Protocol Description</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-edit fa-lg fa-fw"></i></span>
+							<textarea class="form-control" id="description" [(ngModel)]="libraryItem.description" placeholder="Please enter a description for this data protocol" name="description"></textarea>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label>Protocol Enabled</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-check fa-lg fa-fw"></i></span>
+							<select class="form-control" [(ngModel)]="libraryItem.protocol.enabled" name="protocolEnabled">
+								<option *ngFor="let enabled of enabled" value="{{enabled}}">{{enabled}}</option>
+							</select>
+						</div>
+					</div>
+					<div class="form-group col-md-6">
+						<label>Patient Consent</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-user fa-lg fa-fw"></i></span>
+							<select class="form-control" [(ngModel)]="libraryItem.protocol.patientConsent" name="patientConsent">
+								<option *ngFor="let consent of consent" value="{{consent}}">{{consent}}</option>
+							</select>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label>Cohort</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-check fa-lg fa-fw"></i></span>
+							<select class="form-control" [(ngModel)]="libraryItem.protocol.cohort" name="cohort">
+								<option *ngFor="let item of cohorts" value="{{item.uuid}}">{{item.name}}</option>
+							</select>
+						</div>
+					</div>
+					<div class="form-group col-md-6">
+						<label>Data Set</label>
+						<div class="input-group">
+							<span class="input-group-addon"><i class="fa fa-user fa-lg fa-fw"></i></span>
+							<select class="form-control" [(ngModel)]="libraryItem.protocol.dataSet" name="dataSet">
+								<option *ngFor="let item of dataSets" value="{{item.uuid}}">{{item.name}}</option>
+							</select>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-8">
+						<label>Publishers & Subscribers</label>
+						<button type="button" class="btn btn-xs btn-success" style="margin-left: 20px" (click)="addContract()">
+							<span class="fa fa-plus"></span>
+						</button>
+						<div class="table scroll-box-350 form-control">
+							<table class="table table-striped table-condensed">
+								<thead>
+								<tr>
+									<th class="col-md-2">Type</th>
+									<th class="col-md-4">Service</th>
+									<th class="col-md-2">System</th>
+									<th class="col-md-2">Active</th>
+									<th class="col-md-2"></th>
+								</tr>
+								</thead>
+								<tbody>
+								<tr class="hover-box show-child-on-hover"
+									*ngFor="let item of libraryItem.protocol.serviceContract"
+									(click)="selectedContract = item;"
+									[ngClass]="{'selection': item == selectedContract}">
+									<td>{{item.type}}</td>
+									<td>{{item.service.name}}</td>
+									<td>{{item.system.name}}</td>
+									<td>{{item.active}}</td>
+									<td>
+										<div class="child-to-show">
+											<button type="button" class="btn btn-danger btn-xs pull-right" (click)="removeContract(this)">
+												<span class="fa fa-remove"></span>
+											</button>
+										</div>
+									</td>
+								</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="form-group col-md-4" *ngIf="selectedContract">
+						<div class="row">
+							<div class="form-group col-md-12">
+								<label>Type</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-question fa-lg fa-fw"></i></span>
+									<select class="form-control" [(ngModel)]="selectedContract.type" name="contractType">
+										<option *ngFor="let type of type" value="{{type}}">{{type}}</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-12">
+								<label>Service</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-hospital-o fa-lg fa-fw"></i></span>
+									<select id="service" class="form-control" [(ngModel)]="selectedContract.service.uuid" (ngModelChange)="setService()" name="contractServiceUuid">
+										<option *ngFor="let item of services" value="{{item.uuid}}">{{item.name}}</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-12">
+								<label>System</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-laptop fa-lg fa-fw"></i></span>
+									<select id="system" class="form-control" [(ngModel)]="selectedContract.system.uuid" (ngModelChange)="setSystem()" name="contractSystemUuid">
+										<option *ngFor="let item of systems" value="{{item.uuid}}">{{item.name}}</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-12">
+								<label>Technical Interface</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-cog fa-lg fa-fw"></i></span>
+									<select id="technicalInterface" class="form-control" [(ngModel)]="selectedContract.technicalInterface.uuid" (ngModelChange)="setTechnicalInterface()" name="contractTechnicalInterfaceUuid">
+										<option *ngFor="let item of technicalInterfaces" value="{{item.uuid}}">{{item.name}}</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group col-md-12">
+								<label>Active</label>
+								<div class="input-group">
+									<span class="input-group-addon"><i class="fa fa-check fa-lg fa-fw"></i></span>
+									<select class="form-control" [(ngModel)]="selectedContract.active" name="contractActive">
+										<option *ngFor="let enabled of enabled" value="{{enabled}}">{{enabled}}</option>
+									</select>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+

@@ -7,7 +7,7 @@ export class BaseHttp2Service {
 	httpGet(url : string, options? : RequestOptionsArgs) : Observable<any> {
 		return this.http.get(url, options)
 			.map((res:Response) => {
-				return res.json();
+				return res.text() ? res.json() : null;
 			})
 			.catch(this.handleError);
 	}
@@ -15,7 +15,15 @@ export class BaseHttp2Service {
 	httpPost(url : string, options? : RequestOptionsArgs) : Observable<any> {
 		return this.http.post(url, options)
 			.map((res:Response) => {
-				return res.json();
+				return res.text() ? res.json() : null;
+			})
+			.catch(this.handleError);
+	}
+
+	httpDelete(url : string, options? : RequestOptionsArgs) : Observable<any> {
+		return this.http.delete(url, options)
+			.map((res:Response) => {
+				return res.text() ? res.json() : null;
 			})
 			.catch(this.handleError);
 	}

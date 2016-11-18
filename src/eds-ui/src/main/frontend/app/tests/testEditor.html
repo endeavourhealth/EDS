@@ -1,0 +1,447 @@
+<style>
+	.form-group {
+		margin-bottom: 0px;
+	}
+</style>
+
+<div class="modal-header">
+	<button type="button" class="close" (click)="cancel()" aria-hidden="true">&times;</button>
+	<h4 class="modal-title">{{title}}</h4>
+</div>
+<div class="modal-body">
+
+	<ngb-tabset active="active">
+		<ngb-tab id="0" title="Resource Filters & Restrictions">
+			<template ngbTabContent>
+				<br/>
+				<form role="form">
+					<div class='row'>
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label>FHIR Resource</label>
+								<select class="form-control" [(ngModel)]="ruleDatasource" (ngModelChange)="resourceChange(ruleDatasource)" (disabled)="editMode" name="dataSource">
+									<option *ngFor="let datasource of datasources" value="{{datasource}}">{{datasource}}</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-xs-6" *ngIf="addFilter">
+							<div class="form-group">
+								<label>Add a Filter</label><br/>
+								<button type="button" class="btn btn-primary"
+										(click)="showFilter('CODE')" *ngIf="codeFilter">Code</button>
+								<button type="button" class="btn btn-primary"
+										(click)="showFilter('EFFECTIVE_DATE')" *ngIf="dateFilter">Date</button>
+								<button type="button" class="btn btn-primary"
+										(click)="showFilter('VALUE')" *ngIf="valueFilter">Value</button>
+								<button type="button" class="btn btn-primary"
+										(click)="showFilter('DOB')" *ngIf="dobFilter">DOB</button>
+								<button type="button" class="btn btn-primary"
+										(click)="showFilter('SEX')" *ngIf="sexFilter">Sex</button>
+								<button type="button" class="btn btn-primary"
+										(click)="showFilter('AGE')" *ngIf="ageFilter">Age</button>
+								<button type="button" class="btn btn-primary"
+										(click)="showFilter('REGISTRATION_DATE')" *ngIf="regFilter">Reg Date</button>
+								<button type="button" class="btn btn-primary"
+										(click)="showFilter('NHS_NO')" *ngIf="nhsFilter">NHS No.</button>
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="codeEditor">
+						<hr/>
+						<div class="col-xs-12">
+							<div class="form-group">
+								<label>Filter by Clinical Codes:</label>
+								<a class="queryLink" (click)="removeFilter('code')"><i class="fa fa-times"></i> Remove filter</a>
+								<div class="form-control" style="cursor: pointer; height:auto; overflow-y:scroll; min-height: 30px; max-height: 90px;" (click)="showCodePicker()">
+									<span *ngFor="let selection of codeSelection">
+										{{ getTerm(selection.code) }}
+										<span class="label label-success" *ngIf="selection.includeChildren && (!selection.exclusion || selection.exclusion.length == 0)">All children</span>
+										<span class="label label-warning" *ngIf="selection.includeChildren && (selection.exclusion && selection.exclusion.length > 0)">Some children</span>
+										<span class="label label-danger" *ngIf="!selection.includeChildren">No children</span>
+										<span *ngIf="!this.$last">  |  </span>
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="dobEditor">
+						<hr/>
+						<div class="col-xs-12">
+							<div class="form-group">
+								<div class="input-group">
+									<label for="dobrelative">Filter by DOB using relative dates</label>&nbsp;&nbsp;
+									<input id="dobrelative" type="radio" name="dobdatetype" [(ngModel)]="dobdatetype" value="dobrelative" name="dobRelative">
+									&nbsp;
+									<label for="dobabsolute">or absolute dates</label>&nbsp;&nbsp;
+									<input id="dobabsolute" type="radio" name="dobdatetype" [(ngModel)]="dobdatetype" value="dobabsolute" name="dobAbsolute">
+									<a class="queryLink" (click)="removeFilter('dob')"><i class="fa fa-times"></i> Remove filter</a>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="dobEditor">
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label *ngIf="dobdatetype == 'dobabsolute'">From:</label>
+								<p class="input-group" *ngIf="dobdatetype == 'dobabsolute'">
+									<input type="text" class="form-control" uib-datepicker-popup="dd-MMM-yyyy" is-open="dobEditorFromDatePicker" [(ngModel)]="filterDOBFrom" (blur)="filterDateFromChange(filterDOBFrom, dobLabel)" placeholder="Select {{dobLabel}} from" name="dobFrom">
+									<span class="input-group-btn">
+										<button type="button" class="btn btn-default" (click)="dobEditorFromDatePicker = true"><i class="fa fa-calendar"></i></button>
+									</span>
+								</p>
+								<label *ngIf="dobdatetype == 'dobrelative'">From:</label>
+								<p class="input-group" *ngIf="dobdatetype == 'dobrelative'">
+									<input type="text" class="form-control" style="width:80px;margin-right:10px" placeholder="no." [(ngModel)]="filterDOBFromRelativeValue" (blur)="filterRelativeDateFromChange(filterDOBFromRelativeValue, filterDOBFromRelativePeriod, dobLabel)" name="dobFromRelativeValue">
+									<select class="form-control" style="width:100px" [(ngModel)]="filterDOBFromRelativePeriod" (ngModelChange)="filterRelativeDateFromChange(filterDOBFromRelativeValue, filterDOBFromRelativePeriod, dobLabel)" name="dobFromRelativePeriod">
+										<option *ngFor="let period of periods" value="{{period}}">{{period}}</option>
+									</select>&nbsp;&nbsp;of the baseline date
+								</p>
+							</div>
+						</div>
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label *ngIf="dobdatetype == 'dobabsolute'">To:</label>
+								<p class="input-group" *ngIf="dobdatetype == 'dobabsolute'">
+									<input type="text" class="form-control" uib-datepicker-popup="dd-MMM-yyyy" is-open="dobEditorToDatePicker" [(ngModel)]="filterDOBTo" (blur)="filterDateToChange(filterDOBTo, dobLabel)" placeholder="Select {{dobLabel}} to" name="dobTo">
+									<span class="input-group-btn">
+										<button type="button" class="btn btn-default" (click)="dobEditorToDatePicker = true"><i class="fa fa-calendar"></i></button>
+									</span>
+								</p>
+								<label *ngIf="dobdatetype == 'dobrelative'">To:</label>
+								<p class="input-group" *ngIf="dobdatetype == 'dobrelative'">
+									<input type="text" class="form-control" style="width:80px;margin-right:10px" placeholder="no." [(ngModel)]="filterDOBToRelativeValue" (blur)="filterRelativeDateToChange(filterDOBToRelativeValue, filterDOBToRelativePeriod, dobLabel)" name="dobToRelativeValue">
+									<select class="form-control" style="width:100px" [(ngModel)]="filterDOBToRelativePeriod" (ngModelChange)="filterRelativeDateToChange(filterDOBToRelativeValue, filterDOBToRelativePeriod, dobLabel)" name="dobToRelativePeriod">
+										<option *ngFor="let period of periods" value="{{period}}">{{period}}</option>
+									</select>&nbsp;&nbsp;of the baseline date
+								</p>
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="sexEditor">
+						<hr/>
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label>Filter by {{sexLabel}}:</label>
+								<a class="queryLink" (click)="removeFilter('sex')"><i class="fa fa-times"></i> Remove filter</a>
+								<select class="form-control" [(ngModel)]="filterSex" (ngModelChange)="filterValueChange(filterSex, sexLabel)" name="sex">
+									<option *ngFor="let gender of genders" value="{{gender}}">{{gender}}</option>
+								</select>
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="dateEditor">
+						<hr/>
+						<div class="col-xs-12">
+							<div class="form-group">
+								<div class="input-group">
+									<label for="relative">Filter by {{dateLabel}} using relative dates</label>&nbsp;&nbsp;
+									<input id="relative" type="radio" name="datetype" [(ngModel)]="datetype" value="relative" name="dateRelative">
+									&nbsp;
+									<label for="absolute">or absolute dates</label>&nbsp;&nbsp;
+									<input id="absolute" type="radio" name="datetype" [(ngModel)]="datetype" value="absolute" name="dateAbsolute">
+									<a class="queryLink" (click)="removeFilter('date')"><i class="fa fa-times"></i> Remove filter</a>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="dateEditor">
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label *ngIf="datetype == 'absolute'">From:</label>
+								<p class="input-group" *ngIf="datetype == 'absolute'">
+									<input type="text" class="form-control" uib-datepicker-popup="dd-MMM-yyyy" is-open="dateEditorFromDatePicker" [(ngModel)]="filterDateFrom" (blur)="filterDateFromChange(filterDateFrom, dateLabel)" placeholder="Select {{dateLabel}} from" name="dateFrom">
+									<span class="input-group-btn">
+										<button type="button" class="btn btn-default" (click)="dateEditorFromDatePicker = true"><i class="fa fa-calendar"></i></button>
+									</span>
+								</p>
+								<label *ngIf="datetype == 'relative'">From:</label>
+								<p class="input-group" *ngIf="datetype == 'relative'">
+									<input type="text" class="form-control" style="width:80px;margin-right:10px" placeholder="no." [(ngModel)]="filterDateFromRelativeValue" (blur)="filterRelativeDateFromChange(filterDateFromRelativeValue, filterDateFromRelativePeriod, dateLabel)" name="dateFromRelativeValue">
+									<select class="form-control" style="width:100px" [(ngModel)]="filterDateFromRelativePeriod" (ngModelChange)="filterRelativeDateFromChange(filterDateFromRelativeValue, filterDateFromRelativePeriod, dateLabel)" name="dateFromRelativePeriod">
+										<option *ngFor="let period of periods" value="{{period}}">{{period}}</option>
+									</select>&nbsp;&nbsp;of the baseline date
+								</p>
+							</div>
+						</div>
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label *ngIf="datetype == 'absolute'">To:</label>
+								<p class="input-group" *ngIf="datetype == 'absolute'">
+									<input type="text" class="form-control" uib-datepicker-popup="dd-MMM-yyyy" is-open="dateEditorToDatePicker" [(ngModel)]="filterDateTo" (blur)="filterDateToChange(filterDateTo, dateLabel)" placeholder="Select {{dateLabel}} to" name="dateTo">
+									<span class="input-group-btn">
+										<button type="button" class="btn btn-default" (click)="dateEditorToDatePicker = true"><i class="fa fa-calendar"></i></button>
+									</span>
+								</p>
+								<label *ngIf="datetype == 'relative'">To:</label>
+								<p class="input-group" *ngIf="datetype == 'relative'">
+									<input type="text" class="form-control" style="width:80px;margin-right:10px" placeholder="no." [(ngModel)]="filterDateToRelativeValue" (blur)="filterRelativeDateToChange(filterDateToRelativeValue, filterDateToRelativePeriod, dateLabel)" name="dateToRelativeVakue">
+									<select class="form-control" style="width:100px" [(ngModel)]="filterDateToRelativePeriod" (ngModelChange)="filterRelativeDateToChange(filterDateToRelativeValue, filterDateToRelativePeriod, dateLabel)" name="dateToRelativePeriod">
+										<option *ngFor="let period of periods" value="{{period}}">{{period}}</option>
+									</select>&nbsp;&nbsp;of the baseline date
+								</p>
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="valueEditor">
+						<hr/>
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label>Filter by {{valueField}} From:</label>
+								<a class="queryLink" (click)="removeFilter('value')"><i class="fa fa-times"></i> Remove filter</a>
+								<input type="text" class="form-control" [(ngModel)]="filterValueFrom" (blur)="filterValueFromChange(filterValueFrom)" placeholder="Select {{valueField}} from" name="valueFrom">
+							</div>
+						</div>
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label>Filter by {{valueField}} To:</label>
+								<input type="text" class="form-control" [(ngModel)]="filterValueTo" (blur)="filterValueToChange(filterValueTo)" placeholder="Select {{valueField}} to" name="valueT">
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="valueSetEditor">
+						<hr/>
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label>Filter by {{valueSetField}}:</label>
+								<a class="queryLink" (click)="removeFilter('valueSet')"><i class="fa fa-times"></i> Remove filter</a>
+								<input type="text" class="form-control" [(ngModel)]="filterValueSet" (blur)="filterValueSetChange(filterValueSet)" placeholder="Specify {{valueSetField}}(s) separated by commas" name="valueSet">
+							</div>
+						</div>
+					</div>
+					<div *ngIf="addRestriction">
+						<hr/>
+						<a class="queryLink" (click)="toggleRestriction()"><i class="fa fa-sort-amount-asc"></i> Add Restriction (limit the number of entries filtered)</a>
+					</div>
+					<div class='row' *ngIf="showRestriction"><br/>
+						<div class="col-xs-3">
+							<div class="form-group">
+								<label>Sort Field</label>
+								<select class="form-control" [(ngModel)]="restrictionFieldName" (ngModelChange)="restrictionChange(restrictionFieldName)" name="restriction">
+									<option *ngFor="let restrictionfield of fields" value="{{restrictionfield}}">{{restrictionfield}}</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-xs-3">
+							<div class="form-group">
+								<label>Sort Order</label>
+								<select class="form-control" [(ngModel)]="restrictionOrderDirection" (ngModelChange)="restrictionChange(restrictionOrderDirection)" name="restrictionOrder">
+									<option *ngFor="let sortorder of sortorders" value="{{sortorder}}">{{sortorder}}</option>
+								</select>
+							</div>
+						</div>
+						<div class="col-xs-3">
+							<div class="form-group">
+								<label>Restriction Count</label>
+								<input type="text" class="form-control" (disabled)="disableRestrictionCount" [(ngModel)]="restrictionCount" placeholder="1" (blur)="restrictionChange(restrictionCount)" name="restrictionCount">
+							</div>
+						</div>
+						<a class="queryLink" (click)="removeFilter('restriction')"><i class="fa fa-times"></i> Remove restriction</a>
+					</div>
+					<br/>
+				</form>
+			</template>
+		</ngb-tab>
+		<ngb-tab id="1" title="Additional Test Against the Data Source Filters & Restrictions" *ngIf="viewFieldTest">
+			<template ngbTabContent>
+				<br/>
+				<form role="form">
+					<div class='row'>
+						<div class="col-xs-12" *ngIf="addFilter">
+							<div class="form-group">
+								<label>Add a Field (to test against the results of the Data Source Filters & Restrictions)</label><br/>
+								<button type="button" class="btn btn-primary"
+										(click)="showFieldTest('CODE')" *ngIf="codeFilter">Code</button>
+								<button type="button" class="btn btn-primary"
+										(click)="showFieldTest('EFFECTIVE_DATE')" *ngIf="dateFilter">Date</button>
+								<button type="button" class="btn btn-primary"
+										(click)="showFieldTest('VALUE')" *ngIf="valueFilter">Value</button>
+								<button type="button" class="btn btn-primary"
+										(click)="showFieldTest('DOB')" *ngIf="dobFilter">DOB</button>
+								<button type="button" class="btn btn-primary"
+										(click)="showFieldTest('SEX')" *ngIf="sexFilter">Sex</button>
+								<button type="button" class="btn btn-primary"
+										(click)="showFieldTest('AGE')" *ngIf="ageFilter">Age</button>
+								<button type="button" class="btn btn-primary"
+										(click)="showFieldTest('REGISTRATION_DATE')" *ngIf="regFilter">Reg Date</button>
+								<button type="button" class="btn btn-primary"
+										(click)="showFieldTest('NHS_NO')" *ngIf="nhsFilter">NHS No.</button>
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="fieldTestCodeEditor">
+						<hr/>
+						<div class="col-xs-12">
+							<div class="form-group">
+								<label>Test by Clinical Codes:</label>
+								<a class="queryLink" (click)="removeFieldTest('code')"><i class="fa fa-times"></i> Remove field test</a>
+								<div class="form-control" style="cursor: pointer; height:auto; overflow-y:scroll; min-height: 30px; max-height: 90px;" (click)="showFieldTestCodePicker()">
+									<span *ngFor="let selection of fieldTestCodeSelection">
+										{{ getTerm(selection.code) }}
+										<span class="label label-success" *ngIf="selection.includeChildren && (!selection.exclusion || selection.exclusion.length == 0)">All children</span>
+										<span class="label label-warning" *ngIf="selection.includeChildren && (selection.exclusion && selection.exclusion.length > 0)">Some children</span>
+										<span class="label label-danger" *ngIf="!selection.includeChildren">No children</span>
+										<span *ngIf="!this.$last">  |  </span>
+									</span>
+								</div>
+
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="fieldTestDobEditor">
+						<hr/>
+						<div class="col-xs-12">
+							<div class="form-group">
+								<div class="input-group">
+									<label for="fieldtestdobrelative">Test by DOB using relative dates</label>&nbsp;&nbsp;
+									<input id="fieldtestdobrelative" type="radio" name="fieldTestDobdatetype" [(ngModel)]="fieldTestDobdatetype" value="fieldtestdobrelative" name="testDobRelative">
+									&nbsp;
+									<label for="fieldtestdobabsolute">or absolute dates</label>&nbsp;&nbsp;
+									<input id="fieldtestdobabsolute" type="radio" name="fieldTestDobdatetype" [(ngModel)]="fieldTestDobdatetype" value="fieldtestdobabsolute" name="testDobAbsolute">
+									<a class="queryLink" (click)="removeFieldTest('dob')"><i class="fa fa-times"></i> Remove field test</a>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="fieldTestDobEditor">
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label *ngIf="fieldTestDobdatetype == 'fieldtestdobabsolute'">From:</label>
+								<p class="input-group" *ngIf="fieldTestDobdatetype == 'fieldtestdobabsolute'">
+									<input type="text" class="form-control" uib-datepicker-popup="dd-MMM-yyyy" is-open="dobEditorFromDatePicker" [(ngModel)]="fieldTestDOBFrom" (blur)="fieldTestDateFromChange(fieldTestDOBFrom, fieldTestDobLabel)" placeholder="Select {{fieldTestDobLabel}} from" name="testDobFrom">
+									<span class="input-group-btn">
+										<button type="button" class="btn btn-default" (click)="dobEditorFromDatePicker = true"><i class="fa fa-calendar"></i></button>
+									</span>
+								</p>
+								<label *ngIf="fieldTestDobdatetype == 'fieldtestdobrelative'">From:</label>
+								<p class="input-group" *ngIf="fieldTestDobdatetype == 'fieldtestdobrelative'">
+									<input type="text" class="form-control" style="width:80px;margin-right:10px" placeholder="no." [(ngModel)]="fieldTestDOBFromRelativeValue" (blur)="fieldTestRelativeDateFromChange(fieldTestDOBFromRelativeValue, fieldTestDOBFromRelativePeriod, fieldTestDobLabel)" name="testDobFromRelativeValue">
+									<select class="form-control" style="width:100px" [(ngModel)]="fieldTestDOBFromRelativePeriod" (ngModelChange)="fieldTestRelativeDateFromChange(fieldTestDOBFromRelativeValue, fieldTestDOBFromRelativePeriod, fieldTestDobLabel)" name="testDobFromRelativePeriod">
+										<option *ngFor="let period of periods" value="{{period}}">{{period}}</option>
+									</select>&nbsp;&nbsp;of the baseline date
+								</p>
+							</div>
+						</div>
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label *ngIf="fieldTestDobdatetype == 'fieldtestdobabsolute'">To:</label>
+								<p class="input-group" *ngIf="fieldTestDobdatetype == 'fieldtestdobabsolute'">
+									<input type="text" class="form-control" uib-datepicker-popup="dd-MMM-yyyy" is-open="dobEditorToDatePicker" [(ngModel)]="fieldTestDOBTo" (blur)="fieldTestDateToChange(fieldTestDOBTo, fieldTestDobLabel)" placeholder="Select {{fieldTestDobLabel}} to" name="testDobTo">
+									<span class="input-group-btn">
+										<button type="button" class="btn btn-default" (click)="dobEditorToDatePicker = true"><i class="fa fa-calendar"></i></button>
+									</span>
+								</p>
+								<label *ngIf="fieldTestDobdatetype == 'fieldtestdobrelative'">To:</label>
+								<p class="input-group" *ngIf="fieldTestDobdatetype == 'fieldtestdobrelative'">
+									<input type="text" class="form-control" style="width:80px;margin-right:10px" placeholder="no." [(ngModel)]="fieldTestDOBToRelativeValue" (blur)="fieldTestRelativeDateToChange(fieldTestDOBToRelativeValue, fieldTestDOBToRelativePeriod, fieldTestDobLabel)" name="testDobToRelativeValue">
+									<select class="form-control" style="width:100px" [(ngModel)]="fieldTestDOBToRelativePeriod" (ngModelChange)="fieldTestRelativeDateToChange(fieldTestDOBToRelativeValue, fieldTestDOBToRelativePeriod, fieldTestDobLabel)" name="testDobToRelativePeriod">
+										<option *ngFor="let period of periods" value="{{period}}">{{period}}</option>
+									</select>&nbsp;&nbsp;of the baseline date
+								</p>
+							</div>
+						</div>
+					</div>
+
+					<div class='row' *ngIf="fieldTestSexEditor">
+						<hr/>
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label>Test by {{fieldTestSexLabel}}:</label>
+								<a class="queryLink" (click)="removeFieldTest('sex')"><i class="fa fa-times"></i> Remove field test</a>
+								<select class="form-control" [(ngModel)]="fieldTestSex" (ngModelChange)="fieldTestValueChange(fieldTestSex, fieldTestSexLabel)" name="testSex">
+									<option *ngFor="let gender of genders" value="{{gender}}">{{gender}}</option>
+								</select>
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="fieldTestDateEditor">
+						<hr/>
+						<div class="col-xs-12">
+							<div class="form-group">
+								<div class="input-group">
+									<label for="fieldtestrelative">Test by {{fieldTestDateLabel}} using relative dates</label>&nbsp;&nbsp;
+									<input id="fieldtestrelative" type="radio" name="fieldTestDatetype" [(ngModel)]="fieldTestDatetype" value="fieldtestrelative" name="testDateRelative">
+									&nbsp;
+									<label for="fieldtestabsolute">or absolute dates</label>&nbsp;&nbsp;
+									<input id="fieldtestabsolute" type="radio" name="fieldTestDatetype" [(ngModel)]="fieldTestDatetype" value="fieldtestabsolute" name="testDateAbsolute">
+									<a class="queryLink" (click)="removeFieldTest('date')"><i class="fa fa-times"></i> Remove field test</a>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="fieldTestDateEditor">
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label *ngIf="fieldTestDatetype == 'fieldtestabsolute'">From:</label>
+								<p class="input-group" *ngIf="fieldTestDatetype == 'fieldtestabsolute'">
+									<input type="text" class="form-control" uib-datepicker-popup="dd-MMM-yyyy" is-open="dateEditorFromDatePicker" [(ngModel)]="fieldTestDateFrom" (blur)="fieldTestDateFromChange(fieldTestDateFrom, fieldTestDateLabel)" placeholder="Select {{fieldTestDateLabel}} from" name="testDateFrom">
+									<span class="input-group-btn">
+										<button type="button" class="btn btn-default" (click)="dateEditorFromDatePicker = true"><i class="fa fa-calendar"></i></button>
+									</span>
+								</p>
+								<label *ngIf="fieldTestDatetype == 'fieldtestrelative'">From:</label>
+								<p class="input-group" *ngIf="fieldTestDatetype == 'fieldtestrelative'">
+									<input type="text" class="form-control" style="width:80px;margin-right:10px" placeholder="no." [(ngModel)]="fieldTestDateFromRelativeValue" (blur)="fieldTestRelativeDateFromChange(fieldTestDateFromRelativeValue, fieldTestDateFromRelativePeriod, fieldTestDateLabel)" name="testDateFromRelativeValue">
+									<select class="form-control" style="width:100px" [(ngModel)]="fieldTestDateFromRelativePeriod" (ngModelChange)="fieldTestRelativeDateFromChange(fieldTestDateFromRelativeValue, fieldTestDateFromRelativePeriod, fieldTestDateLabel)" name="testDateFromRelativePeriod">
+										<option *ngFor="let period of periods" value="{{period}}">{{period}}</option>
+									</select>&nbsp;&nbsp;of the baseline date
+								</p>
+							</div>
+						</div>
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label *ngIf="fieldTestDatetype == 'fieldtestabsolute'">To:</label>
+								<p class="input-group" *ngIf="fieldTestDatetype == 'fieldtestabsolute'">
+									<input type="text" class="form-control" ngbDatepicker #d="ngbDatepicker" [(ngModel)]="fieldTestDateTo" (blur)="fieldTestDateToChange(fieldTestDateTo, fieldTestDateLabel)" placeholder="Select {{fieldTestDateLabel}} to" name="testDateTo">
+									<span class="input-group-btn">
+										<button type="button" class="btn btn-default" (click)="d.toggle()"><i class="fa fa-calendar"></i></button>
+									</span>
+								</p>
+								<label *ngIf="fieldTestDatetype == 'fieldtestrelative'">To:</label>
+								<p class="input-group" *ngIf="fieldTestDatetype == 'fieldtestrelative'">
+									<input type="text" class="form-control" style="width:80px;margin-right:10px" placeholder="no." [(ngModel)]="fieldTestDateToRelativeValue" (blur)="fieldTestRelativeDateToChange(fieldTestDateToRelativeValue, fieldTestDateToRelativePeriod, fieldTestDateLabel)" name="testDateToRelativeValue">
+									<select class="form-control" style="width:100px" [(ngModel)]="fieldTestDateToRelativePeriod" (ngModelChange)="fieldTestRelativeDateToChange(fieldTestDateToRelativeValue, fieldTestDateToRelativePeriod, fieldTestDateLabel)" name="testDateToRelativePeriod">
+										<option *ngFor="let period of periods" value="{{period}}">{{period}}</option>
+									</select>&nbsp;&nbsp;of the baseline date
+								</p>
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="fieldTestValueEditor">
+						<hr/>
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label>Test by {{fieldTestValueField}} From:</label>
+								<a class="queryLink" (click)="removeFieldTest('value')"><i class="fa fa-times"></i> Remove field test</a>
+								<input type="text" class="form-control" [(ngModel)]="fieldTestValueFrom" (blur)="fieldTestValueFromChange(fieldTestValueFrom)" placeholder="Select {{fieldTestValueField}} from" name="testValueFrom">
+							</div>
+						</div>
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label>Test by {{fieldTestValueField}} To:</label>
+								<input type="text" class="form-control" [(ngModel)]="fieldTestValueTo" (blur)="fieldTestValueToChange(fieldTestValueTo)" placeholder="Select {{fieldTestValueField}} to" name="testValueTo">
+							</div>
+						</div>
+					</div>
+					<div class='row' *ngIf="fieldTestValueSetEditor">
+						<hr/>
+						<div class="col-xs-6">
+							<div class="form-group">
+								<label>Test by {{fieldTestValueSetField}}:</label>
+								<a class="queryLink" (click)="removeFieldTest('valueSet')"><i class="fa fa-times"></i> Remove filter</a>
+								<input type="text" class="form-control" [(ngModel)]="fieldTestValueSet" (blur)="fieldTestValueSetChange(fieldTestValueSet)" placeholder="Specify {{fieldTestValueSetField}}(s) separated by commas" name="testValueSet">
+							</div>
+						</div>
+					</div>
+					<br/>
+				</form>
+			</template>
+		</ngb-tab>
+	</ngb-tabset>
+
+</div>
+<div class="modal-footer">
+	<button type="button" class="btn btn-default"
+			(click)="cancel()">Cancel</button>
+	<button type="button" class="btn btn-primary"
+			(click)="save();">Ok</button>
+</div>

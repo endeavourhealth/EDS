@@ -1,6 +1,16 @@
-import {SystemController} from "./system.controller";
-import {systemRoute} from "./system.route";
+import {NgModule} from "@angular/core";
+import {BrowserModule} from "@angular/platform-browser";
+import {FormsModule} from "@angular/forms";
 
-angular.module('app.system', [])
-	.controller('SystemController', SystemController)
-	.config(systemRoute);
+import {SystemEditComponent} from "./systemEditor.component";
+
+@NgModule({
+	imports : [
+		BrowserModule,
+		FormsModule,
+	],
+	declarations : [
+		SystemEditComponent,
+	]
+})
+export class SystemModule {}

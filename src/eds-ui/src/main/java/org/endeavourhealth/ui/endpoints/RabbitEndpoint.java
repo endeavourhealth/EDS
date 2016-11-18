@@ -196,7 +196,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
-	@Consumes(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.TEXT_PLAIN)
 	@Path("/synchronize")
 	@RequiresAdmin
 	public Response synchronizeRabbit(@Context SecurityContext sc, String address) throws Exception {
