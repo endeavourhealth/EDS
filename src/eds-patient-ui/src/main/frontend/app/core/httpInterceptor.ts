@@ -43,10 +43,13 @@ export class AuthHttp extends Http {
 	private appendAuthHeader(options?: RequestOptionsArgs): RequestOptionsArgs {
 		let mergedOptions: RequestOptionsArgs;
 		if (!options) {
-			mergedOptions = { headers: new Headers() };
+			mergedOptions = { };
 		} else {
 			mergedOptions = options;
 		}
+
+		if (!mergedOptions.headers)
+			mergedOptions.headers = new Headers();
 
 		mergedOptions.withCredentials = true;
 

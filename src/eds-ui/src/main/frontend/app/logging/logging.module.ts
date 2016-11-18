@@ -1,8 +1,25 @@
-import {LogEntryDialogController} from "./logEntryDialog.controller";
-import {LoggingController} from "./logging.controller";
-import {LoggingRoute} from "./logging.route";
+import {NgModule} from "@angular/core";
+import {BrowserModule} from "@angular/platform-browser";
+import {FormsModule} from "@angular/forms";
 
-angular.module('app.logging', [])
-	.controller('LogEntryDialogController', LogEntryDialogController)
-	.controller('LoggingController', LoggingController)
-	.config(LoggingRoute);
+import {LogEntryDialog} from "./logEntry.dialog";
+import {LoggingComponent} from "./logging.component";
+import {LoggingService} from "./logging.service";
+
+@NgModule({
+	imports : [
+		BrowserModule,
+		FormsModule
+	],
+	declarations : [
+		LogEntryDialog,
+		LoggingComponent,
+	],
+	entryComponents : [
+		LogEntryDialog
+	],
+	providers : [
+		LoggingService
+	]
+})
+export class LoggingModule {}

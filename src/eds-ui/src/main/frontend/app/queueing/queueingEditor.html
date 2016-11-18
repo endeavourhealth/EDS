@@ -1,0 +1,46 @@
+<div class="modal-header">
+	<button type="button" class="close" (click)="cancel()" aria-hidden="true">&times;</button>
+	<h4 class="modal-title">Route Group</h4>
+</div>
+<div class="modal-body">
+	<form endUserRole="form" class="container-fluid">
+		<div class="row">
+			<div class="form-group col-md-12">
+				<label class="control-label">Name</label>
+				<input type="text" class="form-control" placeholder="Route name" [(ngModel)]="resultData.name" name="name">
+			</div>
+		</div>
+		<div class="row">
+			<div class="form-group col-md-12">
+				<label class="control-label">Description</label>
+				<input type="text" class="form-control" placeholder="Description" [(ngModel)]="resultData.description" name="description">
+			</div>
+		</div>
+		<div class="row">
+			<div class="form-group col-md-12">
+				<label class="control-label">Filter</label>
+				<input type="text" class="form-control" placeholder="Filter" [(ngModel)]="resultData.regex" name="regex">
+			</div>
+		</div>
+		<div class="row">
+			<div class="form-group col-md-12">
+				<label class="control-label"></label>
+				<button type="button" class="btn btn-xs" (click)="addFilter('[A-Z]')">A-Z</button>
+				<button type="button" class="btn btn-xs" (click)="addFilter('[0-9]')">0-9</button>
+				<button type="button" class="btn btn-xs" (click)="addFilter('[A-Z,0-9]')">A-9</button>
+			</div>
+		</div>
+		<div class="row">
+			<div class="form-group col-md-12">
+				<label class="control-label">Key/Queue</label>
+				<input type="text" class="form-control" placeholder="Route Key" [(ngModel)]="resultData.routeKey" name="routeKey">
+			</div>
+		</div>
+	</form>
+</div>
+<div class="modal-footer">
+	<button type="button" class="btn"
+					(click)="cancel()">Cancel</button>
+	<button type="button" class="btn btn-primary"
+					(click)="ok();">Ok</button>
+</div>

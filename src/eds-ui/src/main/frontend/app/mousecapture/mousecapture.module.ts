@@ -1,6 +1,19 @@
-import {MouseCaptureDirective} from "./mousecapture.directives";
+import {NgModule, Renderer} from "@angular/core";
+import {MouseCaptureDirective} from "./mousecapture.directive";
+import {DraggingService} from "./dragging.service";
 import {MouseCaptureService} from "./mousecapture.service";
 
-angular.module('mouseCapture', [])
-	.directive('mouseCapture', MouseCaptureDirective.factory())
-	.factory('mouseCapture', MouseCaptureService);
+@NgModule({
+	declarations : [
+		MouseCaptureDirective,
+	],
+	providers : [
+		DraggingService,
+		MouseCaptureService,
+	],
+	exports : [
+		MouseCaptureDirective
+	]
+})
+export class MouseCaptureModule {}
+

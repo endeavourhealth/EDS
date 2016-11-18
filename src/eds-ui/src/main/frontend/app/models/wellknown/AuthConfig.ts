@@ -1,6 +1,6 @@
 export class AuthConfig {
 
-			constructor() {
+constructor() {
 	}
 
 	realm : string;

@@ -1,0 +1,141 @@
+<div class="module">
+	<div class="container-fluid">
+		<div class="module-heading">Cohort editor
+			<div class="pull-right">
+				<button class="btn btn-sm btn-default"
+								(click)="zoomIn()"
+								title="Zoom in the chart">
+					<i class="fa fa-search-plus"></i> Zoom In
+				</button>
+				<button class="btn btn-sm btn-default"
+								(click)="zoomOut()"
+								title="Zoom out the chart">
+					<i class="fa fa-search-minus"></i> Zoom Out
+				</button>
+				&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+				<button class="btn btn-sm btn-primary"
+								(click)="addNewRule('1')"
+								title="Add a new rule to this query">
+					<i class="fa fa-plus"></i> Add Rule
+				</button>
+
+				<button class="btn btn-sm btn-default"
+								(click)="addNewRule('2')"
+								title="Add another query as a rule to this query">
+					<i class="fa fa-plus"></i> Add Cohort as Rule
+				</button>
+
+				<button class="btn btn-sm btn-info"
+								(click)="addNewRule('3')"
+								title="Add a new expression rule to this query">
+					<i class="fa fa-plus"></i> Add Expression
+				</button>
+
+				<button class="btn btn-sm btn-warning"
+								(click)="deleteSelected()"
+								(disabled)="chartViewModel.getSelectedRule().length == 0"
+								title="Delete selected rule and connections">
+					<i class="fa fa-times"></i> Delete Selected
+				</button>
+				<button class="btn btn-sm btn-danger"
+								(click)="clearQuery()"
+								title="Clear the rules in this this query without saving">
+					<i class="fa fa-eraser"></i> Clear Rules
+				</button>
+				&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+				<button type="button" class="btn btn-sm btn-success" (click)="save(false)"><i class="fa fa-save"></i> Save
+				</button>
+				<button type="button" class="btn btn-sm btn-warning" (click)="save(true)"><i class="fa fa-save"></i> Save &
+					Close
+				</button>
+				<button type="button" class="btn btn-sm btn-danger" (click)="cancelChanges()"><i class="fa fa-undo"></i> Cancel
+				</button>
+			</div>
+		</div>
+		<div class="module-body">
+			<div id="queryPage">
+				<section class="query-section">
+					<flow-chart id="flowChart" [ngStyle]="{'zoom': zoomPercent}"
+											(onRuleDescription)="onRuleDescription($event)"
+											(onRulePassAction)="onRulePassAction($event)"
+											(onRuleFailAction)="onRuleFailAction($event)"
+											(onEditTest)="onEditTest($event)"
+											[chart]="chartViewModel">
+					</flow-chart>
+				</section>
+
+				<aside class="query-aside">
+					<div class="queryDiv">
+						<div class="queryHeader">
+							Cohort Properties
+							<span style="float: right; cursor: pointer" class="fa fa-info-circle" (click)="ShowDataModel()"
+										title="View Query Document Data Model"></span>
+						</div>
+
+						<div class="ruleFields">
+							<div class="row">
+								<form class="form">
+									<fieldset>
+										<label class="control-label" style="padding: 0px 10px 0px 15px;">Cohort Name:</label>
+										<input class="form-control" type="text" name="queryName" [(ngModel)]="queryName"
+													 style="margin: 0px 0px 15px 10px;width:275px" (ngModelChange)="queryNameChange()">
+										<label class="control-label" style="padding: 0px 10px 0px 15px;">Cohort Description:</label>
+										<textarea class="form-control" [(ngModel)]="queryDescription"
+															style="height: 90px; margin: 0px 0px 15px 10px;width:275px"
+															(ngModelChange)="queryDescriptionChange()" name="queryDescription">
+                                        </textarea>
+									</fieldset>
+								</form>
+							</div>
+						</div>
+					</div>
+					<br/>
+					<div class="ruleDiv">
+						<div class="ruleHeader">
+							Rule Properties
+						</div>
+
+						<div class="ruleFields">
+							<div class="row">
+								<form class="form">
+									<fieldset>
+										<label class="control-label" style="padding: 0px 10px 0px 15px;">Rule Description:</label>
+										<input class="form-control" (disabled)="disableRuleProps" type="text" name="ruleDescription"
+													 [(ngModel)]="ruleDescription" style="margin: 0px 0px 15px 10px;width:275px"
+													 (ngModelChange)="ruleDescriptionChange()">
+										<label class="control-label" style="padding: 0px 10px 0px 15px;">Rule PASS Action:</label>
+										<select class="form-control" (disabled)="disableRuleProps" [(ngModel)]="rulePassAction"
+														style="margin: 0px 0px 15px 10px;width:275px" (ngModelChange)="rulePassActionChange()"
+														name="rulePassAction">
+											<option *ngFor="let result of results" value="{{result.value}}">{{result.displayName}}</option>
+										</select>
+										<label class="control-label" style="padding: 0px 10px 0px 15px;">Rule FAIL Action:</label>
+										<select class="form-control" (disabled)="disableRuleProps" [(ngModel)]="ruleFailAction"
+														style="margin: 0px 0px 15px 10px;width:275px" (ngModelChange)="ruleFailActionChange()"
+														name="ruleFailAction">
+											<option *ngFor="let result of results" value="{{result.value}}">{{result.displayName}}</option>
+										</select>
+									</fieldset>
+								</form>
+							</div>
+						</div>
+					</div>
+				</aside>
+			</div>
+
+			<div class="jsonDiv" *ngIf="dataModel">
+				<div class="jsonHeader">
+					Query Document Data Model
+					<span style="float: right; cursor: pointer" class="fa fa-remove" (click)="ShowDataModel()"></span>
+				</div>
+				<div style="overflow: auto; height:2000px;">
+					 <textarea style="padding:10px;height:488px;width:700px; border:0px"
+										 chart-json-edit
+										 view-model="chartViewModel">
+					 </textarea>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+

@@ -1,23 +1,69 @@
-import {RecordViewerController} from "./recordViewer.controller";
+import {NgModule} from "@angular/core";
+import {BrowserModule} from "@angular/platform-browser";
+import {FormsModule} from "@angular/forms";
+import {RecordViewerComponent} from "./recordViewer.component";
+import {PatientFindDialog} from "./patientFind.dialog";
 import {RecordViewerService} from "./recordViewer.service";
-import {RecordViewerRoute} from "./recordViewer.route";
-import {codeSignificance, codeReadCode, codeReadTerm, codeSnomedCode, codeSnomedLink} from "./filters/coding";
-import {cuiSingleLineAddress, cuiGender, cuiNhsNumber, cuiDateOfBirth, cuiDate, cuiName} from "./filters/cui";
-import {parentheses} from "./filters/general";
+import {CodeReadTerm, CodeReadCode, CodeSnomedCode, CodeSnomedLink, CodeSignificance} from "./pipes/coding";
+import {
+	CuiDate, CuiDateOfBirth, CuiName, CuiNhsNumber,
+	CuiSingleLineAddress, CuiGender
+} from "./pipes/cui";
+import {Parentheses} from "./pipes/general";
+import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
+import {ProblemsComponent} from "./components/problems.component";
+import {DiaryComponent} from "./components/diary.component";
 
-angular.module('app.recordViewer', ['angularMoment'])
-	.controller('RecordViewerController', RecordViewerController)
-	.service('RecordViewerService', RecordViewerService)
-	.config(RecordViewerRoute)
-    .filter('codeReadTerm', codeReadTerm)
-    .filter('codeReadCode', codeReadCode)
-    .filter('codeSnomedCode', codeSnomedCode)
-    .filter('codeSnomedLink', codeSnomedLink)
-    .filter('codeSignificance', codeSignificance)
-    .filter('cuiDate', cuiDate)
-    .filter('cuiDateOfBirth', cuiDateOfBirth)
-    .filter('cuiName', cuiName)
-    .filter('cuiNhsNumber', cuiNhsNumber)
-    .filter('cuiSingleLineAddress', cuiSingleLineAddress)
-    .filter('cuiGender', cuiGender)
-    .filter('parentheses', parentheses);
+@NgModule({
+	imports : [
+		BrowserModule,
+		FormsModule,
+		NgbModule
+	],
+	declarations : [
+		RecordViewerComponent,
+		PatientFindDialog,
+
+		ProblemsComponent,
+		DiaryComponent,
+
+		CodeReadTerm,
+		CodeReadCode,
+		CodeSnomedCode,
+		CodeSnomedLink,
+		CodeSignificance,
+
+		CuiDate,
+		CuiDateOfBirth,
+		CuiName,
+		CuiNhsNumber,
+		CuiSingleLineAddress,
+		CuiGender,
+
+		Parentheses
+	],
+	entryComponents : [
+		PatientFindDialog
+	],
+	providers :
+	[
+		RecordViewerService
+	],
+	exports : [
+		CodeReadTerm,
+		CodeReadCode,
+		CodeSnomedCode,
+		CodeSnomedLink,
+		CodeSignificance,
+
+		CuiDate,
+		CuiDateOfBirth,
+		CuiName,
+		CuiNhsNumber,
+		CuiSingleLineAddress,
+		CuiGender,
+
+		Parentheses
+	]
+})
+export class RecordViewerModule {}

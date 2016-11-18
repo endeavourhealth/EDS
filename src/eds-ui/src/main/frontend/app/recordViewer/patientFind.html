@@ -1,0 +1,50 @@
+<div class="modal-header">
+    <button type="button" class="close" (click)="cancel()" aria-hidden="true">&times;</button>
+    <h4 class="modal-title">Find patient</h4>
+</div>
+<div class="modal-body"> <!-- (keydown)="keydown($event)"> -->
+
+    <div class="container-fluid">
+
+        <form id="patient-find-search-criteria">
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon"><i class="fa fa-building-o fa-lg fa-fw"></i></span>
+                    <select id="service" class="form-control" [(ngModel)]="selectedService" (ngModelChange)="searchTermsChanged()" name="service">
+                        <option value="null" disabled>Select Service...</option>
+                        <option *ngFor="let service of services" [ngValue]="service">[{{service.localIdentifier}}] {{service.name}}</option>
+                    </select>
+                </div>
+                <div *ngIf="selectedService" class="input-group">
+                    <input type="text" class="form-control" [(ngModel)]="searchTerms" (ngModelChange)="searchTermsChanged()" autofocus placeholder="Enter search terms..." name="searchTerms">
+                    <span class="input-group-btn">
+                        <button class="btn btn-primary" type="button" (click)="findPatient()">Find patient</button>
+                    </span>
+                </div>
+            </div>
+        </form>
+
+        <div class="table-selectable" *ngIf="foundPatients">
+            <table class="table table-hover">
+                <thead>
+                    <th>Name / Address</th>
+                    <th>Born / Gender</th>
+                    <th>NHS number</th>
+                </thead>
+                <tbody>
+                <tr *ngIf="!foundPatients.length > 0"><td colspan="3"><i>(no patients found)</i></td></tr>
+                <tr *ngFor="let patient of foundPatients" (click)="selectPatient(patient, false)" (dblclick)="selectPatient(patient, true)" [ngClass]="{'selected': selectedPatient == patient}">
+                        <td><b>{{patient.name | cuiName}}</b><br/>{{patient.homeAddress | cuiSingleLineAddress}}</td>
+                        <td>{{patient.dateOfBirth | cuiDateOfBirth}}<br/>{{patient.gender | cuiGender}}</td>
+                        <td>{{patient.nhsNumber | cuiNhsNumber}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn bnt-default" (click)="cancel()">Cancel</button>
+    <button type="button" class="btn btn-primary" *ngIf="!editMode" (click)="ok()" [disabled]="selectedPatient == null">OK</button>
+</div>

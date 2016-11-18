@@ -1,6 +1,16 @@
-import {CodeSetController} from './codeSetController';
-import {CodeSetRoute} from './codeSet.route';
+import {NgModule} from "@angular/core";
+import {BrowserModule} from "@angular/platform-browser";
+import {FormsModule} from "@angular/forms";
 
-angular.module('app.codeSet', [])
-	.controller('CodeSetController', CodeSetController)
-	.config(CodeSetRoute);
+import {CodeSetEditComponent} from "./codeSetEditor.component";
+
+@NgModule({
+	imports:[
+		BrowserModule,
+		FormsModule
+	],
+	declarations:[
+		CodeSetEditComponent,
+	],
+})
+export class CodeSetModule {}

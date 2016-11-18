@@ -74,8 +74,10 @@ public class ServiceRepository extends Repository {
 
 		for (UUID orgUuid : service.getOrganisations().keySet()) {
 			Organisation organisation = orgMapper.get(orgUuid);
-			organisation.getServices().remove(service.getId());
-			batchStatement.add(orgMapper.saveQuery(organisation));
+			if (organisation != null) {
+				organisation.getServices().remove(service.getId());
+				batchStatement.add(orgMapper.saveQuery(organisation));
+			}
 		}
 
 		getSession().execute(batchStatement);

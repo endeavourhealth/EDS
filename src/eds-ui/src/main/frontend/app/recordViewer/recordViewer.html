@@ -1,156 +1,84 @@
 <div class="module record-viewer">
     <div class="module-heading">
         <span>Record viewer</span>
-        <button class="btn btn-success btn-sm pull-right" ng-click="ctrl.showPatientFind()"><i class="fa fa-search"></i> Find patient</button>
-        <button class="btn btn-success btn-sm pull-right" ng-click="ctrl.clearPatient()" ng-disabled="ctrl.patient == null"><i class="fa fa-times-circle"></i> Clear patient</button>
+        <button class="btn btn-success btn-sm pull-right" (click)="showPatientFind()"><i class="fa fa-search"></i> Find patient</button>
+        <button class="btn btn-success btn-sm pull-right" (click)="clearPatient()" [disabled]="patient == null"><i class="fa fa-times-circle"></i> Clear patient</button>
     </div>
     <div class="module-body">
 
         <div class="container-fluid">
-
-            <div name="noPatientSelectedView" ng-hide="ctrl.patient">
+             <div name="noPatientSelectedView" *ngIf="!patient">
                 No patient selected
             </div>
 
-            <div name="patientSelectedView" ng-show="ctrl.patient">
+            <div name="patientSelectedView" *ngIf="patient">
 
                 <div class="panel panel-default precis">
                     <div class="panel-body">
                         <div class="row">
-                            <div class="col-sm-5"><span class="precis-patientname">{{ctrl.patient.patient.name | cuiName}}</span></div>
-                            <div class="col-sm-3"><span class="precis-label">Born</span> <span class="precis-value">{{ctrl.patient.patient.dateOfBirth | cuiDateOfBirth}}</span></div>
-                            <div class="col-sm-2"><span class="precis-label">Gender</span> <span class="precis-value">{{ctrl.patient.patient.gender | cuiGender}}</span></div>
-                            <div class="col-sm-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{ctrl.patient.patient.nhsNumber | cuiNhsNumber}}</span></div>
+                            <div class="col-sm-5"><span class="precis-patientname">{{patient.patient?.name | cuiName}}</span></div>
+                            <div class="col-sm-3"><span class="precis-label">Born</span> <span class="precis-value">{{patient.patient?.dateOfBirth | cuiDateOfBirth}}</span></div>
+                            <div class="col-sm-2"><span class="precis-label">Gender</span> <span class="precis-value">{{patient.patient?.gender | cuiGender}}</span></div>
+                            <div class="col-sm-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{patient.patient?.nhsNumber | cuiNhsNumber}}</span></div>
                         </div>
                     </div>
                 </div>
 
-                <uib-tabset active="ctrl.activeTab">
+                <ngb-tabset active="activeTab" (tabChange)="beforeTabChange($event)" #recordTabs>
 
                     <!------------------------------------------------------------------------------------------------->
                     <!-- SUMMARY -->
                     <!------------------------------------------------------------------------------------------------->
-                    <uib-tab index="0" heading="Summary">
-
-                        <div class="tab-panel">
-                            <h4>Summary</h4>
-                        </div>
-                    </uib-tab>
+                    <ngb-tab id="summary" title="Summary">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
+                                <h4>Summary</h4>
+                            </div>
+                        </template>
+                    </ngb-tab>
 
                     <!------------------------------------------------------------------------------------------------->
                     <!-- CONSULTATIONS -->
                     <!------------------------------------------------------------------------------------------------->
-                    <uib-tab index="1" heading="Consultations" ng-click="ctrl.loadConsultations();">
-
-                        <div class="tab-panel">
-                            <h4>Consultations</h4>
-                        </div>
-                    </uib-tab>
+                    <ngb-tab id="consultations" title="Consultations">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
+                                <h4>Consultations</h4>
+                            </div>
+                        </template>
+                    </ngb-tab>
 
                     <!------------------------------------------------------------------------------------------------->
                     <!-- MEDICATION -->
                     <!------------------------------------------------------------------------------------------------->
-                    <uib-tab index="2" heading="Medication">
-
-                        <div class="tab-panel">
-                            <h4>Medication</h4>
-                        </div>
-                    </uib-tab>
+                    <ngb-tab id="medication" title="Medication">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
+                                <h4>Medication</h4>
+                            </div>
+                        </template>
+                    </ngb-tab>
 
                     <!------------------------------------------------------------------------------------------------->
                     <!-- PROBLEMS -->
                     <!------------------------------------------------------------------------------------------------->
-                    <uib-tab index="3" heading="Problems" ng-click="ctrl.loadProblems();">
-                        <div class="tab-panel">
+                    <ngb-tab id="problems" title="Problems">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
 
                             <div class="container-fluid">
-                                <h4 class="page-sub-header">Active problems</h4>
-
-                                <table class="table table-hover table-selectable clinical-items-table">
-                                    <thead>
-                                        <th>Onset date</th>
-                                        <th>Problem</th>
-                                        <th></th>
-                                    </thead>
-                                    <tbody>
-                                        <tr data-ng-hide="ctrl.patient.hasActiveProblems()"><td colspan="3"><i>(no active problems)</i></td></tr>
-                                        <tr data-toggle="collapse" data-target="#active-problem-{{$index}}" class="accordion-toggle showing-row collapsed" data-ng-repeat="problem in ctrl.patient.getActiveProblems()">
-                                            <td>{{problem.effectiveDate | cuiDate}}</td>
-                                            <td>
-                                                <span class="problem-term-text">{{problem.code | codeReadTerm}}</span>
-                                                <span class="problem-term-significance-text">{{problem.significance | codeSignificance | lowercase | parentheses}}</span>
-                                                <span class="problem-associated-text">{{problem.notes}}</span>
-
-                                                <div id="active-problem-{{$index}}" class="accordian-body collapse">
-                                                    <div class="problem-detail">
-                                                        <table>
-                                                            <tbody>
-                                                                <tr><td>Significance</td><td><b>{{problem.significance | codeSignificance}}</b></td></tr>
-                                                                <tr><td>Onset date</td><td><b>{{problem.effectiveDate | cuiDate}}</b></td></tr>
-                                                                <tr data-ng-if="problem.hasAbated"><td>Has abated?</td><td><b>Yes</b></td></tr>
-                                                                <tr data-ng-if="problem.hasAbated"><td>Abatement date</td><td><b>{{problem.abatementDate | cuiDate}}</b></td></tr>
-                                                                <tr><td>READ code</td><td><b>{{problem.code | codeReadCode}}</b></td></tr>
-                                                                <tr><td>SNOMED code</td><td><b><a href="{{problem.code | codeSnomedLink}}" target="_blank">{{problem.code | codeSnomedCode}}</a></b></td></tr>
-                                                                <tr data-ng-if="problem.lastReviewDate"><td>Last review date</td><td><b>{{problem.lastReviewDate | cuiDate}}</b></td></tr>
-                                                                <tr data-ng-if="problem.lastReviewer"><td>Last reviewer</td><td><b>{{problem.lastReviewer.name | cuiName}}</b></td></tr>
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td width="20"><i class="fa toggle-icon" aria-hidden="true"></i></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-
-                                <h4 class="page-sub-header">Past problems</h4>
-
-                                <table class="table table-hover table-selectable clinical-items-table">
-                                    <thead>
-                                        <th>Onset date</th>
-                                        <th>Problem</th>
-                                        <th></th>
-                                    </thead>
-                                    <tbody>
-                                        <tr data-ng-hide="ctrl.patient.hasPastProblems()"><td colspan="3"><i>(no past problems)</i></td></tr>
-                                        <tr data-toggle="collapse" data-target="#past-problem-{{$index}}" class="accordion-toggle showing-row collapsed" data-ng-repeat="problem in ctrl.patient.getPastProblems()">
-                                            <td>{{problem.effectiveDate | cuiDate}}</td>
-                                            <td>
-                                                <span class="problem-term-text">{{problem.code | codeReadTerm}}</span>
-                                                <span class="problem-term-significance-text">{{problem.significance | codeSignificance | lowercase | parentheses}}</span>
-                                                <span class="problem-associated-text">{{problem.notes}}</span>
-
-                                                <div id="past-problem-{{$index}}" class="accordian-body collapse">
-                                                    <div class="problem-detail">
-                                                        <table>
-                                                            <tbody>
-                                                            <tr><td>Significance</td><td><b>{{problem.significance | codeSignificance}}</b></td></tr>
-                                                            <tr><td>Onset date</td><td><b>{{problem.effectiveDate | cuiDate}}</b></td></tr>
-                                                            <tr data-ng-if="problem.hasAbated"><td>Has abated?</td><td><b>Yes</b></td></tr>
-                                                            <tr data-ng-if="problem.hasAbated"><td>Abatement date</td><td><b>{{problem.abatementDate | cuiDate}}</b></td></tr>
-                                                            <tr><td>READ code</td><td><b>{{problem.code | codeReadCode}}</b></td></tr>
-                                                            <tr><td>SNOMED code</td><td><b><a href="{{problem.code | codeSnomedLink}}" target="_blank">{{problem.code | codeSnomedCode}}</a></b></td></tr>
-                                                            <tr data-ng-if="problem.lastReviewDate"><td>Last review date</td><td><b>{{problem.lastReviewDate | cuiDate}}</b></td></tr>
-                                                            <tr data-ng-if="problem.lastReviewer"><td>Last reviewer</td><td><b>{{problem.lastReviewer.name | cuiName}}</b></td></tr>
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td width="20"><i class="fa toggle-icon" aria-hidden="true"></i></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-
+                                <problems title="Active problems" [problems]="patient.getActiveProblems()" placeholder="(No active problems)"></problems>
+                                <problems title="Past problems" [problems]="patient.getPastProblems()" placeholder="(No past problems)"></problems>
                             </div>
                         </div>
-                    </uib-tab>
+                        </template>
+                    </ngb-tab>
 
                     <!------------------------------------------------------------------------------------------------->
                     <!-- INVESTIGATIONS -->
                     <!------------------------------------------------------------------------------------------------->
-                    <uib-tab index="4" heading="Investigations" ng-click="ctrl.loadObservations();">
-
+                    <ngb-tab id="investigations" title="Investigations">
+                        <template ngbTabContent>
                         <div class="tab-panel">
 
                             <div class="container-fluid">
@@ -165,8 +93,8 @@
                                                 <th>Term</th>
                                             </thead>
                                             <tbody>
-                                                <tr data-ng-hide="ctrl.patient.hasObservations()"><td colspan="2"><i>(no investigations)</i></td></tr>
-                                                <tr ng-repeat="observation in ctrl.patient.observations">
+                                                <tr *ngIf="!patient.hasObservations()"><td colspan="2"><i>(no investigations)</i></td></tr>
+                                                <tr *ngFor="let observation of patient.observations">
                                                     <td>{{observation.effectiveDate | cuiDate}}</td>
                                                     <td>
                                                         <span class="problem-term-text">{{observation.code | codeReadTerm}}</span>
@@ -178,53 +106,33 @@
                                 </div>
                             </div>
                         </div>
-                    </uib-tab>
+                        </template>
+                    </ngb-tab>
 
                     <!------------------------------------------------------------------------------------------------->
                     <!-- CARE HISTORY -->
                     <!------------------------------------------------------------------------------------------------->
-                    <uib-tab index="5" heading="Care History">
-
-                        <div class="tab-panel">
-                            <h4>Care History</h4>
-                        </div>
-                    </uib-tab>
+                    <ngb-tab id="careHistory" title="Care History">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
+                                <h4>Care History</h4>
+                            </div>
+                        </template>
+                    </ngb-tab>
 
                     <!------------------------------------------------------------------------------------------------->
                     <!-- DIARY -->
                     <!------------------------------------------------------------------------------------------------->
-                    <uib-tab index="6" heading="Diary" ng-click="ctrl.loadDiary();">
-
-                        <div class="tab-panel">
+                    <ngb-tab id="diary" title="Diary">
+                        <template ngbTabContent>
+                           <div class="tab-panel">
                             <div class="container-fluid">
-                                <div class="row">
-                                    <div class="col-md-8">
-
-                                        <h4>Diary</h4>
-
-                                        <table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
-                                            <thead>
-                                                <th>Diary date</th>
-                                                <th>Description</th>
-                                            </thead>
-                                            <tbody>
-                                                <tr data-ng-hide="ctrl.patient.hasDiaryEntries()"><td colspan="2"><i>(no diary entries)</i></td></tr>
-                                                <tr ng-repeat="diary in ctrl.patient.diary" ng-click="ctrl.setSelectedDiary($event, diary)" ng-class="{'selected': ctrl.isSelectedDiary(diary)}">
-                                                    <td>{{diary.effectiveDate | cuiDate}}</td>
-                                                    <td>
-                                                        <span class="problem-term-text">{{diary.code | codeReadTerm}}</span>
-                                                        <span class="problem-associated-text">{{diary.notes}}</span>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-
-                                    </div>
-                                </div>
-                            </div>
+                                <diary [diaries]="patient.diary"></diary>
+                             </div>
                         </div>
-                    </uib-tab>
-                </uib-tabset>
+                        </template>
+                    </ngb-tab>
+                </ngb-tabset>
             </div>
         </div>
     </div>

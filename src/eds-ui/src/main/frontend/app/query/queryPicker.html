@@ -1,0 +1,78 @@
+<div class="modal-header">
+    <button type="button" class="close" (click)="cancel()" aria-hidden="true">&times;</button>
+    <h4 class="modal-title">Query Picker</h4>
+</div>
+<div class="modal-body" style="height:500px;">
+    <form>
+        <div class="form-group">
+            <div class="row">
+
+                <div class="col-md-3">
+                    <library-folder (selectionChange)="folderChanged($event)"></library-folder>
+                    <!--<div ui-tree data-nodrop-enabled="true" data-nodrag id="tree-root">-->
+                        <!--<ol ui-tree-nodes [(ngModel)]="treeData">-->
+                            <!--<li *ngFor="let node of treeData" ui-tree-node ng-include="'query_picker_template.html'"></li>-->
+                        <!--</ol>-->
+                    <!--</div>-->
+                    <!--<script type="text/ng-template" id="query_picker_template.html">-->
+                        <!--<div ui-tree-handle class="tree-node tree-node-content" style="cursor:pointer">-->
+                        <!--<span class="show-child-on-hover folder-item"-->
+                              <!--[ngClass]="{'selection': node.uuid == selectedNode.uuid}">-->
+                            <!--<span	*ngIf="!node.hasChildren" data-nodrag class="fa fa-sm fa-blank text-muted"></span>-->
+                            <!--<span *ngIf="node.hasChildren" data-nodrag	class="fa fa-sm text-muted"-->
+                                  <!--[ngClass]="{'fa-chevron-right': !node.isExpanded,'fa-chevron-down': node.isExpanded}"-->
+                                  <!--(click)="toggleExpansion(node)"></span>-->
+                            <!--<span (click)="selectNode(node)" style="cursor:pointer">-->
+                                <!--<span	class="fa fa-folder-open fa-right-pad text-primary"></span>-->
+                                <!--<span>{{node.folderName}}</span>-->
+                                <!--<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="node.loading"></span>-->
+                            <!--</span>-->
+                        <!--</span>-->
+                        <!--</div>-->
+                        <!--<ol ui-tree-nodes [(ngModel)]="node.nodes" *ngIf="node.isExpanded">-->
+                            <!--<li ui-tree-node *ngFor="let node of node.nodes" ng-include="'query_picker_template.html'">-->
+                            <!--</li>-->
+                        <!--</ol>-->
+                    <!--</script>-->
+
+                </div>
+
+                <div class="col-md-9">
+                    <div class="table" style="height:470px; overflow: auto">
+                        <table class="table table-striped table-condensed">
+                            <thead>
+                            <tr>
+                                <th class="col-md-4" (click)="sortField='name'; sortReverse=!sortReverse">Title
+                                    <span *ngIf="sortField == 'name'"
+                                          class="fa fa-sm"
+                                          [ngClass]="{'fa-chevron-down':!sortReverse, 'fa-chevron-up':sortReverse}"></span>
+                                </th>
+                                <th class="col-md-4" (click)="sortField='lastModified'; sortReverse=!sortReverse">Date modified
+                                    <span *ngIf="sortField == 'lastModified'"
+                                          class="fa fa-sm"
+                                          [ngClass]="{'fa-chevron-down':!sortReverse, 'fa-chevron-up':sortReverse}"></span>
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr class="hover-box show-child-on-hover" *ngFor="let item of getItemSummaryListContents()">
+                                <td>
+                                    <a style="cursor: pointer" (click)="actionItem(item,'edit')">{{item.name}}</a>
+                                    <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{item.description}}" *ngIf="item.description"></span>
+                                </td>
+                                <td>{{item.lastModified | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-default"
+            (click)="cancel()">Cancel</button>
+    <button type="button" class="btn btn-primary"
+            (click)="ok();">Ok</button>
+</div>
