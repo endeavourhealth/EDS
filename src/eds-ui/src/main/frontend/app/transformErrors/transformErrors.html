@@ -65,24 +65,24 @@
                         </div>
                         <div class="panel-body" style="overflow:hidden; height:100%;">
 
-                            <ul uib-pagination max-size="10" boundary-links="true" total-items="selectedSummary.countExchanges" items-per-page="1" [(ngModel)]="selectedExchangeIndex" (ngModelChange)="loadExchange()"></ul>
+                            <ngb-pagination [maxSize]="10" [boundaryLinks]="true" [collectionSize]="selectedSummary.countExchanges" [pageSize]="1" [(page)]="selectedExchangeIndex" (pageChange)="loadExchange()" name="pagination"></ngb-pagination>
 
-                            <h4>Exchange {{selectExchangeErrorDetail.exchangeId}}, transformed on {{selectExchangeErrorDetail.transformStart | date:'dd-MMM-yyyy HH:mm:ss'}}</h4>
+                            <div *ngIf="selectExchangeErrorDetail">
+                                <h4>Exchange {{selectExchangeErrorDetail.exchangeId}}, transformed on {{selectExchangeErrorDetail.transformStart | date:'dd-MMM-yyyy HH:mm:ss'}}</h4>
 
-                            <code>
-                                <div *ngFor="let line of selectExchangeErrorDetail.lines">
-                                    <div *ngIf="line.length > 0">
-                                        {{line}}
+                                <code>
+                                    <div *ngFor="let line of selectExchangeErrorDetail.lines">
+                                        <div *ngIf="line.length > 0">
+                                            {{line}}
+                                        </div>
+
+                                        <div *ngIf="line.length == 0">
+                                            &nbsp;
+                                        </div>
+
                                     </div>
-
-                                    <div *ngIf="line.length == 0">
-                                        &nbsp;
-                                    </div>
-
-                                </div>
-                            </code>
-
-
+                                </code>
+                            </div>
                         </div>
                     </div>
                 </div>
