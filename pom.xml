@@ -24,6 +24,7 @@
         <fhir-dstu2.version>1.0.1.7108</fhir-dstu2.version>
         <gson.version>2.6.2</gson.version>
         <guava.version>19.0</guava.version>
+        <hapi.version>2.2</hapi.version>
         <hibernate.version>5.1.0.Final</hibernate.version>
         <httpclient.version>4.0.2</httpclient.version>
         <jackson.version>2.5.4</jackson.version>
