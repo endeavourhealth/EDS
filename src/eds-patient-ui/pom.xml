@@ -133,9 +133,9 @@
 
         <!-- dependent on EDS-core -->
         <dependency>
-            <groupId>org.endeavourhealth</groupId>
-            <artifactId>eds-ui-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>eds-core</artifactId>
+            <version>1.3</version>
         </dependency>
 
     </dependencies>
