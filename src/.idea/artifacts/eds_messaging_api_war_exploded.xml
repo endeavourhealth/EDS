@@ -10,9 +10,7 @@
           <element id="archive" name="eds-messaging-core-1.0-SNAPSHOT.jar">
             <element id="module-output" name="eds-messaging-core" />
           </element>
-          <element id="archive" name="eds-core-1.0-SNAPSHOT.jar">
-            <element id="module-output" name="eds-core" />
-          </element>
+          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:eds-core:1.3" />
           <element id="library" level="project" name="Maven: ch.qos.logback:logback-classic:1.1.3" />
           <element id="library" level="project" name="Maven: ch.qos.logback:logback-core:1.1.3" />
           <element id="library" level="project" name="Maven: org.slf4j:slf4j-api:1.7.7" />

@@ -25,7 +25,6 @@
         <module name="eds-admin" />
         <module name="eds-bootstrap" />
         <module name="eds-clinical" />
-        <module name="eds-core" />
         <module name="eds-keycloak-providers" />
         <module name="eds-keycloak-theme" />
         <module name="eds-messaging-api" />
@@ -36,7 +35,6 @@
         <module name="eds-subscriber" />
         <module name="eds-transforms" />
         <module name="eds-ui" />
-        <module name="eds-ui-core" />
         <module name="eds-ui-integration-test" />
       </profile>
     </annotationProcessing>

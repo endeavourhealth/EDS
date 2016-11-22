@@ -45,12 +45,16 @@
         <swagger.version>1.5.10</swagger.version>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
     <modules>
-        <module>src/eds-core</module>
         <module>src/eds-messaging-api</module>
         <module>src/eds-messaging-core</module>
-        <module>src/eds-ui-core</module>
         <module>src/eds-patient-ui</module>
         <module>src/eds-queuereader</module>
         <module>src/eds-subscriber</module>

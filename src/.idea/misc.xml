@@ -15,7 +15,6 @@
       <list>
         <option value="$PROJECT_DIR$/eds-messaging-core/pom.xml" />
         <option value="$PROJECT_DIR$/eds-messaging-api/pom.xml" />
-        <option value="$PROJECT_DIR$/eds-core/pom.xml" />
         <option value="$PROJECT_DIR$/eds-admin/pom.xml" />
         <option value="$PROJECT_DIR$/eds-queuereader/pom.xml" />
         <option value="$PROJECT_DIR$/eds-ui/pom.xml" />
@@ -25,7 +24,6 @@
         <option value="$PROJECT_DIR$/eds-patient-ui/pom.xml" />
         <option value="$PROJECT_DIR$/../pom.xml" />
         <option value="$PROJECT_DIR$/eds-subscriber/pom.xml" />
-        <option value="$PROJECT_DIR$/eds-ui-core/pom.xml" />
       </list>
     </option>
   </component>
