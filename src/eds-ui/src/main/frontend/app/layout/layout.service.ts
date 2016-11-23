@@ -11,10 +11,6 @@ export class LayoutService {
 			{caption: 'Services', state: 'serviceList', icon: 'fa fa-building-o'},
 			{caption: 'Queueing', state: 'queueing', icon: 'fa fa-tasks'},
 			//
-			{caption: 'Patients', state: 'patientIdentity', icon: 'fa fa-user'},
-			{caption: 'Record Viewer', state: 'recordViewer', icon: 'fa fa-heart'},
-			{caption: 'Resources', state: 'resourceList', icon: 'fa fa-fire'},
-			//
 			{caption: 'Monitoring', state: 'monitoring', icon: 'fa fa-list-alt'},
 			{caption: 'Transform Errors', state: 'transformErrors', icon: 'fa fa-exchange'},
 			{caption: 'Statistics', state: 'stats', icon: 'fa fa-line-chart'},

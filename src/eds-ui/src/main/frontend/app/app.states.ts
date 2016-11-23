@@ -3,7 +3,7 @@ import {OrganisationListComponent} from "./organisations/organisationList.compon
 import {OrganisationEditComponent} from "./organisations/organisationEditor.component";
 import {ServiceListComponent} from "./services/serviceList.component";
 import {ServiceEditComponent} from "./services/serviceEditor.component";
-import {AdminComponent} from "./administration/admin.component";
+import {UserListComponent} from "./users/userList.component";
 import {AuditComponent} from "./audit/audit.component";
 import {LoggingComponent} from "./logging/logging.component";
 import {QueueingListComponent} from "./queueing/queueingList.component";
@@ -15,9 +15,6 @@ import {ProtocolEditComponent} from "./protocol/protocolEditor.component";
 import {DataSetEditComponent} from "./dataset/dataSetEditor.component";
 import {CodeSetEditComponent} from "./codeSet/codeSetEditor.component";
 import {TransformErrorsComponent} from "./transformErrors/transformErrors.component";
-import {ResourcesComponent} from "../../../../../eds-patient-explorer/src/main/frontend/app/resources/resources.component";
-import {PatientIdentityComponent} from "../../../../../eds-patient-explorer/src/main/frontend/app/patientIdentity/patientIdentity.component";
-import {RecordViewerComponent} from "../../../../../eds-patient-explorer/src/main/frontend/app/recordViewer/recordViewer.component";
 
 
 let dashboardState = {name: 'dashboard', url: '/dashboard', component: DashboardComponent };
@@ -25,7 +22,7 @@ let organisationListState = {name: 'organisationList', url: '/organisationList',
 let organisationEditState = {name: 'organisationEdit', url: '/organisationEdit/:itemAction/:itemUuid', component: OrganisationEditComponent };
 let serviceListState = {name: 'serviceList', url: '/serviceList', component: ServiceListComponent };
 let serviceEditState = {name: 'serviceEdit', url: '/serviceEdit/:itemAction/:itemUuid', component: ServiceEditComponent };
-let adminState = {name: 'admin', url: '/admin', component: AdminComponent };
+let adminState = {name: 'admin', url: '/admin', component: UserListComponent };
 let auditState = {name: 'audit', url: '/audit', component: AuditComponent };
 let loggingState = {name: 'monitoring', url: '/monitoring', component: LoggingComponent };
 let queueingState = {name: 'queueing', url: '/queueing', component: QueueingListComponent };
@@ -37,10 +34,6 @@ let protocolEditState = {name: 'protocolEdit', url: '/protocolEdit/:itemAction/:
 let dataSetEditState = {name: 'dataSetEdit', url: 'dataSetEdit/:itemAction/:itemUuid', component: DataSetEditComponent };
 let codeSetEditState = {name: 'codeSetEdit', url: 'codeSetEdit/:itemAction/:itemUuid', component: CodeSetEditComponent };
 let transformErrorsState = {name: 'transformErrors', url: 'transformErrors', component: TransformErrorsComponent };
-let resourceListState = {name: 'resourceList', url: 'resourceList', component: ResourcesComponent };
-let resourceEditState = {name: 'resourceEdit', url: 'resourceEdit/:itemAction/:itemUuid', component: ResourcesComponent };
-let patientIdentityState = { name: 'patientIdentity', url: 'patientIdentity', component : PatientIdentityComponent };
-let recordViewerState = {name : 'recordViewer', url: 'recordViewer', component : RecordViewerComponent };
 
 export const states = [
 	dashboardState,
@@ -60,8 +53,4 @@ export const states = [
 	dataSetEditState,
 	codeSetEditState,
 	transformErrorsState,
-	resourceListState,
-	resourceEditState,
-	patientIdentityState,
-	recordViewerState,
 ];

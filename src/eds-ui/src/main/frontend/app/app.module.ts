@@ -26,14 +26,12 @@ import {LibraryModule} from "./library/library.module";
 import {OrganisationsModule} from "./organisations/organisations.module";
 import {ServicesModule} from "./services/services.module";
 import {QueueingModule} from "./queueing/queueing.module";
-import {PatientIdentityModule} from "../../../../../eds-patient-explorer/src/main/frontend/app/patientIdentity/patientIdentity.module";
-import {RecordViewerModule} from "../../../../../eds-patient-explorer/src/main/frontend/app/recordViewer/recordViewer.module";
-import {ResourcesModule} from "../../../../../eds-patient-explorer/src/main/frontend/app/resources/resources.module";
 import {LoggingModule} from "./logging/logging.module";
 import {TransformErrorsModule} from "./transformErrors/transformErrors.module";
 import {StatsModule} from "./stats/stats.module";
 import {AuditModule} from "./audit/audit.module";
 import {AdminModule} from "./administration/admin.module";
+import {UserModule} from "./users/user.module";
 
 // Components
 import {ShellComponent} from "./layout/shell.component";
@@ -61,14 +59,12 @@ import {ShellComponent} from "./layout/shell.component";
 		OrganisationsModule,
 		ServicesModule,
 		QueueingModule,
-		PatientIdentityModule,
-		RecordViewerModule,
-		ResourcesModule,
 		LoggingModule,
 		TransformErrorsModule,
 		StatsModule,
 		AuditModule,
 		AdminModule,
+		UserModule,
 	],
 	providers: [
 		{
