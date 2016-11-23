@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+	<webServer>
+		<!--local host cookie-->
+		<cookieDomain>localhost</cookieDomain>
+
+		<!--AIMES cookie-->
+		<!--<cookieDomain>37.48.245.69</cookieDomain>-->
+		<appConfigId>c865eb28-58dd-4ec4-9ca9-fda1273566bf</appConfigId>
+		<authConfigId>f48c8bf3-a03d-411e-baf1-8712569ed67f</authConfigId>	<!-- TODO: this is the same ID as eds-ui, the patient-ui should have its own keycloak client and config id -->
+	</webServer>
+
+</config>

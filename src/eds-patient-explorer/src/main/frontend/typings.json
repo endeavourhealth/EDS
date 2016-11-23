@@ -1,0 +1,8 @@
+{
+  "name": "enterprise",
+  "globalDependencies": {
+    "jquery": "registry:dt/jquery#1.10.0+20160929162922",
+    "keycloak": "file:typings/local/keycloak/keycloak.d.ts",
+    "node": "registry:dt/node#6.0.0+20161019125345"
+  }
+}

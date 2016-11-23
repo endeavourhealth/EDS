@@ -10,6 +10,7 @@
       <module fileurl="file://$PROJECT_DIR$/eds-keycloak-theme/eds-keycloak-theme.iml" filepath="$PROJECT_DIR$/eds-keycloak-theme/eds-keycloak-theme.iml" />
       <module fileurl="file://$PROJECT_DIR$/eds-messaging-api/eds-messaging-api.iml" filepath="$PROJECT_DIR$/eds-messaging-api/eds-messaging-api.iml" group="messaging" />
       <module fileurl="file://$PROJECT_DIR$/eds-messaging-core/eds-messaging-core.iml" filepath="$PROJECT_DIR$/eds-messaging-core/eds-messaging-core.iml" group="messaging" />
+      <module fileurl="file://$PROJECT_DIR$/eds-patient-explorer/eds-patient-explorer.iml" filepath="$PROJECT_DIR$/eds-patient-explorer/eds-patient-explorer.iml" group="core" />
       <module fileurl="file://$PROJECT_DIR$/eds-patient-ui/eds-patient-ui.iml" filepath="$PROJECT_DIR$/eds-patient-ui/eds-patient-ui.iml" group="core" />
       <module fileurl="file://$PROJECT_DIR$/eds-queuereader/eds-queuereader.iml" filepath="$PROJECT_DIR$/eds-queuereader/eds-queuereader.iml" group="messaging" />
       <module fileurl="file://$PROJECT_DIR$/eds-sftpreader/eds-sftpreader.iml" filepath="$PROJECT_DIR$/eds-sftpreader/eds-sftpreader.iml" group="messaging" />

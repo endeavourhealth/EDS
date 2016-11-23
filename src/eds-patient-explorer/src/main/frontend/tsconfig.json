@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"module": "commonjs",
+		"target": "es6",
+		"moduleResolution": "node",
+		"sourceMap": true,
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"noImplicitAny": false,
+		"suppressImplicitAnyIndexErrors": true,
+		"rootDir": ".",
+		"outDir":"../webapp"
+	},
+	"exclude": [
+		"node_modules",
+		"typings",
+		"dist"
+	]
+}

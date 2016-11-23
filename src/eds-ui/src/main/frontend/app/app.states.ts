@@ -15,9 +15,9 @@ import {ProtocolEditComponent} from "./protocol/protocolEditor.component";
 import {DataSetEditComponent} from "./dataset/dataSetEditor.component";
 import {CodeSetEditComponent} from "./codeSet/codeSetEditor.component";
 import {TransformErrorsComponent} from "./transformErrors/transformErrors.component";
-import {ResourcesComponent} from "./resources/resources.component";
-import {PatientIdentityComponent} from "./patientIdentity/patientIdentity.component";
-import {RecordViewerComponent} from "./recordViewer/recordViewer.component";
+import {ResourcesComponent} from "../../../../../eds-patient-explorer/src/main/frontend/app/resources/resources.component";
+import {PatientIdentityComponent} from "../../../../../eds-patient-explorer/src/main/frontend/app/patientIdentity/patientIdentity.component";
+import {RecordViewerComponent} from "../../../../../eds-patient-explorer/src/main/frontend/app/recordViewer/recordViewer.component";
 
 
 let dashboardState = {name: 'dashboard', url: '/dashboard', component: DashboardComponent };
