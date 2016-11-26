@@ -42,6 +42,9 @@ export class CuiNhsNumber implements PipeTransform {
 @Pipe({name : 'cuiName'})
 export class CuiName implements PipeTransform {
     transform(name: UIHumanName): string {
+        if (!name)
+            return null;
+
         let prefix: string;
         let firstGivenName: string;
         let familyName: string;

@@ -1,1 +1,22 @@
-<h4>Medication</h4>
+<div class="row">
+	<div class="col-md-12">
+
+		<h4>Medication</h4>
+
+		<table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
+			<thead>
+				<th>Authorized</th>
+				<th>Medication</th>
+				<th>Prescriber</th>
+			</thead>
+			<tbody>
+				<tr *ngIf="!medicationOrders || medicationOrders.length == 0"><td colspan="2"><i>(no medication)</i></td></tr>
+				<tr *ngFor="let medicationOrder of medicationOrders">
+					<td>{{medicationOrder.dateAuthorized | cuiDate}}</td>
+					<td>{{medicationOrder.medication.code | codeAnyTerm}}</td>
+					<td>{{medicationOrder.prescriber.name | cuiName}}</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>

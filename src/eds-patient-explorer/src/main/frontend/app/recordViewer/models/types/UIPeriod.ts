@@ -1,4 +1,6 @@
+import {UIDate} from "./UIDate";
+
 export class UIPeriod {
-    start: Date;
-    end: Date;
+    start: UIDate;
+    end: UIDate;
 }

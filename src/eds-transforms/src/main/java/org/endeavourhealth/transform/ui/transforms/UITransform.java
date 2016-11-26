@@ -43,6 +43,8 @@ public class UITransform {
             return new UIProcedureTransform();
         else if (resourceType == UIDiary.class)
             return new UIDiaryTransform();
+        else if (resourceType == UIMedicationOrder.class)
+            return new UIMedicationOrderTransform();
 
         throw new NotImplementedException(resourceType.getSimpleName());
     }

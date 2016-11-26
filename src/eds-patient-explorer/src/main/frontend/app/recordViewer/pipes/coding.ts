@@ -1,6 +1,25 @@
 import {UICodeableConcept} from "../models/types/UICodeableConcept";
 import {UICode} from "../models/types/UICode";
 import {Pipe, PipeTransform} from "@angular/core";
+import {linq} from "../../common/linq";
+
+@Pipe({name : 'codeAnyTerm'})
+export class CodeAnyTerm implements PipeTransform {
+    transform(codeableConcept: UICodeableConcept): string {
+        let code: UICode = getReadUICode(codeableConcept);
+        if (code != null)
+            return code.display;
+
+        if (codeableConcept.codes.length > 0) {
+            let descriptions = linq(codeableConcept.codes)
+              .Where(c => c.display != null && c.display.length > 0)
+              .ToArray();
+            if (descriptions.length > 0)
+                return descriptions[0].display;
+        }
+        return "(no term available)"
+    }
+}
 
 @Pipe({name : 'codeReadTerm'})
 export class CodeReadTerm implements PipeTransform {

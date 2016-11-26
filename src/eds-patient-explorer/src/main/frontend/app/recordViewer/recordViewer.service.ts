@@ -8,10 +8,13 @@ import {UIService} from "./models/UIService";
 import {Observable} from "rxjs";
 import {Injectable} from "@angular/core";
 import {URLSearchParams, Http} from "@angular/http";
+import {UIMedicationOrder} from "./models/resources/clinical/UIMedicationOrder";
 
 @Injectable()
 export class RecordViewerService extends BaseHttp2Service {
-    constructor (http : Http) { super(http); }
+    constructor(http: Http) {
+        super(http);
+    }
 
     getServices(): Observable<UIService[]> {
         return this.httpGet('api/recordViewer/getServices');
@@ -23,14 +26,14 @@ export class RecordViewerService extends BaseHttp2Service {
         params.append('systemId', service.systemId);
         params.append('searchTerms', searchTerms);
 
-        return this.httpGet('api/recordViewer/findPatient', { search : params });
+        return this.httpGet('api/recordViewer/findPatient', {search: params});
     }
 
-	getPatient(patientId: UIInternalIdentifier): Observable<UIPatient> {
-		return this.httpGet('api/recordViewer/getPatient', this.getParams(patientId));
-	}
+    getPatient(patientId: UIInternalIdentifier): Observable<UIPatient> {
+        return this.httpGet('api/recordViewer/getPatient', this.getParams(patientId));
+    }
 
-	getEncounters(patientId: UIInternalIdentifier): Observable<UIEncounter[]> {
+    getEncounters(patientId: UIInternalIdentifier): Observable<UIEncounter[]> {
         return this.httpGet('api/recordViewer/getEncounters', this.getParams(patientId));
     }
 
@@ -46,12 +49,16 @@ export class RecordViewerService extends BaseHttp2Service {
         return this.httpGet('api/recordViewer/getObservations', this.getParams(patientId));
     }
 
+    getMedication(patientId : UIInternalIdentifier): Observable<UIMedicationOrder[]> {
+        return this.httpGet('api/recordViewer/getMedicationOrders', this.getParams(patientId));
+    }
+
     private getParams(patientId: UIInternalIdentifier): any {
         var params = new URLSearchParams();
         params.append('serviceId', patientId.serviceId);
         params.append('systemId', patientId.systemId);
         params.append('patientId', patientId.resourceId);
 
-        return { search : params };
+        return {search: params};
     }
 }

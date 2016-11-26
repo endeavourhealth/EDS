@@ -6,9 +6,12 @@ import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.models.resources.admin.UILocation;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIOrganisation;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UIMedication;
+import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
 import org.endeavourhealth.transform.ui.transforms.admin.UILocationTransform;
 import org.endeavourhealth.transform.ui.transforms.admin.UIOrganisationTransform;
 import org.endeavourhealth.transform.ui.transforms.admin.UIPractitionerTransform;
+import org.endeavourhealth.transform.ui.transforms.clinical.UIMedicationTransform;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -22,6 +25,8 @@ public class ReferencedResources {
     private List<UIOrganisation> uiOrganisations = new ArrayList<>();
     private List<Location> locations = new ArrayList<>();
     private List<UILocation> uiLocations = new ArrayList<>();
+    private List<Medication> medications = new ArrayList<>();
+    private List<UIMedication> uiMedications = new ArrayList<>();
 
     public void setPractitioners(List<Practitioner> practitioners) {
         this.practitioners = practitioners;
@@ -74,5 +79,27 @@ public class ReferencedResources {
                 .stream()
                 .map(t -> UILocationTransform.transform(t))
                 .collect(Collectors.toList());
+    }
+
+    public void setMedications(List<Medication> medications) {
+        this.medications = medications;
+
+        this.uiMedications = medications
+            .stream()
+            .map(t -> UIMedicationTransform.transform(t))
+            .collect(Collectors.toList());
+    }
+
+    public UIMedication getUIMedication(Reference reference) {
+        String referenceId = ReferenceHelper.getReferenceId(reference, ResourceType.Medication);
+
+        if (StringUtils.isEmpty(referenceId))
+            return null;
+
+        return this
+            .uiMedications
+            .stream()
+            .filter(t -> t.getId().equals(referenceId))
+            .collect(StreamExtension.firstOrNullCollector());
     }
 }

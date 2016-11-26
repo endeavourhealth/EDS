@@ -5,6 +5,7 @@ import {UICondition} from "./resources/clinical/UICondition";
 import {linq} from "../../common/linq";
 import {UIDiary} from "./resources/clinical/UIDiary";
 import {UIObservation} from "./resources/clinical/UIObservation";
+import {UIMedicationOrder} from "./resources/clinical/UIMedicationOrder";
 
 export class UIPatientRecord {
     patient: UIPatient;
@@ -13,9 +14,8 @@ export class UIPatientRecord {
     encounters: UIEncounter[];
     observations: UIObservation[];
     diary: UIDiary[];
+    medicationOrders : UIMedicationOrder[];
 
-    constructor()
-    constructor(patient: UIPatient)
     constructor(patient?: UIPatient) {
         this.patient = patient;
     }

@@ -9,6 +9,7 @@ import {UIDiary} from "./models/resources/clinical/UIDiary";
 import {UIObservation} from "./models/resources/clinical/UIObservation";
 import {Component, ViewChild} from "@angular/core";
 import {NgbModal, NgbTabChangeEvent} from "@ng-bootstrap/ng-bootstrap";
+import {UIMedicationOrder} from "./models/resources/clinical/UIMedicationOrder";
 
 @Component({
 		template : require('./recordViewer.html')
@@ -48,6 +49,9 @@ export class RecordViewerComponent {
 						case 'consultations' :
 								this.loadConsultations();
 								break;
+						case 'medication' :
+								this.loadMedication();
+								break;
 						case 'problems' :
 								this.loadProblems();
 								break;
@@ -72,7 +76,25 @@ export class RecordViewerComponent {
 				ctrl
 						.recordViewerService
 						.getEncounters(ctrl.patient.patient.patientId)
-						.subscribe((result: UIEncounter[]) => ctrl.patient.encounters = result);
+						.subscribe(
+							(result: UIEncounter[]) => ctrl.patient.encounters = result
+						);
+		}
+
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// medication
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		public loadMedication(): void {
+			if (this.patient.medicationOrders != null)
+				return;
+
+			let ctrl = this;
+			this.recordViewerService.getMedication(ctrl.patient.patient.patientId)
+				.subscribe(
+					(result : UIMedicationOrder[]) => ctrl.patient.medicationOrders = linq(result)
+						.OrderByDescending(t => t.dateAuthorized.date)
+						.ToArray()
+				);
 		}
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

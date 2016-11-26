@@ -4,7 +4,10 @@ import {FormsModule} from "@angular/forms";
 import {RecordViewerComponent} from "./recordViewer.component";
 import {PatientFindDialog} from "./patientFind.dialog";
 import {RecordViewerService} from "./recordViewer.service";
-import {CodeReadTerm, CodeReadCode, CodeSnomedCode, CodeSnomedLink, CodeSignificance} from "./pipes/coding";
+import {
+	CodeReadTerm, CodeReadCode, CodeSnomedCode, CodeSnomedLink, CodeSignificance,
+	CodeAnyTerm
+} from "./pipes/coding";
 import {
 	CuiDate, CuiDateOfBirth, CuiName, CuiNhsNumber,
 	CuiSingleLineAddress, CuiGender
@@ -19,12 +22,15 @@ import {ConsultationsComponent} from "./components/consultations.component";
 import {MedicationComponent} from "./components/medication.component";
 import {InvestigationsComponent} from "./components/investigations.component";
 import {CareHistoryComponent} from "./components/careHistory.component";
+import {TreeModule} from "angular2-tree-component";
 
 @NgModule({
 	imports : [
 		BrowserModule,
 		FormsModule,
-		NgbModule
+		NgbModule,
+
+		TreeModule,
 	],
 	declarations : [
 		RecordViewerComponent,
@@ -39,6 +45,7 @@ import {CareHistoryComponent} from "./components/careHistory.component";
 		CareHistoryComponent,
 		DiaryComponent,
 
+		CodeAnyTerm,
 		CodeReadTerm,
 		CodeReadCode,
 		CodeSnomedCode,

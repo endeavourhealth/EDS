@@ -110,6 +110,18 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Path("/getMedicationOrders")
+    public Response getMedicationOrders(@Context SecurityContext sc,
+                                        @QueryParam("serviceId") UUID serviceId,
+                                        @QueryParam("systemId") UUID systemId,
+                                        @QueryParam("patientId") UUID patientId) throws Exception {
+
+        return getClinicalResourceResponse(serviceId, systemId, patientId, MedicationOrder.class, UIMedicationOrder.class);
+    }
+
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("/getConditions")
     public Response getConditions(@Context SecurityContext sc,
                                   @QueryParam("serviceId") UUID serviceId,
@@ -208,17 +220,19 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
         UIClinicalTransform transform = UITransform.getClinicalTransformer(uiResourceType);
 
         List<Reference> references = transform.getReferences(resources);
-        ReferencedResources referencedResources = getReferencedResources(serviceId, systemId, references);
+        ReferencedResources referencedResources = getReferencedResources(serviceId, systemId, patientId, references);
 
         return transform.transform(resources, referencedResources);
     }
 
-    private ReferencedResources getReferencedResources(UUID serviceId, UUID systemId, List<Reference> references) throws Exception {
+    private ReferencedResources getReferencedResources(UUID serviceId, UUID systemId, UUID patientId, List<Reference> references) throws Exception {
 
         ReferencedResources referencedResources = new ReferencedResources();
 
         List<UUID> practitionerIds = getIdsOfType(references, ResourceType.Practitioner);
         referencedResources.setPractitioners(ResourceFetcher.getResourcesByService(serviceId, systemId, practitionerIds, Practitioner.class));
+
+        referencedResources.setMedications(ResourceFetcher.getResourceByPatient(serviceId, systemId, patientId, Medication.class));
 
         return referencedResources;
     }

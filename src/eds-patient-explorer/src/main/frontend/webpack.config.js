@@ -3,8 +3,8 @@ var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
 	entry: {
-		'app' : './app/main.ts',
-		'vendor' : './app/vendor.ts'
+		'vendor' : './app/vendor.ts',
+		'app' : './app/main.ts'
 	},
 	output: {
 		filename: './[name].bundle.js',

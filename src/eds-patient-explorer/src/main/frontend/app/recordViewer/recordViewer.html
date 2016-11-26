@@ -34,7 +34,7 @@
                     <ngb-tab id="consultations" title="Consultations">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                                <consultations [patientId]="patient.patient.patientId"></consultations>
+                                <consultations [consultations]="patient.encounters"></consultations>
                             </div>
                         </template>
                     </ngb-tab>
@@ -45,7 +45,7 @@
                     <ngb-tab id="medication" title="Medication">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                                <medication [patientId]="patient.patient.patientId"></medication>
+                                <medication [medicationOrders]="patient.medicationOrders"></medication>
                             </div>
                         </template>
                     </ngb-tab>

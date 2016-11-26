@@ -5,7 +5,18 @@ import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.DateType;
 import org.hl7.fhir.instance.model.TemporalPrecisionEnum;
 
+import java.util.Date;
+
 public class DateHelper {
+    public static UIDate convert(Date date) {
+        if (date == null)
+            return getUnknownDate();
+        else
+            return new UIDate()
+                .setDate(date)
+                .setPrecision(getStringValue(TemporalPrecisionEnum.MILLI));
+    }
+
     public static UIDate convert(DateTimeType dateTimeType) {
         if (dateTimeType == null)
             return null;
