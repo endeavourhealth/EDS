@@ -2,11 +2,11 @@ import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService, Transition} from "ui-router-ng2";
 
-import {Service} from "../models/Service";
-import {Organisation} from "../models/Organisation";
-import {System} from "../models/System";
-import {TechnicalInterface} from "../models/TechnicalInterface";
-import {Endpoint} from "../models/Endpoint";
+import {Service} from "./models/Service";
+import {Organisation} from "../organisations/models/Organisation";
+import {System} from "../systems/models/System";
+import {TechnicalInterface} from "../systems/models/TechnicalInterface";
+import {Endpoint} from "./models/Endpoint";
 import {AdminService} from "../administration/admin.service";
 import {LibraryService} from "../library/library.service";
 import {ServiceService} from "./service.service";

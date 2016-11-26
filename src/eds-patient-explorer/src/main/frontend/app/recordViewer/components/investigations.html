@@ -1,0 +1,22 @@
+<div class="row">
+	<div class="col-md-8">
+
+		<h4>Investigations</h4>
+
+		<table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
+			<thead>
+				<th>Date</th>
+				<th>Term</th>
+			</thead>
+			<tbody>
+				<tr *ngIf="!observations || observations.length == 0"><td colspan="2"><i>(no investigations)</i></td></tr>
+				<tr *ngFor="let observation of observations">
+					<td>{{observation.effectiveDate | cuiDate}}</td>
+					<td>
+						<span class="problem-term-text">{{observation.code | codeReadTerm}}</span>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>

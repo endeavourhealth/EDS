@@ -1,5 +1,5 @@
 import {BaseHttp2Service} from "../core/baseHttp2.service";
-import {ConfigurationResource} from "./ConfigurationResource";
+import {ConfigurationResource} from "./models/ConfigurationResource";
 import {Injectable} from "@angular/core";
 import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";

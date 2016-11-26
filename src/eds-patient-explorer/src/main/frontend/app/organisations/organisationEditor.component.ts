@@ -1,7 +1,7 @@
 import {Component} from "@angular/core";
 
-import {Organisation} from "../models/Organisation";
-import {Service} from "../models/Service";
+import {Organisation} from "./models/Organisation";
+import {Service} from "../services/models/Service";
 import {AdminService} from "../administration/admin.service";
 import {OrganisationService} from "./organisation.service";
 import {LoggerService} from "../common/logger.service";

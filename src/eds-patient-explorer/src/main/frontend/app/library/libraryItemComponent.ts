@@ -1,6 +1,6 @@
 import {AdminService} from "../administration/admin.service";
 import {LoggerService} from "../common/logger.service";
-import {LibraryItem} from "../models/LibraryItem";
+import {LibraryItem} from "./models/LibraryItem";
 import {LibraryService} from "./library.service";
 import {Transition, StateService} from "ui-router-ng2";
 

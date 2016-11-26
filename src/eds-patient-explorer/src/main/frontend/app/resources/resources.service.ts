@@ -1,6 +1,6 @@
 import {BaseHttp2Service} from "../core/baseHttp2.service";
-import {FhirResourceType} from "./FhirResourceType";
-import {FhirResourceContainer} from "./FhirResourceContainer";
+import {FhirResourceType} from "./models/FhirResourceType";
+import {FhirResourceContainer} from "./models/FhirResourceContainer";
 import {Injectable} from "@angular/core";
 import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";

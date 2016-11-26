@@ -2,7 +2,7 @@ import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService} from "ui-router-ng2";
 
-import {Service} from "../models/Service";
+import {Service} from "./models/Service";
 import {ServiceService} from "./service.service";
 import {LoggerService} from "../common/logger.service";
 import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";

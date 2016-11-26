@@ -1,4 +1,4 @@
-import {MenuOption} from "../models/MenuOption";
+import {MenuOption} from "./models/MenuOption";
 import {SecurityService} from "../security/security.service";
 import {LayoutService} from "./layout.service";
 import {Component} from "@angular/core";

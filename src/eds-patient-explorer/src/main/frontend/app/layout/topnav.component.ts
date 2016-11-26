@@ -1,5 +1,5 @@
 import {SecurityService} from "../security/security.service";
-import {User} from "../models/User";
+import {User} from "../security/models/User";
 import {Component} from "@angular/core";
 
 @Component({

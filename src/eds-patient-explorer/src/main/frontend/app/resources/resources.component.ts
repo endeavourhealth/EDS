@@ -1,5 +1,5 @@
-import {FhirResourceType} from "./FhirResourceType";
-import {FhirResourceContainer} from "./FhirResourceContainer";
+import {FhirResourceType} from "./models/FhirResourceType";
+import {FhirResourceContainer} from "./models/FhirResourceContainer";
 import {ResourcesService} from "./resources.service";
 import {LoggerService} from "../common/logger.service";
 import {Transition} from "ui-router-ng2";

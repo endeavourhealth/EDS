@@ -1,9 +1,9 @@
 import {Injectable} from "@angular/core";
 import {Observable} from "rxjs";
 
-import {Service} from "../models/Service";
-import {Organisation} from "../models/Organisation";
-import {System} from "../models/System";
+import {Service} from "./models/Service";
+import {Organisation} from "../organisations/models/Organisation";
+import {System} from "../systems/models/System";
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 import {Http, URLSearchParams} from "@angular/http";
 

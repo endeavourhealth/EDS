@@ -4,11 +4,11 @@ import {Observable} from "rxjs";
 
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 
-import {LibraryItem} from "../models/LibraryItem";
-import {System} from "../models/System";
-import {EntityMap} from "../models/EntityMap/EntityMap";
-import {Cohort} from "../models/Cohort";
-import {DataSet} from "../models/Dataset";
+import {LibraryItem} from "./models/LibraryItem";
+import {System} from "../systems/models/System";
+import {EntityMap} from "../entities/models/EntityMap";
+import {Cohort} from "../cohorts/models/Cohort";
+import {DataSet} from "../dataSets/models/Dataset";
 
 @Injectable()
 export class LibraryService extends BaseHttp2Service {

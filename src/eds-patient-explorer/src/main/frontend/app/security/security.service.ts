@@ -1,5 +1,5 @@
 import {Auth} from "./security.auth";
-import {User} from "../models/User";
+import {User} from "./models/User";
 import {Injectable} from "@angular/core";
 
 @Injectable()

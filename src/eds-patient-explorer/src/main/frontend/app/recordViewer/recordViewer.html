@@ -13,16 +13,7 @@
 
             <div name="patientSelectedView" *ngIf="patient">
 
-                <div class="panel panel-default precis">
-                    <div class="panel-body">
-                        <div class="row">
-                            <div class="col-sm-5"><span class="precis-patientname">{{patient.patient?.name | cuiName}}</span></div>
-                            <div class="col-sm-3"><span class="precis-label">Born</span> <span class="precis-value">{{patient.patient?.dateOfBirth | cuiDateOfBirth}}</span></div>
-                            <div class="col-sm-2"><span class="precis-label">Gender</span> <span class="precis-value">{{patient.patient?.gender | cuiGender}}</span></div>
-                            <div class="col-sm-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{patient.patient?.nhsNumber | cuiNhsNumber}}</span></div>
-                        </div>
-                    </div>
-                </div>
+                <precis [patient]="patient.patient"></precis>
 
                 <ngb-tabset active="activeTab" (tabChange)="beforeTabChange($event)" #recordTabs>
 
@@ -32,7 +23,7 @@
                     <ngb-tab id="summary" title="Summary">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                                <h4>Summary</h4>
+                                <summary [patientId]="patient.patient.patientId"></summary>
                             </div>
                         </template>
                     </ngb-tab>
@@ -43,7 +34,7 @@
                     <ngb-tab id="consultations" title="Consultations">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                                <h4>Consultations</h4>
+                                <consultations [patientId]="patient.patient.patientId"></consultations>
                             </div>
                         </template>
                     </ngb-tab>
@@ -54,7 +45,7 @@
                     <ngb-tab id="medication" title="Medication">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                                <h4>Medication</h4>
+                                <medication [patientId]="patient.patient.patientId"></medication>
                             </div>
                         </template>
                     </ngb-tab>
@@ -65,12 +56,11 @@
                     <ngb-tab id="problems" title="Problems">
                         <template ngbTabContent>
                             <div class="tab-panel">
-
-                            <div class="container-fluid">
+                                <div class="container-fluid">
                                 <problems title="Active problems" [problems]="patient.getActiveProblems()" placeholder="(No active problems)"></problems>
                                 <problems title="Past problems" [problems]="patient.getPastProblems()" placeholder="(No past problems)"></problems>
+                                </div>
                             </div>
-                        </div>
                         </template>
                     </ngb-tab>
 
@@ -80,30 +70,8 @@
                     <ngb-tab id="investigations" title="Investigations">
                         <template ngbTabContent>
                         <div class="tab-panel">
-
                             <div class="container-fluid">
-                                <div class="row">
-                                    <div class="col-md-8">
-
-                                       <h4>Investigations</h4>
-
-                                        <table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
-                                            <thead>
-                                                <th>Date</th>
-                                                <th>Term</th>
-                                            </thead>
-                                            <tbody>
-                                                <tr *ngIf="!patient.hasObservations()"><td colspan="2"><i>(no investigations)</i></td></tr>
-                                                <tr *ngFor="let observation of patient.observations">
-                                                    <td>{{observation.effectiveDate | cuiDate}}</td>
-                                                    <td>
-                                                        <span class="problem-term-text">{{observation.code | codeReadTerm}}</span>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                                <investigations [observations]="patient.observations"></investigations>
                             </div>
                         </div>
                         </template>
@@ -115,7 +83,7 @@
                     <ngb-tab id="careHistory" title="Care History">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                                <h4>Care History</h4>
+                                <careHistory [patientId]="patient.patient.patientId"></careHistory>
                             </div>
                         </template>
                     </ngb-tab>

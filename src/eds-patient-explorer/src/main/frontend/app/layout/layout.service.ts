@@ -1,5 +1,5 @@
 import {Injectable} from "@angular/core";
-import {MenuOption} from "../models/MenuOption";
+import {MenuOption} from "./models/MenuOption";
 
 @Injectable()
 export class LayoutService {

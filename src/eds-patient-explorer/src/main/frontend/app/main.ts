@@ -5,9 +5,9 @@ import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 import { enableProdMode } from '@angular/core';
 
 import { AppModule } from './app.module';
-import {WellKnownConfig} from "./security/security.wellKnownConfig";
-import {AuthConfig} from "./models/wellknown/AuthConfig";
+import {AuthConfig} from "./security/models/AuthConfig";
 import {Auth} from "./security/security.auth";
+import {WellKnownConfig} from "./security/models/WellKnownConfig";
 
 //enableProdMode(); //Uncomment for production
 
