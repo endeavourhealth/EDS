@@ -59,4 +59,16 @@ export class UIPatientRecord {
 
         return (this.diary.length > 0);
     }
+
+    public getCurrentMedicationOrders(): UIMedicationOrder[] {
+        return linq(this.medicationOrders)
+          .Where(t=> t.dateEnded.date == null)
+          .ToArray();
+    }
+
+    public getPastMedicationOrders(): UIMedicationOrder[] {
+        return linq(this.medicationOrders)
+					.Where(t=> t.dateEnded.date != null)
+					.ToArray();
+    }
 }

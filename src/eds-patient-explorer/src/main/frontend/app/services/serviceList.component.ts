@@ -33,11 +33,11 @@ export class ServiceListComponent {
 
 
 	add() {
-		this.$state.go('serviceEdit', {itemUuid: null, itemAction: 'add'});
+		this.$state.go('app.serviceEdit', {itemUuid: null, itemAction: 'add'});
 	}
 
 	edit(item : Service) {
-		this.$state.go('serviceEdit', {itemUuid: item.uuid, itemAction: 'edit'});
+		this.$state.go('app.serviceEdit', {itemUuid: item.uuid, itemAction: 'edit'});
 	}
 
 	save(original : Service, edited : Service) {

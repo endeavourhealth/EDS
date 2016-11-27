@@ -5,17 +5,17 @@ import {MenuOption} from "../models/MenuOption";
 export class LayoutService {
 	getMenuOptions():MenuOption[] {
 		return [
-			{caption: 'Dashboard', state: 'dashboard', icon: 'fa fa-tachometer'},
-			{caption: 'Protocols', state: 'library', icon: 'fa fa-share-alt'},
-			{caption: 'Organisations', state: 'organisationList', icon: 'fa fa-hospital-o'},
-			{caption: 'Services', state: 'serviceList', icon: 'fa fa-building-o'},
-			{caption: 'Queueing', state: 'queueing', icon: 'fa fa-tasks'},
+			{caption: 'Dashboard', state: 'app.dashboard', icon: 'fa fa-tachometer'},
+			{caption: 'Protocols', state: 'app.library', icon: 'fa fa-share-alt'},
+			{caption: 'Organisations', state: 'app.organisationList', icon: 'fa fa-hospital-o'},
+			{caption: 'Services', state: 'app.serviceList', icon: 'fa fa-building-o'},
+			{caption: 'Queueing', state: 'app.queueing', icon: 'fa fa-tasks'},
 			//
-			{caption: 'Monitoring', state: 'monitoring', icon: 'fa fa-list-alt'},
-			{caption: 'Transform Errors', state: 'transformErrors', icon: 'fa fa-exchange'},
-			{caption: 'Statistics', state: 'stats', icon: 'fa fa-line-chart'},
-			{caption: 'Audit', state: 'audit', icon: 'fa fa-list-ul'}
-			// {caption: 'Admin', state: 'admin', icon: 'fa fa-user'}
+			{caption: 'Monitoring', state: 'app.monitoring', icon: 'fa fa-list-alt'},
+			{caption: 'Transform Errors', state: 'app.transformErrors', icon: 'fa fa-exchange'},
+			{caption: 'Statistics', state: 'sapp.tats', icon: 'fa fa-line-chart'},
+			{caption: 'Audit', state: 'app.audit', icon: 'fa fa-list-ul'}
+			// {caption: 'Admin', state: 'app.admin', icon: 'fa fa-user'}
 		];
 	}
 }

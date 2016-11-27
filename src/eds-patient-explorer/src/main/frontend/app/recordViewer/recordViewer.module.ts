@@ -23,6 +23,7 @@ import {MedicationComponent} from "./components/medication.component";
 import {InvestigationsComponent} from "./components/investigations.component";
 import {CareHistoryComponent} from "./components/careHistory.component";
 import {TreeModule} from "angular2-tree-component";
+import {DosageInstructionsComponent} from "./components/dosageInstructions.component";
 
 @NgModule({
 	imports : [
@@ -40,6 +41,7 @@ import {TreeModule} from "angular2-tree-component";
 		SummaryComponent,
 		ConsultationsComponent,
 		MedicationComponent,
+			DosageInstructionsComponent,
 		ProblemsComponent,
 		InvestigationsComponent,
 		CareHistoryComponent,

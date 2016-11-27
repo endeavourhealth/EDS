@@ -30,11 +30,11 @@ export class OrganisationListComponent {
 	}
 
 	add() {
-		this.$state.go('organisationEdit', {itemUuid: null, itemAction: 'add'});
+		this.$state.go('app.organisationEdit', {itemUuid: null, itemAction: 'add'});
 	}
 
 	edit(item : Organisation) {
-		this.$state.go('organisationEdit', {itemUuid: item.uuid, itemAction: 'edit'});
+		this.$state.go('app.organisationEdit', {itemUuid: item.uuid, itemAction: 'edit'});
 	}
 
 	save(original : Organisation, edited : Organisation) {

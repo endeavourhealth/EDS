@@ -6,5 +6,8 @@ import {UIMedicationOrder} from "../models/resources/clinical/UIMedicationOrder"
 	template : require('./medication.html')
 })
 export class MedicationComponent {
+	@Input() title : string;
 	@Input() medicationOrders : UIMedicationOrder[];
+	@Input() showDateEnded : boolean = false;
+	@Input() placeholder : string;
 }

@@ -116,6 +116,6 @@ export class TransformErrorsComponent {
 	}
 
 	actionItem(uuid : string, action : string) {
-		this.$state.go('resources', {itemUuid: uuid, itemAction: action});
+		this.$state.go('app.resources', {itemUuid: uuid, itemAction: action});
 	}
 }

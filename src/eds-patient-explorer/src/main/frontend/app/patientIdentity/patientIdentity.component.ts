@@ -99,6 +99,6 @@ export class PatientIdentityComponent {
 	}*/
 
 	actionItem(uuid : string, action : string) {
-		this.$state.go('resourceEdit', {itemUuid: uuid, itemAction: action});
+		this.$state.go('app.resourceEdit', {itemUuid: uuid, itemAction: action});
 	}
 }

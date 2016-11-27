@@ -8,6 +8,7 @@ import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.DateHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UIDosageInstruction;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIMedication;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIMedicationOrder;
 import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
@@ -31,8 +32,10 @@ public class UIMedicationOrderTransform extends UIClinicalTransform<MedicationOr
         return new UIMedicationOrder()
             .setId(medicationOrder.getId())
             .setDateAuthorized(DateHelper.convert(medicationOrder.getDateWrittenElement()))
+						.setDateEnded(DateHelper.convert(medicationOrder.getDateEndedElement()))
             .setPrescriber(getPrescriber(medicationOrder, referencedResources))
-            .setMedication(getMedication(medicationOrder, referencedResources));
+            .setMedication(getMedication(medicationOrder, referencedResources))
+						.setDosageInstructions(getDosageInstructions(medicationOrder, referencedResources));
     }
 
     @Override
@@ -90,4 +93,16 @@ public class UIMedicationOrderTransform extends UIClinicalTransform<MedicationOr
             return null;
         }
     }
+
+    private static List<UIDosageInstruction> getDosageInstructions(MedicationOrder medicationOrder, ReferencedResources referencedResources) {
+    	return medicationOrder.getDosageInstruction().stream()
+					.map(t -> getDosageInstruction(t, referencedResources))
+					.collect(Collectors.toList());
+		}
+
+		private static UIDosageInstruction getDosageInstruction(MedicationOrder.MedicationOrderDosageInstructionComponent dosageInstruction, ReferencedResources referencedResources) {
+    	return new UIDosageInstruction()
+					.setInstructions(dosageInstruction.getText())
+					.setAdditionalInstructions(CodeHelper.convert(dosageInstruction.getAdditionalInstructions()));
+		}
 }

@@ -59,19 +59,19 @@ export class LibraryComponent {
 		this.saveFolderState();
 		switch ($event.type) {
 			case ItemType.System:
-				this.$state.go('systemEdit', {itemUuid: $event.uuid, itemAction: $event.action});
+				this.$state.go('app.systemEdit', {itemUuid: $event.uuid, itemAction: $event.action});
 				break;
 			case ItemType.Protocol:
-				this.$state.go('protocolEdit', {itemUuid: $event.uuid, itemAction: $event.action});
+				this.$state.go('app.protocolEdit', {itemUuid: $event.uuid, itemAction: $event.action});
 				break;
 			case ItemType.Query:
-				this.$state.go('queryEdit', {itemUuid: $event.uuid, itemAction: $event.action});
+				this.$state.go('app.queryEdit', {itemUuid: $event.uuid, itemAction: $event.action});
 				break;
 			case ItemType.DataSet:
-				this.$state.go('dataSetEdit', {itemUuid: $event.uuid, itemAction: $event.action});
+				this.$state.go('app.dataSetEdit', {itemUuid: $event.uuid, itemAction: $event.action});
 				break;
 			case ItemType.CodeSet:
-				this.$state.go('codeSetEdit', {itemUuid: $event.uuid, itemAction: $event.action});
+				this.$state.go('app.codeSetEdit', {itemUuid: $event.uuid, itemAction: $event.action});
 				break;
 			default:
 				this.log.error('Invalid item type', $event.type, 'Item ' + $event.action);

@@ -5,7 +5,7 @@ import {FormsModule} from '@angular/forms';
 import {HttpModule, RequestOptions, XHRBackend, Http} from '@angular/http';
 import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {ToastModule, ToastOptions} from "ng2-toastr";
-import {UIRouterModule, RootModule} from 'ui-router-ng2';
+import {UIRouterModule, RootModule, UIView} from 'ui-router-ng2';
 import {TreeModule} from "angular2-tree-component";
 
 import {AuthHttpService} from "./security/authHttp.service";
@@ -35,7 +35,7 @@ import {ShellComponent} from "./layout/shell.component";
 		TreeModule,
 		NgbModule.forRoot(),
 		ToastModule.forRoot(<ToastOptions>{animate: 'flyRight', positionClass: 'toast-bottom-right'}),
-		UIRouterModule.forRoot(<RootModule>{ states: states, useHash: true, otherwise:'/recordViewer' }),
+		UIRouterModule.forRoot(<RootModule>{ states: states, useHash: true, otherwise: { state : 'app.recordViewer', params: {}} }),
 
 		CommonModule,
 		DialogsModule,
@@ -53,7 +53,6 @@ import {ShellComponent} from "./layout/shell.component";
 			deps: [XHRBackend, RequestOptions]
 		}
 	],
-	bootstrap: [ ShellComponent ]
+	bootstrap: [ UIView ]
 })
-
 export class AppModule {}
