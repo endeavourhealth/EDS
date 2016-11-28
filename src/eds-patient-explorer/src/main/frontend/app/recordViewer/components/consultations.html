@@ -1,14 +1,21 @@
 <h4>Consultations</h4>
+
 <div class="row">
 	<div class="col-md-2">
-			<Tree [nodes]="dateTreeData" (onActivate)="selectDate($event.node.data)">
-				<template #treeNodeTemplate let-node>
-					{{ node.data.title }}
-				</template>
-			</Tree>
+		<div class="consultation-title">Date Filter</div>
+		<Tree [nodes]="dateTreeData" (onActivate)="selectDate($event.node.data)" (onUpdateData)="onUpdateData()">
+			<template #treeNodeTemplate let-node>
+				{{ node.data.title }}
+			</template>
+		</Tree>
 	</div>
 	<div class="col-md-10">
-		<div *ngFor="let consultation of consultations">
+		<div class="row consultation-title">
+			<div class="col-md-2">Consultation Date</div>
+			<div class="col-md-5">Performed By</div>
+			<div class="col-md-5">Entered By</div>
+		</div>
+		<div *ngFor="let consultation of filteredConsultations">
 			<div class="row consultation-header">
 				<div class="col-md-2">{{ consultation.period.start | cuiDate }}</div>
 				<div class="col-md-5">{{ consultation.performedBy?.name | cuiName }}</div>

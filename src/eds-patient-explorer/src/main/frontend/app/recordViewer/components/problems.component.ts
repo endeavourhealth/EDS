@@ -3,7 +3,7 @@ import {UIProblem} from "../models/resources/clinical/UIProblem";
 
 @Component({
 	selector : 'problems',
-	template : require('./problems.component.html')
+	template : require('./problems.html')
 })
 export class ProblemsComponent {
 	@Input() title : string;

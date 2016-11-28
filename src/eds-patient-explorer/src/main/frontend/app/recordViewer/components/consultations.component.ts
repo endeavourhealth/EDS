@@ -14,6 +14,7 @@ export class ConsultationsComponent implements OnChanges {
 	@Input() consultations : UIEncounter[] = [];
 	@ViewChild(TreeComponent) tree: TreeComponent;
 	dateTreeData : TreeNode[] = [];
+	filteredConsultations : UIEncounter[] = [];
 
 	ngOnChanges(): void {
 		// Rebuild date tree
@@ -21,6 +22,15 @@ export class ConsultationsComponent implements OnChanges {
 			this.consultations = linq(this.consultations)
 				.OrderByDescending(c => c.period.start.date)
 				.ToArray();
+
+			this.dateTreeData = [
+				{
+					id : 0,
+					title : 'All',
+					data : this.consultations,
+					children : []
+				}
+			]
 
 			for (let encounter of this.consultations) {
 				let encounterDate: Moment = moment(encounter.period.start.date);
@@ -31,8 +41,25 @@ export class ConsultationsComponent implements OnChanges {
 		}
 	}
 
+	onUpdateData() {
+		let node = this.tree.treeModel.getFirstRoot();
+		if (node)
+			node.setActiveAndVisible();
+	}
+
 	selectDate(selection) {
-		console.log(selection);
+		this.filteredConsultations = [];
+		this.addNodeData(selection);
+	}
+
+	addNodeData(node : TreeNode) {
+		if (node.data && node.data.length > 0)
+			this.filteredConsultations = this.filteredConsultations.concat(node.data);
+
+		if (node.children){
+			for(let childNode of node.children)
+				this.addNodeData(childNode);
+		}
 	}
 
 	getDateNode(moment : Moment) : TreeNode {
