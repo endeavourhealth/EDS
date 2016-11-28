@@ -11,6 +11,7 @@ import {Component, ViewChild} from "@angular/core";
 import {NgbModal, NgbTabChangeEvent} from "@ng-bootstrap/ng-bootstrap";
 import {UIMedicationOrder} from "./models/resources/clinical/UIMedicationOrder";
 import {UIAllergy} from "./models/resources/clinical/UIAllergy";
+import {UIImmunization} from "./models/resources/clinical/UIImmunization";
 
 @Component({
 		template : require('./recordViewer.html')
@@ -64,6 +65,9 @@ export class RecordViewerComponent {
 					break;
 				case 'allergies' :
 					this.loadAllergies();
+					break;
+				case 'immunizations' :
+					this.loadImmunizations();
 					break;
 			}
 		}
@@ -149,4 +153,18 @@ export class RecordViewerComponent {
 						.OrderByDescending(t => t.effectiveDate.date)
 						.ToArray());
 		}
+
+	public loadImmunizations(): void {
+		if (this.patient.immunizations != null)
+			return;
+
+		let vm = this;
+		vm
+			.recordViewerService
+			.getImmunizations(vm.patient.patient.patientId)
+			.subscribe((result: UIImmunization[]) =>
+				vm.patient.immunizations = linq(result)
+					.OrderByDescending(t => t.effectiveDate.date)
+					.ToArray());
+	}
 }

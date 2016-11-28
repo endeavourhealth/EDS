@@ -175,7 +175,6 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
         return getClinicalResourceResponse(serviceId, systemId, patientId, Observation.class, UIObservation.class);
     }
 
-
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/getAllergies")
@@ -187,6 +186,17 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
         return getClinicalResourceResponse(serviceId, systemId, patientId, AllergyIntolerance.class, UIAllergyIntolerance.class);
     }
 
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/getImmunizations")
+    public Response getImmunizations(@Context SecurityContext sc,
+                                 @QueryParam("serviceId") UUID serviceId,
+                                 @QueryParam("systemId") UUID systemId,
+                                 @QueryParam("patientId") UUID patientId) throws Exception {
+
+        return getClinicalResourceResponse(serviceId, systemId, patientId, Immunization.class, UIImmunisation.class);
+    }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private static void validateIdentifiers(UUID serviceId, UUID systemId, UUID patientId) {

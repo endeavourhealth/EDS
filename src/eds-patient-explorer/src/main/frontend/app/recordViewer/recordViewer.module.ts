@@ -24,6 +24,7 @@ import {InvestigationsComponent} from "./components/investigations.component";
 import {TreeModule} from "angular2-tree-component";
 import {DosageInstructionsComponent} from "./components/dosageInstructions.component";
 import {AllergiesComponent} from "./components/allergies.component";
+import {ImmunizationsComponent} from "./components/immunizations.component";
 
 @NgModule({
 	imports : [
@@ -45,6 +46,7 @@ import {AllergiesComponent} from "./components/allergies.component";
 		ProblemsComponent,
 		InvestigationsComponent,
 		AllergiesComponent,
+		ImmunizationsComponent,
 		DiaryComponent,
 
 		CodeAnyTerm,
