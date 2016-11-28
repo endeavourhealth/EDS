@@ -41,6 +41,11 @@ export class ConsultationsComponent implements OnChanges {
 		}
 	}
 
+	onInitialized() {
+		// Check for and restore saved filter state
+		this.onUpdateData();
+	}
+
 	onUpdateData() {
 		let node = this.tree.treeModel.getFirstRoot();
 		if (node)
