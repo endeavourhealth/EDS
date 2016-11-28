@@ -1,0 +1,17 @@
+<h4 class="page-sub-header">Allergies <small> ({{allergies?.length}} items)</small></h4>
+
+<table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
+	<thead>
+		<th>Date</th>
+		<th>Term</th>
+	</thead>
+	<tbody>
+		<tr *ngIf="!allergies || allergies.length == 0"><td colspan="2"><i>(no allergies)</i></td></tr>
+		<tr *ngFor="let allergy of allergies">
+			<td>{{allergy.effectiveDate | cuiDate}}</td>
+			<td>
+				<span class="problem-term-text">{{allergy.code | codeReadTerm}}</span>
+			</td>
+		</tr>
+	</tbody>
+</table>

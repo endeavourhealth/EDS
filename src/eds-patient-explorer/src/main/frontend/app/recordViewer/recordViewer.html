@@ -79,12 +79,12 @@
                     </ngb-tab>
 
                     <!------------------------------------------------------------------------------------------------->
-                    <!-- CARE HISTORY -->
+                    <!-- Allergies -->
                     <!------------------------------------------------------------------------------------------------->
-                    <ngb-tab id="careHistory" title="Care History">
+                    <ngb-tab id="allergies" title="Allergies">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                                <careHistory [patientId]="patient.patient.patientId"></careHistory>
+                                <allergies [allergies]="patient.allergies"></allergies>
                             </div>
                         </template>
                     </ngb-tab>

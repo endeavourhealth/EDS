@@ -21,9 +21,9 @@ import {SummaryComponent} from "./components/summary.component";
 import {ConsultationsComponent} from "./components/consultations.component";
 import {MedicationComponent} from "./components/medication.component";
 import {InvestigationsComponent} from "./components/investigations.component";
-import {CareHistoryComponent} from "./components/careHistory.component";
 import {TreeModule} from "angular2-tree-component";
 import {DosageInstructionsComponent} from "./components/dosageInstructions.component";
+import {AllergiesComponent} from "./components/allergies.component";
 
 @NgModule({
 	imports : [
@@ -44,7 +44,7 @@ import {DosageInstructionsComponent} from "./components/dosageInstructions.compo
 			DosageInstructionsComponent,
 		ProblemsComponent,
 		InvestigationsComponent,
-		CareHistoryComponent,
+		AllergiesComponent,
 		DiaryComponent,
 
 		CodeAnyTerm,

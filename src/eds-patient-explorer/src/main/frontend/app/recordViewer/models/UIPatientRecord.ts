@@ -6,6 +6,7 @@ import {linq} from "../../common/linq";
 import {UIDiary} from "./resources/clinical/UIDiary";
 import {UIObservation} from "./resources/clinical/UIObservation";
 import {UIMedicationOrder} from "./resources/clinical/UIMedicationOrder";
+import {UIAllergy} from "./resources/clinical/UIAllergy";
 
 export class UIPatientRecord {
     patient: UIPatient;
@@ -15,6 +16,7 @@ export class UIPatientRecord {
     observations: UIObservation[];
     diary: UIDiary[];
     medicationOrders : UIMedicationOrder[];
+    allergies : UIAllergy[];
 
     constructor(patient?: UIPatient) {
         this.patient = patient;

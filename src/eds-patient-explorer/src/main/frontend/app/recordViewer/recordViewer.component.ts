@@ -10,6 +10,7 @@ import {UIObservation} from "./models/resources/clinical/UIObservation";
 import {Component, ViewChild} from "@angular/core";
 import {NgbModal, NgbTabChangeEvent} from "@ng-bootstrap/ng-bootstrap";
 import {UIMedicationOrder} from "./models/resources/clinical/UIMedicationOrder";
+import {UIAllergy} from "./models/resources/clinical/UIAllergy";
 
 @Component({
 		template : require('./recordViewer.html')
@@ -45,29 +46,28 @@ export class RecordViewerComponent {
 		}
 
 		beforeTabChange($event: NgbTabChangeEvent) {
-				switch ($event.nextId) {
-						case 'consultations' :
-								this.loadConsultations();
-								break;
-						case 'medication' :
-								this.loadMedication();
-								break;
-						case 'problems' :
-								this.loadProblems();
-								break;
-						case 'investigations' :
-								this.loadObservations();
-								break;
-						case 'diary' :
-								this.loadDiary();
-								break;
-				}
-
+			switch ($event.nextId) {
+				case 'consultations' :
+					this.loadConsultations();
+					break;
+				case 'medication' :
+					this.loadMedication();
+					break;
+				case 'problems' :
+					this.loadProblems();
+					break;
+				case 'investigations' :
+					this.loadObservations();
+					break;
+				case 'diary' :
+					this.loadDiary();
+					break;
+				case 'allergies' :
+					this.loadAllergies();
+					break;
+			}
 		}
 
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// consultations
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		public loadConsultations(): void {
 				if (this.patient.encounters != null)
 						return;
@@ -81,9 +81,6 @@ export class RecordViewerComponent {
 						);
 		}
 
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// medication
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		public loadMedication(): void {
 			if (this.patient.medicationOrders != null)
 				return;
@@ -97,9 +94,6 @@ export class RecordViewerComponent {
 				);
 		}
 
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// problems
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		public loadProblems(): void {
 				if (this.patient.problems != null)
 						return;
@@ -114,9 +108,6 @@ export class RecordViewerComponent {
 										.ToArray());
 		}
 
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// observations
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		public loadObservations(): void {
 				if (this.patient.observations != null)
 						return;
@@ -131,10 +122,6 @@ export class RecordViewerComponent {
 										.ToArray());
 		}
 
-
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// diary
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		public loadDiary(): void {
 				if (this.patient.diary != null)
 						return;
@@ -147,5 +134,19 @@ export class RecordViewerComponent {
 							vm.patient.diary = linq(result)
 										.OrderByDescending(t => t.effectiveDate.date)
 										.ToArray());
+		}
+
+		public loadAllergies(): void {
+			if (this.patient.allergies != null)
+				return;
+
+			let vm = this;
+			vm
+				.recordViewerService
+				.getAllergies(vm.patient.patient.patientId)
+				.subscribe((result: UIAllergy[]) =>
+					vm.patient.allergies = linq(result)
+						.OrderByDescending(t => t.effectiveDate.date)
+						.ToArray());
 		}
 }
