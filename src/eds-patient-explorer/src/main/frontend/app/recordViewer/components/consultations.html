@@ -1,8 +1,8 @@
-<h4>Consultations</h4>
+<h4 class="page-sub-header">Consultations <small> ({{filteredConsultations.length}} items)</small></h4>
 
 <div class="row">
 	<div class="col-md-2">
-		<div class="consultation-title">Date Filter</div>
+		<span class="consultation-title">Date Filter</span>
 		<Tree [nodes]="dateTreeData" (onActivate)="selectDate($event.node.data)" (onUpdateData)="onUpdateData()">
 			<template #treeNodeTemplate let-node>
 				{{ node.data.title }}
