@@ -7,4 +7,11 @@ import {UIDosageInstruction} from "../models/resources/clinical/UIDosageInstruct
 })
 export class DosageInstructionsComponent {
 	@Input() dosageInstructions : UIDosageInstruction[];
+
+	hasAdditionalInstructions(dosageInstruction : UIDosageInstruction) {
+		return dosageInstruction
+			&& dosageInstruction.additionalInstructions
+			&& dosageInstruction.additionalInstructions.codes
+			&& dosageInstruction.additionalInstructions.codes.length > 0;
+	}
 }
