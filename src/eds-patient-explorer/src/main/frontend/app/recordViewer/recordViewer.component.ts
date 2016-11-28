@@ -8,7 +8,7 @@ import {UIPatientRecord} from "./models/UIPatientRecord";
 import {UIDiary} from "./models/resources/clinical/UIDiary";
 import {UIObservation} from "./models/resources/clinical/UIObservation";
 import {Component, ViewChild} from "@angular/core";
-import {NgbModal, NgbTabChangeEvent} from "@ng-bootstrap/ng-bootstrap";
+import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {UIMedicationOrder} from "./models/resources/clinical/UIMedicationOrder";
 import {UIAllergy} from "./models/resources/clinical/UIAllergy";
 import {UIImmunization} from "./models/resources/clinical/UIImmunization";
@@ -39,6 +39,7 @@ export class RecordViewerComponent {
 		public setPatient(patient: UIPatient): void {
 				this.clearPatient();
 				this.patient = new UIPatientRecord(patient);
+				this.loadDataForTab('summary');
 		}
 
 		public clearPatient(): void {
@@ -47,8 +48,8 @@ export class RecordViewerComponent {
 				this.patient = null;
 		}
 
-		beforeTabChange($event: NgbTabChangeEvent) {
-			switch ($event.nextId) {
+	loadDataForTab(tabId : string) {
+			switch (tabId) {
 				case 'consultations' :
 					this.loadConsultations();
 					break;
@@ -72,6 +73,12 @@ export class RecordViewerComponent {
 					break;
 				case 'familyHistory' :
 					this.loadFamilyHistory();
+					break;
+				case 'summary' :
+					this.loadProblems();
+					this.loadAllergies();
+					this.loadMedication();
+					this.loadImmunizations();
 					break;
 			}
 		}

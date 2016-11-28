@@ -1,1 +1,19 @@
-<h4 class="page-sub-header">Summary</h4>
+<div class="row">
+	<div class="col-md-6">
+		<problems title="Active problems" [problems]="activeProblems" placeholder="(No active problems)"></problems>
+		<problems title="Past problems" [problems]="pastProblems" placeholder="(No past problems)"></problems>
+	</div>
+	<div class="col-md-6">
+		<medication title="Current medication" [medicationOrders]="currentMedication" placeholder="(No current medication)"></medication>
+		<medication title="Past medication" [medicationOrders]="pastMedication" showDateEnded="true" placeholder="(No past medication)"></medication>
+	</div>
+</div>
+<hr>
+<div class="row">
+	<div class="col-md-6">
+		<allergies [allergies]="allergies"></allergies>
+	</div>
+	<div class="col-md-6">
+		<immunizations [immunizations]="immunizations"></immunizations>
+	</div>
+</div>

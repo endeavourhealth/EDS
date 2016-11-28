@@ -59,3 +59,6 @@
     padding-left: 10px;
 }
 
+a.nav-link.active {
+    background-color: #93c9e9;
+}

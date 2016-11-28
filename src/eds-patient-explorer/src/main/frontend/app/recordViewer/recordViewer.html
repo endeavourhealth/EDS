@@ -15,7 +15,7 @@
 
                 <precis [patient]="patient.patient"></precis>
 
-                <ngb-tabset active="activeTab" (tabChange)="beforeTabChange($event)" #recordTabs>
+                <ngb-tabset active="activeTab" (tabChange)="loadDataForTab($event.nextId)" #recordTabs>
 
                     <!------------------------------------------------------------------------------------------------->
                     <!-- SUMMARY -->
@@ -23,7 +23,12 @@
                     <ngb-tab id="summary" title="Summary">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                                <summary [patientId]="patient.patient.patientId"></summary>
+                                <summary [activeProblems]="patient.getActiveProblems()"
+                                         [pastProblems]="patient.getPastProblems()"
+                                         [allergies]="patient.allergies"
+                                         [immunizations]="patient.immunizations"
+                                         [currentMedication]="patient.getCurrentMedicationOrders()"
+                                         [pastMedication]="patient.getPastMedicationOrders()"></summary>
                             </div>
                         </template>
                     </ngb-tab>
