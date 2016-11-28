@@ -89,7 +89,6 @@
                         </template>
                     </ngb-tab>
 
-
                     <!------------------------------------------------------------------------------------------------->
                     <!-- Immunizations -->
                     <!------------------------------------------------------------------------------------------------->
@@ -97,6 +96,17 @@
                         <template ngbTabContent>
                             <div class="tab-panel">
                                 <immunizations [immunizations]="patient.immunizations"></immunizations>
+                            </div>
+                        </template>
+                    </ngb-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- Family History -->
+                    <!------------------------------------------------------------------------------------------------->
+                    <ngb-tab id="familyHistory" title="Family History">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
+                                <familyHistory [familyHistory]="patient.familyHistory"></familyHistory>
                             </div>
                         </template>
                     </ngb-tab>

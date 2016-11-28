@@ -1,0 +1,20 @@
+<h4 class="page-sub-header">Family History <small> ({{familyHistory?.length}} items)</small></h4>
+
+<table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
+	<thead>
+		<th>Date</th>
+		<th>Term</th>
+	</thead>
+	<tbody>
+		<tr *ngIf="!familyHistory || familyHistory.length == 0"><td colspan="2"><i>(no family history)</i></td></tr>
+		<tr *ngFor="let item of familyHistory" (click)="item.showDetail = !item.showDetail" [ngClass]="{'collapsed' : !item.showDetail}">
+			<td>{{item.recordedDate | cuiDate}}</td>
+			<td>
+				<span class="problem-term-text">{{item.code | codeAnyTerm}}</span>
+				<div class="problem-detail" [hidden]="!item.showDetail">
+					<familyHistoryCondition [conditions]="item.conditions"></familyHistoryCondition>
+				</div>
+			</td>
+		</tr>
+	</tbody>
+</table>

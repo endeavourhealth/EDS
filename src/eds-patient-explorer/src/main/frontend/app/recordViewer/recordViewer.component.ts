@@ -12,6 +12,7 @@ import {NgbModal, NgbTabChangeEvent} from "@ng-bootstrap/ng-bootstrap";
 import {UIMedicationOrder} from "./models/resources/clinical/UIMedicationOrder";
 import {UIAllergy} from "./models/resources/clinical/UIAllergy";
 import {UIImmunization} from "./models/resources/clinical/UIImmunization";
+import {UIFamilyHistory} from "./models/resources/clinical/UIFamilyHistory";
 
 @Component({
 		template : require('./recordViewer.html')
@@ -68,6 +69,9 @@ export class RecordViewerComponent {
 					break;
 				case 'immunizations' :
 					this.loadImmunizations();
+					break;
+				case 'familyHistory' :
+					this.loadFamilyHistory();
 					break;
 			}
 		}
@@ -165,6 +169,20 @@ export class RecordViewerComponent {
 			.subscribe((result: UIImmunization[]) =>
 				vm.patient.immunizations = linq(result)
 					.OrderByDescending(t => t.effectiveDate.date)
+					.ToArray());
+	}
+
+	public loadFamilyHistory(): void {
+		if (this.patient.familyHistory != null)
+			return;
+
+		let vm = this;
+		vm
+			.recordViewerService
+			.getFamilyHistory(vm.patient.patient.patientId)
+			.subscribe((result: UIFamilyHistory[]) =>
+				vm.patient.familyHistory = linq(result)
+					.OrderByDescending(t => t.recordedDate.date)
 					.ToArray());
 	}
 }

@@ -8,6 +8,7 @@ import {UIObservation} from "./resources/clinical/UIObservation";
 import {UIMedicationOrder} from "./resources/clinical/UIMedicationOrder";
 import {UIAllergy} from "./resources/clinical/UIAllergy";
 import {UIImmunization} from "./resources/clinical/UIImmunization";
+import {UIFamilyHistory} from "./resources/clinical/UIFamilyHistory";
 
 export class UIPatientRecord {
     patient: UIPatient;
@@ -19,6 +20,7 @@ export class UIPatientRecord {
     medicationOrders : UIMedicationOrder[];
     allergies : UIAllergy[];
     immunizations : UIImmunization[];
+    familyHistory : UIFamilyHistory[];
 
     constructor(patient?: UIPatient) {
         this.patient = patient;
