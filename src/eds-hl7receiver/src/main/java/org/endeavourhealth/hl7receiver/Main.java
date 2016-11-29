@@ -4,9 +4,12 @@ import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HapiContext;
 import ca.uhn.hl7v2.app.HL7Service;
 import ca.uhn.hl7v2.protocol.ReceivingApplication;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
 
 public class Main {
 
@@ -18,10 +21,8 @@ public class Main {
 
 	public static void main(String[] args) {
 		try {
-            if (StringUtils.isBlank(System.getenv(LOGBACK_ENVIRONMENT_VARIABLE))) {
-                System.out.println("Please set environment variable " + LOGBACK_ENVIRONMENT_VARIABLE);
+            if (!isLogbackConfigValid())
                 return;
-            }
 
 			writeHeaderLogLine(PROGRAM_DISPLAY_NAME);
 
@@ -39,6 +40,25 @@ public class Main {
 			LOG.error("Fatal exception occurred", e);
 		}
 	}
+
+	private static boolean isLogbackConfigValid()
+    {
+        String logbackConfiguration = System.getenv(LOGBACK_ENVIRONMENT_VARIABLE);
+
+        if (StringUtils.isBlank(logbackConfiguration)) {
+            System.out.println("Please set environment variable " + LOGBACK_ENVIRONMENT_VARIABLE);
+            return false;
+        }
+
+        File file = new File(logbackConfiguration);
+
+        if ((!file.exists()) || (!file.isFile())) {
+            System.out.println("Could not find " + logbackConfiguration);
+            return false;
+        }
+
+        return true;
+    }
 
 	private static void writeHeaderLogLine(String text) {
 		LOG.info("--------------------------------------------------");
