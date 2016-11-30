@@ -1,5 +1,5 @@
-import {CodeSetValue} from "../models/CodeSetValue";
-import {ExclusionTreeNode} from "../models/ExclusionTreeNode";
+import {CodeSetValue} from "./models/CodeSetValue";
+import {ExclusionTreeNode} from "./models/ExclusionTreeNode";
 import {Input, Component} from "@angular/core";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 import {TermlexCodingService} from "./termlex/termlexCoding.service";

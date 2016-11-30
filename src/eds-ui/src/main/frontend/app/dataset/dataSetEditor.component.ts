@@ -1,17 +1,16 @@
-import {Composition} from "../models/Composition";
-import {Section} from "../models/Section";
-import {Resource} from "../models/Resource";
-import {EntityMap} from "../models/EntityMap/EntityMap";
+import {Composition} from "./models/Composition";
+import {Section} from "./models/Section";
+import {Resource} from "./models/Resource";
+import {EntityMap} from "../entities/models/EntityMap";
 import {LibraryService} from "../library/library.service";
 import {LoggerService} from "../common/logger.service";
 import {AdminService} from "../administration/admin.service";
-import {Test} from "../models/Test";
-import {DataSet} from "../models/Dataset";
+import {Test} from "../tests/models/Test";
 import {TestEditDialog} from "../tests/testEditor.dialog";
 import {Component} from "@angular/core";
 import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-import {LibraryItem} from "../models/LibraryItem";
+import {LibraryItem} from "../library/models/LibraryItem";
 
 @Component({
 	template : require('./dataSetEditor.html')

@@ -3,10 +3,10 @@ import {Http, URLSearchParams, RequestOptionsArgs} from "@angular/http";
 import {Observable} from "rxjs";
 
 import {BaseHttp2Service} from "../core/baseHttp2.service";
-import {RabbitBinding} from "../models/RabbitBinding";
-import {RabbitExchange} from "../models/RabbitExchange";
-import {RabbitQueue} from "../models/RabbitQueue";
-import {RabbitNode} from "../models/RabbitNode";
+import {RabbitBinding} from "./models/RabbitBinding";
+import {RabbitExchange} from "./models/RabbitExchange";
+import {RabbitQueue} from "./models/RabbitQueue";
+import {RabbitNode} from "./models/RabbitNode";
 
 @Injectable()
 export class RabbitService extends BaseHttp2Service {

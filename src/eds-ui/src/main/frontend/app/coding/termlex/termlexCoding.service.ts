@@ -2,10 +2,10 @@ import {Injectable} from "@angular/core";
 
 import {BaseHttp2Service} from "../../core/baseHttp2.service";
 import {ICodingService} from "../coding.service";
-import {CodeSetValue} from "../../models/CodeSetValue";
+import {CodeSetValue} from "../models/CodeSetValue";
 import {TermlexSearchResult} from "./TermlexSearchResult";
 import {TermlexCode} from "./TermlexCode";
-import {Concept} from "../../models/Concept";
+import {Concept} from "../models/Concept";
 import {Observable} from "rxjs";
 import {Http, URLSearchParams} from "@angular/http";
 

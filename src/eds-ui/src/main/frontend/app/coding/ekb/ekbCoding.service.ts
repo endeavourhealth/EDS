@@ -1,7 +1,7 @@
 import {BaseHttp2Service} from "../../core/baseHttp2.service";
 import {ICodingService} from "../coding.service";
-import {CodeSetValue} from "../../models/CodeSetValue";
-import {Concept} from "../../models/Concept";
+import {CodeSetValue} from "../models/CodeSetValue";
+import {Concept} from "../models/Concept";
 import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 import {Injectable} from "@angular/core";

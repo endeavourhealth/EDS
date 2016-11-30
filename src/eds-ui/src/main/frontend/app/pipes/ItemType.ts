@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import {ItemType} from "../models/ItemType";
+import {ItemType} from "../library/models/ItemType";
 
 @Pipe({name: 'itemTypeIdToString'})
 export class ItemTypeIdToStringPipe implements PipeTransform {

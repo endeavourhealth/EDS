@@ -5,9 +5,9 @@ import {LoggerService} from "../common/logger.service";
 import {OrganisationService} from "../organisations/organisation.service";
 import {AuditService} from "./audit.service";
 
-import {User} from "../models/User";
-import {Organisation} from "../models/Organisation";
-import {AuditEvent} from "../models/AuditEvent";
+import {User} from "../users/models/User";
+import {Organisation} from "../organisations/models/Organisation";
+import {AuditEvent} from "./models/AuditEvent";
 
 @Component({
 	template : require('./audit.html')

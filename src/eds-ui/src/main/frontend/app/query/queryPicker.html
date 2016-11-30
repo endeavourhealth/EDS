@@ -9,33 +9,7 @@
 
                 <div class="col-md-3">
                     <library-folder (selectionChange)="folderChanged($event)"></library-folder>
-                    <!--<div ui-tree data-nodrop-enabled="true" data-nodrag id="tree-root">-->
-                        <!--<ol ui-tree-nodes [(ngModel)]="treeData">-->
-                            <!--<li *ngFor="let node of treeData" ui-tree-node ng-include="'query_picker_template.html'"></li>-->
-                        <!--</ol>-->
-                    <!--</div>-->
-                    <!--<script type="text/ng-template" id="query_picker_template.html">-->
-                        <!--<div ui-tree-handle class="tree-node tree-node-content" style="cursor:pointer">-->
-                        <!--<span class="show-child-on-hover folder-item"-->
-                              <!--[ngClass]="{'selection': node.uuid == selectedNode.uuid}">-->
-                            <!--<span	*ngIf="!node.hasChildren" data-nodrag class="fa fa-sm fa-blank text-muted"></span>-->
-                            <!--<span *ngIf="node.hasChildren" data-nodrag	class="fa fa-sm text-muted"-->
-                                  <!--[ngClass]="{'fa-chevron-right': !node.isExpanded,'fa-chevron-down': node.isExpanded}"-->
-                                  <!--(click)="toggleExpansion(node)"></span>-->
-                            <!--<span (click)="selectNode(node)" style="cursor:pointer">-->
-                                <!--<span	class="fa fa-folder-open fa-right-pad text-primary"></span>-->
-                                <!--<span>{{node.folderName}}</span>-->
-                                <!--<span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="node.loading"></span>-->
-                            <!--</span>-->
-                        <!--</span>-->
-                        <!--</div>-->
-                        <!--<ol ui-tree-nodes [(ngModel)]="node.nodes" *ngIf="node.isExpanded">-->
-                            <!--<li ui-tree-node *ngFor="let node of node.nodes" ng-include="'query_picker_template.html'">-->
-                            <!--</li>-->
-                        <!--</ol>-->
-                    <!--</script>-->
-
-                </div>
+                 </div>
 
                 <div class="col-md-9">
                     <div class="table" style="height:470px; overflow: auto">

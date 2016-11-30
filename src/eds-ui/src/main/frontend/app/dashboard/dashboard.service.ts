@@ -3,7 +3,7 @@ import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 
 import {BaseHttp2Service} from "../core/baseHttp2.service";
-import {FolderItem} from "../models/FolderContent";
+import {FolderItem} from "../library/models/FolderContent";
 
 @Injectable()
 export class DashboardService extends BaseHttp2Service {

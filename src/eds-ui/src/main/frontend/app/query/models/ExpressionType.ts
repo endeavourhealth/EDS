@@ -1,4 +1,4 @@
-import {VariableType} from "./VariableType";
+import {VariableType} from "../../expressions/models/VariableType";
 
 export class ExpressionType {
     expressionText : string;

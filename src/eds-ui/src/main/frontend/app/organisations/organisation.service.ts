@@ -3,8 +3,8 @@ import {URLSearchParams, Http} from "@angular/http";
 import {Observable} from "rxjs";
 
 import {BaseHttp2Service} from "../core/baseHttp2.service";
-import {Organisation} from "../models/Organisation";
-import {Service} from "../models/Service";
+import {Organisation} from "./models/Organisation";
+import {Service} from "../services/models/Service";
 
 @Injectable()
 export class OrganisationService extends BaseHttp2Service  {

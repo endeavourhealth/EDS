@@ -4,16 +4,23 @@ import {Observable} from "rxjs";
 
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 
-import {LibraryItem} from "../models/LibraryItem";
-import {System} from "../models/System";
-import {EntityMap} from "../models/EntityMap/EntityMap";
-import {Cohort} from "../models/Cohort";
-import {DataSet} from "../models/Dataset";
+import {LibraryItem} from "./models/LibraryItem";
+import {System} from "../system/models/System";
+import {EntityMap} from "../entities/models/EntityMap";
+import {Cohort} from "../protocol/models/Cohort";
+import {DataSet} from "../dataset/models/Dataset";
+import {ItemSummaryList} from "./models/ItemSummaryList";
 
 @Injectable()
 export class LibraryService extends BaseHttp2Service {
 	constructor(http: Http) {
 		super(http);
+	}
+
+	getFolderContents(folderUuid : string):Observable<ItemSummaryList> {
+		let params = new URLSearchParams();
+		params.append('folderUuid', folderUuid);
+		return this.httpGet('api/folder/getFolderContents', { search : params });
 	}
 
 	getLibraryItem(uuid: string): Observable<LibraryItem> {

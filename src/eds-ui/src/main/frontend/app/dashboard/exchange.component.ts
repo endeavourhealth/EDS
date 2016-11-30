@@ -1,5 +1,5 @@
 import {Component, Input} from "@angular/core";
-import {RabbitExchange} from "../models/RabbitExchange";
+import {RabbitExchange} from "../queueing/models/RabbitExchange";
 
 @Component({
 	selector: 'rabbit-exchange',

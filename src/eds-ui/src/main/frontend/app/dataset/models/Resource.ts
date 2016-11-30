@@ -1,6 +1,6 @@
 	import {CalculationType} from "./CalculationType";
-	import {FieldTest} from "./FieldTest";
-	import {Restriction} from "./Restriction";
+	import {FieldTest} from "../../tests/models/FieldTest";
+	import {Restriction} from "../../expressions/models/Restriction";
 
 	export class Resource {
 		heading : string;

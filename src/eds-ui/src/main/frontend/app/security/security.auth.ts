@@ -1,6 +1,6 @@
 import Keycloak = require('keycloak');
 
-import {AuthConfig} from "../models/wellknown/AuthConfig";
+import {AuthConfig} from "./models/AuthConfig";
 import {WellKnownConfig} from "./security.wellKnownConfig";
 
 export class Auth {

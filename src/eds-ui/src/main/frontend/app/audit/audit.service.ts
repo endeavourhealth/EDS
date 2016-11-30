@@ -3,8 +3,8 @@ import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 
-import {AuditEvent} from "../models/AuditEvent";
-import {User} from "../models/User";
+import {AuditEvent} from "./models/AuditEvent";
+import {User} from "../users/models/User";
 
 @Injectable()
 export class AuditService extends BaseHttp2Service {

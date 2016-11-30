@@ -1,4 +1,4 @@
-import {User} from "../models/User";
+import {User} from "./models/User";
 import {UserEditorDialog} from "./userEditor.dialog";
 import {LoggerService} from "../common/logger.service";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";

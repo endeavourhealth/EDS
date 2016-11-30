@@ -1,5 +1,5 @@
 	import {TermlexCode} from "./TermlexCode";
-	import {Code} from "../Code";
+	import {Code} from "../models/Code";
 
 	export class TermlexSearchResultCategory {
 		count: number;

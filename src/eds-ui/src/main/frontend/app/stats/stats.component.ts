@@ -1,5 +1,5 @@
 import {ServicePickerDialog} from "../services/servicePicker.dialog";
-import {Service} from "../models/Service";
+import {Service} from "../services/models/Service";
 import {StorageStatistics} from "./StorageStatistics";
 import {StatsService} from "./stats.service";
 import {LoggerService} from "../common/logger.service";

@@ -1,17 +1,17 @@
 import {OnInit, Input, Component} from "@angular/core";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 
-import {CodeSetValue} from "../models/CodeSetValue";
-import {Test} from "../models/Test";
-import {IsAny} from "../models/IsAny";
-import {Resource} from "../models/Resource";
+import {CodeSetValue} from "../coding/models/CodeSetValue";
+import {Test} from "./models/Test";
+import {IsAny} from "./models/IsAny";
+import {Resource} from "../dataset/models/Resource";
 import {CodePickerDialog} from "../coding/codePicker.dialog";
-import {CodeSet} from "../models/CodeSet";
-import {FieldTest} from "../models/FieldTest";
-import {ValueFrom} from "../models/ValueFrom";
-import {ValueTo} from "../models/ValueTo";
-import {ValueSet} from "../models/ValueSet";
-import {Restriction} from "../models/Restriction";
+import {CodeSet} from "./models/CodeSet";
+import {FieldTest} from "./models/FieldTest";
+import {ValueFrom} from "./models/ValueFrom";
+import {ValueTo} from "./models/ValueTo";
+import {ValueSet} from "./models/ValueSet";
+import {Restriction} from "../expressions/models/Restriction";
 import {TermlexCodingService} from "../coding/termlex/termlexCoding.service";
 
 @Component({

@@ -2,7 +2,7 @@ import {Injectable} from "@angular/core";
 import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 import {BaseHttp2Service} from "../core/baseHttp2.service";
-import {LoggingEvent} from "../models/LoggingEvent";
+import {LoggingEvent} from "./models/LoggingEvent";
 
 @Injectable()
 export class LoggingService extends BaseHttp2Service {

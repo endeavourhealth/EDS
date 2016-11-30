@@ -1,5 +1,5 @@
-import {LoggingEvent} from "../models/LoggingEvent";
-import {Service} from "../models/Service";
+import {LoggingEvent} from "./models/LoggingEvent";
+import {Service} from "../services/models/Service";
 import {LoggingService} from "./logging.service";
 import {LoggerService} from "../common/logger.service";
 import {LogEntryDialog} from "./logEntry.dialog";

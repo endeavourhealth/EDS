@@ -1,5 +1,5 @@
 import {Injectable} from "@angular/core";
-import {MenuOption} from "../models/MenuOption";
+import {MenuOption} from "./models/MenuOption";
 
 @Injectable()
 export class LayoutService {
@@ -13,7 +13,7 @@ export class LayoutService {
 			//
 			{caption: 'Monitoring', state: 'app.monitoring', icon: 'fa fa-list-alt'},
 			{caption: 'Transform Errors', state: 'app.transformErrors', icon: 'fa fa-exchange'},
-			{caption: 'Statistics', state: 'sapp.tats', icon: 'fa fa-line-chart'},
+			{caption: 'Statistics', state: 'app.stats', icon: 'fa fa-line-chart'},
 			{caption: 'Audit', state: 'app.audit', icon: 'fa fa-list-ul'}
 			// {caption: 'Admin', state: 'app.admin', icon: 'fa fa-user'}
 		];

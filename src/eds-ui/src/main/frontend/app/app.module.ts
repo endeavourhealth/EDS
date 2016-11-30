@@ -32,6 +32,11 @@ import {StatsModule} from "./stats/stats.module";
 import {AuditModule} from "./audit/audit.module";
 import {AdminModule} from "./administration/admin.module";
 import {UserModule} from "./users/user.module";
+import {SystemModule} from "./system/system.module";
+import {QueryModule} from "./query/query.module";
+import {ProtocolModule} from "./protocol/protocol.module";
+import {DataSetModule} from "./dataset/dataSet.module";
+import {CodeSetModule} from "./codeSet/codeSet.module";
 
 
 @NgModule({
@@ -62,6 +67,11 @@ import {UserModule} from "./users/user.module";
 		AuditModule,
 		AdminModule,
 		UserModule,
+		SystemModule,
+		QueryModule,
+		ProtocolModule,
+		DataSetModule,
+		CodeSetModule,
 	],
 	providers: [
 		{

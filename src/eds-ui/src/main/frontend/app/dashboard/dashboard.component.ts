@@ -1,12 +1,12 @@
 import {Component} from "@angular/core";
 import {StateService} from "ui-router-ng2";
-import {FolderItem} from "../models/FolderContent";
-import {RabbitNode} from "../models/RabbitNode";
-import {RabbitExchange} from "../models/RabbitExchange";
-import {RabbitQueue} from "../models/RabbitQueue";
+import {FolderItem} from "../library/models/FolderContent";
+import {RabbitNode} from "../queueing/models/RabbitNode";
+import {RabbitExchange} from "../queueing/models/RabbitExchange";
+import {RabbitQueue} from "../queueing/models/RabbitQueue";
 import {RabbitService} from "../queueing/rabbit.service";
 import {DashboardService} from "./dashboard.service";
-import {ItemType} from "../models/ItemType";
+import {ItemType} from "../library/models/ItemType";
 
 @Component({
 	template: require('./dashboard.html'),

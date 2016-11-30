@@ -3,9 +3,8 @@ import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 
-import {FolderNode} from "../models/FolderNode";
-import {ItemSummaryList} from "../models/ItemSummaryList";
-import {Folder} from "../models/Folder";
+import {FolderNode} from "./models/FolderNode";
+import {Folder} from "./models/Folder";
 
 @Injectable()
 export class FolderService extends BaseHttp2Service {
@@ -17,12 +16,6 @@ export class FolderService extends BaseHttp2Service {
 		params.append('parentUuid', folderUuid);
 
 		return this.httpGet('api/folder/getFolders', { search : params });
-	}
-
-	getFolderContents(folderUuid : string):Observable<ItemSummaryList> {
-		let params = new URLSearchParams();
-		params.append('folderUuid', folderUuid);
-		return this.httpGet('api/folder/getFolderContents', { search : params });
 	}
 
 	saveFolder(folder: Folder):Observable<any> {

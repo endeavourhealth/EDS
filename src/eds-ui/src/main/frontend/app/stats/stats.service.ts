@@ -1,5 +1,5 @@
 import {BaseHttp2Service} from "../core/baseHttp2.service";
-import {Service} from "../models/Service";
+import {Service} from "../services/models/Service";
 import {StorageStatistics} from "./StorageStatistics";
 import {Injectable} from "@angular/core";
 import {Http, URLSearchParams} from "@angular/http";

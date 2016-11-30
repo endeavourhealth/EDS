@@ -1,8 +1,8 @@
 import {Component} from "@angular/core";
 
-import {RabbitNode} from "../models/RabbitNode";
+import {RabbitNode} from "./models/RabbitNode";
 import {Routing} from "./Routing";
-import {RabbitBinding} from "../models/RabbitBinding";
+import {RabbitBinding} from "./models/RabbitBinding";
 import {RabbitService} from "./rabbit.service";
 import {LoggerService} from "../common/logger.service";
 import {QueueingService} from "./queueing.service";

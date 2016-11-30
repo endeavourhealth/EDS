@@ -1,11 +1,11 @@
 import {LoggerService} from "../common/logger.service";
-import {FolderNode} from "../models/FolderNode";
-import {Folder} from "../models/Folder";
+import {FolderNode} from "./models/FolderNode";
+import {Folder} from "./models/Folder";
 import {FolderService} from "./folder.service";
 import {InputBoxDialog} from "../dialogs/inputBox/inputBox.dialog";
 import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
-import {FolderType} from "../models/FolderType";
-import {ItemType} from "../models/ItemType";
+import {FolderType} from "./models/FolderType";
+import {ItemType} from "../library/models/ItemType";
 import {ModuleStateService} from "../common/moduleState.service";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Component, OnInit, ViewChild, EventEmitter, Output, Input} from "@angular/core";

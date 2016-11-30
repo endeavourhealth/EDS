@@ -1,4 +1,4 @@
-import {User} from "../models/User";
+import {User} from "./models/User";
 import {Component, Input} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 

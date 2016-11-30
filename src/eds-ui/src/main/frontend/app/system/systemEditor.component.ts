@@ -1,11 +1,11 @@
 import {LibraryItemComponent} from "../library/libraryItemComponent";
-import {System} from "../models/System";
-import {TechnicalInterface} from "../models/TechnicalInterface";
+import {System} from "./models/System";
+import {TechnicalInterface} from "./models/TechnicalInterface";
 import {LibraryService} from "../library/library.service";
 import {ServiceService} from "../services/service.service";
 import {LoggerService} from "../common/logger.service";
 import {AdminService} from "../administration/admin.service";
-import {LibraryItem} from "../models/LibraryItem";
+import {LibraryItem} from "../library/models/LibraryItem";
 import {StateService, Transition} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Component} from "@angular/core";

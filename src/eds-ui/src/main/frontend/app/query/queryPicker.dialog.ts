@@ -1,18 +1,18 @@
-import {Input, Component, OnInit} from "@angular/core";
+import {Input, Component} from "@angular/core";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
-import {FolderNode} from "../models/FolderNode";
-import {ItemSummaryList} from "../models/ItemSummaryList";
-import {FolderService} from "../folder/folder.service";
-import {FolderType} from "../models/FolderType";
-import {ItemType} from "../models/ItemType";
-import {FolderItem} from "../models/FolderContent";
-import {QuerySelection} from "../models/QuerySelection";
+import {FolderNode} from "../folder/models/FolderNode";
+import {ItemSummaryList} from "../library/models/ItemSummaryList";
+import {ItemType} from "../library/models/ItemType";
+import {FolderItem} from "../library/models/FolderContent";
+import {QuerySelection} from "./models/QuerySelection";
+import {LibraryService} from "../library/library.service";
+import {linq} from "../common/linq";
 
 @Component({
     selector: 'ngbd-modal-content',
     template: require('./queryPicker.html')
 })
-export class QueryPickerDialog implements OnInit {
+export class QueryPickerDialog {
     public static open(modalService: NgbModal,  querySelection : QuerySelection) {
         const modalRef = modalService.open(QueryPickerDialog, { backdrop : "static", size : "lg"});
         modalRef.componentInstance.resultData = querySelection;
@@ -26,48 +26,8 @@ export class QueryPickerDialog implements OnInit {
     itemSummaryList : ItemSummaryList;
 
     constructor(
-        protected folderService:FolderService,
+        protected libraryService : LibraryService,
         protected activeModal : NgbActiveModal) {
-    }
-
-    ngOnInit(): void {
-        this.getRootFolders(FolderType.Library);
-    }
-
-    getRootFolders(folderType : FolderType) {
-        var vm = this;
-        vm.folderService.getFolders(folderType, null)
-            .subscribe(
-              (data) => {
-                vm.treeData = data.folders;
-
-                if (vm.treeData && vm.treeData.length > 0) {
-                    // Set folder type (not retrieved by API)
-                    vm.treeData.forEach((item) => { item.folderType = folderType; } );
-                    // Expand top level by default
-                    vm.toggleExpansion(vm.treeData[0]);
-                }
-            });
-    }
-
-    toggleExpansion(node : FolderNode) {
-        if (!node.hasChildren) { return; }
-
-        node.isExpanded = !node.isExpanded;
-
-        if (node.isExpanded && (node.nodes == null || node.nodes.length === 0)) {
-            var vm = this;
-            var folderId = node.uuid;
-            node.loading = true;
-            this.folderService.getFolders(1, folderId)
-                .subscribe(
-                  (data) => {
-                    node.nodes = data.folders;
-                    // Set parent folder (not retrieved by API)
-                    node.nodes.forEach((item) => { item.parentFolderUuid = node.uuid; } );
-                    node.loading = false;
-                });
-        }
     }
 
     folderChanged($event) {
@@ -81,9 +41,12 @@ export class QueryPickerDialog implements OnInit {
         vm.selectedNode = node;
         node.loading = true;
 
-        vm.folderService.getFolderContents(node.uuid)
+        vm.libraryService.getFolderContents(node.uuid)
             .subscribe(
               (data) => {
+                  data.contents = linq(data.contents)
+                    .Where(t => t.type === ItemType.Query)
+                    .ToArray();
                 vm.itemSummaryList = data;
                 node.loading = false;
             });

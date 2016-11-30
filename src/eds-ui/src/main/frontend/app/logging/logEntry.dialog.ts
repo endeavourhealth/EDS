@@ -1,4 +1,4 @@
-import {LoggingEvent} from "../models/LoggingEvent";
+import {LoggingEvent} from "./models/LoggingEvent";
 import {Component, Input} from "@angular/core";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 

@@ -3,14 +3,13 @@ import {StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 
 import {LibraryService} from "./library.service";
-import {FolderService} from "../folder/folder.service";
 import {LoggerService} from "../common/logger.service";
 import {ModuleStateService} from "../common/moduleState.service";
-import {ItemType} from "../models/ItemType";
-import {FolderItem} from "../models/FolderContent";
-import {LibraryItem} from "../models/LibraryItem";
-import {FolderNode} from "../models/FolderNode";
-import {ItemSummaryList} from "../models/ItemSummaryList";
+import {ItemType} from "./models/ItemType";
+import {FolderItem} from "./models/FolderContent";
+import {LibraryItem} from "./models/LibraryItem";
+import {FolderNode} from "../folder/models/FolderNode";
+import {ItemSummaryList} from "./models/ItemSummaryList";
 
 @Component({
 	template : require('./library.html')
@@ -21,7 +20,6 @@ export class LibraryComponent {
 
 	constructor(
 		protected libraryService:LibraryService,
-		protected folderService:FolderService,
 		protected log:LoggerService,
 		protected moduleStateService : ModuleStateService,
 		protected $modal : NgbModal,
@@ -35,7 +33,7 @@ export class LibraryComponent {
 
 	refresh() {
 		var vm = this;
-		vm.folderService.getFolderContents(vm.selectedFolder.uuid)
+		vm.libraryService.getFolderContents(vm.selectedFolder.uuid)
 			.subscribe(
 				(data) => {
 					vm.itemSummaryList = data;

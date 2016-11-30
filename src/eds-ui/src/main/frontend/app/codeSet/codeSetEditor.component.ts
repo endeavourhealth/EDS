@@ -1,9 +1,9 @@
-import {LibraryItem} from "../models/LibraryItem";
+import {LibraryItem} from "../library/models/LibraryItem";
 import {LibraryService} from "../library/library.service";
 import {LoggerService} from "../common/logger.service";
 import {AdminService} from "../administration/admin.service";
 import {TermlexCodingService} from "../coding/termlex/termlexCoding.service";
-import {Concept} from "../models/Concept";
+import {Concept} from "../coding/models/Concept";
 import {CodePickerDialog} from "../coding/codePicker.dialog";
 import {Component} from "@angular/core";
 import {Transition, StateService} from "ui-router-ng2";

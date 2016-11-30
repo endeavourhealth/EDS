@@ -1,7 +1,7 @@
-import {ExpressionType} from "../models/ExpressionType";
+import {ExpressionType} from "../query/models/ExpressionType";
 import {LoggerService} from "../common/logger.service";
-import {Restriction} from "../models/Restriction";
-import {VariableType} from "../models/VariableType";
+import {Restriction} from "./models/Restriction";
+import {VariableType} from "./models/VariableType";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 import {Component, Input, OnInit} from "@angular/core";
 
