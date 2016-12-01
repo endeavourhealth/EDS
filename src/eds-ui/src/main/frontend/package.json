@@ -16,7 +16,7 @@
     "typescript": "2.0.6",
     "typings": "^1.4.0",
     "url-loader": "^0.5.7",
-    "webpack": "^1.13.2",
+    "webpack": "^1.13.3",
     "webpack-dev-server": "^1.16.1"
   },
   "dependencies": {

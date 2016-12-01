@@ -4,7 +4,7 @@ var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
 	entry: {
-		'app' : './app/main.ts',
+		'app' : './app/dataServiceManager.app.ts',
 		'vendor' : './app/vendor.ts'
 	},
 	output: {
