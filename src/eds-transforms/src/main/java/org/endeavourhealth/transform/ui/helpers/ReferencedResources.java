@@ -7,11 +7,13 @@ import org.endeavourhealth.transform.ui.models.resources.admin.UILocation;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIOrganisation;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIMedication;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UIObservation;
 import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
 import org.endeavourhealth.transform.ui.transforms.admin.UILocationTransform;
 import org.endeavourhealth.transform.ui.transforms.admin.UIOrganisationTransform;
 import org.endeavourhealth.transform.ui.transforms.admin.UIPractitionerTransform;
 import org.endeavourhealth.transform.ui.transforms.clinical.UIMedicationTransform;
+import org.endeavourhealth.transform.ui.transforms.clinical.UIObservationTransform;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -27,6 +29,8 @@ public class ReferencedResources {
     private List<UILocation> uiLocations = new ArrayList<>();
     private List<Medication> medications = new ArrayList<>();
     private List<UIMedication> uiMedications = new ArrayList<>();
+    private List<Observation> observations = new ArrayList<>();
+    private List<UIObservation> uiObservations = new ArrayList<>();
 
     public void setPractitioners(List<Practitioner> practitioners) {
         this.practitioners = practitioners;
@@ -98,6 +102,27 @@ public class ReferencedResources {
 
         return this
             .uiMedications
+            .stream()
+            .filter(t -> t.getId().equals(referenceId))
+            .collect(StreamExtension.firstOrNullCollector());
+    }
+
+    public void setObservations(List<Observation> observations, ReferencedResources referencedResources) {
+        this.observations = observations;
+        this.uiObservations = observations
+            .stream()
+            .map(t -> UIObservationTransform.transform(t, referencedResources))
+            .collect(Collectors.toList());
+    }
+
+    public UIObservation getUIObservation(Reference reference) {
+        String referenceId = ReferenceHelper.getReferenceId(reference, ResourceType.Observation);
+
+        if (StringUtils.isEmpty(referenceId))
+            return null;
+
+        return this
+            .uiObservations
             .stream()
             .filter(t -> t.getId().equals(referenceId))
             .collect(StreamExtension.firstOrNullCollector());

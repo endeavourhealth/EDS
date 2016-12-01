@@ -77,4 +77,10 @@ export class UIPatientRecord {
 					.Where(t=> t.dateEnded.date != null)
 					.ToArray();
     }
+
+    public getInvestigations() : UIObservation[] {
+        return linq(this.observations)
+          .Where(t => t.related && t.related.filter((r) => r.type === 'has-member').length > 0)
+          .ToArray();
+    }
 }

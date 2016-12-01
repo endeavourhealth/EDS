@@ -27,6 +27,7 @@ import {ImmunizationsComponent} from "./components/immunizations.component";
 import {FamilyHistoryComponent} from "./components/familyHistory.component";
 import {FamilyHistoryConditionComponent} from "./components/familyHistoryCondition.component";
 import {CareHistoryComponent} from "./components/careHistory.component";
+import {InvestigationsComponent} from "./components/investigations.component";
 
 @NgModule({
 	imports : [
@@ -47,6 +48,7 @@ import {CareHistoryComponent} from "./components/careHistory.component";
 			DosageInstructionsComponent,
 		ProblemsComponent,
 		CareHistoryComponent,
+		InvestigationsComponent,
 		AllergiesComponent,
 		ImmunizationsComponent,
 		FamilyHistoryComponent,

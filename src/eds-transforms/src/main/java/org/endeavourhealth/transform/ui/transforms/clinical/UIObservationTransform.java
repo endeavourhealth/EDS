@@ -10,12 +10,14 @@ import org.endeavourhealth.transform.ui.helpers.QuantityHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIObservation;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UIObservationRelation;
 import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.endeavourhealth.transform.ui.models.types.UIQuantity;
 import org.hl7.fhir.instance.model.Observation;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,7 +33,7 @@ public class UIObservationTransform extends UIClinicalTransform<Observation, UIO
                 .collect(Collectors.toList());
     }
 
-    private static UIObservation transform(Observation observation, ReferencedResources referencedResources) {
+    public static UIObservation transform(Observation observation, ReferencedResources referencedResources) {
         try {
             return new UIObservation()
                     .setId(observation.getId())
@@ -44,7 +46,8 @@ public class UIObservationTransform extends UIClinicalTransform<Observation, UIO
                     .setStatus(getStatus(observation))
                     .setValue(getValue(observation))
                     .setReferenceRangeHigh(getReferenceRangeHigh(observation))
-                    .setReferenceRangeLow(getReferenceRangeLow(observation));
+                    .setReferenceRangeLow(getReferenceRangeLow(observation))
+                    .setRelated(getRelated(observation, referencedResources));
 
 //        private String status;
 //        private Date effectiveDateTime;
@@ -115,6 +118,21 @@ public class UIObservationTransform extends UIClinicalTransform<Observation, UIO
         return DateHelper.convert(observation.getEffectiveDateTimeType());
     }
 
+    private static List<UIObservationRelation> getRelated(Observation observation, ReferencedResources referencedResources) {
+        if (!observation.hasRelated())
+            return null;
+
+        List<UIObservationRelation> related = new ArrayList<>();
+        for(Observation.ObservationRelatedComponent relatedComponent : observation.getRelated()) {
+            related.add(new UIObservationRelation()
+            .setType(relatedComponent.getType().toCode())
+            .setTarget(referencedResources.getUIObservation(relatedComponent.getTarget()))
+            );
+        }
+
+        return related;
+    }
+
     @Override
     public List<Reference> getReferences(List<Observation> resources) {
         return StreamExtension.concat(
@@ -122,6 +140,11 @@ public class UIObservationTransform extends UIClinicalTransform<Observation, UIO
                         .stream()
                         .filter(t -> t.hasSubject())
                         .map(t -> t.getSubject()),
+                resources
+                        .stream()
+                        .filter(t -> t.hasRelated())
+                        .flatMap(t -> t.getRelated().stream())
+                        .map(t -> t.getTarget()),
                 resources
                         .stream()
                         .filter(t -> t.hasEncounter())

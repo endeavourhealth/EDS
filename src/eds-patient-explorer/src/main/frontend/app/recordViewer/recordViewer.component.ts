@@ -59,6 +59,7 @@ export class RecordViewerComponent {
 				case 'problems' :
 					this.loadProblems();
 					break;
+				case 'investigations' :
 				case 'careHistory' :
 					this.loadObservations();
 					break;

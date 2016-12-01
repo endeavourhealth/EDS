@@ -6,6 +6,7 @@ import org.endeavourhealth.transform.ui.models.types.UIQuantity;
 import org.hl7.fhir.instance.model.Encounter;
 
 import java.util.Date;
+import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UIObservation extends UIClinicalResource<UIObservation> {
@@ -14,6 +15,7 @@ public class UIObservation extends UIClinicalResource<UIObservation> {
     private UIQuantity referenceRangeLow;
     private UIQuantity referenceRangeHigh;
     private UIEncounter encounter;
+    private List<UIObservationRelation> related;
 
     public String getStatus() {
         return status;
@@ -57,6 +59,15 @@ public class UIObservation extends UIClinicalResource<UIObservation> {
 
     public UIObservation setEncounter(UIEncounter encounter) {
         this.encounter = encounter;
+        return this;
+    }
+
+    public List<UIObservationRelation> getRelated() {
+        return related;
+    }
+
+    public UIObservation setRelated(List<UIObservationRelation> related) {
+        this.related = related;
         return this;
     }
 }

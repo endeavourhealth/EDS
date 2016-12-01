@@ -1,0 +1,29 @@
+<div class="row">
+	<div class="col-md-12">
+
+		<h4 class="page-sub-header">Investigations <small> ({{investigations?.length}} items)</small></h4>
+
+		<table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
+			<thead>
+				<th>Date</th>
+				<th>Term</th>
+				<th>Value</th>
+			</thead>
+			<tbody>
+				<tr *ngIf="!investigations || investigations.length == 0"><td colspan="2"><i>(no care history)</i></td></tr>
+				<tr *ngFor="let investigation of investigations">
+					<td>{{investigation.effectiveDate | cuiDate}}</td>
+					<td>
+						<span class="problem-term-text">{{investigation.code | codeReadTerm}}</span>
+						<div *ngFor="let related of investigation.related">
+							<span>{{ related.target?.code | codeReadTerm }}</span>
+						</div>
+					</td>
+					<td>
+						{{investigation?.value | cuiQuantity }}
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>

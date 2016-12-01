@@ -266,6 +266,8 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
 
         referencedResources.setMedications(ResourceFetcher.getResourceByPatient(serviceId, systemId, patientId, Medication.class));
 
+        referencedResources.setObservations(ResourceFetcher.getResourceByPatient(serviceId, systemId, patientId, Observation.class), referencedResources);
+
         return referencedResources;
     }
 

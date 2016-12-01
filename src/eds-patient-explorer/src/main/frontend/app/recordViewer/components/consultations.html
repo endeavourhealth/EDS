@@ -12,21 +12,21 @@
 	<div class="col-md-10">
 		<table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
 			<thead>
-				<th class="col-md-2">Consultation Date</th>
-				<th class="col-md-5">Performed By (Source)</th>
-				<th class="col-md-5">Reason(s)</th>
+				<th>Consultation Date</th>
+				<th>Performed By (Source)</th>
+				<th>Reason(s)</th>
 			</thead>
 			<tbody>
 				<tr *ngIf="!filteredConsultations || filteredConsultations.length == 0"><td colspan="2"><i>(no consultations)</i></td></tr>
 				<tr *ngFor="let consultation of filteredConsultations">
-					<td class="col-md-2">{{ consultation.period.start | cuiDate }}</td>
-					<td class="col-md-5">
+					<td>{{ consultation.period.start | cuiDate }}</td>
+					<td>
 						<span class="problem-term-text">{{ consultation.performedBy?.name | cuiName }}</span>
 						<span class="problem-term-significance-text" *ngIf="consultation.encounterSource"> {{consultation.encounterSource | codeAnyTerm}}</span>
 					</td>
-					<td class="col-md-5">
-						<div class="row" *ngFor="let reason of consultation.reason">
-							<div class="col-md-12 problem-associated-text">{{ reason | codeAnyTerm }}</div>
+					<td>
+						<div *ngFor="let reason of consultation.reason">
+							<div class="problem-associated-text">{{ reason | codeAnyTerm }}</div>
 						</div>
 					</td>
 				</tr>

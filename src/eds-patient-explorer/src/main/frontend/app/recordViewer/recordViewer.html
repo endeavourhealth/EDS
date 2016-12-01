@@ -71,7 +71,20 @@
                     </ngb-tab>
 
                     <!------------------------------------------------------------------------------------------------->
-                    <!-- INVESTIGATIONS -->
+                    <!-- Investigations -->
+                    <!------------------------------------------------------------------------------------------------->
+                    <ngb-tab id="investigations" title="Investigations">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
+                                <div class="container-fluid">
+                                    <investigations [investigations]="patient.getInvestigations()"></investigations>
+                                </div>
+                            </div>
+                        </template>
+                    </ngb-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- Care History -->
                     <!------------------------------------------------------------------------------------------------->
                     <ngb-tab id="careHistory" title="Care History">
                         <template ngbTabContent>

@@ -17,7 +17,7 @@ export class CodeAnyTerm implements PipeTransform {
             if (descriptions.length > 0)
                 return descriptions[0].display;
         }
-        return "(no term available)"
+        return "";
     }
 }
 
