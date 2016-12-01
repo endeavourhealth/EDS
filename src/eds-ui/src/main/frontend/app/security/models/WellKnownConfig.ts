@@ -1,4 +1,4 @@
-import {AuthConfig} from "./models/AuthConfig";
+import {AuthConfig} from "./AuthConfig";
 
 export class WellKnownConfig {
 

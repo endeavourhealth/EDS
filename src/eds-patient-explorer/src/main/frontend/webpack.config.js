@@ -3,7 +3,7 @@ var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
 	entry: {
-		'app' : './app/main.ts',
+		'app' : './app/patientExplorer.app.ts',
 		'vendor' : './app/vendor.ts'
 	},
 	output: {

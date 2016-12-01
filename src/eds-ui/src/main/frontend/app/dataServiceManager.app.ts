@@ -81,7 +81,8 @@ import {TransformErrorsComponent} from "./transformErrors/transformErrors.compon
 			{name: 'app.dataSetEdit', url: '/dataSetEdit/:itemAction/:itemUuid', component: DataSetEditComponent},
 			{name: 'app.codeSetEdit', url: '/codeSetEdit/:itemAction/:itemUuid', component: CodeSetEditComponent},
 			{name: 'app.transformErrors', url: '/transformErrors', component: TransformErrorsComponent}
-		]
+		],
+		defaultState : { state: 'app.dashboard', params: {} }
 	})
 )
 export class AppModule {}
