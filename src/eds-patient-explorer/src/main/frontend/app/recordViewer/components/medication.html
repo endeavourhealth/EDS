@@ -16,6 +16,7 @@
 					<td *ngIf="showDateEnded">{{medicationOrder.dateEnded | cuiDate}}</td>
 					<td>
 						<span>{{medicationOrder.medication.code | codeAnyTerm}}</span>
+						<span *ngIf="medicationOrder.dispenseRequest && medicationOrder.dispenseRequest.numberOfRepeatsAllowed > 0"> [REPEAT]</span>
 						<div class="problem-detail" [hidden]="!medicationOrder.showDetail">
 							<dosageInstructions [dosageInstructions]="medicationOrder.dosageInstructions"></dosageInstructions>
 						</div>

@@ -12,6 +12,7 @@ import org.endeavourhealth.transform.ui.models.types.UIPeriod;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 import org.hl7.fhir.instance.model.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,16 +35,8 @@ public class UIEncounterTransform extends UIClinicalTransform<Encounter, UIEncou
                 .setPeriod(getPeriod(encounter.getPeriod()))
                 .setServiceProvider(getServiceProvider(encounter, referencedResources))
                 .setRecordedDate(getRecordedDateExtensionValue(encounter))
-                .setEncounterSource(getEncounterSource(encounter));
-
-//        private String status;
-//        private UIAppointment appointment;        *
-//        private UIPractitioner performedBy;
-//        private UIPractitioner recordedBy;
-//        private UIPeriod period;
-//        private UIOrganisation serviceProvider;
-//        private Date recordedDate;
-//        private UICode encounterSource;
+                .setEncounterSource(getEncounterSource(encounter))
+                .setReason(getEncounterReasons(encounter));
     }
 
     private static UICodeableConcept getEncounterSource(Encounter encounter) {
@@ -86,6 +79,16 @@ public class UIEncounterTransform extends UIClinicalTransform<Encounter, UIEncou
                     return referencedResources.getUIPractitioner(component.getIndividual());
 
         return null;
+    }
+
+    private static List<UICodeableConcept> getEncounterReasons(Encounter encounter) {
+        List<UICodeableConcept> reasons = new ArrayList<>();
+
+        for(CodeableConcept reason : encounter.getReason()) {
+            reasons.add(CodeHelper.convert(reason));
+        }
+
+        return reasons;
     }
 
     public List<Reference> getReferences(List<Encounter> encounters) {

@@ -9,6 +9,8 @@ import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
 import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.endeavourhealth.transform.ui.models.types.UIPeriod;
 
+import java.util.List;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UIEncounter extends UIResource<UIEncounter> {
     private String status;
@@ -19,6 +21,7 @@ public class UIEncounter extends UIResource<UIEncounter> {
     private UICodeableConcept encounterSource;
     private UIPractitioner recordedBy;
     private UIDate recordedDate;
+    private List<UICodeableConcept> reason;
 
     public UIAppointment getAppointment() {
         return appointment;
@@ -89,6 +92,15 @@ public class UIEncounter extends UIResource<UIEncounter> {
 
     public UIEncounter setRecordedDate(UIDate recordedDate) {
         this.recordedDate = recordedDate;
+        return this;
+    }
+
+    public List<UICodeableConcept> getReason() {
+        return reason;
+    }
+
+    public UIEncounter setReason(List<UICodeableConcept> reason) {
+        this.reason = reason;
         return this;
     }
 }

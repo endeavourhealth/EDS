@@ -8,6 +8,7 @@ import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.DateHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UIDispenseRequest;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIDosageInstruction;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIMedication;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIMedicationOrder;
@@ -35,7 +36,8 @@ public class UIMedicationOrderTransform extends UIClinicalTransform<MedicationOr
 						.setDateEnded(DateHelper.convert(medicationOrder.getDateEndedElement()))
             .setPrescriber(getPrescriber(medicationOrder, referencedResources))
             .setMedication(getMedication(medicationOrder, referencedResources))
-						.setDosageInstructions(getDosageInstructions(medicationOrder, referencedResources));
+						.setDosageInstructions(getDosageInstructions(medicationOrder, referencedResources))
+						.setDispenseRequest(getDispenseRequest(medicationOrder));
     }
 
     @Override
@@ -80,8 +82,6 @@ public class UIMedicationOrderTransform extends UIClinicalTransform<MedicationOr
     }
 
     private static UIMedication getMedication(MedicationOrder medicationOrder, ReferencedResources referencedResources) {
-        List<UICodeableConcept> medication = new ArrayList<>();
-
         try {
             if (medicationOrder.hasMedicationCodeableConcept())
                 return new UIMedication()
@@ -104,5 +104,13 @@ public class UIMedicationOrderTransform extends UIClinicalTransform<MedicationOr
     	return new UIDosageInstruction()
 					.setInstructions(dosageInstruction.getText())
 					.setAdditionalInstructions(CodeHelper.convert(dosageInstruction.getAdditionalInstructions()));
+		}
+
+		private static UIDispenseRequest getDispenseRequest(MedicationOrder medicationOrder) {
+    	if (!medicationOrder.hasDispenseRequest() || medicationOrder.getDispenseRequest().getNumberOfRepeatsAllowedElement().isEmpty())
+    		return null;
+
+    	return new UIDispenseRequest()
+					.setNumberOfRepeatsAllowed(medicationOrder.getDispenseRequest().getNumberOfRepeatsAllowed());
 		}
 }

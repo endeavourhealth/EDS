@@ -5,6 +5,24 @@ import * as moment from 'moment';
 import {UIHumanName} from "../models/types/UIHumanName";
 import {UIAddress} from "../models/types/UIAddress";
 import {UIDate} from "../models/types/UIDate";
+import {UIQuantity} from "../models/types/UIQuantity";
+
+@Pipe({name : 'cuiQuantity'})
+export class CuiQuantity implements PipeTransform {
+    transform(quantity : UIQuantity) : string {
+        if (!quantity || !quantity.value)
+            return;
+
+        let result : string = quantity.value.toString();
+        if (quantity.comparator)
+            result = quantity.comparator + ' ' + result;
+
+        if (quantity.units)
+            result += ' ' + quantity.units;
+
+        return result;
+    }
+}
 
 @Pipe({name : 'cuiDate'})
 export class CuiDate implements PipeTransform {

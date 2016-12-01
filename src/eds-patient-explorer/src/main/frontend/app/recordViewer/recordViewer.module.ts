@@ -10,7 +10,7 @@ import {
 } from "./pipes/coding";
 import {
 	CuiDate, CuiDateOfBirth, CuiName, CuiNhsNumber,
-	CuiSingleLineAddress, CuiGender
+	CuiSingleLineAddress, CuiGender, CuiQuantity
 } from "./pipes/cui";
 import {Parentheses} from "./pipes/general";
 import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
@@ -20,13 +20,13 @@ import {PrecisComponent} from "./components/precis.component";
 import {SummaryComponent} from "./components/summary.component";
 import {ConsultationsComponent} from "./components/consultations.component";
 import {MedicationComponent} from "./components/medication.component";
-import {InvestigationsComponent} from "./components/investigations.component";
 import {TreeModule} from "angular2-tree-component";
 import {DosageInstructionsComponent} from "./components/dosageInstructions.component";
 import {AllergiesComponent} from "./components/allergies.component";
 import {ImmunizationsComponent} from "./components/immunizations.component";
 import {FamilyHistoryComponent} from "./components/familyHistory.component";
 import {FamilyHistoryConditionComponent} from "./components/familyHistoryCondition.component";
+import {CareHistoryComponent} from "./components/careHistory.component";
 
 @NgModule({
 	imports : [
@@ -46,7 +46,7 @@ import {FamilyHistoryConditionComponent} from "./components/familyHistoryConditi
 		MedicationComponent,
 			DosageInstructionsComponent,
 		ProblemsComponent,
-		InvestigationsComponent,
+		CareHistoryComponent,
 		AllergiesComponent,
 		ImmunizationsComponent,
 		FamilyHistoryComponent,
@@ -66,6 +66,7 @@ import {FamilyHistoryConditionComponent} from "./components/familyHistoryConditi
 		CuiNhsNumber,
 		CuiSingleLineAddress,
 		CuiGender,
+		CuiQuantity,
 
 		Parentheses
 	],

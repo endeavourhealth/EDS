@@ -12,6 +12,7 @@ public class UIMedicationOrder extends UIResource<UIMedicationOrder> {
 	private UIPractitioner prescriber;
 	private UIMedication medication;
 	private List<UIDosageInstruction> dosageInstructions;
+	private UIDispenseRequest dispenseRequest;
 
 	public UIDate getDateAuthorized() {
 		return dateAuthorized;
@@ -55,6 +56,15 @@ public class UIMedicationOrder extends UIResource<UIMedicationOrder> {
 
 	public UIMedicationOrder setDateEnded(UIDate dateEnded) {
 		this.dateEnded = dateEnded;
+		return this;
+	}
+
+	public UIDispenseRequest getDispenseRequest() {
+		return dispenseRequest;
+	}
+
+	public UIMedicationOrder setDispenseRequest(UIDispenseRequest dispenseRequest) {
+		this.dispenseRequest = dispenseRequest;
 		return this;
 	}
 }

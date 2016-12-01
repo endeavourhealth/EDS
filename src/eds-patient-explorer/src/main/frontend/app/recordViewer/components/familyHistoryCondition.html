@@ -1,4 +1,7 @@
 <div class="row" *ngFor="let condition of conditions">
-	<div class="col-md-6">{{condition.code | codeAnyTerm}}</div>
-	<div class="col-md-6" *ngIf="condition.outcome && condition.outcome.code">{{condition.outcome | codeAnyTerm }}</div>
+	<div class="col-md-10">
+		<span class="problem-term-text">{{condition.code | codeAnyTerm}}</span>
+		<span class="problem-term-significance-text"> (Onset : {{condition.effectiveDate | cuiDate}})</span>
+		<span class="problem-associated-text" *ngIf="condition.outcome && condition.outcome.code"> - {{condition.outcome | codeAnyTerm }}</span>
+	</div>
 </div>
