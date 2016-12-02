@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<SftpReaderConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                         xsi:noNamespaceSchemaLocation="SftpReaderConfiguration.xsd">
+<Hl7ReceiverConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                         xsi:noNamespaceSchemaLocation="Hl7ReceiverConfiguration.xsd">
 
     <InstanceId>EMIS001</InstanceId>
 
@@ -8,11 +8,11 @@
         <SftpReader>
             <Hostname>localhost</Hostname>
             <Port>5432</Port>
-            <Database>sftpreader</Database>
+            <Database>hl7receiver</Database>
             <Username>postgres</Username>
             <Password></Password>
         </SftpReader>
         <!-- also set database connection in logback.xml -->
     </DatabaseConnections>
 
-</SftpReaderConfiguration>
+</Hl7ReceiverConfiguration>

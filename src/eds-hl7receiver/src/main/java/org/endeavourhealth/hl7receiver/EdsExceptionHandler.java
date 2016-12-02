@@ -8,6 +8,7 @@ import java.util.Map;
 public class EdsExceptionHandler implements ReceivingApplicationExceptionHandler{
 
     public String processException(String incomingMessage, Map<String, Object> incomingMetadata, String outgoingMessage, Exception exception) throws HL7Exception {
-        return outgoingMessage;
+        exception.printStackTrace();
+        return "";
     }
 }

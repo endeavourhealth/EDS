@@ -4,7 +4,6 @@ import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HapiContext;
 import ca.uhn.hl7v2.app.HL7Service;
 import ca.uhn.hl7v2.protocol.ReceivingApplication;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,8 +28,8 @@ public class Main {
             HapiContext context = new DefaultHapiContext();
             HL7Service server = context.newServer(PORT, USE_TLS);
 
-            ReceivingApplication handler = new EdsReceiverApplication();
-            server.registerApplication("*", "*", handler);
+            ReceivingApplication receiver = new EdsReceiverApplication();
+            server.registerApplication("*", "*", receiver);
 
             server.registerConnectionListener(new EdsConnectionListener());
             server.setExceptionHandler(new EdsExceptionHandler());
