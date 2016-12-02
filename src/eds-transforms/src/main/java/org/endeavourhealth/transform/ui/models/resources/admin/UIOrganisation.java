@@ -5,4 +5,14 @@ import org.endeavourhealth.transform.ui.models.resources.UIResource;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UIOrganisation extends UIResource<UIOrganisation> {
+	private String name;
+
+	public String getName() {
+		return name;
+	}
+
+	public UIOrganisation setName(String name) {
+		this.name = name;
+		return this;
+	}
 }
