@@ -110,17 +110,21 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/")
-	public Response getOrganisation(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+	public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-				"Organisation Id", uuid);
+				"Organisation Id", uuid,
+				"SearchData", searchData);
 
-		if (uuid == null) {
+		if (uuid == null && searchData == null) {
 			LOG.trace("getOrganisation - list");
 			return getOrganisationList();
-		} else {
+		} else if (uuid != null){
 			LOG.trace("getOrganisation - single - " + uuid);
 			return getOrganisation(uuid);
+		} else {
+			LOG.trace("Search Organisations - " + searchData);
+			return search(searchData);
 		}
 	}
 
@@ -145,6 +149,22 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 		Organisation organisation = repository.getById(organisationUuid);
 
 		JsonOrganisation ret = new JsonOrganisation(organisation, false);
+
+		clearLogbackMarkers();
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
+
+	private Response search(String searchData) {
+		Iterable<Organisation> organisations = repository.search(searchData);
+
+		List<JsonOrganisation> ret = new ArrayList<>();
+
+		for (Organisation organisation : organisations) {
+			ret.add(new JsonOrganisation(organisation, false));
+		}
 
 		clearLogbackMarkers();
 		return Response

@@ -1,18 +1,17 @@
 import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService, Transition} from "ui-router-ng2";
-
 import {Service} from "./models/Service";
 import {Organisation} from "../organisations/models/Organisation";
 import {System} from "../system/models/System";
 import {TechnicalInterface} from "../system/models/TechnicalInterface";
 import {Endpoint} from "./models/Endpoint";
 import {AdminService} from "../administration/admin.service";
-import {LibraryService} from "../library/library.service";
 import {ServiceService} from "./service.service";
 import {OrganisationPickerDialog} from "../organisations/organisationPicker.dialog";
 import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
 import {LoggerService} from "../common/logger.service";
+import {SystemService} from "../system/system.service";
 
 @Component({
 	template : require('./serviceEditor.html')
@@ -24,14 +23,14 @@ export class ServiceEditComponent {
 	systems : System[];
 	technicalInterfaces : TechnicalInterface[];
 
-	selectedEndpoint : Endpoint = <Endpoint>{};
+	selectedEndpoint : Endpoint;
 
 	constructor(private $modal : NgbModal,
 							private $window : StateService,
 							private log:LoggerService,
 							private adminService : AdminService,
-							private libraryService : LibraryService,
 							private serviceService : ServiceService,
+							private systemService : SystemService,
 							private transition : Transition) {
 
 		this.loadSystems();
@@ -156,7 +155,7 @@ export class ServiceEditComponent {
 
 	loadSystems() {
 		var vm = this;
-		vm.libraryService.getSystems()
+		vm.systemService.getSystems()
 			.subscribe(
 				(result) => {
 				vm.systems = result;

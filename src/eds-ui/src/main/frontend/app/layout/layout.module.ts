@@ -3,7 +3,6 @@ import {BrowserModule} from "@angular/platform-browser";
 import {FormsModule} from "@angular/forms";
 import {UIRouterModule} from "ui-router-ng2";
 import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
-
 import {ShellComponent} from "./shell.component";
 import {SidebarComponent} from "./sidebar.component";
 import {TopnavComponent} from "./topnav.component";

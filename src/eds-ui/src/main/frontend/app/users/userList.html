@@ -48,19 +48,19 @@
 								<thead>
 									<tr>
 										<th class="col-md-4"  (click)="sortField='username'; sortReverse=!sortReverse">EMail
-											<span ng-show="sortField == 'username'"
+											<span *ngIf="sortField == 'username'"
 														class="fa fa-sm"
 														[ngClass]="{'fa-chevron-down':!sortReverse, 'fa-chevron-up':sortReverse}"></span>
 
 										</th>
 										<th class="col-md-2" (click)="sortField='surname'; sortReverse=!sortReverse">Surname
-											<span ng-show="sortField == 'surname'"
+											<span *ngIf="sortField == 'surname'"
 														class="fa fa-sm"
 														[ngClass]="{'fa-chevron-down':!sortReverse, 'fa-chevron-up':sortReverse}"></span>
 										</th>
 										<th class="col-md-2" >Forename</th>
 										<th class="col-md-2" (click)="sortField='isSuperUser'; sortReverse=!sortReverse">Super
-											<span ng-show="sortField == 'isSuperUser'"
+											<span *ngIf="sortField == 'isSuperUser'"
 														class="fa fa-sm"
 														[ngClass]="{'fa-chevron-down':!sortReverse, 'fa-chevron-up':sortReverse}"></span>
 										</th>

@@ -1,14 +1,8 @@
 import {Injectable} from "@angular/core";
 import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
-
 import {BaseHttp2Service} from "../core/baseHttp2.service";
-
 import {LibraryItem} from "./models/LibraryItem";
-import {System} from "../system/models/System";
-import {EntityMap} from "../entities/models/EntityMap";
-import {Cohort} from "../protocol/models/Cohort";
-import {DataSet} from "../dataset/models/Dataset";
 import {ItemSummaryList} from "./models/ItemSummaryList";
 
 @Injectable()
@@ -36,28 +30,5 @@ export class LibraryService extends BaseHttp2Service {
 	deleteLibraryItem(uuid: string): Observable<any> {
 		var libraryItem = {uuid: uuid};
 		return this.httpPost('api/library/deleteLibraryItem', libraryItem);
-	}
-
-	getEntityMap(): Observable<EntityMap> {
-		return this.httpGet('api/entity/getEntityMap');
-	}
-
-	getSystems(): Observable<System[]> {
-		return this.httpGet('api/library/getSystems');
-	}
-
-	getCohorts(): Observable<Cohort[]> {
-		return this.httpGet('api/library/getQueries');
-	}
-
-	getDatasets(): Observable<DataSet[]> {
-		return this.httpGet('api/library/getDataSets');
-	}
-
-	getProtocols(serviceId: string): Observable<LibraryItem[]> {
-		let params = new URLSearchParams();
-		params.set('serviceId', serviceId);
-
-		return this.httpGet('api/library/getProtocols', {search: params});
 	}
 }

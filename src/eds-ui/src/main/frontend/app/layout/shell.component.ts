@@ -1,5 +1,4 @@
-import '../../content/css/sidebar.css';
-
+import "../../content/css/sidebar.css";
 import {Component} from "@angular/core";
 
 @Component({

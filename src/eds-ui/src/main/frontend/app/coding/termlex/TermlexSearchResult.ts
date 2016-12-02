@@ -1,7 +1,7 @@
-	import {TermlexCode} from "./TermlexCode";
-	import {Code} from "../models/Code";
+import {TermlexCode} from "./TermlexCode";
+import {Code} from "../models/Code";
 
-	export class TermlexSearchResultCategory {
+export class TermlexSearchResultCategory {
 		count: number;
 		type: string;
 	}

@@ -1,7 +1,7 @@
 import {Composition} from "./models/Composition";
 import {Section} from "./models/Section";
 import {Resource} from "./models/Resource";
-import {EntityMap} from "../entities/models/EntityMap";
+import {EntityMap} from "./models/EntityMap";
 import {LibraryService} from "../library/library.service";
 import {LoggerService} from "../common/logger.service";
 import {AdminService} from "../administration/admin.service";
@@ -11,6 +11,7 @@ import {Component} from "@angular/core";
 import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {LibraryItem} from "../library/models/LibraryItem";
+import {DataSetService} from "./dataSet.service";
 
 @Component({
 	template : require('./dataSetEditor.html')
@@ -59,6 +60,7 @@ export class DataSetEditComponent {
 		"Distribution list"];
 
 	constructor(protected libraryService: LibraryService,
+							protected dataSetService : DataSetService,
 							protected logger: LoggerService,
 							protected $modal: NgbModal,
 							protected adminService: AdminService,
@@ -82,7 +84,7 @@ export class DataSetEditComponent {
 
 	loadEntityMap() {
 		var vm = this;
-		vm.libraryService.getEntityMap()
+		vm.dataSetService.getEntityMap()
 			.subscribe(
 				(result) => vm.entityMap = result,
 				(error) => vm.logger.error('Error loading entity map', error, 'Error')

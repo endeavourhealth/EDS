@@ -1,10 +1,8 @@
 // Core
-import {NgModule} from '@angular/core';
+import {NgModule} from "@angular/core";
 import {Application} from "./application";
-
 // Modules
 import {FlowchartModule} from "./flowchart/flowchart.module";
-
 import {DashboardModule} from "./dashboard/dashboard.module";
 import {LibraryModule} from "./library/library.module";
 import {OrganisationsModule} from "./organisations/organisations.module";
@@ -21,7 +19,6 @@ import {QueryModule} from "./query/query.module";
 import {ProtocolModule} from "./protocol/protocol.module";
 import {DataSetModule} from "./dataset/dataSet.module";
 import {CodeSetModule} from "./codeSet/codeSet.module";
-
 // State components
 import {DashboardComponent} from "./dashboard/dashboard.component";
 import {OrganisationListComponent} from "./organisations/organisationList.component";

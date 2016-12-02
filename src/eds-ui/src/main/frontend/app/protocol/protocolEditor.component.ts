@@ -13,6 +13,9 @@ import {AdminService} from "../administration/admin.service";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Transition, StateService} from "ui-router-ng2";
 import {Component} from "@angular/core";
+import {SystemService} from "../system/system.service";
+import {DataSetService} from "../dataset/dataSet.service";
+import {ProtocolService} from "./protocol.service";
 
 @Component({
 	template : require('./protocolEditor.html')
@@ -35,6 +38,9 @@ export class ProtocolEditComponent {
 	constructor(
 		protected libraryService : LibraryService,
 		protected serviceService : ServiceService,
+		protected systemService : SystemService,
+		protected dataSetService : DataSetService,
+		protected protocolService : ProtocolService,
 		protected logger : LoggerService,
 		protected $modal : NgbModal,
 		protected adminService : AdminService,
@@ -158,7 +164,7 @@ export class ProtocolEditComponent {
 
 	loadCohorts() {
 		var vm = this;
-		vm.libraryService.getCohorts()
+		vm.protocolService.getCohorts()
 			.subscribe(
 				(result) => vm.cohorts = result,
 				(error) => vm.logger.error('Failed to load cohorts', error, 'Load cohorts')
@@ -167,7 +173,7 @@ export class ProtocolEditComponent {
 
 	loadDatasets() {
 		var vm = this;
-		vm.libraryService.getDatasets()
+		vm.dataSetService.getDatasets()
 			.subscribe(
 				(result) => vm.dataSets = result,
 				(error) => vm.logger.error('Failed to load dataSets', error, 'Load dataSets')
@@ -184,7 +190,7 @@ export class ProtocolEditComponent {
 
 	loadSystems() {
 		var vm = this;
-		vm.libraryService.getSystems()
+		vm.systemService.getSystems()
 			.subscribe(
 				(result) => vm.processSystems(result),
 				(error) => vm.logger.error('Failed to load systems', error, 'Load systems')

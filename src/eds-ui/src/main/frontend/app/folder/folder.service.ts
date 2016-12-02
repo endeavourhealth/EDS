@@ -2,7 +2,6 @@ import {Injectable} from "@angular/core";
 import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 import {BaseHttp2Service} from "../core/baseHttp2.service";
-
 import {FolderNode} from "./models/FolderNode";
 import {Folder} from "./models/Folder";
 

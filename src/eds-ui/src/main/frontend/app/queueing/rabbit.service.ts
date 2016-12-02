@@ -1,7 +1,6 @@
 import {Injectable} from "@angular/core";
-import {Http, URLSearchParams, RequestOptionsArgs} from "@angular/http";
+import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
-
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 import {RabbitBinding} from "./models/RabbitBinding";
 import {RabbitExchange} from "./models/RabbitExchange";

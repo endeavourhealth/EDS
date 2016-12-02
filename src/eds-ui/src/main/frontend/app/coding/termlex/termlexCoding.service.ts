@@ -1,5 +1,4 @@
 import {Injectable} from "@angular/core";
-
 import {BaseHttp2Service} from "../../core/baseHttp2.service";
 import {ICodingService} from "../coding.service";
 import {CodeSetValue} from "../models/CodeSetValue";

@@ -1,7 +1,6 @@
 import {Component} from "@angular/core";
 import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-
 import {LoggerService} from "../common/logger.service";
 import {LibraryService} from "../library/library.service";
 import {AdminService} from "../administration/admin.service";

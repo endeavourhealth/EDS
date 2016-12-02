@@ -1,7 +1,6 @@
 import {NgModule} from "@angular/core";
 import {BrowserModule} from "@angular/platform-browser";
 import {FormsModule} from "@angular/forms";
-
 import {UserListComponent} from "./userList.component";
 import {UserService} from "./user.service";
 // import {UserEditorDialog} from "./userEditor.dialog";

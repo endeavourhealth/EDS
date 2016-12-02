@@ -1,8 +1,8 @@
-	import {CalculationType} from "./CalculationType";
-	import {FieldTest} from "../../tests/models/FieldTest";
-	import {Restriction} from "../../expressions/models/Restriction";
+import {CalculationType} from "./CalculationType";
+import {FieldTest} from "../../tests/models/FieldTest";
+import {Restriction} from "../../expressions/models/Restriction";
 
-	export class Resource {
+export class Resource {
 		heading : string;
 		resourceUuid : string[];
 		calculation : CalculationType;

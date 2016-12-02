@@ -1,5 +1,4 @@
 import {Component, Input} from "@angular/core";
-
 import {Service} from "./models/Service";
 import {LoggerService} from "../common/logger.service";
 import {ServiceService} from "./service.service";

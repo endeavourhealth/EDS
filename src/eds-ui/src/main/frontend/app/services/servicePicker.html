@@ -9,7 +9,7 @@
 				<label class="control-label">Search Criteria</label>
 				<div class="input-group">
 					<input type="text" class="form-control" placeholder="Search term" aria-describedby="searchTerm"
-								 ng-model="searchData" ng-keyup="$event.keyCode == 13 && search()" autofocus>
+								 [(ngModel)]="searchData" (keyup)="$event.keyCode == 13 && search()" autofocus name="searchData">
 					<span class="input-group-addon" (click)="search()" style="cursor: pointer">
 						<i class="fa fa-search" id="searchTerm" aria-hidden="true"></i>
 					</span>

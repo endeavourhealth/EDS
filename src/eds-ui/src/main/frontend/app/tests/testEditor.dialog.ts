@@ -1,6 +1,5 @@
 import {OnInit, Input, Component} from "@angular/core";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
-
 import {CodeSetValue} from "../coding/models/CodeSetValue";
 import {Test} from "./models/Test";
 import {IsAny} from "./models/IsAny";

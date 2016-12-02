@@ -1,5 +1,4 @@
 import {Component, Input} from "@angular/core";
-
 import {Organisation} from "./models/Organisation";
 import {OrganisationService} from "./organisation.service";
 import {LoggerService} from "../common/logger.service";

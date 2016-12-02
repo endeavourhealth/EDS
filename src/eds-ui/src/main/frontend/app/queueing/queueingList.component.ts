@@ -1,5 +1,4 @@
 import {Component} from "@angular/core";
-
 import {RabbitNode} from "./models/RabbitNode";
 import {Routing} from "./Routing";
 import {RabbitBinding} from "./models/RabbitBinding";
