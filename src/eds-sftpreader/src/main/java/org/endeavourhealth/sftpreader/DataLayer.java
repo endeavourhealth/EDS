@@ -1,10 +1,10 @@
 package org.endeavourhealth.sftpreader;
 
 import org.endeavourhealth.sftpreader.model.db.*;
-import org.endeavourhealth.sftpreader.utilities.StreamExtension;
-import org.endeavourhealth.sftpreader.utilities.postgres.PgResultSet;
-import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProc;
-import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
+import org.endeavourhealth.utilities.streams.StreamExtension;
+import org.endeavourhealth.utilities.postgres.PgResultSet;
+import org.endeavourhealth.utilities.postgres.PgStoredProc;
+import org.endeavourhealth.utilities.postgres.PgStoredProcException;
 
 import javax.sql.DataSource;
 import java.util.List;

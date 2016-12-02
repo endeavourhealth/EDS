@@ -1,4 +1,4 @@
-package org.endeavourhealth.sftpreader.utilities;
+package org.endeavourhealth.utilities.xml;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
@@ -18,11 +18,7 @@ import javax.xml.validation.SchemaFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public abstract class XmlSerializer
 {
