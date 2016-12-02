@@ -15,7 +15,9 @@ public class EkbManager {
                     " from " +
                     "    ConceptEntity c" +
                     " where" +
-                    "    c.display like :term ";
+                    "    c.display like :term " +
+                    " order by "+
+                    "    length(c.display) ";
 
         Query query = entityManager.createQuery(sql, ConceptEntity.class)
                 .setParameter("term", "%"+term+"%")

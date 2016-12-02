@@ -20,7 +20,7 @@ export class EkbCodingService extends BaseHttp2Service implements CodingService 
 		var observable = Observable.create(observer => {
 			vm.httpGet('/api/ekb/search/sct', {search: params, withCredentials: false})
 				.subscribe(
-					(response) => observer.next(response.data),
+					(response) => observer.next(response),
 					(exception) => observer.error(exception)
 				);
 		});
@@ -34,7 +34,7 @@ export class EkbCodingService extends BaseHttp2Service implements CodingService 
 		var observable = Observable.create(observer => {
 			vm.httpGet('/api/ekb/hierarchy/' + id + '/childHierarchy')
 				.subscribe(
-					(response) => observer.next(response.data),
+					(response) => observer.next(response),
 					(exception) => observer.error(exception)
 				);
 		});
@@ -47,7 +47,7 @@ export class EkbCodingService extends BaseHttp2Service implements CodingService 
 		var observable = Observable.create(observer => {
 			vm.httpGet('/api/ekb/hierarchy/' + id + '/parentHierarchy')
 				.subscribe(
-					(response) => observer.next(response.data),
+					(response) => observer.next(response),
 					(exception) => observer.error(exception)
 				);
 		});

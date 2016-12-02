@@ -121,22 +121,22 @@ export class DashboardComponent {
 	actionItem(item : FolderItem, action : string) {
 		switch (item.type) {
 			case ItemType.Query:
-				this.$state.go('app.queryAction', {itemUuid: item.uuid, itemAction: action});
+				this.$state.go('app.queryEdit', {itemUuid: item.uuid, itemAction: action});
 				break;
 			case ItemType.DataSet:
-				this.$state.go('app.dataSetAction', {itemUuid: item.uuid, itemAction: action});
+				this.$state.go('app.dataSetEdit', {itemUuid: item.uuid, itemAction: action});
 				break;
 			case ItemType.CodeSet:
-				this.$state.go('app.codeSetAction', {itemUuid: item.uuid, itemAction: action});
+				this.$state.go('app.codeSetEdit', {itemUuid: item.uuid, itemAction: action});
 				break;
 			case ItemType.Report:
-				this.$state.go('app.reportAction', {itemUuid: item.uuid, itemAction: action});
+				this.$state.go('app.reportEdit', {itemUuid: item.uuid, itemAction: action});
 				break;
 			case ItemType.Protocol:
-				this.$state.go('app.protocolAction', {itemUuid: item.uuid, itemAction: action});
+				this.$state.go('app.protocolEdit', {itemUuid: item.uuid, itemAction: action});
 				break;
 			case ItemType.System:
-				this.$state.go('systemEdit', {itemUuid: item.uuid, itemAction: action});
+				this.$state.go('app.systemEdit', {itemUuid: item.uuid, itemAction: action});
 				break;
 		}
 	}
