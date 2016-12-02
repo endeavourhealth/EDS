@@ -1,11 +1,11 @@
 package org.endeavourhealth.sftpreader;
 
-import org.endeavourhealth.sftpreader.utilities.XmlSerializer;
+import org.endeavourhealth.utilities.xml.XmlSerializer;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.xml.DatabaseConnection;
 import org.endeavourhealth.sftpreader.model.xml.SftpReaderConfiguration;
-import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
-import org.postgresql.ds.PGSimpleDataSource;
+import org.endeavourhealth.utilities.postgres.PgDataSource;
+import org.endeavourhealth.utilities.postgres.PgStoredProcException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,20 +63,17 @@ public final class Configuration
 
     public DataSource getDatabaseConnection() throws SQLException
     {
-        return getDataSource(localConfiguration.getDatabaseConnections().getSftpReader());
+        DatabaseConnection dataSource = localConfiguration.getDatabaseConnections().getSftpReader();
+
+        return PgDataSource.get(
+                dataSource.getHostname(),
+                dataSource.getPort().intValue(),
+                dataSource.getDatabase(),
+                dataSource.getUsername(),
+                dataSource.getPassword());
     }
 
-    private static DataSource getDataSource(DatabaseConnection databaseConnection) throws SQLException
-    {
-        PGSimpleDataSource pgSimpleDataSource = new PGSimpleDataSource();
-        pgSimpleDataSource.setServerName(databaseConnection.getHostname());
-        pgSimpleDataSource.setPortNumber(databaseConnection.getPort().intValue());
-        pgSimpleDataSource.setDatabaseName(databaseConnection.getDatabase());
-        pgSimpleDataSource.setUser(databaseConnection.getUsername());
-        pgSimpleDataSource.setPassword(databaseConnection.getPassword());
-        return pgSimpleDataSource;
-        //return DataSources.pooledDataSource(pgSimpleDataSource);
-    }
+
 
     public String getInstanceId()
     {

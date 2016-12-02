@@ -1,4 +1,4 @@
-package org.endeavourhealth.sftpreader.utilities.postgres;
+package org.endeavourhealth.utilities.postgres;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;

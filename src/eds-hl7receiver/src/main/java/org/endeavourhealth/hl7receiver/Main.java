@@ -25,20 +25,26 @@ public class Main {
 
 			writeHeaderLogLine(PROGRAM_DISPLAY_NAME);
 
-            HapiContext context = new DefaultHapiContext();
-            HL7Service server = context.newServer(PORT, USE_TLS);
+            //loadConfiguration();
 
-            ReceivingApplication receiver = new EdsReceiverApplication();
-            server.registerApplication("*", "*", receiver);
-
-            server.registerConnectionListener(new EdsConnectionListener());
-            server.setExceptionHandler(new EdsExceptionHandler());
-            server.startAndWait();
+            startMllpListener();
 
 		} catch (Exception e) {
 			LOG.error("Fatal exception occurred", e);
 		}
 	}
+
+	private static void startMllpListener() throws InterruptedException {
+        HapiContext context = new DefaultHapiContext();
+        HL7Service server = context.newServer(PORT, USE_TLS);
+
+        ReceivingApplication receiver = new EdsReceiverApplication();
+        server.registerApplication("*", "*", receiver);
+
+        server.registerConnectionListener(new EdsConnectionListener());
+        server.setExceptionHandler(new EdsExceptionHandler());
+        server.startAndWait();
+    }
 
 	private static boolean isLogbackConfigValid()
     {

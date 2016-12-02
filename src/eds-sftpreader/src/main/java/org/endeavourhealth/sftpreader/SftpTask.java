@@ -16,14 +16,14 @@ import org.endeavourhealth.sftpreader.model.db.*;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpFilenameParseException;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpReaderException;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpValidationException;
-import org.endeavourhealth.sftpreader.utilities.KeycloakClient;
+import org.endeavourhealth.utilities.keycloak.KeycloakClient;
 import org.endeavourhealth.sftpreader.utilities.PgpUtil;
-import org.endeavourhealth.sftpreader.utilities.StreamExtension;
-import org.endeavourhealth.sftpreader.utilities.postgres.PgStoredProcException;
+import org.endeavourhealth.utilities.streams.StreamExtension;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnection;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionDetails;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpConnectionException;
 import org.endeavourhealth.sftpreader.utilities.sftp.SftpRemoteFile;
+import org.endeavourhealth.utilities.postgres.PgStoredProcException;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;

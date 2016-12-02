@@ -1,4 +1,4 @@
-package org.endeavourhealth.sftpreader.utilities.postgres;
+package org.endeavourhealth.utilities.postgres;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
