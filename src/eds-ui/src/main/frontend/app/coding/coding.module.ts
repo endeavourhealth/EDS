@@ -4,6 +4,7 @@ import {FormsModule} from "@angular/forms";
 import {TreeModule} from "angular2-tree-component";
 import {CodePickerDialog} from "./codePicker.dialog";
 import {TermlexCodingService} from "./termlex/termlexCoding.service";
+import {CodingService} from "./coding.service";
 
 @NgModule({
 	imports : [
@@ -18,7 +19,7 @@ import {TermlexCodingService} from "./termlex/termlexCoding.service";
 		CodePickerDialog
 	],
 	providers : [
-		TermlexCodingService
+		{ provide : CodingService, useClass : TermlexCodingService }
 	],
 })
 export class CodingModule {}

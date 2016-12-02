@@ -1,6 +1,6 @@
 import {Injectable} from "@angular/core";
 import {BaseHttp2Service} from "../../core/baseHttp2.service";
-import {ICodingService} from "../coding.service";
+import {CodingService} from "../coding.service";
 import {CodeSetValue} from "../models/CodeSetValue";
 import {TermlexSearchResult} from "./TermlexSearchResult";
 import {TermlexCode} from "./TermlexCode";
@@ -9,7 +9,7 @@ import {Observable} from "rxjs";
 import {Http, URLSearchParams} from "@angular/http";
 
 @Injectable()
-export class TermlexCodingService extends BaseHttp2Service implements ICodingService {
+export class TermlexCodingService extends BaseHttp2Service implements CodingService {
 	constructor(http : Http) { super(http); }
 
 	searchCodes(searchData : string) : Observable<CodeSetValue[]> {

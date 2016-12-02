@@ -11,7 +11,7 @@ import {ValueFrom} from "./models/ValueFrom";
 import {ValueTo} from "./models/ValueTo";
 import {ValueSet} from "./models/ValueSet";
 import {Restriction} from "../expressions/models/Restriction";
-import {TermlexCodingService} from "../coding/termlex/termlexCoding.service";
+import {CodingService} from "../coding/coding.service";
 
 @Component({
 	selector: 'ngbd-modal-content',
@@ -217,7 +217,7 @@ export class TestEditDialog implements OnInit{
 	constructor(
 		protected $modal : NgbModal,
 		protected activeModal : NgbActiveModal,
-		private codingService : TermlexCodingService) {
+		private codingService : CodingService) {
 	}
 
 	ngOnInit(): void {

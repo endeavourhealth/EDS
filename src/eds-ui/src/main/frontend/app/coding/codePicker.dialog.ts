@@ -2,8 +2,8 @@ import {CodeSetValue} from "./models/CodeSetValue";
 import {ExclusionTreeNode} from "./models/ExclusionTreeNode";
 import {Input, Component} from "@angular/core";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
-import {TermlexCodingService} from "./termlex/termlexCoding.service";
 import {ITreeOptions} from "angular2-tree-component";
+import {CodingService} from "./coding.service";
 
 @Component({
 	selector: 'ngbd-modal-content',
@@ -34,7 +34,7 @@ export class CodePickerDialog {
 	exclusionTreeData : ExclusionTreeNode[];
 
 	constructor(protected activeModal : NgbActiveModal,
-							private codingService : TermlexCodingService) {
+							private codingService : CodingService) {
 		this.termCache = {};
 		this.options = {
 			childrenField : 'exclusion',
