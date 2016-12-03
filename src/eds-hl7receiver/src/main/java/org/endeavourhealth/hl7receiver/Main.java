@@ -21,14 +21,17 @@ public class Main {
             EdsHl7Service hl7Service = new EdsHl7Service();
             hl7Service.start();
 
-            System.out.println();
-            System.out.println("Press any key to exit...");
+            LOG.info("Press any key to exit...");
 
             System.in.read();
 
+            LOG.info("Shutting down...");
             hl7Service.stop();
 
-		} catch (LogbackConfigurationException e) {
+            LOG.info("Shutdown");
+            System.exit(0);
+
+        } catch (LogbackConfigurationException e) {
             LOG.error("Fatal exception occurred initializing logback", e);
             System.err.println("Fatal exception occurred initializing logback");
             e.printStackTrace();
