@@ -24,7 +24,7 @@ import javax.xml.bind.annotation.XmlType;
  *             &lt;complexContent>
  *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *                 &lt;sequence>
- *                   &lt;element name="SftpReader" type="{}DatabaseConnection"/>
+ *                   &lt;element name="Hl7Receiver" type="{}DatabaseConnection"/>
  *                 &lt;/sequence>
  *               &lt;/restriction>
  *             &lt;/complexContent>
@@ -110,7 +110,7 @@ public class Hl7ReceiverConfiguration {
      *   &lt;complexContent>
      *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
      *       &lt;sequence>
-     *         &lt;element name="SftpReader" type="{}DatabaseConnection"/>
+     *         &lt;element name="Hl7Receiver" type="{}DatabaseConnection"/>
      *       &lt;/sequence>
      *     &lt;/restriction>
      *   &lt;/complexContent>
@@ -121,35 +121,35 @@ public class Hl7ReceiverConfiguration {
      */
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlType(name = "", propOrder = {
-        "sftpReader"
+        "hl7Receiver"
     })
     public static class DatabaseConnections {
 
-        @XmlElement(name = "SftpReader", required = true)
-        protected DatabaseConnection sftpReader;
+        @XmlElement(name = "Hl7Receiver", required = true)
+        protected DatabaseConnection hl7Receiver;
 
         /**
-         * Gets the value of the sftpReader property.
+         * Gets the value of the hl7Receiver property.
          * 
          * @return
          *     possible object is
          *     {@link DatabaseConnection }
          *     
          */
-        public DatabaseConnection getSftpReader() {
-            return sftpReader;
+        public DatabaseConnection getHl7Receiver() {
+            return hl7Receiver;
         }
 
         /**
-         * Sets the value of the sftpReader property.
+         * Sets the value of the hl7Receiver property.
          * 
          * @param value
          *     allowed object is
          *     {@link DatabaseConnection }
          *     
          */
-        public void setSftpReader(DatabaseConnection value) {
-            this.sftpReader = value;
+        public void setHl7Receiver(DatabaseConnection value) {
+            this.hl7Receiver = value;
         }
 
     }

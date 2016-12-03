@@ -2,16 +2,16 @@
 <Hl7ReceiverConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                          xsi:noNamespaceSchemaLocation="Hl7ReceiverConfiguration.xsd">
 
-    <InstanceId>EMIS001</InstanceId>
+    <InstanceId>TEST001</InstanceId>
 
     <DatabaseConnections>
-        <SftpReader>
+        <Hl7Receiver>
             <Hostname>localhost</Hostname>
             <Port>5432</Port>
             <Database>hl7receiver</Database>
             <Username>postgres</Username>
             <Password></Password>
-        </SftpReader>
+        </Hl7Receiver>
         <!-- also set database connection in logback.xml -->
     </DatabaseConnections>
 

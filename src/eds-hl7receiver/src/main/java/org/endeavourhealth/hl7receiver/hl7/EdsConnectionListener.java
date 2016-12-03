@@ -1,4 +1,4 @@
-package org.endeavourhealth.hl7receiver;
+package org.endeavourhealth.hl7receiver.hl7;
 
 import ca.uhn.hl7v2.app.Connection;
 import ca.uhn.hl7v2.app.ConnectionListener;
