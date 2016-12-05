@@ -120,6 +120,31 @@ public class PgStoredProc
         }
     }
 
+    public <T extends Object> T executeMultiQuerySingleRow(IResultSetPopulator<T> firstRowMapper) throws PgStoredProcException
+    {
+        List<T> resultList;
+
+        try
+        {
+            resultList = executeMultiQuery(firstRowMapper);
+        }
+        catch (PgStoredProcException e)
+        {
+            throw new PgStoredProcException("executeMultiQuerySingleRow error, see inner exception", e.getCause());
+        }
+
+        if (resultList == null)
+            throw new PgStoredProcException("No results returned (null list)");
+
+        if (resultList.size() == 0)
+            throw new PgStoredProcException("No results returned");
+
+        if (resultList.size() > 1)
+            throw new PgStoredProcException("More than one result returned");
+
+        return resultList.get(0);
+    }
+
     public <T extends Object> List<T> executeMultiQuery(IResultSetPopulator<T> firstRowMapper) throws PgStoredProcException
     {
         try
@@ -143,20 +168,6 @@ public class PgStoredProc
             throw new PgStoredProcException("executeMultiQuery error, see inner exception", e);
         }
     }
-
-    /*public <T extends Object> List<T> nextMultiQuery(IResultSetPopulator<T> nextRowMapper) throws PgStoredProcException
-    {
-        try
-        {
-            return populatePojoFromMultiResultSet(nextRowMapper);
-        }
-        catch (Exception e)
-        {
-            closeMultiResourcesQuietly();
-
-            throw new PgStoredProcException("getNextMultiQuery error, see inner exception", e);
-        }
-    }*/
 
     private static <T extends Object> List<T> populatePojo(ResultSet resultSet, IResultSetPopulator<T> rowMapper) throws SQLException
     {

@@ -1,24 +1,37 @@
 package org.endeavourhealth.hl7receiver.model.db;
 
-public class DbConfiguration {
-    private String instanceId;
-    private String instanceDescription;
+import java.util.List;
 
-    public String getInstanceId() {
-        return instanceId;
+public class DbConfiguration {
+
+    private Instance instance;
+    private List<Port> ports;
+    private List<Channel> channels;
+
+    public Instance getInstance() {
+        return instance;
     }
 
-    public DbConfiguration setInstanceId(String instanceId) {
-        this.instanceId = instanceId;
+    public DbConfiguration setInstance(Instance instance) {
+        this.instance = instance;
         return this;
     }
 
-    public String getInstanceDescription() {
-        return instanceDescription;
+    public List<Port> getPorts() {
+        return ports;
     }
 
-    public DbConfiguration setInstanceDescription(String instanceDescription) {
-        this.instanceDescription = instanceDescription;
+    public DbConfiguration setPorts(List<Port> ports) {
+        this.ports = ports;
+        return this;
+    }
+
+    public List<Channel> getChannels() {
+        return channels;
+    }
+
+    public DbConfiguration setChannels(List<Channel> channels) {
+        this.channels = channels;
         return this;
     }
 }

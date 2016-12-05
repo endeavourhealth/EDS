@@ -55,6 +55,8 @@ public final class Configuration
 
         if ((!file.exists()) || (!file.isFile()))
             throw new LogbackConfigurationException("FATAL ERROR: Could not find " + LOGBACK_ENVIRONMENT_VARIABLE);
+
+        LOG.info("Using base logback config file at " + logbackConfiguration);
     }
 
     private void loadLocalConfiguration() throws ConfigurationException
@@ -66,7 +68,7 @@ public final class Configuration
                 LOG.info("Loading local configuration file from path " + path);
                 localConfiguration = XmlSerializer.deserializeFromFile(Hl7ReceiverConfiguration.class, path, CONFIG_XSD);
             } else {
-                LOG.info("Loading local configuration file from resource " + CONFIG_RESOURCE);
+                LOG.info("Did not find java property " + CONFIG_PATH_JAVA_PROPERTY + ", loading local configuration file from resource " + CONFIG_RESOURCE);
                 localConfiguration = XmlSerializer.deserializeFromResource(Hl7ReceiverConfiguration.class, CONFIG_RESOURCE, CONFIG_XSD);
             }
         } catch (Exception e) {
@@ -79,7 +81,7 @@ public final class Configuration
             DataLayer dataLayer = new DataLayer(getDatabaseConnection());
             this.dbConfiguration = dataLayer.getConfiguration(getInstanceId());
         } catch (Exception e) {
-            throw new ConfigurationException("Error logading DB configuration, see inner exception", e);
+            throw new ConfigurationException("Error loading DB configuration, see inner exception", e);
         }
     }
 

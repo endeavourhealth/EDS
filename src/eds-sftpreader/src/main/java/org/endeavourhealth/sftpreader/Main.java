@@ -47,7 +47,5 @@ public class Main
 
 		timer.scheduleAtFixedRate(sftpTask, 0, configuration.getDbConfiguration().getPollFrequencySeconds() * 1000);
   	}
-
-
 }
 
