@@ -95,4 +95,8 @@ public final class Configuration
     {
         return localConfiguration.getInstanceId();
     }
+
+    public DbConfiguration getDbConfiguration() {
+        return dbConfiguration;
+    }
 }

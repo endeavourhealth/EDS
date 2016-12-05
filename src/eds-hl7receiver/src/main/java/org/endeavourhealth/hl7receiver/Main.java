@@ -1,6 +1,5 @@
 package org.endeavourhealth.hl7receiver;
 
-import org.endeavourhealth.hl7receiver.hl7.EdsHl7Service;
 import org.endeavourhealth.hl7receiver.model.exceptions.LogbackConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,15 +17,15 @@ public class Main {
 
 			Configuration configuration = Configuration.getInstance();
 
-            EdsHl7Service hl7Service = new EdsHl7Service();
-            hl7Service.start();
+			Hl7ServiceManager serviceManager = new Hl7ServiceManager(configuration);
+            serviceManager.start();
 
             LOG.info("Press any key to exit...");
 
             System.in.read();
 
             LOG.info("Shutting down...");
-            hl7Service.stop();
+            serviceManager.stop();
 
             LOG.info("Shutdown");
             System.exit(0);

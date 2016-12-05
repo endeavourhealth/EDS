@@ -9,7 +9,7 @@ import ca.uhn.hl7v2.protocol.ReceivingApplicationException;
 import java.io.IOException;
 import java.util.Map;
 
-public class EdsReceiverApplication implements ReceivingApplication {
+public class Hl7ReceiverApplication implements ReceivingApplication {
 
     public Message processMessage(Message message, Map<String, Object> map) throws ReceivingApplicationException, HL7Exception {
         String encodedMessage = new DefaultHapiContext().getPipeParser().encode(message);
