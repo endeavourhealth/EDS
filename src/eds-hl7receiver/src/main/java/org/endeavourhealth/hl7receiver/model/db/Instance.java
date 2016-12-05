@@ -2,6 +2,7 @@ package org.endeavourhealth.hl7receiver.model.db;
 
 public class Instance {
     private String instanceId;
+    private String instanceName;
     private String instanceDescription;
 
     public String getInstanceId() {
@@ -10,6 +11,15 @@ public class Instance {
 
     public Instance setInstanceId(String instanceId) {
         this.instanceId = instanceId;
+        return this;
+    }
+
+    public String getInstanceName() {
+        return instanceName;
+    }
+
+    public Instance setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
         return this;
     }
 

@@ -5,19 +5,29 @@ import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.protocol.ReceivingApplication;
 import ca.uhn.hl7v2.protocol.ReceivingApplicationException;
-import org.endeavourhealth.hl7receiver.model.xml.Hl7ReceiverConfiguration;
+import org.endeavourhealth.hl7receiver.Configuration;
+import org.endeavourhealth.hl7receiver.model.db.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
 
-public class Hl7ReceiverApplication implements ReceivingApplication {
+class Hl7MessageHandler implements ReceivingApplication {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Hl7ReceiverApplication.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Hl7MessageHandler.class);
+
+    private Channel channel;
+    private Configuration configuration;
+
+    public Hl7MessageHandler(Channel channel, Configuration configuration) {
+        this.channel = channel;
+        this.configuration = configuration;
+    }
 
     public Message processMessage(Message message, Map<String, Object> map) throws ReceivingApplicationException, HL7Exception {
         String encodedMessage = new DefaultHapiContext().getPipeParser().encode(message);
+
         System.out.println("Received message:\n" + encodedMessage + "\n\n");
 
         try {

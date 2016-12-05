@@ -1,7 +1,7 @@
 
 create or replace function configuration.get_configuration
 (
-	_instance_id varchar(100)
+	_instance_name varchar(100)
 )
 returns setof refcursor
 as $$
@@ -16,9 +16,10 @@ begin
 	open configuration_instance for
 	select
 		i.instance_id,
+		i.instance_name,
 		i.description
 	from configuration.instance i
-	where i.instance_id = _instance_id;
+	where i.instance_name = _instance_name;
 	
 	return next configuration_instance;
 
@@ -30,6 +31,7 @@ begin
 		c.channel_id,
 		c.channel_name,
 		c.port_number,
+		c.is_active,
 		c.use_tls,
 		c.remote_application,
 		c.remote_facility,

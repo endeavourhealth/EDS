@@ -23,7 +23,7 @@ public class Hl7ServiceManager {
 
     private void createChannels() {
         for (Channel channelConfiguration : configuration.getDbConfiguration().getChannels())
-            channels.add(new Hl7Channel(channelConfiguration));
+            channels.add(new Hl7Channel(channelConfiguration, configuration));
     }
 
     public void start() throws InterruptedException {

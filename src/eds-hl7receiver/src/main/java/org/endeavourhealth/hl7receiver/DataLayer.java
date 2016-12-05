@@ -9,8 +9,8 @@ import org.endeavourhealth.utilities.postgres.PgStoredProcException;
 import javax.sql.DataSource;
 import java.util.List;
 
-public class DataLayer
-{
+public class DataLayer {
+
     private DataSource dataSource;
 
     public DataLayer(DataSource dataSource)
@@ -18,15 +18,16 @@ public class DataLayer
         this.dataSource = dataSource;
     }
 
-    public DbConfiguration getConfiguration(String instanceId) throws PgStoredProcException
-    {
+    public DbConfiguration getConfiguration(String instanceName) throws PgStoredProcException {
+
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("configuration.get_configuration")
-                .addParameter("_instance_id", instanceId);
+                .addParameter("_instance_name", instanceName);
 
         Instance instance = pgStoredProc.executeMultiQuerySingleRow((resultSet) ->
                 new Instance()
                         .setInstanceId(resultSet.getString("instance_id"))
+                        .setInstanceName(resultSet.getString("instance_name"))
                         .setInstanceDescription(resultSet.getString("description")));
 
         List<Channel> channels = pgStoredProc.executeMultiQuery((resultSet) ->
@@ -46,4 +47,17 @@ public class DataLayer
                 .setInstance(instance)
                 .setChannels(channels);
     }
+
+    public int startConnection(String instanceName, String channelName, String host) throws PgStoredProcException {
+
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("log.start_connection")
+                .addParameter("_instance_name", instanceName)
+                .addParameter("_channel_name", channelName)
+                .addParameter("_host", host);
+
+        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("start_connection"));
+    }
+
+
 }

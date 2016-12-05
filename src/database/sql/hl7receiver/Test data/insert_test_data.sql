@@ -5,10 +5,12 @@
 insert into configuration.instance
 (
 	instance_id, 
+	instance_name,
 	description
 )
 values
 (
+	1,
 	'TEST001', 
 	'TESTING'
 );
@@ -18,6 +20,7 @@ insert into configuration.channel
 	channel_id, 
 	channel_name, 
 	port_number, 
+	is_active,
 	use_tls, 
 	remote_application, 
 	remote_facility,
@@ -27,5 +30,5 @@ insert into configuration.channel
 	notes
 )
 values
-(1, 'HOMERTON', 8900, false, 'HOMERTON_TIE', 'HOMERTON', 'EDS', 'ENDEAVOUR', false, ''),
-(2, 'BARTS', 8901, false, 'BLT_TIE', 'BLT', 'EDS', 'ENDEAVOUR', false, '');
+(1, 'HOMERTON', 8900, true, false, 'HOMERTON_TIE', 'HOMERTON', 'EDS', 'ENDEAVOUR', false, ''),
+(2, 'BARTS', 8901, true, false, 'BLT_TIE', 'BLT', 'EDS', 'ENDEAVOUR', false, '');

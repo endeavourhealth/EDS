@@ -10,7 +10,7 @@ import ca.uhn.hl7v2.app.HL7Service;
 import ca.uhn.hl7v2.protocol.ReceivingApplication;
 import ca.uhn.hl7v2.protocol.ReceivingApplicationExceptionHandler;
 import org.apache.commons.lang3.Validate;
-import org.endeavourhealth.hl7receiver.Main;
+import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.model.db.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,62 +21,45 @@ public class Hl7Channel {
 
     private static final Logger LOG = LoggerFactory.getLogger(Hl7Channel.class);
     private HapiContext context;
-    private HL7Service server;
-    private ReceivingApplication receiver;
-    private Channel configuration;
+    private HL7Service service;
+    private Hl7MessageHandler messageHandler;
+    private Hl7ConnectionListener connectionListener;
+    private Hl7ExceptionHandler exceptionHandler;
+    private Channel channel;
+    private Configuration configuration;
 
-    public Hl7Channel(Channel channel) {
+    public Hl7Channel(Channel channel, Configuration configuration) {
         Validate.notNull(channel);
         Validate.notBlank(channel.getChannelName());
         Validate.isTrue(channel.getPortNumber() > 0);
 
-        this.configuration = channel;
+        this.channel = channel;
+        this.configuration = configuration;
 
         context = new DefaultHapiContext();
-        server = context.newServer(channel.getPortNumber(), channel.isUseTls());
+        service = context.newServer(channel.getPortNumber(), channel.isUseTls());
     }
 
-    public Channel getConfiguration() {
-        return configuration;
+    public Channel getChannel() {
+        return channel;
     }
 
     public void start() throws InterruptedException {
-        LOG.info("Starting channel " + configuration.getChannelName() + " on port " + Integer.toString(configuration.getPortNumber()));
+        LOG.info("Starting channel " + channel.getChannelName() + " on port " + Integer.toString(channel.getPortNumber()));
 
-        receiver = new Hl7ReceiverApplication();
-        server.registerApplication("*", "*", receiver);
-        server.registerConnectionListener(new Hl7ConnectionListener());
-        server.setExceptionHandler(new Hl7ExceptionHandler());
-        server.startAndWait();
+        messageHandler = new Hl7MessageHandler(channel, configuration);
+        connectionListener = new Hl7ConnectionListener(channel, configuration);
+        exceptionHandler = new Hl7ExceptionHandler(channel, configuration);
+
+        service.registerApplication("*", "*", messageHandler);
+        service.registerConnectionListener(connectionListener);
+        service.setExceptionHandler(exceptionHandler);
+        service.startAndWait();
     }
 
     public void stop() {
-        LOG.info("Stopping channel " + configuration.getChannelName() + " on port " + Integer.toString(configuration.getPortNumber()));
+        LOG.info("Stopping channel " + channel.getChannelName() + " on port " + Integer.toString(channel.getPortNumber()));
 
-        server.stopAndWait();
-    }
-
-    ////////////////////////////////////////////////////////////////////
-    // ConnectionListener
-    ////////////////////////////////////////////////////////////////////
-    class Hl7ConnectionListener implements ConnectionListener {
-        public void connectionReceived(Connection connection) {
-            System.out.println("New connection received: " + connection.getRemoteAddress().toString());
-        }
-
-        public void connectionDiscarded(Connection connection) {
-            System.out.println("Lost connection from: " + connection.getRemoteAddress().toString());
-        }
-    }
-
-    ////////////////////////////////////////////////////////////////////
-    // ExceptionHandler
-    ////////////////////////////////////////////////////////////////////
-    class Hl7ExceptionHandler implements ReceivingApplicationExceptionHandler {
-
-        public String processException(String incomingMessage, Map<String, Object> incomingMetadata, String outgoingMessage, Exception exception) throws HL7Exception {
-            exception.printStackTrace();
-            return "";
-        }
+        service.stopAndWait();
     }
 }
