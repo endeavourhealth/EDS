@@ -1,6 +1,7 @@
 import {Auth} from "./security.auth";
 import {User} from "./models/User";
 import {Injectable} from "@angular/core";
+import {OrganisationGroup} from "./models/OrganisationGroup";
 
 @Injectable()
 export class SecurityService {
@@ -64,6 +65,23 @@ export class SecurityService {
 			//user.title = this.getAuthz().idTokenParsed.title;              // TODO: custom attribute??
 			user.uuid = this.getAuthz().idTokenParsed.sub;
 			user.permissions = this.getAuthz().realmAccess.roles;
+
+			user.organisationGroups = [];
+
+			// Set default organisation
+			user.organisation = this.getAuthz().idTokenParsed.orgGroups[0].organisationId;
+
+			for(var orgGroup of this.getAuthz().idTokenParsed.orgGroups) {
+				let organisationGroup : OrganisationGroup = new OrganisationGroup();
+				organisationGroup.id = orgGroup.groupId;
+				organisationGroup.name = orgGroup.group;
+				organisationGroup.organisationId = orgGroup.organisationId;
+				organisationGroup.roles = [];
+				for (var role of orgGroup.roles) {
+					organisationGroup.roles.push(role);
+				}
+				user.organisationGroups.push(organisationGroup);
+			}
 
 			user.isSuperUser = false;                                   // TODO: design session needed on RBAC roles / ABAC attributes!
 			for(var permission in user.permissions) {

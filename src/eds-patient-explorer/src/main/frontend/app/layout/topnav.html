@@ -8,20 +8,18 @@
 			<div class="pull-right" style="padding: 10px;color:gray">
 				Logged in : {{currentUser.title}} {{currentUser.forename}} {{currentUser.surname}}
 
-
-				<!--<div class="dropdown" uib-dropdown>-->
-				<!--Organisation : <a href="#" class="dropdown-toggle" uib-dropdown-toggle>-->
-				<!--{{ topnav.selectedRole.organisationName }}-->
-				<!--<span class="caret"></span>-->
-				<!--</a>-->
-				<!--<ul uib-dropdown-menu>-->
-				<!--<li ng-repeat="endUserRole in topnav.currentUser.userInRoles">-->
-				<!--<a href="#" ng-click="topnav.updateRole(endUserRole.userInRoleUuid)">-->
-				<!--{{ endUserRole.organisationName }}-->
-				<!--</a>-->
-				<!--</li>-->
-				<!--</ul>-->
-				<!--</div>-->
+				<span class="dropdown" ngbDropdown>
+					At :
+					<button class="dropdown-toggle" ngbDropdownToggle id="organisationMenu">
+						{{ currentUser.organisation }}
+						<span class="caret"></span>
+					</button>
+					<ul class="dropdown-menu" aria-labelledby="organisationMenu">
+						<li *ngFor="let organisation of getUserOrganisations()">
+							<a (click)="switchOrganisation(organisation)">{{ organisation }}</a>
+						</li>
+					</ul>
+				</span>
 			</div>
 		</div>
 	</div>

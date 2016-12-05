@@ -1,10 +1,10 @@
 export class AuthConfig {
 
-constructor() {
+	constructor() {
 	}
 
-	realm : string;
-	authServerUrl : string;
-	authClientId : string;
-	appUrl : string;
+	realm: string;
+	authServerUrl: string;
+	authClientId: string;
+	appUrl: string;
 }

@@ -1,3 +1,4 @@
+import {OrganisationGroup} from "./OrganisationGroup";
 export class User {
 
 			constructor() {
@@ -10,6 +11,8 @@ export class User {
 	username:string;	// email
 	isSuperUser:boolean;
 	permissions:string[];
+	organisation:string;
+	organisationGroups: OrganisationGroup[];
 
 	displayName():string {
 		if(this.forename == null && this.surname == null) {

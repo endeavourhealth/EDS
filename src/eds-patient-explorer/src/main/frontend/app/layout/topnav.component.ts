@@ -1,6 +1,7 @@
 import {SecurityService} from "../security/security.service";
 import {User} from "../security/models/User";
 import {Component} from "@angular/core";
+import {linq} from "../common/linq";
 
 @Component({
 	selector: 'topnav-component',
@@ -18,17 +19,14 @@ export class TopnavComponent {
 		//vm.updateRole(vm.currentUser.currentUserInRoleUuid);
 	}
 
-	updateRole(userInRoleUuid : string) {
-		/*var vm = this;
-		 var matches = $.grep(vm.currentUser.userInRoles, function (e) {
-		 return e.userInRoleUuid === userInRoleUuid;
-		 });
-		 if (matches.length === 1) {
-		 vm.securityService.switchUserInRole(userInRoleUuid)
-		 .then(function(data) {
-		 vm.currentUser.currentUserInRoleUuid = userInRoleUuid;
-		 vm.selectedRole = matches[0];
-		 });
-		 }*/
+	getUserOrganisations() {
+		return linq(this.currentUser.organisationGroups)
+			.Select(g => g.organisationId)
+			.Distinct()
+			.ToArray();
+	}
+
+	switchOrganisation(organisation : string) {
+		this.currentUser.organisation = organisation;
 	}
 }
