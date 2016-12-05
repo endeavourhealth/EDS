@@ -3,11 +3,12 @@ package org.endeavourhealth.hl7receiver.model.db;
 public class Channel {
     private int channelId;
     private String channelName;
+    private int portNumber;
+    private boolean useTls;
     private String remoteApplication;
     private String remoteFacility;
     private String localApplication;
     private String localFacility;
-    private int portNumber;
     private boolean useAcks;
     private String notes;
 
@@ -26,6 +27,24 @@ public class Channel {
 
     public Channel setChannelName(String channelName) {
         this.channelName = channelName;
+        return this;
+    }
+
+    public int getPortNumber() {
+        return portNumber;
+    }
+
+    public Channel setPortNumber(int portNumber) {
+        this.portNumber = portNumber;
+        return this;
+    }
+
+    public boolean isUseTls() {
+        return useTls;
+    }
+
+    public Channel setUseTls(boolean useTls) {
+        this.useTls = useTls;
         return this;
     }
 
@@ -62,15 +81,6 @@ public class Channel {
 
     public Channel setLocalFacility(String localFacility) {
         this.localFacility = localFacility;
-        return this;
-    }
-
-    public int getPortNumber() {
-        return portNumber;
-    }
-
-    public Channel setPortNumber(int portNumber) {
-        this.portNumber = portNumber;
         return this;
     }
 

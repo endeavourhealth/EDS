@@ -5,7 +5,6 @@ import java.util.List;
 public class DbConfiguration {
 
     private Instance instance;
-    private List<Port> ports;
     private List<Channel> channels;
 
     public Instance getInstance() {
@@ -14,15 +13,6 @@ public class DbConfiguration {
 
     public DbConfiguration setInstance(Instance instance) {
         this.instance = instance;
-        return this;
-    }
-
-    public List<Port> getPorts() {
-        return ports;
-    }
-
-    public DbConfiguration setPorts(List<Port> ports) {
-        this.ports = ports;
         return this;
     }
 
