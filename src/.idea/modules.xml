@@ -6,6 +6,7 @@
       <module fileurl="file://$PROJECT_DIR$/eds-admin/eds-admin.iml" filepath="$PROJECT_DIR$/eds-admin/eds-admin.iml" group="core" />
       <module fileurl="file://$PROJECT_DIR$/eds-bootstrap/eds-bootstrap.iml" filepath="$PROJECT_DIR$/eds-bootstrap/eds-bootstrap.iml" />
       <module fileurl="file://$PROJECT_DIR$/eds-clinical/eds-clinical.iml" filepath="$PROJECT_DIR$/eds-clinical/eds-clinical.iml" group="core" />
+      <module fileurl="file://$PROJECT_DIR$/eds-hl7receiver/eds-hl7receiver.iml" filepath="$PROJECT_DIR$/eds-hl7receiver/eds-hl7receiver.iml" />
       <module fileurl="file://$PROJECT_DIR$/eds-keycloak-providers/eds-keycloak-providers.iml" filepath="$PROJECT_DIR$/eds-keycloak-providers/eds-keycloak-providers.iml" />
       <module fileurl="file://$PROJECT_DIR$/eds-keycloak-theme/eds-keycloak-theme.iml" filepath="$PROJECT_DIR$/eds-keycloak-theme/eds-keycloak-theme.iml" />
       <module fileurl="file://$PROJECT_DIR$/eds-messaging-api/eds-messaging-api.iml" filepath="$PROJECT_DIR$/eds-messaging-api/eds-messaging-api.iml" group="messaging" />
@@ -18,6 +19,7 @@
       <module fileurl="file://$PROJECT_DIR$/eds-transforms/eds-transforms.iml" filepath="$PROJECT_DIR$/eds-transforms/eds-transforms.iml" group="core" />
       <module fileurl="file://$PROJECT_DIR$/eds-ui/eds-ui.iml" filepath="$PROJECT_DIR$/eds-ui/eds-ui.iml" group="core" />
       <module fileurl="file://$PROJECT_DIR$/eds-ui-integration-test/eds-ui-integration-test.iml" filepath="$PROJECT_DIR$/eds-ui-integration-test/eds-ui-integration-test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/eds-utilities/eds-utilities.iml" filepath="$PROJECT_DIR$/eds-utilities/eds-utilities.iml" />
     </modules>
   </component>
 </project>

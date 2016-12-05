@@ -3,10 +3,22 @@ import {Injectable} from "@angular/core";
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 import {PatientIdentity} from "./PatientIdentity";
 import {Observable} from "rxjs";
+import {Service} from "./models/Service";
+import {System} from "./models/System";
 
 @Injectable()
 export class PatientIdentityService extends BaseHttp2Service {
 	constructor (http:Http) { super(http); }
+
+	getServices(): Observable<Service[]> {
+		return this.httpGet('api/service');
+	}
+
+	getSystemsForService(serviceId : string) : Observable<System[]> {
+		let params = new URLSearchParams();
+		params.set('serviceId',serviceId);
+		return this.httpGet('api/service/systemsForService', { search : params });
+	}
 
 	getByLocalIdentifier(serviceId : string, systemId : string, localId : string):Observable<PatientIdentity[]> {
 		var params = new URLSearchParams();

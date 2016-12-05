@@ -1,11 +1,10 @@
 import {PatientIdentity} from "./PatientIdentity";
-import {Service} from "../services/models/Service";
-import {System} from "../systems/models/System";
 import {PatientIdentityService} from "./patientIdentity.service";
 import {LoggerService} from "../common/logger.service";
-import {ServiceService} from "../services/service.service";
 import {Component} from "@angular/core";
 import {StateService} from "ui-router-ng2";
+import {Service} from "./models/Service";
+import {System} from "./models/System";
 
 @Component({
 	template : require('./patientIdentity.html')
@@ -22,7 +21,6 @@ export class PatientIdentityComponent {
 
 	constructor(protected patientIdentityService:PatientIdentityService,
 				protected logger:LoggerService,
-				protected serviceService : ServiceService,
 				protected $state : StateService) {
 		this.loadServices();
 		this.refresh();
@@ -36,7 +34,7 @@ export class PatientIdentityComponent {
 
 	loadServices() {
 		var vm = this;
-		vm.serviceService.getAll()
+		vm.patientIdentityService.getServices()
 			.subscribe(
 				(result) => vm.services = result,
 				(error) => vm.logger.error('Failed to load services', error, 'Load services')
@@ -45,7 +43,7 @@ export class PatientIdentityComponent {
 
 	loadSystems() {
 		var vm = this;
-		vm.serviceService.getSystemsForService(vm.serviceId)
+		vm.patientIdentityService.getSystemsForService(vm.serviceId)
 			.subscribe(
 				(result) => vm.systems = result,
 				(error) => vm.logger.error('Failed to load systems', error, 'Load systems')
