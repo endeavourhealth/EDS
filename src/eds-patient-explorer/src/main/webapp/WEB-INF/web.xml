@@ -19,7 +19,7 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>public</servlet-name>
-        <url-pattern>/eds-patient-explorer/public/*</url-pattern>
+        <url-pattern>/public/*</url-pattern>
     </servlet-mapping>
 
     <!-- API proxy -->
@@ -37,6 +37,6 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>api</servlet-name>
-        <url-pattern>/eds-patient-explorer/api/*</url-pattern>
+        <url-pattern>/api/*</url-pattern>
     </servlet-mapping>
 </web-app>
