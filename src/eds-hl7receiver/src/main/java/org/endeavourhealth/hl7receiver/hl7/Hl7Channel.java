@@ -1,27 +1,18 @@
 package org.endeavourhealth.hl7receiver.hl7;
 
-
 import ca.uhn.hl7v2.DefaultHapiContext;
-import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.HapiContext;
 import ca.uhn.hl7v2.app.HL7Service;
-import ca.uhn.hl7v2.model.Message;
-import ca.uhn.hl7v2.protocol.ReceivingApplication;
-import ca.uhn.hl7v2.protocol.ReceivingApplicationException;
-import ca.uhn.hl7v2.protocol.ReceivingApplicationExceptionHandler;
 import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
-import org.endeavourhealth.utilities.postgres.PgStoredProcException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Map;
 
-public class Hl7Channel implements ReceivingApplicationExceptionHandler, ReceivingApplication {
+public class Hl7Channel {
     private static final Logger LOG = LoggerFactory.getLogger(Hl7Channel.class);
 
     private HapiContext context;
@@ -30,6 +21,8 @@ public class Hl7Channel implements ReceivingApplicationExceptionHandler, Receivi
     private Configuration configuration;
     private DataLayer dataLayer;
     private Hl7ConnectionManager connectionManager;
+    private Hl7MessageReceiver messageReceiver;
+    private Hl7ExceptionHandler exceptionHandler;
 
     private Hl7Channel() {
     }
@@ -46,11 +39,13 @@ public class Hl7Channel implements ReceivingApplicationExceptionHandler, Receivi
 
         context = new DefaultHapiContext();
         connectionManager = new Hl7ConnectionManager(configuration, dbChannel);
+        messageReceiver = new Hl7MessageReceiver(configuration, dbChannel, connectionManager);
+        exceptionHandler = new Hl7ExceptionHandler();
         service = context.newServer(dbChannel.getPortNumber(), false);
 
-        service.registerApplication("*", "*", this);
+        service.registerApplication("*", "*", messageReceiver);
         service.registerConnectionListener(connectionManager);
-        service.setExceptionHandler(this);
+        service.setExceptionHandler(exceptionHandler);
     }
 
     public void start() throws InterruptedException {
@@ -62,40 +57,5 @@ public class Hl7Channel implements ReceivingApplicationExceptionHandler, Receivi
         LOG.info("Stopping channel " + dbChannel.getChannelName() + " on port " + Integer.toString(dbChannel.getPortNumber()));
         connectionManager.closeConnections();
         service.stopAndWait();
-    }
-
-    public String processException(String incomingMessage, Map<String, Object> incomingMetadata, String outgoingMessage, Exception exception) throws HL7Exception {
-        exception.printStackTrace();
-        return "";
-    }
-
-    public Message processMessage(Message message, Map<String, Object> map) throws ReceivingApplicationException, HL7Exception {
-        Integer connectionId = getConnectionId(map);
-
-        String encodedMessage = new DefaultHapiContext().getPipeParser().encode(message);
-
-        try {
-            dataLayer.logMessage(dbChannel.getChannelId(), connectionId, encodedMessage);
-        } catch (PgStoredProcException e) {
-            e.printStackTrace();
-            throw new HL7Exception(e);
-        }
-
-        try {
-            return message.generateACK();
-        } catch (IOException e) {
-            throw new HL7Exception(e);
-        }
-    }
-
-    private Integer getConnectionId(Map<String, Object> map) {
-        String remoteHost = (String)map.get("SENDING_IP");
-        Integer remotePort = (Integer)map.get("SENDING_PORT");
-
-        return connectionManager.getConnectionId(remoteHost, remotePort);
-    }
-
-    public boolean canProcess(Message message) {
-        return true;
     }
 }

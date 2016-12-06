@@ -48,7 +48,7 @@ public class Hl7ConnectionManager implements ConnectionListener  {
     }
 
     private void recordConnectionOpened(Connection connection) {
-        String remoteHost = connection.getRemoteAddress().toString();
+        String remoteHost = connection.getRemoteAddress().getHostAddress();
         Integer remotePort = connection.getRemotePort();
 
         LOG.info("Connection opened on channel " + dbChannel.getChannelName() + " from remote host " + remoteHost + " using remote port " + remotePort.toString());
@@ -68,7 +68,7 @@ public class Hl7ConnectionManager implements ConnectionListener  {
     }
 
     private void recordConnectionClosed(Connection connection) {
-        String remoteHost = connection.getRemoteAddress().toString();
+        String remoteHost = connection.getRemoteAddress().getHostAddress();
         Integer remotePort = connection.getRemotePort();
 
         LOG.info("Connection closed on channel " + dbChannel.getChannelName() + " from remote host " + remoteHost + " using remote port " + remotePort.toString());

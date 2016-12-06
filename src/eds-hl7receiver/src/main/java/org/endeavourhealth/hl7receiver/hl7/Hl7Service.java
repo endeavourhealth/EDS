@@ -9,13 +9,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Hl7ServiceManager {
+public class Hl7Service {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Hl7ServiceManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Hl7Service.class);
     private Configuration configuration;
     private List<Hl7Channel> channels;
 
-    public Hl7ServiceManager(Configuration configuration) throws SQLException {
+    public Hl7Service(Configuration configuration) throws SQLException {
         this.configuration = configuration;
         this.channels = new ArrayList<>();
 
