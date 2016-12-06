@@ -1,8 +1,8 @@
 package org.endeavourhealth.hl7receiver;
 
-import org.endeavourhealth.hl7receiver.model.db.Channel;
+import org.endeavourhealth.hl7receiver.model.db.DbChannel;
 import org.endeavourhealth.hl7receiver.model.db.DbConfiguration;
-import org.endeavourhealth.hl7receiver.model.db.Instance;
+import org.endeavourhealth.hl7receiver.model.db.DbInstance;
 import org.endeavourhealth.utilities.postgres.PgStoredProc;
 import org.endeavourhealth.utilities.postgres.PgStoredProcException;
 
@@ -24,14 +24,14 @@ public class DataLayer {
                 .setName("configuration.get_configuration")
                 .addParameter("_instance_name", instanceName);
 
-        Instance instance = pgStoredProc.executeMultiQuerySingleRow((resultSet) ->
-                new Instance()
+        DbInstance dbInstance = pgStoredProc.executeMultiQuerySingleRow((resultSet) ->
+                new DbInstance()
                         .setInstanceId(resultSet.getString("instance_id"))
                         .setInstanceName(resultSet.getString("instance_name"))
                         .setInstanceDescription(resultSet.getString("description")));
 
-        List<Channel> channels = pgStoredProc.executeMultiQuery((resultSet) ->
-                new Channel()
+        List<DbChannel> dbChannels = pgStoredProc.executeMultiQuery((resultSet) ->
+                new DbChannel()
                         .setChannelId(resultSet.getInt("channel_id"))
                         .setChannelName(resultSet.getString("channel_name"))
                         .setPortNumber(resultSet.getInt("port_number"))
@@ -44,20 +44,29 @@ public class DataLayer {
                         .setNotes(resultSet.getString("notes")));
 
         return new DbConfiguration()
-                .setInstance(instance)
-                .setChannels(channels);
+                .setDbInstance(dbInstance)
+                .setDbChannels(dbChannels);
     }
 
-    public int startConnection(String instanceName, String channelName, String host) throws PgStoredProcException {
+    public int openConnection(String instanceName, String channelName, int localPort, String remoteHost, int remotePort) throws PgStoredProcException {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("log.start_connection")
+                .setName("log.open_connection")
                 .addParameter("_instance_name", instanceName)
                 .addParameter("_channel_name", channelName)
-                .addParameter("_host", host);
+                .addParameter("_local_port", localPort)
+                .addParameter("_remote_host", remoteHost)
+                .addParameter("_remote_port", remotePort);
 
-        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("start_connection"));
+        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("open_connection"));
     }
 
+    public void closeConnection(int connectionId) throws PgStoredProcException {
 
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("log.close_connection")
+                .addParameter("_connection_id", connectionId);
+
+        pgStoredProc.execute();
+    }
 }

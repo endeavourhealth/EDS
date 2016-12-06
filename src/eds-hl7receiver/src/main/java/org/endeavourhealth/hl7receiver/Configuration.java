@@ -79,7 +79,7 @@ public final class Configuration
     private void loadDbConfiguration() throws ConfigurationException {
         try {
             DataLayer dataLayer = new DataLayer(getDatabaseConnection());
-            this.dbConfiguration = dataLayer.getConfiguration(getInstanceId());
+            this.dbConfiguration = dataLayer.getConfiguration(getInstanceName());
         } catch (Exception e) {
             throw new ConfigurationException("Error loading DB configuration, see inner exception", e);
         }
@@ -91,9 +91,9 @@ public final class Configuration
         return PgDataSource.get(db.getHostname(), db.getPort().intValue(), db.getDatabase(), db.getUsername(), db.getPassword());
     }
 
-    public String getInstanceId()
+    public String getInstanceName()
     {
-        return localConfiguration.getInstanceId();
+        return localConfiguration.getInstanceName();
     }
 
     public DbConfiguration getDbConfiguration() {

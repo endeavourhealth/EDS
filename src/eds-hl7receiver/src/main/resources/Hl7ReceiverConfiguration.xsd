@@ -4,7 +4,7 @@
     <xs:element name="Hl7ReceiverConfiguration">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="InstanceId" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+                <xs:element name="InstanceName" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
                 <xs:element name="DatabaseConnections" minOccurs="1" maxOccurs="1">
                     <xs:complexType>
                         <xs:sequence>

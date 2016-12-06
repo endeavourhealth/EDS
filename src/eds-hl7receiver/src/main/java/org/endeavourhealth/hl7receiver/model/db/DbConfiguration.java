@@ -4,24 +4,24 @@ import java.util.List;
 
 public class DbConfiguration {
 
-    private Instance instance;
-    private List<Channel> channels;
+    private DbInstance dbInstance;
+    private List<DbChannel> dbChannels;
 
-    public Instance getInstance() {
-        return instance;
+    public DbInstance getDbInstance() {
+        return dbInstance;
     }
 
-    public DbConfiguration setInstance(Instance instance) {
-        this.instance = instance;
+    public DbConfiguration setDbInstance(DbInstance dbInstance) {
+        this.dbInstance = dbInstance;
         return this;
     }
 
-    public List<Channel> getChannels() {
-        return channels;
+    public List<DbChannel> getDbChannels() {
+        return dbChannels;
     }
 
-    public DbConfiguration setChannels(List<Channel> channels) {
-        this.channels = channels;
+    public DbConfiguration setDbChannels(List<DbChannel> dbChannels) {
+        this.dbChannels = dbChannels;
         return this;
     }
 }

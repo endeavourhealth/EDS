@@ -2,7 +2,7 @@
 <Hl7ReceiverConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                          xsi:noNamespaceSchemaLocation="Hl7ReceiverConfiguration.xsd">
 
-    <InstanceId>TEST001</InstanceId>
+    <InstanceName>TEST001</InstanceName>
 
     <DatabaseConnections>
         <Hl7Receiver>

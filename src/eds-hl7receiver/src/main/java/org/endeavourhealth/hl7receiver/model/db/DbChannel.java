@@ -1,6 +1,6 @@
 package org.endeavourhealth.hl7receiver.model.db;
 
-public class Channel {
+public class DbChannel {
     private int channelId;
     private String channelName;
     private int portNumber;
@@ -16,7 +16,7 @@ public class Channel {
         return channelId;
     }
 
-    public Channel setChannelId(int channelId) {
+    public DbChannel setChannelId(int channelId) {
         this.channelId = channelId;
         return this;
     }
@@ -25,7 +25,7 @@ public class Channel {
         return channelName;
     }
 
-    public Channel setChannelName(String channelName) {
+    public DbChannel setChannelName(String channelName) {
         this.channelName = channelName;
         return this;
     }
@@ -34,7 +34,7 @@ public class Channel {
         return portNumber;
     }
 
-    public Channel setPortNumber(int portNumber) {
+    public DbChannel setPortNumber(int portNumber) {
         this.portNumber = portNumber;
         return this;
     }
@@ -43,7 +43,7 @@ public class Channel {
         return useTls;
     }
 
-    public Channel setUseTls(boolean useTls) {
+    public DbChannel setUseTls(boolean useTls) {
         this.useTls = useTls;
         return this;
     }
@@ -52,7 +52,7 @@ public class Channel {
         return remoteApplication;
     }
 
-    public Channel setRemoteApplication(String remoteApplication) {
+    public DbChannel setRemoteApplication(String remoteApplication) {
         this.remoteApplication = remoteApplication;
         return this;
     }
@@ -61,7 +61,7 @@ public class Channel {
         return remoteFacility;
     }
 
-    public Channel setRemoteFacility(String remoteFacility) {
+    public DbChannel setRemoteFacility(String remoteFacility) {
         this.remoteFacility = remoteFacility;
         return this;
     }
@@ -70,7 +70,7 @@ public class Channel {
         return localApplication;
     }
 
-    public Channel setLocalApplication(String localApplication) {
+    public DbChannel setLocalApplication(String localApplication) {
         this.localApplication = localApplication;
         return this;
     }
@@ -79,7 +79,7 @@ public class Channel {
         return localFacility;
     }
 
-    public Channel setLocalFacility(String localFacility) {
+    public DbChannel setLocalFacility(String localFacility) {
         this.localFacility = localFacility;
         return this;
     }
@@ -88,7 +88,7 @@ public class Channel {
         return useAcks;
     }
 
-    public Channel setUseAcks(boolean useAcks) {
+    public DbChannel setUseAcks(boolean useAcks) {
         this.useAcks = useAcks;
         return this;
     }
@@ -97,7 +97,7 @@ public class Channel {
         return notes;
     }
 
-    public Channel setNotes(String notes) {
+    public DbChannel setNotes(String notes) {
         this.notes = notes;
         return this;
     }

@@ -18,7 +18,7 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="InstanceId" type="{}nonEmptyString"/>
+ *         &lt;element name="InstanceName" type="{}nonEmptyString"/>
  *         &lt;element name="DatabaseConnections">
  *           &lt;complexType>
  *             &lt;complexContent>
@@ -40,39 +40,39 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
-    "instanceId",
+    "instanceName",
     "databaseConnections"
 })
 @XmlRootElement(name = "Hl7ReceiverConfiguration")
 public class Hl7ReceiverConfiguration {
 
-    @XmlElement(name = "InstanceId", required = true)
-    protected String instanceId;
+    @XmlElement(name = "InstanceName", required = true)
+    protected String instanceName;
     @XmlElement(name = "DatabaseConnections", required = true)
     protected Hl7ReceiverConfiguration.DatabaseConnections databaseConnections;
 
     /**
-     * Gets the value of the instanceId property.
+     * Gets the value of the instanceName property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getInstanceId() {
-        return instanceId;
+    public String getInstanceName() {
+        return instanceName;
     }
 
     /**
-     * Sets the value of the instanceId property.
+     * Sets the value of the instanceName property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setInstanceId(String value) {
-        this.instanceId = value;
+    public void setInstanceName(String value) {
+        this.instanceName = value;
     }
 
     /**

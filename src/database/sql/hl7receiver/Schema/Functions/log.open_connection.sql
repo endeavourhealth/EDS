@@ -1,9 +1,11 @@
 
-create or replace function log.start_connection
+create or replace function log.open_connection
 (
 	_instance_name varchar(100),
 	_channel_name varchar(100),
-	_host varchar(100)	
+	_local_port integer,
+	_remote_host varchar(100)	,
+	_remote_port integer
 )
 returns integer
 as $$
@@ -27,14 +29,18 @@ begin
 	(
 		instance_id,
 		channel_id,
-		host,
+		local_port,
+		remote_host,
+		remote_port,
 		connected
 	)
 	values
 	(
 		_instance_id,
 		_channel_id,
-		_host,
+		_local_port,
+		_remote_host,
+		_remote_port,
 		now()
 	)
 	returning connection_id into _connection_id;

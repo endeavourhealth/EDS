@@ -44,13 +44,17 @@ create table log.connection
 	connection_id serial not null,
 	instance_id integer not null,
 	channel_id integer not null,
-	host varchar(100) not null,
+	local_port integer not null,
+	remote_host varchar(100) not null,
+	remote_port integer not null,
 	connected timestamp not null,
 	disconnected timestamp null,
 	
 	constraint log_connection_connectionid_pk primary key (connection_id),
 	constraint log_connection_instanceid_fk foreign key (instance_id) references configuration.instance (instance_id),
 	constraint log_connection_channelid_fk foreign key (channel_id) references configuration.channel (channel_id),
-	constraint log_connection_host_ck check (char_length(trim(host)) > 0), 
+	constraint log_connection_localport_ck check (local_port > 0),
+	constraint log_connection_remotehost_ck check (char_length(trim(remote_host)) > 0), 
+	constraint log_connection_remoteport_ck check (remote_port > 0),
 	constraint log_connection_connected_disconnected_ck check ((disconnected is null) or (connected <= disconnected)) 
 );
