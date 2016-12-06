@@ -1,6 +1,6 @@
-package org.endeavourhealth.hl7receiver;
+package org.endeavourhealth.hl7receiver.hl7;
 
-import org.endeavourhealth.hl7receiver.hl7.Hl7Channel;
+import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -58,3 +58,18 @@ create table log.connection
 	constraint log_connection_remoteport_ck check (remote_port > 0),
 	constraint log_connection_connected_disconnected_ck check ((disconnected is null) or (connected <= disconnected)) 
 );
+
+create table log.message
+(
+	message_id serial not null,
+	channel_id integer not null,
+	connection_id integer not null,
+	inbound_date timestamp null,
+	inbound_payload varchar null,
+	outbound_date timestamp null,
+	outbound_payload varchar null,
+	
+	constraint log_message_messageid_pk primary key (message_id),
+	constraint log_message_channelid_fk foreign key (channel_id) references configuration.channel (channel_id),
+	constraint log_message_inbounddate_inboundpayload_outbounddate_outboundpayload_ck check ((inbound_date is not null and inbound_payload is not null) or (outbound_date is not null and outbound_payload is not null))
+);

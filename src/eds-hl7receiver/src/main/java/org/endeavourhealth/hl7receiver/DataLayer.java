@@ -69,4 +69,15 @@ public class DataLayer {
 
         pgStoredProc.execute();
     }
+
+    public int logMessage(int channelId, int connectionId, String inboundPayload) throws PgStoredProcException {
+
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("log.log_message")
+                .addParameter("_channel_id", channelId)
+                .addParameter("_connection_id", connectionId)
+                .addParameter("_inbound_payload", inboundPayload);
+
+        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("log_message"));
+    }
 }

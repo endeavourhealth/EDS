@@ -11,8 +11,13 @@ public class RemoteConnection {
 
     public RemoteConnection(Connection connection) {
         this.connection = connection;
-        this.host = connection.getRemoteAddress().toString();
+        this.host = connection.getRemoteAddress().getHostAddress();
         this.port = connection.getRemotePort();
+    }
+
+    public RemoteConnection(String host, int port) {
+        this.host = host;
+        this.port = port;
     }
 
     public Connection getConnection() {
