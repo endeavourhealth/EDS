@@ -1,4 +1,4 @@
-package org.endeavourhealth.ui.utility;
+package org.endeavourhealth.patientexplorer.utility;
 
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;

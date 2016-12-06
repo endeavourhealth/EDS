@@ -14,7 +14,7 @@
   <logger name="org.endeavourhealth" level="TRACE"/>
 
   <!-- only log to stdout with INFO level -->
-  <root level="INFO">
+  <root level="TRACE">
     <appender-ref ref="stdout" />
     <appender-ref ref="db_async" />
   </root>

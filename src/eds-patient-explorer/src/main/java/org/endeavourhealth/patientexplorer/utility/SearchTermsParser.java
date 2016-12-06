@@ -1,4 +1,4 @@
-package org.endeavourhealth.ui.utility;
+package org.endeavourhealth.patientexplorer.utility;
 
 import org.apache.commons.lang3.StringUtils;
 

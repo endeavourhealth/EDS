@@ -1,4 +1,4 @@
-package org.endeavourhealth.ui.endpoints;
+package org.endeavourhealth.patientexplorer.endpoints;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
@@ -9,6 +9,8 @@ import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByLocalId;
 import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
+import org.endeavourhealth.patientexplorer.utility.ResourceFetcher;
+import org.endeavourhealth.patientexplorer.utility.SearchTermsParser;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPatient;
@@ -18,8 +20,6 @@ import org.endeavourhealth.transform.ui.models.types.UIInternalIdentifier;
 import org.endeavourhealth.transform.ui.models.types.UIService;
 import org.endeavourhealth.transform.ui.transforms.clinical.UIClinicalTransform;
 import org.endeavourhealth.transform.ui.transforms.UITransform;
-import org.endeavourhealth.ui.utility.ResourceFetcher;
-import org.endeavourhealth.ui.utility.SearchTermsParser;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
