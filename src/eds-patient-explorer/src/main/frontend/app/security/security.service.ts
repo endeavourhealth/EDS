@@ -68,13 +68,16 @@ export class SecurityService {
 
 			user.organisationGroups = [];
 
-			// Set default organisation
-			user.organisation = this.getAuthz().idTokenParsed.orgGroups[0].organisationId;
-
 			for(var orgGroup of this.getAuthz().idTokenParsed.orgGroups) {
+
+				// Set default organisation
+				if (!user.organisation && orgGroup.organisationId != '00000000-0000-0000-0000-000000000000')
+					user.organisation = orgGroup.organisationId;
+
 				let organisationGroup : OrganisationGroup = new OrganisationGroup();
 				organisationGroup.id = orgGroup.groupId;
 				organisationGroup.name = orgGroup.group;
+				// TODO : OrganisationId <--> ServiceId
 				organisationGroup.organisationId = orgGroup.organisationId;
 				organisationGroup.roles = [];
 				for (var role of orgGroup.roles) {

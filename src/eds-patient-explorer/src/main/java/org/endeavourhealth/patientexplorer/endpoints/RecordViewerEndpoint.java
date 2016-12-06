@@ -50,6 +50,22 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
     }
 
     @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("/getServiceName")
+    public Response getServices(@Context SecurityContext sc, @QueryParam("serviceId") UUID serviceId) throws Exception {
+
+        List<Service> services = Lists.newArrayList(serviceRepository.getAll());
+        Optional<Service> service = services.stream()
+            .filter(s -> s.getId().equals(serviceId))
+            .findFirst();
+
+        if (service.isPresent())
+            return buildResponse(service.get().getName());
+
+        return buildResponse("");
+    }
+
+    @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/findPatient")
     public Response findPatient(@Context SecurityContext sc,

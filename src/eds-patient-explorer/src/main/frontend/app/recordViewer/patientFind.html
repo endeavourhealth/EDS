@@ -7,15 +7,15 @@
     <div class="container-fluid">
 
         <form id="patient-find-search-criteria">
-            <div class="form-group">
-                <div class="input-group">
-                    <span class="input-group-addon"><i class="fa fa-building-o fa-lg fa-fw"></i></span>
-                    <select id="service" class="form-control" [(ngModel)]="selectedService" (ngModelChange)="searchTermsChanged()" name="service">
-                        <option value="null" disabled>Select Service...</option>
-                        <option *ngFor="let service of services" [ngValue]="service">[{{service.localIdentifier}}] {{service.name}}</option>
-                    </select>
-                </div>
-            </div>
+            <!--<div class="form-group">-->
+                <!--<div class="input-group">-->
+                    <!--<span class="input-group-addon"><i class="fa fa-building-o fa-lg fa-fw"></i></span>-->
+                    <!--<select id="service" class="form-control" [(ngModel)]="selectedService" (ngModelChange)="searchTermsChanged()" name="service">-->
+                        <!--<option value="null" disabled>Select Service...</option>-->
+                        <!--<option *ngFor="let service of services" [ngValue]="service">[{{service.localIdentifier}}] {{service.name}}</option>-->
+                    <!--</select>-->
+                <!--</div>-->
+            <!--</div>-->
             <div class="form-group">
                 <div *ngIf="selectedService" class="input-group">
                     <input type="text" class="form-control" [(ngModel)]="searchTerms" (ngModelChange)="searchTermsChanged()" autofocus placeholder="Enter search terms..." name="searchTerms">

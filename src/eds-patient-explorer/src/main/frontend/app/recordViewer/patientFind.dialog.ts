@@ -4,6 +4,7 @@ import {UIService} from "./models/UIService";
 import {linq} from "../common/linq";
 import {Component} from "@angular/core";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
+import {SecurityService} from "../security/security.service";
 
 // enum KeyCodes {
 // 		ReturnKey = 13,
@@ -20,7 +21,6 @@ import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 })
 export class PatientFindDialog {
 
-    services: UIService[];
     selectedService: UIService = null;
     searchTerms: string;
     searchedTerms: string;
@@ -33,7 +33,8 @@ export class PatientFindDialog {
     }
 
     constructor(protected activeModal: NgbActiveModal,
-                protected recordViewerService: RecordViewerService) {
+                protected recordViewerService: RecordViewerService,
+                protected securityService: SecurityService) {
 
         this.loadServices();
     }
@@ -52,7 +53,11 @@ export class PatientFindDialog {
         var vm = this;
         vm.recordViewerService.getServices()
           .subscribe(
-            (result) => vm.services = linq(result).OrderBy(t => t.name).ToArray());
+            (result) => {
+                vm.selectedService = linq(result)
+                  .Where(t => t.serviceId === vm.securityService.currentUser.organisation)
+                  .First();
+            });
     }
 
     findPatient() {

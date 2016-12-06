@@ -11,12 +11,12 @@
 				<span class="dropdown" ngbDropdown>
 					At :
 					<button class="dropdown-toggle" ngbDropdownToggle id="organisationMenu">
-						{{ currentUser.organisation }}
+						{{ currentOrgRole?.name }}
 						<span class="caret"></span>
 					</button>
 					<ul class="dropdown-menu" aria-labelledby="organisationMenu">
 						<li *ngFor="let organisation of getUserOrganisations()">
-							<a (click)="switchOrganisation(organisation)">{{ organisation }}</a>
+							<a (click)="switchOrganisation(organisation)">{{ organisation.name }}</a>
 						</li>
 					</ul>
 				</span>

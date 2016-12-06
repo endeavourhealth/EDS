@@ -2,6 +2,9 @@ import {SecurityService} from "../security/security.service";
 import {User} from "../security/models/User";
 import {Component} from "@angular/core";
 import {linq} from "../common/linq";
+import {OrganisationGroup} from "../security/models/OrganisationGroup";
+import {LayoutService} from "./layout.service";
+import {OrgRole} from "./models/OrgRole";
 
 @Component({
 	selector: 'topnav-component',
@@ -9,24 +12,40 @@ import {linq} from "../common/linq";
 })
 export class TopnavComponent {
 	currentUser:User;
+	currentOrgRole : OrgRole;
+	userOrganisations : OrgRole[];
 
-	constructor(private securityService:SecurityService) {
-		this.getCurrentUser();
-	}
+	constructor(private securityService:SecurityService, private layoutService : LayoutService) {
+		let vm = this;
 
-	getCurrentUser() {
-		this.currentUser = this.securityService.getCurrentUser();
-		//vm.updateRole(vm.currentUser.currentUserInRoleUuid);
+		vm.currentUser = this.securityService.getCurrentUser();
+		vm.layoutService.getServiceName(vm.currentUser.organisation)
+			.subscribe(
+				(result) => vm.currentOrgRole = new OrgRole(vm.currentUser.organisation, result),
+				(error) => vm.currentOrgRole = new OrgRole(null, 'Not selected')
+			);
 	}
 
 	getUserOrganisations() {
-		return linq(this.currentUser.organisationGroups)
-			.Select(g => g.organisationId)
-			.Distinct()
-			.ToArray();
+		let vm = this;
+		if (!vm.userOrganisations) {
+
+			vm.userOrganisations = [];
+			for(let orgGroup of vm.currentUser.organisationGroups) {
+				let orgRole = new OrgRole(orgGroup.organisationId, 'Loading...');
+				vm.userOrganisations.push(orgRole);
+				vm.layoutService.getServiceName(orgRole.id)
+					.subscribe(
+						(result) => orgRole.name = result,
+						(error) => orgRole.name = 'Unknown'
+					);
+			}
+		}
+		return vm.userOrganisations;
 	}
 
-	switchOrganisation(organisation : string) {
-		this.currentUser.organisation = organisation;
+	switchOrganisation(orgRole : OrgRole) {
+		this.currentUser.organisation = orgRole.id;
+		this.currentOrgRole = orgRole;
 	}
 }
