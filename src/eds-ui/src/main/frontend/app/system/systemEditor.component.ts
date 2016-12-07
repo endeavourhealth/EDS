@@ -37,13 +37,13 @@ export class SystemEditComponent extends LibraryItemComponent {
 	create(folderUuid : string) {
 		this.system = {
 			uuid: null,
-			name: 'New system',
+			name: '',
 			technicalInterface: []
 		} as System;
 
 		this.libraryItem = {
 			uuid: null,
-			name: 'New system',
+			name: '',
 			description: '',
 			folderUuid: folderUuid,
 			system: this.system

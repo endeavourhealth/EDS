@@ -72,7 +72,7 @@ export class CodeSetEditComponent {
 	create(folderUuid: string) {
 		this.libraryItem = {
 			uuid: null,
-			name: 'New item',
+			name: '',
 			description: '',
 			folderUuid: folderUuid,
 			codeSet: {

@@ -180,7 +180,7 @@ export class DataSetEditComponent {
 	create(folderUuid: string) {
 		this.libraryItem = {
 			uuid: null,
-			name: 'New item',
+			name: '',
 			description: '',
 			folderUuid: folderUuid,
 			dataSet: {

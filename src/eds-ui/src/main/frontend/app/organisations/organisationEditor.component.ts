@@ -40,7 +40,7 @@ export class OrganisationEditComponent {
 	create(uuid : string) {
 		this.organisation = {
 			uuid : uuid,
-			name : 'New item'
+			name : ''
 		} as Organisation;
 	}
 

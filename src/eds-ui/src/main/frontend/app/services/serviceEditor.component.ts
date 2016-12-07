@@ -51,7 +51,7 @@ export class ServiceEditComponent {
 	create(uuid : string) {
 		this.service = {
 			uuid : uuid,
-			name : 'New item',
+			name : '',
 			endpoints : []
 		} as Service;
 	}

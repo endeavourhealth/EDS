@@ -111,7 +111,7 @@ export class ProtocolEditComponent {
 
 		this.libraryItem = {
 			uuid: null,
-			name: 'New data protocol',
+			name: '',
 			description: '',
 			folderUuid: folderUuid,
 			protocol: this.protocol

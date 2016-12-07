@@ -31,7 +31,7 @@ export class LibraryItemComponent {
 	create(folderUuid : string) {
 		this.libraryItem = {
 			uuid : null,
-			name : 'New item',
+			name : '',
 			description : '',
 			folderUuid : folderUuid,
 		} as LibraryItem;
