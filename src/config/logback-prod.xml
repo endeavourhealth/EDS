@@ -18,6 +18,7 @@
   <root level="INFO">
     <appender-ref ref="stdout" />
     <appender-ref ref="db_async" />
+    <appender-ref ref="file" />
   </root>
 
 </included>
