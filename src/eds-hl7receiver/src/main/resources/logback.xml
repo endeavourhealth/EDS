@@ -24,6 +24,16 @@
     <includeCallerData>true</includeCallerData>
   </appender>
 
+  <timestamp key="bySecond" datePattern="yyyyMMdd'T'HHmmss"/>
+
+  <appender name="file" class="ch.qos.logback.core.FileAppender">
+    <file>/var/log/${LOGBACK_FOLDER:-logback}/log-${bySecond}.txt</file>
+    <encoder>
+      <pattern>%d{dd MMM HH:mm:ss.SSS} [%thread] %-5level %logger{10}:%-3line - %msg%n
+      </pattern>
+    </encoder>
+  </appender>
+
   <!-- use the environment variable LOGBACK_CONFIG_FILE to set an external log file,
        fallback to resource file logback-development.xml if not set -->
   <include file="${LOGBACK_CONFIG_FILE}" />
