@@ -6,6 +6,9 @@ import {linq} from "../../common/linq";
 @Pipe({name : 'codeAnyTerm'})
 export class CodeAnyTerm implements PipeTransform {
     transform(codeableConcept: UICodeableConcept): string {
+        if (!codeableConcept.codes || codeableConcept.codes.length == 0)
+            return codeableConcept.text;
+
         let code: UICode = getReadUICode(codeableConcept);
         if (code != null)
             return code.display;

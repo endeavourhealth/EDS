@@ -9,10 +9,10 @@ import {UIDiary} from "./models/resources/clinical/UIDiary";
 import {UIObservation} from "./models/resources/clinical/UIObservation";
 import {Component, ViewChild} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-import {UIMedicationOrder} from "./models/resources/clinical/UIMedicationOrder";
 import {UIAllergy} from "./models/resources/clinical/UIAllergy";
 import {UIImmunization} from "./models/resources/clinical/UIImmunization";
 import {UIFamilyHistory} from "./models/resources/clinical/UIFamilyHistory";
+import {UIMedicationStatement} from "./models/resources/clinical/UIMedicationStatement";
 
 @Component({
 		template : require('./recordViewer.html')
@@ -98,13 +98,13 @@ export class RecordViewerComponent {
 		}
 
 		public loadMedication(): void {
-			if (this.patient.medicationOrders != null)
+			if (this.patient.medication != null)
 				return;
 
 			let ctrl = this;
 			this.recordViewerService.getMedication(ctrl.patient.patient.patientId)
 				.subscribe(
-					(result : UIMedicationOrder[]) => ctrl.patient.medicationOrders = linq(result)
+					(result : UIMedicationStatement[]) => ctrl.patient.medication = linq(result)
 						.OrderByDescending(t => t.dateAuthorized.date)
 						.ToArray()
 				);

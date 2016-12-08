@@ -5,10 +5,10 @@ import {UICondition} from "./resources/clinical/UICondition";
 import {linq} from "../../common/linq";
 import {UIDiary} from "./resources/clinical/UIDiary";
 import {UIObservation} from "./resources/clinical/UIObservation";
-import {UIMedicationOrder} from "./resources/clinical/UIMedicationOrder";
 import {UIAllergy} from "./resources/clinical/UIAllergy";
 import {UIImmunization} from "./resources/clinical/UIImmunization";
 import {UIFamilyHistory} from "./resources/clinical/UIFamilyHistory";
+import {UIMedicationStatement} from "./resources/clinical/UIMedicationStatement";
 
 export class UIPatientRecord {
     patient: UIPatient;
@@ -17,7 +17,7 @@ export class UIPatientRecord {
     encounters: UIEncounter[];
     observations: UIObservation[];
     diary: UIDiary[];
-    medicationOrders : UIMedicationOrder[];
+    medication : UIMedicationStatement[];
     allergies : UIAllergy[];
     immunizations : UIImmunization[];
     familyHistory : UIFamilyHistory[];
@@ -66,15 +66,21 @@ export class UIPatientRecord {
         return (this.diary.length > 0);
     }
 
-    public getCurrentMedicationOrders(): UIMedicationOrder[] {
-        return linq(this.medicationOrders)
-          .Where(t=> t.dateEnded.date == null)
+    public getAcuteMedication(): UIMedicationStatement[] {
+        return linq(this.medication)
+          .Where(t=> t.status != 'Completed' && t.authorizationType.code != 'repeat')
           .ToArray();
     }
 
-    public getPastMedicationOrders(): UIMedicationOrder[] {
-        return linq(this.medicationOrders)
-					.Where(t=> t.dateEnded.date != null)
+    public getRepeatMedication(): UIMedicationStatement[] {
+        return linq(this.medication)
+					.Where(t=> t.status != 'Completed' && t.authorizationType.code == 'repeat')
+					.ToArray();
+    }
+
+    public getPastMedication(): UIMedicationStatement[] {
+        return linq(this.medication)
+					.Where(t=> t.status == 'Completed')
 					.ToArray();
     }
 

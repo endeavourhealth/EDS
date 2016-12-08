@@ -8,10 +8,10 @@ import {UIService} from "./models/UIService";
 import {Observable} from "rxjs";
 import {Injectable} from "@angular/core";
 import {URLSearchParams, Http} from "@angular/http";
-import {UIMedicationOrder} from "./models/resources/clinical/UIMedicationOrder";
 import {UIAllergy} from "./models/resources/clinical/UIAllergy";
 import {UIImmunization} from "./models/resources/clinical/UIImmunization";
 import {UIFamilyHistory} from "./models/resources/clinical/UIFamilyHistory";
+import {UIMedicationStatement} from "./models/resources/clinical/UIMedicationStatement";
 
 @Injectable()
 export class RecordViewerService extends BaseHttp2Service {
@@ -52,8 +52,8 @@ export class RecordViewerService extends BaseHttp2Service {
         return this.httpGet('api/recordViewer/getObservations', this.getParams(patientId));
     }
 
-    getMedication(patientId : UIInternalIdentifier): Observable<UIMedicationOrder[]> {
-        return this.httpGet('api/recordViewer/getMedicationOrders', this.getParams(patientId));
+    getMedication(patientId : UIInternalIdentifier): Observable<UIMedicationStatement[]> {
+        return this.httpGet('api/recordViewer/getMedicationStatements', this.getParams(patientId));
     }
 
     getAllergies(patientId: UIInternalIdentifier) : Observable<UIAllergy[]> {

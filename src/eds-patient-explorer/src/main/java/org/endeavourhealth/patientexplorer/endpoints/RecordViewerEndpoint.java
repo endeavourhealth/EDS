@@ -126,13 +126,13 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/getMedicationOrders")
-    public Response getMedicationOrders(@Context SecurityContext sc,
+    @Path("/getMedicationStatements")
+    public Response getMedicationStatements(@Context SecurityContext sc,
                                         @QueryParam("serviceId") UUID serviceId,
                                         @QueryParam("systemId") UUID systemId,
                                         @QueryParam("patientId") UUID patientId) throws Exception {
 
-        return getClinicalResourceResponse(serviceId, systemId, patientId, MedicationOrder.class, UIMedicationOrder.class);
+        return getClinicalResourceResponse(serviceId, systemId, patientId, MedicationStatement.class, UIMedicationStatement.class);
     }
 
 

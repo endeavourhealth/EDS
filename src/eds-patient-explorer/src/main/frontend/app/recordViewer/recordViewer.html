@@ -27,8 +27,8 @@
                                          [pastProblems]="patient.getPastProblems()"
                                          [allergies]="patient.allergies"
                                          [immunizations]="patient.immunizations"
-                                         [currentMedication]="patient.getCurrentMedicationOrders()"
-                                         [pastMedication]="patient.getPastMedicationOrders()"></summary>
+                                         [acuteMedication]="patient.getAcuteMedication()"
+                                         [repeatMedication]="patient.getRepeatMedication()"></summary>
                             </div>
                         </template>
                     </ngb-tab>
@@ -50,8 +50,9 @@
                     <ngb-tab id="medication" title="Medication">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                                <medication title="Current medication" [medicationOrders]="patient.getCurrentMedicationOrders()" placeholder="(No current medication)"></medication>
-                                <medication title="Past medication" [medicationOrders]="patient.getPastMedicationOrders()" showDateEnded="true" placeholder="(No past medication)"></medication>
+                                <medication title="Acute medication" [medication]="patient.getAcuteMedication()" placeholder="(No acute medication)"></medication>
+                                <medication title="Repeat medication" [medication]="patient.getRepeatMedication()" placeholder="(No repeat medication)"></medication>
+                                <medication title="Past medication" [medication]="patient.getPastMedication()" placeholder="(No past medication)"></medication>
                             </div>
                         </template>
                     </ngb-tab>

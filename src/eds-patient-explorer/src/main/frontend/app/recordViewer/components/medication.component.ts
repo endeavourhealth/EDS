@@ -1,5 +1,5 @@
 import {Component, Input} from "@angular/core";
-import {UIMedicationOrder} from "../models/resources/clinical/UIMedicationOrder";
+import {UIMedicationStatement} from "../models/resources/clinical/UIMedicationStatement";
 
 @Component({
 	selector : 'medication',
@@ -7,7 +7,7 @@ import {UIMedicationOrder} from "../models/resources/clinical/UIMedicationOrder"
 })
 export class MedicationComponent {
 	@Input() title : string;
-	@Input() medicationOrders : UIMedicationOrder[];
+	@Input() medication : UIMedicationStatement[];
 	@Input() showDateEnded : boolean = false;
 	@Input() placeholder : string;
 }

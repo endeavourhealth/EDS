@@ -1,4 +1,4 @@
-<h4 class="page-sub-header">{{title}} <small> ({{medicationOrders.length}} items)</small></h4>
+<h4 class="page-sub-header">{{title}} <small> ({{medication.length}} items)</small></h4>
 
 <div class="row">
 	<div class="col-md-12">
@@ -10,20 +10,22 @@
 				<th>Prescriber</th>
 			</thead>
 			<tbody>
-				<tr *ngIf="!medicationOrders || medicationOrders.length == 0"><td colspan="2"><i>{{placeholder}}</i></td></tr>
-				<tr *ngFor="let medicationOrder of medicationOrders" (click)="medicationOrder.showDetail = !medicationOrder.showDetail" [ngClass]="{'collapsed' : !medicationOrder.showDetail}">
-					<td>{{medicationOrder.dateAuthorized | cuiDate}}</td>
-					<td *ngIf="showDateEnded">{{medicationOrder.dateEnded | cuiDate}}</td>
+				<tr *ngIf="!medication || medication.length == 0"><td colspan="4"><i>{{placeholder}}</i></td></tr>
+				<tr *ngFor="let med of medication" (click)="med.showDetail = !med.showDetail" [ngClass]="{'collapsed' : !med.showDetail}">
+					<td>{{med.dateAuthorized | cuiDate}}</td>
+					<td *ngIf="showDateEnded">{{med.dateEnded | cuiDate}}</td>
 					<td>
-						<span>{{medicationOrder.medication.code | codeAnyTerm}}</span>
-						<span *ngIf="medicationOrder.dispenseRequest && medicationOrder.dispenseRequest.numberOfRepeatsAllowed > 0"> [REPEAT]</span>
-						<div class="problem-detail" [hidden]="!medicationOrder.showDetail">
-							<dosageInstructions [dosageInstructions]="medicationOrder.dosageInstructions"></dosageInstructions>
-							<div>Quantity : {{medicationOrder.dispenseRequest?.quantity | cuiQuantity}}</div>
-							<div>Duration : {{medicationOrder.dispenseRequest?.expectedDuration | cuiQuantity}}</div>
+						<span>{{med.medication.code | codeAnyTerm}}</span>
+						<div class="problem-detail" [hidden]="!med.showDetail">
+							<table>
+								<tr><td>Dosage </td><td> : <b>{{med.dosage}}</b></td></tr>
+								<tr><td>Auth Qty </td><td> : <b>{{med.authorizedQuantity | cuiQuantity}}</b></td></tr>
+								<tr><td>Issues </td><td> : <b> {{med.repeatsIssued}}</b></td></tr>
+								<tr><td>Last Iss </td><td> : <b> {{med.mostRecentIssue | cuiDate }}</b></td></tr>
+							</table>
 						</div>
 					</td>
-					<td>{{medicationOrder.prescriber.name | cuiName}}</td>
+					<td>{{med.prescriber?.name | cuiName}}</td>
 					<td width="20"><i class="fa toggle-icon" aria-hidden="true"></i></td>
 				</tr>
 			</tbody>

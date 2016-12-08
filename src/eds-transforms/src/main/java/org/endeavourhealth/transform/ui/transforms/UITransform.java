@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.ui.models.resources.UIResource;
@@ -15,7 +14,6 @@ import org.endeavourhealth.transform.ui.transforms.admin.UIPatientTransform;
 import org.endeavourhealth.transform.ui.transforms.clinical.*;
 import org.hl7.fhir.instance.model.*;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -43,8 +41,8 @@ public class UITransform {
             return new UIProcedureTransform();
         else if (resourceType == UIDiary.class)
             return new UIDiaryTransform();
-        else if (resourceType == UIMedicationOrder.class)
-            return new UIMedicationOrderTransform();
+        else if (resourceType == UIMedicationStatement.class)
+            return new UIMedicationStatementTransform();
         else if (resourceType == UIFamilyMemberHistory.class)
             return new UIFamilyMemberHistoryTransform();
 

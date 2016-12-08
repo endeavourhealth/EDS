@@ -21,7 +21,6 @@ import {SummaryComponent} from "./components/summary.component";
 import {ConsultationsComponent} from "./components/consultations.component";
 import {MedicationComponent} from "./components/medication.component";
 import {TreeModule} from "angular2-tree-component";
-import {DosageInstructionsComponent} from "./components/dosageInstructions.component";
 import {AllergiesComponent} from "./components/allergies.component";
 import {ImmunizationsComponent} from "./components/immunizations.component";
 import {FamilyHistoryComponent} from "./components/familyHistory.component";
@@ -45,7 +44,6 @@ import {InvestigationsComponent} from "./components/investigations.component";
 		SummaryComponent,
 		ConsultationsComponent,
 		MedicationComponent,
-			DosageInstructionsComponent,
 		ProblemsComponent,
 		CareHistoryComponent,
 		InvestigationsComponent,
