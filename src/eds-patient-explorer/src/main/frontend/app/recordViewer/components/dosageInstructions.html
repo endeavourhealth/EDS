@@ -1,4 +1,5 @@
 <div class="row" *ngFor="let dosageInstruction of dosageInstructions">
-	<div class="col-md-8">{{dosageInstruction.instructions}}</div>
+	<div class="col-md-6">{{dosageInstruction.instructions}}</div>
 	<div class="col-md-4" *ngIf="hasAdditionalInstructions(dosageInstruction)">{{dosageInstruction.additionalInstructions | codeAnyTerm }}</div>
+	<div class="col-md-2">{{dosageInstruction.dose}}</div>
 </div>

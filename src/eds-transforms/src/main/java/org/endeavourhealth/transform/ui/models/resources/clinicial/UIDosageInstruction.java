@@ -7,6 +7,8 @@ import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
 public class UIDosageInstruction extends UIResource<UIDosageInstruction> {
 	private String instructions;
 	private UICodeableConcept additionalInstructions;
+	private String dose;
+	private String rate;
 
 	public String getInstructions() {
 		return instructions;
@@ -23,6 +25,24 @@ public class UIDosageInstruction extends UIResource<UIDosageInstruction> {
 
 	public UIDosageInstruction setAdditionalInstructions(UICodeableConcept additionalInstructions) {
 		this.additionalInstructions = additionalInstructions;
+		return this;
+	}
+
+	public String getDose() {
+		return dose;
+	}
+
+	public UIDosageInstruction setDose(String dose) {
+		this.dose = dose;
+		return this;
+	}
+
+	public String getRate() {
+		return rate;
+	}
+
+	public UIDosageInstruction setRate(String rate) {
+		this.rate = rate;
 		return this;
 	}
 }

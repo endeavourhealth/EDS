@@ -14,6 +14,7 @@
 				<tr *ngFor="let investigation of investigations">
 					<td>{{investigation.effectiveDate | cuiDate}}</td>
 					<td>
+						<span class="fa fa-registered" ngbTooltip="Read : {{investigation.code | codeReadCode}}"></span>
 						<span class="problem-term-text">{{investigation.code | codeReadTerm}}</span>
 						<div *ngFor="let related of investigation.related">
 							<span>{{ related.target?.code | codeReadTerm }}</span>

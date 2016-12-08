@@ -10,6 +10,7 @@
 		<tr *ngFor="let allergy of allergies">
 			<td>{{allergy.effectiveDate | cuiDate}}</td>
 			<td>
+				<span class="fa fa-registered" ngbTooltip="Read : {{allergy.code | codeReadCode}}"></span>
 				<span class="problem-term-text">{{allergy.code | codeReadTerm}}</span>
 			</td>
 		</tr>

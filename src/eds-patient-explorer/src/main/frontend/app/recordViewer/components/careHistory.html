@@ -14,6 +14,7 @@
 				<tr *ngFor="let observation of observations">
 					<td>{{observation.effectiveDate | cuiDate}}</td>
 					<td>
+						<span class="fa fa-registered" ngbTooltip="Read : {{observation.code | codeReadCode}}"></span>
 						<span class="problem-term-text">{{observation.code | codeReadTerm}}</span>
 					</td>
 					<td>

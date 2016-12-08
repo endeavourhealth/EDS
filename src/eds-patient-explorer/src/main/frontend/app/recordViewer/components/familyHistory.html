@@ -11,7 +11,7 @@
 		<tr *ngFor="let item of familyHistory">
 			<td>{{item.recordedDate | cuiDate}}</td>
 			<td>
-					<familyHistoryCondition [conditions]="item.conditions"></familyHistoryCondition>
+				<familyHistoryCondition [conditions]="item.conditions"></familyHistoryCondition>
 			</td>
 			<td>{{item.code | codeAnyTerm}}</td>
 		</tr>

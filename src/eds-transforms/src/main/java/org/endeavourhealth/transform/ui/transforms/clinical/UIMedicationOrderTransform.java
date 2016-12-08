@@ -103,7 +103,8 @@ public class UIMedicationOrderTransform extends UIClinicalTransform<MedicationOr
 		private static UIDosageInstruction getDosageInstruction(MedicationOrder.MedicationOrderDosageInstructionComponent dosageInstruction, ReferencedResources referencedResources) {
     	return new UIDosageInstruction()
 					.setInstructions(dosageInstruction.getText())
-					.setAdditionalInstructions(CodeHelper.convert(dosageInstruction.getAdditionalInstructions()));
+					.setAdditionalInstructions(CodeHelper.convert(dosageInstruction.getAdditionalInstructions()))
+					.setDose(getDose(dosageInstruction));
 		}
 
 		private static UIDispenseRequest getDispenseRequest(MedicationOrder medicationOrder) {
@@ -111,6 +112,25 @@ public class UIMedicationOrderTransform extends UIClinicalTransform<MedicationOr
     		return null;
 
     	return new UIDispenseRequest()
-					.setNumberOfRepeatsAllowed(medicationOrder.getDispenseRequest().getNumberOfRepeatsAllowed());
+					.setNumberOfRepeatsAllowed(medicationOrder.getDispenseRequest().getNumberOfRepeatsAllowed())
+					.setExpectedDuration(medicationOrder.getDispenseRequest().getExpectedSupplyDuration().toString())
+					.setQuantity(medicationOrder.getDispenseRequest().getQuantity().toString());
+		}
+
+		private static String getDose(MedicationOrder.MedicationOrderDosageInstructionComponent dosageInstruction) {
+    	if (!dosageInstruction.hasDose())
+    		return "";
+    	try {
+				if (dosageInstruction.hasDoseSimpleQuantity())
+					return dosageInstruction.getDoseSimpleQuantity().getValue().toString();
+			}
+			catch (Exception e) {}
+
+			try {
+    		if (dosageInstruction.hasDoseRange())
+    			return dosageInstruction.getDoseRange().toString();
+			} catch (Exception e){}
+
+			return "";
 		}
 }

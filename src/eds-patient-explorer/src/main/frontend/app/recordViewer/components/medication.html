@@ -17,6 +17,8 @@
 					<td>
 						<span>{{medicationOrder.medication.code | codeAnyTerm}}</span>
 						<span *ngIf="medicationOrder.dispenseRequest && medicationOrder.dispenseRequest.numberOfRepeatsAllowed > 0"> [REPEAT]</span>
+						<span>-- {{medicationOrder.dispenseRequest?.quantity}}</span>
+						<span>++ {{medicationOrder.dispenseRequest?.expectedDuration}}</span>
 						<div class="problem-detail" [hidden]="!medicationOrder.showDetail">
 							<dosageInstructions [dosageInstructions]="medicationOrder.dosageInstructions"></dosageInstructions>
 						</div>
