@@ -1,22 +1,19 @@
 package org.endeavourhealth.transform.ui.transforms.clinical;
 
-import org.apache.commons.lang3.time.DateUtils;
 import org.endeavourhealth.core.utility.StreamExtension;
-import org.endeavourhealth.transform.ceg.models.Medication;
 import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.DateHelper;
+import org.endeavourhealth.transform.ui.helpers.QuantityHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIDispenseRequest;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIDosageInstruction;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIMedication;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIMedicationOrder;
-import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
 import org.hl7.fhir.instance.model.MedicationOrder;
 import org.hl7.fhir.instance.model.Reference;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -108,13 +105,13 @@ public class UIMedicationOrderTransform extends UIClinicalTransform<MedicationOr
 		}
 
 		private static UIDispenseRequest getDispenseRequest(MedicationOrder medicationOrder) {
-    	if (!medicationOrder.hasDispenseRequest() || medicationOrder.getDispenseRequest().getNumberOfRepeatsAllowedElement().isEmpty())
+    	if (!medicationOrder.hasDispenseRequest())
     		return null;
 
     	return new UIDispenseRequest()
 					.setNumberOfRepeatsAllowed(medicationOrder.getDispenseRequest().getNumberOfRepeatsAllowed())
-					.setExpectedDuration(medicationOrder.getDispenseRequest().getExpectedSupplyDuration().toString())
-					.setQuantity(medicationOrder.getDispenseRequest().getQuantity().toString());
+					.setExpectedDuration(QuantityHelper.convert(medicationOrder.getDispenseRequest().getExpectedSupplyDuration()))
+					.setQuantity(QuantityHelper.convert(medicationOrder.getDispenseRequest().getQuantity()));
 		}
 
 		private static String getDose(MedicationOrder.MedicationOrderDosageInstructionComponent dosageInstruction) {

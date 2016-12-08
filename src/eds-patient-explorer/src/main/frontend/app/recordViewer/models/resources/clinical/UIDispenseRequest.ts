@@ -1,7 +1,8 @@
 import {UIResource} from "../UIResource";
+import {UIQuantity} from "../../types/UIQuantity";
 
 export class UIDispenseRequest extends UIResource {
     numberOfRepeatsAllowed: number;
-    expectedDuration: string;
-    quantity: string;
+    expectedDuration: UIQuantity;
+    quantity: UIQuantity;
 }

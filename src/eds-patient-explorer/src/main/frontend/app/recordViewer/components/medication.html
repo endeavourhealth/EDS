@@ -17,10 +17,10 @@
 					<td>
 						<span>{{medicationOrder.medication.code | codeAnyTerm}}</span>
 						<span *ngIf="medicationOrder.dispenseRequest && medicationOrder.dispenseRequest.numberOfRepeatsAllowed > 0"> [REPEAT]</span>
-						<span>-- {{medicationOrder.dispenseRequest?.quantity}}</span>
-						<span>++ {{medicationOrder.dispenseRequest?.expectedDuration}}</span>
 						<div class="problem-detail" [hidden]="!medicationOrder.showDetail">
 							<dosageInstructions [dosageInstructions]="medicationOrder.dosageInstructions"></dosageInstructions>
+							<div>Quantity : {{medicationOrder.dispenseRequest?.quantity | cuiQuantity}}</div>
+							<div>Duration : {{medicationOrder.dispenseRequest?.expectedDuration | cuiQuantity}}</div>
 						</div>
 					</td>
 					<td>{{medicationOrder.prescriber.name | cuiName}}</td>

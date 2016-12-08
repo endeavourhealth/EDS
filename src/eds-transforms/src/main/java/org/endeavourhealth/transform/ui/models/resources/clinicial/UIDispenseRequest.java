@@ -1,15 +1,12 @@
 package org.endeavourhealth.transform.ui.models.resources.clinicial;
 
 import org.endeavourhealth.transform.ui.models.resources.UIResource;
-import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
-import org.endeavourhealth.transform.ui.models.types.UIDate;
-
-import java.util.List;
+import org.endeavourhealth.transform.ui.models.types.UIQuantity;
 
 public class UIDispenseRequest extends UIResource<UIDispenseRequest> {
 	private int numberOfRepeatsAllowed;
-	private String expectedDuration;
-	private String quantity;
+	private UIQuantity expectedDuration;
+	private UIQuantity quantity;
 
 	public int getNumberOfRepeatsAllowed() {
 		return numberOfRepeatsAllowed;
@@ -20,20 +17,20 @@ public class UIDispenseRequest extends UIResource<UIDispenseRequest> {
 		return this;
 	}
 
-	public String getExpectedDuration() {
+	public UIQuantity getExpectedDuration() {
 		return expectedDuration;
 	}
 
-	public UIDispenseRequest setExpectedDuration(String expectedDuration) {
+	public UIDispenseRequest setExpectedDuration(UIQuantity expectedDuration) {
 		this.expectedDuration = expectedDuration;
 		return this;
 	}
 
-	public String getQuantity() {
+	public UIQuantity getQuantity() {
 		return quantity;
 	}
 
-	public UIDispenseRequest setQuantity(String quantity) {
+	public UIDispenseRequest setQuantity(UIQuantity quantity) {
 		this.quantity = quantity;
 		return this;
 	}

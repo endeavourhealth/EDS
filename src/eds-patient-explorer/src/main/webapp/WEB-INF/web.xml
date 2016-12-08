@@ -61,7 +61,7 @@
     <!--register our Startup class as a servlet listener so we can perform one-time setup-->
     <context-param>
         <param-name>engine_config_property</param-name>
-        <param-value>eds.uiEngineConfiguration</param-value>
+        <param-value>eds.patientExplorerEngineConfiguration</param-value>
     </context-param>
     <listener>
         <listener-class>
