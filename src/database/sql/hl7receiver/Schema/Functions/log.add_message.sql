@@ -1,7 +1,6 @@
 
-create or replace function log.log_message
+create or replace function log.add_message
 (
-	_channel_id integer,
 	_connection_id integer,
 	_inbound_payload text
 )
@@ -13,14 +12,12 @@ begin
 
 	insert into log.message
 	(
-		channel_id,
 		connection_id,
-		inbound_date,
+		datestamp,
 		inbound_payload
 	)
 	values
 	(
-		_channel_id,
 		_connection_id,
 		now(),
 		_inbound_payload

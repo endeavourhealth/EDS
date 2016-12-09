@@ -70,14 +70,23 @@ public class DataLayer {
         pgStoredProc.execute();
     }
 
-    public int logMessage(int channelId, int connectionId, String inboundPayload) throws PgStoredProcException {
+    public int addMessage(int connectionId, String inboundPayload) throws PgStoredProcException {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("log.log_message")
-                .addParameter("_channel_id", channelId)
+                .setName("log.add_message")
                 .addParameter("_connection_id", connectionId)
                 .addParameter("_inbound_payload", inboundPayload);
 
-        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("log_message"));
+        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("add_message"));
+    }
+
+    public void updateMessageWithOutbound(int messageId, String outboundPayload) throws PgStoredProcException {
+
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("log.update_message_with_outbound")
+                .addParameter("_message_id", messageId)
+                .addParameter("_outbound_payload", outboundPayload);
+
+        pgStoredProc.execute();
     }
 }

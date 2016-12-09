@@ -62,14 +62,11 @@ create table log.connection
 create table log.message
 (
 	message_id serial not null,
-	channel_id integer not null,
 	connection_id integer not null,
-	inbound_date timestamp null,
-	inbound_payload varchar null,
-	outbound_date timestamp null,
+	datestamp timestamp not null,
+	inbound_payload varchar not null,
 	outbound_payload varchar null,
 	
 	constraint log_message_messageid_pk primary key (message_id),
-	constraint log_message_channelid_fk foreign key (channel_id) references configuration.channel (channel_id),
-	constraint log_message_inbounddate_inboundpayload_outbounddate_outboundpayload_ck check ((inbound_date is not null and inbound_payload is not null) or (outbound_date is not null and outbound_payload is not null))
+	constraint log_message_messageid_fk foreign key (connection_id) references log.connection (connection_id)
 );
