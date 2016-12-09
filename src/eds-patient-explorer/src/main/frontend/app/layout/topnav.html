@@ -14,7 +14,8 @@
 						{{ currentOrgRole?.name }}
 						<span class="caret"></span>
 					</button>
-					<ul class="dropdown-menu" aria-labelledby="organisationMenu">
+					<ul class="dropdown-menu dropdown-menu-right" aria-labelledby="organisationMenu">
+						<li disabled="true"><a>Select Organisation</a></li>
 						<li *ngFor="let organisation of getUserOrganisations()">
 							<a (click)="switchOrganisation(organisation)">{{ organisation.name }}</a>
 						</li>

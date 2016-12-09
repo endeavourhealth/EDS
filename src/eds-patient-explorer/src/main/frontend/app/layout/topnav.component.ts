@@ -36,7 +36,12 @@ export class TopnavComponent {
 				vm.userOrganisations.push(orgRole);
 				vm.layoutService.getServiceName(orgRole.id)
 					.subscribe(
-						(result) => orgRole.name = result,
+						(result) => {
+							if (result != null && result != '')
+								orgRole.name = result;
+							else
+								orgRole.name = 'Unknown';
+						},
 						(error) => orgRole.name = 'Unknown'
 					);
 			}

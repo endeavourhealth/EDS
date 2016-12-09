@@ -5,9 +5,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
+import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditAction;
+import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByLocalId;
-import org.endeavourhealth.core.utility.StreamExtension;
+import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.patientexplorer.utility.ResourceFetcher;
 import org.endeavourhealth.patientexplorer.utility.SearchTermsParser;
@@ -36,6 +39,7 @@ import java.util.stream.Collectors;
 public final class RecordViewerEndpoint extends AbstractEndpoint {
 
     private static final Logger LOG = LoggerFactory.getLogger(RecordViewerEndpoint.class);
+    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsPatientExplorerModule.RecordViewer);
     private static final ServiceRepository serviceRepository = new ServiceRepository();
     private static final PatientIdentifierRepository identifierRepository = new PatientIdentifierRepository();
 
@@ -43,6 +47,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/getServices")
     public Response getServices(@Context SecurityContext sc) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Service List");
 
         List<UIService> uiServices = UITransform.transformServices(Lists.newArrayList(serviceRepository.getAll()));
 
@@ -52,7 +57,8 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/getServiceName")
-    public Response getServices(@Context SecurityContext sc, @QueryParam("serviceId") UUID serviceId) throws Exception {
+    public Response getServiceName(@Context SecurityContext sc, @QueryParam("serviceId") UUID serviceId) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Service Name", serviceId);
 
         List<Service> services = Lists.newArrayList(serviceRepository.getAll());
         Optional<Service> service = services.stream()
@@ -62,7 +68,7 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
         if (service.isPresent())
             return buildResponse(service.get().getName());
 
-        return buildResponse("");
+        return buildResponse(null);
     }
 
     @GET
@@ -72,6 +78,10 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                 @QueryParam("serviceId") UUID serviceId,
                                 @QueryParam("systemId") UUID systemId,
                                 @QueryParam("searchTerms") String searchTerms) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Find patient", searchTerms,
+            "ServiceId", serviceId,
+            "SystemId", systemId);
 
         List<UIPatient> result = new ArrayList<>();
 
@@ -118,6 +128,11 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                     @QueryParam("systemId") UUID systemId,
                                     @QueryParam("patientId") UUID patientId) throws Exception {
 
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Patient", patientId,
+            "ServiceId", serviceId,
+            "SystemId", systemId);
+
         validateIdentifiers(serviceId, systemId, patientId);
 
         UIPatient patient = getPatient(serviceId, systemId, patientId);
@@ -132,6 +147,11 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                         @QueryParam("systemId") UUID systemId,
                                         @QueryParam("patientId") UUID patientId) throws Exception {
 
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Medication Statements", patientId,
+            "ServiceId", serviceId,
+            "SystemId", systemId);
+
         return getClinicalResourceResponse(serviceId, systemId, patientId, MedicationStatement.class, UIMedicationStatement.class);
     }
 
@@ -144,6 +164,11 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                   @QueryParam("systemId") UUID systemId,
                                   @QueryParam("patientId") UUID patientId) throws Exception {
 
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Conditions", patientId,
+            "ServiceId", serviceId,
+            "SystemId", systemId);
+
         return getClinicalResourceResponse(serviceId, systemId, patientId, Condition.class, UICondition.class);
     }
 
@@ -155,6 +180,11 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                   @QueryParam("systemId") UUID systemId,
                                   @QueryParam("patientId") UUID patientId) throws Exception {
 
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Problems", patientId,
+            "ServiceId", serviceId,
+            "SystemId", systemId);
+
         return getClinicalResourceResponse(serviceId, systemId, patientId, Condition.class, UIProblem.class);
     }
 
@@ -165,6 +195,10 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                     @QueryParam("serviceId") UUID serviceId,
                                     @QueryParam("systemId") UUID systemId,
                                     @QueryParam("patientId") UUID patientId) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Encounters", patientId,
+            "ServiceId", serviceId,
+            "SystemId", systemId);
 
         return getClinicalResourceResponse(serviceId, systemId, patientId, Encounter.class, UIEncounter.class);
     }
@@ -176,6 +210,10 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                   @QueryParam("serviceId") UUID serviceId,
                                   @QueryParam("systemId") UUID systemId,
                                   @QueryParam("patientId") UUID patientId) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Diaries", patientId,
+            "ServiceId", serviceId,
+            "SystemId", systemId);
 
         return getClinicalResourceResponse(serviceId, systemId, patientId, ProcedureRequest.class, UIDiary.class);
     }
@@ -187,6 +225,10 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                     @QueryParam("serviceId") UUID serviceId,
                                     @QueryParam("systemId") UUID systemId,
                                     @QueryParam("patientId") UUID patientId) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Observations", patientId,
+            "ServiceId", serviceId,
+            "SystemId", systemId);
 
         return getClinicalResourceResponse(serviceId, systemId, patientId, Observation.class, UIObservation.class);
     }
@@ -198,6 +240,10 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                     @QueryParam("serviceId") UUID serviceId,
                                     @QueryParam("systemId") UUID systemId,
                                     @QueryParam("patientId") UUID patientId) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Allergies", patientId,
+            "ServiceId", serviceId,
+            "SystemId", systemId);
 
         return getClinicalResourceResponse(serviceId, systemId, patientId, AllergyIntolerance.class, UIAllergyIntolerance.class);
     }
@@ -209,6 +255,10 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                  @QueryParam("serviceId") UUID serviceId,
                                  @QueryParam("systemId") UUID systemId,
                                  @QueryParam("patientId") UUID patientId) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Immunizations", patientId,
+            "ServiceId", serviceId,
+            "SystemId", systemId);
 
         return getClinicalResourceResponse(serviceId, systemId, patientId, Immunization.class, UIImmunisation.class);
     }
@@ -220,6 +270,10 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
                                      @QueryParam("serviceId") UUID serviceId,
                                      @QueryParam("systemId") UUID systemId,
                                      @QueryParam("patientId") UUID patientId) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Family History", patientId,
+            "ServiceId", serviceId,
+            "SystemId", systemId);
 
         return getClinicalResourceResponse(serviceId, systemId, patientId, FamilyMemberHistory.class, UIFamilyMemberHistory.class);
     }
