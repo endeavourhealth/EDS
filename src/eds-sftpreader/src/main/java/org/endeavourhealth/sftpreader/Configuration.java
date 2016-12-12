@@ -1,11 +1,14 @@
 package org.endeavourhealth.sftpreader;
 
-import org.endeavourhealth.utilities.xml.XmlSerializer;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
-import org.endeavourhealth.sftpreader.model.xml.DatabaseConnection;
-import org.endeavourhealth.sftpreader.model.xml.SftpReaderConfiguration;
+import org.endeavourhealth.utilities.configuration.LocalConfigurationException;
+import org.endeavourhealth.utilities.configuration.LocalConfigurationLoader;
+import org.endeavourhealth.utilities.configuration.model.DatabaseConnection;
+import org.endeavourhealth.utilities.configuration.model.DatabaseType;
+import org.endeavourhealth.utilities.configuration.model.LocalConfiguration;
 import org.endeavourhealth.utilities.postgres.PgDataSource;
 import org.endeavourhealth.utilities.postgres.PgStoredProcException;
+import org.endeavourhealth.utilities.streams.StreamExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,8 +19,6 @@ public final class Configuration
 {
     // class members //
     private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
-    private static final String CONFIG_XSD = "SftpReaderConfiguration.xsd";
-    private static final String CONFIG_RESOURCE = "SftpReaderConfiguration.xml";
 
     private static Configuration instance = null;
 
@@ -30,8 +31,9 @@ public final class Configuration
     }
 
     // instance members //
-    private SftpReaderConfiguration localConfiguration;
+    private LocalConfiguration localConfiguration;
     private DbConfiguration dbConfiguration;
+    private DatabaseConnection sftpReaderDatabaseConnection;
 
     private Configuration() throws Exception
     {
@@ -39,48 +41,38 @@ public final class Configuration
         loadDbConfiguration();
     }
 
-    private void loadLocalConfiguration() throws Exception
-    {
-        String path = System.getProperty("sftpreader.configurationFile");
+    private void loadLocalConfiguration() throws LocalConfigurationException {
+        localConfiguration = LocalConfigurationLoader.loadLocalConfiguration();
 
-        if (path != null)
-        {
-            LOG.info("Loading local configuration file from path " + path);
-            localConfiguration = XmlSerializer.deserializeFromFile(SftpReaderConfiguration.class, path, CONFIG_XSD);
-        }
-        else
-        {
-            LOG.info("Loading local configuration file from resource " + CONFIG_RESOURCE);
-            localConfiguration = XmlSerializer.deserializeFromResource(SftpReaderConfiguration.class, CONFIG_RESOURCE, CONFIG_XSD);
-        }
+        sftpReaderDatabaseConnection = localConfiguration
+                .getDatabaseConnections()
+                .getDatabaseConnection()
+                .stream()
+                .filter(t -> t.getDatabaseType().equals(DatabaseType.SFTPREADER.value()))
+                .collect(StreamExtension.singleOrNullCollector());
+
+        if (sftpReaderDatabaseConnection == null)
+            throw new LocalConfigurationException("Could not find database connection in local configuration file with DatabaseType of " + DatabaseType.HL_7_RECEIVER.value());
     }
+
 
     private void loadDbConfiguration() throws PgStoredProcException, SQLException
     {
         DataLayer dataLayer = new DataLayer(getDatabaseConnection());
-        this.dbConfiguration = dataLayer.getConfiguration(getInstanceId());
+        this.dbConfiguration = dataLayer.getConfiguration(getInstanceName());
     }
 
     public DataSource getDatabaseConnection() throws SQLException
     {
-        DatabaseConnection dataSource = localConfiguration.getDatabaseConnections().getSftpReader();
-
-        return PgDataSource.get(
-                dataSource.getHostname(),
-                dataSource.getPort().intValue(),
-                dataSource.getDatabase(),
-                dataSource.getUsername(),
-                dataSource.getPassword());
+        return PgDataSource.get(sftpReaderDatabaseConnection);
     }
 
-
-
-    public String getInstanceId()
+    public String getInstanceName()
     {
-        return localConfiguration.getInstanceId();
+        return localConfiguration.getInstanceName();
     }
 
-    public SftpReaderConfiguration getLocalConfiguration()
+    public LocalConfiguration getLocalConfiguration()
     {
         return this.localConfiguration;
     }

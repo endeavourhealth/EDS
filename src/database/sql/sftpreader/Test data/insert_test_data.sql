@@ -9,7 +9,7 @@ insert into sftpreader.instance
 )
 values
 (
-	'EMIS001',
+	'TEST001',
 	'Endeavour test EMIS instance connecting to endeavour-sftp.cloudapp.net'
 );
 
@@ -22,7 +22,7 @@ insert into sftpreader.configuration
 )
 values
 (
-	'EMIS001',
+	'TEST001',
 	1,
 	'/Users/jonny/Code/Local/sftp/EMIS001',
 	60
@@ -45,7 +45,7 @@ insert into sftpreader.configuration_eds
 )
 values
 (
-	'EMIS001',
+	'TEST001',
 	'http://localhost:8080/api/PostMessageAsync',
 	'EMIS001',
 	'EmisExtractService',
@@ -67,7 +67,7 @@ insert into sftpreader.configuration_kvp
 )
 values
 (
-	'EMIS001',
+	'TEST001',
 	'SharingAgreementGuid',
 	'45E7CD20-EE37-41AB-90D6-DC9D4B03D102'
 );
@@ -86,7 +86,7 @@ insert into sftpreader.configuration_sftp
 )
 values
 (
-	'EMIS001',
+	'TEST001',
 	'endeavour-sftp.cloudapp.net',
 	22,
 	'/gpg',
@@ -184,7 +184,7 @@ insert into sftpreader.configuration_pgp
 )
 values
 (
-	'EMIS001',
+	'TEST001',
 	'.gpg',
 	'-----BEGIN PGP PUBLIC KEY BLOCK-----
 Comment: GPGTools - https://gpgtools.org

@@ -1,5 +1,5 @@
 
-package org.endeavourhealth.hl7receiver.model.xml;
+package org.endeavourhealth.utilities.configuration.model;
 
 import java.math.BigInteger;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -18,10 +18,11 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="Hostname" type="{}nonEmptyString"/>
+ *         &lt;element name="DatabaseType" type="{}NonEmptyString"/>
+ *         &lt;element name="Hostname" type="{}NonEmptyString"/>
  *         &lt;element name="Port" type="{http://www.w3.org/2001/XMLSchema}integer"/>
- *         &lt;element name="Database" type="{}nonEmptyString"/>
- *         &lt;element name="Username" type="{}nonEmptyString"/>
+ *         &lt;element name="Database" type="{}NonEmptyString"/>
+ *         &lt;element name="Username" type="{}NonEmptyString"/>
  *         &lt;element name="Password" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -33,6 +34,7 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "DatabaseConnection", propOrder = {
+    "databaseType",
     "hostname",
     "port",
     "database",
@@ -41,6 +43,8 @@ import javax.xml.bind.annotation.XmlType;
 })
 public class DatabaseConnection {
 
+    @XmlElement(name = "DatabaseType", required = true)
+    protected String databaseType;
     @XmlElement(name = "Hostname", required = true)
     protected String hostname;
     @XmlElement(name = "Port", required = true)
@@ -51,6 +55,30 @@ public class DatabaseConnection {
     protected String username;
     @XmlElement(name = "Password", required = true)
     protected String password;
+
+    /**
+     * Gets the value of the databaseType property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getDatabaseType() {
+        return databaseType;
+    }
+
+    /**
+     * Sets the value of the databaseType property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setDatabaseType(String value) {
+        this.databaseType = value;
+    }
 
     /**
      * Gets the value of the hostname property.

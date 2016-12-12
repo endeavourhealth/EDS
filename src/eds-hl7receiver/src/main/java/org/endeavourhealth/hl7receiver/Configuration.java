@@ -4,10 +4,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.hl7receiver.model.db.DbConfiguration;
 import org.endeavourhealth.hl7receiver.model.exceptions.ConfigurationException;
 import org.endeavourhealth.hl7receiver.model.exceptions.LogbackConfigurationException;
-import org.endeavourhealth.hl7receiver.model.xml.DatabaseConnection;
-import org.endeavourhealth.hl7receiver.model.xml.Hl7ReceiverConfiguration;
+import org.endeavourhealth.utilities.configuration.LocalConfigurationException;
+import org.endeavourhealth.utilities.configuration.LocalConfigurationLoader;
+import org.endeavourhealth.utilities.configuration.model.DatabaseConnection;
+import org.endeavourhealth.utilities.configuration.model.DatabaseType;
+import org.endeavourhealth.utilities.configuration.model.LocalConfiguration;
 import org.endeavourhealth.utilities.postgres.PgDataSource;
-import org.endeavourhealth.utilities.xml.XmlSerializer;
+import org.endeavourhealth.utilities.streams.StreamExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,9 +23,6 @@ public final class Configuration
     // class members //
     private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
     private static final String LOGBACK_ENVIRONMENT_VARIABLE = "LOGBACK_CONFIG_FILE";
-    private static final String CONFIG_XSD = "Hl7ReceiverConfiguration.xsd";
-    private static final String CONFIG_RESOURCE = "Hl7ReceiverConfiguration.xml";
-    private static final String CONFIG_PATH_JAVA_PROPERTY = "hl7receiver.configurationFile";
 
     private static Configuration instance = null;
 
@@ -35,8 +35,9 @@ public final class Configuration
     }
 
     // instance members //
-    private Hl7ReceiverConfiguration localConfiguration;
+    private LocalConfiguration localConfiguration;
     private DbConfiguration dbConfiguration;
+    private DatabaseConnection hl7ReceiverDatabaseConnection;
 
     private Configuration() throws ConfigurationException
     {
@@ -59,20 +60,22 @@ public final class Configuration
         LOG.info("Using base logback config file at " + logbackConfiguration);
     }
 
-    private void loadLocalConfiguration() throws ConfigurationException
-    {
-        String path = System.getProperty(CONFIG_PATH_JAVA_PROPERTY);
-
+    private void loadLocalConfiguration() throws ConfigurationException {
         try {
-            if (path != null) {
-                LOG.info("Loading local configuration file from path " + path);
-                localConfiguration = XmlSerializer.deserializeFromFile(Hl7ReceiverConfiguration.class, path, CONFIG_XSD);
-            } else {
-                LOG.info("Did not find java property " + CONFIG_PATH_JAVA_PROPERTY + ", loading local configuration file from resource " + CONFIG_RESOURCE);
-                localConfiguration = XmlSerializer.deserializeFromResource(Hl7ReceiverConfiguration.class, CONFIG_RESOURCE, CONFIG_XSD);
-            }
-        } catch (Exception e) {
-            throw new ConfigurationException("Error loading local configuration, see inner exception", e);
+            localConfiguration = LocalConfigurationLoader.loadLocalConfiguration();
+
+            hl7ReceiverDatabaseConnection = localConfiguration
+                    .getDatabaseConnections()
+                    .getDatabaseConnection()
+                    .stream()
+                    .filter(t -> t.getDatabaseType().equals(DatabaseType.HL_7_RECEIVER.value()))
+                    .collect(StreamExtension.singleOrNullCollector());
+
+            if (hl7ReceiverDatabaseConnection == null)
+                throw new ConfigurationException("Could not find database connection in local configuration file with DatabaseType of " + DatabaseType.HL_7_RECEIVER.value());
+
+        } catch (LocalConfigurationException e) {
+            throw new ConfigurationException(e);
         }
     }
 
@@ -87,8 +90,7 @@ public final class Configuration
 
     public DataSource getDatabaseConnection() throws SQLException
     {
-        DatabaseConnection db = localConfiguration.getDatabaseConnections().getHl7Receiver();
-        return PgDataSource.get(db.getHostname(), db.getPort().intValue(), db.getDatabase(), db.getUsername(), db.getPassword());
+        return PgDataSource.get(hl7ReceiverDatabaseConnection);
     }
 
     public String getInstanceName()

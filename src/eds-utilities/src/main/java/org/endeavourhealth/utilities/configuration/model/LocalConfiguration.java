@@ -1,6 +1,8 @@
 
-package org.endeavourhealth.hl7receiver.model.xml;
+package org.endeavourhealth.utilities.configuration.model;
 
+import java.util.ArrayList;
+import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -18,13 +20,13 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="InstanceName" type="{}nonEmptyString"/>
+ *         &lt;element name="InstanceName" type="{}NonEmptyString"/>
  *         &lt;element name="DatabaseConnections">
  *           &lt;complexType>
  *             &lt;complexContent>
  *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *                 &lt;sequence>
- *                   &lt;element name="Hl7Receiver" type="{}DatabaseConnection"/>
+ *                   &lt;element name="DatabaseConnection" type="{}DatabaseConnection" maxOccurs="2"/>
  *                 &lt;/sequence>
  *               &lt;/restriction>
  *             &lt;/complexContent>
@@ -43,13 +45,13 @@ import javax.xml.bind.annotation.XmlType;
     "instanceName",
     "databaseConnections"
 })
-@XmlRootElement(name = "Hl7ReceiverConfiguration")
-public class Hl7ReceiverConfiguration {
+@XmlRootElement(name = "LocalConfiguration")
+public class LocalConfiguration {
 
     @XmlElement(name = "InstanceName", required = true)
     protected String instanceName;
     @XmlElement(name = "DatabaseConnections", required = true)
-    protected Hl7ReceiverConfiguration.DatabaseConnections databaseConnections;
+    protected LocalConfiguration.DatabaseConnections databaseConnections;
 
     /**
      * Gets the value of the instanceName property.
@@ -80,10 +82,10 @@ public class Hl7ReceiverConfiguration {
      * 
      * @return
      *     possible object is
-     *     {@link Hl7ReceiverConfiguration.DatabaseConnections }
+     *     {@link LocalConfiguration.DatabaseConnections }
      *     
      */
-    public Hl7ReceiverConfiguration.DatabaseConnections getDatabaseConnections() {
+    public LocalConfiguration.DatabaseConnections getDatabaseConnections() {
         return databaseConnections;
     }
 
@@ -92,10 +94,10 @@ public class Hl7ReceiverConfiguration {
      * 
      * @param value
      *     allowed object is
-     *     {@link Hl7ReceiverConfiguration.DatabaseConnections }
+     *     {@link LocalConfiguration.DatabaseConnections }
      *     
      */
-    public void setDatabaseConnections(Hl7ReceiverConfiguration.DatabaseConnections value) {
+    public void setDatabaseConnections(LocalConfiguration.DatabaseConnections value) {
         this.databaseConnections = value;
     }
 
@@ -110,7 +112,7 @@ public class Hl7ReceiverConfiguration {
      *   &lt;complexContent>
      *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
      *       &lt;sequence>
-     *         &lt;element name="Hl7Receiver" type="{}DatabaseConnection"/>
+     *         &lt;element name="DatabaseConnection" type="{}DatabaseConnection" maxOccurs="2"/>
      *       &lt;/sequence>
      *     &lt;/restriction>
      *   &lt;/complexContent>
@@ -121,35 +123,40 @@ public class Hl7ReceiverConfiguration {
      */
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlType(name = "", propOrder = {
-        "hl7Receiver"
+        "databaseConnection"
     })
     public static class DatabaseConnections {
 
-        @XmlElement(name = "Hl7Receiver", required = true)
-        protected DatabaseConnection hl7Receiver;
+        @XmlElement(name = "DatabaseConnection", required = true)
+        protected List<DatabaseConnection> databaseConnection;
 
         /**
-         * Gets the value of the hl7Receiver property.
+         * Gets the value of the databaseConnection property.
          * 
-         * @return
-         *     possible object is
-         *     {@link DatabaseConnection }
-         *     
-         */
-        public DatabaseConnection getHl7Receiver() {
-            return hl7Receiver;
-        }
-
-        /**
-         * Sets the value of the hl7Receiver property.
+         * <p>
+         * This accessor method returns a reference to the live list,
+         * not a snapshot. Therefore any modification you make to the
+         * returned list will be present inside the JAXB object.
+         * This is why there is not a <CODE>set</CODE> method for the databaseConnection property.
          * 
-         * @param value
-         *     allowed object is
-         *     {@link DatabaseConnection }
-         *     
+         * <p>
+         * For example, to add a new item, do as follows:
+         * <pre>
+         *    getDatabaseConnection().add(newItem);
+         * </pre>
+         * 
+         * 
+         * <p>
+         * Objects of the following type(s) are allowed in the list
+         * {@link DatabaseConnection }
+         * 
+         * 
          */
-        public void setHl7Receiver(DatabaseConnection value) {
-            this.hl7Receiver = value;
+        public List<DatabaseConnection> getDatabaseConnection() {
+            if (databaseConnection == null) {
+                databaseConnection = new ArrayList<DatabaseConnection>();
+            }
+            return this.databaseConnection;
         }
 
     }

@@ -78,7 +78,6 @@ public class SftpTask extends TimerTask
         this.db = new DataLayer(configuration.getDatabaseConnection());
     }
 
-
     private boolean downloadAndProcessFiles()
     {
         SftpConnection sftpConnection = null;
@@ -107,7 +106,7 @@ public class SftpTask extends TimerTask
                     continue;
                 }
 
-                AddFileResult addFileResult = db.addFile(configuration.getInstanceId(), batchFile);
+                AddFileResult addFileResult = db.addFile(configuration.getInstanceName(), batchFile);
 
                 if (addFileResult.isFileAlreadyProcessed())
                 {
