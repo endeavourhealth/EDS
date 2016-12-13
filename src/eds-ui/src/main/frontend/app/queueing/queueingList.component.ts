@@ -4,7 +4,6 @@ import {Routing} from "./Routing";
 import {RabbitBinding} from "./models/RabbitBinding";
 import {RabbitService} from "./rabbit.service";
 import {LoggerService} from "../common/logger.service";
-import {QueueingService} from "./queueing.service";
 import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {QueueEditDialog} from "./queueingEditor.dialog";
@@ -23,7 +22,6 @@ export class QueueingListComponent {
 	subscriberBindings : RabbitBinding[];
 
 	constructor(private $modal : NgbModal,
-							private queueingService : QueueingService,
 							private rabbitService : RabbitService,
 							private log : LoggerService) {
 		this.getRabbitNodes();
@@ -70,7 +68,7 @@ export class QueueingListComponent {
 
 	getRouteGroups() {
 		var vm = this;
-		vm.queueingService.getRoutings()
+		vm.rabbitService.getRoutings()
 			.subscribe(
 				(result) => vm.routings = result,
 				(error) => vm.log.error('Failed to load route groups', error, 'Load route groups')
@@ -105,7 +103,7 @@ export class QueueingListComponent {
 		QueueEditDialog.open(vm.$modal, item)
 			.result.then(function(editedItem : Routing) {
 			jQuery.extend(true, item, editedItem);
-			vm.queueingService.saveRoutings(vm.routings)
+			vm.rabbitService.saveRoutings(vm.routings)
 				.subscribe(
 					() => vm.log.success('Route group saved', editedItem, 'Save routeGroup'),
 					(error) => vm.log.error('Failed to save route group', error, 'Save route group')
@@ -119,7 +117,7 @@ export class QueueingListComponent {
 		MessageBoxDialog.open(vm.$modal, 'Delete Route group', 'Are you sure you want to delete the route group?', 'Yes', 'No')
 			.result.then(function () {
 			// remove item from list
-			vm.queueingService.saveRoutings(vm.routings)
+			vm.rabbitService.saveRoutings(vm.routings)
 				.subscribe(
 					() => vm.log.success('Route group deleted', item, 'Delete route group'),
 					(error) => vm.log.error('Failed to delete route group', error, 'Delete route group')

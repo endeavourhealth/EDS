@@ -28,16 +28,16 @@ public class UIMedicationStatementTransform extends UIClinicalTransform<Medicati
     private UIMedicationStatement transform(MedicationStatement medicationStatement, ReferencedResources referencedResources) {
         return new UIMedicationStatement()
             .setId(medicationStatement.getId())
-            .setDateAuthorized(getRecordedDateExtensionValue(medicationStatement))
+            .setDateAuthorised(getRecordedDateExtensionValue(medicationStatement))
             .setPrescriber(getRecordedByExtensionValue(medicationStatement, referencedResources))
             .setMedication(getMedication(medicationStatement, referencedResources))
 						.setDosage(getDosage(medicationStatement))
 						.setStatus(medicationStatement.getStatus().getDisplay())
-						.setAuthorizedQuantity(getAuthorizedQty(medicationStatement))
+						.setAuthorisedQuantity(getAuthorisedQty(medicationStatement))
 						.setRepeatsAllowed(getRepeatsAllowed(medicationStatement))
 						.setRepeatsIssued(getRepeatsIssued(medicationStatement))
 						.setMostRecentIssue(getMostRecentIssue(medicationStatement))
-						.setAuthorizationType(getAuthorizationType(medicationStatement));
+						.setAuthorisationType(getAuthorisationType(medicationStatement));
     }
 
     @Override
@@ -96,7 +96,7 @@ public class UIMedicationStatementTransform extends UIClinicalTransform<Medicati
     	return null;
 		}
 
-		private static UIQuantity getAuthorizedQty(MedicationStatement medicationStatement) {
+		private static UIQuantity getAuthorisedQty(MedicationStatement medicationStatement) {
 			Quantity quantity = ExtensionHelper.getExtensionValue(medicationStatement, FhirExtensionUri.MEDICATION_AUTHORISATION_QUANTITY, Quantity.class);
 			return QuantityHelper.convert(quantity);
 		}
@@ -120,7 +120,7 @@ public class UIMedicationStatementTransform extends UIClinicalTransform<Medicati
     	return DateHelper.convert(issueDate);
 	}
 
-	private static UICode getAuthorizationType(MedicationStatement medicationStatement) {
+	private static UICode getAuthorisationType(MedicationStatement medicationStatement) {
     Coding authType = ExtensionHelper.getExtensionValue(medicationStatement, FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE, Coding.class);
     return CodeHelper.convert(authType);
 	}

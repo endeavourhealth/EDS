@@ -1,7 +1,7 @@
 import {Component, Input} from "@angular/core";
 import {UIProblem} from "../models/resources/clinical/UIProblem";
 import {UIAllergy} from "../models/resources/clinical/UIAllergy";
-import {UIImmunization} from "../models/resources/clinical/UIImmunization";
+import {UIImmunisation} from "../models/resources/clinical/UIImmunisation";
 import {UIMedicationStatement} from "../models/resources/clinical/UIMedicationStatement";
 
 @Component({
@@ -14,5 +14,5 @@ export class SummaryComponent {
 	@Input() allergies : UIAllergy[];
 	@Input() acuteMedication : UIMedicationStatement[];
 	@Input() repeatMedication : UIMedicationStatement[];
-	@Input() immunizations : UIImmunization[];
+	@Input() immunisations : UIImmunisation[];
 }

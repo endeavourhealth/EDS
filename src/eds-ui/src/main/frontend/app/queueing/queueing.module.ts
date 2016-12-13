@@ -4,7 +4,6 @@ import {FormsModule} from "@angular/forms";
 import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {QueueingListComponent} from "./queueingList.component";
 import {QueueEditDialog} from "./queueingEditor.dialog";
-import {QueueingService} from "./queueing.service";
 import {ConfigModule} from "../config/config.module";
 import {RabbitService} from "./rabbit.service";
 
@@ -23,7 +22,6 @@ import {RabbitService} from "./rabbit.service";
 		QueueEditDialog
 	],
 	providers : [
-		QueueingService,
 		RabbitService
 	]
 })

@@ -8,7 +8,7 @@ import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 })
 export class LogEntryDialog {
 	public static open(modalService: NgbModal, logEntry : LoggingEvent, stackTrace : string) {
-		const modalRef = modalService.open(LogEntryDialog, { backdrop : "static"});
+		const modalRef = modalService.open(LogEntryDialog, { backdrop : "static", size : 'lg'});
 		modalRef.componentInstance.logEntry = logEntry;
 		modalRef.componentInstance.stackTrace = stackTrace;
 

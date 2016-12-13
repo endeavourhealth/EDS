@@ -53,6 +53,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Patient By Local Id",
             "Service Id", serviceIdStr,
             "System Id", systemIdStr,
             "Local Id", localId);
@@ -112,6 +113,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
     public Response byNhsNumber(@Context SecurityContext sc, @QueryParam("nhsNumber") String nhsNumber) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Patient By NHS Number",
             "NHS Number", nhsNumber);
 
         if (Strings.isNullOrEmpty(nhsNumber)) {
@@ -164,6 +166,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
     public Response byPatientId(@Context SecurityContext sc, @QueryParam("patientId") String patientIdStr) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Patient",
             "Patient Id", patientIdStr);
 
         if (Strings.isNullOrEmpty(patientIdStr)) {

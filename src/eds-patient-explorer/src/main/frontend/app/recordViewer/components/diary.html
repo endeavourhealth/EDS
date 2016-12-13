@@ -13,7 +13,7 @@
 				<tr *ngFor="let diary of diaries"> <!-- (click)="setSelectedDiary($event, diary)" [ngClass]="{'selected': isSelectedDiary(diary)}"> -->
 					<td>{{diary.effectiveDate | cuiDate}}</td>
 					<td>
-						<span class="fa fa-registered" ngbTooltip="Read : {{diary.code | codeReadCode}}"></span>
+						<codeTooltip [code]="diary.code"></codeTooltip>
 						<span class="problem-term-text">{{diary.code | codeReadTerm}}</span>
 						<span class="problem-associated-text">{{diary.notes}}</span>
 					</td>

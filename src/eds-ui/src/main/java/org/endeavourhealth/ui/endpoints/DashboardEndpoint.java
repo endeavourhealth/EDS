@@ -34,8 +34,8 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 
 		UUID userUuid = SecurityUtils.getCurrentUserId(sc);
 		UUID orgUuid = getOrganisationUuidFromToken(sc);
-		userAudit.save(userUuid, orgUuid, AuditAction.Load,
-				"Recent Documents", count);
+		userAudit.save(userUuid, orgUuid, AuditAction.Load,	"Recent Documents",
+				"Count", count);
 
 		LOG.trace("getRecentDocuments {}", count);
 

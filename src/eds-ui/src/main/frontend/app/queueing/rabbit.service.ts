@@ -6,6 +6,7 @@ import {RabbitBinding} from "./models/RabbitBinding";
 import {RabbitExchange} from "./models/RabbitExchange";
 import {RabbitQueue} from "./models/RabbitQueue";
 import {RabbitNode} from "./models/RabbitNode";
+import {Routing} from "./Routing";
 
 @Injectable()
 export class RabbitService extends BaseHttp2Service {
@@ -41,5 +42,13 @@ export class RabbitService extends BaseHttp2Service {
 
 	synchronize(address:string) : Observable<any> {
 		return this.httpPost('api/rabbit/synchronize', address );
+	}
+
+	getRoutings() : Observable<Routing[]> {
+		return this.httpGet('api/rabbit/routings');
+	}
+
+	saveRoutings(routings : Routing[]) : Observable<any> {
+		return this.httpPost('api/rabbit/routings', routings);
 	}
 }

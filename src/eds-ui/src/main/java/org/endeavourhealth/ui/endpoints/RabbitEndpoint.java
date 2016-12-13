@@ -1,17 +1,15 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
-import org.endeavourhealth.core.data.config.ConfigurationRepository;
-import org.endeavourhealth.core.data.config.models.ConfigurationResource;
+import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
-import org.endeavourhealth.coreui.framework.config.ConfigSerializer;
-import org.endeavourhealth.coreui.framework.config.models.RabbitmqManagement;
 import org.endeavourhealth.ui.json.*;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.slf4j.Logger;
@@ -26,7 +24,6 @@ import javax.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Path("/rabbit")
 public final class RabbitEndpoint extends AbstractEndpoint {
@@ -36,8 +33,46 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 
 	private final HttpAuthenticationFeature rabbitAuth;
 	{
-		RabbitmqManagement authConfig = ConfigSerializer.getConfig().getRabbitmqManagement();
-		rabbitAuth = HttpAuthenticationFeature.basic(authConfig.getUsername(), authConfig.getPassword());
+		try {
+			String rabbitConfigJson = ConfigManager.getConfiguration("rabbit");
+			JsonNode rabbitConfig = ObjectMapperPool.getInstance().readTree(rabbitConfigJson);
+
+			rabbitAuth = HttpAuthenticationFeature.basic(rabbitConfig.get("username").asText(), rabbitConfig.get("password").asText());
+		} catch (Exception e) {
+			throw new IllegalStateException("Unable to load rabbit config", e);
+		}
+
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/routings")
+	public Response getRoutings(@Context SecurityContext sc) throws Exception {
+		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Routings");
+
+		String routings = ConfigManager.getConfiguration("routings");
+
+		return Response
+				.ok()
+				.entity(routings)
+				.build();
+	}
+
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/routings")
+	public Response getRoutings(@Context SecurityContext sc, String routings) throws Exception {
+		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Routings");
+
+		ConfigManager.setConfiguration("routings", routings);
+
+		return Response
+				.ok()
+				.build();
 	}
 
 	@GET
@@ -46,12 +81,13 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@Path("/nodes")
 	public Response getRabbitNodes(@Context SecurityContext sc) throws Exception {
 		super.setLogbackMarkers(sc);
-		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Nodes");
 
-		ConfigurationResource rabbitNodes = new ConfigurationRepository().getByKey(ConfigurationRepository.RABBIT_NODES);
+		String rabbitConfigJson = ConfigManager.getConfiguration("rabbit");
+		JsonNode rabbitConfig = ObjectMapperPool.getInstance().readTree(rabbitConfigJson);
 
 		List<JsonRabbitNode> ret = new ArrayList<>();
-		for (String node : rabbitNodes.getConfigurationData().split(",", -1))
+		for (String node : rabbitConfig.get("nodes").asText().split(",", -1))
 			ret.add(new JsonRabbitNode(node, 0));
 
 
@@ -70,7 +106,8 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	public Response pingRabbitNode(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-				"Ping time", address);
+				"Ping time",
+				"Address", address);
 
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
@@ -114,7 +151,8 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	public Response getRabbitQueues(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-				"Queues", address);
+				"Queues",
+				"Address", address);
 
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
@@ -147,7 +185,8 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	public Response getRabbitExchanges(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-				"Exchanges", address);
+				"Exchanges",
+				"Address", address);
 
 		Client client = ClientBuilder.newClient();
 		client.register(rabbitAuth);
@@ -180,7 +219,8 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	public Response getRabbitBindings(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-				"Bindings", address);
+				"Bindings",
+				"Address", address);
 
 		String ret = getRabbitBindingsJson(address);
 
@@ -202,7 +242,8 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	public Response synchronizeRabbit(@Context SecurityContext sc, String address) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
-				"Bindings (Sync)", address);
+				"Bindings (Sync)",
+				"Address", address);
 
 		String[] pipelines = {"EdsInbound", "EdsProtocol", "EdsTransform", "EdsResponse", "EdsSubscriber"};
 
@@ -285,9 +326,9 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 
 	private List<JsonRouteGroup> getConfiguredBindings() throws IOException {
 		List<JsonRouteGroup> bindings = new ArrayList<>();
-		ConfigurationResource configurationResource = new ConfigurationRepository().getByKey(UUID.fromString("b9b14e26-5a52-4f36-ad89-f01e465c1361"));
-		if (configurationResource != null) {
-			bindings = ObjectMapperPool.getInstance().readValue(configurationResource.getConfigurationData(), new TypeReference<List<JsonRouteGroup>>(){});
+		String routingsJson = ConfigManager.getConfiguration("routings");
+		if (routingsJson != null) {
+			bindings = ObjectMapperPool.getInstance().readValue(routingsJson, new TypeReference<List<JsonRouteGroup>>(){});
 		}
 
 		return bindings;

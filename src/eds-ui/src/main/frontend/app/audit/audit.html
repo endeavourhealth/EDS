@@ -72,22 +72,21 @@
 										<table class="table table-striped table-condensed">
 											<thead>
 												<tr>
-													<!--<th>User Id</th>-->
-													<!--<th>Service Id</th>-->
+													<th>Timestamp</th>
 													<th>Module</th>
 													<th>Submodule</th>
 													<th>Action</th>
-													<th>Timestamp</th>
+													<th>Details</th>
 												</tr>
 											</thead>
 											<tbody>
 												<tr *ngFor="let event of getFilteredEvents(this)">
-													<!--<td>{{event.userId}}</td>-->
-													<!--<td>{{event.serviceId}}</td>-->
+													<td>{{event.timestamp | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
 													<td>{{event.module}}</td>
 													<td>{{event.subModule}}</td>
 													<td>{{event.action}}</td>
-													<td>{{event.timestamp | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+													<td *ngIf="!event.data || event.data === ''">None</td>
+													<td *ngIf="event.data && event.data !== ''"><a (click)="viewData(event)">{{getDataTitle(event.data)}}</a></td>
 												</tr>
 											</tbody>
 										</table>

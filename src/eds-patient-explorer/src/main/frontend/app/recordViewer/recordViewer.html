@@ -26,7 +26,7 @@
                                 <summary [activeProblems]="patient.getActiveProblems()"
                                          [pastProblems]="patient.getPastProblems()"
                                          [allergies]="patient.allergies"
-                                         [immunizations]="patient.immunizations"
+                                         [immunisations]="patient.immunisations"
                                          [acuteMedication]="patient.getAcuteMedication()"
                                          [repeatMedication]="patient.getRepeatMedication()"></summary>
                             </div>
@@ -109,12 +109,12 @@
                     </ngb-tab>
 
                     <!------------------------------------------------------------------------------------------------->
-                    <!-- Immunizations -->
+                    <!-- Immunisations -->
                     <!------------------------------------------------------------------------------------------------->
-                    <ngb-tab id="immunizations" title="Immunizations">
+                    <ngb-tab id="immunisations" title="Immunisations">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                                <immunizations [immunizations]="patient.immunizations"></immunizations>
+                                <immunisations [immunisations]="patient.immunisations"></immunisations>
                             </div>
                         </template>
                     </ngb-tab>

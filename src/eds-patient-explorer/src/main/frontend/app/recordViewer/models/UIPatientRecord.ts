@@ -6,7 +6,7 @@ import {linq} from "../../common/linq";
 import {UIDiary} from "./resources/clinical/UIDiary";
 import {UIObservation} from "./resources/clinical/UIObservation";
 import {UIAllergy} from "./resources/clinical/UIAllergy";
-import {UIImmunization} from "./resources/clinical/UIImmunization";
+import {UIImmunisation} from "./resources/clinical/UIImmunisation";
 import {UIFamilyHistory} from "./resources/clinical/UIFamilyHistory";
 import {UIMedicationStatement} from "./resources/clinical/UIMedicationStatement";
 
@@ -19,7 +19,7 @@ export class UIPatientRecord {
     diary: UIDiary[];
     medication : UIMedicationStatement[];
     allergies : UIAllergy[];
-    immunizations : UIImmunization[];
+    immunisations : UIImmunisation[];
     familyHistory : UIFamilyHistory[];
 
     constructor(patient?: UIPatient) {
@@ -68,13 +68,13 @@ export class UIPatientRecord {
 
     public getAcuteMedication(): UIMedicationStatement[] {
         return linq(this.medication)
-          .Where(t=> t.status != 'Completed' && t.authorizationType.code != 'repeat')
+          .Where(t=> t.status != 'Completed' && t.authorisationType.code != 'repeat')
           .ToArray();
     }
 
     public getRepeatMedication(): UIMedicationStatement[] {
         return linq(this.medication)
-					.Where(t=> t.status != 'Completed' && t.authorizationType.code == 'repeat')
+					.Where(t=> t.status != 'Completed' && t.authorisationType.code == 'repeat')
 					.ToArray();
     }
 

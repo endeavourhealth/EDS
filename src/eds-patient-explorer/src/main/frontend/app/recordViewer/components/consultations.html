@@ -2,7 +2,7 @@
 
 <div class="row">
 	<div class="col-md-2">
-		<span class="consultation-title">Date Filter</span>
+		<span class="consultation-title">Date filter</span>
 		<Tree [nodes]="dateTreeData" (onActivate)="selectDate($event.node.data)" (onUpdateData)="onUpdateData()" (onInitialized)="onInitialized()">
 			<template #treeNodeTemplate let-node>
 				{{ node.data.title }}
@@ -12,9 +12,9 @@
 	<div class="col-md-10">
 		<table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
 			<thead>
-				<th>Consultation Date</th>
+				<th>Consultation date</th>
 				<th>Type (Location)</th>
-				<th>Performed By</th>
+				<th>Performed by</th>
 			</thead>
 			<tbody>
 				<tr *ngIf="!filteredConsultations || filteredConsultations.length == 0"><td colspan="2"><i>(no consultations)</i></td></tr>

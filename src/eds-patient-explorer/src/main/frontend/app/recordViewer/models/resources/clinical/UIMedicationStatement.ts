@@ -6,14 +6,14 @@ import {UIQuantity} from "../../types/UIQuantity";
 import {UICode} from "../../types/UICode";
 
 export class UIMedicationStatement extends UIResource {
-    dateAuthorized: UIDate;
+    dateAuthorised: UIDate;
     prescriber: UIPractitioner;
     medication : UIMedication;
     dosage: string;
     status: string;
     mostRecentIssue: UIDate;
-    authorizationType : UICode;
-    authorizedQuantity: UIQuantity;
+    authorisationType : UICode;
+    authorisedQuantity: UIQuantity;
     repeatsAllowed: number;
     repeatsIssued: number;
 }

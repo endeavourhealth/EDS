@@ -105,6 +105,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
                           @QueryParam("resourceId") String resourceId) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Resource",
             "Version", "Current",
             "Resource Type", resourceType,
             "Resource Id", resourceId);
@@ -139,6 +140,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
                                @QueryParam("resourceType") String resourceType,
                                @QueryParam("patientId") String patientIdStr) throws Exception {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Resource For Patient",
             "Resource Type", resourceType,
             "Patient Id", patientIdStr);
 
@@ -184,6 +186,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
                                     @QueryParam("resourceId") String resourceId) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Resource History",
             "Version", "History",
             "Resource Type", resourceType,
             "Resource Id", resourceId);

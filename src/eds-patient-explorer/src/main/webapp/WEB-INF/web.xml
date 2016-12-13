@@ -60,12 +60,12 @@
 
     <!--register our Startup class as a servlet listener so we can perform one-time setup-->
     <context-param>
-        <param-name>engine_config_property</param-name>
-        <param-value>eds.patientExplorerEngineConfiguration</param-value>
+        <param-name>app_id</param-name>
+        <param-value>eds-patient-explorer</param-value>
     </context-param>
     <listener>
         <listener-class>
-            org.endeavourhealth.coreui.framework.Startup
+            org.endeavourhealth.coreui.framework.StartupConfig
         </listener-class>
     </listener>
 

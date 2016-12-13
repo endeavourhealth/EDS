@@ -1,5 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.Credentials;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
@@ -11,6 +12,7 @@ import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.*;
+import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
@@ -20,8 +22,6 @@ import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
-import org.endeavourhealth.coreui.framework.config.ConfigSerializer;
-import org.endeavourhealth.coreui.framework.config.models.RePostMessageToExchangeConfig;
 import org.endeavourhealth.ui.json.JsonTransformExchangeError;
 import org.endeavourhealth.ui.json.JsonTransformRerunRequest;
 import org.endeavourhealth.ui.json.JsonTransformServiceErrorSummary;
@@ -116,7 +116,8 @@ public class TransformErrorsEndpoint extends AbstractEndpoint {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-                "Transform Errors for Exchange Id", exchangeIdStr);
+            "Error Details",
+                "Exchange Id", exchangeIdStr);
 
         LOG.trace("getErrorDetails for exchange ID " + exchangeIdStr);
 
@@ -214,7 +215,8 @@ public class TransformErrorsEndpoint extends AbstractEndpoint {
     public Response rerunFirstExchange(@Context SecurityContext sc, JsonTransformRerunRequest request) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
-                "rerunFirstExchange", request);
+            "Rerun First Exchange",
+                "Request", request);
 
         LOG.info("Rerun first");
         rerunExchanges(request, true);
@@ -239,7 +241,8 @@ public class TransformErrorsEndpoint extends AbstractEndpoint {
     public Response rerunAllExchanges(@Context SecurityContext sc, JsonTransformRerunRequest request) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
-                "rerunAllExchanges", request);
+            "Rerun All Exchanges",
+                "Request", request);
 
         LOG.info("rerunAllExchanges");
         rerunExchanges(request, false);
@@ -295,18 +298,20 @@ public class TransformErrorsEndpoint extends AbstractEndpoint {
             exchange.setHeader(header, headers.get(header));
         }
 
-        RePostMessageToExchangeConfig c = ConfigSerializer.getConfig().getRePostMessageToExchangeConfig();
+        String repostMessageToExchangeConfigJson = ConfigManager.getConfiguration("rePostMessageToExchangeConfig");
+        JsonNode c = ObjectMapperPool.getInstance().readTree(repostMessageToExchangeConfigJson);
+
 
         Credentials credentials = new Credentials();
-        credentials.setUsername(c.getUsername());
-        credentials.setPassword(c.getPassword());
+        credentials.setUsername(c.get("username").asText());
+        credentials.setPassword(c.get("password").asText());
 
         PostMessageToExchangeConfig config = new PostMessageToExchangeConfig();
         config.setCredentials(credentials);
-        config.setMulticastHeader(c.getMulticastHeader());
-        config.setNodes(c.getNodes());
-        config.setRoutingHeader(c.getRoutingHeader());
-        config.setExchange(c.getExchange());
+        config.setMulticastHeader(c.get("mMulticastHeader").asText());
+        config.setNodes(c.get("nodes").asText());
+        config.setRoutingHeader(c.get("routingHeader").asText());
+        config.setExchange(c.get("exchange").asText());
 
         //re-post back into Rabbit using the same pipeline component as used by the messaging API
         PostMessageToExchange component = new PostMessageToExchange(config);

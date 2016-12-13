@@ -7,23 +7,23 @@ import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.endeavourhealth.transform.ui.models.types.UIQuantity;
 
 public class UIMedicationStatement extends UIResource<UIMedicationStatement> {
-	private UIDate dateAuthorized;
+	private UIDate dateAuthorised;
 	private UIPractitioner prescriber;
 	private UIMedication medication;
 	private String dosage;
 	private String status;
-	private UIQuantity authorizedQuantity;
+	private UIQuantity authorisedQuantity;
 	private Integer repeatsAllowed;
 	private Integer repeatsIssued;
 	private UIDate mostRecentIssue;
-	private UICode authorizationType;
+	private UICode authorisationType;
 
-	public UIDate getDateAuthorized() {
-		return dateAuthorized;
+	public UIDate getDateAuthorised() {
+		return dateAuthorised;
 	}
 
-	public UIMedicationStatement setDateAuthorized(UIDate dateAuthorized) {
-		this.dateAuthorized = dateAuthorized;
+	public UIMedicationStatement setDateAuthorised(UIDate dateAuthorised) {
+		this.dateAuthorised = dateAuthorised;
 		return this;
 	}
 
@@ -63,12 +63,12 @@ public class UIMedicationStatement extends UIResource<UIMedicationStatement> {
 		return this;
 	}
 
-	public UIQuantity getAuthorizedQuantity() {
-		return authorizedQuantity;
+	public UIQuantity getAuthorisedQuantity() {
+		return authorisedQuantity;
 	}
 
-	public UIMedicationStatement setAuthorizedQuantity(UIQuantity authorizedQuantity) {
-		this.authorizedQuantity = authorizedQuantity;
+	public UIMedicationStatement setAuthorisedQuantity(UIQuantity authorisedQuantity) {
+		this.authorisedQuantity = authorisedQuantity;
 		return this;
 	}
 
@@ -81,12 +81,12 @@ public class UIMedicationStatement extends UIResource<UIMedicationStatement> {
 		return this;
 	}
 
-	public UICode getAuthorizationType() {
-		return authorizationType;
+	public UICode getAuthorisationType() {
+		return authorisationType;
 	}
 
-	public UIMedicationStatement setAuthorizationType(UICode authorizationType) {
-		this.authorizationType = authorizationType;
+	public UIMedicationStatement setAuthorisationType(UICode authorisationType) {
+		this.authorisationType = authorisationType;
 		return this;
 	}
 

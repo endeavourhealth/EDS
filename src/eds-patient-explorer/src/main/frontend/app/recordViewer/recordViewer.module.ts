@@ -22,11 +22,12 @@ import {ConsultationsComponent} from "./components/consultations.component";
 import {MedicationComponent} from "./components/medication.component";
 import {TreeModule} from "angular2-tree-component";
 import {AllergiesComponent} from "./components/allergies.component";
-import {ImmunizationsComponent} from "./components/immunizations.component";
+import {ImmunisationsComponent} from "./components/immunisations.component";
 import {FamilyHistoryComponent} from "./components/familyHistory.component";
 import {FamilyHistoryConditionComponent} from "./components/familyHistoryCondition.component";
 import {CareHistoryComponent} from "./components/careHistory.component";
 import {InvestigationsComponent} from "./components/investigations.component";
+import {CodeTooltipComponent} from "./components/codeTooltip.component";
 
 @NgModule({
 	imports : [
@@ -41,6 +42,7 @@ import {InvestigationsComponent} from "./components/investigations.component";
 		PatientFindDialog,
 
 		PrecisComponent,
+		CodeTooltipComponent,
 		SummaryComponent,
 		ConsultationsComponent,
 		MedicationComponent,
@@ -48,7 +50,7 @@ import {InvestigationsComponent} from "./components/investigations.component";
 		CareHistoryComponent,
 		InvestigationsComponent,
 		AllergiesComponent,
-		ImmunizationsComponent,
+		ImmunisationsComponent,
 		FamilyHistoryComponent,
 			FamilyHistoryConditionComponent,
 		DiaryComponent,

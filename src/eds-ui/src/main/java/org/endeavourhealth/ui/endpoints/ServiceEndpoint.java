@@ -50,6 +50,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	public Response post(@Context SecurityContext sc, JsonService service) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+				"Service",
 				"Service", service);
 
 		Service dbService = new Service();
@@ -82,6 +83,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	public Response deleteService(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+				"Service",
 				"Service Id", uuid);
 
 		UUID serviceUuid = UUID.fromString(uuid);
@@ -102,7 +104,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	public Response getServiceOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-				"Service Organisations", uuid);
+				"Service Organisations",
+				"ServiceId", uuid);
 
 		UUID serviceUuid = UUID.fromString(uuid);
 		Service service = repository.getById(serviceUuid);
@@ -127,6 +130,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"Service(s)",
 				"Service Id", uuid,
 				"Search Data", searchData);
 
@@ -195,7 +199,8 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	public Response getSystemsForService(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-				"Service Systems", serviceIdStr);
+				"Service Systems",
+				"ServiceId", serviceIdStr);
 
 		UUID serviceId = UUID.fromString(serviceIdStr);
 		org.endeavourhealth.core.data.admin.models.Service service = new ServiceRepository().getById(serviceId);

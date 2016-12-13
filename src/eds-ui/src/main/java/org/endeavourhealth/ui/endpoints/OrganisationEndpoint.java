@@ -38,6 +38,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	public Response post(@Context SecurityContext sc, JsonOrganisation organisation) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+				"Organisation",
 				"Organisation", organisation);
 
 		// Save the new
@@ -68,6 +69,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	public Response deleteOrganisation(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+				"Organisation",
 				"Organisation Id", uuid);
 
 		UUID organisationUuid = UUID.fromString(uuid);
@@ -87,7 +89,8 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@Path("/services")
 	public Response getOrganisationServices(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-				"Organisation Services", uuid);
+				"Organisation Services",
+				"OrganisationId", uuid);
 
 		super.setLogbackMarkers(sc);
 		UUID organisationUuid = UUID.fromString(uuid);
@@ -113,6 +116,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
 		super.setLogbackMarkers(sc);
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"Organisation(s)",
 				"Organisation Id", uuid,
 				"SearchData", searchData);
 

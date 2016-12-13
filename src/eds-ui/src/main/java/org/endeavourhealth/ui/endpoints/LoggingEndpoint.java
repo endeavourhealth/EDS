@@ -32,7 +32,10 @@ public final class LoggingEndpoint extends AbstractEndpoint {
         @QueryParam("serviceId") String serviceId,
         @QueryParam("level") String level) throws Exception {
         super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Logging Events - Page : " + page.toString() + " Service : " + serviceId + " Level : " + level);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Logging Events",
+            "Page", page.toString(),
+            "Service", serviceId,
+            "Level",level);
 
         LoggingManager db = new LoggingManager();
 
@@ -53,7 +56,8 @@ public final class LoggingEndpoint extends AbstractEndpoint {
     public Response getStackTrace(@Context SecurityContext sc, @QueryParam("eventId") Long eventId) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-            "Stack Trace", eventId);
+            "Stack Trace",
+            "EventId", eventId);
 
         LoggingManager db = new LoggingManager();
 

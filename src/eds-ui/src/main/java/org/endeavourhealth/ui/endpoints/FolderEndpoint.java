@@ -124,7 +124,8 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     @RequiresAdmin
     public Response deleteFolder(@Context SecurityContext sc, JsonFolder folderParameters) throws Exception {
         super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete, folderParameters);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete, "Folder",
+            "Parameters", folderParameters);
 
         UUID orgUuid = getOrganisationUuidFromToken(sc);
         UUID userUuid = SecurityUtils.getCurrentUserId(sc);
@@ -162,6 +163,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     public Response getFolders(@Context SecurityContext sc, @QueryParam("folderType") int folderType, @QueryParam("parentUuid") String parentUuidStr) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Folders",
             "Folder Type", folderType,
             "Parent Uuid", parentUuidStr);
 
@@ -293,6 +295,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     public Response getFolderContents(@Context SecurityContext sc, @QueryParam("folderUuid") String uuidStr) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "FolderContents",
             "Folder Id", uuidStr);
 
         LibraryRepository repository = new LibraryRepository();

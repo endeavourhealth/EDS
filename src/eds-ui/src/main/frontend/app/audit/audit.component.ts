@@ -6,6 +6,7 @@ import {AuditService} from "./audit.service";
 import {User} from "../users/models/User";
 import {Organisation} from "../organisations/models/Organisation";
 import {AuditEvent} from "./models/AuditEvent";
+import {AuditEventDialog} from "./auditEvent.dialog";
 
 @Component({
 	template : require('./audit.html')
@@ -136,5 +137,17 @@ export class AuditComponent {
 				return false;
 			}
 		);
+	}
+
+	getDataTitle(data : string) {
+		if (!data || data === '')
+			return 'None';
+
+		let arrayOfLines = data.match(/[^\r\n]+/g);
+		return arrayOfLines[0];
+	}
+
+	viewData(event : AuditEvent) {
+		AuditEventDialog.open(this.$modal, this.getDataTitle(event.data), event);
 	}
 }

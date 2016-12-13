@@ -49,6 +49,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     public Response getLibraryItem(@Context SecurityContext sc, @QueryParam("uuid") String uuidStr) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "LibraryItem",
             "Item Id", uuidStr);
 
         UUID libraryItemUuid = UUID.fromString(uuidStr);
@@ -79,7 +80,8 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     public Response saveLibraryItem(@Context SecurityContext sc, LibraryItem libraryItem) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
-            "Library Item", libraryItem);
+            "LibraryItem",
+            "Item", libraryItem);
 
         LibraryRepository repository = new LibraryRepository();
 
@@ -175,7 +177,8 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     public Response deleteLibraryItem(@Context SecurityContext sc, LibraryItem libraryItem) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
-            "Library Item", libraryItem);
+            "LibraryItem",
+            "Item", libraryItem);
 
         UUID libraryItemUuid = parseUuidFromStr(libraryItem.getUuid());
         UUID orgUuid = getOrganisationUuidFromToken(sc);
@@ -200,7 +203,8 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     public Response getContentNamesForReportLibraryItem(@Context SecurityContext sc, @QueryParam("uuid") String uuidStr) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-            "Content Names", uuidStr);
+            "ContentForReport",
+            "ReportId", uuidStr);
 
         LibraryRepository repository = new LibraryRepository();
 
@@ -239,7 +243,8 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     public Response moveLibraryItems(@Context SecurityContext sc, JsonMoveItems parameters) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Move,
-            "Move parameters", parameters);
+            "MoveItem",
+            "Parameters", parameters);
 
         UUID orgUuid = getOrganisationUuidFromToken(sc);
         UUID userUuid = SecurityUtils.getCurrentUserId(sc);
@@ -262,7 +267,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     public Response getSystems(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-            "Entity Type", "Systems");
+            "Systems");
 
         DefinitionItemType itemType = DefinitionItemType.System;
 
@@ -347,7 +352,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     public Response getQueries(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-            "Entity Type", "Queries");
+            "Queries");
 
         DefinitionItemType itemType = DefinitionItemType.Query;
 
@@ -394,7 +399,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     public Response getDataSets(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-            "Entity Type", "Data sets");
+            "Data sets");
 
         DefinitionItemType itemType = DefinitionItemType.DataSet;
 
@@ -441,7 +446,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     public Response getProtocols(@Context SecurityContext sc, @QueryParam("serviceId") String serviceId) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-            "Entity Type", "Protocols");
+            "Protocols");
 
         List<LibraryItem> ret = LibraryRepositoryHelper.getProtocolsByServiceId(serviceId);
 

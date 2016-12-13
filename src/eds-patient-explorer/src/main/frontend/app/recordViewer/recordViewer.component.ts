@@ -10,7 +10,7 @@ import {UIObservation} from "./models/resources/clinical/UIObservation";
 import {Component, ViewChild} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {UIAllergy} from "./models/resources/clinical/UIAllergy";
-import {UIImmunization} from "./models/resources/clinical/UIImmunization";
+import {UIImmunisation} from "./models/resources/clinical/UIImmunisation";
 import {UIFamilyHistory} from "./models/resources/clinical/UIFamilyHistory";
 import {UIMedicationStatement} from "./models/resources/clinical/UIMedicationStatement";
 
@@ -69,8 +69,8 @@ export class RecordViewerComponent {
 				case 'allergies' :
 					this.loadAllergies();
 					break;
-				case 'immunizations' :
-					this.loadImmunizations();
+				case 'immunisations' :
+					this.loadImmunisations();
 					break;
 				case 'familyHistory' :
 					this.loadFamilyHistory();
@@ -79,7 +79,7 @@ export class RecordViewerComponent {
 					this.loadProblems();
 					this.loadAllergies();
 					this.loadMedication();
-					this.loadImmunizations();
+					this.loadImmunisations();
 					break;
 			}
 		}
@@ -105,7 +105,7 @@ export class RecordViewerComponent {
 			this.recordViewerService.getMedication(ctrl.patient.patient.patientId)
 				.subscribe(
 					(result : UIMedicationStatement[]) => ctrl.patient.medication = linq(result)
-						.OrderByDescending(t => t.dateAuthorized.date)
+						.OrderByDescending(t => t.dateAuthorised.date)
 						.ToArray()
 				);
 		}
@@ -166,16 +166,16 @@ export class RecordViewerComponent {
 						.ToArray());
 		}
 
-	public loadImmunizations(): void {
-		if (this.patient.immunizations != null)
+	public loadImmunisations(): void {
+		if (this.patient.immunisations != null)
 			return;
 
 		let vm = this;
 		vm
 			.recordViewerService
-			.getImmunizations(vm.patient.patient.patientId)
-			.subscribe((result: UIImmunization[]) =>
-				vm.patient.immunizations = linq(result)
+			.getImmunisations(vm.patient.patient.patientId)
+			.subscribe((result: UIImmunisation[]) =>
+				vm.patient.immunisations = linq(result)
 					.OrderByDescending(t => t.effectiveDate.date)
 					.ToArray());
 	}

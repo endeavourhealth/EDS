@@ -30,7 +30,7 @@ public final class UserEndpoint extends AbstractEndpoint {
     @Path("/details")
     public Response userDetails(@Context SecurityContext sc) throws Exception {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-            "Level", "Details");
+            "User Details");
         return Response
                 .ok()
                 .entity(SecurityUtils.getCurrentUser(sc))
@@ -41,7 +41,7 @@ public final class UserEndpoint extends AbstractEndpoint {
     @Path("/account")
     public Response userAccount(@Context SecurityContext sc) throws Exception {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-            "Level", "Account");
+            "User Account");
 
         String url = String.format(ConfigService.instance().getAuthConfig().getAuthServerUrl() + "/realms/%s/account",
                 SecurityUtils.getKeycloakSecurityContext(sc).getRealm());

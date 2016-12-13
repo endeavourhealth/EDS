@@ -1,5 +1,5 @@
 import {UIClinicalResource} from "./UIClinicalResource";
 
-export class UIImmunization extends UIClinicalResource {
+export class UIImmunisation extends UIClinicalResource {
 
 }

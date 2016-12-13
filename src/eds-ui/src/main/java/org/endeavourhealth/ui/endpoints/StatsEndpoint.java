@@ -37,6 +37,7 @@ public final class StatsEndpoint extends AbstractEndpoint {
                                          @QueryParam("systemList") List<String> systems) throws Exception {
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Statistics",
             "Service list", services,
             "System list", systems);
 

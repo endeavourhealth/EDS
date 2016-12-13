@@ -202,22 +202,14 @@
             <version>${postgresql.version}</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.hibernate/hibernate-entitymanager -->
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-entitymanager</artifactId>
-            <version>${hibernate.version}</version>
-        </dependency>
-
 
         <!-- dependent on EDS-core -->
 
         <dependency>
             <groupId>com.github.endeavourhealth.Common</groupId>
             <artifactId>eds-ui-core</artifactId>
-            <version>1.4</version>
+            <version>${eds-common.version}</version>
         </dependency>
-
 
         <!-- dependent on EDS-transforms -->
 
