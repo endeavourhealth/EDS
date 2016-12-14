@@ -11,6 +11,7 @@ import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Component, OnInit, ViewChild, EventEmitter, Output, Input} from "@angular/core";
 import {ITreeOptions, TreeNode, TreeComponent} from "angular2-tree-component";
 import {Observable} from "rxjs";
+import {ITreeNode} from "angular2-tree-component/dist/defs/api";
 
 @Component({
 	selector : 'library-folder',
@@ -97,7 +98,7 @@ export class FolderComponent implements OnInit {
 		this.moduleStateService.setState(this.id, state);
 	}
 
-	getChildren(node : TreeNode) {
+	getChildren(node : ITreeNode) {
 		var vm = this;
 		let observable = Observable.create(observer => {
 			vm.folderService.getFolders(1, node.id)
