@@ -1,7 +1,7 @@
 package org.endeavourhealth.queuereader;
 
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
-import org.endeavourhealth.core.engineConfiguration.EngineConfigurationSerializer;
+import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.utility.XmlSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,25 +9,23 @@ import org.slf4j.LoggerFactory;
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 	private static final String CONFIG_XSD = "QueueReaderConfiguration.xsd";
-	private static final String CONFIG_RESOURCE = "QueueReaderConfiguration.xml";
 
 	public static void main(String[] args) throws Exception {
 		LOG.info("--------------------------------------------------");
 		LOG.info("EDS Queue Reader");
 		LOG.info("--------------------------------------------------");
 
-		// Load config - from file if passed in, otherwise from resources
-		QueueReaderConfiguration configuration = null;
-		if (args.length > 0) {
-			LOG.info("Loading configuration file (" + args[0] + ")");
-			configuration = XmlSerializer.deserializeFromFile(QueueReaderConfiguration.class, args[0], CONFIG_XSD);
-		} else {
-			LOG.info("Loading configuration file from resource " + CONFIG_RESOURCE);
-			configuration = XmlSerializer.deserializeFromResource(QueueReaderConfiguration.class, CONFIG_RESOURCE, CONFIG_XSD);
+		if (args.length != 1) {
+			LOG.error("Usage: queuereader config_id");
+			return;
 		}
 
-		//load common config
-		EngineConfigurationSerializer.loadConfigFromArgIfPossible(args, 1);
+		LOG.info("Initialising config manager");
+		ConfigManager.Initialize("queuereader");
+
+		LOG.info("Fetching queuereader configuration");
+		String configXml = ConfigManager.getConfiguration(args[0]);
+		QueueReaderConfiguration configuration = XmlSerializer.deserializeFromString(QueueReaderConfiguration.class, configXml, CONFIG_XSD);
 
 		// Instantiate rabbit handler
 		LOG.info("Creating EDS queue reader");

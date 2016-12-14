@@ -30,9 +30,13 @@
     </servlet-mapping>
 
     <!--register our Startup class as a servlet listener so we can perform one-time setup-->
+    <context-param>
+        <param-name>app_id</param-name>
+        <param-value>messaging-api</param-value>
+    </context-param>
     <listener>
         <listener-class>
-            org.endeavourhealth.messagingapi.configuration.Startup
+            org.endeavourhealth.coreui.framework.StartupConfig
         </listener-class>
     </listener>
 

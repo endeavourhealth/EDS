@@ -20,7 +20,7 @@
         <dependency>
             <groupId>com.github.endeavourhealth.Common</groupId>
             <artifactId>eds-core</artifactId>
-            <version>1.3</version>
+            <version>${eds-common.version}</version>
         </dependency>
 
         <dependency>

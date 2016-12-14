@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.cache.CacheManager;
 import org.endeavourhealth.core.cache.ICacheable;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
-import org.endeavourhealth.core.data.config.ConfigKeys;
-import org.endeavourhealth.core.data.config.ConfigurationRepository;
-import org.endeavourhealth.core.data.config.models.ConfigurationResource;
+import org.endeavourhealth.core.data.config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,11 +44,11 @@ public class RoutingManager implements ICacheable {
 
 	private RouteGroup[] getRoutingMap() {
 		if (routingMap == null) {
-			ConfigurationResource routingConfig = new ConfigurationRepository().getByKey(ConfigKeys.RouteGroupings);
+			String routings = ConfigManager.getConfiguration("routings");
 
 			try {
-				routingMap = ObjectMapperPool.getInstance().readValue(routingConfig.getConfigurationData(), RouteGroup[].class);
-				LOG.debug("Routing table loaded : " + routingConfig.getConfigurationData());
+				routingMap = ObjectMapperPool.getInstance().readValue(routings, RouteGroup[].class);
+				LOG.debug("Routing table loaded : " + routings);
 			}
 			catch (Exception e) {
 				LOG.error("Error reading routing config, falling back to defaults", e);

@@ -1,7 +1,7 @@
 package org.endeavourhealth.messagingapi.endpoints;
 
 import org.endeavourhealth.core.configuration.Pipeline;
-import org.endeavourhealth.messagingapi.configuration.ConfigManager;
+import org.endeavourhealth.messagingapi.configuration.ConfigWrapper;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
@@ -17,7 +17,7 @@ public class GetData extends AbstractEndpoint {
 	@Path("/GetData")
 	@RolesAllowed({"eds_messaging_get"})
 	public Response GetData(@Context HttpHeaders headers) {
-		Pipeline pipeline = ConfigManager.getInstance().getGetData().getPipeline();
+		Pipeline pipeline = ConfigWrapper.getInstance().getGetData().getPipeline();
 		return Process(headers, null, pipeline);
 	}
 
@@ -26,7 +26,7 @@ public class GetData extends AbstractEndpoint {
 	@Path("/GetDataAsync")
 	@RolesAllowed({"eds_messaging_get"})
 	public Response GetDataAsync(@Context HttpHeaders headers) {
-		Pipeline pipeline = ConfigManager.getInstance().getGetDataAsync().getPipeline();
+		Pipeline pipeline = ConfigWrapper.getInstance().getGetDataAsync().getPipeline();
 		return Process(headers, null, pipeline);
 	}
 }
