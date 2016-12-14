@@ -6,28 +6,27 @@ import ca.uhn.hl7v2.app.HL7Service;
 import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
+import org.endeavourhealth.hl7receiver.logging.Logger;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 
-public class Hl7Channel {
-    private static final Logger LOG = LoggerFactory.getLogger(Hl7Channel.class);
+public class HL7Channel {
+    private static final Logger LOG = Logger.getLogger(HL7Channel.class);
 
     private HapiContext context;
     private HL7Service service;
     private DbChannel dbChannel;
     private Configuration configuration;
     private DataLayer dataLayer;
-    private Hl7ConnectionManager connectionManager;
-    private Hl7MessageReceiver messageReceiver;
-    private Hl7ExceptionHandler exceptionHandler;
+    private HL7ConnectionManager connectionManager;
+    private HL7MessageReceiver messageReceiver;
+    private HL7ExceptionHandler exceptionHandler;
 
-    private Hl7Channel() {
+    private HL7Channel() {
     }
 
-    public Hl7Channel(DbChannel dbChannel, Configuration configuration) throws SQLException {
+    public HL7Channel(DbChannel dbChannel, Configuration configuration) throws SQLException {
         Validate.notNull(dbChannel);
         Validate.notBlank(dbChannel.getChannelName());
         Validate.isTrue(dbChannel.getPortNumber() > 0);
@@ -38,9 +37,9 @@ public class Hl7Channel {
         this.dataLayer = new DataLayer(configuration.getDatabaseConnection());
 
         context = new DefaultHapiContext();
-        connectionManager = new Hl7ConnectionManager(configuration, dbChannel);
-        messageReceiver = new Hl7MessageReceiver(configuration, dbChannel, connectionManager);
-        exceptionHandler = new Hl7ExceptionHandler();
+        connectionManager = new HL7ConnectionManager(configuration, dbChannel);
+        messageReceiver = new HL7MessageReceiver(configuration, dbChannel, connectionManager);
+        exceptionHandler = new HL7ExceptionHandler();
         service = context.newServer(dbChannel.getPortNumber(), false);
 
         service.registerApplication("*", "*", messageReceiver);

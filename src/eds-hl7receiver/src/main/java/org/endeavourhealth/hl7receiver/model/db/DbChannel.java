@@ -1,15 +1,54 @@
 package org.endeavourhealth.hl7receiver.model.db;
 
+import java.util.List;
+
 public class DbChannel {
     private int channelId;
     private String channelName;
     private int portNumber;
     private boolean useTls;
-    private String remoteApplication;
-    private String remoteFacility;
-    private String localApplication;
-    private String localFacility;
-    private boolean useAcks;
+    private String sendingApplication;
+    private String sendingFacility;
+    private String receivingApplication;
+    private String receivingFacility;
+    private List<DbChannelMessageType> dbChannelMessageTypes;
+
+    public String getSendingApplication() {
+        return sendingApplication;
+    }
+
+    public DbChannel setSendingApplication(String sendingApplication) {
+        this.sendingApplication = sendingApplication;
+        return this;
+    }
+
+    public String getSendingFacility() {
+        return sendingFacility;
+    }
+
+    public DbChannel setSendingFacility(String sendingFacility) {
+        this.sendingFacility = sendingFacility;
+        return this;
+    }
+
+    public String getReceivingApplication() {
+        return receivingApplication;
+    }
+
+    public DbChannel setReceivingApplication(String receivingApplication) {
+        this.receivingApplication = receivingApplication;
+        return this;
+    }
+
+    public String getReceivingFacility() {
+        return receivingFacility;
+    }
+
+    public DbChannel setReceivingFacility(String receivingFacility) {
+        this.receivingFacility = receivingFacility;
+        return this;
+    }
+
     private String notes;
 
     public int getChannelId() {
@@ -48,57 +87,21 @@ public class DbChannel {
         return this;
     }
 
-    public String getRemoteApplication() {
-        return remoteApplication;
-    }
-
-    public DbChannel setRemoteApplication(String remoteApplication) {
-        this.remoteApplication = remoteApplication;
-        return this;
-    }
-
-    public String getRemoteFacility() {
-        return remoteFacility;
-    }
-
-    public DbChannel setRemoteFacility(String remoteFacility) {
-        this.remoteFacility = remoteFacility;
-        return this;
-    }
-
-    public String getLocalApplication() {
-        return localApplication;
-    }
-
-    public DbChannel setLocalApplication(String localApplication) {
-        this.localApplication = localApplication;
-        return this;
-    }
-
-    public String getLocalFacility() {
-        return localFacility;
-    }
-
-    public DbChannel setLocalFacility(String localFacility) {
-        this.localFacility = localFacility;
-        return this;
-    }
-
-    public boolean isUseAcks() {
-        return useAcks;
-    }
-
-    public DbChannel setUseAcks(boolean useAcks) {
-        this.useAcks = useAcks;
-        return this;
-    }
-
     public String getNotes() {
         return notes;
     }
 
     public DbChannel setNotes(String notes) {
         this.notes = notes;
+        return this;
+    }
+
+    public List<DbChannelMessageType> getDbChannelMessageTypes() {
+        return dbChannelMessageTypes;
+    }
+
+    public DbChannel setDbChannelMessageTypes(List<DbChannelMessageType> dbChannelMessageTypes) {
+        this.dbChannelMessageTypes = dbChannelMessageTypes;
         return this;
     }
 }

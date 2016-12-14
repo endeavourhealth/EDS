@@ -8,6 +8,7 @@ as $$
 declare
 	configuration_instance refcursor;
 	configuration_channel refcursor;
+	configuration_channel_message_type refcursor;
 begin
 
 	------------------------------------------------------
@@ -33,16 +34,27 @@ begin
 		c.port_number,
 		c.is_active,
 		c.use_tls,
-		c.remote_application,
-		c.remote_facility,
-		c.local_application,
-		c.local_facility,
+		c.sending_application,
+		c.sending_facility,
+		c.recipient_application,
+		c.recipient_facility,
 		c.port_number,
-		c.use_acks,
 		c.notes
 	from configuration.channel c;
 	
 	return next configuration_channel;
+	
+	------------------------------------------------------
+	configuration_channel_message_type = 'configuration_channel_message_type';
+
+	open configuration_channel_message_type for
+	select
+		t.channel_id,
+		t.message_type_id,
+		t.is_active
+	from configuration.channel_message_type t;
+	
+	return next configuration_channel_message_type;
 	
 end;
 $$ language plpgsql;

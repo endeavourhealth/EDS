@@ -1,14 +1,13 @@
 package org.endeavourhealth.hl7receiver;
 
-import org.endeavourhealth.hl7receiver.hl7.Hl7Service;
+import org.endeavourhealth.hl7receiver.hl7.HL7Service;
+import org.endeavourhealth.hl7receiver.logging.Logger;
 import org.endeavourhealth.hl7receiver.model.exceptions.LogbackConfigurationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Main {
 
 	private static final String PROGRAM_DISPLAY_NAME = "EDS HL7 receiver";
-	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+	private static final Logger LOG = Logger.getLogger(Main.class);
 
 	public static void main(String[] args) {
 		try {
@@ -18,7 +17,7 @@ public class Main {
 
 			Configuration configuration = Configuration.getInstance();
 
-			Hl7Service serviceManager = new Hl7Service(configuration);
+			HL7Service serviceManager = new HL7Service(configuration);
             serviceManager.start();
 
             LOG.info("Press any key to exit...");

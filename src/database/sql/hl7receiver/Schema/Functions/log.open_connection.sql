@@ -32,7 +32,7 @@ begin
 		local_port,
 		remote_host,
 		remote_port,
-		connected
+		connect_date
 	)
 	values
 	(

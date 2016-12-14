@@ -1,8 +1,9 @@
 
-create or replace function log.add_message
+create or replace function log.log_message
 (
 	_connection_id integer,
-	_inbound_payload text
+	_inbound_payload text,
+	_outbound_payload text
 )
 returns integer
 as $$
@@ -13,14 +14,16 @@ begin
 	insert into log.message
 	(
 		connection_id,
-		datestamp,
-		inbound_payload
+		log_date,
+		inbound_payload,
+		outbound_payload
 	)
 	values
 	(
 		_connection_id,
 		now(),
-		_inbound_payload
+		_inbound_payload,
+		_outbound_payload
 	)
 	returning message_id into _message_id;
 	

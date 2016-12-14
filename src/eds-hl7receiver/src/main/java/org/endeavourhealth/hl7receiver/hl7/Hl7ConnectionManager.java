@@ -4,27 +4,26 @@ import ca.uhn.hl7v2.app.Connection;
 import ca.uhn.hl7v2.app.ConnectionListener;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
+import org.endeavourhealth.hl7receiver.logging.Logger;
 import org.endeavourhealth.hl7receiver.model.application.RemoteConnection;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
 import org.endeavourhealth.utilities.postgres.PgStoredProcException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Hl7ConnectionManager implements ConnectionListener  {
-    private static final Logger LOG = LoggerFactory.getLogger(Hl7ConnectionManager.class);
+public class HL7ConnectionManager implements ConnectionListener  {
+    private static final Logger LOG = Logger.getLogger(HL7ConnectionManager.class);
 
     private Configuration configuration;
     private DbChannel dbChannel;
     private DataLayer dataLayer;
     private ConcurrentHashMap<RemoteConnection, Integer> connectionIds = new ConcurrentHashMap<>();
 
-    private Hl7ConnectionManager() {
+    private HL7ConnectionManager() {
     }
 
-    public Hl7ConnectionManager(Configuration configuration, DbChannel dbChannel) throws SQLException {
+    public HL7ConnectionManager(Configuration configuration, DbChannel dbChannel) throws SQLException {
         this.configuration = configuration;
         this.dbChannel = dbChannel;
         this.dataLayer = new DataLayer(configuration.getDatabaseConnection());

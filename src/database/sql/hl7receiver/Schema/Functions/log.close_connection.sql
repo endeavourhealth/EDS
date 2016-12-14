@@ -8,7 +8,7 @@ as $$
 begin
 
 	update log.connection
-	set disconnected = now()
+	set disconnect_date = now()
 	where connection_id = _connection_id;
 	
 end;

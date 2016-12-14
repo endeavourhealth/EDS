@@ -1,6 +1,7 @@
 package org.endeavourhealth.hl7receiver;
 
 import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.hl7receiver.logging.Logger;
 import org.endeavourhealth.hl7receiver.model.db.DbConfiguration;
 import org.endeavourhealth.hl7receiver.model.exceptions.ConfigurationException;
 import org.endeavourhealth.hl7receiver.model.exceptions.LogbackConfigurationException;
@@ -11,8 +12,6 @@ import org.endeavourhealth.utilities.configuration.model.DatabaseType;
 import org.endeavourhealth.utilities.configuration.model.LocalConfiguration;
 import org.endeavourhealth.utilities.postgres.PgDataSource;
 import org.endeavourhealth.utilities.streams.StreamExtension;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.io.File;
@@ -21,7 +20,7 @@ import java.sql.SQLException;
 public final class Configuration
 {
     // class members //
-    private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
+    private static final Logger LOG = Logger.getLogger(Configuration.class);
     private static final String LOGBACK_ENVIRONMENT_VARIABLE = "LOGBACK_CONFIG_FILE";
 
     private static Configuration instance = null;
@@ -43,7 +42,16 @@ public final class Configuration
     {
         validateLogbackConfiguration();
         loadLocalConfiguration();
+        configureLogger();
         loadDbConfiguration();
+    }
+
+    private void configureLogger() throws ConfigurationException {
+        try {
+            Logger.setDBLogger(new DataLayer(getDatabaseConnection()));
+        } catch (Exception e) {
+            throw new ConfigurationException("Error setting logger data source", e);
+        }
     }
 
     public void validateLogbackConfiguration() throws ConfigurationException {
