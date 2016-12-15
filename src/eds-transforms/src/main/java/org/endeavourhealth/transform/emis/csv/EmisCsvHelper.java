@@ -8,6 +8,7 @@ import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.data.transform.EmisRepository;
 import org.endeavourhealth.core.data.transform.models.EmisAdminResourceCache;
 import org.endeavourhealth.core.data.transform.models.EmisCsvCodeMap;
+import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.ClinicalCodeNotFoundException;
@@ -38,11 +39,11 @@ public class EmisCsvHelper {
     private ResourceRepository resourceRepository = new ResourceRepository();
 
     //some resources are referred to by others, so we cache them here for when we need them
-    private Map<String, Condition> problemMap = new HashMap<>();
+    private Map<String, String> problemMap = new HashMap<>(); //changed to cache the conditions as JSON strings
     private Map<String, ReferralRequest> referralMap = new HashMap<>();
     private Map<String, List<String>> observationChildMap = new HashMap<>();
     private Map<String, List<String>> problemChildMap = new HashMap<>();
-    private Map<String, DateTimeType> issueRecordDateMap = new HashMap<>();
+    private Map<String, DateTimeType> drugRecordLastIssueDateMap = new HashMap<>();
     private Map<String, List<Observation.ObservationComponentComponent>> bpComponentMap = new HashMap<>();
     private Map<String, SessionPractitioners> sessionPractitionerMap = new HashMap<>();
     private Map<String, List<String>> organisationLocationMap = new HashMap<>();
@@ -260,12 +261,21 @@ public class EmisCsvHelper {
         return referralMap.remove(createUniqueId(patientGuid, observationGuid));
     }
 
-    public void cacheProblem(String observationGuid, String patientGuid, Condition fhirCondition) {
-        problemMap.put(createUniqueId(patientGuid, observationGuid), fhirCondition);
+    public void cacheProblem(String observationGuid, String patientGuid, Condition fhirCondition) throws Exception {
+        //the Condition java objects are huge in memory, so save some by caching as a JSON string
+        String conditionJson = FhirSerializationHelper.serializeResource(fhirCondition);
+        problemMap.put(createUniqueId(patientGuid, observationGuid), conditionJson);
+        //problemMap.put(createUniqueId(patientGuid, observationGuid), fhirCondition);
     }
 
-    public Condition findProblem(String observationGuid, String patientGuid) {
-        return problemMap.remove(createUniqueId(patientGuid, observationGuid));
+    public Condition findProblem(String observationGuid, String patientGuid) throws Exception {
+        String conditionJson = problemMap.remove(createUniqueId(patientGuid, observationGuid));
+        if (conditionJson != null) {
+            return (Condition)FhirSerializationHelper.deserializeResource(conditionJson);
+        } else {
+            return null;
+        }
+        //return problemMap.remove(createUniqueId(patientGuid, observationGuid));
     }
 
     public List<String> getAndRemoveObservationParentRelationships(String parentObservationGuid, String patientGuid) {
@@ -505,14 +515,14 @@ public class EmisCsvHelper {
 
     public void cacheDrugRecordDate(String drugRecordGuid, String patientGuid, DateTimeType dateTime) {
         String uniqueId = createUniqueId(patientGuid, drugRecordGuid);
-        DateTimeType previous = issueRecordDateMap.get(uniqueId);
+        DateTimeType previous = drugRecordLastIssueDateMap.get(uniqueId);
         if (previous == null
                 || dateTime.after(previous)) {
-            issueRecordDateMap.put(uniqueId, dateTime);
+            drugRecordLastIssueDateMap.put(uniqueId, dateTime);
         }
     }
     public DateTimeType getDrugRecordDate(String drugRecordId, String patientGuid) {
-        return issueRecordDateMap.get(createUniqueId(patientGuid, drugRecordId));
+        return drugRecordLastIssueDateMap.remove(createUniqueId(patientGuid, drugRecordId));
     }
 
     public void cacheBpComponent(String parentObservationGuid, String patientGuid, Observation.ObservationComponentComponent component) {
@@ -834,10 +844,14 @@ public class EmisCsvHelper {
     public void processRemainingProblems(CsvProcessor csvProcessor) throws Exception {
 
         for (String locallyUniqueId: problemMap.keySet()) {
-            Condition fhirProblem = problemMap.get(locallyUniqueId);
+
+            //the conditions are cached as strings now
+            //Condition fhirProblem = problemMap.get(locallyUniqueId);
+            String conditionJson = problemMap.get(locallyUniqueId);
+            Condition fhirProblem = (Condition)FhirSerializationHelper.deserializeResource(conditionJson);
 
             //if the resource has the Condition profile URI, then it means we have a pre-existing problem
-            //that's now been deleted from being a problem, but the root Obervation itself has not (i.e.
+            //that's now been deleted from being a problem, but the root Observation itself has not (i.e.
             //the problem has been down-graded from being a problem to just an observation)
             if (isCondition(fhirProblem)) {
                 downgradeExistingProblemToCondition(locallyUniqueId, csvProcessor);
@@ -846,7 +860,6 @@ public class EmisCsvHelper {
                 updateExistingProblem(fhirProblem, csvProcessor);
 
             }
-
         }
     }
 
