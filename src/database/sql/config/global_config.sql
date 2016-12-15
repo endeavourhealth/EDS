@@ -7,6 +7,7 @@ VALUES
   ]
  }' );
 
+
 INSERT INTO config
 (app_id, config_id, config_data)
 VALUES
@@ -36,7 +37,21 @@ VALUES
     <includeCallerData>true</includeCallerData>
   </appender>
 
+  <!-- file logging uses this element to name log files using the time-->
   <timestamp key="bySecond" datePattern="yyyyMMdd''T''HHmmss"/>
+
+  <!-- file logging uses this element to locate the log files in a folder using a java system property-->
+  <property scope="context" name="LOGBACK_FOLDER" value="${location.of.the.log.folder}" />
+
+  <!--
+  <appender name="file" class="ch.qos.logback.core.FileAppender">
+    <file>/var/log/${LOGBACK_FOLDER}/log-${bySecond}.txt</file>
+    <encoder>
+      <pattern>%d{dd MMM HH:mm:ss.SSS} [%thread] %-5level %logger{10}:%-3line - %msg%n
+      </pattern>
+    </encoder>
+  </appender>
+  -->
 
   <!--================================-->
   <!--logging settings for development-->
@@ -56,12 +71,14 @@ VALUES
   <root level="INFO">
     <appender-ref ref="stdout" />
     <appender-ref ref="db_async" />
+    <!--appender-ref ref="file" /-->
   </root>
 
   <!-- specify a shutdown hook for logging, so all loggers are flushed before app exit -->
   <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
 
 </configuration>' );
+
 
 
 INSERT INTO config

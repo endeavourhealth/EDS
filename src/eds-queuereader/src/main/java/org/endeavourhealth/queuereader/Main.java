@@ -11,9 +11,6 @@ public class Main {
 	private static final String CONFIG_XSD = "QueueReaderConfiguration.xsd";
 
 	public static void main(String[] args) throws Exception {
-		LOG.info("--------------------------------------------------");
-		LOG.info("EDS Queue Reader");
-		LOG.info("--------------------------------------------------");
 
 		if (args.length != 1) {
 			LOG.error("Usage: queuereader config_id");
@@ -22,6 +19,10 @@ public class Main {
 
 		LOG.info("Initialising config manager");
 		ConfigManager.Initialize("queuereader");
+
+		LOG.info("--------------------------------------------------");
+		LOG.info("EDS Queue Reader " + args[0]);
+		LOG.info("--------------------------------------------------");
 
 		LOG.info("Fetching queuereader configuration");
 		String configXml = ConfigManager.getConfiguration(args[0]);
