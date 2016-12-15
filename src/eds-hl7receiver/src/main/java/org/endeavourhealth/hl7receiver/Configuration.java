@@ -1,10 +1,8 @@
 package org.endeavourhealth.hl7receiver;
 
-import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.hl7receiver.logging.Logger;
 import org.endeavourhealth.hl7receiver.model.db.DbConfiguration;
 import org.endeavourhealth.hl7receiver.model.exceptions.ConfigurationException;
-import org.endeavourhealth.hl7receiver.model.exceptions.LogbackConfigurationException;
 import org.endeavourhealth.utilities.configuration.LocalConfigurationException;
 import org.endeavourhealth.utilities.configuration.LocalConfigurationLoader;
 import org.endeavourhealth.utilities.configuration.model.DatabaseConnection;
@@ -14,14 +12,12 @@ import org.endeavourhealth.utilities.postgres.PgDataSource;
 import org.endeavourhealth.utilities.streams.StreamExtension;
 
 import javax.sql.DataSource;
-import java.io.File;
 import java.sql.SQLException;
 
 public final class Configuration
 {
     // class members //
     private static final Logger LOG = Logger.getLogger(Configuration.class);
-    private static final String LOGBACK_ENVIRONMENT_VARIABLE = "LOGBACK_CONFIG_FILE";
 
     private static Configuration instance = null;
 
@@ -40,7 +36,6 @@ public final class Configuration
 
     private Configuration() throws ConfigurationException
     {
-        validateLogbackConfiguration();
         loadLocalConfiguration();
         configureLogger();
         loadDbConfiguration();
@@ -52,20 +47,6 @@ public final class Configuration
         } catch (Exception e) {
             throw new ConfigurationException("Error setting logger data source", e);
         }
-    }
-
-    public void validateLogbackConfiguration() throws ConfigurationException {
-        String logbackConfiguration = System.getenv(LOGBACK_ENVIRONMENT_VARIABLE);
-
-        if (StringUtils.isBlank(logbackConfiguration))
-            throw new LogbackConfigurationException("FATAL ERROR: Please set environment variable " + LOGBACK_ENVIRONMENT_VARIABLE);
-
-        File file = new File(logbackConfiguration);
-
-        if ((!file.exists()) || (!file.isFile()))
-            throw new LogbackConfigurationException("FATAL ERROR: Could not find " + LOGBACK_ENVIRONMENT_VARIABLE);
-
-        LOG.info("Using base logback config file at " + logbackConfiguration);
     }
 
     private void loadLocalConfiguration() throws ConfigurationException {

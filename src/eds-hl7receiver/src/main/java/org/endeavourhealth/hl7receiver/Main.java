@@ -1,5 +1,6 @@
 package org.endeavourhealth.hl7receiver;
 
+import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.hl7receiver.hl7.HL7Service;
 import org.endeavourhealth.hl7receiver.logging.Logger;
 import org.endeavourhealth.hl7receiver.model.exceptions.LogbackConfigurationException;
@@ -7,11 +8,14 @@ import org.endeavourhealth.hl7receiver.model.exceptions.LogbackConfigurationExce
 public class Main {
 
 	private static final String PROGRAM_DISPLAY_NAME = "EDS HL7 receiver";
+	private static final String PROGRAM_CONFIG_MANAGER_NAME = "eds-hl7receiver";
 	private static final Logger LOG = Logger.getLogger(Main.class);
 
 	public static void main(String[] args) {
 		try {
-            LOG.info("--------------------------------------------------");
+            ConfigManager.Initialize(PROGRAM_CONFIG_MANAGER_NAME);
+
+		    LOG.info("--------------------------------------------------");
             LOG.info(PROGRAM_DISPLAY_NAME);
             LOG.info("--------------------------------------------------");
 
