@@ -36,8 +36,8 @@ begin
 		c.use_tls,
 		c.sending_application,
 		c.sending_facility,
-		c.recipient_application,
-		c.recipient_facility,
+		c.receiving_application,
+		c.receiving_facility,
 		c.port_number,
 		c.notes
 	from configuration.channel c;
@@ -50,8 +50,8 @@ begin
 	open configuration_channel_message_type for
 	select
 		t.channel_id,
-		t.message_type_id,
-		t.is_active
+		t.message_type,
+		t.is_allowed		
 	from configuration.channel_message_type t;
 	
 	return next configuration_channel_message_type;

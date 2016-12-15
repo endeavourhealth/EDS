@@ -91,6 +91,9 @@ public final class Configuration
         try {
             DataLayer dataLayer = new DataLayer(getDatabaseConnection());
             this.dbConfiguration = dataLayer.getConfiguration(getInstanceName());
+
+            if (this.dbConfiguration.getDbInstance() == null)
+                throw new ConfigurationException("No instance matching " + getInstanceName() + " found in DB configuration");
         } catch (Exception e) {
             throw new ConfigurationException("Error loading DB configuration, see inner exception", e);
         }

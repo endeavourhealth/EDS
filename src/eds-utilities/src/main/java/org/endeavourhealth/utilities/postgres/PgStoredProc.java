@@ -88,7 +88,7 @@ public class PgStoredProc
         }
 
         if (resultList == null)
-            throw new PgStoredProcException("No results returned (null list)");
+            throw new PgStoredProcException("No resultset returned (null list)");
 
         if (resultList.size() == 0)
             throw new PgStoredProcException("No results returned");
@@ -120,6 +120,31 @@ public class PgStoredProc
         }
     }
 
+    public <T extends Object> T executeMultiQuerySingleOrNoRow(IResultSetPopulator<T> firstRowMapper) throws PgStoredProcException
+    {
+        List<T> resultList;
+
+        try
+        {
+            resultList = executeMultiQuery(firstRowMapper);
+        }
+        catch (PgStoredProcException e)
+        {
+            throw new PgStoredProcException("executeMultiQuerySingleOrNoRow error, see inner exception", e.getCause());
+        }
+
+        if (resultList == null)
+            throw new PgStoredProcException("No resultset returned (null list)");
+
+        if (resultList.size() == 0)
+            return null;
+
+        if (resultList.size() > 1)
+            throw new PgStoredProcException("More than one result returned");
+
+        return resultList.get(0);
+    }
+
     public <T extends Object> T executeMultiQuerySingleRow(IResultSetPopulator<T> firstRowMapper) throws PgStoredProcException
     {
         List<T> resultList;
@@ -134,7 +159,7 @@ public class PgStoredProc
         }
 
         if (resultList == null)
-            throw new PgStoredProcException("No results returned (null list)");
+            throw new PgStoredProcException("No resultset returned (null list)");
 
         if (resultList.size() == 0)
             throw new PgStoredProcException("No results returned");

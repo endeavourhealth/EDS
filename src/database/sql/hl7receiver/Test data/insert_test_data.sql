@@ -39,4 +39,5 @@ insert into configuration.channel_message_type
 	is_allowed
 )
 values
-(1, 'ADT^A04', true)
+(1, 'ADT^A04', true),
+(2, 'ACK^04', true)

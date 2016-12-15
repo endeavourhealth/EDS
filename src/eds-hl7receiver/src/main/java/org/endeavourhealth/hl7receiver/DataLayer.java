@@ -25,7 +25,7 @@ public class DataLayer implements IDBLogger {
                 .setName("configuration.get_configuration")
                 .addParameter("_instance_name", instanceName);
 
-        DbInstance dbInstance = pgStoredProc.executeMultiQuerySingleRow((resultSet) ->
+        DbInstance dbInstance = pgStoredProc.executeMultiQuerySingleOrNoRow((resultSet) ->
                 new DbInstance()
                         .setInstanceId(resultSet.getString("instance_id"))
                         .setInstanceName(resultSet.getString("instance_name"))
@@ -36,6 +36,7 @@ public class DataLayer implements IDBLogger {
                         .setChannelId(resultSet.getInt("channel_id"))
                         .setChannelName(resultSet.getString("channel_name"))
                         .setPortNumber(resultSet.getInt("port_number"))
+                        .setActive(resultSet.getBoolean("is_active"))
                         .setUseTls(resultSet.getBoolean("use_tls"))
                         .setSendingApplication(resultSet.getString("sending_application"))
                         .setSendingFacility(resultSet.getString("sending_facility"))
@@ -47,7 +48,7 @@ public class DataLayer implements IDBLogger {
                 new DbChannelMessageType()
                         .setChannelId(resultSet.getInt("channel_id"))
                         .setMessageType(resultSet.getString("message_type"))
-                        .setActive(resultSet.getBoolean("is_active")));
+                        .setAllowed(resultSet.getBoolean("is_allowed")));
 
         for (DbChannel dbChannel : dbChannels) {
             dbChannel.setDbChannelMessageTypes(
@@ -84,12 +85,23 @@ public class DataLayer implements IDBLogger {
         pgStoredProc.execute();
     }
 
-    public int logMessage(int connectionId, String inboundPayload, String outboundPayload) throws PgStoredProcException {
+    public int logMessage(
+            int channelId,
+            int connectionId,
+            String messageControlId,
+            String inboundMessageType,
+            String inboundPayload,
+            String outboundMessageType,
+            String outboundPayload) throws PgStoredProcException {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("log.log_message")
+                .addParameter("_channel_id", channelId)
                 .addParameter("_connection_id", connectionId)
+                .addParameter("_message_control_id", messageControlId)
+                .addParameter("_inbound_message_type", inboundMessageType)
                 .addParameter("_inbound_payload", inboundPayload)
+                .addParameter("_outbound_message_type", outboundMessageType)
                 .addParameter("_outbound_payload", outboundPayload);
 
         return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("log_message"));
@@ -110,32 +122,38 @@ public class DataLayer implements IDBLogger {
     }
 
     public int logDeadLetter(
+            Integer channelId,
             Integer connectionId,
             Integer localPort,
             String remoteHost,
             Integer remotePort,
-            Integer channelId,
             String sendingApplication,
             String sendingFacility,
-            String recipientApplication,
-            String recipientFacility,
+            String receivingApplication,
+            String receivingFacility,
+            String messageControlId,
+            String inboundMessageType,
             String inboundPayload,
+            String outboundMessageType,
             String outboundPayload) throws PgStoredProcException {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("log.add_dead_letter")
+                .setName("log.log_dead_letter")
+                .addParameter("_channel_id", channelId)
                 .addParameter("_connection_id", connectionId)
                 .addParameter("_local_port", localPort)
                 .addParameter("_remote_host", remoteHost)
                 .addParameter("_remote_port", remotePort)
-                .addParameter("_channel_id", channelId)
                 .addParameter("_sending_application", sendingApplication)
                 .addParameter("_sending_facility", sendingFacility)
-                .addParameter("_recipient_application", recipientApplication)
-                .addParameter("_recipient_facility", recipientFacility)
+                .addParameter("_receiving_application", receivingApplication)
+                .addParameter("_receiving_facility", receivingFacility)
+                .addParameter("_message_control_id", messageControlId)
+                .addParameter("_inbound_message_type", inboundMessageType)
                 .addParameter("_inbound_payload", inboundPayload)
+                .addParameter("_outbound_message_type", outboundMessageType)
                 .addParameter("_outbound_payload", outboundPayload);
 
-        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("add_dead_letter"));
+        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("log_dead_letter"));
     }
 }

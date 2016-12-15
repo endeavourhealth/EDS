@@ -3,7 +3,7 @@ package org.endeavourhealth.hl7receiver.model.db;
 public class DbChannelMessageType {
     private int channelId;
     private String messageType;
-    private boolean isActive;
+    private boolean isAllowed;
 
     public int getChannelId() {
         return channelId;
@@ -23,12 +23,12 @@ public class DbChannelMessageType {
         return this;
     }
 
-    public boolean isActive() {
-        return isActive;
+    public boolean isAllowed() {
+        return isAllowed;
     }
 
-    public DbChannelMessageType setActive(boolean active) {
-        isActive = active;
+    public DbChannelMessageType setAllowed(boolean allowed) {
+        isAllowed = allowed;
         return this;
     }
 }

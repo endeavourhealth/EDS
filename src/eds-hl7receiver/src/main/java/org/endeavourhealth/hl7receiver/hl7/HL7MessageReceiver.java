@@ -39,15 +39,16 @@ public class HL7MessageReceiver implements ReceivingApplication {
         Integer connectionId = null;
         HL7KeyFields hl7KeyFields = null;
         Message response = null;
+        HL7KeyFields hl7KeyFieldsResponse = null;
         UUID errorUuid = null;
 
         try {
             connectionId = getConnectionId(map);
 
+            hl7KeyFields = HL7KeyFields.parse(message);
+
             if (connectionId == null)
                 throw new MessageProcessingException("Could not determine connection");
-
-            hl7KeyFields = HL7KeyFields.parse(message);
 
             if (!isMessageControlIdPresent(hl7KeyFields))
                 throw new MessageProcessingException("Message control ID is empty");
@@ -59,11 +60,16 @@ public class HL7MessageReceiver implements ReceivingApplication {
                 throw new MessageProcessingException("Message type is not allowed");
 
             response = message.generateACK();
+            hl7KeyFieldsResponse = HL7KeyFields.parse(response);
 
             dataLayer.logMessage(
+                    dbChannel.getChannelId(),
                     connectionId,
+                    hl7KeyFields.getMessageControlId(),
+                    hl7KeyFields.getMessageType(),
                     hl7KeyFields.getEncodedMessage(),
-                    response.encode());
+                    hl7KeyFieldsResponse.getMessageType(),
+                    hl7KeyFieldsResponse.getEncodedMessage());
 
             return response;
 
@@ -73,32 +79,40 @@ public class HL7MessageReceiver implements ReceivingApplication {
                 LOG.error("Exception while processing message", e1);
 
                 Message negativeResponse = null;
-                String encodedNegativeResponse = null;
+                HL7KeyFields negativeResponseKeyFields = null;
 
                 try {
                     negativeResponse = message.generateACK(AcknowledgmentCode.AE, new HL7Exception(e1.getMessage(), e1));
-                    encodedNegativeResponse = negativeResponse.encode();
+                    negativeResponseKeyFields = HL7KeyFields.parse(negativeResponse);
+
                 } catch (Exception e2) {
                     LOG.error("Error generating negative acknowledgement", e2);
                 }
 
-                dataLayer.logDeadLetter(
-                        connectionId,
-                        dbChannel.getPortNumber(),
-                        getRemoteHost(map),
-                        getRemotePort(map),
-                        dbChannel.getChannelId(),
-                        hl7KeyFields.getSendingApplication(),
-                        hl7KeyFields.getSendingFacility(),
-                        hl7KeyFields.getReceivingApplication(),
-                        hl7KeyFields.getReceivingFacility(),
-                        hl7KeyFields.getEncodedMessage(),
-                        encodedNegativeResponse);
+                try {
+                    dataLayer.logDeadLetter(
+                            dbChannel.getChannelId(),
+                            connectionId,
+                            dbChannel.getPortNumber(),
+                            getRemoteHost(map),
+                            getRemotePort(map),
+                            hl7KeyFields.getSendingApplication(),
+                            hl7KeyFields.getSendingFacility(),
+                            hl7KeyFields.getReceivingApplication(),
+                            hl7KeyFields.getReceivingFacility(),
+                            hl7KeyFields.getMessageControlId(),
+                            hl7KeyFields.getMessageType(),
+                            hl7KeyFields.getEncodedMessage(),
+                            (negativeResponseKeyFields == null ? null : negativeResponseKeyFields.getMessageType()),
+                            (negativeResponseKeyFields == null ? null : negativeResponseKeyFields.getEncodedMessage()));
+                } catch (Exception e3) {
+                    LOG.error("Error logging dead letter", e3);
+                }
 
                 return negativeResponse;
 
-            } catch (Exception e3) {
-                LOG.error("Error logging dead letter", e3);
+            } catch (Exception e4) {
+                LOG.error("Error handling exception", e4);
             }
         }
 
@@ -120,7 +134,7 @@ public class HL7MessageReceiver implements ReceivingApplication {
         return dbChannel
                 .getDbChannelMessageTypes()
                 .stream()
-                .filter(t -> t.isActive())
+                .filter(t -> t.isAllowed())
                 .anyMatch(t -> t.getMessageType().equals(message.getMessageType()));
     }
 
@@ -133,6 +147,9 @@ public class HL7MessageReceiver implements ReceivingApplication {
     }
 
     private Integer getConnectionId(Map<String, Object> map) {
+        if (map == null)
+            return null;
+
         String remoteHost = getRemoteHost(map);
         Integer remotePort = getRemotePort(map);
 

@@ -7,6 +7,7 @@ import org.endeavourhealth.hl7receiver.model.db.DbChannel;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class HL7Service {
 
@@ -22,11 +23,22 @@ public class HL7Service {
     }
 
     private void createChannels() throws SQLException {
-        for (DbChannel dbChannel : configuration.getDbConfiguration().getDbChannels())
+        List<DbChannel> activeDbChannels = configuration
+                .getDbConfiguration()
+                .getDbChannels()
+                .stream()
+                .filter(t -> t.isActive())
+                .collect(Collectors.toList());
+
+        for (DbChannel dbChannel : activeDbChannels)
             channels.add(new HL7Channel(dbChannel, configuration));
+
     }
 
     public void start() throws InterruptedException {
+        if (channels.size() == 0)
+            LOG.info("No active channels to start");
+
         for (HL7Channel channel : channels)
             channel.start();
     }

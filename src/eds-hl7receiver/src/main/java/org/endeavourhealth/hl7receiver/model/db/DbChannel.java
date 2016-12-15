@@ -6,6 +6,7 @@ public class DbChannel {
     private int channelId;
     private String channelName;
     private int portNumber;
+    private boolean isActive;
     private boolean useTls;
     private String sendingApplication;
     private String sendingFacility;
@@ -75,6 +76,15 @@ public class DbChannel {
 
     public DbChannel setPortNumber(int portNumber) {
         this.portNumber = portNumber;
+        return this;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public DbChannel setActive(boolean active) {
+        isActive = active;
         return this;
     }
 
