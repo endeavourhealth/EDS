@@ -17,7 +17,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.UUID;
 
-public class HL7MessageReceiver implements ReceivingApplication {
+class HL7MessageReceiver implements ReceivingApplication {
     private static final Logger LOG = Logger.getLogger(HL7MessageReceiver.class);
 
     private Configuration configuration;
@@ -43,7 +43,7 @@ public class HL7MessageReceiver implements ReceivingApplication {
         UUID errorUuid = null;
 
         try {
-            connectionId = getConnectionId(map);
+            connectionId = connectionManager.getConnectionId(map);
 
             hl7KeyFields = HL7KeyFields.parse(message);
 
@@ -96,8 +96,8 @@ public class HL7MessageReceiver implements ReceivingApplication {
                             connectionId,
                             configuration.getMachineName(),
                             dbChannel.getPortNumber(),
-                            getRemoteHost(map),
-                            getRemotePort(map),
+                            connectionManager.getRemoteHost(map),
+                            connectionManager.getRemotePort(map),
                             hl7KeyFields.getSendingApplication(),
                             hl7KeyFields.getSendingFacility(),
                             hl7KeyFields.getReceivingApplication(),
@@ -140,26 +140,7 @@ public class HL7MessageReceiver implements ReceivingApplication {
                 .anyMatch(t -> t.getMessageType().equals(message.getMessageType()));
     }
 
-    private static String getRemoteHost(Map<String, Object> map) {
-        return (String)map.get(MetadataKeys.IN_SENDING_IP);
-    }
-
-    private static Integer getRemotePort(Map<String, Object> map) {
-        return (Integer)map.get(MetadataKeys.IN_SENDING_PORT);
-    }
-
-    private Integer getConnectionId(Map<String, Object> map) {
-        if (map == null)
-            return null;
-
-        String remoteHost = getRemoteHost(map);
-        Integer remotePort = getRemotePort(map);
-
-        return connectionManager.getConnectionId(remoteHost, remotePort);
-    }
-
     public boolean canProcess(Message message) {
         return true;
     }
-
 }

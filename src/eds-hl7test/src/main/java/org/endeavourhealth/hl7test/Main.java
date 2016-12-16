@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 public class Main {
 
     private static String ipAddress = "127.0.0.1";
-    private static int port = 8009;
+    private static int port = 8900;
 
     private static String msg =
             "MASH|^~\\&|NES|NINTENDO|TESTSYSTEM|TESTFACILITY|20010101000000||ADT^A04|Q123456789T123456789X123456|P|2.3\r" +

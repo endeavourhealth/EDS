@@ -11,7 +11,7 @@ import org.endeavourhealth.hl7receiver.model.db.DbChannel;
 
 import java.sql.SQLException;
 
-public class HL7Channel {
+class HL7Channel {
     private static final Logger LOG = Logger.getLogger(HL7Channel.class);
 
     private HapiContext context;
@@ -39,7 +39,7 @@ public class HL7Channel {
         context = new DefaultHapiContext();
         connectionManager = new HL7ConnectionManager(configuration, dbChannel);
         messageReceiver = new HL7MessageReceiver(configuration, dbChannel, connectionManager);
-        exceptionHandler = new HL7ExceptionHandler();
+        exceptionHandler = new HL7ExceptionHandler(configuration, dbChannel, connectionManager);
         service = context.newServer(dbChannel.getPortNumber(), false);
 
         service.registerApplication("*", "*", messageReceiver);

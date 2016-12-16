@@ -2,6 +2,7 @@ package org.endeavourhealth.hl7receiver.hl7;
 
 import ca.uhn.hl7v2.app.Connection;
 import ca.uhn.hl7v2.app.ConnectionListener;
+import ca.uhn.hl7v2.protocol.MetadataKeys;
 import org.endeavourhealth.core.postgres.PgStoredProcException;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
@@ -10,9 +11,10 @@ import org.endeavourhealth.hl7receiver.model.application.RemoteConnection;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
 
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class HL7ConnectionManager implements ConnectionListener  {
+class HL7ConnectionManager implements ConnectionListener {
     private static final Logger LOG = Logger.getLogger(HL7ConnectionManager.class);
 
     private Configuration configuration;
@@ -44,6 +46,24 @@ public class HL7ConnectionManager implements ConnectionListener  {
 
     public Integer getConnectionId(String ipAddress, int port) {
         return connectionIds.get(new RemoteConnection(ipAddress, port));
+    }
+
+    public static String getRemoteHost(Map<String, Object> map) {
+        return (String)map.get(MetadataKeys.IN_SENDING_IP);
+    }
+
+    public static Integer getRemotePort(Map<String, Object> map) {
+        return (Integer)map.get(MetadataKeys.IN_SENDING_PORT);
+    }
+
+    public Integer getConnectionId(Map<String, Object> map) {
+        if (map == null)
+            return null;
+
+        String remoteHost = getRemoteHost(map);
+        Integer remotePort = getRemotePort(map);
+
+        return getConnectionId(remoteHost, remotePort);
     }
 
     private void recordConnectionOpened(Connection connection) {

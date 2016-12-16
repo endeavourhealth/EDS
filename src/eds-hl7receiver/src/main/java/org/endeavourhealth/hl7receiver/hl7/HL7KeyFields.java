@@ -9,7 +9,7 @@ import ca.uhn.hl7v2.util.Terser;
 
 import java.time.LocalDateTime;
 
-public class HL7KeyFields {
+class HL7KeyFields {
 
     private String encodedMessage;
     private String sendingApplication;
