@@ -1,8 +1,10 @@
 
 create or replace function log.log_dead_letter
 (
+	_instance_id integer,
 	_channel_id integer,
 	_connection_id integer,
+	_local_host varchar(100),
 	_local_port integer,
 	_remote_host varchar(100),
 	_remote_port integer,
@@ -22,11 +24,28 @@ declare
 	_dead_letter_id integer;
 begin
 
+	if not exists (select * from log.instance where instance_id = _instance_id) 
+	then
+		_instance_id = null;
+	end if;
+	
+	if not exists (select * from configuration.channel where channel_id = _channel_id)
+	then
+		_channel_id = null;
+	end if;
+	
+	if not exists (select * from log.connection where connection_id = _connection_id)
+	then
+		_connection_id = null;
+	end if;
+
 	insert into log.dead_letter
 	(
 		log_date,
+		instance_id,
 		channel_id,
 		connection_id,
+		local_host,
 		local_port,
 		remote_host,
 		remote_port,
@@ -43,8 +62,10 @@ begin
 	values
 	(
 		now(),
+		_instance_id,
 		_channel_id,
 		_connection_id,
+		_local_host,
 		_local_port,
 		_remote_host,
 		_remote_port,

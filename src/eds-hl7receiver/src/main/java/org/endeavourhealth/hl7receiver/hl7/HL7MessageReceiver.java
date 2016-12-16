@@ -91,8 +91,10 @@ public class HL7MessageReceiver implements ReceivingApplication {
 
                 try {
                     dataLayer.logDeadLetter(
+                            configuration.getDbConfiguration().getInstanceId(),
                             dbChannel.getChannelId(),
                             connectionId,
+                            configuration.getMachineName(),
                             dbChannel.getPortNumber(),
                             getRemoteHost(map),
                             getRemotePort(map),

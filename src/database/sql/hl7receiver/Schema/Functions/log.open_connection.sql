@@ -1,29 +1,20 @@
 
 create or replace function log.open_connection
 (
-	_instance_name varchar(100),
-	_channel_name varchar(100),
+	_instance_id integer,
+	_channel_id integer,
 	_local_port integer,
 	_remote_host varchar(100)	,
 	_remote_port integer
 )
-returns integer
+returns table
+(
+	connection_id integer
+)
 as $$
 declare
-	_instance_id integer;
-	_channel_id integer;
 	_connection_id integer;
 begin
-
-	select
-		instance_id into _instance_id
-	from configuration.instance
-	where instance_name = _instance_name;
-
-	select
-		channel_id into _channel_id
-	from configuration.channel
-	where channel_name = _channel_name;
 
 	insert into log.connection
 	(
@@ -43,9 +34,11 @@ begin
 		_remote_port,
 		now()
 	)
-	returning connection_id into _connection_id;
+	returning connection.connection_id into _connection_id;
 	
-	return _connection_id;
+	return query 
+	select 
+		_connection_id as connection_id;
 	
 end;
 $$ language plpgsql;

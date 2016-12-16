@@ -1,29 +1,44 @@
 
 create or replace function configuration.get_configuration
 (
-	_instance_name varchar(100)
+	_hostname varchar(100)
 )
 returns setof refcursor
 as $$
 declare
-	configuration_instance refcursor;
+	_instance_id integer;
+	log_instance refcursor;
 	configuration_channel refcursor;
 	configuration_channel_message_type refcursor;
 begin
 
-	------------------------------------------------------
-	configuration_instance = 'configuration_instance';
-
-	open configuration_instance for
+	insert into log.instance
+	(
+		instance_id,
+		hostname,
+		added_date,
+		last_get_config_date
+	)
 	select
-		i.instance_id,
-		i.instance_name,
-		i.description
-	from configuration.instance i
-	where i.instance_name = _instance_name;
-	
-	return next configuration_instance;
+		coalesce(max(instance_id), 0) + 1 as instance_id,
+		_hostname,
+		now(),
+		now()
+	from log.instance
+	on conflict (hostname) do 
+	update
+	set last_get_config_date = now()
+	where instance.hostname = _hostname
+	returning instance_id into _instance_id;
 
+	------------------------------------------------------
+	log_instance = 'log_instance';
+
+	open log_instance for
+	select _instance_id as instance_id;
+	
+	return next log_instance;
+	
 	------------------------------------------------------
 	configuration_channel = 'configuration_channel';
 

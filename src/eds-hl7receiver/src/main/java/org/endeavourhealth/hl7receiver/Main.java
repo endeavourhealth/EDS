@@ -31,6 +31,7 @@ public class Main {
 
         } catch (Exception e) {
 			LOG.error("Fatal exception occurred", e);
+			System.exit(-1);
 		}
 	}
 }

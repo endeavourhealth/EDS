@@ -24,19 +24,6 @@ create table dictionary.message_type
 	constraint dictionary_messagetype_description_ck check (char_length(trim(description)) > 0)
 );
 
-create table configuration.instance
-(
-	instance_id integer not null,
-	instance_name varchar(100) not null,
-	description varchar(1000) not null,
-
-	constraint configuration_instance_instanceid_pk primary key (instance_id),
-	constraint configuration_instance_instancename_uq unique (instance_name), 
-	constraint configuration_instance_instancename_ck check (char_length(trim(instance_name)) > 0),
-	constraint configuration_instance_description_uq unique (description),
-	constraint configuration_instance_description_ck check (char_length(trim(description)) > 0)
-);
-
 create table configuration.channel
 (
 	channel_id integer not null,
@@ -68,6 +55,18 @@ create table configuration.channel_message_type
 	constraint configuration_channelmessagetype_messagetype_fk foreign key (message_type) references dictionary.message_type (message_type)
 );
 
+create table log.instance
+(
+	instance_id integer not null,
+	hostname varchar(100) not null,
+	added_date timestamp not null,
+	last_get_config_date timestamp not null,
+
+	constraint log_instance_instanceid_pk primary key (instance_id),
+	constraint log_instance_hostname_uq unique (hostname), 
+	constraint log_instance_hostname_ck check (char_length(trim(hostname)) > 0)
+);
+
 create table log.connection
 (
 	connection_id serial not null,
@@ -80,7 +79,7 @@ create table log.connection
 	disconnect_date timestamp null,
 	
 	constraint log_connection_connectionid_pk primary key (connection_id),
-	constraint log_connection_instanceid_fk foreign key (instance_id) references configuration.instance (instance_id),
+	constraint log_connection_instanceid_fk foreign key (instance_id) references log.instance (instance_id),
 	constraint log_connection_channelid_fk foreign key (channel_id) references configuration.channel (channel_id),
 	constraint log_connection_channelid_connectionid_uq unique (channel_id, connection_id),
 	constraint log_connection_localport_ck check (local_port > 0),
@@ -126,9 +125,11 @@ create table log.error
 create table log.dead_letter
 (
 	dead_letter_id serial not null,
+	instance_id integer null,
 	channel_id integer null,
 	connection_id integer null,
 	log_date timestamp not null,
+	local_host varchar(100) not null,
 	local_port integer not null,
 	remote_host varchar(100) not null,
 	remote_port integer not null,
@@ -144,6 +145,7 @@ create table log.dead_letter
 	error_id integer null,
 	
 	constraint log_deadletter_deadletterid_pk primary key (dead_letter_id),
+	constraint log_deadletter_instanceid_fk foreign key (instance_id) references log.instance (instance_id),
 	constraint log_deadletter_connectionid_fk foreign key (connection_id) references log.connection (connection_id),
 	constraint log_deadletter_channelid_fk foreign key (channel_id) references configuration.channel (channel_id),
 	constraint log_deadletter_errorid_fk foreign key (error_id) references log.error (error_id)

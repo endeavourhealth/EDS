@@ -2,19 +2,6 @@
 	insert test data
 */
 
-insert into configuration.instance
-(
-	instance_id, 
-	instance_name,
-	description
-)
-values
-(
-	1,
-	'TEST001', 
-	'TESTING'
-);
-
 insert into configuration.channel 
 (
 	channel_id, 
@@ -24,8 +11,8 @@ insert into configuration.channel
 	use_tls, 
 	sending_application,
 	sending_facility,
-	recipient_application,
-	recipient_facility,
+	receiving_application,
+	receiving_facility,
 	notes
 )
 values
@@ -40,4 +27,6 @@ insert into configuration.channel_message_type
 )
 values
 (1, 'ADT^A04', true),
-(2, 'ACK^04', true)
+(1, 'ACK^A04', true)
+
+

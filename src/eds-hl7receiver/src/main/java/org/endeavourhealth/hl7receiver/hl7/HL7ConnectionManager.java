@@ -55,7 +55,7 @@ public class HL7ConnectionManager implements ConnectionListener  {
         Integer connectionId = null;
 
         try {
-            connectionId = dataLayer.openConnection(configuration.getMachineName(), dbChannel.getChannelName(), dbChannel.getPortNumber(), remoteHost, remotePort);
+            connectionId = dataLayer.openConnection(configuration.getDbConfiguration().getInstanceId(), dbChannel.getChannelId(), dbChannel.getPortNumber(), remoteHost, remotePort);
 
         } catch (PgStoredProcException e) {
             LOG.error("Could not write new connection to database for channel " + dbChannel.getChannelName() + ". Closing inbound connection", e);

@@ -19,11 +19,15 @@ public class DataLayer implements IDBLogger {
         this.dataSource = dataSource;
     }
 
-    public DbConfiguration getConfiguration(String instanceName) throws PgStoredProcException {
+    public DbConfiguration getConfiguration(String hostname) throws PgStoredProcException {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("configuration.get_configuration")
-                .addParameter("_instance_name", instanceName);
+                .addParameter("_hostname", hostname);
+
+        DbConfiguration dbConfiguration = pgStoredProc.executeMultiQuerySingleRow((resultSet) ->
+                new DbConfiguration()
+                        .setInstanceId(resultSet.getInt("instance_id")));
 
         List<DbChannel> dbChannels = pgStoredProc.executeMultiQuery((resultSet) ->
                 new DbChannel()
@@ -52,21 +56,21 @@ public class DataLayer implements IDBLogger {
                             .collect(Collectors.toList()));
         }
 
-        return new DbConfiguration()
+        return dbConfiguration
                 .setDbChannels(dbChannels);
     }
 
-    public int openConnection(String instanceName, String channelName, int localPort, String remoteHost, int remotePort) throws PgStoredProcException {
+    public int openConnection(int instanceId, int channelId, int localPort, String remoteHost, int remotePort) throws PgStoredProcException {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("log.open_connection")
-                .addParameter("_instance_name", instanceName)
-                .addParameter("_channel_name", channelName)
+                .addParameter("_instance_id", instanceId)
+                .addParameter("_channel_id", channelId)
                 .addParameter("_local_port", localPort)
                 .addParameter("_remote_host", remoteHost)
                 .addParameter("_remote_port", remotePort);
 
-        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("open_connection"));
+        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("connection_id"));
     }
 
     public void closeConnection(int connectionId) throws PgStoredProcException {
@@ -115,8 +119,10 @@ public class DataLayer implements IDBLogger {
     }
 
     public int logDeadLetter(
+            Integer instanceId,
             Integer channelId,
             Integer connectionId,
+            String localHost,
             Integer localPort,
             String remoteHost,
             Integer remotePort,
@@ -132,8 +138,10 @@ public class DataLayer implements IDBLogger {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("log.log_dead_letter")
+                .addParameter("_instance_id", instanceId)
                 .addParameter("_channel_id", channelId)
                 .addParameter("_connection_id", connectionId)
+                .addParameter("_local_host", localHost)
                 .addParameter("_local_port", localPort)
                 .addParameter("_remote_host", remoteHost)
                 .addParameter("_remote_port", remotePort)
