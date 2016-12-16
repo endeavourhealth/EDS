@@ -1,9 +1,9 @@
 package org.endeavourhealth.hl7receiver;
 
+import org.endeavourhealth.core.postgres.PgStoredProc;
+import org.endeavourhealth.core.postgres.PgStoredProcException;
 import org.endeavourhealth.hl7receiver.logging.IDBLogger;
 import org.endeavourhealth.hl7receiver.model.db.*;
-import org.endeavourhealth.utilities.postgres.PgStoredProc;
-import org.endeavourhealth.utilities.postgres.PgStoredProcException;
 
 import javax.sql.DataSource;
 import java.util.List;

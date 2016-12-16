@@ -2,10 +2,10 @@ package org.endeavourhealth.hl7receiver;
 
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.config.ConfigManagerException;
+import org.endeavourhealth.core.postgres.PgDataSource;
 import org.endeavourhealth.hl7receiver.logging.Logger;
 import org.endeavourhealth.hl7receiver.model.db.DbConfiguration;
 import org.endeavourhealth.hl7receiver.model.exceptions.ConfigurationException;
-import org.endeavourhealth.utilities.postgres.PgDataSource;
 
 import javax.sql.DataSource;
 import java.net.InetAddress;

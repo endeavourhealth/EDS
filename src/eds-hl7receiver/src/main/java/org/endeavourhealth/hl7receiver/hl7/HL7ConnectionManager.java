@@ -2,12 +2,12 @@ package org.endeavourhealth.hl7receiver.hl7;
 
 import ca.uhn.hl7v2.app.Connection;
 import ca.uhn.hl7v2.app.ConnectionListener;
+import org.endeavourhealth.core.postgres.PgStoredProcException;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
 import org.endeavourhealth.hl7receiver.logging.Logger;
 import org.endeavourhealth.hl7receiver.model.application.RemoteConnection;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
-import org.endeavourhealth.utilities.postgres.PgStoredProcException;
 
 import java.sql.SQLException;
 import java.util.concurrent.ConcurrentHashMap;

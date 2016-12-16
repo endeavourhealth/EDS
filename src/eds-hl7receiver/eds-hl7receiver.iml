@@ -11,7 +11,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: com.github.endeavourhealth.Common:eds-core:1.11" level="project" />
+    <orderEntry type="library" name="Maven: com.github.endeavourhealth.Common:eds-core:1.12" level="project" />
     <orderEntry type="library" name="Maven: me.fhir:fhir-dstu2:1.0.1.7108" level="project" />
     <orderEntry type="library" name="Maven: net.sf.saxon:Saxon-HE:9.5.1-5" level="project" />
     <orderEntry type="library" name="Maven: commons-discovery:commons-discovery:0.2" level="project" />
@@ -69,7 +69,6 @@
     <orderEntry type="library" name="Maven: javax.inject:javax.inject:1" level="project" />
     <orderEntry type="library" name="Maven: com.mchange:c3p0:0.9.5.2" level="project" />
     <orderEntry type="library" name="Maven: com.mchange:mchange-commons-java:0.2.11" level="project" />
-    <orderEntry type="module" module-name="eds-utilities" />
     <orderEntry type="library" name="Maven: ca.uhn.hapi:hapi-base:2.2" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.6.6" level="project" />
     <orderEntry type="library" name="Maven: ca.uhn.hapi:hapi-structures-v22:2.2" level="project" />
