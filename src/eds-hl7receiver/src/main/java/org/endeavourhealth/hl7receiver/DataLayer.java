@@ -25,12 +25,6 @@ public class DataLayer implements IDBLogger {
                 .setName("configuration.get_configuration")
                 .addParameter("_instance_name", instanceName);
 
-        DbInstance dbInstance = pgStoredProc.executeMultiQuerySingleOrNoRow((resultSet) ->
-                new DbInstance()
-                        .setInstanceId(resultSet.getString("instance_id"))
-                        .setInstanceName(resultSet.getString("instance_name"))
-                        .setInstanceDescription(resultSet.getString("description")));
-
         List<DbChannel> dbChannels = pgStoredProc.executeMultiQuery((resultSet) ->
                 new DbChannel()
                         .setChannelId(resultSet.getInt("channel_id"))
@@ -59,7 +53,6 @@ public class DataLayer implements IDBLogger {
         }
 
         return new DbConfiguration()
-                .setDbInstance(dbInstance)
                 .setDbChannels(dbChannels);
     }
 
