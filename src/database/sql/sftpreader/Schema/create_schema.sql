@@ -287,17 +287,17 @@ create table sftpreader.notification_message
 	constraint sftpreader_notificationmessage_wassuccess_errortext_ck check ((was_success and error_text is null) or ((not was_success) and error_text is not null))
 );
 
-CREATE TABLE sftpreader.emis_organisation_map
+create table sftpreader.emis_organisation_map
 (
-  guid character varying NOT NULL,
-  name character varying NOT NULL,
-  ods_code character varying NOT NULL,
-  CONSTRAINT pk_guid PRIMARY KEY (guid)
-)
+  guid varchar not null,
+  name varchar not null,
+  ods_code varchar not null,
+  constraint pk_guid primary key (guid)
+);
 
-CREATE INDEX guid
-  ON sftpreader.emis_organisation_map
-  USING btree
-  (guid COLLATE pg_catalog."default");
+create index guid
+on sftpreader.emis_organisation_map
+using btree
+(guid collate pg_catalog."default");
 
 

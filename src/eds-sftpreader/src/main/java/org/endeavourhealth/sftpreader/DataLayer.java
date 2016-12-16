@@ -25,7 +25,7 @@ public class DataLayer
                 .setName("sftpreader.get_configuration")
                 .addParameter("_instance_id", instanceId);
 
-        DbConfiguration dbConfiguration = pgStoredProc.executeSingleRow((resultSet) ->
+        DbConfiguration dbConfiguration = pgStoredProc.executeSingleOrEmptyRow((resultSet) ->
                 new DbConfiguration()
 
                         .setInstanceId(resultSet.getString("instance_id"))
@@ -63,8 +63,10 @@ public class DataLayer
                             .setKeycloakPassword(resultSet.getString("keycloak_password"))
                             .setKeycloakClientId(resultSet.getString("keycloak_clientid"))));
 
-        dbConfiguration.setDbConfigurationKvp(getConfigurationKvp(instanceId));
-        dbConfiguration.setInterfaceFileTypes(getInterfaceFileTypes(instanceId));
+        if (dbConfiguration != null) {
+            dbConfiguration.setDbConfigurationKvp(getConfigurationKvp(instanceId));
+            dbConfiguration.setInterfaceFileTypes(getInterfaceFileTypes(instanceId));
+        }
 
         return dbConfiguration;
     }

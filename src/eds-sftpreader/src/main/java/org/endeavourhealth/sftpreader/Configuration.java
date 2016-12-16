@@ -1,10 +1,12 @@
 package org.endeavourhealth.sftpreader;
 
+import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.config.ConfigManagerException;
 import org.endeavourhealth.core.postgres.PgDataSource;
 import org.endeavourhealth.core.postgres.PgStoredProcException;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
+import org.endeavourhealth.sftpreader.model.exceptions.SftpReaderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +18,7 @@ public final class Configuration
     // class members //
     private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
     private static final String PROGRAM_CONFIG_MANAGER_NAME = "sftpreader";
+    private static final String INSTANCE_NAME_JAVA_PROPERTY = "INSTANCE_NAME";
 
     private static Configuration instance = null;
 
@@ -29,15 +32,28 @@ public final class Configuration
 
     // instance members //
     private DbConfiguration dbConfiguration;
+    private String instanceName;
     private String postgresUrl;
     private String postgresUsername;
     private String postgresPassword;
 
-
     private Configuration() throws Exception
     {
+        retrieveInstanceName();
         initialiseConfigManager();
         loadDbConfiguration();
+    }
+
+    private void retrieveInstanceName() throws SftpReaderException {
+        try {
+            instanceName = System.getProperty(INSTANCE_NAME_JAVA_PROPERTY);
+
+            if (StringUtils.isEmpty(instanceName))
+                throw new SftpReaderException("Could not find " + INSTANCE_NAME_JAVA_PROPERTY + " Java -D property");
+
+        } catch (Exception e) {
+            throw new SftpReaderException("Could not read " + INSTANCE_NAME_JAVA_PROPERTY + " Java -D property");
+        }
     }
 
     private void initialiseConfigManager() throws ConfigManagerException {
@@ -48,26 +64,22 @@ public final class Configuration
         postgresPassword = ConfigManager.getConfiguration("postgres-username");
     }
 
-    private void loadDbConfiguration() throws PgStoredProcException, SQLException
-    {
+    private void loadDbConfiguration() throws PgStoredProcException, SQLException, SftpReaderException {
         DataLayer dataLayer = new DataLayer(getDatabaseConnection());
         this.dbConfiguration = dataLayer.getConfiguration(getInstanceName());
+
+        if (this.dbConfiguration == null)
+            throw new SftpReaderException("No configuration found with instance name " + getInstanceName());
     }
 
-    public DataSource getDatabaseConnection() throws SQLException
-    {
+    public DataSource getDatabaseConnection() throws SQLException {
         return PgDataSource.get(postgresUrl, postgresUsername, postgresPassword);
     }
 
     public String getInstanceName()
     {
-        return "INSTANCE-NAME";
+        return instanceName;
     }
-
-//    public LocalConfiguration getLocalConfiguration()
-//    {
-//        return this.localConfiguration;
-//    }
 
     public DbConfiguration getDbConfiguration()
     {

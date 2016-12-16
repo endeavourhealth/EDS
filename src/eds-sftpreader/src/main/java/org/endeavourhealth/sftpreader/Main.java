@@ -15,37 +15,22 @@ public class Main
 	{
 		try
 		{
-			writeHeaderLogLine(PROGRAM_DISPLAY_NAME);
+            configuration = Configuration.getInstance();
 
-            loadConfiguration();
+            LOG.info("--------------------------------------------------");
+            LOG.info(PROGRAM_DISPLAY_NAME);
+            LOG.info("--------------------------------------------------");
 
-			runSftpHandlerAndWaitForInput();
+            SftpTask sftpTask = new SftpTask(configuration);
+
+            Timer timer = new Timer();
+
+            timer.scheduleAtFixedRate(sftpTask, 0, configuration.getDbConfiguration().getPollFrequencySeconds() * 1000);
 		}
 		catch (Exception e)
 		{
 			LOG.error("Fatal exception occurred", e);
 		}
 	}
-
-	private static void writeHeaderLogLine(String text)
-	{
-		LOG.info("--------------------------------------------------");
-		LOG.info(text);
-		LOG.info("--------------------------------------------------");
-	}
-
-	private static void loadConfiguration() throws Exception
-    {
-        configuration = Configuration.getInstance();
-    }
-
-	private static void runSftpHandlerAndWaitForInput() throws Exception
-	{
-		SftpTask sftpTask = new SftpTask(configuration);
-
-		Timer timer = new Timer();
-
-		timer.scheduleAtFixedRate(sftpTask, 0, configuration.getDbConfiguration().getPollFrequencySeconds() * 1000);
-  	}
 }
 
