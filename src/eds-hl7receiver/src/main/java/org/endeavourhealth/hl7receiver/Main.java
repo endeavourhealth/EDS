@@ -1,12 +1,13 @@
 package org.endeavourhealth.hl7receiver;
 
 import org.endeavourhealth.hl7receiver.hl7.HL7Service;
-import org.endeavourhealth.hl7receiver.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Main {
 
 	private static final String PROGRAM_DISPLAY_NAME = "EDS HL7 receiver";
-	private static final Logger LOG = Logger.getLogger(Main.class);
+	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
 	public static void main(String[] args) {
 		try {

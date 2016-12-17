@@ -6,13 +6,14 @@ import ca.uhn.hl7v2.app.HL7Service;
 import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
-import org.endeavourhealth.hl7receiver.logging.Logger;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 
 class HL7Channel {
-    private static final Logger LOG = Logger.getLogger(HL7Channel.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HL7Channel.class);
 
     private HapiContext context;
     private HL7Service service;

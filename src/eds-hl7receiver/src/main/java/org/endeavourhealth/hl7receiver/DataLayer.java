@@ -2,7 +2,6 @@ package org.endeavourhealth.hl7receiver;
 
 import org.endeavourhealth.core.postgres.PgStoredProc;
 import org.endeavourhealth.core.postgres.PgStoredProcException;
-import org.endeavourhealth.hl7receiver.logging.IDBLogger;
 import org.endeavourhealth.hl7receiver.model.db.*;
 
 import javax.sql.DataSource;
@@ -10,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class DataLayer implements IDBLogger {
+public class DataLayer {
 
     private DataSource dataSource;
 

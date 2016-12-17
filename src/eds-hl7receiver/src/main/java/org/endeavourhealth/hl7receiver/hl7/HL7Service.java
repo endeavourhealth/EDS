@@ -1,8 +1,9 @@
 package org.endeavourhealth.hl7receiver.hl7;
 
 import org.endeavourhealth.hl7receiver.Configuration;
-import org.endeavourhealth.hl7receiver.logging.Logger;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -11,7 +12,7 @@ import java.util.stream.Collectors;
 
 public class HL7Service {
 
-    private static final Logger LOG = Logger.getLogger(HL7Service.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HL7Service.class);
     private Configuration configuration;
     private List<HL7Channel> channels;
 

@@ -3,9 +3,10 @@ package org.endeavourhealth.hl7receiver;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.config.ConfigManagerException;
 import org.endeavourhealth.core.postgres.PgDataSource;
-import org.endeavourhealth.hl7receiver.logging.Logger;
 import org.endeavourhealth.hl7receiver.model.db.DbConfiguration;
 import org.endeavourhealth.hl7receiver.model.exceptions.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.net.InetAddress;
@@ -14,7 +15,7 @@ import java.sql.SQLException;
 public final class Configuration
 {
     // class members //
-    private static final Logger LOG = Logger.getLogger(Configuration.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
     private static final String PROGRAM_CONFIG_MANAGER_NAME = "hl7receiver";
 
     private static Configuration instance = null;
@@ -65,7 +66,7 @@ public final class Configuration
 
     private void configureLogger() throws ConfigurationException {
         try {
-            Logger.setDBLogger(new DataLayer(getDatabaseConnection()));
+            //Logger.setDBLogger(new DataLayer(getDatabaseConnection()));
         } catch (Exception e) {
             throw new ConfigurationException("Error setting logger data source", e);
         }

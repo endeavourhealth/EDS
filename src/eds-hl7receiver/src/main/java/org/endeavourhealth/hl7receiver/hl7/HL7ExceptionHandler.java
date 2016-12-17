@@ -4,14 +4,15 @@ import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.protocol.ReceivingApplicationExceptionHandler;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
-import org.endeavourhealth.hl7receiver.logging.Logger;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.Map;
 
 class HL7ExceptionHandler implements ReceivingApplicationExceptionHandler {
-    private static final Logger LOG = Logger.getLogger(HL7ExceptionHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HL7ExceptionHandler.class);
 
     private Configuration configuration;
     private HL7ConnectionManager connectionManager;
@@ -48,6 +49,9 @@ class HL7ExceptionHandler implements ReceivingApplicationExceptionHandler {
         } catch (Exception e3) {
             LOG.error("Error logging dead letter", e3);
         }
+
+        if (outgoingMessage == null)
+            outgoingMessage = "";
 
         return outgoingMessage;
     }

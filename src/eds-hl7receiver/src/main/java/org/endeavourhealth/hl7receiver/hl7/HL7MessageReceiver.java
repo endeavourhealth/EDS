@@ -3,22 +3,22 @@ package org.endeavourhealth.hl7receiver.hl7;
 import ca.uhn.hl7v2.AcknowledgmentCode;
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Message;
-import ca.uhn.hl7v2.protocol.MetadataKeys;
 import ca.uhn.hl7v2.protocol.ReceivingApplication;
 import ca.uhn.hl7v2.protocol.ReceivingApplicationException;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
-import org.endeavourhealth.hl7receiver.logging.Logger;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
 import org.endeavourhealth.hl7receiver.model.exceptions.MessageProcessingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.UUID;
 
 class HL7MessageReceiver implements ReceivingApplication {
-    private static final Logger LOG = Logger.getLogger(HL7MessageReceiver.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HL7MessageReceiver.class);
 
     private Configuration configuration;
     private DbChannel dbChannel;

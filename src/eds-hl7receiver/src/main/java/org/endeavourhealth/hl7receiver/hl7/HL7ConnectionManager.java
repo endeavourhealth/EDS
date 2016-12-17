@@ -6,16 +6,17 @@ import ca.uhn.hl7v2.protocol.MetadataKeys;
 import org.endeavourhealth.core.postgres.PgStoredProcException;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
-import org.endeavourhealth.hl7receiver.logging.Logger;
 import org.endeavourhealth.hl7receiver.model.application.RemoteConnection;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 class HL7ConnectionManager implements ConnectionListener {
-    private static final Logger LOG = Logger.getLogger(HL7ConnectionManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HL7ConnectionManager.class);
 
     private Configuration configuration;
     private DbChannel dbChannel;

@@ -109,12 +109,13 @@ create table log.message
 
 create table log.error
 (
-	error_id serial not null,
+	error_id integer not null,
 	error_uuid uuid not null,
 	error_count integer not null,
 	exception varchar(1000) not null,
-	method varchar(1000) not null,
-	message text,
+	message varchar(1000) not null,
+	throw_method varchar(1000) not null,
+	catch_method varchar(1000) not null
 	
 	constraint log_error_errorid_pk primary key (error_id),
 	constraint log_error_erroruuid_fk unique (error_uuid),
