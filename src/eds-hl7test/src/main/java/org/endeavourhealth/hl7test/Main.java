@@ -40,6 +40,8 @@ public class Main {
             while ((inputLine = bis.readLine()) != null)
                 System.out.println(inputLine);
 
+            socket.close();
+
         } catch (Exception e) {
             e.printStackTrace();
         }

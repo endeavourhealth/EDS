@@ -1,8 +1,10 @@
 package org.endeavourhealth.hl7receiver;
 
+import ch.qos.logback.classic.LoggerContext;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.config.ConfigManagerException;
 import org.endeavourhealth.core.postgres.PgDataSource;
+import org.endeavourhealth.hl7receiver.logging.HL7LogDigestAppender;
 import org.endeavourhealth.hl7receiver.model.db.DbConfiguration;
 import org.endeavourhealth.hl7receiver.model.exceptions.ConfigurationException;
 import org.slf4j.Logger;
@@ -17,6 +19,9 @@ public final class Configuration
     // class members //
     private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
     private static final String PROGRAM_CONFIG_MANAGER_NAME = "hl7receiver";
+    private static final String POSTGRES_URL_CONFIG_MANAGER_KEY = "postgres-url";
+    private static final String POSTGRES_USERNAME_CONFIG_MANAGER_KEY = "postgres-username";
+    private static final String POSTGRES_PASSWORD_CONFIG_MANAGER_KEY = "postgres-password";
 
     private static Configuration instance = null;
 
@@ -39,7 +44,7 @@ public final class Configuration
     {
         initialiseMachineName();
         initialiseConfigManager();
-        configureLogger();
+        addHL7LogAppender();
         loadDbConfiguration();
     }
 
@@ -55,20 +60,30 @@ public final class Configuration
         try {
             ConfigManager.Initialize(PROGRAM_CONFIG_MANAGER_NAME);
 
-            postgresUrl = ConfigManager.getConfiguration("postgres-url");
-            postgresUsername = ConfigManager.getConfiguration("postgres-username");
-            postgresPassword = ConfigManager.getConfiguration("postgres-username");
+            postgresUrl = ConfigManager.getConfiguration(POSTGRES_URL_CONFIG_MANAGER_KEY);
+            postgresUsername = ConfigManager.getConfiguration(POSTGRES_USERNAME_CONFIG_MANAGER_KEY);
+            postgresPassword = ConfigManager.getConfiguration(POSTGRES_PASSWORD_CONFIG_MANAGER_KEY);
 
         } catch (ConfigManagerException e) {
             throw new ConfigurationException("Error loading ConfigManager configuration", e);
         }
     }
 
-    private void configureLogger() throws ConfigurationException {
+    private void addHL7LogAppender() throws ConfigurationException {
         try {
-            //Logger.setDBLogger(new DataLayer(getDatabaseConnection()));
+            LoggerContext lc = (LoggerContext)LoggerFactory.getILoggerFactory();
+
+            HL7LogDigestAppender appender = new HL7LogDigestAppender(new DataLayer(getDatabaseConnection()));
+            appender.setContext(lc);
+            appender.setName("HL7LogDigestAppender");
+            appender.start();
+
+            ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+            logger.addAppender(appender);
+
+
         } catch (Exception e) {
-            throw new ConfigurationException("Error setting logger data source", e);
+            throw new ConfigurationException("Error adding HL7 log appender", e);
         }
     }
 

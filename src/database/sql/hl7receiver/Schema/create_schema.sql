@@ -107,22 +107,6 @@ create table log.message
 	constraint log_message_messagecontrolid_ck check (char_length(trim(message_control_id)) > 0)
 );
 
-create table log.error
-(
-	error_id integer not null,
-	error_uuid uuid not null,
-	error_count integer not null,
-	exception varchar(1000) not null,
-	message varchar(1000) not null,
-	throw_method varchar(1000) not null,
-	catch_method varchar(1000) not null
-	
-	constraint log_error_errorid_pk primary key (error_id),
-	constraint log_error_erroruuid_fk unique (error_uuid),
-	constraint log_error_errorcount_ck check (error_count > 0),
-	constraint log_error_exception_method_message_uq unique (exception, method, message)
-);
-
 create table log.dead_letter
 (
 	dead_letter_id serial not null,
@@ -143,13 +127,29 @@ create table log.dead_letter
 	inbound_payload varchar not null,
 	outbound_message_type varchar(100) null,
 	outbound_payload varchar null,
-	error_id integer null,
+	exception varchar not null,
+	logback_uuid varchar not null,	
 	
 	constraint log_deadletter_deadletterid_pk primary key (dead_letter_id),
 	constraint log_deadletter_instanceid_fk foreign key (instance_id) references log.instance (instance_id),
 	constraint log_deadletter_connectionid_fk foreign key (connection_id) references log.connection (connection_id),
 	constraint log_deadletter_channelid_fk foreign key (channel_id) references configuration.channel (channel_id),
-	constraint log_deadletter_errorid_fk foreign key (error_id) references log.error (error_id)
+	constraint log_deadletter_logbackuuid_uq unique (logback_uuid)
+);
+
+create table log.error_digest
+(
+	error_digest_id integer not null,
+	error_count integer not null,
+	last_log_date timestamp not null,
+	log_class varchar(1000) not null,
+	log_method varchar(1000) not null,
+	log_message varchar(1000) not null,
+	exception varchar not null,
+	
+	constraint log_errordigest_errordigestid_pk primary key (error_digest_id),
+	constraint log_errordigest_errorcount_ck check (error_count > 0),
+	constraint log_errordigest_logclass_logmethod_logmessage_exception_uq unique (log_class, log_method, log_message, exception)
 );
 
 /*

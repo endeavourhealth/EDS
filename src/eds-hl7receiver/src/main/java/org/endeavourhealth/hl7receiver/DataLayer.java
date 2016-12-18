@@ -2,6 +2,7 @@ package org.endeavourhealth.hl7receiver;
 
 import org.endeavourhealth.core.postgres.PgStoredProc;
 import org.endeavourhealth.core.postgres.PgStoredProcException;
+import org.endeavourhealth.hl7receiver.logging.IDBDigestLogger;
 import org.endeavourhealth.hl7receiver.model.db.*;
 
 import javax.sql.DataSource;
@@ -9,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class DataLayer {
+public class DataLayer implements IDBDigestLogger {
 
     private DataSource dataSource;
 
@@ -103,20 +104,6 @@ public class DataLayer {
         return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("log_message"));
     }
 
-    public DbErrorIdentifier logError(String exception, String method, String message) throws PgStoredProcException {
-
-        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("log.log_error")
-                .addParameter("_exception", exception)
-                .addParameter("_method", method)
-                .addParameter("_message", message);
-
-        return pgStoredProc.executeSingleRow((resultSet) ->
-                new DbErrorIdentifier()
-                        .setErrorId(resultSet.getInt("error_id"))
-                        .setErrorUuid(UUID.fromString(resultSet.getString("error_uuid"))));
-    }
-
     public int logDeadLetter(
             Integer instanceId,
             Integer channelId,
@@ -133,7 +120,9 @@ public class DataLayer {
             String inboundMessageType,
             String inboundPayload,
             String outboundMessageType,
-            String outboundPayload) throws PgStoredProcException {
+            String outboundPayload,
+            String exception,
+            UUID logbackUuid) throws PgStoredProcException {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("log.log_dead_letter")
@@ -152,8 +141,22 @@ public class DataLayer {
                 .addParameter("_inbound_message_type", inboundMessageType)
                 .addParameter("_inbound_payload", inboundPayload)
                 .addParameter("_outbound_message_type", outboundMessageType)
-                .addParameter("_outbound_payload", outboundPayload);
+                .addParameter("_outbound_payload", outboundPayload)
+                .addParameter("_exception", exception)
+                .addParameter("_logback_uuid", logbackUuid);
 
         return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("log_dead_letter"));
+    }
+
+    public void logErrorDigest(String logClass, String logMethod, String logMessage, String exception) throws PgStoredProcException {
+
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("log.log_error_digest")
+                .addParameter("_log_class", logClass)
+                .addParameter("_log_method", logMethod)
+                .addParameter("_log_message", logMessage)
+                .addParameter("_exception", exception);
+
+        pgStoredProc.execute();
     }
 }

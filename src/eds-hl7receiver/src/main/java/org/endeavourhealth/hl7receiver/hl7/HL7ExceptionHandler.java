@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.UUID;
 
 class HL7ExceptionHandler implements ReceivingApplicationExceptionHandler {
     private static final Logger LOG = LoggerFactory.getLogger(HL7ExceptionHandler.class);
@@ -28,6 +29,10 @@ class HL7ExceptionHandler implements ReceivingApplicationExceptionHandler {
 
     public String processException(String incomingMessage, Map<String, Object> incomingMetadata, String outgoingMessage, Exception exception) throws HL7Exception {
         try {
+            UUID logbackUuid = UUID.randomUUID();
+            Object[] logbackArgs = new Object[] { "DEAD-LETTER-UUID", logbackUuid, exception };
+            LOG.error("Exception while processing message", logbackArgs);
+
             dataLayer.logDeadLetter(
                     configuration.getDbConfiguration().getInstanceId(),
                     dbChannel.getChannelId(),
@@ -44,8 +49,9 @@ class HL7ExceptionHandler implements ReceivingApplicationExceptionHandler {
                     null,
                     incomingMessage,
                     null,
-                    outgoingMessage
-                    );
+                    outgoingMessage,
+                    "exception",
+                    logbackUuid);
         } catch (Exception e3) {
             LOG.error("Error logging dead letter", e3);
         }
