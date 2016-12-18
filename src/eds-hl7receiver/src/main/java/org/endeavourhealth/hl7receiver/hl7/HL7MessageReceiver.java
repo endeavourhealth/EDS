@@ -76,10 +76,8 @@ class HL7MessageReceiver implements ReceivingApplication {
         } catch (Exception e1) {
 
             try {
-                UUID logbackUuid = UUID.randomUUID();
-                Object[] logbackArgs = new Object[] { "DEAD-LETTER-UUID", logbackUuid, e1 };
-
-                LOG.error("Exception while processing message", logbackArgs);
+                UUID deadLetterUuid = UUID.randomUUID();
+                LOG.error("Exception while processing message", HL7ExceptionHandler.constructLogbackDeadLetterArgs(deadLetterUuid, e1));
 
                 Message negativeResponse = null;
                 HL7KeyFields negativeResponseKeyFields = null;
@@ -110,8 +108,8 @@ class HL7MessageReceiver implements ReceivingApplication {
                             hl7KeyFields.getEncodedMessage(),
                             (negativeResponseKeyFields == null ? null : negativeResponseKeyFields.getMessageType()),
                             (negativeResponseKeyFields == null ? null : negativeResponseKeyFields.getEncodedMessage()),
-                            "exception",
-                            logbackUuid);
+                            HL7ExceptionHandler.constructFormattedException(e1),
+                            deadLetterUuid);
                 } catch (Exception e3) {
                     LOG.error("Error logging dead letter", e3);
                 }

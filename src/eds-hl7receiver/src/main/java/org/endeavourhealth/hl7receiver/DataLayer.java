@@ -122,7 +122,7 @@ public class DataLayer implements IDBDigestLogger {
             String outboundMessageType,
             String outboundPayload,
             String exception,
-            UUID logbackUuid) throws PgStoredProcException {
+            UUID deadLetterUuid) throws PgStoredProcException {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("log.log_dead_letter")
@@ -143,7 +143,7 @@ public class DataLayer implements IDBDigestLogger {
                 .addParameter("_outbound_message_type", outboundMessageType)
                 .addParameter("_outbound_payload", outboundPayload)
                 .addParameter("_exception", exception)
-                .addParameter("_logback_uuid", logbackUuid);
+                .addParameter("_dead_letter_uuid", deadLetterUuid);
 
         return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getInt("log_dead_letter"));
     }

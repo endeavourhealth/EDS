@@ -18,7 +18,7 @@ create or replace function log.log_dead_letter
 	_outbound_message_type varchar(100),
 	_outbound_payload text,
 	_exception varchar,
-	_logback_uuid uuid
+	_dead_letter_uuid uuid
 )
 returns integer
 as $$
@@ -61,7 +61,7 @@ begin
 		outbound_message_type,
 		outbound_payload,
 		exception,
-		logback_uuid
+		dead_letter_uuid
 	)
 	values
 	(
@@ -83,7 +83,7 @@ begin
 		_outbound_message_type,
 		_outbound_payload,
 		_exception,
-		_logback_uuid
+		_dead_letter_uuid
 	)
 	returning dead_letter_id into _dead_letter_id;
 	

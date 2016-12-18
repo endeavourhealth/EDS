@@ -128,13 +128,13 @@ create table log.dead_letter
 	outbound_message_type varchar(100) null,
 	outbound_payload varchar null,
 	exception varchar not null,
-	logback_uuid varchar not null,	
+	dead_letter_uuid varchar not null,	
 	
 	constraint log_deadletter_deadletterid_pk primary key (dead_letter_id),
 	constraint log_deadletter_instanceid_fk foreign key (instance_id) references log.instance (instance_id),
 	constraint log_deadletter_connectionid_fk foreign key (connection_id) references log.connection (connection_id),
 	constraint log_deadletter_channelid_fk foreign key (channel_id) references configuration.channel (channel_id),
-	constraint log_deadletter_logbackuuid_uq unique (logback_uuid)
+	constraint log_deadletter_deadletteruuid_uq unique (dead_letter_uuid)
 );
 
 create table log.error_digest

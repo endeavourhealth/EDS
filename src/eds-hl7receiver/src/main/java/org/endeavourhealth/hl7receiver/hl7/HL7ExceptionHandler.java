@@ -2,6 +2,8 @@ package org.endeavourhealth.hl7receiver.hl7;
 
 import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.protocol.ReceivingApplicationExceptionHandler;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.IThrowableProxy;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
@@ -29,9 +31,8 @@ class HL7ExceptionHandler implements ReceivingApplicationExceptionHandler {
 
     public String processException(String incomingMessage, Map<String, Object> incomingMetadata, String outgoingMessage, Exception exception) throws HL7Exception {
         try {
-            UUID logbackUuid = UUID.randomUUID();
-            Object[] logbackArgs = new Object[] { "DEAD-LETTER-UUID", logbackUuid, exception };
-            LOG.error("Exception while processing message", logbackArgs);
+            UUID deadLetterUuid = UUID.randomUUID();
+            LOG.error("Exception while processing message", constructLogbackDeadLetterArgs(deadLetterUuid, exception));
 
             dataLayer.logDeadLetter(
                     configuration.getDbConfiguration().getInstanceId(),
@@ -50,8 +51,8 @@ class HL7ExceptionHandler implements ReceivingApplicationExceptionHandler {
                     incomingMessage,
                     null,
                     outgoingMessage,
-                    "exception",
-                    logbackUuid);
+                    constructFormattedException(exception),
+                    deadLetterUuid);
         } catch (Exception e3) {
             LOG.error("Error logging dead letter", e3);
         }
@@ -60,5 +61,22 @@ class HL7ExceptionHandler implements ReceivingApplicationExceptionHandler {
             outgoingMessage = "";
 
         return outgoingMessage;
+    }
+
+    static Object[] constructLogbackDeadLetterArgs(UUID deadLetterUuid, Exception exception) {
+        return new Object[] { "DEAD-LETTER-UUID", deadLetterUuid, exception };
+    }
+
+    static String constructFormattedException(Throwable exception) {
+        if (exception == null)
+            return "";
+
+        String message = "[" + exception.getClass().getName() + "]  " + exception.getMessage();
+
+        if (exception.getCause() != null)
+            if (exception.getCause() != exception)
+                message += "\r\n" + constructFormattedException(exception.getCause());
+
+        return message;
     }
 }
