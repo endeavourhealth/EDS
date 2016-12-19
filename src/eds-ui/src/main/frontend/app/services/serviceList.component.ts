@@ -76,4 +76,24 @@ export class ServiceListComponent {
 				(error) => vm.log.error('Failed to delete Service', error, 'Delete Service')
 			);
 	}
+
+	deleteData(item : Service) {
+		var vm = this;
+		MessageBoxDialog.open(vm.$modal, 'Delete Data', 'Are you sure you want to delete all data for this Service?', 'Yes', 'No')
+			.result.then(
+			() => vm.doDeleteData(item),
+			() => vm.log.info('Delete data cancelled')
+		);
+	}
+
+	doDeleteData(item : Service) {
+		var vm = this;
+		vm.serviceService.deleteData(item.uuid)
+			.subscribe(
+				() => {
+					vm.log.success('Data deletion started', item, 'Delete Data');
+				},
+				(error) => vm.log.error('Failed to delete data', error, 'Delete Data')
+			);
+	}
 }

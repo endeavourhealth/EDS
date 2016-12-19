@@ -6,6 +6,7 @@ export class Service {
 	name:string;
 	endpoints:Endpoint[];
 	organisations:{ [key:string]:string; };
+	additionalInfo:string;
 
 	constructor() {}
 }

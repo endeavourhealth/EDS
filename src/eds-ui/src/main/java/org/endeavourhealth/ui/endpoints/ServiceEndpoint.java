@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
@@ -13,6 +12,7 @@ import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
+import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
 import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
@@ -32,7 +32,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Path("/service")
 public final class ServiceEndpoint extends AbstractEndpoint {
@@ -41,6 +43,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 	private static final ServiceRepository repository = new ServiceRepository();
 	private static final OrganisationRepository organisationRepository = new OrganisationRepository();
 	private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Service);
+	private static final Map<UUID, FhirDeletionService> dataBeingDeleted = new ConcurrentHashMap<>();
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
@@ -90,6 +93,50 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 		Service dbService = repository.getById(serviceUuid);
 
 		repository.delete(dbService);
+
+		clearLogbackMarkers();
+		return Response
+				.ok()
+				.build();
+	}
+
+	@DELETE
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/data")
+	@RequiresAdmin
+	public Response deleteServiceData(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+				"Service Data",
+				"Service Id", uuid);
+
+		UUID serviceUuid = UUID.fromString(uuid);
+		if (dataBeingDeleted.get(serviceUuid) != null) {
+			throw new BadRequestException("Data deletion already in progress");
+		}
+
+		final Service dbService = repository.getById(serviceUuid);
+
+		//the delete will take some time, so do the delete in a separate thread. This does mean
+		//that there's no way to check the progress of the delete, but that can be added later.
+		Runnable task = () -> {
+			LOG.info("Deleting all data for service " + dbService.getName() + " " + dbService.getId());
+			FhirDeletionService deletor = new FhirDeletionService(dbService);
+			dataBeingDeleted.put(dbService.getId(), deletor);
+
+			try {
+				deletor.deleteData();
+				LOG.info("Completed deleting all data for service " + dbService.getName() + " " + dbService.getId());
+			} catch (Exception ex) {
+				LOG.error("Error deleting service " + dbService.getName() + " " + dbService.getId(), ex);
+			} finally {
+				dataBeingDeleted.remove(dbService.getId());
+			}
+		};
+
+		Thread thread = new Thread(task);
+		thread.start();
 
 		clearLogbackMarkers();
 		return Response
@@ -152,7 +199,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 		List<JsonService> ret = new ArrayList<>();
 
 		for (Service service: services) {
-			ret.add(new JsonService(service));
+			ret.add(new JsonService(service, getAdditionalInfo(service)));
 		}
 
 		clearLogbackMarkers();
@@ -181,7 +228,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 		List<JsonService> ret = new ArrayList<>();
 
 		for (Service service: services) {
-			ret.add(new JsonService(service));
+			ret.add(new JsonService(service, getAdditionalInfo(service)));
 		}
 
 		clearLogbackMarkers();
@@ -189,6 +236,20 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 				.ok()
 				.entity(ret)
 				.build();
+	}
+
+	/**
+	 * returns additional info string for the service. Currently this is just
+	 * the progress on data being deleted
+     */
+	private String getAdditionalInfo(Service service) {
+
+		FhirDeletionService deletionService = dataBeingDeleted.get(service.getId());
+		if (deletionService != null) {
+			return "Data being deleted: " + deletionService.getProgress();
+		}
+
+		return null;
 	}
 
 

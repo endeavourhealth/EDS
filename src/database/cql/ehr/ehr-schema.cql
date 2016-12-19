@@ -46,8 +46,8 @@ CREATE TABLE resource_history_by_service (
   is_deleted boolean,
   schema_version text,
   resource_data text,
-  PRIMARY KEY ((service_id, system_id, resource_type), created_at, resource_id, version)
-) WITH CLUSTERING ORDER BY (created_at DESC, resource_id ASC, version DESC);
+  PRIMARY KEY ((service_id, system_id, resource_type), resource_id, version)
+) WITH CLUSTERING ORDER BY (resource_id ASC, version DESC);
 
 CREATE TABLE resource_by_service (
   service_id uuid,
