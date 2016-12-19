@@ -13,7 +13,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: com.github.endeavourhealth.Common:eds-core:1.16.3" level="project" />
+    <orderEntry type="library" name="Maven: com.github.endeavourhealth.Common:eds-core:1.16.4" level="project" />
     <orderEntry type="library" name="Maven: me.fhir:fhir-dstu2:1.0.1.7108" level="project" />
     <orderEntry type="library" name="Maven: net.sf.saxon:Saxon-HE:9.5.1-5" level="project" />
     <orderEntry type="library" name="Maven: commons-discovery:commons-discovery:0.2" level="project" />

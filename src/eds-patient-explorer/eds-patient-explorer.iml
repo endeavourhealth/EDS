@@ -106,8 +106,8 @@
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.keycloak:keycloak-core:2.0.0.Final" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.keycloak:keycloak-authz-client:2.0.0.Final" level="project" />
     <orderEntry type="library" name="Maven: org.postgresql:postgresql:9.4.1212.jre7" level="project" />
-    <orderEntry type="library" name="Maven: com.github.endeavourhealth.Common:eds-ui-core:1.16.3" level="project" />
-    <orderEntry type="library" name="Maven: com.github.endeavourhealth.Common:eds-core:1.16.3" level="project" />
+    <orderEntry type="library" name="Maven: com.github.endeavourhealth.Common:eds-ui-core:1.16.4" level="project" />
+    <orderEntry type="library" name="Maven: com.github.endeavourhealth.Common:eds-core:1.16.4" level="project" />
     <orderEntry type="library" name="Maven: org.hibernate:hibernate-core:5.2.5.Final" level="project" />
     <orderEntry type="library" name="Maven: org.hibernate.javax.persistence:hibernate-jpa-2.1-api:1.0.0.Final" level="project" />
     <orderEntry type="library" name="Maven: antlr:antlr:2.7.7" level="project" />
