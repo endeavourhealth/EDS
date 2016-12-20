@@ -1,8 +1,8 @@
 import {Renderer, Directive, ElementRef} from "@angular/core";
-import {MouseCaptureService} from "./mousecapture.service";
+import {MouseCaptureService} from "./mouseCapture.service";
 
 @Directive({
-	selector : '[mousecapture]'
+	selector : '[mouseCapture]'
 })
 export class MouseCaptureDirective {
 	constructor ($element : ElementRef, renderer : Renderer, mouseCapture : MouseCaptureService) {

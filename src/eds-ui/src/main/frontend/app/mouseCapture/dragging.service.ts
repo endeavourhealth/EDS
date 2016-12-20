@@ -1,5 +1,5 @@
 import {Injectable} from "@angular/core";
-import {MouseCaptureService} from "./mousecapture.service";
+import {MouseCaptureService} from "./mouseCapture.service";
 
 @Injectable()
 export class DraggingService {

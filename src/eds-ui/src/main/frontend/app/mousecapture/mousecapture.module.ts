@@ -1,7 +1,7 @@
 import {NgModule} from "@angular/core";
-import {MouseCaptureDirective} from "./mousecapture.directive";
+import {MouseCaptureDirective} from "./mouseCapture.directive";
 import {DraggingService} from "./dragging.service";
-import {MouseCaptureService} from "./mousecapture.service";
+import {MouseCaptureService} from "./mouseCapture.service";
 
 @NgModule({
 	declarations : [
