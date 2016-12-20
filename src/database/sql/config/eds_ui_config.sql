@@ -43,5 +43,5 @@ VALUES
 ('eds-ui', 'logbackDb','{
    "url" : "jdbc:postgresql://localhost:5432/logback",
    "username" : "postgres",
-   "password" : "Taz123"
+   "password" : ""
 }');
