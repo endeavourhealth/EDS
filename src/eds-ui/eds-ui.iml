@@ -37,8 +37,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: com.github.endeavourhealth.Common:eds-ui-core:1.17.1" level="project" />
-    <orderEntry type="library" name="Maven: com.github.endeavourhealth.Common:eds-core:1.17.1" level="project" />
     <orderEntry type="library" name="Maven: org.glassfish.jersey.core:jersey-server:2.22.1" level="project" />
     <orderEntry type="library" name="Maven: javax.ws.rs:javax.ws.rs-api:2.0.1" level="project" />
     <orderEntry type="library" name="Maven: org.glassfish.jersey.media:jersey-media-jaxb:2.22.1" level="project" />
@@ -131,8 +129,8 @@
     <orderEntry type="library" name="Maven: org.javassist:javassist:3.20.0-GA" level="project" />
     <orderEntry type="library" name="Maven: net.bytebuddy:byte-buddy:1.5.4" level="project" />
     <orderEntry type="library" name="Maven: org.apache.geronimo.specs:geronimo-jta_1.1_spec:1.1.1" level="project" />
-    <orderEntry type="library" name="Maven: com.github.endeavourhealth.Common:eds-ui-core:1.17.1" level="project" />
-    <orderEntry type="library" name="Maven: com.github.endeavourhealth.Common:eds-core:1.17.1" level="project" />
+    <orderEntry type="library" name="Maven: com.github.endeavourhealth.Common:eds-ui-core:1.17.2" level="project" />
+    <orderEntry type="library" name="Maven: com.github.endeavourhealth.Common:eds-core:1.17.2" level="project" />
     <orderEntry type="module" module-name="eds-transforms" />
     <orderEntry type="library" name="Maven: me.fhir:fhir-dstu2:1.0.1.7108" level="project" />
     <orderEntry type="library" name="Maven: net.sf.saxon:Saxon-HE:9.5.1-5" level="project" />
