@@ -12,6 +12,7 @@ import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
+import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
 import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.security.SecurityUtils;
@@ -90,9 +91,20 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 				"Service Id", uuid);
 
 		UUID serviceUuid = UUID.fromString(uuid);
-		Service dbService = repository.getById(serviceUuid);
+		Service service = repository.getById(serviceUuid);
 
-		repository.delete(dbService);
+		//validate that there's no data in the EHR repo before allowing a delete
+		ResourceRepository resourceRepository = new ResourceRepository();
+		List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+		for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
+			UUID systemId = endpoint.getSystemUuid();
+
+			if (resourceRepository.dataExists(serviceUuid, systemId)) {
+				throw new BadRequestException("Cannot delete service without deleting data first");
+			}
+		}
+
+		repository.delete(service);
 
 		clearLogbackMarkers();
 		return Response
