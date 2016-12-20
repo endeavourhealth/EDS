@@ -17,7 +17,7 @@ module.exports = {
 	},
 	module: {
 		loaders: [
-			{ test: /\.ts$/, loader: 'ts' },
+			{ test: /\.ts$/, loader: 'awesome-typescript-loader' },
 			{ test: /\.html/, loader: 'raw' },
 			{ test: /\.css$/, loader: "style-loader!css-loader" },
 			{ test: /\.less$/, loader: "style!css!less" },
