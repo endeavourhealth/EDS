@@ -89,7 +89,10 @@ function getSnomedUICode(codeableConcept: UICodeableConcept): UICode {
 }
 
 function getReadUICode(codeableConcept: UICodeableConcept): UICode {
-    return getCode(codeableConcept, "http://endeavourhealth.org/fhir/read2");
+    let code : UICode  = getCode(codeableConcept, "http://read.info/readv2");
+    if (code == null)
+        code = getCode(codeableConcept, "http://endeavourhealth.org/fhir/read2");
+    return code;
 }
 
 function getCode(codeableConcept: UICodeableConcept, system: string): UICode {

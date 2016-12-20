@@ -164,6 +164,10 @@ function formatPostalCode(postalCode: string): string {
     if (postalCode == null)
         return null;
 
+    // Handle partials such as "LS11"
+    if (postalCode.length<5)
+        return postalCode;
+
     postalCode = postalCode.replace(" ", "").toUpperCase().trim();
 
     let regExp: RegExp = new RegExp("^([A-Z]{1,2}[0-9]{1,2}[A-Z]?)([0-9][A-Z]{2})$");

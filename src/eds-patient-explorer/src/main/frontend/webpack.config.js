@@ -3,8 +3,9 @@ var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
 	entry: {
-		'app' : './app/patientExplorer.app.ts',
-		'vendor' : './app/vendor.ts'
+		'shim' : 'core-js/fn/object/assign',
+		'vendor' : './app/vendor.ts',
+		'app' : './app/patientExplorer.app.ts'
 	},
 	output: {
 		filename: './[name].bundle.js',
