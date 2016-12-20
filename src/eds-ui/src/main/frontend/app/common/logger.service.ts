@@ -46,18 +46,20 @@ export class LoggerService {
      */
 	private appendResponseMessage(message:string, data?:{}) : string {
 
-		if (data
-			&& '_body' in data) {
+		try {
+			if (data && '_body' in data) {
 
-			var body = data['_body'];
-			if (body) {
-				var bodyObj = JSON.parse(body);
-				if ('message' in bodyObj) {
-					message += ':<br/>';
-					message += bodyObj['message'];
-
+				var body = data['_body'];
+				if (body) {
+					var bodyObj = JSON.parse(body);
+					if ('message' in bodyObj) {
+						message += ':<br/>';
+						message += bodyObj['message'];
+					}
 				}
 			}
+		} catch (err) {
+			//if it's not JSON, then don't worry
 		}
 
 		return message;
