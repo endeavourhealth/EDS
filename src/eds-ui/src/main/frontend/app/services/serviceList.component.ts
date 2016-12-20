@@ -5,12 +5,16 @@ import {Service} from "./models/Service";
 import {ServiceService} from "./service.service";
 import {LoggerService} from "../common/logger.service";
 import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
+import {services} from "ui-router-ng2/ng2";
+/*import {Observable} from 'rxjs/Rx';*/
+import {Observable} from "rxjs";
 
 @Component({
 	template: require('./serviceList.html')
 })
 export class ServiceListComponent {
 	services : Service[];
+	timerSubscription : any;
 
 	static $inject = ['$uibModal', 'ServiceService', 'LoggerService','$state'];
 
@@ -25,7 +29,10 @@ export class ServiceListComponent {
 		var vm = this;
 		vm.serviceService.getAll()
 			.subscribe(
-				(result) => vm.services = result,
+				(result) => {
+					vm.services = result;
+					vm.startRefreshTimersIfNecessary();
+				},
 				(error) => vm.log.error('Failed to load services', error, 'Load services')
 			)
 	}
@@ -92,8 +99,75 @@ export class ServiceListComponent {
 			.subscribe(
 				() => {
 					vm.log.success('Data deletion started', item, 'Delete Data');
+					vm.refreshService(item);
 				},
 				(error) => vm.log.error('Failed to delete data', error, 'Delete Data')
 			);
 	}
+
+	private refreshService(oldService : Service) {
+		var vm = this;
+		vm.serviceService.get(oldService.uuid)
+			.subscribe(
+				(result) => {
+					var index = vm.services.indexOf(oldService);
+					if (index > -1) {
+						vm.services[index] = result;
+					}
+				},
+				(error) => vm.log.error('Failed to refresh service', error, 'Refresh Service')
+			)
+	}
+
+	private startRefreshTimersIfNecessary() {
+		var vm = this;
+
+		//if we already have a timer, unsubscribe from it
+		vm.stopTimer();
+
+		//check to see if any service has additional info. If any does, start the timer
+		if (vm.anyServiceWithAdditionalInfo()) {
+			vm.timerSubscription = Observable.interval(2000).subscribe(x => {
+				vm.refreshServiceAdditionalInfo();
+			});
+		}
+	}
+
+	private refreshServiceAdditionalInfo() {
+		var vm = this;
+		var arrayLength = vm.services.length;
+		for (var i = 0; i < arrayLength; i++) {
+			var service = vm.services[i];
+			if (service.additionalInfo) {
+				vm.refreshService(service);
+			}
+		}
+
+		//if no services have additional info we may as well stop the timer
+		if (!vm.anyServiceWithAdditionalInfo()) {
+			vm.stopTimer();
+		}
+	}
+
+	private stopTimer() {
+		var vm = this;
+		if (vm.timerSubscription) {
+			vm.timerSubscription.unsubscribe();
+			vm.timerSubscription = null;
+		}
+	}
+
+	private anyServiceWithAdditionalInfo() : boolean {
+		var vm = this;
+		var arrayLength = vm.services.length;
+		for (var i = 0; i < arrayLength; i++) {
+			var service = vm.services[i];
+			if (service.additionalInfo) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+
 }

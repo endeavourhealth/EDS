@@ -213,7 +213,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 		UUID serviceUuid = UUID.fromString(uuid);
 		Service service = repository.getById(serviceUuid);
 
-		JsonService ret = new JsonService(service);
+		JsonService ret = new JsonService(service, getAdditionalInfo(service));
 
 		clearLogbackMarkers();
 		return Response

@@ -28,11 +28,11 @@
 												<a (click)="edit(item)">{{item.name}}</a>
 												<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{item.description}}" *ngIf="item.description"></span>
 
-												<!-- if we have any additional info, show it below the service name-->
-												<div *ngIf="item.additionalInfo != undefined">
-													<br/>
+												<!-- if we have any additional info, show it after the service name-->
+												<span class="bg-danger" *ngIf="item.additionalInfo">
 													{{item.additionalInfo}}
-												</div>
+												</span>
+
 										</td>
 										<td>{{item.localIdentifier}}</td>
 										<td>
