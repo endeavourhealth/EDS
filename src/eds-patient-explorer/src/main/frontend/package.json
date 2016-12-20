@@ -16,7 +16,7 @@
     "typescript": "2.0.6",
     "typings": "^1.4.0",
     "url-loader": "^0.5.7",
-    "webpack": "1.13.3",
+    "webpack": "1.13.2",
     "webpack-dev-server": "^1.16.1"
   },
   "dependencies": {
@@ -37,7 +37,7 @@
     "font-awesome": "^4.7.0",
     "jquery": "^3.1.1",
     "keycloak": "^1.2.0",
-    "linqts": "^1.6.0",
+    "linqts": "1.6.1",
     "moment": "^2.15.2",
     "ng2-datetime": "^1.2.2",
     "ng2-toastr": "^1.2.1",
@@ -48,7 +48,6 @@
   },
   "scripts": {
     "typings": "typings",
-    "postinstall": "typings install",
     "clean": "rm -rf ./dist",
     "build": "node ./node_modules/webpack/bin/webpack.js --config webpack.dist.config.js",
     "build-dev": "node ./node_modules/webpack/bin/webpack.js --config webpack.dev.config.js",
