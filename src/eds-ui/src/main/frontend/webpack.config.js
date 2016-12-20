@@ -4,8 +4,8 @@ var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
 	entry: {
-		'app' : './app/dataServiceManager.app.ts',
-		'vendor' : './app/vendor.ts'
+		'vendor' : './app/vendor.ts',
+		'app' : './app/dataServiceManager.app.ts'
 	},
 	output: {
 		filename: './[name].bundle.js',
