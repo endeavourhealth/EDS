@@ -1,4 +1,4 @@
-import {Resource} from "../../dataset/models/Resource";
+import {Resource} from "../../dataSet/models/Resource";
 import {FieldTest} from "./FieldTest";
 import {IsAny} from "./IsAny";
 

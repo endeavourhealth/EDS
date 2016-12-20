@@ -3,7 +3,7 @@ import {BrowserModule} from "@angular/platform-browser";
 import {FormsModule} from "@angular/forms";
 import {ProtocolEditComponent} from "./protocolEditor.component";
 import {ProtocolService} from "./protocol.service";
-import {DataSetModule} from "../dataset/dataSet.module";
+import {DataSetModule} from "../dataSet/dataSet.module";
 @NgModule({
 	imports : [
 		BrowserModule,

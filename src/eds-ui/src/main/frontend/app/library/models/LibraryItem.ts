@@ -1,6 +1,6 @@
 import {System} from "../../system/models/System";
 import {Protocol} from "../../protocol/models/Protocol";
-import {DataSet} from "../../dataset/models/Dataset";
+import {DataSet} from "../../dataSet/models/Dataset";
 import {CodeSet} from "../../tests/models/CodeSet";
 import {Query} from "../../query/models/Query";
 

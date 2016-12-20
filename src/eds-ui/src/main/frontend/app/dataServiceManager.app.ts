@@ -17,7 +17,7 @@ import {UserModule} from "./users/user.module";
 import {SystemModule} from "./system/system.module";
 import {QueryModule} from "./query/query.module";
 import {ProtocolModule} from "./protocol/protocol.module";
-import {DataSetModule} from "./dataset/dataSet.module";
+import {DataSetModule} from "./dataSet/dataSet.module";
 import {CodeSetModule} from "./codeSet/codeSet.module";
 // State components
 import {DashboardComponent} from "./dashboard/dashboard.component";
@@ -34,7 +34,7 @@ import {LibraryComponent} from "./library/library.component";
 import {SystemEditComponent} from "./system/systemEditor.component";
 import {QueryEditComponent} from "./query/queryEditor.component";
 import {ProtocolEditComponent} from "./protocol/protocolEditor.component";
-import {DataSetEditComponent} from "./dataset/dataSetEditor.component";
+import {DataSetEditComponent} from "./dataSet/dataSetEditor.component";
 import {CodeSetEditComponent} from "./codeSet/codeSetEditor.component";
 import {TransformErrorsComponent} from "./transformErrors/transformErrors.component";
 

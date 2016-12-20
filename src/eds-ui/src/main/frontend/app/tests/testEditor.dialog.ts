@@ -3,7 +3,7 @@ import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 import {CodeSetValue} from "../coding/models/CodeSetValue";
 import {Test} from "./models/Test";
 import {IsAny} from "./models/IsAny";
-import {Resource} from "../dataset/models/Resource";
+import {Resource} from "../dataSet/models/Resource";
 import {CodePickerDialog} from "../coding/codePicker.dialog";
 import {CodeSet} from "./models/CodeSet";
 import {FieldTest} from "./models/FieldTest";

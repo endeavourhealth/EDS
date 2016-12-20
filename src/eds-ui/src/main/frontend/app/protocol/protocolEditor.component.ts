@@ -6,7 +6,7 @@ import {Cohort} from "./models/Cohort";
 import {LibraryItem} from "../library/models/LibraryItem";
 import {TechnicalInterface} from "../system/models/TechnicalInterface";
 import {LibraryService} from "../library/library.service";
-import {DataSet} from "../dataset/models/Dataset";
+import {DataSet} from "../dataSet/models/Dataset";
 import {ServiceService} from "../services/service.service";
 import {LoggerService} from "../common/logger.service";
 import {AdminService} from "../administration/admin.service";
@@ -14,7 +14,7 @@ import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Transition, StateService} from "ui-router-ng2";
 import {Component} from "@angular/core";
 import {SystemService} from "../system/system.service";
-import {DataSetService} from "../dataset/dataSet.service";
+import {DataSetService} from "../dataSet/dataSet.service";
 import {ProtocolService} from "./protocol.service";
 
 @Component({
