@@ -4,6 +4,7 @@ var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
 	entry: {
+		'shim' : 'core-js/fn/object/assign',
 		'vendor' : './app/vendor.ts',
 		'app' : './app/dataServiceManager.app.ts'
 	},
