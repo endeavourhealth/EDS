@@ -21,7 +21,10 @@
 						</div>
 					</td>
 					<td>
-						{{investigation?.value | cuiQuantity }}
+						<span>{{investigation?.value | cuiQuantity }}</span>
+						<div *ngFor="let related of investigation.related">
+							<span>{{ related.target?.value | cuiQuantity }}</span>
+						</div>
 					</td>
 				</tr>
 			</tbody>
