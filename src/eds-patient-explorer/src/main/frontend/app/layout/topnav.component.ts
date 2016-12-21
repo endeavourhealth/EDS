@@ -33,16 +33,14 @@ export class TopnavComponent {
 			vm.userOrganisations = [];
 			for(let orgGroup of vm.currentUser.organisationGroups) {
 				let orgRole = new OrgRole(orgGroup.organisationId, 'Loading...');
-				vm.userOrganisations.push(orgRole);
 				vm.layoutService.getServiceName(orgRole.id)
 					.subscribe(
 						(result) => {
-							if (result != null && result != '')
+							if (result != null && result != '') {
 								orgRole.name = result;
-							else
-								orgRole.name = 'Unknown';
-						},
-						(error) => orgRole.name = 'Unknown'
+								vm.userOrganisations.push(orgRole);
+							}
+						}
 					);
 			}
 		}

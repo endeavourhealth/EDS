@@ -1,6 +1,5 @@
 package org.endeavourhealth.keycloak.providers;
 
-import org.apache.commons.codec.binary.StringUtils;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -104,9 +103,22 @@ public class OrgGroupMembershipMapper extends AbstractOIDCProtocolMapper impleme
     }
 
     public void buildMembership(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
-        List<OrgGroupMembership> membership = new LinkedList<>();
+        LinkedList<OrgGroupMembership> membershipMap = new LinkedList<>();
+
         boolean fullPath = useFullPath(mappingModel);
-        for (GroupModel group : userSession.getUser().getGroups()) {
+
+        Set<GroupModel> groupModels = userSession.getUser().getGroups();
+        addOrganisationIds(fullPath, groupModels, membershipMap);
+
+        String protocolClaim = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
+        token.getOtherClaims().put(protocolClaim, membershipMap);
+    }
+
+    private void addOrganisationIds(boolean fullPath, Set<GroupModel> groupModels, LinkedList<OrgGroupMembership> membershipMap) {
+        if (groupModels == null || groupModels.size() == 0)
+            return;
+
+        for (GroupModel group : groupModels) {
             OrgGroupMembership orgGroupMembership = new OrgGroupMembership();
             if (fullPath) {
                 orgGroupMembership.setGroup(ModelToRepresentation.buildGroupPath(group));
@@ -120,13 +132,12 @@ public class OrgGroupMembershipMapper extends AbstractOIDCProtocolMapper impleme
                 orgGroupMembership.setOrganisationId(organisationId.trim());
             }
 
+            membershipMap.add(orgGroupMembership);
+
             buildRoles(orgGroupMembership.getRoles(), group.getRoleMappings());
 
-            membership.add(orgGroupMembership);
+            addOrganisationIds(fullPath, group.getSubGroups(), membershipMap);
         }
-        String protocolClaim = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
-
-        token.getOtherClaims().put(protocolClaim, membership);
     }
 
     private void buildRoles(List<String> orgGroupMembership, Set<RoleModel> roles) {
