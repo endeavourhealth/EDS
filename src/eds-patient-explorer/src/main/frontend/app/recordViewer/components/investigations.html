@@ -21,7 +21,7 @@
 						</div>
 					</td>
 					<td>
-						<span>{{investigation?.value | cuiQuantity }}</span>
+						<span>{{investigation?.value | cuiQuantity }}&nbsp;</span> <!-- nbsp forces "row" when value not present, for alignment of "related" -->
 						<div *ngFor="let related of investigation.related">
 							<span>{{ related.target?.value | cuiQuantity }}</span>
 						</div>
