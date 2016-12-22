@@ -13,6 +13,7 @@ import {UIAllergy} from "./models/resources/clinical/UIAllergy";
 import {UIImmunisation} from "./models/resources/clinical/UIImmunisation";
 import {UIFamilyHistory} from "./models/resources/clinical/UIFamilyHistory";
 import {UIMedicationStatement} from "./models/resources/clinical/UIMedicationStatement";
+import {Subscription} from "rxjs";
 
 @Component({
 		template : require('./recordViewer.html')
@@ -20,6 +21,7 @@ import {UIMedicationStatement} from "./models/resources/clinical/UIMedicationSta
 export class RecordViewerComponent {
 		@ViewChild('recordTabs') recordTabs : any;
 		public patient: UIPatientRecord;
+		busy: Subscription;
 
 		constructor(private $modal: NgbModal, protected recordViewerService: RecordViewerService) {
 				this.showPatientFind();
@@ -89,7 +91,7 @@ export class RecordViewerComponent {
 						return;
 
 				let ctrl = this;
-				ctrl
+				this.busy = ctrl
 						.recordViewerService
 						.getEncounters(ctrl.patient.patient.patientId)
 						.subscribe(
@@ -102,7 +104,7 @@ export class RecordViewerComponent {
 				return;
 
 			let ctrl = this;
-			this.recordViewerService.getMedication(ctrl.patient.patient.patientId)
+			this.busy = this.recordViewerService.getMedication(ctrl.patient.patient.patientId)
 				.subscribe(
 					(result : UIMedicationStatement[]) => ctrl.patient.medication = linq(result)
 						.OrderByDescending(t => t.dateAuthorised.date)
@@ -115,7 +117,7 @@ export class RecordViewerComponent {
 						return;
 
 				let vm = this;
-				vm
+			this.busy = vm
 						.recordViewerService
 						.getProblems(vm.patient.patient.patientId)
 						.subscribe((result: UIProblem[]) =>
@@ -129,7 +131,7 @@ export class RecordViewerComponent {
 						return;
 
 				let vm = this;
-				vm
+			this.busy = vm
 						.recordViewerService
 						.getObservations(vm.patient.patient.patientId)
 						.subscribe((result: UIObservation[]) =>
@@ -143,7 +145,7 @@ export class RecordViewerComponent {
 						return;
 
 				let vm = this;
-				vm
+			this.busy = vm
 						.recordViewerService
 						.getDiary(vm.patient.patient.patientId)
 						.subscribe((result: UIDiary[]) =>
@@ -157,7 +159,7 @@ export class RecordViewerComponent {
 				return;
 
 			let vm = this;
-			vm
+			this.busy = vm
 				.recordViewerService
 				.getAllergies(vm.patient.patient.patientId)
 				.subscribe((result: UIAllergy[]) =>
@@ -171,7 +173,7 @@ export class RecordViewerComponent {
 			return;
 
 		let vm = this;
-		vm
+		this.busy = vm
 			.recordViewerService
 			.getImmunisations(vm.patient.patient.patientId)
 			.subscribe((result: UIImmunisation[]) =>
@@ -185,7 +187,7 @@ export class RecordViewerComponent {
 			return;
 
 		let vm = this;
-		vm
+		this.busy = vm
 			.recordViewerService
 			.getFamilyHistory(vm.patient.patient.patientId)
 			.subscribe((result: UIFamilyHistory[]) =>

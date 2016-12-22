@@ -3,7 +3,7 @@
 @import "~ng2-toastr/ng2-toastr.css";
 @import "~bootstrap/dist/css/bootstrap.css";
 @import "~bootstrap/dist/css/bootstrap-theme.css";
-
+@import "~angular2-busy/build/style/busy.css";
 
 /* internal css */
 @import "bootstrap-extensions.css";
