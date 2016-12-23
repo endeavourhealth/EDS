@@ -36,6 +36,9 @@ module.exports = {
 		new webpack.optimize.DedupePlugin(),
 		new webpack.ProvidePlugin({
 			'moment': 'moment'
+		}),
+		new webpack.optimize.UglifyJsPlugin({
+			compress: { warnings: false }
 		})
 	],
 	devServer: {
