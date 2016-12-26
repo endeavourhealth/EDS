@@ -1,21 +1,21 @@
-package org.endeavourhealth.hl7receiver.model.application;
+package org.endeavourhealth.hl7receiver.hl7;
 
 import ca.uhn.hl7v2.app.Connection;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-public class RemoteConnection {
+public class HL7Connection {
     private Connection connection;
     private String host;
     private int port;
 
-    public RemoteConnection(Connection connection) {
+    public HL7Connection(Connection connection) {
         this.connection = connection;
         this.host = connection.getRemoteAddress().getHostAddress();
         this.port = connection.getRemotePort();
     }
 
-    public RemoteConnection(String host, int port) {
+    public HL7Connection(String host, int port) {
         this.host = host;
         this.port = port;
     }
@@ -42,13 +42,13 @@ public class RemoteConnection {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof RemoteConnection))
+        if (!(obj instanceof HL7Connection))
             return false;
 
         if (obj == this)
             return true;
 
-        RemoteConnection rhs = (RemoteConnection)obj;
+        HL7Connection rhs = (HL7Connection)obj;
 
         return new EqualsBuilder()
                 .append(host, rhs.host)

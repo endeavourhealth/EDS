@@ -6,7 +6,6 @@ import ca.uhn.hl7v2.protocol.MetadataKeys;
 import org.endeavourhealth.core.postgres.PgStoredProcException;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
-import org.endeavourhealth.hl7receiver.model.application.RemoteConnection;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +20,7 @@ class HL7ConnectionManager implements ConnectionListener {
     private Configuration configuration;
     private DbChannel dbChannel;
     private DataLayer dataLayer;
-    private ConcurrentHashMap<RemoteConnection, Integer> connectionIds = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<HL7Connection, Integer> connectionIds = new ConcurrentHashMap<>();
 
     private HL7ConnectionManager() {
     }
@@ -41,12 +40,12 @@ class HL7ConnectionManager implements ConnectionListener {
     }
 
     public void closeConnections() {
-        for (RemoteConnection connection : connectionIds.keySet())
+        for (HL7Connection connection : connectionIds.keySet())
             connection.getConnection().close();
     }
 
     public Integer getConnectionId(String ipAddress, int port) {
-        return connectionIds.get(new RemoteConnection(ipAddress, port));
+        return connectionIds.get(new HL7Connection(ipAddress, port));
     }
 
     public static String getRemoteHost(Map<String, Object> map) {
@@ -84,7 +83,7 @@ class HL7ConnectionManager implements ConnectionListener {
         }
 
         if (connectionId != null)
-            this.connectionIds.put(new RemoteConnection(connection), connectionId);
+            this.connectionIds.put(new HL7Connection(connection), connectionId);
     }
 
     private void recordConnectionClosed(Connection connection) {
@@ -93,7 +92,7 @@ class HL7ConnectionManager implements ConnectionListener {
 
         LOG.info("Connection closed on channel " + dbChannel.getChannelName() + " from remote host " + remoteHost + " using remote port " + remotePort.toString());
 
-        Integer connectionId = this.connectionIds.remove(new RemoteConnection(connection));
+        Integer connectionId = this.connectionIds.remove(new HL7Connection(connection));
 
         try {
             dataLayer.closeConnection(connectionId);
