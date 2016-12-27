@@ -79,9 +79,9 @@
     <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpcore:4.4.4" level="project" />
     <orderEntry type="library" name="Maven: commons-logging:commons-logging:1.2" level="project" />
     <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.9" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.keycloak:keycloak-common:2.0.0.Final" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.bouncycastle:bcpkix-jdk15on:1.52" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.keycloak:keycloak-core:2.0.0.Final" level="project" />
+    <orderEntry type="library" name="Maven: org.keycloak:keycloak-common:2.0.0.Final" level="project" />
+    <orderEntry type="library" name="Maven: org.bouncycastle:bcpkix-jdk15on:1.52" level="project" />
+    <orderEntry type="library" name="Maven: org.keycloak:keycloak-core:2.0.0.Final" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.5.4" level="project" />
   </component>
 </module>
