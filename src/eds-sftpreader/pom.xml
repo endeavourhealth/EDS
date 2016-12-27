@@ -97,7 +97,7 @@
                             <mainClass>org.endeavourhealth.sftpreader.Main</mainClass>
                         </manifest>
                     </archive>
-                    <outputDirectory>${project.build.directory}/jar</outputDirectory>
+                    <outputDirectory>${project.build.directory}</outputDirectory>
                 </configuration>
             </plugin>
 
@@ -113,7 +113,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.directory}/jar/lib</outputDirectory>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
                             <overWriteReleases>false</overWriteReleases>
                             <overWriteSnapshots>false</overWriteSnapshots>
                             <overWriteIfNewer>true</overWriteIfNewer>
