@@ -61,7 +61,7 @@ public final class Configuration
 
         postgresUrl = ConfigManager.getConfiguration("postgres-url");
         postgresUsername = ConfigManager.getConfiguration("postgres-username");
-        postgresPassword = ConfigManager.getConfiguration("postgres-username");
+        postgresPassword = ConfigManager.getConfiguration("postgres-password");
     }
 
     private void loadDbConfiguration() throws PgStoredProcException, SQLException, SftpReaderException {
