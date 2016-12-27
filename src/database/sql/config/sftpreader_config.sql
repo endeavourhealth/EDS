@@ -5,6 +5,6 @@ insert into config
 	config_data
 )
 values
-('sftpreader', 'postgres-url', 'jdbc:postgresql://localhost:5432/hl7receiver'),
+('sftpreader', 'postgres-url', 'jdbc:postgresql://localhost:5432/sftpreader'),
 ('sftpreader', 'postgres-username', 'postgres'),
 ('sftpreader', 'postgres-password', '');
