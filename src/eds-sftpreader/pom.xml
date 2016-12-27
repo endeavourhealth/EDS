@@ -21,6 +21,11 @@
             <version>${eds-common.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j-log4j12.version}</version>
+        </dependency>
+        <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>
             <version>${javax.ws.rs-api.version}</version>
@@ -82,6 +87,21 @@
             <!-- NOTE: Cannot be build as a fat JAR due to Bouncy Castle dependency -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>org.endeavourhealth.sftpreader.Main</mainClass>
+                        </manifest>
+                    </archive>
+                    <outputDirectory>${project.build.directory}/jar</outputDirectory>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>3.0.0</version>
                 <executions>
@@ -92,7 +112,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <outputDirectory>${project.build.directory}/jar</outputDirectory>
                             <overWriteReleases>false</overWriteReleases>
                             <overWriteSnapshots>false</overWriteSnapshots>
                             <overWriteIfNewer>true</overWriteIfNewer>
