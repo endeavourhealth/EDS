@@ -1,5 +1,3 @@
---manually delete the old version of this function
-DROP FUNCTION IF EXISTS sftpreader.get_unnotified_batches (_instance_id varchar);
 
 create or replace function sftpreader.get_unnotified_batch_splits
 (

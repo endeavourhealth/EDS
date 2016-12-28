@@ -88,6 +88,7 @@
 
     <build>
         <plugins>
+            <!-- fix the source and target compiler versions -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -98,22 +99,64 @@
                 </configuration>
             </plugin>
 
-            <!-- NOTE: Cannot be build as a fat JAR due to Bouncy Castle dependency -->
+            <!-- create a fat jar, specifically excluding the bouncycastle libraries (these need to remain intact) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                            <mainClass>org.endeavourhealth.sftpreader.Main</mainClass>
-                        </manifest>
-                    </archive>
-                    <outputDirectory>${project.build.directory}</outputDirectory>
-                </configuration>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Main-Class>org.endeavourhealth.sftpreader.Main</Main-Class>
+
+                                        <!-- add bouncycastle libraries to jar manifest as these need to remain outside the fat jar -->
+                                        <Class-Path>bcprov-jdk15on-${bouncy-castle.version}.jar bcpg-jdk15on-${bouncy-castle.version}.jar</Class-Path>
+
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                            <artifactSet>
+                                <!-- exclude bouncycastle libraries from the fat jar -->
+                                <excludes>
+                                    <exclude>org.bouncycastle:bcprov-jdk15on</exclude>
+                                    <exclude>org.bouncycastle:bcpg-jdk15on</exclude>
+                                    <exclude>org.bouncycastle:bcpkix-jdk15on</exclude>
+                                </excludes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
+            <!-- remove original-eds-sftpreader-1.0-SNAPSHOT.jar as this is the thin JAR and of no use -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <delete file="${project.build.directory}/original-${project.artifactId}-${project.version}.jar" />
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- copy bouncycastle dependencies -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -126,6 +169,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
+                            <includeArtifactIds>bcprov-jdk15on,bcpg-jdk15on,bcpkix-jdk15on</includeArtifactIds>
                             <outputDirectory>${project.build.directory}</outputDirectory>
                             <overWriteReleases>false</overWriteReleases>
                             <overWriteSnapshots>false</overWriteSnapshots>
@@ -134,6 +178,7 @@
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
     </build>
 </project>

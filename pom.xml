@@ -13,7 +13,7 @@
         <npm.version>3.3.12</npm.version>
 
         <amqp-client.version>3.6.2</amqp-client.version>
-        <bouncy-castle.version>1.54</bouncy-castle.version>
+        <bouncy-castle.version>1.56</bouncy-castle.version>
         <c3p0.version>0.9.5.2</c3p0.version>
         <cassandra-driver.version>3.1.1</cassandra-driver.version>
         <commons-codec.version>1.10</commons-codec.version>

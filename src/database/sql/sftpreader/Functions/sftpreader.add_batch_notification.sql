@@ -1,8 +1,4 @@
 
---need to manually delete the old version, since the new version doesn't overwrite the new one
-DROP FUNCTION IF EXISTS sftpreader.add_batch_notification(integer, character varying, uuid, character varying, character varying, boolean, character varying);
-
-
 create or replace function sftpreader.add_batch_notification
 (
 	_batch_id integer,
