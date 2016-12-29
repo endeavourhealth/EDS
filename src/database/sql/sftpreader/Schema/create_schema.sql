@@ -249,7 +249,7 @@ create table log.batch_file
 create table log.batch_split
 (
 	batch_split_id serial not null,
-	batch_id serial not null,
+	batch_id integer not null,
 	instance_id varchar(100) not null,
 	local_relative_path varchar(1000) not null,
 	organisation_id varchar(100) not null,
