@@ -1,5 +1,5 @@
 
-create or replace function sftpreader.get_batches
+create or replace function log.get_batches
 (
 	_batch_ids integer[]
 )
@@ -18,7 +18,7 @@ begin
 			b.batch_identifier,
 			b.local_relative_path,
 			b.sequence_number
-		from sftpreader.batch b
+		from log.batch b
 		where b.batch_id in
 		(
 			select unnest(_batch_ids)
@@ -42,8 +42,8 @@ begin
 			bf.is_decrypted,
 			bf.decrypted_filename,
 			bf.decrypted_size_bytes
-		from sftpreader.batch b
-		inner join sftpreader.batch_file bf on b.batch_id = bf.batch_id 
+		from log.batch b
+		inner join log.batch_file bf on b.batch_id = bf.batch_id 
 		where b.batch_id in
 		(
 			select unnest(_batch_ids)

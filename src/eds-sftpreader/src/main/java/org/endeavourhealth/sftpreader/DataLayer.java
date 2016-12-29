@@ -22,7 +22,7 @@ public class DataLayer
     public DbConfiguration getConfiguration(String instanceId) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.get_configuration")
+                .setName("configuration.get_configuration")
                 .addParameter("_instance_id", instanceId);
 
         DbConfiguration dbConfiguration = pgStoredProc.executeSingleOrEmptyRow((resultSet) ->
@@ -74,7 +74,7 @@ public class DataLayer
     private List<DbConfigurationKvp> getConfigurationKvp(String instanceId) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.get_configuration_kvp")
+                .setName("configuration.get_configuration_kvp")
                 .addParameter("_instance_id", instanceId);
 
         return pgStoredProc.executeQuery((resultSet) -> new DbConfigurationKvp()
@@ -85,16 +85,44 @@ public class DataLayer
     public List<String> getInterfaceFileTypes(String instanceId) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.get_interface_file_types")
+                .setName("configuration.get_interface_file_types")
                 .addParameter("_instance_id", instanceId);
 
         return pgStoredProc.executeQuery(resultSet -> resultSet.getString("file_type_identifier"));
     }
 
+    public void addEmisOrganisationMap(EmisOrganisationMap mapping) throws PgStoredProcException {
+
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("configuration.add_emis_organisation_map")
+                .addParameter("_guid", mapping.getGuid())
+                .addParameter("_name", mapping.getName())
+                .addParameter("_ods_code", mapping.getOdsCode());
+
+        pgStoredProc.execute();
+    }
+
+    public EmisOrganisationMap getEmisOrganisationMap(String guid) throws PgStoredProcException
+    {
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("configuration.get_emis_organisation_map")
+                .addParameter("_guid", guid);
+
+        List<EmisOrganisationMap> mappings = pgStoredProc.executeQuery(resultSet -> new EmisOrganisationMap()
+                .setGuid(resultSet.getString("guid"))
+                .setName(resultSet.getString("name"))
+                .setOdsCode(resultSet.getString("ods_code")));
+
+        if (mappings.isEmpty())
+            return null;
+
+        return mappings.get(0);
+    }
+
     public AddFileResult addFile(String instanceId, SftpFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.add_file")
+                .setName("log.add_file")
                 .addParameter("_instance_id", instanceId)
                 .addParameter("_batch_identifier", batchFile.getBatchIdentifier())
                 .addParameter("_file_type_identifier", batchFile.getFileTypeIdentifier())
@@ -113,7 +141,7 @@ public class DataLayer
     public void setFileAsDownloaded(SftpFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.set_file_as_downloaded")
+                .setName("log.set_file_as_downloaded")
                 .addParameter("_batch_file_id", batchFile.getBatchFileId())
                 .addParameter("_local_size_bytes", batchFile.getLocalFileSizeBytes());
 
@@ -123,7 +151,7 @@ public class DataLayer
     public void setFileAsDecrypted(SftpFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.set_file_as_decrypted")
+                .setName("log.set_file_as_decrypted")
                 .addParameter("_batch_file_id", batchFile.getBatchFileId())
                 .addParameter("_decrypted_filename", batchFile.getDecryptedFilename())
                 .addParameter("_decrypted_size_bytes", batchFile.getDecryptedFileSizeBytes());
@@ -134,7 +162,7 @@ public class DataLayer
     public void addUnknownFile(String instanceId, SftpFile batchFile) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.add_unknown_file")
+                .setName("log.add_unknown_file")
                 .addParameter("_instance_id", instanceId)
                 .addParameter("_filename", batchFile.getFilename())
                 .addParameter("_remote_size_bytes", batchFile.getRemoteFileSizeInBytes())
@@ -146,7 +174,7 @@ public class DataLayer
     public List<Batch> getIncompleteBatches(String instanceId) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.get_incomplete_batches")
+                .setName("log.get_incomplete_batches")
                 .addParameter("_instance_id", instanceId);
 
         return populateBatches(pgStoredProc);
@@ -155,7 +183,7 @@ public class DataLayer
     public Batch getLastCompleteBatch(String instanceId) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.get_last_complete_batch")
+                .setName("log.get_last_complete_batch")
                 .addParameter("_instance_id", instanceId);
 
         List<Batch> batches = populateBatches(pgStoredProc);
@@ -172,7 +200,7 @@ public class DataLayer
     public List<BatchSplit> getUnnotifiedBatchSplits(String instanceId) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.get_unnotified_batch_splits")
+                .setName("log.get_unnotified_batch_splits")
                 .addParameter("_instance_id", instanceId);
 
         return populateBatchSplits(pgStoredProc);
@@ -200,19 +228,10 @@ public class DataLayer
         return batchSplits;
     }
 
-    /*public List<Batch> getUnnotifiedBatches(String instanceId) throws PgStoredProcException
-    {
-        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.get_unnotified_batches")
-                .addParameter("_instance_id", instanceId);
-
-        return populateBatch(pgStoredProc);
-    }*/
-
     public List<UnknownFile> getUnknownFiles(String instanceId) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.get_unknown_files")
+                .setName("log.get_unknown_files")
                 .addParameter("_instance_id", instanceId);
 
         return pgStoredProc.executeQuery(resultSet -> new UnknownFile()
@@ -259,7 +278,7 @@ public class DataLayer
     public void setBatchAsComplete(Batch batch, int sequenceNumber) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.set_batch_as_complete")
+                .setName("log.set_batch_as_complete")
                 .addParameter("_batch_id", batch.getBatchId())
                 .addParameter("_sequence_number", Integer.toString(sequenceNumber));
 
@@ -269,7 +288,7 @@ public class DataLayer
     public void addBatchNotification(int batchId, int batchSplitId, String instanceId, UUID messageId, String outboundMessage, String inboundMessage, boolean wasSuccess, String errorText) throws PgStoredProcException
     {
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.add_batch_notification")
+                .setName("log.add_batch_notification")
                 .addParameter("_batch_id", batchId)
                 .addParameter("_batch_split_id", batchSplitId)
                 .addParameter("_instance_id", instanceId)
@@ -289,7 +308,7 @@ public class DataLayer
         String organisationId = batchSplit.getOrganisationId();
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.add_batch_split")
+                .setName("log.add_batch_split")
                 .addParameter("_batch_id", batchId)
                 .addParameter("_instance_id", instanceId)
                 .addParameter("_local_relative_path", localRelativePath)
@@ -298,51 +317,12 @@ public class DataLayer
         pgStoredProc.execute();
     }
 
-    public void addConfigurationKvp(DbConfigurationKvp newKvp, String instanceId) throws PgStoredProcException {
-
-        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.add_configuration_kvp")
-                .addParameter("_instance_id", instanceId)
-                .addParameter("_key", newKvp.getKey())
-                .addParameter("_value", newKvp.getValue());
-
-        pgStoredProc.execute();
-    }
-
     public void deleteBatchSplits(Batch batch) throws PgStoredProcException {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.delete_batch_splits")
+                .setName("log.delete_batch_splits")
                 .addParameter("_batch_id", batch.getBatchId());
 
         pgStoredProc.execute();
-    }
-
-    public void addEmisOrganisationMap(EmisOrganisationMap mapping) throws PgStoredProcException {
-
-        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.add_emis_organisation_map")
-                .addParameter("_guid", mapping.getGuid())
-                .addParameter("_name", mapping.getName())
-                .addParameter("_ods_code", mapping.getOdsCode());
-
-        pgStoredProc.execute();
-    }
-
-    public EmisOrganisationMap getEmisOrganisationMap(String guid) throws PgStoredProcException
-    {
-        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("sftpreader.get_emis_organisation_map")
-                .addParameter("_guid", guid);
-
-        List<EmisOrganisationMap> mappings = pgStoredProc.executeQuery(resultSet -> new EmisOrganisationMap()
-                .setGuid(resultSet.getString("guid"))
-                .setName(resultSet.getString("name"))
-                .setOdsCode(resultSet.getString("ods_code")));
-        if (mappings.isEmpty()) {
-            return null;
-        } else {
-            return mappings.get(0);
-        }
     }
 }

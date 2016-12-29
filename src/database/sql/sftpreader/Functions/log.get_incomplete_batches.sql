@@ -1,5 +1,5 @@
 
-create or replace function sftpreader.get_incomplete_batches
+create or replace function log.get_incomplete_batches
 (
 	_instance_id varchar
 )
@@ -11,14 +11,14 @@ begin
 
 	select
 		array_agg(b.batch_id) into _batch_ids
-	from sftpreader.batch b
+	from log.batch b
 	where b.instance_id = _instance_id
 	and b.is_complete = false;
 
 	return query
 	select
 	  * 
-	from sftpreader.get_batches(_batch_ids);
+	from log.get_batches(_batch_ids);
 
 end;
 $$ language plpgsql;

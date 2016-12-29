@@ -1,5 +1,5 @@
 
-create or replace function sftpreader.set_batch_as_complete
+create or replace function log.set_batch_as_complete
 (
 	_batch_id integer,
 	_sequence_number integer
@@ -7,7 +7,7 @@ create or replace function sftpreader.set_batch_as_complete
 returns void
 as $$
 
-	update sftpreader.batch
+	update log.batch
 	set
 		sequence_number = _sequence_number,
 		is_complete = true,

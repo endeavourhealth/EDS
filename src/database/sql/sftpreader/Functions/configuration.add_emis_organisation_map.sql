@@ -1,5 +1,5 @@
 
-create or replace function sftpreader.add_emis_organisation_map
+create or replace function configuration.add_emis_organisation_map
 (
     _guid varchar,
     _name varchar,
@@ -8,10 +8,10 @@ create or replace function sftpreader.add_emis_organisation_map
 returns void as
 $$
 
-	delete from sftpreader.emis_organisation_map
+	delete from configuration.emis_organisation_map
 	where guid = _guid;
 
-	insert into sftpreader.emis_organisation_map
+	insert into configuration.emis_organisation_map
 	(
 		guid,
 		name,

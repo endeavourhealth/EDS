@@ -2,7 +2,7 @@
 	insert test data
 */
 
-insert into sftpreader.instance
+insert into configuration.instance
 (
 	instance_id,
 	description
@@ -13,7 +13,7 @@ values
 	'Endeavour test EMIS instance connecting to endeavour-sftp.cloudapp.net'
 );
 
-insert into sftpreader.configuration
+insert into configuration.configuration
 (
 	instance_id,
 	interface_type_id,
@@ -28,7 +28,7 @@ values
 	60
 );
 
-insert into sftpreader.configuration_eds
+insert into configuration.configuration_eds
 (
 	instance_id,
 	eds_url,
@@ -59,7 +59,7 @@ values
 	'eds-sftpreader'
 );
 
-insert into sftpreader.configuration_kvp
+insert into configuration.configuration_kvp
 (
 	instance_id,
 	key,
@@ -72,7 +72,7 @@ values
 	'45E7CD20-EE37-41AB-90D6-DC9D4B03D102'
 );
 
-insert into sftpreader.configuration_sftp
+insert into configuration.configuration_sftp
 (
 	instance_id,
 	hostname,
@@ -173,7 +173,7 @@ iADr8X4xdygVMJIP5KO4EhQLs1C9C4FZSfPWRPhhL7CKWgdh7pYvtKIL1umduY5i
 
 */
 
-insert into sftpreader.configuration_pgp
+insert into configuration.configuration_pgp
 (
 	instance_id,
 	file_extension_filter,

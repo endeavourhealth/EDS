@@ -1,5 +1,5 @@
 
-create or replace function sftpreader.get_batch_splits
+create or replace function log.get_batch_splits
 (
 	_batch_split_ids integer[]
 )
@@ -17,7 +17,7 @@ begin
 			b.batch_id,
 			b.local_relative_path,
 			b.organisation_id
-		from sftpreader.batch_split b
+		from log.batch_split b
 		where b.batch_split_id in
 		(
 			select unnest(_batch_split_ids)

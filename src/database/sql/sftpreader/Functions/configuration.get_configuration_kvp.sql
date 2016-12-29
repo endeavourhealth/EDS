@@ -1,5 +1,5 @@
 
-create or replace function sftpreader.get_configuration_kvp
+create or replace function configuration.get_configuration_kvp
 (
 	_instance_id varchar(100)
 )
@@ -13,7 +13,7 @@ as $$
 	select
 		kvp.key,
 		kvp.value
-	from sftpreader.configuration_kvp kvp
+	from configuration.configuration_kvp kvp
 	where kvp.instance_id = _instance_id;
 
 $$ language sql;

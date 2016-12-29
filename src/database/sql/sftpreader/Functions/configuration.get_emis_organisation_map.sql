@@ -1,5 +1,5 @@
 
-create or replace function sftpreader.get_emis_organisation_map
+create or replace function configuration.get_emis_organisation_map
 (
 	_guid varchar
 )
@@ -11,10 +11,11 @@ returns table
 ) 
 as $$
 
-	select guid,
+	select 
+		guid,
 		name,
 		ods_code
-	from sftpreader.emis_organisation_map
+	from configuration.emis_organisation_map
 	where guid = _guid;
 
 $$ language sql;

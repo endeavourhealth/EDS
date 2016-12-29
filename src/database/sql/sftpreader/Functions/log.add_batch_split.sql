@@ -1,5 +1,5 @@
 
-create or replace function sftpreader.add_batch_split
+create or replace function log.add_batch_split
 (
 	_batch_id int,
 	_instance_id varchar,
@@ -10,7 +10,7 @@ returns void
 as $$
 begin
 
-	insert into sftpreader.batch_split
+	insert into log.batch_split
 	(
 		batch_id,
 		instance_id,

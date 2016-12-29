@@ -1,5 +1,5 @@
 
-create or replace function sftpreader.get_last_complete_batch
+create or replace function log.get_last_complete_batch
 (
 	_instance_id varchar
 )
@@ -11,12 +11,12 @@ begin
 
 	select
 		array_agg(b.batch_id) into _batch_ids
-	from sftpreader.batch b
+	from log.batch b
 	where b.instance_id = _instance_id
 	and sequence_number =
 	(
 		select max(sequence_number)
-		from sftpreader.batch
+		from log.batch
 		where instance_id = _instance_id
 		and is_complete = true
 	);
@@ -24,7 +24,7 @@ begin
 	return query
 	select
 	  * 
-	from sftpreader.get_batches(_batch_ids);
+	from log.get_batches(_batch_ids);
 
 end;
 $$ language plpgsql;

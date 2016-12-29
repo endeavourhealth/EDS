@@ -1,5 +1,5 @@
 
-create or replace function sftpreader.add_configuration_kvp
+create or replace function configuration.add_configuration_kvp
 (
 	_instance_id varchar,
 	_key varchar,
@@ -9,7 +9,7 @@ returns void
 as $$
 begin
 	
-	insert into sftpreader.configuration_kvp
+	insert into configuration.configuration_kvp
 	(
 		instance_id,
 		key,

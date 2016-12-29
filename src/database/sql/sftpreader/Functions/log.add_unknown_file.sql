@@ -1,5 +1,5 @@
 
-create or replace function sftpreader.add_unknown_file
+create or replace function log.add_unknown_file
 (
 	_instance_id varchar,
 	_filename varchar,
@@ -13,12 +13,12 @@ begin
 	if not exists
 	(
 		select *
-		from sftpreader.unknown_file
+		from log.unknown_file
 		where instance_id = _instance_id
 		and filename = _filename
 	)
 	then
-		insert into sftpreader.unknown_file
+		insert into log.unknown_file
 		(
 			instance_id,
 			filename,

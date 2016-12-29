@@ -1,5 +1,5 @@
 
-create or replace function sftpreader.set_file_as_decrypted
+create or replace function log.set_file_as_decrypted
 (
 	_batch_file_id integer,
 	_decrypted_filename varchar,
@@ -9,7 +9,7 @@ returns void
 as $$
 begin
 
-	update sftpreader.batch_file
+	update log.batch_file
 	set
 		is_decrypted = true,
 		decrypted_filename = _decrypted_filename,

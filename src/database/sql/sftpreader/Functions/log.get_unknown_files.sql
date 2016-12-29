@@ -1,5 +1,5 @@
 
-create or replace function sftpreader.get_unknown_files
+create or replace function log.get_unknown_files
 (
 	_instance_id varchar
 )
@@ -19,7 +19,7 @@ as $$
 		filename,
 		remote_created_date,
 		remote_size_bytes
-	from sftpreader.unknown_file
+	from log.unknown_file
 	where instance_id = _instance_id;
 
 $$ language sql;
