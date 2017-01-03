@@ -11,6 +11,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.endeavourhealth.core.eds.EdsEnvelopeBuilder;
 import org.endeavourhealth.core.keycloak.KeycloakClient;
 import org.endeavourhealth.core.postgres.PgStoredProcException;
 import org.endeavourhealth.core.utility.StreamExtension;
@@ -446,10 +447,12 @@ public class SftpTask extends TimerTask
         SftpNotificationCreator sftpNotificationCreator = ImplementationActivator.createSftpNotificationCreator();
 
         String messagePayload = sftpNotificationCreator.createNotificationMessage(dbConfiguration, unnotifiedBatchSplit);
-        EdsEnvelopeBuilder edsEnvelopeBuilder = new EdsEnvelopeBuilder(dbConfiguration.getDbConfigurationEds());
+
         UUID messageId = UUID.randomUUID();
         String organisationId = unnotifiedBatchSplit.getOrganisationId();
-        String outboundMessage = edsEnvelopeBuilder.buildEnvelope(messageId, messagePayload, organisationId);
+        String envelopeContentType = dbConfiguration.getDbConfigurationEds().getEnvelopeContentType();
+        String softwareVersion = dbConfiguration.getDbConfigurationEds().getSoftwareVersion();
+        String outboundMessage = EdsEnvelopeBuilder.build(messageId, organisationId, envelopeContentType, softwareVersion, messagePayload);
 
         try {
             String inboundMessage = notifyEds(outboundMessage);

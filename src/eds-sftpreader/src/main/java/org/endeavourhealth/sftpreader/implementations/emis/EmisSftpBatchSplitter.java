@@ -32,38 +32,6 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
 
     private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
 
-    /*private static final Set<String> FILES_TO_SPLIT_BY_PROCESSING_ID = new HashSet<>();
-    private static final Set<String> FILES_TO_SPLIT_BY_ORG_ID = new HashSet<>();
-    private static final Set<String> FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID = new HashSet<>();
-
-    static {
-        //these files only contain a processing_id
-        FILES_TO_SPLIT_BY_PROCESSING_ID.add("Admin_Location");
-        FILES_TO_SPLIT_BY_PROCESSING_ID.add("Admin_Organisation");
-        FILES_TO_SPLIT_BY_PROCESSING_ID.add("Admin_OrganisationLocation");
-        FILES_TO_SPLIT_BY_PROCESSING_ID.add("Admin_UserInRole");
-        FILES_TO_SPLIT_BY_PROCESSING_ID.add("Appointment_Session");
-        FILES_TO_SPLIT_BY_PROCESSING_ID.add("Appointment_SessionUser");
-        FILES_TO_SPLIT_BY_PROCESSING_ID.add("Coding_ClinicalCode");
-        FILES_TO_SPLIT_BY_PROCESSING_ID.add("Coding_DrugCode");
-
-        //these files contain a processing_id and organisation GUID
-        FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("Admin_Patient");
-        FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("Appointment_Slot");
-        FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("CareRecord_Consultation");
-        FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("CareRecord_Diary");
-        FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("CareRecord_Observation");
-        FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("CareRecord_ObservationReferral");
-        FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("CareRecord_Problem");
-        FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("Prescribing_DrugRecord");
-        FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("Prescribing_IssueRecord");
-        FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("Audit_PatientAudit");
-        FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.add("Audit_RegistrationAudit");
-
-        //this file only has an organisation_guid
-        FILES_TO_SPLIT_BY_ORG_ID.add(("Agreements_SharingOrganisation"));
-    }*/
-
     /**
      * splits the 17 EMIS extract files we use by org GUID and processing ID, so
      * we have a directory structure of dstDir -> org GUID -> processing ID
@@ -270,8 +238,6 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
         } finally {
             csvParser.close();
         }
-
-
     }
 
     private static String findOdsCode(String emisOrgGuid, DataLayer db) throws Exception {
@@ -284,53 +250,6 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
 
         throw new RuntimeException("Failed to find ODS code for EMIS Org GUID " + emisOrgGuid);
     }
-    /*private static String findOdsCode(String emisOrgGuid, DataLayer db, DbConfiguration dbConfiguration, Batch batch) throws Exception {
-
-        //first look in our key-value-pair table, as any previously encountered orgs will have been stored in there
-        for (DbConfigurationKvp kvp: dbConfiguration.getDbConfigurationKvp()) {
-            if (kvp.getKey().equalsIgnoreCase(emisOrgGuid)) {
-                return kvp.getValue();
-            }
-        }
-
-        //if not found in the key-value-pair table, then we need to process the Organisation CSV file to find it
-        File adminCsvFile = null;
-        for (BatchFile batchFile: batch.getBatchFiles()) {
-            if (batchFile.getFileTypeIdentifier().equalsIgnoreCase("Admin_Organisation")) {
-                String path = FilenameUtils.concat(dbConfiguration.getLocalRootPath(), batch.getLocalRelativePath());
-                path = FilenameUtils.concat(path, batchFile.getDecryptedFilename());
-                adminCsvFile = new File(path);
-            }
-        }
-
-        CSVParser csvParser = CSVParser.parse(adminCsvFile, Charset.defaultCharset(), CSV_FORMAT.withHeader());
-        try {
-            Iterator<CSVRecord> csvIterator = csvParser.iterator();
-
-            while (csvIterator.hasNext()) {
-                CSVRecord csvRecord = csvIterator.next();
-                String orgGuid = csvRecord.get("OrganisationGuid");
-                if (orgGuid.equalsIgnoreCase(emisOrgGuid)) {
-                    String orgOds = csvRecord.get("ODSCode");
-
-                    DbConfigurationKvp newKvp = new DbConfigurationKvp();
-                    newKvp.setKey(emisOrgGuid);
-                    newKvp.setValue(orgOds);
-                    dbConfiguration.getDbConfigurationKvp().add(newKvp);
-
-                    //save the new pair for next time
-                    db.addConfigurationKvp(newKvp, dbConfiguration.getInstanceId());
-
-                    return orgOds;
-                }
-
-            }
-        } finally {
-            csvParser.close();
-        }
-
-        throw new RuntimeException("Failed to find ODS code for EMIS Org GUID " + emisOrgGuid);
-    }*/
 
     /**
      * scans through the files in the folder and works out which are admin and which are clinical
@@ -370,28 +289,7 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
                 throw new SftpFilenameParseException("Unknown EMIS CSV file type for " + fileName);
             }
         }
-
     }
-    /*private static void identifyFiles(Batch batch, List<String> orgAndProcessingIdFiles, List<String> processingIdFiles,
-                                      List<String> orgIdFiles, DbConfiguration dbConfiguration) throws Exception {
-
-        for (BatchFile batchFile: batch.getBatchFiles()) {
-
-            String fileName = batchFile.getDecryptedFilename();
-            EmisSftpFilenameParser parser = new EmisSftpFilenameParser(fileName, dbConfiguration, ".csv");
-            String fileType = parser.generateFileTypeIdentifier();
-            if (FILES_TO_SPLIT_BY_PROCESSING_ID.contains(fileType)) {
-                processingIdFiles.add(fileName);
-            } else if (FILES_TO_SPLIT_BY_ORG_AND_PROCESSING_ID.contains(fileType)) {
-                orgAndProcessingIdFiles.add(fileName);
-            } else if (FILES_TO_SPLIT_BY_ORG_ID.contains(fileType)) {
-                orgIdFiles.add(fileName);
-            } else {
-                throw new SftpFilenameParseException("Unknown EMIS CSV file type for " + fileName);
-            }
-        }
-
-    }*/
 
     private static void createMissingFiles(File srcFile, File dstDir) throws Exception {
 
@@ -410,6 +308,7 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
             }
         }
     }
+
     private static void createMissingFile(String fileName, String headers, File dstDir) throws Exception {
 
         File dstFile = new File(dstDir, fileName);
@@ -453,12 +352,8 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
         return headers;
     }
 
-
     private static void splitFile(File srcFile, File dstDir, CSVFormat csvFormat, String... splitColmumns) throws Exception {
         CsvSplitter csvSplitter = new CsvSplitter(srcFile, dstDir, csvFormat, splitColmumns);
         csvSplitter.go();
     }
-
-
-
 }
