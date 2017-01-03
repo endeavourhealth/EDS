@@ -11,6 +11,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.endeavourhealth.core.eds.EdsEnvelopeBuilder;
 import org.endeavourhealth.core.keycloak.KeycloakClient;
 import org.endeavourhealth.core.postgres.PgStoredProcException;
 import org.endeavourhealth.core.utility.StreamExtension;
@@ -203,7 +204,13 @@ public class SftpTask extends TimerTask
 
         Files.copy(inputStream, temporaryDownloadFile.toPath());
 
-        if (!temporaryDownloadFile.renameTo(new File(localFilePath)))
+        //if we previously failure during decryption, the renamed file will already exist, so delete it
+        File destination = new File(localFilePath);
+        if (destination.exists()) {
+            destination.delete();
+        }
+
+        if (!temporaryDownloadFile.renameTo(destination))
             throw new IOException("Could not temporary download file to " + localFilePath);
     }
 
@@ -236,12 +243,14 @@ public class SftpTask extends TimerTask
     {
         String localFilePath = batchFile.getLocalFilePath();
         String decryptedLocalFilePath = batchFile.getDecryptedLocalFilePath();
-        String recipientPrivateKey = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPrivateKey();
-        String recipientPrivateKeyPassword = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPrivateKeyPassword();
+        String privateKey = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPrivateKey();
+        String privateKeyPassword = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPrivateKeyPassword();
+        //String publicKey = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPublicKey();
+        String publicKey = dbConfiguration.getDbConfigurationPgp().getPgpSenderPublicKey();
 
         LOG.info("   Decrypting file to: " + decryptedLocalFilePath);
 
-        PgpUtil.decryptAndVerify(localFilePath, recipientPrivateKey, recipientPrivateKeyPassword, decryptedLocalFilePath);
+        PgpUtil.decryptAndVerify(localFilePath, privateKey, privateKeyPassword, decryptedLocalFilePath, publicKey);
 
         batchFile.setDecryptedFileSizeBytes(getFileSizeBytes(batchFile.getDecryptedLocalFilePath()));
 
@@ -446,10 +455,12 @@ public class SftpTask extends TimerTask
         SftpNotificationCreator sftpNotificationCreator = ImplementationActivator.createSftpNotificationCreator();
 
         String messagePayload = sftpNotificationCreator.createNotificationMessage(dbConfiguration, unnotifiedBatchSplit);
-        EdsEnvelopeBuilder edsEnvelopeBuilder = new EdsEnvelopeBuilder(dbConfiguration.getDbConfigurationEds());
+
         UUID messageId = UUID.randomUUID();
         String organisationId = unnotifiedBatchSplit.getOrganisationId();
-        String outboundMessage = edsEnvelopeBuilder.buildEnvelope(messageId, messagePayload, organisationId);
+        String envelopeContentType = dbConfiguration.getDbConfigurationEds().getEnvelopeContentType();
+        String softwareVersion = dbConfiguration.getDbConfigurationEds().getSoftwareVersion();
+        String outboundMessage = EdsEnvelopeBuilder.build(messageId, organisationId, envelopeContentType, softwareVersion, messagePayload);
 
         try {
             String inboundMessage = notifyEds(outboundMessage);
