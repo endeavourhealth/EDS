@@ -204,7 +204,13 @@ public class SftpTask extends TimerTask
 
         Files.copy(inputStream, temporaryDownloadFile.toPath());
 
-        if (!temporaryDownloadFile.renameTo(new File(localFilePath)))
+        //if we previously failure during decryption, the renamed file will already exist, so delete it
+        File destination = new File(localFilePath);
+        if (destination.exists()) {
+            destination.delete();
+        }
+
+        if (!temporaryDownloadFile.renameTo(destination))
             throw new IOException("Could not temporary download file to " + localFilePath);
     }
 
@@ -237,12 +243,14 @@ public class SftpTask extends TimerTask
     {
         String localFilePath = batchFile.getLocalFilePath();
         String decryptedLocalFilePath = batchFile.getDecryptedLocalFilePath();
-        String recipientPrivateKey = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPrivateKey();
-        String recipientPrivateKeyPassword = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPrivateKeyPassword();
+        String privateKey = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPrivateKey();
+        String privateKeyPassword = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPrivateKeyPassword();
+        //String publicKey = dbConfiguration.getDbConfigurationPgp().getPgpRecipientPublicKey();
+        String publicKey = dbConfiguration.getDbConfigurationPgp().getPgpSenderPublicKey();
 
         LOG.info("   Decrypting file to: " + decryptedLocalFilePath);
 
-        PgpUtil.decryptAndVerify(localFilePath, recipientPrivateKey, recipientPrivateKeyPassword, decryptedLocalFilePath);
+        PgpUtil.decryptAndVerify(localFilePath, privateKey, privateKeyPassword, decryptedLocalFilePath, publicKey);
 
         batchFile.setDecryptedFileSizeBytes(getFileSizeBytes(batchFile.getDecryptedLocalFilePath()));
 
