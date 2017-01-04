@@ -3,15 +3,7 @@ package org.endeavourhealth.sftpreader;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.endeavourhealth.core.eds.EdsEnvelopeBuilder;
+import org.endeavourhealth.core.eds.EdsSender;
 import org.endeavourhealth.core.keycloak.KeycloakClient;
 import org.endeavourhealth.core.postgres.PgStoredProcException;
 import org.endeavourhealth.core.utility.StreamExtension;
@@ -460,10 +452,13 @@ public class SftpTask extends TimerTask
         String organisationId = unnotifiedBatchSplit.getOrganisationId();
         String envelopeContentType = dbConfiguration.getDbConfigurationEds().getEnvelopeContentType();
         String softwareVersion = dbConfiguration.getDbConfigurationEds().getSoftwareVersion();
-        String outboundMessage = EdsEnvelopeBuilder.build(messageId, organisationId, envelopeContentType, softwareVersion, messagePayload);
+        String outboundMessage = EdsSender.buildEnvelope(messageId, organisationId, envelopeContentType, softwareVersion, messagePayload);
 
         try {
-            String inboundMessage = notifyEds(outboundMessage);
+            String edsUrl = dbConfiguration.getDbConfigurationEds().getEdsUrl();
+            boolean useKeycloak = dbConfiguration.getDbConfigurationEds().isUseKeycloak();
+
+            String inboundMessage = EdsSender.notifyEds(edsUrl, useKeycloak, outboundMessage);
 
             db.addBatchNotification(unnotifiedBatchSplit.getBatchId(),
                     unnotifiedBatchSplit.getBatchSplitId(),
@@ -490,57 +485,4 @@ public class SftpTask extends TimerTask
             throw new SftpReaderException("Error notifying EDS for batch split " + unnotifiedBatchSplit.getBatchSplitId(), e);
         }
     }
-
-    private String notifyEds(String outboundMessage) throws IOException
-    {
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build())
-        {
-            HttpPost httpPost = new HttpPost(dbConfiguration.getDbConfigurationEds().getEdsUrl());
-            //LOG.trace("Performing POST to {}", dbConfiguration.getDbConfigurationEds().getEdsUrl());
-
-            if (dbConfiguration.getDbConfigurationEds().isUseKeycloak()) {
-                Header keycloakHeader = KeycloakClient.instance().getAuthorizationHeader();
-                httpPost.addHeader(keycloakHeader);
-                //LOG.trace("Added keycloak header {}={}", keycloakHeader.getName(), keycloakHeader.getValue());
-            }
-
-            //the bundle is being sent as XML, so we need to declare this
-            httpPost.addHeader("Content-Type", "text/xml");
-            httpPost.setEntity(new ByteArrayEntity(outboundMessage.getBytes()));
-            //LOG.trace("Set payload to {} bytes", outboundMessage.getBytes().length);
-            HttpResponse response = httpClient.execute(httpPost);
-
-            int statusCode = response.getStatusLine().getStatusCode();
-            LOG.trace("Received HTTP code {}: {}", statusCode, response.getStatusLine());
-
-            List<String> lines = new ArrayList<>();
-            lines.add(response.getStatusLine().toString());
-
-            HttpEntity entity = response.getEntity();
-            if (entity != null)
-            {
-                try (InputStream instream = entity.getContent()) {
-                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(instream, "UTF-8"));
-                    String line = bufferedReader.readLine();
-                    while (line != null){
-
-                        if (statusCode != HttpStatus.SC_OK) {
-                            LOG.info(line);
-                        }
-
-                        line = bufferedReader.readLine();
-                        lines.add(line);
-                    }
-                }
-            }
-
-            String responseString = String.join("/n", lines);
-            if (statusCode == HttpStatus.SC_OK) {
-                return responseString;
-            } else {
-                throw new IOException(responseString);
-            }
-        }
-    }
-
 }
