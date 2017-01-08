@@ -9,6 +9,7 @@ DROP MATERIALIZED VIEW IF EXISTS user_event_by_module_user_organisation_timestam
 DROP TABLE IF EXISTS user_event;
 DROP TABLE IF EXISTS exchange_transform_error_state;
 DROP TABLE IF EXISTS exchange_transform_audit;
+DROP TABLE IF EXISTS exchange_by_service;
 DROP TABLE IF EXISTS exchange_event;
 DROP TABLE IF EXISTS exchange;
 
@@ -37,6 +38,18 @@ CREATE TABLE exchange_event
     event INT,
     PRIMARY KEY (exchange_id, timestamp)
 );
+
+
+CREATE TABLE exchange_by_service
+(
+    service_id UUID,
+    timestamp TIMESTAMP,
+	exchange_id UUID,
+    PRIMARY KEY ((service_id), timestamp)
+
+) WITH CLUSTERING ORDER BY (timestamp DESC);
+
+
 
 CREATE TABLE exchange_transform_audit 
 ( 

@@ -37,12 +37,13 @@ import {ProtocolEditComponent} from "./protocol/protocolEditor.component";
 import {DataSetEditComponent} from "./dataSet/dataSetEditor.component";
 import {CodeSetEditComponent} from "./codeSet/codeSetEditor.component";
 import {TransformErrorsComponent} from "./transformErrors/transformErrors.component";
+import {ExchangeAuditComponent} from "./exchangeAudit/exchangeAudit.component";
+import {ExchangeAuditModule} from "./exchangeAudit/exchangeAudit.module";
 
 @NgModule(
 	Application.Define({
 		modules: [
 			FlowchartModule,
-
 			DashboardModule,
 			LibraryModule,
 			OrganisationsModule,
@@ -58,7 +59,8 @@ import {TransformErrorsComponent} from "./transformErrors/transformErrors.compon
 			QueryModule,
 			ProtocolModule,
 			DataSetModule,
-			CodeSetModule
+			CodeSetModule,
+			ExchangeAuditModule
 		],
 		states: [
 			{name: 'app.dashboard', url: '/dashboard', component: DashboardComponent},
@@ -77,7 +79,8 @@ import {TransformErrorsComponent} from "./transformErrors/transformErrors.compon
 			{name: 'app.protocolEdit', url: '/protocolEdit/:itemAction/:itemUuid', component: ProtocolEditComponent},
 			{name: 'app.dataSetEdit', url: '/dataSetEdit/:itemAction/:itemUuid', component: DataSetEditComponent},
 			{name: 'app.codeSetEdit', url: '/codeSetEdit/:itemAction/:itemUuid', component: CodeSetEditComponent},
-			{name: 'app.transformErrors', url: '/transformErrors', component: TransformErrorsComponent}
+			{name: 'app.transformErrors', url: '/transformErrors', component: TransformErrorsComponent},
+			{name: 'app.exchangeAudit', url: '/exchangeAudit/:serviceUuid', component: ExchangeAuditComponent}
 		],
 		defaultState : { state: 'app.dashboard', params: {} }
 	})

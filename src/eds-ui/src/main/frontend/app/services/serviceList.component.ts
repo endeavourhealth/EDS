@@ -169,5 +169,7 @@ export class ServiceListComponent {
 		return false;
 	}
 
-
+	viewExchanges(selectedService: Service) {
+		this.$state.go('app.exchangeAudit', {serviceUuid: selectedService.uuid});
+	}
 }

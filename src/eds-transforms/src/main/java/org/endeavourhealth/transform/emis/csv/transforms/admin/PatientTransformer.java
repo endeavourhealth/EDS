@@ -87,7 +87,7 @@ public class PatientTransformer {
 
         //EMIS only provides sex but FHIR requires gender, but will treat as the same concept
         VocSex vocSex = VocSex.fromValue(parser.getSex());
-        Enumerations.AdministrativeGender gender = SexConverter.convertSex(vocSex);
+        Enumerations.AdministrativeGender gender = SexConverter.convertSexToFhir(vocSex);
         fhirPatient.setGender(gender);
 
         String title = parser.getTitle();
@@ -202,7 +202,8 @@ public class PatientTransformer {
                 //have to handle the mis-spelling of the column name in EMIS test pack
                 //String externalOrgGuid = patientParser.getExternalUsualGPOrganisation();
                 String externalOrgGuid = null;
-                if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+                if (version.equals(EmisCsvTransformer.VERSION_5_0)
+                        || version.equals(EmisCsvTransformer.VERSION_5_1)) {
                     externalOrgGuid = parser.getExternalUsusalGPOrganisation();
                 } else {
                     externalOrgGuid = parser.getExternalUsualGPOrganisation();

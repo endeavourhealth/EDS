@@ -26,7 +26,7 @@ VALUES
 ('eds-ui', 'application', '{ "appUrl" : "http://localhost:8080" }');
 
 
-INSERT INTO config
+/*INSERT INTO config
 (app_id, config_id, config_data)
 VALUES
 ('eds-ui', 'rePostMessageToExchangeConfig', '{
@@ -35,7 +35,7 @@ VALUES
 	"nodes" : ["localhost:5672"],
 	"exchange" : "EdsInbound",
 	"routingHeader" : "SenderLocalIdentifier"
-}');
+}');*/
 
 INSERT INTO config
 (app_id, config_id, config_data)

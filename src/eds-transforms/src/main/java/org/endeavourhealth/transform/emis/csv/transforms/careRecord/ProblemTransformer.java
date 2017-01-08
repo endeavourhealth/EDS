@@ -58,7 +58,8 @@ public class ProblemTransformer {
         fhirProblem.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //the deleted fields isn't present in the test pack, so need to check the version first
-        if (!version.equals(EmisCsvTransformer.VERSION_TEST_PACK)
+        if (!version.equals(EmisCsvTransformer.VERSION_5_0)
+            && !version.equals(EmisCsvTransformer.VERSION_5_1)
             && parser.getDeleted()) {
 
             //if we have a row in the Problem file that's deleted but the row in the Observation file

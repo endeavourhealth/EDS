@@ -48,7 +48,8 @@ public class ObservationPreTransformer {
         }
 
         //the test pack has non-deleted rows with missing CodeIds, so skip these rows
-        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)
+        if ((version.equals(EmisCsvTransformer.VERSION_5_0)
+                || version.equals(EmisCsvTransformer.VERSION_5_1))
             && parser.getCodeId() == null) {
             return;
         }

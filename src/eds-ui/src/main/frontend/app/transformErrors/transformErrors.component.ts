@@ -49,8 +49,8 @@ export class TransformErrorsComponent {
 
 	rerunFirst(summary:TransformErrorSummary) {
 		var vm = this;
-		var serviceId = vm.selectedSummary.serviceId;
-		var systemId = vm.selectedSummary.systemId;
+		var serviceId = summary.serviceId;
+		var systemId = summary.systemId;
 
 		vm.transformErrorService.rerunFirst(serviceId, systemId)
 			.subscribe(
@@ -60,8 +60,8 @@ export class TransformErrorsComponent {
 
 	rerunAll(summary:TransformErrorSummary) {
 		var vm = this;
-		var serviceId = vm.selectedSummary.serviceId;
-		var systemId = vm.selectedSummary.systemId;
+		var serviceId = summary.serviceId;
+		var systemId = summary.systemId;
 
 		vm.transformErrorService.rerunAll(serviceId, systemId)
 			.subscribe(

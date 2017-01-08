@@ -25,4 +25,13 @@ public enum AuditEvent {
         }
         throw new IllegalArgumentException(v);
     }
+
+    public static AuditEvent fromValue(int value) {
+        for (AuditEvent c: AuditEvent.values()) {
+            if (c.value == value) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException("" + value);
+    }
 }

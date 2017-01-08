@@ -122,9 +122,9 @@ export class ProtocolEditComponent {
 	addContract() {
 		this.selectedContract = {
 			type: '',
-			service: null,
-			system: null,
-			technicalInterface: null,
+			service: new Service(),
+			system: new System(),
+			technicalInterface: new TechnicalInterface(),
 			active: 'TRUE'
 		} as ServiceContract;
 

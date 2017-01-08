@@ -16,8 +16,30 @@ public class IssueRecord extends AbstractCsvParser {
     @Override
     protected String[] getCsvHeaders(String version) {
 
-        //have to handle mis-spelt column name in EMIS test pack
-        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+        if (version.equals(EmisCsvTransformer.VERSION_5_0)) {
+            return new String[]{
+                    "IssueRecordGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "DrugRecordGuid",
+                    "EffectiveDate",
+                    "EffectiveDatePrecision",
+                    "EnteredDate",
+                    //"EnteredTime", //not present in this earlier version
+                    "ClinicanUserInRoleGuid", //mis-spelled column name
+                    "EnteredByUserInRoleGuid",
+                    "CodeId",
+                    "Dosage",
+                    "Quantity",
+                    "QuantityUnit",
+                    "ProblemObservationGuid",
+                    "CourseDurationInDays",
+                    "EstimatedNhsCost",
+                    "IsConfidential",
+                    "Deleted",
+                    "ProcessingId"
+            };
+        } else if (version.equals(EmisCsvTransformer.VERSION_5_1)) {
             return new String[]{
                     "IssueRecordGuid",
                     "PatientGuid",
@@ -27,7 +49,7 @@ public class IssueRecord extends AbstractCsvParser {
                     "EffectiveDatePrecision",
                     "EnteredDate",
                     "EnteredTime",
-                    "ClinicanUserInRoleGuid",
+                    "ClinicanUserInRoleGuid", //mis-spelled column name
                     "EnteredByUserInRoleGuid",
                     "CodeId",
                     "Dosage",
@@ -80,6 +102,9 @@ public class IssueRecord extends AbstractCsvParser {
     }
     public String getEffectiveDatePrecision() {
         return super.getString("EffectiveDatePrecision");
+    }
+    public Date getEnteredDate() throws TransformException {
+        return super.getDate("EnteredDate");
     }
     public Date getEnteredDateTime() throws TransformException {
         return super.getDateTime("EnteredDate", "EnteredTime");

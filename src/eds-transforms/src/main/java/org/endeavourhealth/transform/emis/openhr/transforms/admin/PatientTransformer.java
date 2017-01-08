@@ -1,12 +1,11 @@
 package org.endeavourhealth.transform.emis.openhr.transforms.admin;
 
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001AdminDomain;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Patient;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Person;
-import org.endeavourhealth.transform.emis.openhr.transforms.common.OpenHRHelper;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.*;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.Enumerations.AdministrativeGender;
 
@@ -33,7 +32,7 @@ public class PatientTransformer
         if (names != null)
             names.forEach(targetPatient::addName);
 
-        AdministrativeGender gender = SexConverter.convertSex(sourcePerson.getSex());
+        AdministrativeGender gender = SexConverter.convertSexToFhir(sourcePerson.getSex());
         targetPatient.setGender(gender);
 
         targetPatient.setBirthDate(DateConverter.toDate(sourcePerson.getBirthDate()));

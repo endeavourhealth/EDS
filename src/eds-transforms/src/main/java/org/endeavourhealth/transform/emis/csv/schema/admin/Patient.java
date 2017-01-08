@@ -17,7 +17,8 @@ public class Patient extends AbstractCsvParser {
     protected String[] getCsvHeaders(String version) {
 
         //EMIS test packs spell two of the columns with "Ususal" rather than "Usual", so handling that variation
-        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+        if (version.equals(EmisCsvTransformer.VERSION_5_0)
+                || version.equals(EmisCsvTransformer.VERSION_5_1)) {
             return new String[] {
                     "PatientGuid",
                     "OrganisationGuid",

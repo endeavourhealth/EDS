@@ -17,7 +17,8 @@ public class Diary extends AbstractCsvParser {
     protected String[] getCsvHeaders(String version) {
 
         //the EMIS test pack has mis-spellings of column names, so having to handle this here
-        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+        if (version.equals(EmisCsvTransformer.VERSION_5_0)
+                || version.equals(EmisCsvTransformer.VERSION_5_1)) {
             return new String[]{
                     "DiaryGuid",
                     "PatientGuid",

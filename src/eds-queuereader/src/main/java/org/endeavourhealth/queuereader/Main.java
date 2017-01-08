@@ -2,13 +2,12 @@ package org.endeavourhealth.queuereader;
 
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.config.ConfigManager;
-import org.endeavourhealth.core.utility.XmlSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
-	private static final String CONFIG_XSD = "QueueReaderConfiguration.xsd";
+
 
 	public static void main(String[] args) throws Exception {
 
@@ -26,7 +25,7 @@ public class Main {
 
 		LOG.info("Fetching queuereader configuration");
 		String configXml = ConfigManager.getConfiguration(args[0]);
-		QueueReaderConfiguration configuration = XmlSerializer.deserializeFromString(QueueReaderConfiguration.class, configXml, CONFIG_XSD);
+		QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
 
 		// Instantiate rabbit handler
 		LOG.info("Creating EDS queue reader");

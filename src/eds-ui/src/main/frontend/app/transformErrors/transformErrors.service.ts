@@ -28,7 +28,8 @@ export class TransformErrorsService extends BaseHttp2Service {
             'serviceId': serviceId,
             'systemId': systemId
         };
-        return this.httpPost('api/transformErrors/rerunFirstExchange', { body : request });
+        return this.httpPost('api/transformErrors/rerunFirstExchange', request);
+        /*return this.httpPost('api/transformErrors/rerunFirstExchange', { body : request });*/
     }
 
     rerunAll(serviceId: string, systemId: string) : Observable<any> {
@@ -36,7 +37,8 @@ export class TransformErrorsService extends BaseHttp2Service {
             'serviceId': serviceId,
             'systemId': systemId
         };
-        return this.httpPost('api/transformErrors/rerunAllExchanges', { body : request });
+        return this.httpPost('api/transformErrors/rerunAllExchanges', request);
+        /*return this.httpPost('api/transformErrors/rerunAllExchanges', { body : request });*/
     }
 
 }

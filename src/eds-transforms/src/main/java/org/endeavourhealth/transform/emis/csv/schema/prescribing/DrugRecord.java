@@ -15,8 +15,32 @@ public class DrugRecord extends AbstractCsvParser {
     @Override
     protected String[] getCsvHeaders(String version) {
 
-        //have to handle a mis-spelt column name in the EMIS test pack
-        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+        if (version.equals(EmisCsvTransformer.VERSION_5_0)) {
+            return new String[]{
+                    "DrugRecordGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "EffectiveDate",
+                    "EffectiveDatePrecision",
+                    "EnteredDate",
+                    //"EnteredTime", //not present in this older version
+                    "ClinicanUserInRoleGuid", //mis-spelled column name in this version
+                    "EnteredByUserInRoleGuid",
+                    "CodeId",
+                    "Dosage",
+                    "Quantity",
+                    "QuantityUnit",
+                    "ProblemObservationGuid",
+                    "PrescriptionType",
+                    "IsActive",
+                    "CancellationDate",
+                    "NumberOfIssues",
+                    "NumberOfIssuesAuthorised",
+                    "IsConfidential",
+                    "Deleted",
+                    "ProcessingId"
+            };
+        } else if (version.equals(EmisCsvTransformer.VERSION_5_1)) {
             return new String[]{
                     "DrugRecordGuid",
                     "PatientGuid",
@@ -25,7 +49,7 @@ public class DrugRecord extends AbstractCsvParser {
                     "EffectiveDatePrecision",
                     "EnteredDate",
                     "EnteredTime",
-                    "ClinicanUserInRoleGuid",
+                    "ClinicanUserInRoleGuid", //mis-spelled column name in this version
                     "EnteredByUserInRoleGuid",
                     "CodeId",
                     "Dosage",
@@ -83,6 +107,9 @@ public class DrugRecord extends AbstractCsvParser {
     }
     public String getEffectiveDatePrecision() {
         return super.getString("EffectiveDatePrecision");
+    }
+    public Date getEnteredDate() throws TransformException {
+        return super.getDate("EnteredDate");
     }
     public Date getEnteredDateTime() throws TransformException {
         return super.getDateTime("EnteredDate", "EnteredTime");

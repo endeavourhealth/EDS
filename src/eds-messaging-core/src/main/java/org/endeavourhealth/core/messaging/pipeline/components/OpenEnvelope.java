@@ -6,6 +6,8 @@ import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
+import org.endeavourhealth.core.data.audit.AuditRepository;
+import org.endeavourhealth.core.data.audit.models.ExchangeByService;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
@@ -18,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -105,6 +108,13 @@ public class OpenEnvelope extends PipelineComponent {
 		if (service == null) {
 			throw new PipelineException("No service found for organisation " + organisation.getId());
 		}
+
+		//record the service-exchange linkage, so we can retrieve exchanges by service
+		ExchangeByService exchangeByService = new ExchangeByService();
+		exchangeByService.setExchangeId(exchange.getExchangeId());
+		exchangeByService.setServiceId(service.getId());
+		exchangeByService.setTimestamp(new Date());
+		new AuditRepository().save(exchangeByService);
 
 		exchange.setHeader(HeaderKeys.SenderServiceUuid, service.getId().toString());
 		exchange.setHeader(HeaderKeys.SenderOrganisationUuid, organisation.getId().toString());

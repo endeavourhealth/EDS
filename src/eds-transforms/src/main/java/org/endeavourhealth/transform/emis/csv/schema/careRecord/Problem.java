@@ -16,7 +16,9 @@ public class Problem extends AbstractCsvParser {
     @Override
     protected String[] getCsvHeaders(String version) {
 
-        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+        //the older versions didn't have the Deleted column
+        if (version.equals(EmisCsvTransformer.VERSION_5_0)
+                || version.equals(EmisCsvTransformer.VERSION_5_1)) {
             return new String[]{
                     "ObservationGuid",
                     "PatientGuid",

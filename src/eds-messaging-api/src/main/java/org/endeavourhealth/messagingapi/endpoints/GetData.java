@@ -1,10 +1,12 @@
 package org.endeavourhealth.messagingapi.endpoints;
 
+import org.endeavourhealth.core.configuration.ConfigWrapper;
 import org.endeavourhealth.core.configuration.Pipeline;
-import org.endeavourhealth.messagingapi.configuration.ConfigWrapper;
 
 import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.*;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;

@@ -238,6 +238,11 @@
             <artifactId>eds-messaging-core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.endeavourhealth</groupId>
+            <artifactId>eds-queuereader</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <!-- Swagger End-->
 
     </dependencies>

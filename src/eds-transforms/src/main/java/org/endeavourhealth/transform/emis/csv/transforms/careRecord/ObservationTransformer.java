@@ -147,7 +147,8 @@ public class ObservationTransformer {
                                        EmisCsvHelper csvHelper) throws Exception {
 
         //the code ID should NEVER be null, but the test data has nulls, so adding this to handle those rows gracefully
-        if (version.equalsIgnoreCase(EmisCsvTransformer.VERSION_TEST_PACK)
+        if ((version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_0)
+                || version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_1))
                 && parser.getCodeId() == null) {
             return;
         }

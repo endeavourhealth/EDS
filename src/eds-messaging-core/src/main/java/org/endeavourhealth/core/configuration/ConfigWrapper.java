@@ -1,14 +1,9 @@
-package org.endeavourhealth.messagingapi.configuration;
+package org.endeavourhealth.core.configuration;
 
-import org.endeavourhealth.core.configuration.ApiConfiguration;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.utility.XmlSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class ConfigWrapper {
 	private static final Logger LOG = LoggerFactory.getLogger(ConfigWrapper.class);
@@ -24,8 +19,12 @@ public class ConfigWrapper {
 
 	public static void initialize() {
 		String apiConfigXml = ConfigManager.getConfiguration("api-configuration");
+		config = deserialise(apiConfigXml);
+	}
+
+	public static ApiConfiguration deserialise(String xmlStr) throws UnsupportedOperationException {
 		try {
-			config = XmlSerializer.deserializeFromString(ApiConfiguration.class, apiConfigXml, XSD);
+			return XmlSerializer.deserializeFromString(ApiConfiguration.class, xmlStr, XSD);
 		} catch (Exception e) {
 			throw new UnsupportedOperationException("api configuration not set", e);
 		}

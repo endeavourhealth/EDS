@@ -48,8 +48,9 @@ public abstract class EmisCsvTransformer {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmisCsvTransformer.class);
 
-    public static final String VERSION_5_1 = "5.1";
-    public static final String VERSION_TEST_PACK = "TestPack";
+    public static final String VERSION_5_3 = "5.3"; //version being received live from Emis as of Nov 2016
+    public static final String VERSION_5_1 = "5.1"; //version received in official emis test pack
+    public static final String VERSION_5_0 = "5.0"; //assumed version received prior to emis test pack (not sure of actual version number)
 
     public static final String DATE_FORMAT_YYYY_MM_DD = "yyyy-MM-dd"; //EMIS spec says "dd/MM/yyyy", but test data is different
     public static final String TIME_FORMAT = "hh:mm:ss";
@@ -385,8 +386,9 @@ public abstract class EmisCsvTransformer {
 
     private static void validateVersion(String version) throws Exception {
 
-        if (!version.equalsIgnoreCase(EmisCsvTransformer.VERSION_TEST_PACK)
-                && !version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_1)) {
+        if (!version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_0)
+                && !version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_1)
+                && !version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_3)) {
             throw new TransformException("Unsupported version for EMIS CSV: " + version);
         }
     }
@@ -480,7 +482,7 @@ public abstract class EmisCsvTransformer {
         findFileAndOpenParser(DrugRecord.class, dir, version, parsers);
         findFileAndOpenParser(IssueRecord.class, dir, version, parsers);
 
-        if (version.equals(VERSION_5_1)) {
+        if (version.equals(VERSION_5_3)) {
             findFileAndOpenParser(PatientAudit.class, dir, version, parsers); //not present in EMIS test data
             findFileAndOpenParser(RegistrationAudit.class, dir, version, parsers); //not present in EMIS test data
         }

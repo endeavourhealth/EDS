@@ -70,7 +70,8 @@ public class IssueRecordTransformer {
         //need to handle mis-spelt column name in EMIS test pack
         //String clinicianGuid = parser.getClinicianUserInRoleGuid();
         String clinicianGuid = null;
-        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+        if (version.equals(EmisCsvTransformer.VERSION_5_0)
+                || version.equals(EmisCsvTransformer.VERSION_5_1)) {
             clinicianGuid = parser.getClinicanUserInRoleGuid();
         } else {
             clinicianGuid = parser.getClinicianUserInRoleGuid();
@@ -111,7 +112,14 @@ public class IssueRecordTransformer {
             fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
         }
 
-        Date enteredDateTime = parser.getEnteredDateTime();
+        //in the earliest version of the extract, we only got the entered date and not time
+        Date enteredDateTime = null;
+        if (version.equals(EmisCsvTransformer.VERSION_5_0)) {
+            enteredDateTime = parser.getEnteredDate();
+        } else {
+            enteredDateTime = parser.getEnteredDateTime();
+        }
+
         if (enteredDateTime != null) {
             fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(enteredDateTime)));
         }

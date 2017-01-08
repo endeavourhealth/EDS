@@ -84,7 +84,8 @@ public class DiaryTransformer {
         //handle mis-spelt column in EMIS test pack
         //String clinicianGuid = diaryParser.getClinicianUserInRoleGuid();
         String clinicianGuid = null;
-        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+        if (version.equals(EmisCsvTransformer.VERSION_5_0)
+                || version.equals(EmisCsvTransformer.VERSION_5_1)) {
             clinicianGuid = parser.getClinicanUserInRoleGuid();
         } else {
             clinicianGuid = parser.getClinicianUserInRoleGuid();

@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation;
@@ -29,7 +30,7 @@ public class ConsultationTransformer {
             while (parser.nextRecord()) {
 
                 try {
-                    createResource((Consultation)parser, csvProcessor, csvHelper);
+                    createResource((Consultation)parser, csvProcessor, csvHelper, version);
                 } catch (Exception ex) {
                     csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
                 }
@@ -39,7 +40,8 @@ public class ConsultationTransformer {
 
     private static void createResource(Consultation parser,
                                         CsvProcessor csvProcessor,
-                                        EmisCsvHelper csvHelper) throws Exception {
+                                        EmisCsvHelper csvHelper,
+                                        String version) throws Exception {
 
         Encounter fhirEncounter = new Encounter();
         fhirEncounter.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ENCOUNTER));
@@ -77,7 +79,14 @@ public class ConsultationTransformer {
             fhirEncounter.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
         }
 
-        Date enteredDateTime = parser.getEnteredDateTime();
+        //in the earliest version of the extract, we only got the entered date and not time
+        Date enteredDateTime = null;
+        if (version.equals(EmisCsvTransformer.VERSION_5_0)) {
+            enteredDateTime = parser.getEnteredDate();
+        } else {
+            enteredDateTime = parser.getEnteredDateTime();
+        }
+
         if (enteredDateTime != null) {
             fhirEncounter.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(enteredDateTime)));
         }

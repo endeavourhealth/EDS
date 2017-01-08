@@ -1,8 +1,9 @@
 package org.endeavourhealth.ui.endpoints;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
-import org.endeavourhealth.core.configuration.Credentials;
+import org.endeavourhealth.core.configuration.ApiConfiguration;
+import org.endeavourhealth.core.configuration.ConfigWrapper;
+import org.endeavourhealth.core.configuration.Pipeline;
 import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
@@ -16,6 +17,7 @@ import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
+import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.Arg;
 import org.endeavourhealth.core.xml.transformError.Error;
@@ -298,6 +300,41 @@ public class TransformErrorsEndpoint extends AbstractEndpoint {
             exchange.setHeader(header, headers.get(header));
         }
 
+        //we access the messaging API config directly, to find out how it posts new incoming exchanges to rabbit
+        String apiConfigXml = ConfigManager.getConfiguration("api-configuration", "messaging-api");
+        ApiConfiguration config = ConfigWrapper.deserialise(apiConfigXml);
+        ApiConfiguration.PostMessageAsync postConfig = config.getPostMessageAsync();
+        Pipeline pipeline = postConfig.getPipeline();
+
+        PostMessageToExchangeConfig exchangeConfig = pipeline
+                .getPipelineComponents()
+                .stream()
+                .filter(t -> t instanceof PostMessageToExchangeConfig)
+                .map(t -> (PostMessageToExchangeConfig)t)
+                .collect(StreamExtension.singleOrNullCollector());
+
+        if (exchangeConfig == null) {
+            throw new BadRequestException("Failed to find PostMessageToExchange config details for messaging api");
+        }
+
+        //re-post back into Rabbit using the same pipeline component as used by the messaging API
+        PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+        component.process(exchange);
+    }
+
+/*
+    private void postToRabbit(UUID exchangeId) throws Exception {
+
+        Exchange exchangeAudit = new AuditRepository().getExchange(exchangeId);
+        String body = exchangeAudit.getBody();
+        String headerJson = exchangeAudit.getHeaders();
+        HashMap<String, String> headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+
+        org.endeavourhealth.core.messaging.exchange.Exchange exchange = new org.endeavourhealth.core.messaging.exchange.Exchange(exchangeId, body);
+        for (String header: headers.keySet()) {
+            exchange.setHeader(header, headers.get(header));
+        }
+
         String repostMessageToExchangeConfigJson = ConfigManager.getConfiguration("rePostMessageToExchangeConfig");
         JsonNode c = ObjectMapperPool.getInstance().readTree(repostMessageToExchangeConfigJson);
 
@@ -316,6 +353,6 @@ public class TransformErrorsEndpoint extends AbstractEndpoint {
         //re-post back into Rabbit using the same pipeline component as used by the messaging API
         PostMessageToExchange component = new PostMessageToExchange(config);
         component.process(exchange);
-    }
+    }*/
 
 }

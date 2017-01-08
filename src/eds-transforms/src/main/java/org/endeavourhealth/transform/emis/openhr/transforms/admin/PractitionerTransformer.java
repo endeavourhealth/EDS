@@ -1,14 +1,14 @@
 package org.endeavourhealth.transform.emis.openhr.transforms.admin;
 
 import org.endeavourhealth.core.utility.StreamExtension;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.*;
-import org.endeavourhealth.transform.emis.openhr.transforms.common.OpenHRHelper;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.ContactPointConverter;
-import org.endeavourhealth.transform.fhir.NameConverter;
+import org.endeavourhealth.transform.emis.openhr.transforms.common.OpenHRHelper;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.SexConverter;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.NameConverter;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ public class PractitionerTransformer
                 person.getTitle()));
 
         if (person.getSex() != null)
-            practitioner.setGender(SexConverter.convertSex(person.getSex()));
+            practitioner.setGender(SexConverter.convertSexToFhir(person.getSex()));
 
         List<ContactPoint> telecoms = ContactPointConverter.convert(person.getContact());
 
