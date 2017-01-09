@@ -12,6 +12,9 @@
     <url>http://maven.apache.org</url>
 
     <properties>
+
+        <eds-common.version>1.32</eds-common.version>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <shrinkwrap-resolver.version>2.2.2</shrinkwrap-resolver.version>
         <version.org.apache.tomcat>8.0.1</version.org.apache.tomcat>
