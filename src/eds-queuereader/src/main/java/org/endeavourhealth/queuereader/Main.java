@@ -8,7 +8,6 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.data.audit.models.Exchange;
 import org.endeavourhealth.core.data.audit.models.ExchangeByService;
-import org.endeavourhealth.core.data.audit.models.ExchangeEvent;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
@@ -34,7 +33,7 @@ public class Main {
 		ConfigManager.Initialize("queuereader");
 
 		LOG.info("Fixing events");
-		fixExchangeEvents();
+		//fixExchangeEvents();
 		fixExchanges();
 
 		LOG.info("--------------------------------------------------");
@@ -55,7 +54,7 @@ public class Main {
 		LOG.info("EDS Queue reader running");
 	}
 
-	private static void fixExchangeEvents() {
+	/*private static void fixExchangeEvents() {
 
 		List<ExchangeEvent> events = new AuditRepository().getAllExchangeEvents();
 		for (ExchangeEvent event: events) {
@@ -89,7 +88,7 @@ public class Main {
 			new AuditRepository().save(null, event);
 		}
 
-	}
+	}*/
 
 	private static void fixExchanges() {
 
@@ -158,6 +157,8 @@ public class Main {
 					try {
 						String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchUuids.toArray());
 						headers.put(HeaderKeys.BatchIds, batchUuidsStr);
+						String newHeaderJson = ObjectMapperPool.getInstance().writeValueAsString(headers);
+						exchange.setHeaders(newHeaderJson);
 
 						auditRepository.save(exchange, null);
 

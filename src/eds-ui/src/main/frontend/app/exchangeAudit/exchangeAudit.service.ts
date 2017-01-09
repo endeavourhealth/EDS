@@ -10,9 +10,9 @@ export class ExchangeAuditService extends BaseHttp2Service {
     constructor(http:Http) { super(http); }
 
 
-    createMissingData() : Observable<any>{
+    /*createMissingData() : Observable<any>{
         return this.httpPost('api/exchangeAudit/createMissingData', {});
-    }
+    }*/
 
     getExchangeList(serviceId:string, maxRows:number) : Observable<Exchange[]> {
         var params = new URLSearchParams();

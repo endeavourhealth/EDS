@@ -1,16 +1,12 @@
 
 package org.endeavourhealth.ui.endpoints;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.*;
 import org.endeavourhealth.core.data.config.ConfigManager;
-import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
-import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
@@ -29,7 +25,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Path("/exchangeAudit")
 public class ExchangeAuditEndpoint extends AbstractEndpoint {
@@ -41,7 +36,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     /**
      * function to create missing records in the Exchange_by_service table from data in the Exchange table
      */
-    @POST
+    /*@POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/createMissingData")
@@ -123,7 +118,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .build();
-    }
+    }*/
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
