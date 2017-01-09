@@ -77,6 +77,10 @@ public class ConditionTransformer extends AbstractTransformer {
                     }
                 }
             }
+
+            //add the raw original code, to assist in data checking
+            String originalCode = findOriginalCode(fhir.getCode());
+            model.setOriginalCode(originalCode);
         }
 
         data.getCondition().add(model);

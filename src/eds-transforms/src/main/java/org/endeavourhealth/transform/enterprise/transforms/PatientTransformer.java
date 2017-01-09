@@ -97,22 +97,29 @@ public class PatientTransformer extends AbstractTransformer {
             }*/
 
             model.setPseudoId(pseudonomise(fhirPatient));
+
+            //adding NHS number to allow data checking
+            String nhsNumber = findNhsNumber(fhirPatient);
+            model.setNhsNumber(nhsNumber);
         }
 
         data.getPatient().add(model);
     }
 
-    private static String pseudonomise(Patient fhirPatient) throws Exception {
-
-        String nhsNumber = null;
+    private static String findNhsNumber(Patient fhirPatient) {
         if (fhirPatient.hasIdentifier()) {
             for (Identifier identifier: fhirPatient.getIdentifier()) {
                 if (identifier.getSystem().equals(FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER)) {
-                    nhsNumber = identifier.getValue();
-                    break;
+                    return identifier.getValue();
                 }
             }
         }
+        return null;
+    }
+
+    private static String pseudonomise(Patient fhirPatient) throws Exception {
+
+        String nhsNumber = findNhsNumber(fhirPatient);
 
         String dob = null;
         if (fhirPatient.hasBirthDate()) {

@@ -119,9 +119,12 @@ VALUES
     <Nodes>localhost:5672</Nodes>
     <Queue>EdsTransform-A-M</Queue>
     <Pipeline>
+        <PostMessageToLog>
+            <EventType>Transform_Out_Start</EventType>
+        </PostMessageToLog>
         <MessageTransformOutbound/>
         <PostMessageToLog>
-            <EventType>Validate</EventType>
+            <EventType>Transform_Out_End</EventType>
         </PostMessageToLog>
         <PostMessageToExchange>
             <Credentials>
@@ -133,5 +136,8 @@ VALUES
             <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
             <MulticastHeader>SubscriberBatch</MulticastHeader>
         </PostMessageToExchange>
+        <PostMessageToLog>
+            <EventType>Posted_To_Subscriber_Queue</EventType>
+        </PostMessageToLog>
     </Pipeline>
 </QueueReaderConfiguration>');

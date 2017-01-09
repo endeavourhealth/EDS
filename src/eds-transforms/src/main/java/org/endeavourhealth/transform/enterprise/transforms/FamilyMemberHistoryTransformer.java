@@ -64,6 +64,10 @@ public class FamilyMemberHistoryTransformer extends AbstractTransformer {
             FamilyMemberHistory.FamilyMemberHistoryConditionComponent condition = fhir.getCondition().get(0);
             Long snomedConceptId = findSnomedConceptId(condition.getCode());
             model.setSnomedConceptId(snomedConceptId);
+
+            //add the raw original code, to assist in data checking
+            String originalCode = findOriginalCode(condition.getCode());
+            model.setOriginalCode(originalCode);
         }
 
         data.getFamilyMemberHistory().add(model);

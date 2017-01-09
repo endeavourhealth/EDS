@@ -66,6 +66,10 @@ public class SpecimenTransformer extends AbstractTransformer {
 
             Long snomedConceptId = findSnomedConceptId(fhir.getType());
             model.setSnomedConceptId(snomedConceptId);
+
+            //add the raw original code, to assist in data checking
+            String originalCode = findOriginalCode(fhir.getType());
+            model.setOriginalCode(originalCode);
         }
 
         data.getSpecimen().add(model);

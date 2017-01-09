@@ -56,6 +56,10 @@ public class ProcedureRequestTransformer extends AbstractTransformer {
             model.setSnomedConceptId(snomedConceptId);
 
             model.setProcedureRequestStatusId(fhir.getStatus().ordinal());
+
+            //add the raw original code, to assist in data checking
+            String originalCode = findOriginalCode(fhir.getCode());
+            model.setOriginalCode(originalCode);
         }
 
         data.getProcedureRequest().add(model);

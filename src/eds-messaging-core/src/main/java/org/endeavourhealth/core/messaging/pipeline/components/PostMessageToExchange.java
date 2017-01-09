@@ -53,9 +53,13 @@ public class PostMessageToExchange extends PipelineComponent {
 
 		// Handle multicast
 		String multicastHeader = config.getMulticastHeader();
-		if (multicastHeader == null || multicastHeader.isEmpty() || exchange.getHeader(multicastHeader) == null) {
+		if (Strings.isNullOrEmpty(multicastHeader)) {
+
+			LOG.trace("Posting exchange {} to Rabbit exchange {} with routing key {}", messageUuid, config.getExchange(), routingKey);
 			publishMessage(routingKey, messageUuid, channel, properties);
+
 		} else {
+			LOG.trace("Posting exchange {} to Rabbit exchange {} with routing key {} and multicast header {}", messageUuid, config.getExchange(), routingKey, multicastHeader);
 			String multicastData = exchange.getHeader(multicastHeader);
 
 			//adding handler for when we're missing multicast header data
@@ -105,7 +109,6 @@ public class PostMessageToExchange extends PipelineComponent {
 	}
 
 	private void publishMessage(String routingKey, UUID messageUuid, Channel channel, AMQP.BasicProperties properties) throws PipelineException {
-		LOG.trace("Posting exchange {} to Rabbit exchange {} with routing key {}", messageUuid, config.getExchange(), routingKey);
 		try {
 			channel.basicPublish(
 					config.getExchange(),

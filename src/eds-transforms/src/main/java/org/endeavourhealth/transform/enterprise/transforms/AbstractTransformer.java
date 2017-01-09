@@ -77,6 +77,17 @@ public abstract class AbstractTransformer {
         return null;
     }
 
+    protected static String findOriginalCode(CodeableConcept code) {
+        for (Coding coding: code.getCoding()) {
+            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_READ2)
+                    || coding.getSystem().equals(FhirUri.CODE_SYSTEM_EMIS_CODE)) {
+                return coding.getCode();
+            }
+        }
+
+        return null;
+    }
+
     protected static Integer findEnterpriseId(Resource resource) throws Exception {
         String resourceType = resource.getResourceType().toString();
         UUID resourceId = UUID.fromString(resource.getId());

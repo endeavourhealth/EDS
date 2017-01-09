@@ -61,6 +61,10 @@ public class AllergyIntoleranceTransformer extends AbstractTransformer {
 
             Long snomedConceptId = findSnomedConceptId(fhir.getSubstance());
             model.setSnomedConceptId(snomedConceptId);
+
+            //add the raw original code, to assist in data checking
+            String originalCode = findOriginalCode(fhir.getSubstance());
+            model.setOriginalCode(originalCode);
         }
 
         data.getAllergyIntolerance().add(model);

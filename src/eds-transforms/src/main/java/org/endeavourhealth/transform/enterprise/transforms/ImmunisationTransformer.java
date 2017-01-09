@@ -54,6 +54,10 @@ public class ImmunisationTransformer extends AbstractTransformer {
 
             Long snomedConceptId = findSnomedConceptId(fhir.getVaccineCode());
             model.setSnomedConceptId(snomedConceptId);
+
+            //add the raw original code, to assist in data checking
+            String originalCode = findOriginalCode(fhir.getVaccineCode());
+            model.setOriginalCode(originalCode);
         }
 
         data.getImmunization().add(model);

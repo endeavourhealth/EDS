@@ -1,9 +1,19 @@
 package org.endeavourhealth.queuereader;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.endeavourhealth.core.data.audit.AuditRepository;
+import org.endeavourhealth.core.data.audit.models.Exchange;
 import org.endeavourhealth.core.data.config.ConfigManager;
+import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
+import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
+import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -21,7 +31,7 @@ public class Main {
 
 		//LOG.info("Fixing events");
 		//fixExchangeEvents();
-		//fixExchanges();
+		fixExchanges();
 
 		LOG.info("--------------------------------------------------");
 		LOG.info("EDS Queue Reader " + args[0]);
@@ -77,9 +87,8 @@ public class Main {
 
 	}*/
 
-	/*private static void fixExchanges() {
+	private static void fixExchanges() {
 
-		UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Organisation);
 		AuditRepository auditRepository = new AuditRepository();
 
 		Map<UUID, Set<UUID>> existingOnes = new HashMap();
@@ -99,7 +108,7 @@ public class Main {
 				continue;
 			}
 
-			String serviceId = headers.get(HeaderKeys.SenderServiceUuid);
+			/*String serviceId = headers.get(HeaderKeys.SenderServiceUuid);
 			if (serviceId == null) {
 				LOG.warn("No service ID found for exchange " + exchange.getExchangeId());
 				continue;
@@ -129,9 +138,9 @@ public class Main {
 				newOne.setTimestamp(timestamp);
 
 				auditRepository.save(newOne);
-			}
+			}*/
 
-			if (!headers.containsKey(HeaderKeys.BatchIds)) {
+			//if (!headers.containsKey(HeaderKeys.BatchIds)) {
 
 				//fix the batch IDs not being in the exchange
 				List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
@@ -139,7 +148,7 @@ public class Main {
 
 					List<UUID> batchUuids = batches
 							.stream()
-							.map(t -> t.getExchangeId())
+							.map(t -> t.getBatchId())
 							.collect(Collectors.toList());
 					try {
 						String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchUuids.toArray());
@@ -153,7 +162,7 @@ public class Main {
 						LOG.error("Failed to populate batch IDs for exchange " + exchangeUuid, e);
 					}
 				}
-			}
+			//}
 		}
-	}*/
+	}
 }

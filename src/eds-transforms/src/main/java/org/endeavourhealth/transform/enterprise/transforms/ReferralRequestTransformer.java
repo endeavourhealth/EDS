@@ -147,6 +147,10 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                     }
                 }
             }
+
+            //add the raw original code, to assist in data checking
+            String originalCode = findOriginalCode(fhir.getType());
+            model.setOriginalCode(originalCode);
         }
 
         data.getReferralRequest().add(model);

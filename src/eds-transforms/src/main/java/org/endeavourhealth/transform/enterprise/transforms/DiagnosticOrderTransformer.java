@@ -62,6 +62,10 @@ public class DiagnosticOrderTransformer extends AbstractTransformer {
             DiagnosticOrder.DiagnosticOrderItemComponent item = fhir.getItem().get(0);
             Long snomedConceptId = findSnomedConceptId(item.getCode());
             model.setSnomedConceptId(snomedConceptId);
+
+            //add the raw original code, to assist in data checking
+            String originalCode = findOriginalCode(item.getCode());
+            model.setOriginalCode(originalCode);
         }
 
         data.getDiagnosticOrder().add(model);

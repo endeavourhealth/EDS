@@ -63,6 +63,10 @@ public class ObservationTransformer extends AbstractTransformer {
                 model.setValue(quantity.getValue());
                 model.setUnits(quantity.getUnit());
             }
+
+            //add the raw original code, to assist in data checking
+            String originalCode = findOriginalCode(fhir.getCode());
+            model.setOriginalCode(originalCode);
         }
 
         data.getObservation().add(model);

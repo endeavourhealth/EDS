@@ -60,6 +60,10 @@ public class DiagnosticReportTransformer extends AbstractTransformer {
 
             Long snomedConceptId = findSnomedConceptId(fhir.getCode());
             model.setSnomedConceptId(snomedConceptId);
+
+            //add the raw original code, to assist in data checking
+            String originalCode = findOriginalCode(fhir.getCode());
+            model.setOriginalCode(originalCode);
         }
 
         data.getDiagnosticReport().add(model);
