@@ -11,6 +11,7 @@ import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.queueing.ConnectionManager;
+import org.endeavourhealth.core.queueing.RabbitConfig;
 import org.endeavourhealth.core.queueing.RoutingManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,7 +134,27 @@ public class PostMessageToExchange extends PipelineComponent {
 		return channel;
 	}
 
+	/**
+	 * re-written to get Rabbit credentials from global Rabbit config
+     */
 	private Connection getConnection() throws PipelineException {
+
+		try {
+			String nodes = RabbitConfig.getInstance().getNodes();
+			String username = RabbitConfig.getInstance().getUsername();
+			String password = RabbitConfig.getInstance().getPassword();
+
+			return ConnectionManager.getConnection(username, password, nodes);
+
+		} catch (IOException e) {
+			LOG.error("Unable to connect to rabbit", e);
+			throw new PipelineException("Unable to connect to Rabbit : " + e.getMessage(), e);
+		} catch (TimeoutException e) {
+			LOG.error("Connection to Rabbit timed out", e);
+			throw new PipelineException("Connection to rabbit timed out : " + e.getMessage(), e);
+		}
+	}
+	/*private Connection getConnection() throws PipelineException {
 		try {
 			return ConnectionManager.getConnection(
 							config.getCredentials().getUsername(),
@@ -147,7 +168,7 @@ public class PostMessageToExchange extends PipelineComponent {
 			LOG.error("Connection to Rabbit timed out", e);
 			throw new PipelineException("Connection to rabbit timed out : " + e.getMessage(), e);
 		}
-	}
+	}*/
 
 	private String getRoutingKey(Exchange exchange) {
 		String routingIdentifier = "Unknown";

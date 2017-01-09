@@ -30,6 +30,22 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link QueueReaderConfiguration }
+     * 
+     */
+    public QueueReaderConfiguration createQueueReaderConfiguration() {
+        return new QueueReaderConfiguration();
+    }
+
+    /**
+     * Create an instance of {@link Pipeline }
+     * 
+     */
+    public Pipeline createPipeline() {
+        return new Pipeline();
+    }
+
+    /**
      * Create an instance of {@link ForEachConfig }
      * 
      */
@@ -115,14 +131,6 @@ public class ObjectFactory {
      */
     public PGPDecryptConfig createPGPDecryptConfig() {
         return new PGPDecryptConfig();
-    }
-
-    /**
-     * Create an instance of {@link Pipeline }
-     * 
-     */
-    public Pipeline createPipeline() {
-        return new Pipeline();
     }
 
     /**

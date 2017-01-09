@@ -54,8 +54,6 @@
         <xs:complexContent>
             <xs:extension base="ComponentConfig">
                 <xs:sequence>
-                    <xs:element name="Credentials" type="Credentials" minOccurs="1" maxOccurs="1"/>
-                    <xs:element name="Nodes" type="xs:string" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="Exchange" type="xs:string" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="RoutingHeader" type="xs:string" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="MulticastHeader" type="xs:string" minOccurs="0" maxOccurs="1"/>

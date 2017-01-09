@@ -132,8 +132,8 @@ export class ExchangeAuditComponent {
 		var exchangeId = vm.selectedExchange.exchangeId;
 
 		vm.exchangeAuditService.postToExchange(exchangeId, exchangeName).subscribe(
-			(result) => vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Pust to Exchange'),
-			(error) => vm.log.error('Failed to post to ' + exchangeName + ' exchange', error, 'Pust to Exchange')
+			(result) => vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange'),
+			(error) => vm.log.error('Failed to post to ' + exchangeName + ' exchange', error, 'Post to Exchange')
 		)
 	}
 

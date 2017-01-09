@@ -4,14 +4,11 @@ import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import org.endeavourhealth.core.configuration.RMQExchange;
-import org.endeavourhealth.core.configuration.RMQQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
@@ -96,7 +93,7 @@ public class ConnectionManager {
 		return channel;
 	}
 
-	private static void declareQueuesAndBind(String exchangeName, Channel channel) throws IOException {
+	/*private static void declareQueuesAndBind(String exchangeName, Channel channel) throws IOException {
 		// Bind exchanges to queues ??? Should this be done externally!??!?!
 		RMQExchange rmqExchange = RabbitConfig.getInstance().getExchange(exchangeName);
 
@@ -112,5 +109,5 @@ public class ConnectionManager {
 					channel.queueBind(rmqQueue.getName(), exchangeName, routingKey);
 			}
 		}
-	}
+	}*/
 }

@@ -44,11 +44,6 @@ VALUES
                 <EventType>Validate</EventType>
             </PostMessageToLog>
             <PostMessageToExchange>
-                <Credentials>
-                    <Username>guest</Username>
-                    <Password>guest</Password>
-                </Credentials>
-                <Nodes>localhost:5672</Nodes>
                 <Exchange>EdsInbound</Exchange>
                 <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
             </PostMessageToExchange>

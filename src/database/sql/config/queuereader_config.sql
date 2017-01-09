@@ -3,11 +3,6 @@ INSERT INTO config
 VALUES
 ('queuereader', 'inbound', '<?xml version="1.0" encoding="UTF-8"?>
 <QueueReaderConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../eds-messaging-core/src/main/resources/QueueReaderConfiguration.xsd">
-    <Credentials>
-        <Username>guest</Username>
-        <Password>guest</Password>
-    </Credentials>
-    <Nodes>localhost:5672</Nodes>
     <Queue>EdsInbound-GPs_Eng_Wls</Queue>
     <!--<Queue>EdsInbound-A-M</Queue>-->
     <Pipeline>
@@ -22,20 +17,10 @@ VALUES
             <EventType>Transform_End</EventType>
         </PostMessageToLog>
         <PostMessageToExchange>
-            <Credentials>
-                <Username>guest</Username>
-                <Password>guest</Password>
-            </Credentials>
-            <Nodes>localhost:5672</Nodes>
             <Exchange>EdsResponse</Exchange>
             <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
         </PostMessageToExchange>
         <PostMessageToExchange>
-            <Credentials>
-                <Username>guest</Username>
-                <Password>guest</Password>
-            </Credentials>
-            <Nodes>localhost:5672</Nodes>
             <Exchange>EdsProtocol</Exchange>
             <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
             <MulticastHeader>BatchIds</MulticastHeader>
@@ -48,20 +33,10 @@ INSERT INTO config
 VALUES
 ('queuereader', 'protocol', '<?xml version="1.0" encoding="UTF-8"?>
 <QueueReaderConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../eds-messaging-core/src/main/resources/QueueReaderConfiguration.xsd">
-    <Credentials>
-        <Username>guest</Username>
-        <Password>guest</Password>
-    </Credentials>
-    <Nodes>localhost:5672</Nodes>
     <Queue>EdsProtocol-A-M</Queue>
     <Pipeline>
         <RunDataDistributionProtocols/>
         <PostMessageToExchange>
-            <Credentials>
-                <Username>guest</Username>
-                <Password>guest</Password>
-            </Credentials>
-            <Nodes>localhost:5672</Nodes>
             <Exchange>EdsTransform</Exchange>
             <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
             <MulticastHeader>TransformBatch</MulticastHeader>
@@ -74,11 +49,6 @@ INSERT INTO config
 VALUES
 ('queuereader', 'response', '<?xml version="1.0" encoding="UTF-8"?>
 <QueueReaderConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../eds-messaging-core/src/main/resources/QueueReaderConfiguration.xsd">
-    <Credentials>
-        <Username>guest</Username>
-        <Password>guest</Password>
-    </Credentials>
-    <Nodes>localhost:5672</Nodes>
     <Queue>EdsResponse-N-Z</Queue>
     <Pipeline>
         <PostToRest>
@@ -92,11 +62,6 @@ INSERT INTO config
 VALUES
 ('queuereader', 'subscriber', '<?xml version="1.0" encoding="UTF-8"?>
 <QueueReaderConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../eds-messaging-core/src/main/resources/QueueReaderConfiguration.xsd">
-    <Credentials>
-        <Username>guest</Username>
-        <Password>guest</Password>
-    </Credentials>
-    <Nodes>localhost:5672</Nodes>
     <Queue>EdsSubscriber-A-M</Queue>
     <Pipeline>
         <PostMessageToLog>
@@ -112,11 +77,6 @@ INSERT INTO config
 VALUES
 ('queuereader', 'transform', '<?xml version="1.0" encoding="UTF-8"?>
 <QueueReaderConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../eds-messaging-core/src/main/resources/QueueReaderConfiguration.xsd">
-    <Credentials>
-        <Username>guest</Username>
-        <Password>guest</Password>
-    </Credentials>
-    <Nodes>localhost:5672</Nodes>
     <Queue>EdsTransform-A-M</Queue>
     <Pipeline>
         <PostMessageToLog>
@@ -127,11 +87,6 @@ VALUES
             <EventType>Transform_Out_End</EventType>
         </PostMessageToLog>
         <PostMessageToExchange>
-            <Credentials>
-                <Username>guest</Username>
-                <Password>guest</Password>
-            </Credentials>
-            <Nodes>localhost:5672</Nodes>
             <Exchange>EdsSubscriber</Exchange>
             <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
             <MulticastHeader>SubscriberBatch</MulticastHeader>
