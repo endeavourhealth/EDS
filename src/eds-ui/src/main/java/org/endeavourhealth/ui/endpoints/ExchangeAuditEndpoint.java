@@ -1,13 +1,15 @@
 
 package org.endeavourhealth.ui.endpoints;
 
-import org.endeavourhealth.core.audit.AuditEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.*;
 import org.endeavourhealth.core.data.config.ConfigManager;
+import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
+import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.security.SecurityUtils;
@@ -27,6 +29,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Path("/exchangeAudit")
 public class ExchangeAuditEndpoint extends AbstractEndpoint {
@@ -50,6 +53,8 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "Create Missing Exchange_by_service");
 
         Map<UUID, Set<UUID>> existingOnes = new HashMap();
+
+        ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
 
         List<Exchange> exchanges = auditRepository.getAllExchanges();
         for (Exchange exchange: exchanges) {
@@ -77,18 +82,40 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 existingOnes.put(serviceUuid, exchangeIdsDone);
             }
 
-            if (exchangeIdsDone.contains(exchangeUuid)) {
-                continue;
+            //create the exchange by service entity
+            if (!exchangeIdsDone.contains(exchangeUuid)) {
+
+                Date timestamp = exchange.getTimestamp();
+
+                ExchangeByService newOne = new ExchangeByService();
+                newOne.setExchangeId(exchangeUuid);
+                newOne.setServiceId(serviceUuid);
+                newOne.setTimestamp(timestamp);
+
+                auditRepository.save(newOne);
             }
 
-            Date timestamp = exchange.getTimestamp();
+            if (!headers.containsKey(HeaderKeys.BatchIds)) {
 
-            ExchangeByService newOne = new ExchangeByService();
-            newOne.setExchangeId(exchangeUuid);
-            newOne.setServiceId(serviceUuid);
-            newOne.setTimestamp(timestamp);
+                //fix the batch IDs not being in the exchange
+                List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
+                if (!batches.isEmpty()) {
 
-            auditRepository.save(newOne);
+                    List<UUID> batchUuids = batches
+                            .stream()
+                            .map(t -> t.getExchangeId())
+                            .collect(Collectors.toList());
+                    try {
+                        String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchUuids.toArray());
+                        headers.put(HeaderKeys.BatchIds, batchUuidsStr);
+
+                        auditRepository.save(exchange, null);
+
+                    } catch (JsonProcessingException e) {
+                        LOG.error("Failed to populate batch IDs for exchange " + exchangeUuid, e);
+                    }
+                }
+            }
         }
 
         clearLogbackMarkers();
@@ -152,9 +179,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         for (ExchangeEvent exchangeEvent: exchangeEvents) {
 
             Date timestamp = exchangeEvent.getTimestamp();
-            Integer eventInt = exchangeEvent.getEvent();
-            AuditEvent val = AuditEvent.fromValue(eventInt.intValue());
-            String eventStr = val.toString();
+            String eventStr = exchangeEvent.getEventDesc();
 
             JsonExchangeEvent jsonExchangeEvent = new JsonExchangeEvent(timestamp, eventStr);
             ret.add(jsonExchangeEvent);

@@ -35,7 +35,7 @@ CREATE TABLE exchange_event
 ( 
 	exchange_id UUID,
     timestamp TIMESTAMP,
-    event INT,
+    event_desc VARCHAR,
     PRIMARY KEY (exchange_id, timestamp)
 );
 

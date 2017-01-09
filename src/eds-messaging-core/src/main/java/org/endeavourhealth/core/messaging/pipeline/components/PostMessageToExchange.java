@@ -1,5 +1,6 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import com.google.common.base.Strings;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -56,6 +57,12 @@ public class PostMessageToExchange extends PipelineComponent {
 			publishMessage(routingKey, messageUuid, channel, properties);
 		} else {
 			String multicastData = exchange.getHeader(multicastHeader);
+
+			//adding handler for when we're missing multicast header data
+			if (Strings.isNullOrEmpty(multicastData)) {
+				throw new PipelineException("No multicast data for " + multicastHeader + " to post exchange " + exchange.getExchangeId() + " to " + config.getExchange());
+			}
+
 			try {
 				Object[] multicastItems = ObjectMapperPool.getInstance().readValue(multicastData, Object[].class);
 
@@ -69,7 +76,6 @@ public class PostMessageToExchange extends PipelineComponent {
 			} catch (IOException e) {
 				throw new PipelineException("Could not parse multicast data", e);
 			}
-
 		}
 
 		waitForConfirmations(channel);

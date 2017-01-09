@@ -1,6 +1,5 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import org.endeavourhealth.core.audit.AuditEvent;
 import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.PostMessageToLogConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -20,6 +19,18 @@ public class PostMessageToLog extends PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
+		String eventType = config.getEventType();
+
+		try {
+			AuditWriter.writeAuditEvent(exchange, eventType);
+			LOG.debug("Message written to outbound log");
+		} catch (Exception e) {
+			LOG.error("Error writing exchange to audit", e);
+			// throw new PipelineException(e.getMessage());
+		}
+	}
+
+	/*public void process(Exchange exchange) throws PipelineException {
 		AuditEvent auditEvent = AuditEvent.fromString(config.getEventType());
 
 		try {
@@ -29,6 +40,6 @@ public class PostMessageToLog extends PipelineComponent {
 			LOG.error("Error writing exchange to audit", e);
 			// throw new PipelineException(e.getMessage());
 		}
-	}
+	}*/
 
 }
