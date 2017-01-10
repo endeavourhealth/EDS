@@ -5,10 +5,13 @@ import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.fhir.FhirValueSetUri;
 import org.hl7.fhir.instance.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public class PractitionerTransformer extends AbstractTransformer {
+    private static final Logger LOG = LoggerFactory.getLogger(PractitionerTransformer.class);
 
     public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
@@ -22,8 +25,7 @@ public class PractitionerTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getSaveMode() == SaveMode.INSERT
-                || model.getSaveMode() == SaveMode.UPDATE) {
+        if (model.getSaveMode() == SaveMode.UPSERT) {
 
             Practitioner fhir = (Practitioner)deserialiseResouce(resource);
 

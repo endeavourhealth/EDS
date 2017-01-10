@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
+import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.transform.EnterpriseIdMapRepository;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
@@ -36,8 +37,7 @@ public class OrganisationTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getSaveMode() == SaveMode.INSERT
-                || model.getSaveMode() == SaveMode.UPDATE) {
+        if (model.getSaveMode() == SaveMode.UPSERT) {
 
             org.hl7.fhir.instance.model.Organization fhir = (org.hl7.fhir.instance.model.Organization)deserialiseResouce(resource);
 
@@ -46,12 +46,11 @@ public class OrganisationTransformer extends AbstractTransformer {
                 model.setOdsCode(odsCode);
             }
 
-            LOG.info("Org ID " + model.getOdsCode());
+            //LOG.info("Org ID " + model.getOdsCode());
 
             //if the organisation ODS code matches the one we're filing data for, replace the ID with the ID
             //we've pre-generated to use as our org ID
-            if (model.getSaveMode() == SaveMode.INSERT
-                && model.getOdsCode() != null
+            if (model.getOdsCode() != null
                 && model.getOdsCode().equalsIgnoreCase(orgOdsCode)) {
 
                 new EnterpriseIdMapRepository().saveEnterpriseOrganisationIdMapping(orgOdsCode, new Integer(model.getId()));
@@ -97,13 +96,19 @@ public class OrganisationTransformer extends AbstractTransformer {
                     if (extension.getUrl().equals(FhirExtensionUri.ORGANISATION_MAIN_LOCATION)) {
 
                         Reference locationReference = (Reference)extension.getValue();
-                        Location location = (Location)findResource(locationReference, otherResources);
-                        if (location != null
-                                && location.hasAddress()) {
-                            Address address = location.getAddress();
-                            if (address.hasPostalCode()) {
-                                model.setPostcode(address.getPostalCode());
+
+                        try {
+                            Location location = (Location) findResource(locationReference, otherResources);
+                            if (location != null
+                                    && location.hasAddress()) {
+                                Address address = location.getAddress();
+                                if (address.hasPostalCode()) {
+                                    model.setPostcode(address.getPostalCode());
+                                }
                             }
+                        } catch (ResourceNotFoundException ex) {
+                            //The Emis data contains organisations that refer to organisations that don't exist
+                            LOG.warn("" + fhir.getResourceType() + " " + fhir.getId() + " refers to " + locationReference.getReference() + " that doesn't exist");
                         }
                     }
 

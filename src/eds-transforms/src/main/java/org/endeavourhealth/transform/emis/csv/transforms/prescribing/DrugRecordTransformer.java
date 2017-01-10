@@ -115,7 +115,7 @@ public class DrugRecordTransformer {
         Date cancellationDate = parser.getCancellationDate();
         if (cancellationDate != null) {
             //the cancellation extension is a compound extension, so we have one extension inside another
-            Extension extension = ExtensionConverter.createExtension("performer", new DateType(cancellationDate));
+            Extension extension = ExtensionConverter.createExtension("date", new DateType(cancellationDate));
             fhirMedicationStatement.addExtension(ExtensionConverter.createCompoundExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_CANCELLATION, extension));
         }
 

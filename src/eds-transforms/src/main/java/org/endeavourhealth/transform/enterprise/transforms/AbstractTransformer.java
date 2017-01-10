@@ -190,15 +190,10 @@ public abstract class AbstractTransformer {
             if (enterpriseId == null) {
                 //if we don't have an schema ID, the resource is new, so should be an INSERT transaction
                 enterpriseId = createEnterpriseId(resource);
-
-                baseRecord.setId(enterpriseId);
-                baseRecord.setSaveMode(SaveMode.INSERT);
-
-            } else {
-                //if we have an schema ID, the resource was previously passed to Enterprise, so it's an update
-                baseRecord.setId(enterpriseId);
-                baseRecord.setSaveMode(SaveMode.UPDATE);
             }
+            baseRecord.setId(enterpriseId);
+
+            baseRecord.setSaveMode(SaveMode.UPSERT);
         }
 
         return true;

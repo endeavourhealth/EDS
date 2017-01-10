@@ -6,11 +6,11 @@ import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.utility.Resources;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
-import org.endeavourhealth.transform.fhir.schema.RegistrationType;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Identifier;
+import org.hl7.fhir.instance.model.Patient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class PatientTransformer extends AbstractTransformer {
+    private static final Logger LOG = LoggerFactory.getLogger(PatientTransformer.class);
 
     private static final String PSEUDO_KEY_NHS_NUMBER = "NHSNumber";
     private static final String PSEUDO_KEY_DATE_OF_BIRTH = "DOB";
@@ -31,11 +32,6 @@ public class PatientTransformer extends AbstractTransformer {
                           Map<String, ResourceByExchangeBatch> otherResources,
                           Integer enterpriseOrganisationUuid) throws Exception {
 
-        //we transform EpisodeOfCare BEFORE Patient, and handle Patient while doing it. So we only need
-        //to consider the case where we have a change to our Patient, but there wasn't a change to the EpisodeOfCare
-
-        //TODO - work out how to handle Patient changing W/O EpisodeOfCare
-
         org.endeavourhealth.core.xml.enterprise.Patient model = new org.endeavourhealth.core.xml.enterprise.Patient();
 
         if (!mapIdAndMode(resource, model)) {
@@ -43,8 +39,7 @@ public class PatientTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getSaveMode() == SaveMode.INSERT
-                || model.getSaveMode() == SaveMode.UPDATE) {
+        if (model.getSaveMode() == SaveMode.UPSERT) {
 
             Patient fhirPatient = (Patient)deserialiseResouce(resource);
 
@@ -66,7 +61,8 @@ public class PatientTransformer extends AbstractTransformer {
 
             model.setPatientGenderId(fhirPatient.getGender().ordinal());
 
-            if (fhirPatient.hasCareProvider()) {
+            //moved all reg-specific stuff to the EpisodeOfCare table, where it belongs
+            /*if (fhirPatient.hasCareProvider()) {
                 for (Reference reference: fhirPatient.getCareProvider()) {
                     ResourceType resourceType = ReferenceHelper.getResourceType(reference);
                     if (resourceType == ResourceType.Practitioner) {
@@ -86,9 +82,8 @@ public class PatientTransformer extends AbstractTransformer {
                 }
             }
 
-            //TODO - restore this
             model.setDateRegistered(convertDate(new Date()));
-         /*   Period period = fhirEpisode.getPeriod();
+         *//*   Period period = fhirEpisode.getPeriod();
             if (period.hasStart()) {
                 model.setDateRegistered(convertDate(period.getStart()));
             }

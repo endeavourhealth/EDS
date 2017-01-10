@@ -7,10 +7,14 @@ import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.schema.MedicationAuthorisationType;
 import org.hl7.fhir.instance.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public class MedicationStatementTransformer extends AbstractTransformer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MedicationStatementTransformer.class);
 
     public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
@@ -24,8 +28,7 @@ public class MedicationStatementTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getSaveMode() == SaveMode.INSERT
-                || model.getSaveMode() == SaveMode.UPDATE) {
+        if (model.getSaveMode() == SaveMode.UPSERT) {
 
             MedicationStatement fhir = (MedicationStatement)deserialiseResouce(resource);
 
@@ -33,6 +36,14 @@ public class MedicationStatementTransformer extends AbstractTransformer {
 
             Reference patientReference = fhir.getPatient();
             Integer enterprisePatientUuid = findEnterpriseId(patientReference);
+
+            //the test pack has data that refers to deleted or missing patients, so if we get a null
+            //patient ID here, then skip this resource
+            if (enterprisePatientUuid == null) {
+                LOG.warn("Skipping " + fhir.getResourceType() + " " + fhir.getId() + " as no Enterprise patient ID could be found for it");
+                return;
+            }
+
             model.setPatientId(enterprisePatientUuid);
 
             if (fhir.hasInformationSource()) {
@@ -61,15 +72,35 @@ public class MedicationStatementTransformer extends AbstractTransformer {
                 }
 
                 MedicationStatement.MedicationStatementDosageComponent doseage = fhir.getDosage().get(0);
-                model.setDose(doseage.getText());
+                String dose = doseage.getText();
+
+                //one of the Emis test packs includes the unicode \u0001 character in the dose. This should be handled
+                //during the inbound transform, but the data is already in the DB now, so needs handling here
+                char[] chars = dose.toCharArray();
+                for (int i=0; i<chars.length; i++) {
+                    char c = chars[i];
+                    if (c == 1) {
+                        chars[i] = '?'; //just replace with ?
+                    }
+                }
+                dose = new String(chars);
+
+                model.setDose(dose);
             }
 
             if (fhir.hasExtension()) {
                 for (Extension extension: fhir.getExtension()) {
 
                     if (extension.getUrl().equals(FhirExtensionUri.MEDICATION_AUTHORISATION_CANCELLATION)) {
-                        DateType d = (DateType)extension.getValue();
-                        model.setCancellationDate(convertDate(d.getValue()));
+                        //this extension is a compound one, with one or two inner extensions, giving us the date and performer
+                        if (extension.hasExtension()) {
+                            for (Extension innerExtension: extension.getExtension()) {
+                                if (innerExtension.getValue() instanceof DateType) {
+                                    DateType d = (DateType)innerExtension.getValue();
+                                    model.setCancellationDate(convertDate(d.getValue()));
+                                }
+                            }
+                        }
 
                     } else if (extension.getUrl().equals(FhirExtensionUri.MEDICATION_AUTHORISATION_QUANTITY)) {
                         Quantity q = (Quantity)extension.getValue();

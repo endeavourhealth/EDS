@@ -8,10 +8,14 @@ import org.hl7.fhir.instance.model.Condition;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.Extension;
 import org.hl7.fhir.instance.model.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public class ConditionTransformer extends AbstractTransformer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ConditionTransformer.class);
 
     public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
@@ -25,8 +29,7 @@ public class ConditionTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getSaveMode() == SaveMode.INSERT
-                || model.getSaveMode() == SaveMode.UPDATE) {
+        if (model.getSaveMode() == SaveMode.UPSERT) {
 
             Condition fhir = (Condition)deserialiseResouce(resource);
 
@@ -34,6 +37,14 @@ public class ConditionTransformer extends AbstractTransformer {
 
             Reference patientReference = fhir.getPatient();
             Integer enterprisePatientUuid = findEnterpriseId(patientReference);
+
+            //the test pack has data that refers to deleted or missing patients, so if we get a null
+            //patient ID here, then skip this resource
+            if (enterprisePatientUuid == null) {
+                LOG.warn("Skipping " + fhir.getResourceType() + " " + fhir.getId() + " as no Enterprise patient ID could be found for it");
+                return;
+            }
+
             model.setPatientId(enterprisePatientUuid);
 
             if (fhir.hasEncounter()) {

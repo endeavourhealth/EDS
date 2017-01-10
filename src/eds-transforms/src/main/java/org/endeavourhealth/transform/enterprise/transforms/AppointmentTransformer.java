@@ -8,11 +8,15 @@ import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.ReferenceComponents;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.Map;
 
 public class AppointmentTransformer extends AbstractTransformer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(AppointmentTransformer.class);
 
     public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
@@ -26,8 +30,7 @@ public class AppointmentTransformer extends AbstractTransformer {
         }
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getSaveMode() == SaveMode.INSERT
-                || model.getSaveMode() == SaveMode.UPDATE) {
+        if (model.getSaveMode() == SaveMode.UPSERT) {
 
             Appointment fhir = (Appointment)deserialiseResouce(resource);
 
@@ -40,6 +43,14 @@ public class AppointmentTransformer extends AbstractTransformer {
 
                     if (components.getResourceType() == ResourceType.Patient) {
                         Integer enterprisePatientUuid = findEnterpriseId(reference);
+
+                        //the test pack has data that refers to deleted or missing patients, so if we get a null
+                        //patient ID here, then skip this resource
+                        if (enterprisePatientUuid == null) {
+                            LOG.warn("Skipping " + fhir.getResourceType() + " " + fhir.getId() + " as no Enterprise patient ID could be found for it");
+                            return;
+                        }
+
                         model.setPatientId(enterprisePatientUuid);
 
                     } else if (components.getResourceType() == ResourceType.Practitioner) {

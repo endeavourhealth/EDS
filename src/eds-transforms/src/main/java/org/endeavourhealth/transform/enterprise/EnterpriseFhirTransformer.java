@@ -65,10 +65,12 @@ public class EnterpriseFhirTransformer {
         Organisation org = new OrganisationRepository().getById(orgId);
         String orgNationalId = org.getNationalId();
 
+        if (resources.size() > 0) {
+            UUID batchId = resources.get(0).getBatchId();
+            LOG.info("=============================================batch ID " + batchId + " org ID " + orgNationalId + " ========================================");
+        }
 
-        if (true) {
-
-
+       /* if (true) {
             List<String> keys = new ArrayList<>();
             Map<String, Integer> counts = new HashMap<>();
             UUID batchId = null;
@@ -86,15 +88,13 @@ public class EnterpriseFhirTransformer {
                 counts.put(resourceType, new Integer(newCount));
             }
 
-            LOG.info("=============================================batch ID " + batchId + " org ID " + orgNationalId + " ========================================");
-
-            String[] keyArray = keys.toArray(new String[]{});
+*//*            String[] keyArray = keys.toArray(new String[]{});
             Arrays.sort(keyArray);
             for (String key: keyArray) {
                 LOG.info(key + " -> " + counts.get(key));
-            }
+            }*//*
             //return data;
-        }
+        }*/
 
 
         //we detect whether we're doing an update or insert, based on whether we're previously mapped
@@ -107,8 +107,8 @@ public class EnterpriseFhirTransformer {
 
         tranformResources(ResourceType.Practitioner, new PractitionerTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
         tranformResources(ResourceType.Schedule, new ScheduleTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
-        tranformResources(ResourceType.EpisodeOfCare, new EpisodeOfCareTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
         tranformResources(ResourceType.Patient, new PatientTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
+        tranformResources(ResourceType.EpisodeOfCare, new EpisodeOfCareTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
         tranformResources(ResourceType.Appointment, new AppointmentTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
         tranformResources(ResourceType.Encounter, new EncounterTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
         tranformResources(ResourceType.Condition, new ConditionTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);

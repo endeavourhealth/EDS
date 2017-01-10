@@ -50,9 +50,8 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 		try {
 			String outbound = EnterpriseFhirTransformer.transformFromFhir(serviceId, orglId, transformBatch.getBatchId(), null);
-
-			//rather than following normal pipeline, I'm just writing the content directly to the Enterprise DB, so I can get it working asap
 			EnterpriseFiler.file(outbound);
+
 		} catch (Exception ex) {
 			throw new PipelineException("Exception saving to Enterprise DB", ex);
 		}
