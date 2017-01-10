@@ -35,7 +35,9 @@ public class RabbitConsumer extends DefaultConsumer {
 		// Get the message from the db
 		QueuedMessage queuedMessage = new QueuedMessageRepository().getById(messageUuid);
 
+		//seem to get brokwn messages in dev environments, so handle for now
 		if (queuedMessage == null) {
+			LOG.warn("Received queued message ID " + messageId + " with no actual message");
 			this.getChannel().basicAck(envelope.getDeliveryTag(), false);
 			return;
 		}

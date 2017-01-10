@@ -1,5 +1,6 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.PostToSubscriberWebServiceConfig;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
@@ -8,12 +9,10 @@ import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
-import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.UUID;
 
 public class PostToSubscriberWebService extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(PostToSubscriberWebService.class);
@@ -33,6 +32,10 @@ public class PostToSubscriberWebService extends PipelineComponent {
 			exchange.setBody(outboundMessage);
 			// Set list of destinations
 			exchange.setHeader(HeaderKeys.DestinationAddress, String.join(",", subscriberBatch.getEndpoints()));
+
+			//commit what we've just received to the DB
+			AuditWriter.writeExchange(exchange);
+
 		} catch (IOException e) {
 			LOG.error("Error deserializing subscriber batch JSON", e);
 			throw new PipelineException("Error deserializing subscriber batch JSON", e);

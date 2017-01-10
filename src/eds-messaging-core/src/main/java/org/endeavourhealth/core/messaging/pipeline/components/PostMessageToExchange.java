@@ -42,6 +42,7 @@ public class PostMessageToExchange extends PipelineComponent {
 		Connection connection = getConnection();
 		Channel channel = getChannel(connection);
 
+		//copy the headers from the exchange, since we may be changing it
 		Map<String, Object> headers = new HashMap<>();
 		for (String key : exchange.getHeaders().keySet())
 			headers.put(key, exchange.getHeader(key));

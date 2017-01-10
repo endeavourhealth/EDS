@@ -2,6 +2,7 @@ package org.endeavourhealth.messagingapi.endpoints;
 
 import com.datastax.driver.core.utils.UUIDs;
 import org.apache.http.HttpStatus;
+import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.Pipeline;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
@@ -19,8 +20,12 @@ public abstract class AbstractEndpoint {
 
 		Exchange exchange = new Exchange(UUIDs.timeBased(), body); //use a time-based UUID, so exchanges can easily be sorted
 
-		for (String key : headers.getRequestHeaders().keySet())
+		for (String key : headers.getRequestHeaders().keySet()) {
 			exchange.setHeader(key, headers.getHeaderString(key));
+		}
+
+		//commit what we've just received to the DB
+		AuditWriter.writeExchange(exchange);
 
 		PipelineProcessor processor = new PipelineProcessor(pipeline);
 		if (processor.execute(exchange)) {

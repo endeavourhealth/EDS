@@ -1,7 +1,6 @@
 package org.endeavourhealth.core.queueing;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,8 +24,7 @@ public class RabbitConfig {
 	private RabbitConfig() {
 
 		try {
-			String rabbitConfigJson = ConfigManager.getConfiguration("rabbit");
-			JsonNode rabbitConfig = ObjectMapperPool.getInstance().readTree(rabbitConfigJson);
+			JsonNode rabbitConfig = ConfigManager.getConfigurationAsJson("rabbit");
 
 			this.nodes = rabbitConfig.get("nodes").asText();
 			this.username = rabbitConfig.get("username").asText();

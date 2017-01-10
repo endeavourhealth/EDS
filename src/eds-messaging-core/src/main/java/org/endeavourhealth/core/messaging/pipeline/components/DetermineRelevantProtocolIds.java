@@ -1,6 +1,7 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.DetermineRelevantProtocolIdsConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
@@ -41,6 +42,9 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 			LOG.error("Unable to serialize protocols to JSON");
 			throw new PipelineException(e.getMessage(), e);
 		}
+
+		//commit what we've just received to the DB
+		AuditWriter.writeExchange(exchange);
 
 		LOG.debug("Data distribution protocols identified");
 	}

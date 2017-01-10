@@ -1,12 +1,11 @@
 package org.endeavourhealth.subscriber;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.xml.EnterpriseSerializer;
 import org.endeavourhealth.core.xml.enterprise.BaseRecord;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
-import org.endeavourhealth.subscriber.configuration.ConfigurationProvider;
-import org.endeavourhealth.subscriber.configuration.models.PostgreSQLConnection;
-import org.endeavourhealth.subscriber.configuration.models.SubscriberConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -367,6 +366,24 @@ public class EnterpriseFiler {
     }
 
     private static Connection openConnection() throws Exception {
+
+        //force the driver to be loaded
+        Class.forName("org.postgresql.Driver");
+
+        JsonNode config = ConfigManager.getConfigurationAsJson("postgres", "enterprise");
+        String url = config.get("url").asText();
+        String username = config.get("username").asText();
+        String password = config.get("password").asText();
+
+        Connection conn = DriverManager.getConnection(url, username, password);
+        conn.setAutoCommit(false);
+
+        return conn;
+    }
+
+
+
+    /*private static Connection openConnection() throws Exception {
         SubscriberConfiguration config = ConfigurationProvider.getInstance().getConfiguration();
         PostgreSQLConnection dbConfig = config.getPostgreSQLConnection();
 
@@ -384,6 +401,6 @@ public class EnterpriseFiler {
         }
 
         return conn;
-    }
+    }*/
 
 }

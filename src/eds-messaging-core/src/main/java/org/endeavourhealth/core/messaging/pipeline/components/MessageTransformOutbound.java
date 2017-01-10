@@ -2,11 +2,13 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.MessageTransformOutboundConfig;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
+import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
@@ -16,6 +18,7 @@ import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
 import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
+import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.enterprise.EnterpriseFhirTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +69,10 @@ public class MessageTransformOutbound extends PipelineComponent {
 				UUID orglId = UUID.fromString(orgIdStr);
 
 				String outbound = EnterpriseFhirTransformer.transformFromFhir(serviceId, orglId, transformBatch.getBatchId(), transformBatch.getResourceIds());
+
+				//rather than following normal pipeline, I'm just writing the content directly to the Enterprise DB, so I can get it working asap
+				EnterpriseFiler.file(outbound);
+
 				//String outbound = CegFhirTransformer.transformFromFhir(serviceId, orgNationalId, transformBatch.getBatchId(), transformBatch.getResourceIds());
 
 				// Store transformed message
@@ -119,5 +126,15 @@ public class MessageTransformOutbound extends PipelineComponent {
 			LOG.error("Error deserializing transformation batch JSON", e);
 			throw new PipelineException("Error deserializing transformation batch JSON", e);
 		}
+	}
+
+
+	private void writeToEnterprise(String outbound) throws Exception {
+		JsonNode config = ConfigManager.getConfigurationAsJson("postgres", "enterprise");
+		String url = config.get("url").asText();
+		String username = config.get("username").asText();
+		String password = config.get("password").asText();
+
+
 	}
 }

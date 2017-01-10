@@ -1,12 +1,17 @@
 
 package org.endeavourhealth.ui.endpoints;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.Strings;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.*;
 import org.endeavourhealth.core.data.config.ConfigManager;
+import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
+import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
+import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
@@ -25,6 +30,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Path("/exchangeAudit")
 public class ExchangeAuditEndpoint extends AbstractEndpoint {
@@ -210,6 +216,14 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         org.endeavourhealth.core.messaging.exchange.Exchange exchange = retrieveExchange(exchangeId);
 
+        //work out what multicast header we need
+        String multicastHeader = exchangeConfig.getMulticastHeader();
+        if (!Strings.isNullOrEmpty(multicastHeader)) {
+            if (exchange.getHeader(multicastHeader) == null) {
+                populateMulticastHeader(exchange, multicastHeader);
+            }
+        }
+
         postToExchange(exchangeConfig, exchange);
 
         clearLogbackMarkers();
@@ -217,6 +231,44 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .build();
+    }
+
+    private void populateMulticastHeader(org.endeavourhealth.core.messaging.exchange.Exchange exchange, String multicastHeader) throws Exception {
+
+        if (multicastHeader.equalsIgnoreCase(HeaderKeys.BatchIds)) {
+
+            //fix the batch IDs not being in the exchange
+            UUID exchangeUuid = exchange.getExchangeId();
+
+            ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+            List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
+            if (!batches.isEmpty()) {
+
+                List<UUID> batchUuids = batches
+                        .stream()
+                        .map(t -> t.getExchangeId())
+                        .collect(Collectors.toList());
+                try {
+                    String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchUuids.toArray());
+                    exchange.setHeader(HeaderKeys.BatchIds, batchUuidsStr);
+
+                } catch (JsonProcessingException e) {
+                    LOG.error("Failed to populate batch IDs for exchange " + exchangeUuid, e);
+                }
+            }
+
+        } else if (multicastHeader.equalsIgnoreCase(HeaderKeys.TransformBatch)) {
+
+            throw new BadRequestException("Mutlicasting using transform batch not supported");
+
+        } else if (multicastHeader.equalsIgnoreCase(HeaderKeys.SubscriberBatch)) {
+
+            throw new BadRequestException("Mutlicasting using subscriber batch not supported");
+
+        } else {
+            throw new BadRequestException("Unsupported multicast header: " + multicastHeader);
+        }
+
     }
 
     private PostMessageToExchangeConfig findExchangeConfig(String exchangeName) throws Exception {

@@ -22,11 +22,10 @@ public class PostMessageToLog extends PipelineComponent {
 		String eventType = config.getEventType();
 
 		try {
-			AuditWriter.writeAuditEvent(exchange, eventType);
-			LOG.debug("Message written to outbound log");
+			AuditWriter.writeExchangeEvent(exchange, eventType);
+
 		} catch (Exception e) {
-			LOG.error("Error writing exchange to audit", e);
-			// throw new PipelineException(e.getMessage());
+			throw new PipelineException("Failed to write exchange " + exchange.getExchangeId() + " " + eventType + " to audit DB", e);
 		}
 	}
 

@@ -1,5 +1,6 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.cache.ParserPool;
 import org.endeavourhealth.core.configuration.OpenEnvelopeConfig;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
@@ -64,6 +65,9 @@ public class OpenEnvelope extends PipelineComponent {
 			processHeader(exchange, messageHeader);
 			processBody(exchange, binary);
 
+			//commit what we've just received to the DB
+			AuditWriter.writeExchange(exchange);
+
 		} catch (Exception e) {
 			throw new PipelineException(e.getMessage(), e);
 		}
@@ -119,6 +123,8 @@ public class OpenEnvelope extends PipelineComponent {
 		exchange.setHeader(HeaderKeys.SenderServiceUuid, service.getId().toString());
 		exchange.setHeader(HeaderKeys.SenderOrganisationUuid, organisation.getId().toString());
 
+		//commit what we've just added to the DB
+		AuditWriter.writeExchange(exchange);
 	}
 	/*private void getSenderUuid(Exchange exchange) throws PipelineException {
 
