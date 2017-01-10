@@ -12,6 +12,7 @@ import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
@@ -235,31 +236,50 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
     private void populateMulticastHeader(org.endeavourhealth.core.messaging.exchange.Exchange exchange, String multicastHeader) throws Exception {
 
-        if (multicastHeader.equalsIgnoreCase(HeaderKeys.BatchIds)) {
+        UUID exchangeUuid = exchange.getExchangeId();
 
-            //fix the batch IDs not being in the exchange
-            UUID exchangeUuid = exchange.getExchangeId();
+        if (multicastHeader.equalsIgnoreCase(HeaderKeys.BatchIds)) {
 
             ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
             List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
-            if (!batches.isEmpty()) {
 
-                List<UUID> batchUuids = batches
-                        .stream()
-                        .map(t -> t.getExchangeId())
-                        .collect(Collectors.toList());
-                try {
-                    String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchUuids.toArray());
-                    exchange.setHeader(HeaderKeys.BatchIds, batchUuidsStr);
+            List<UUID> batchUuids = batches
+                    .stream()
+                    .map(t -> t.getExchangeId())
+                    .collect(Collectors.toList());
+            try {
+                String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchUuids.toArray());
+                exchange.setHeader(HeaderKeys.BatchIds, batchUuidsStr);
 
-                } catch (JsonProcessingException e) {
-                    LOG.error("Failed to populate batch IDs for exchange " + exchangeUuid, e);
-                }
+            } catch (JsonProcessingException e) {
+                LOG.error("Failed to populate batch IDs for exchange " + exchangeUuid, e);
             }
 
         } else if (multicastHeader.equalsIgnoreCase(HeaderKeys.TransformBatch)) {
 
-            throw new BadRequestException("Mutlicasting using transform batch not supported");
+            //hack to bypass the generation of transform batches
+            //throw new BadRequestException("Mutlicasting using transform batch not supported");
+
+            List<TransformBatch> transformBatches = new ArrayList<>();
+
+            ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+            List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
+            for (ExchangeBatch batch: batches) {
+
+                //the only bit of data we can populate is the batch ID
+                TransformBatch transformBatch = new TransformBatch();
+                transformBatch.setBatchId(batch.getBatchId());
+
+                transformBatches.add(transformBatch);
+            }
+
+            try {
+                String transformBatchesJson = ObjectMapperPool.getInstance().writeValueAsString(transformBatches);
+                exchange.setHeader(HeaderKeys.TransformBatch, transformBatchesJson);
+
+            } catch (JsonProcessingException e) {
+                LOG.error("Failed to populate batch IDs for exchange " + exchangeUuid, e);
+            }
 
         } else if (multicastHeader.equalsIgnoreCase(HeaderKeys.SubscriberBatch)) {
 

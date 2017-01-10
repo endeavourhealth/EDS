@@ -129,8 +129,7 @@ public class PostMessageToExchange extends PipelineComponent {
 			channel = ConnectionManager.getPublishChannel(connection, config.getExchange());
 			channel.confirmSelect();
 		} catch (IOException e) {
-			LOG.error("Unable to get publish channel", e);
-			throw new PipelineException("Unable to get publish channel: " + e.getMessage(), e);
+			throw new PipelineException("Unable to get Rabbit channel for exchange " + config.getExchange(), e);
 		}
 		return channel;
 	}

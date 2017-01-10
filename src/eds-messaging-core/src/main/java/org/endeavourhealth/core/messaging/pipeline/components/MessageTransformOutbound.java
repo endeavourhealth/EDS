@@ -1,11 +1,9 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.MessageTransformOutboundConfig;
-import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.config.ConfigManager;
@@ -14,10 +12,8 @@ import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
-import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.enterprise.EnterpriseFhirTransformer;
 import org.slf4j.Logger;
@@ -27,7 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 
 public class MessageTransformOutbound extends PipelineComponent {
@@ -40,7 +35,30 @@ public class MessageTransformOutbound extends PipelineComponent {
 		this.config = config;
 	}
 
+	/**
+	 * hacked version of this fn to force data into Enterprise DB
+     */
 	@Override
+	public void process(Exchange exchange) throws PipelineException {
+
+		TransformBatch transformBatch = getTransformBatch(exchange);
+
+		String serviceIdStr = exchange.getHeader(HeaderKeys.SenderServiceUuid);
+		UUID serviceId = UUID.fromString(serviceIdStr);
+		String orgIdStr = exchange.getHeader(HeaderKeys.SenderOrganisationUuid);
+		UUID orglId = UUID.fromString(orgIdStr);
+
+		try {
+			String outbound = EnterpriseFhirTransformer.transformFromFhir(serviceId, orglId, transformBatch.getBatchId(), null);
+
+			//rather than following normal pipeline, I'm just writing the content directly to the Enterprise DB, so I can get it working asap
+			EnterpriseFiler.file(outbound);
+		} catch (Exception ex) {
+			throw new PipelineException("Exception saving to Enterprise DB", ex);
+		}
+	}
+
+	/*@Override
 	public void process(Exchange exchange) throws PipelineException {
 		// Get the transformation data from the exchange
 		// List of resources and subscriber service contracts
@@ -68,12 +86,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 				String orgIdStr = exchange.getHeader(HeaderKeys.SenderOrganisationUuid);
 				UUID orglId = UUID.fromString(orgIdStr);
 
-				String outbound = EnterpriseFhirTransformer.transformFromFhir(serviceId, orglId, transformBatch.getBatchId(), transformBatch.getResourceIds());
-
-				//rather than following normal pipeline, I'm just writing the content directly to the Enterprise DB, so I can get it working asap
-				EnterpriseFiler.file(outbound);
-
-				//String outbound = CegFhirTransformer.transformFromFhir(serviceId, orgNationalId, transformBatch.getBatchId(), transformBatch.getResourceIds());
+				throw new PipelineException("Transform out not implemented", ex);
 
 				// Store transformed message
 				UUID messageUuid = UUID.randomUUID();
@@ -95,7 +108,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 		}
 		exchange.setHeader(HeaderKeys.SubscriberBatch, subscriberBatchesJson);
 		LOG.trace("Message transformed (outbound)");
-	}
+	}*/
 
 	private List<String> getSubscriberEndpoints(TransformBatch transformBatch) throws PipelineException {
 		// Find the relevant endpoints for those subscribers/technical interface

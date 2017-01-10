@@ -3,7 +3,6 @@ package org.endeavourhealth.core.messaging.pipeline;
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.components.*;
-import org.endeavourhealth.core.messaging.pipeline.components.ForEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,9 +21,9 @@ public class PipelineProcessor {
 			for (Object processConfig : pipeline.getPipelineComponents()) {
 				PopulateExchangeParameters(exchange, processConfig);
 				component = getComponent(processConfig);
-				LOG.info("Calling pipeline component {} for exchange {}", component.getClass().getSimpleName(), exchange.getExchangeId());
+				LOG.trace("Calling pipeline component {} for exchange {}", component.getClass().getSimpleName(), exchange.getExchangeId());
 				component.baseProcess(exchange);
-				LOG.info("Completed pipeline component {} for exchange {}", component.getClass().getSimpleName(), exchange.getExchangeId());
+				//LOG.info("Completed pipeline component {} for exchange {}", component.getClass().getSimpleName(), exchange.getExchangeId());
 			}
 			return true;
 		}

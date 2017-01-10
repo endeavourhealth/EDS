@@ -10,10 +10,13 @@ import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.FhirValueSetUri;
 import org.endeavourhealth.transform.fhir.IdentifierHelper;
 import org.hl7.fhir.instance.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public class OrganisationTransformer extends AbstractTransformer {
+    private static final Logger LOG = LoggerFactory.getLogger(OrganisationTransformer.class);
 
     private String orgOdsCode = null;
 
@@ -43,8 +46,10 @@ public class OrganisationTransformer extends AbstractTransformer {
                 model.setOdsCode(odsCode);
             }
 
-            //if the organisation ODS code matches the one we're filing data for, then save the Enterprise ID
-            //we've generated for the org in the the enterprise_organisation_id mapping table
+            LOG.info("Org ID " + model.getOdsCode());
+
+            //if the organisation ODS code matches the one we're filing data for, replace the ID with the ID
+            //we've pre-generated to use as our org ID
             if (model.getSaveMode() == SaveMode.INSERT
                 && model.getOdsCode() != null
                 && model.getOdsCode().equalsIgnoreCase(orgOdsCode)) {
