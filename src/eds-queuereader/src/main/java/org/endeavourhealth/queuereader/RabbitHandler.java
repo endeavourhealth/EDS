@@ -43,7 +43,13 @@ public class RabbitHandler {
 		connectionFactory.setUsername(RabbitConfig.getInstance().getUsername());
 		connectionFactory.setPassword(RabbitConfig.getInstance().getPassword());
 
+		LOG.trace("User: " + RabbitConfig.getInstance().getUsername());
+		LOG.trace("Password: " + RabbitConfig.getInstance().getPassword());
+
 		Address[] addresses = Address.parseAddresses(RabbitConfig.getInstance().getNodes());
+		for (Address address: addresses) {
+			LOG.trace("Node: " + address);
+		}
 
 		return connectionFactory.newConnection(addresses);
 	}

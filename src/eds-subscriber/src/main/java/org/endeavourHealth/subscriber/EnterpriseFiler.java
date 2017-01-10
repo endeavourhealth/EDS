@@ -62,7 +62,8 @@ public class EnterpriseFiler {
                 bos.close();
 
                 byte[] xmlBytes = baos.toByteArray();
-                EnterpriseData data = EnterpriseSerializer.readFromXml(new String(xmlBytes));
+                String xmlStr = new String(xmlBytes);
+                EnterpriseData data = EnterpriseSerializer.readFromXml(xmlStr);
                 fileEnterpriseData(data);
             }
         } finally {
@@ -79,6 +80,7 @@ public class EnterpriseFiler {
             file(data.getPractitioner(), connection);
             file(data.getSchedule(), connection);
             file(data.getPatient(), connection);
+            file(data.getEpisodeOfCare(), connection);
             file(data.getAppointment(), connection);
             file(data.getEncounter(), connection);
             file(data.getCondition(), connection);
@@ -96,11 +98,16 @@ public class EnterpriseFiler {
 
         } catch (SQLException ex) {
 
-            while (ex != null) {
-                LOG.error("", ex);
-                ex = ex.getNextException();
+            //SQL exceptions have a weird way of storing multiple exceptions, which
+            //normal exception logging doesn't display, so we need to manually log those
+            //exceptions here, before throwing the exception as normal
+            SQLException next = ex;
+            while (next != null) {
+                LOG.error("", next);
+                next = next.getNextException();
             }
-            LOG.error("----------------------------------------------");
+
+            throw ex;
 
         } finally {
             connection.close();
@@ -115,15 +122,12 @@ public class EnterpriseFiler {
         }
 
         //separate into three lists, for inserts, updates and deletes
-        List<T> inserts = new ArrayList<>();
-        List<T> updates = new ArrayList<>();
+        List<T> upserts = new ArrayList<>();
         List<T> deletes = new ArrayList<>();
 
         for (T record: objects) {
-            if (record.getSaveMode() == SaveMode.INSERT) {
-                inserts.add(record);
-            } else if (record.getSaveMode() == SaveMode.UPDATE) {
-                updates.add(record);
+            if (record.getSaveMode() == SaveMode.UPSERT) {
+                upserts.add(record);
             } else if (record.getSaveMode() == SaveMode.DELETE) {
                 deletes.add(record);
             } else {
@@ -131,9 +135,39 @@ public class EnterpriseFiler {
             }
         }
 
-        fileInserts(inserts, connection);
-        fileUpdates(updates, connection);
+        fileUpserts(upserts, connection);
         fileDeletes(deletes, connection);
+    }
+
+    private static <T extends BaseRecord> void fileUpserts(List<T> objects, Connection connection) throws Exception {
+
+        if (objects == null || objects.isEmpty()) {
+            return;
+        }
+
+        //first try treating all the objects as inserts
+        try {
+            fileInserts(objects, connection);
+
+        } catch (SQLException ex) {
+            //if we get a SQL Exception, then it's probably because one of the objects is an update, so we try to
+            //save each object separately first as an insert, then as an update
+            connection.rollback();
+
+            for (T obj: objects) {
+                List<T> singleObject = new ArrayList<>();
+                singleObject.add(obj);
+
+                try {
+                    fileInserts(singleObject, connection);
+
+                } catch (SQLException ex2) {
+                    //if the insert of this single row failed, then save it as an update
+                    connection.rollback();
+                    fileUpdates(singleObject, connection);
+                }
+            }
+        }
     }
 
     private static Object getClassAnnotationValue(Class classType, Class annotationType, String attributeName) throws Exception {
@@ -318,26 +352,29 @@ public class EnterpriseFiler {
             }
             addComma = true;
 
-            sb.append(columnName + " = ?");
+            //the Appointment table has a column called "left" which is a keyword, so we may as well escape
+            //all column names to prevent this error
+            sb.append("\"" + columnName + "\" = ?");
+            //sb.append(columnName + " = ?");
         }
         sb.append(" where id = ?");
 
-        PreparedStatement insert = connection.prepareStatement(sb.toString());
+        PreparedStatement update = connection.prepareStatement(sb.toString());
 
         for (T record: objects) {
 
             for (int i=0; i<fields.size(); i++) {
                 Field field = fields.get(i);
-                addToStatement(insert, field, record, i+1);
+                addToStatement(update, field, record, i+1);
             }
 
             //the ID is the last parameter
-            insert.setInt(fields.size()+1, record.getId());
+            update.setInt(fields.size()+1, record.getId());
 
-            insert.addBatch();
+            update.addBatch();
         }
 
-        insert.executeBatch();
+        update.executeBatch();
 
         connection.commit();
     }
