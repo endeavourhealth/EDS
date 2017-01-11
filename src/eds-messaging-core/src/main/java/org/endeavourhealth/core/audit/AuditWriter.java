@@ -45,7 +45,7 @@ public final class AuditWriter {
         } catch (JsonProcessingException e) {
             //not throwing this exception further up, since it should never happen
             //and means we don't need to litter try/catches everywhere this is called from
-            LOG.error("Failed to write exchange headers to Json", ex);
+            LOG.error("Failed to write exchange headers to Json", e);
         }
 
         //always re-save the exchange, so any new/changed headers are stored in the DB

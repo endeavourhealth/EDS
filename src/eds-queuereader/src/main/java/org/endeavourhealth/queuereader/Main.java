@@ -1,22 +1,27 @@
 package org.endeavourhealth.queuereader;
 
+import com.datastax.driver.core.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.endeavourhealth.core.data.CassandraConnector;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
+import org.endeavourhealth.core.data.audit.models.Exchange;
 import org.endeavourhealth.core.data.audit.models.ExchangeByService;
+import org.endeavourhealth.core.data.audit.models.ExchangeEvent;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
+import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.enterprise.EnterpriseFhirTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -31,6 +36,11 @@ public class Main {
 
 		LOG.info("Initialising config manager");
 		ConfigManager.Initialize("queuereader");
+
+		if (args[0].equalsIgnoreCase("FixExchanges")) {
+			fixMissingExchanges();
+			return;
+		}
 
 		//hack to get the Enterprise data streaming
 		try {
@@ -94,6 +104,107 @@ public class Main {
 				}
 			}
 		}
+	}
+
+	private static void fixMissingExchanges() {
+
+		LOG.info("Fixing missing exchanges");
+
+		Session session = CassandraConnector.getInstance().getSession();
+		Statement stmt = new SimpleStatement("SELECT exchange_id, batch_id, inserted_at FROM ehr.exchange_batch LIMIT 600000;");
+		stmt.setFetchSize(100);
+
+		Set<UUID> exchangeIdsDone = new HashSet<>();
+
+		AuditRepository auditRepository = new AuditRepository();
+
+		ResultSet rs = session.execute(stmt);
+		while (!rs.isExhausted()) {
+			Row row = rs.one();
+
+			UUID exchangeId = row.get(0, UUID.class);
+			UUID batchId = row.get(1, UUID.class);
+			Date date = row.getTimestamp(2);
+			//LOG.info("Exchange " + exchangeId + " batch " + batchId + " date " + date);
+
+			if (exchangeIdsDone.contains(exchangeId)) {
+				continue;
+			}
+
+			if (auditRepository.getExchange(exchangeId) != null) {
+				continue;
+			}
+
+			UUID serviceId = findServiceId(batchId, session);
+			if (serviceId == null) {
+				continue;
+			}
+
+			Exchange exchange = new Exchange();
+			ExchangeByService exchangeByService = new ExchangeByService();
+			ExchangeEvent exchangeEvent = new ExchangeEvent();
+
+			Map<String, String> headers = new HashMap<>();
+			headers.put(HeaderKeys.SenderServiceUuid, serviceId.toString());
+
+			String headersJson = null;
+			try {
+				headersJson = ObjectMapperPool.getInstance().writeValueAsString(headers);
+			} catch (JsonProcessingException e) {
+				//not throwing this exception further up, since it should never happen
+				//and means we don't need to litter try/catches everywhere this is called from
+				LOG.error("Failed to write exchange headers to Json", e);
+				continue;
+			}
+
+			exchange.setBody("Body not available, as exchange re-created");
+			exchange.setExchangeId(exchangeId);
+			exchange.setHeaders(headersJson);
+			exchange.setTimestamp(date);
+
+			exchangeByService.setExchangeId(exchangeId);
+			exchangeByService.setServiceId(serviceId);
+			exchangeByService.setTimestamp(date);
+
+			exchangeEvent.setEventDesc("Created_By_Conversion");
+			exchangeEvent.setExchangeId(exchangeId);
+			exchangeEvent.setTimestamp(new Date());
+
+			auditRepository.save(exchange);
+			auditRepository.save(exchangeEvent);
+			auditRepository.save(exchangeByService);
+
+			exchangeIdsDone.add(exchangeId);
+
+			LOG.info("Creating exchange " + exchangeId);
+		}
+
+		LOG.info("Finished exchange fix");
+	}
+
+	private static UUID findServiceId(UUID batchId, Session session) {
+
+		Statement stmt = new SimpleStatement("select resource_type, resource_id from ehr.resource_by_exchange_batch where batch_id = " + batchId + " LIMIT 1;");
+		ResultSet rs = session.execute(stmt);
+		if (rs.isExhausted()) {
+			LOG.error("Failed to find resource_by_exchange_batch for batch_id " + batchId);
+			return null;
+		}
+
+		Row row = rs.one();
+		String resourceType = row.getString(0);
+		UUID resourceId = row.get(1, UUID.class);
+
+		stmt = new SimpleStatement("select service_id from ehr.resource_history where resource_type = '" + resourceType + "' and resource_id = " + resourceId + " LIMIT 1;");
+		rs = session.execute(stmt);
+		if (rs.isExhausted()) {
+			LOG.error("Failed to find resource_history for resource_type " + resourceType + " and resource_id " + resourceId);
+			return null;
+		}
+
+		row = rs.one();
+		UUID serviceId = row.get(0, UUID.class);
+		return serviceId;
 	}
 
 	/*private static void fixExchangeEvents() {

@@ -20,11 +20,8 @@ public abstract class HeaderKeys {
 
 	public static final String MessageFormat = "MessageFormat";
 
-
 	// Transform
 	public static final String BatchIds = "BatchIds";
-
-	// Pipeline
 	public static final String DestinationAddress = "DestinationAddress";
 	public static final String TransformBatch = "TransformBatch";
 	public static final String Protocols = "Protocols";
