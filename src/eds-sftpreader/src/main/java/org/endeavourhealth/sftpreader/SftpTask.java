@@ -3,6 +3,7 @@ package org.endeavourhealth.sftpreader;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.Header;
 import org.endeavourhealth.core.eds.EdsSender;
 import org.endeavourhealth.core.keycloak.KeycloakClient;
 import org.endeavourhealth.core.postgres.PgStoredProcException;
@@ -388,6 +389,14 @@ public class SftpTask extends TimerTask
                     dbConfiguration.getDbConfigurationEds().getKeycloakUsername(),
                     dbConfiguration.getDbConfigurationEds().getKeycloakPassword(),
                     dbConfiguration.getDbConfigurationEds().getKeycloakClientId());
+
+            try {
+                Header response = KeycloakClient.instance().getAuthorizationHeader();
+
+                LOG.trace("Keycloak authorization header is {}: {}", response.getName(), response.getValue());
+            } catch (IOException e) {
+                throw new SftpReaderException("Error initialising keycloak", e);
+            }
         }
         else
         {
