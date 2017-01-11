@@ -76,7 +76,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                 if (resourceType == ResourceType.Organization) {
 
                     Integer enterpriseId = findEnterpriseId(requesterReference);
-                    model.setRecipientOrganizationId(enterpriseId);
+                    model.setRequesterOrganizationId(enterpriseId);
 
                 } else if (resourceType == ResourceType.Practitioner) {
 
@@ -85,7 +85,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                     Reference organisationReference = role.getManagingOrganization();
                     Integer enterpriseId = findEnterpriseId(organisationReference);
                     if (enterpriseId != null) {
-                        model.setRecipientOrganizationId(enterpriseId);
+                        model.setRequesterOrganizationId(enterpriseId);
                     }
                 }
             }
@@ -119,7 +119,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
             }
 
             //base the outgoing flag simply on whether the recipient ID matches the owning ID
-            boolean outgoing = model.getRecipientOrganizationId() != model.getOrganizationId();
+            boolean outgoing = model.getRequesterOrganizationId() == model.getOrganizationId();
             model.setOutgoingReferral(outgoing);
 
             if (fhir.hasPriority()) {

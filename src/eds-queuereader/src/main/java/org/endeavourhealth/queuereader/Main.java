@@ -2,10 +2,13 @@ package org.endeavourhealth.queuereader;
 
 import com.datastax.driver.core.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.Strings;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.CassandraConnector;
+import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
+import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.models.Exchange;
@@ -16,6 +19,7 @@ import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.enterprise.EnterpriseFhirTransformer;
 import org.slf4j.Logger;
@@ -39,6 +43,11 @@ public class Main {
 
 		if (args[0].equalsIgnoreCase("FixExchanges")) {
 			fixMissingExchanges();
+			return;
+		}
+
+		if (args[0].equalsIgnoreCase("FixExchangeHeaders")) {
+			fixExchangeHeaders();
 			return;
 		}
 
@@ -73,6 +82,73 @@ public class Main {
 		LOG.info("Starting message consumption");
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
+	}
+
+	private static void fixExchangeHeaders() {
+		LOG.info("Fixing exchange headers");
+
+		AuditRepository auditRepository = new AuditRepository();
+		ServiceRepository serviceRepository = new ServiceRepository();
+		OrganisationRepository organisationRepository = new OrganisationRepository();
+
+		List<Exchange> exchanges = new AuditRepository().getAllExchanges();
+		for (Exchange exchange: exchanges) {
+
+			String headerJson = exchange.getHeaders();
+			HashMap<String, String> headers = null;
+			try {
+				headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+			} catch (Exception ex) {
+				LOG.error("Failed to parse headers for exchange " + exchange.getExchangeId(), ex);
+				continue;
+			}
+
+			if (headers.containsKey(HeaderKeys.SenderLocalIdentifier)
+					&& headers.containsKey(HeaderKeys.SenderOrganisationUuid)) {
+				continue;
+			}
+
+			String serviceIdStr = headers.get(HeaderKeys.SenderServiceUuid);
+			if (Strings.isNullOrEmpty(serviceIdStr)) {
+				LOG.error("Failed to find service ID for exchange " + exchange.getExchangeId());
+				continue;
+			}
+
+			UUID serviceId = UUID.fromString(serviceIdStr);
+			Service service = serviceRepository.getById(serviceId);
+			Map<UUID, String> orgMap = service.getOrganisations();
+			if (orgMap.size() != 1) {
+				LOG.error("Wrong number of orgs in service " + serviceId + " for exchange " + exchange.getExchangeId());
+				continue;
+			}
+
+			UUID orgId = orgMap
+					.keySet()
+					.stream()
+					.collect(StreamExtension.firstOrNullCollector());
+			Organisation organisation = organisationRepository.getById(orgId);
+			String odsCode = organisation.getNationalId();
+
+			headers.put(HeaderKeys.SenderLocalIdentifier, odsCode);
+			headers.put(HeaderKeys.SenderOrganisationUuid, orgId.toString());
+
+			try {
+				headerJson = ObjectMapperPool.getInstance().writeValueAsString(headers);
+			} catch (JsonProcessingException e) {
+				//not throwing this exception further up, since it should never happen
+				//and means we don't need to litter try/catches everywhere this is called from
+				LOG.error("Failed to write exchange headers to Json", e);
+				continue;
+			}
+
+			exchange.setHeaders(headerJson);
+
+			auditRepository.save(exchange);
+
+			LOG.info("Creating exchange " + exchange.getExchangeId());
+		}
+
+		LOG.info("Finished fixing exchange headers");
 	}
 
 	private static void startEnterpriseStream(UUID serviceId) throws Exception {
