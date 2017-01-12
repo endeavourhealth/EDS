@@ -160,7 +160,10 @@ public class Main {
 		UUID orgId = orgIds.get(0);
 
 		List<ExchangeByService> exchangeByServiceList = new AuditRepository().getExchangesByService(serviceId, Integer.MAX_VALUE);
-		for (ExchangeByService exchangeByService: exchangeByServiceList) {
+
+		for (int i=exchangeByServiceList.size()-1; i>=0; i--) {
+			ExchangeByService exchangeByService = exchangeByServiceList.get(i);
+		//for (ExchangeByService exchangeByService: exchangeByServiceList) {
 			UUID exchangeId = exchangeByService.getExchangeId();
 
 			List<ExchangeBatch> exchangeBatches = new ExchangeBatchRepository().retrieveForExchangeId(exchangeId);
