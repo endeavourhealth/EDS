@@ -300,6 +300,12 @@ public class MessageTransformInbound extends PipelineComponent {
 											   String software, TransformError currentErrors,
 											   TransformError previousErrors) throws Exception {
 
+
+		//hack to get around data in Rabbit being wrong
+		if (version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_1)) {
+			version = EmisCsvTransformer.VERSION_5_3;
+		}
+
 		//for EMIS CSV, the exchange body will be a list of files received
 		String decodedFileString = exchange.getBody();
 		String[] decodedFiles = decodedFileString.split(java.lang.System.lineSeparator());
