@@ -2,6 +2,7 @@ package org.endeavourhealth.queuereader;
 
 import com.datastax.driver.core.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
@@ -25,6 +26,8 @@ import org.endeavourhealth.transform.enterprise.EnterpriseFhirTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.util.*;
 
 public class Main {
@@ -151,9 +154,31 @@ public class Main {
 		LOG.info("Finished fixing exchange headers");
 	}
 
+	private static void testConnection() {
+		try {
+			//force the driver to be loaded
+			Class.forName("org.postgresql.Driver");
+
+			JsonNode config = ConfigManager.getConfigurationAsJson("postgres", "enterprise");
+			String url = config.get("url").asText();
+			String username = config.get("username").asText();
+			String password = config.get("password").asText();
+
+			Connection conn = DriverManager.getConnection(url, username, password);
+			conn.setAutoCommit(false);
+			LOG.info("Connection ok");
+
+			conn.close();
+		} catch (Exception e) {
+			LOG.error("", e);
+		}
+	}
 	private static void startEnterpriseStream(UUID serviceId) throws Exception {
 
 		LOG.info("Starting Enterprise Streaming for " + serviceId);
+
+		LOG.info("Testing postgre connection");
+		testConnection();
 
 		Service service = new ServiceRepository().getById(serviceId);
 		List<UUID> orgIds = new ArrayList<>(service.getOrganisations().keySet());
