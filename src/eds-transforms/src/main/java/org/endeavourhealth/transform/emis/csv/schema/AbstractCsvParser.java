@@ -98,7 +98,13 @@ public abstract class AbstractCsvParser implements AutoCloseable {
 
     protected abstract String[] getCsvHeaders(String version);
 
-    public boolean nextRecord() {
+    public boolean nextRecord() throws Exception {
+
+        //we now only open the first set of parsers when starting a transform, so
+        //need to check to open the subsequent ones
+        if (csvReader == null) {
+            open();
+        }
 
         //if the source file couldn't be found, the iterator will be null
         if (csvIterator == null) {
