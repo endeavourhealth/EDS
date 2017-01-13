@@ -1,15 +1,24 @@
 package org.endeavourhealth.queuereader;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
+import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
+import org.endeavourhealth.core.data.audit.models.Exchange;
 import org.endeavourhealth.core.data.audit.models.ExchangeByService;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
+import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.enterprise.EnterpriseFhirTransformer;
 import org.slf4j.Logger;
@@ -18,8 +27,10 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -44,6 +55,11 @@ public class Main {
 			fixExchangeHeaders();
 			return;
 		}*/
+
+		if (args[0].equalsIgnoreCase("FixExchangeProtocols")) {
+			fixExchangeProtocols();
+			return;
+		}
 
 		//hack to get the Enterprise data streaming
 		try {
@@ -76,6 +92,101 @@ public class Main {
 		LOG.info("Starting message consumption");
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
+	}
+
+	private static void fixExchangeProtocols() {
+		LOG.info("Fixing exchange protocols");
+
+		AuditRepository auditRepository = new AuditRepository();
+		ServiceRepository serviceRepository = new ServiceRepository();
+		OrganisationRepository organisationRepository = new OrganisationRepository();
+
+		List<Exchange> exchanges = new AuditRepository().getAllExchanges();
+		for (Exchange exchange: exchanges) {
+
+			LOG.info("Processing exchange " + exchange.getExchangeId());
+
+			String headerJson = exchange.getHeaders();
+			HashMap<String, String> headers = null;
+			try {
+				headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+			} catch (Exception ex) {
+				LOG.error("Failed to parse headers for exchange " + exchange.getExchangeId(), ex);
+				continue;
+			}
+
+			String serviceIdStr = headers.get(HeaderKeys.SenderServiceUuid);
+			if (Strings.isNullOrEmpty(serviceIdStr)) {
+				LOG.error("Failed to find service ID for exchange " + exchange.getExchangeId());
+				continue;
+			}
+
+			UUID serviceId = UUID.fromString(serviceIdStr);
+			List<String> newIds = new ArrayList<>();
+			String protocolJson = headers.get(HeaderKeys.Protocols);
+
+			if (!headers.containsKey(HeaderKeys.Protocols)) {
+
+				try {
+					List<LibraryItem> libraryItemList = LibraryRepositoryHelper.getProtocolsByServiceId(serviceIdStr);
+
+					// Get protocols where service is publisher
+					newIds = libraryItemList.stream()
+							.filter(
+									libraryItem -> libraryItem.getProtocol().getServiceContract().stream()
+											.anyMatch(sc ->
+													sc.getType().equals(ServiceContractType.PUBLISHER)
+															&& sc.getService().getUuid().equals(serviceIdStr)))
+							.map(t -> t.getUuid().toString())
+							.collect(Collectors.toList());
+				} catch (Exception e) {
+					LOG.error("Failed to find protocols for exchange " + exchange.getExchangeId(), e);
+					continue;
+				}
+
+			} else {
+
+				try {
+					JsonNode node = ObjectMapperPool.getInstance().readTree(protocolJson);
+
+					for (int i = 0; i < node.size(); i++) {
+						JsonNode libraryItemNode = node.get(i);
+						JsonNode idNode = libraryItemNode.get("uuid");
+						String id = idNode.asText();
+						newIds.add(id);
+					}
+				} catch (Exception e) {
+					LOG.error("Failed to read Json from " + protocolJson + " for exchange " + exchange.getExchangeId(), e);
+					continue;
+				}
+			}
+
+			try {
+				if (newIds.isEmpty()) {
+					headers.remove(HeaderKeys.Protocols);
+
+				} else {
+					String protocolsJson = ObjectMapperPool.getInstance().writeValueAsString(newIds.toArray());
+					headers.put(HeaderKeys.Protocols, protocolsJson);
+				}
+
+			} catch (JsonProcessingException e) {
+				LOG.error("Unable to serialize protocols to JSON for exchange " + exchange.getExchangeId(), e);
+				continue;
+			}
+
+			try {
+				headerJson = ObjectMapperPool.getInstance().writeValueAsString(headers);
+				exchange.setHeaders(headerJson);
+			} catch (JsonProcessingException e) {
+				LOG.error("Failed to write exchange headers to Json for exchange " + exchange.getExchangeId(), e);
+				continue;
+			}
+
+			auditRepository.save(exchange);
+		}
+
+		LOG.info("Finished fixing exchange protocols");
 	}
 
 	/*private static void fixExchangeHeaders() {

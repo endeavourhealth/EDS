@@ -3,6 +3,7 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Strings;
+import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.data.audit.AuditRepository;
@@ -226,6 +227,9 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         }
 
         postToExchange(exchangeConfig, exchange);
+
+        //write an event for the exchange, so we can see this happened
+        AuditWriter.writeExchangeEvent(exchange, "Manually pushed into " + exchangeName + " exchange");
 
         clearLogbackMarkers();
 

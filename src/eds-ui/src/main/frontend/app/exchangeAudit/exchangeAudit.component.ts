@@ -108,6 +108,10 @@ export class ExchangeAuditComponent {
 			return;
 		}
 
+		this.loadExchangeEvents(exchange);
+	}
+
+	private loadExchangeEvents(exchange: Exchange) {
 		var vm = this;
 		vm.exchangeAuditService.getExchangeEvents(exchange.exchangeId).subscribe(
 			(result) => {
@@ -132,7 +136,12 @@ export class ExchangeAuditComponent {
 		var exchangeId = vm.selectedExchange.exchangeId;
 
 		vm.exchangeAuditService.postToExchange(exchangeId, exchangeName).subscribe(
-			(result) => vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange'),
+			(result) => {
+				vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
+
+				//re-load the events for the exchange, as we'll have added to them
+				this.loadExchangeEvents(vm.selectedExchange);
+			},
 			(error) => vm.log.error('Failed to post to ' + exchangeName + ' exchange', error, 'Post to Exchange')
 		)
 	}

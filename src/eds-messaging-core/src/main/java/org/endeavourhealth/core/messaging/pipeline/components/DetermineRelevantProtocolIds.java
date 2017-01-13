@@ -31,6 +31,49 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
 
 		// Determine relevant publisher protocols
+		List<String> protocolIds = getProtocolsForPublisherService(serviceUuid);
+		if (protocolIds.size() == 0)
+			throw new PipelineException("No publisher protocols found for service " + serviceUuid);
+
+		try {
+			String protocolsJson = ObjectMapperPool.getInstance().writeValueAsString(protocolIds.toArray());
+			exchange.setHeader(HeaderKeys.Protocols, protocolsJson);
+		} catch (JsonProcessingException e) {
+			LOG.error("Unable to serialize protocols to JSON");
+			throw new PipelineException(e.getMessage(), e);
+		}
+
+		//commit what we've just received to the DB
+		AuditWriter.writeExchange(exchange);
+
+		LOG.debug("Data distribution protocols identified");
+	}
+
+	private List<String> getProtocolsForPublisherService(String serviceUuid) throws PipelineException {
+
+		try {
+			List<LibraryItem> libraryItemList = LibraryRepositoryHelper.getProtocolsByServiceId(serviceUuid);
+
+			// Get protocols where service is publisher
+			return libraryItemList.stream()
+					.filter(
+							libraryItem -> libraryItem.getProtocol().getServiceContract().stream()
+									.anyMatch(sc ->
+											sc.getType().equals(ServiceContractType.PUBLISHER)
+													&& sc.getService().getUuid().equals(serviceUuid)))
+					.map(t -> t.getUuid())
+					.collect(Collectors.toList());
+		} catch (Exception e) {
+			throw new PipelineException(e.getMessage(), e);
+		}
+
+	}
+
+	/*@Override
+	public void process(Exchange exchange) throws PipelineException {
+		String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
+
+		// Determine relevant publisher protocols
 		List<LibraryItem> protocols = getProtocolsForPublisherService(serviceUuid);
 		if (protocols.size() == 0)
 			throw new PipelineException("No publisher protocols found for service " + serviceUuid);
@@ -67,5 +110,5 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 										sc.getType().equals(ServiceContractType.PUBLISHER)
 										&& sc.getService().getUuid().equals(serviceUuid)))
 				.collect(Collectors.toList());
-	}
+	}*/
 }

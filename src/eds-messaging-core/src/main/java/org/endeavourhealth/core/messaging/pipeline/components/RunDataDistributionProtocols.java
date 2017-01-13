@@ -3,6 +3,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig;
+import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
@@ -33,7 +34,8 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		// Get the batch Id and list of protocols to run on it
 		String batchId = exchange.getHeader(HeaderKeys.BatchIds);
 
-		LibraryItem[] protocolsToRun = getProtocols(exchange);
+		List<LibraryItem> protocolsToRun = getProtocols(exchange);
+		//LibraryItem[] protocolsToRun = getProtocols(exchange);
 		List<TransformBatch> transformBatches = new ArrayList<>();
 
 		// Run each protocol, creating a transformation batch for each
@@ -64,7 +66,31 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		LOG.debug("Data distribution protocols executed");
 	}
 
-	private LibraryItem[] getProtocols(Exchange exchange) throws PipelineException {
+	private List<LibraryItem> getProtocols(Exchange exchange) throws PipelineException {
+
+		List<LibraryItem> ret = new ArrayList<>();
+
+		String[] protocolIds = null;
+		String protocolIdJson = exchange.getHeader(HeaderKeys.Protocols);
+		try {
+			protocolIds = ObjectMapperPool.getInstance().readValue(protocolIdJson, String[].class);
+		} catch (IOException e) {
+			throw new PipelineException("Failed to read protocol IDs from json " + protocolIdJson, e);
+		}
+
+		for (String protocolId: protocolIds) {
+			UUID protocolUuid = UUID.fromString(protocolId);
+			try {
+				LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItem(protocolUuid);
+				ret.add(libraryItem);
+			} catch (Exception e) {
+				throw new PipelineException("Failed to read protocol item for " + protocolId, e);
+			}
+		}
+
+		return ret;
+	}
+	/*private LibraryItem[] getProtocols(Exchange exchange) throws PipelineException {
 		// Get the protocols
 		String protocolJson = exchange.getHeader(HeaderKeys.Protocols);
 		LibraryItem[] libraryItemList;
@@ -74,5 +100,5 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			throw new PipelineException(e.getMessage(), e);
 		}
 		return libraryItemList;
-	}
+	}*/
 }
