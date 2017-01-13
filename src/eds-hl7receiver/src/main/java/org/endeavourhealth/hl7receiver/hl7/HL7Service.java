@@ -33,7 +33,6 @@ public class HL7Service {
 
         for (DbChannel dbChannel : activeDbChannels)
             channels.add(new HL7Channel(dbChannel, configuration));
-
     }
 
     public void start() throws InterruptedException {

@@ -23,6 +23,7 @@ class HL7Channel {
     private HL7ConnectionManager connectionManager;
     private HL7MessageReceiver messageReceiver;
     private HL7ExceptionHandler exceptionHandler;
+    private HL7ChannelForwarder channelForwarder;
 
     private HL7Channel() {
     }
@@ -42,6 +43,7 @@ class HL7Channel {
         messageReceiver = new HL7MessageReceiver(configuration, dbChannel, connectionManager);
         exceptionHandler = new HL7ExceptionHandler(configuration, dbChannel, connectionManager);
         service = context.newServer(dbChannel.getPortNumber(), false);
+        channelForwarder = new HL7ChannelForwarder();
 
         service.registerApplication("*", "*", messageReceiver);
         service.registerConnectionListener(connectionManager);

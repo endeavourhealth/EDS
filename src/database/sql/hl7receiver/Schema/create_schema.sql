@@ -24,6 +24,15 @@ create table dictionary.message_type
 	constraint dictionary_messagetype_description_ck check (char_length(trim(description)) > 0)
 );
 
+create table dictionary.notification_status
+(
+	notification_status_id integer not null,
+	notification_status varchar(100) not null,
+	
+	constraint dictionary_notificationstatus_notificationstatusid_pk primary key (notification_status_id),
+	constraint dictionary_notificationstatus_notificationstatus_ck check (char_length(trim(notification_status)) > 0)
+);
+
 create table configuration.channel
 (
 	channel_id integer not null,
@@ -95,16 +104,20 @@ create table log.message
 	connection_id integer not null,
 	log_date timestamp not null,
 	message_control_id varchar(100) not null,
+	message_sequence_number varchar(100) null,
+	message_date timestamp not null,
 	inbound_message_type varchar(100) not null,
 	inbound_payload varchar not null,
 	outbound_message_type varchar(100) not null,
 	outbound_payload varchar not null,
+	notification_status_id smallint not null,
 	
 	constraint log_message_messageid_pk primary key (message_id),
 	constraint log_message_channelid_connectionid_fk foreign key (channel_id, connection_id) references log.connection (channel_id, connection_id),
 	constraint log_message_inboundmessagetype_fk foreign key (channel_id, inbound_message_type) references configuration.channel_message_type (channel_id, message_type),
 	constraint log_message_outboundmessagetype_fk foreign key (channel_id, outbound_message_type) references configuration.channel_message_type (channel_id, message_type),
-	constraint log_message_messagecontrolid_ck check (char_length(trim(message_control_id)) > 0)
+	constraint log_message_messagecontrolid_ck check (char_length(trim(message_control_id)) > 0),
+	constraint log_message_notificationstatus_fk foreign key (notification_status_id) references dictionary.notification_status (notification_status_id)
 );
 
 create table log.dead_letter
@@ -123,6 +136,8 @@ create table log.dead_letter
 	receiving_application varchar(100) null,
 	receiving_facility varchar(100) null,
 	message_control_id varchar(100) null,
+	message_sequence_number varchar(100) null,
+	message_date timestamp null,
 	inbound_message_type varchar(100) null,
 	inbound_payload varchar not null,
 	outbound_message_type varchar(100) null,
@@ -260,3 +275,14 @@ insert into dictionary.message_type (message_type, description) values
 ('ACK^A50', 'Acknowledgement to change visit number'),
 ('ACK^A51', 'Acknowledgement to change alternate visit ID');
 
+insert into dictionary.notification_status
+(
+	notification_status_id,
+	notification_status
+)
+values
+(1, 'Notification not attempted'),
+(2, 'Attempting notification'),
+(3, 'Notification failed'),
+(4, 'Re-attempting notification'),
+(9, 'Notification succeeded');

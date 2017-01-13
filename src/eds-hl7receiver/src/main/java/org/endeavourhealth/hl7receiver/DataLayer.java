@@ -6,6 +6,7 @@ import org.endeavourhealth.hl7receiver.logging.IDBDigestLogger;
 import org.endeavourhealth.hl7receiver.model.db.*;
 
 import javax.sql.DataSource;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -86,6 +87,8 @@ public class DataLayer implements IDBDigestLogger {
             int channelId,
             int connectionId,
             String messageControlId,
+            String messageSequenceNumber,
+            LocalDateTime messageDateTime,
             String inboundMessageType,
             String inboundPayload,
             String outboundMessageType,
@@ -96,6 +99,8 @@ public class DataLayer implements IDBDigestLogger {
                 .addParameter("_channel_id", channelId)
                 .addParameter("_connection_id", connectionId)
                 .addParameter("_message_control_id", messageControlId)
+                .addParameter("_message_sequence_number", messageSequenceNumber)
+                .addParameter("_message_date", messageDateTime)
                 .addParameter("_inbound_message_type", inboundMessageType)
                 .addParameter("_inbound_payload", inboundPayload)
                 .addParameter("_outbound_message_type", outboundMessageType)
@@ -117,6 +122,8 @@ public class DataLayer implements IDBDigestLogger {
             String receivingApplication,
             String receivingFacility,
             String messageControlId,
+            String messageSequenceNumber,
+            LocalDateTime messageDate,
             String inboundMessageType,
             String inboundPayload,
             String outboundMessageType,
@@ -138,6 +145,8 @@ public class DataLayer implements IDBDigestLogger {
                 .addParameter("_receiving_application", receivingApplication)
                 .addParameter("_receiving_facility", receivingFacility)
                 .addParameter("_message_control_id", messageControlId)
+                .addParameter("_message_sequence_number", messageSequenceNumber)
+                .addParameter("_message_date", messageDate)
                 .addParameter("_inbound_message_type", inboundMessageType)
                 .addParameter("_inbound_payload", inboundPayload)
                 .addParameter("_outbound_message_type", outboundMessageType)
