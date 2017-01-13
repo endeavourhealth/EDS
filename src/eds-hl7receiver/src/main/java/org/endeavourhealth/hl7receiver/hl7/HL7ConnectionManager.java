@@ -31,14 +31,6 @@ class HL7ConnectionManager implements ConnectionListener {
         this.dataLayer = new DataLayer(configuration.getDatabaseConnection());
     }
 
-    public void connectionReceived(Connection connection) {
-        recordConnectionOpened(connection);
-    }
-
-    public void connectionDiscarded(Connection connection) {
-        recordConnectionClosed(connection);
-    }
-
     public void closeConnections() {
         for (HL7Connection connection : connectionIds.keySet())
             connection.getConnection().close();
@@ -56,7 +48,7 @@ class HL7ConnectionManager implements ConnectionListener {
         return (Integer)map.get(MetadataKeys.IN_SENDING_PORT);
     }
 
-    public Integer getConnectionId(Map<String, Object> map) {
+    public synchronized Integer getConnectionId(Map<String, Object> map) {
         if (map == null)
             return null;
 
@@ -66,7 +58,7 @@ class HL7ConnectionManager implements ConnectionListener {
         return getConnectionId(remoteHost, remotePort);
     }
 
-    private void recordConnectionOpened(Connection connection) {
+    public synchronized void connectionReceived(Connection connection) {
         String remoteHost = connection.getRemoteAddress().getHostAddress();
         Integer remotePort = connection.getRemotePort();
 
@@ -86,7 +78,8 @@ class HL7ConnectionManager implements ConnectionListener {
             this.connectionIds.put(new HL7Connection(connection), connectionId);
     }
 
-    private void recordConnectionClosed(Connection connection) {
+    public synchronized void connectionDiscarded(Connection connection) {
+
         String remoteHost = connection.getRemoteAddress().getHostAddress();
         Integer remotePort = connection.getRemotePort();
 
