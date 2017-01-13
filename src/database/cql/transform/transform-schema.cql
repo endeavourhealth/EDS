@@ -28,6 +28,7 @@ CREATE TABLE emis_csv_code_map (
 	national_code TEXT,
 	national_code_category TEXT,
 	national_code_description TEXT,
+	parent_code_id bigint,
 PRIMARY KEY ((data_sharing_agreement_guid), medication, code_id, time_uuid))
 WITH CLUSTERING ORDER BY (medication ASC, code_id ASC, time_uuid DESC);
 

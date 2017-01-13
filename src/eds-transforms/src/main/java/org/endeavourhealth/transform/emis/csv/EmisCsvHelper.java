@@ -115,7 +115,8 @@ public class EmisCsvHelper {
                                 String snomedTerm,
                                 String nationalCode,
                                 String nationalCodeCategory,
-                                String nationalCodeDescription) throws Exception {
+                                String nationalCodeDescription,
+                                Long parentCodeId) throws Exception {
 
         //don't add to the caches. A large percentage of codes aren't ever used, so let them be lazily loaded when
         //required, so we don't chew up memory needlessly
@@ -140,6 +141,7 @@ public class EmisCsvHelper {
         mapping.setNationalCode(nationalCode);
         mapping.setNationalCodeCategory(nationalCodeCategory);
         mapping.setNationalCodeDescription(nationalCodeDescription);
+        mapping.setParentCodeId(parentCodeId);
 
         mappingRepository.save(mapping);
     }

@@ -1,26 +1,15 @@
 package org.endeavourhealth.queuereader;
 
-import com.datastax.driver.core.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
-import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
-import org.endeavourhealth.core.data.CassandraConnector;
-import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
-import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
-import org.endeavourhealth.core.data.audit.models.Exchange;
 import org.endeavourhealth.core.data.audit.models.ExchangeByService;
-import org.endeavourhealth.core.data.audit.models.ExchangeEvent;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.enterprise.EnterpriseFhirTransformer;
 import org.slf4j.Logger;
@@ -28,7 +17,9 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -44,7 +35,7 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.Initialize("queuereader");
 
-		if (args[0].equalsIgnoreCase("FixExchanges")) {
+		/*if (args[0].equalsIgnoreCase("FixExchanges")) {
 			fixMissingExchanges();
 			return;
 		}
@@ -52,7 +43,7 @@ public class Main {
 		if (args[0].equalsIgnoreCase("FixExchangeHeaders")) {
 			fixExchangeHeaders();
 			return;
-		}
+		}*/
 
 		//hack to get the Enterprise data streaming
 		try {
@@ -87,7 +78,7 @@ public class Main {
 		LOG.info("EDS Queue reader running");
 	}
 
-	private static void fixExchangeHeaders() {
+	/*private static void fixExchangeHeaders() {
 		LOG.info("Fixing exchange headers");
 
 		AuditRepository auditRepository = new AuditRepository();
@@ -152,7 +143,7 @@ public class Main {
 		}
 
 		LOG.info("Finished fixing exchange headers");
-	}
+	}*/
 
 	private static void testConnection() {
 		try {
@@ -210,7 +201,7 @@ public class Main {
 		}
 	}
 
-	private static void fixMissingExchanges() {
+	/*private static void fixMissingExchanges() {
 
 		LOG.info("Fixing missing exchanges");
 
@@ -309,7 +300,7 @@ public class Main {
 		row = rs.one();
 		UUID serviceId = row.get(0, UUID.class);
 		return serviceId;
-	}
+	}*/
 
 	/*private static void fixExchangeEvents() {
 

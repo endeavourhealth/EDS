@@ -4,6 +4,7 @@ import org.endeavourhealth.core.data.admin.CodeRepository;
 import org.endeavourhealth.core.data.admin.models.SnomedLookup;
 import org.endeavourhealth.transform.common.CsvProcessor;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.CallableError;
 import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -45,7 +46,7 @@ public abstract class ClinicalCodeTransformer {
                 while (parser.nextRecord()) {
 
                     try {
-                        transform((ClinicalCode) parser, csvProcessor, csvHelper, threadPool);
+                        transform((ClinicalCode)parser, csvProcessor, csvHelper, threadPool, version);
                     } catch (Exception ex) {
                         throw new TransformException(parser.getCurrentState().toString(), ex);
                     }
@@ -74,7 +75,8 @@ public abstract class ClinicalCodeTransformer {
     private static void transform(ClinicalCode parser,
                                   CsvProcessor csvProcessor,
                                   EmisCsvHelper csvHelper,
-                                  ThreadPool threadPool) throws Exception {
+                                  ThreadPool threadPool,
+                                  String version) throws Exception {
 
         Long codeId = parser.getCodeId();
         String emisTerm = parser.getTerm();
@@ -85,6 +87,12 @@ public abstract class ClinicalCodeTransformer {
         String nationalCode = parser.getNationalCode();
         String nationalCodeCategory = parser.getNationalCodeCategory();
         String nationalCodeDescription = parser.getNationalDescription();
+
+        //the parent code ID was added after 5.3
+        Long parentCodeId = null;
+        if (version.equals(EmisCsvTransformer.VERSION_5_4)) {
+            parentCodeId = parser.getParentCodeId();
+        }
 
         ClinicalCodeType codeType = ClinicalCodeType.fromValue(emisCategory);
 
@@ -128,7 +136,7 @@ public abstract class ClinicalCodeTransformer {
                                                             fhirConcept, codeType, emisTerm,
                                                             emisCode, snomedConceptId, snomedDescriptionId,
                                                             nationalCode, nationalCodeCategory, nationalCodeDescription,
-                                                            csvHelper));
+                                                            parentCodeId, csvHelper));
         handleErrors(errors);
     }
 
@@ -146,6 +154,7 @@ public abstract class ClinicalCodeTransformer {
         private String nationalCode = null;
         private String nationalCodeCategory = null;
         private String nationalCodeDescription = null;
+        private Long parentCodeId = null;
         private EmisCsvHelper csvHelper = null;
 
         public WebServiceLookup(CsvCurrentState parserState,
@@ -159,6 +168,7 @@ public abstract class ClinicalCodeTransformer {
                                 String nationalCode,
                                 String nationalCodeCategory,
                                 String nationalCodeDescription,
+                                Long parentCodeId,
                                 EmisCsvHelper csvHelper) {
 
             this.parserState = parserState;
@@ -172,6 +182,7 @@ public abstract class ClinicalCodeTransformer {
             this.nationalCode = nationalCode;
             this.nationalCodeCategory = nationalCodeCategory;
             this.nationalCodeDescription = nationalCodeDescription;
+            this.parentCodeId = parentCodeId;
             this.csvHelper = csvHelper;
         }
 
@@ -194,7 +205,7 @@ public abstract class ClinicalCodeTransformer {
             //store the coding in Cassandra
             csvHelper.addClinicalCode(codeId, fhirConcept, codeType, readTerm,
                     readCode, snomedConceptId, snomedDescriptionId, snomedTerm,
-                    nationalCode, nationalCodeCategory, nationalCodeDescription);
+                    nationalCode, nationalCodeCategory, nationalCodeDescription, parentCodeId);
 
             return null;
         }

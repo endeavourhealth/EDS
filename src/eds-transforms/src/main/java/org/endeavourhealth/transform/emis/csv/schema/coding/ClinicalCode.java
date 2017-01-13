@@ -7,24 +7,43 @@ import java.io.File;
 
 public class ClinicalCode extends AbstractCsvParser {
 
-    public ClinicalCode(String version, File f) throws Exception {
-        super(version, f, EmisCsvTransformer.CSV_FORMAT, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
+    public ClinicalCode(String version, File f, boolean openParser) throws Exception {
+        super(version, f, openParser, EmisCsvTransformer.CSV_FORMAT, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override
     protected String[] getCsvHeaders(String version) {
-        return new String[]{
-                "CodeId",
-                "Term",
-                "ReadTermId",
-                "SnomedCTConceptId",
-                "SnomedCTDescriptionId",
-                "NationalCode",
-                "NationalCodeCategory",
-                "NationalDescription",
-                "EmisCodeCategoryDescription",
-                "ProcessingId"
-        };
+
+        if (version.equals(EmisCsvTransformer.VERSION_5_4)) {
+            return new String[]{
+                    "CodeId",
+                    "Term",
+                    "ReadTermId",
+                    "SnomedCTConceptId",
+                    "SnomedCTDescriptionId",
+                    "NationalCode",
+                    "NationalCodeCategory",
+                    "NationalDescription",
+                    "EmisCodeCategoryDescription",
+                    "ProcessingId",
+                    "ParentCodeId"
+            };
+
+        } else {
+
+            return new String[]{
+                    "CodeId",
+                    "Term",
+                    "ReadTermId",
+                    "SnomedCTConceptId",
+                    "SnomedCTDescriptionId",
+                    "NationalCode",
+                    "NationalCodeCategory",
+                    "NationalDescription",
+                    "EmisCodeCategoryDescription",
+                    "ProcessingId"
+            };
+        }
     }
 
     public Long getCodeId() {
@@ -56,5 +75,8 @@ public class ClinicalCode extends AbstractCsvParser {
     }
     public Integer getProcessingId() {
         return super.getInt("ProcessingId");
+    }
+    public Long getParentCodeId() {
+        return super.getLong("ParentCodeId");
     }
 }

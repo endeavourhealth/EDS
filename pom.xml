@@ -12,7 +12,7 @@
         <node.version>v5.5.0</node.version>
         <npm.version>3.3.12</npm.version>
 
-        <eds-common.version>1.38</eds-common.version>
+        <eds-common.version>1.43</eds-common.version>
 
         <amqp-client.version>3.6.2</amqp-client.version>
         <bouncy-castle.version>1.56</bouncy-castle.version>

@@ -9,8 +9,8 @@ import java.util.Date;
 
 public class Problem extends AbstractCsvParser {
 
-    public Problem(String version, File f) throws Exception {
-        super(version, f, EmisCsvTransformer.CSV_FORMAT, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
+    public Problem(String version, File f, boolean openParser) throws Exception {
+        super(version, f, openParser, EmisCsvTransformer.CSV_FORMAT, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override

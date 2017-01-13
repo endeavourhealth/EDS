@@ -8,8 +8,8 @@ import java.util.Date;
 
 public class RegistrationAudit extends AbstractCsvParser {
 
-    public RegistrationAudit(String version, File f) throws Exception {
-        super(version, f, EmisCsvTransformer.CSV_FORMAT, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
+    public RegistrationAudit(String version, File f, boolean openParser) throws Exception {
+        super(version, f, openParser, EmisCsvTransformer.CSV_FORMAT, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
     }
 
     @Override

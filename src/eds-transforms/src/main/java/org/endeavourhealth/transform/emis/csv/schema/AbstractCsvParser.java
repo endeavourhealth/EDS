@@ -37,7 +37,7 @@ public abstract class AbstractCsvParser implements AutoCloseable {
     private Set<Long> recordNumbersToProcess = null;
 
 
-    public AbstractCsvParser(String version, File file, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
+    public AbstractCsvParser(String version, File file, boolean openParser, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
 
         this.version = version;
         this.file = file;
@@ -45,7 +45,9 @@ public abstract class AbstractCsvParser implements AutoCloseable {
         this.dateFormat = new SimpleDateFormat(dateFormat);
         this.timeFormat = new SimpleDateFormat(timeFormat);
 
-        open();
+        if (openParser) {
+            open();
+        }
     }
 
     private void open() throws Exception {
