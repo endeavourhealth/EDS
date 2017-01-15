@@ -41,20 +41,6 @@ public class PractitionerTransformer extends AbstractTransformer {
 
             for (Practitioner.PractitionerPractitionerRoleComponent role : fhir.getPractitionerRole()) {
 
-                Reference organisationReference = role.getManagingOrganization();
-
-                Integer enterpriseOrgId = findEnterpriseId(organisationReference);
-
-                if (resource.getResourceId().equals(UUID.fromString("fff936b4-e8db-429b-9450-28dc4bdbc2d2"))) {
-                    LOG.debug("Processing practitioner from " + organisationReference + " got enterprise ID " + enterpriseOrgId);
-                }
-
-                if (enterpriseOrgId == null) {
-                    continue;
-                }
-
-                model.setOrganizationId(enterpriseOrgId);
-
                 CodeableConcept cc = role.getRole();
                 for (Coding coding: cc.getCoding()) {
                     if (coding.getSystem().equals(FhirValueSetUri.VALUE_SET_JOB_ROLE_CODES)) {
@@ -62,17 +48,34 @@ public class PractitionerTransformer extends AbstractTransformer {
                         model.setRoleDesc(coding.getDisplay());
                     }
                 }
+
+                Reference organisationReference = role.getManagingOrganization();
+                Integer enterpriseOrgId = findEnterpriseId(organisationReference);
+
+                if (resource.getResourceId().equals(UUID.fromString("fff936b4-e8db-429b-9450-28dc4bdbc2d2"))) {
+                    LOG.debug("Processing practitioner from " + organisationReference + " got enterprise ID " + enterpriseOrgId);
+                }
+
+                if (enterpriseOrgId == null) {
+                    LOG.warn("" + fhir.getResourceType() + " " + fhir.getId() + " refers to " + organisationReference.getReference() + " that doesn't exist");
+                } else {
+                    model.setOrganizationId(enterpriseOrgId);
+                }
             }
         }
 
         if (resource.getResourceId().equals(UUID.fromString("fff936b4-e8db-429b-9450-28dc4bdbc2d2"))) {
-            LOG.debug("Processing practitioner from org enterprise ID is " + model.getOrganizationId());
+            LOG.debug("Processing practitioner from org ID is " + model.getOrganizationId() + " role code " + model.getRoleCode() + " role desc " + model.getRoleDesc() + " enterpriseOrganisationUuid = " + enterpriseOrganisationUuid);
         }
 
         //the EMIS test data has practitioners that point to non-exist organisations,
         //so, in order to file them in enterprise, we sub in the main org ID
         if (model.getOrganizationId() == 0) {
             model.setOrganizationId(enterpriseOrganisationUuid);
+
+            if (resource.getResourceId().equals(UUID.fromString("fff936b4-e8db-429b-9450-28dc4bdbc2d2"))) {
+                LOG.debug("Processing practitioner and set org id to enterpriseOrganisationUuid = " + enterpriseOrganisationUuid);
+            }
         }
 
         data.getPractitioner().add(model);

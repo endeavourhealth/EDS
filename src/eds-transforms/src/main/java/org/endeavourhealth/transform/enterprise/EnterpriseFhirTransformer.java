@@ -57,7 +57,7 @@ public class EnterpriseFhirTransformer {
 
     private static EnterpriseData tranformResources(List<ResourceByExchangeBatch> resources, UUID orgId) throws Exception {
 
-        //hash the resources by reference to them, so we can process in a specific order
+        //hash the resources by eference to them, so the transforms can quickly look up dependant resources
         Map<String, ResourceByExchangeBatch> resourcesMap = hashResourcesByReference(resources);
 
         EnterpriseData data = new EnterpriseData();
@@ -154,8 +154,11 @@ public class EnterpriseFhirTransformer {
                                           Map<String, ResourceByExchangeBatch> resourcesMap,
                                           Integer enterpriseOrganisationId) throws Exception {
 
-        for (int i=resources.size()-1; i>=0; i--) {
-            ResourceByExchangeBatch resource = resources.get(i);
+        HashSet<ResourceByExchangeBatch> resourcesProcessed = new HashSet<>();
+
+        /*for (int i=resources.size()-1; i>=0; i--) {
+            ResourceByExchangeBatch resource = resources.get(i);*/
+        for (ResourceByExchangeBatch resource: resources) {
             if (resource.getResourceType().equals(resourceType.toString())) {
 
                 //we use this function with a null transformer for resources we want to ignore
@@ -168,9 +171,13 @@ public class EnterpriseFhirTransformer {
 
                 }
 
-                resources.remove(i);
+                resourcesProcessed.add(resource);
+                //resources.remove(i);
             }
         }
+
+        //remove all the resources we processed, so we can check for ones we missed at the end
+        resources.removeAll(resourcesProcessed);
     }
 
     /**
