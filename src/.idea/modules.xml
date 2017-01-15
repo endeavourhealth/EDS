@@ -19,7 +19,6 @@
       <module fileurl="file://$PROJECT_DIR$/eds-transforms/eds-transforms.iml" filepath="$PROJECT_DIR$/eds-transforms/eds-transforms.iml" group="core" />
       <module fileurl="file://$PROJECT_DIR$/eds-ui/eds-ui.iml" filepath="$PROJECT_DIR$/eds-ui/eds-ui.iml" group="core" />
       <module fileurl="file://$PROJECT_DIR$/eds-ui-integration-test/eds-ui-integration-test.iml" filepath="$PROJECT_DIR$/eds-ui-integration-test/eds-ui-integration-test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/eds-utilities/eds-utilities.iml" filepath="$PROJECT_DIR$/eds-utilities/eds-utilities.iml" />
     </modules>
   </component>
 </project>
