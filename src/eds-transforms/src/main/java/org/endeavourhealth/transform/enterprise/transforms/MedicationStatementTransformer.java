@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
+import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
@@ -63,6 +64,10 @@ public class MedicationStatementTransformer extends AbstractTransformer {
 
             //add term too, for easy display of results
             String originalTerm = fhir.getMedicationCodeableConcept().getText();
+            //if we failed to find one, it's because of a change in how the CodeableConcept was generated, so find the term differently
+            if (Strings.isNullOrEmpty(originalTerm)) {
+                originalTerm = findSnomedConceptText(fhir.getMedicationCodeableConcept());
+            }
             model.setOriginalTerm(originalTerm);
 
             if (fhir.hasStatus()) {

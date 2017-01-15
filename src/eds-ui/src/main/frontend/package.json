@@ -31,7 +31,6 @@
     "@angular/router": "~3.1.0",
     "@angular/upgrade": "~2.1.0",
     "@ng-bootstrap/ng-bootstrap": "^1.0.0-alpha.10",
-    "angular2-busy": "^1.0.2",
     "angular2-logger": "^0.5.0",
     "angular2-moment": "^0.8.2",
     "angular2-tree-component": "^2.5.0",

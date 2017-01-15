@@ -67,6 +67,9 @@ public class DrugCodeTransformer {
             fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_SNOMED_CT, term, dmdId.toString());
         }
 
+        //always set the selected term as the text
+        fhirConcept.setText(term);
+
         List<CallableError> errors = threadPool.submit(new DrugSaveCallable(parser.getCurrentState(), csvHelper, codeId, fhirConcept, dmdId, term));
         handleErrors(errors);
     }

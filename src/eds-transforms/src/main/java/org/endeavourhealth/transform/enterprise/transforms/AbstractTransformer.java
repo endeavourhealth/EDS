@@ -77,6 +77,17 @@ public abstract class AbstractTransformer {
         return null;
     }
 
+    protected static String findSnomedConceptText(CodeableConcept code) {
+        for (Coding coding: code.getCoding()) {
+            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_SNOMED_CT)
+                    || coding.getSystem().equals(FhirUri.CODE_SYSTEM_EMISSNOMED)) {
+                return coding.getDisplay();
+            }
+        }
+
+        return null;
+    }
+
     protected static String findOriginalCode(CodeableConcept code) {
         for (Coding coding: code.getCoding()) {
             if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_READ2)

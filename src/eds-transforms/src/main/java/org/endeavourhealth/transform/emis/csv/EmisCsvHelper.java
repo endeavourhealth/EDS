@@ -44,6 +44,7 @@ public class EmisCsvHelper {
     private Map<String, List<String>> observationChildMap = new HashMap<>();
     private Map<String, List<String>> problemChildMap = new HashMap<>();
     private Map<String, DateTimeType> drugRecordLastIssueDateMap = new HashMap<>();
+    private Map<String, DateTimeType> drugRecordFirstIssueDateMap = new HashMap<>();
     private Map<String, List<Observation.ObservationComponentComponent>> bpComponentMap = new HashMap<>();
     private Map<String, SessionPractitioners> sessionPractitionerMap = new HashMap<>();
     private Map<String, List<String>> organisationLocationMap = new HashMap<>();
@@ -517,15 +518,29 @@ public class EmisCsvHelper {
 
     public void cacheDrugRecordDate(String drugRecordGuid, String patientGuid, DateTimeType dateTime) {
         String uniqueId = createUniqueId(patientGuid, drugRecordGuid);
-        DateTimeType previous = drugRecordLastIssueDateMap.get(uniqueId);
+
+        DateTimeType previous = drugRecordFirstIssueDateMap.get(uniqueId);
+        if (previous == null
+                || dateTime.before(previous)) {
+            drugRecordFirstIssueDateMap.put(uniqueId, dateTime);
+        }
+
+        previous = drugRecordLastIssueDateMap.get(uniqueId);
         if (previous == null
                 || dateTime.after(previous)) {
             drugRecordLastIssueDateMap.put(uniqueId, dateTime);
         }
     }
-    public DateTimeType getDrugRecordDate(String drugRecordId, String patientGuid) {
+
+    public DateTimeType getDrugRecordFirstIssueDate(String drugRecordId, String patientGuid) {
+        return drugRecordFirstIssueDateMap.remove(createUniqueId(patientGuid, drugRecordId));
+    }
+
+    public DateTimeType getDrugRecordLastIssueDate(String drugRecordId, String patientGuid) {
         return drugRecordLastIssueDateMap.remove(createUniqueId(patientGuid, drugRecordId));
     }
+
+
 
     public void cacheBpComponent(String parentObservationGuid, String patientGuid, Observation.ObservationComponentComponent component) {
         String key = createUniqueId(patientGuid, parentObservationGuid);
