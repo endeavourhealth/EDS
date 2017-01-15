@@ -68,14 +68,16 @@
                     </ngb-accordion>
 
                     <div class="panel panel-primary">
-                        <div class="panel-body">
+                    <!--<div class="panel panel-primary">-->
+                        <div class="panel-body" [disabled]="busyPostingToExchange">
                             Post to Exchange:
                             <div>
-                                <button type="button" class="btn btn-sm btn-success" (click)="postToExchange('edsInbound')">Inbound</button>
-                                <button type="button" class="btn btn-sm btn-success" (click)="postToExchange('edsResponse')">Response</button>
-                                <button type="button" class="btn btn-sm btn-success" (click)="postToExchange('edsProtocol')">Protocol</button>
-                                <button type="button" class="btn btn-sm btn-success" (click)="postToExchange('edsTransform')">Transform</button>
-                                <button type="button" class="btn btn-sm btn-success" (click)="postToExchange('edsSubscriber')">Subscriber</button>
+                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsInbound')">Inbound</button>
+                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsResponse')">Response</button>
+                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsProtocol')">Protocol</button>
+                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsTransform')">Transform</button>
+                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsSubscriber')">Subscriber</button>
+                                <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
                             </div>
                         </div>
                     </div>

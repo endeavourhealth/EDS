@@ -63,6 +63,8 @@ CREATE TABLE enterprise_id_map (
 	resource_id UUID, 
 	enterprise_id int, 
 PRIMARY KEY ((resource_type), resource_id));
+
+CREATE INDEX enterprise_id ON transform.enterprise_id_map (enterprise_id);
 	  
 CREATE TABLE enterprise_organisation_id_map (
 	organisation_ods_code text, 

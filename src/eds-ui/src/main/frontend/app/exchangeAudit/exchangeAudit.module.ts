@@ -4,12 +4,14 @@ import {FormsModule} from "@angular/forms";
 import {ExchangeAuditComponent} from "./exchangeAudit.component";
 import {ExchangeAuditService} from "./exchangeAudit.service";
 import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
+import {BusyModule} from "angular2-busy";
 
 @NgModule({
 	imports : [
 		BrowserModule,
 		FormsModule,
-		NgbModule
+		NgbModule,
+		BusyModule
 	],
 	declarations : [
 		ExchangeAuditComponent

@@ -18,6 +18,7 @@ import {ExchangeAuditTransformErrorDetail} from "./ExchangeAuditTransformErrorDe
 import {ExchangeAuditService} from "./exchangeAudit.service";
 import {Exchange} from "./Exchange";
 import {ServiceService} from "../services/service.service";
+import {Subscription} from "rxjs/Subscription";
 
 
 @Component({
@@ -25,20 +26,11 @@ import {ServiceService} from "../services/service.service";
 })
 export class ExchangeAuditComponent {
 
-
 	service: Service;
 	exchangesToShow: number;
-
 	exchanges: Exchange[];
 	selectedExchange: Exchange;
-
-
-
-
-	transformErrorSummaries:ExchangeAuditTransformErrorSummary[];
-	selectedSummary:ExchangeAuditTransformErrorSummary;
-	selectedExchangeIndex:number;
-	selectExchangeErrorDetail:ExchangeAuditTransformErrorDetail;
+	busyPostingToExchange: Subscription;
 
 
 	constructor(private $modal : NgbModal,
@@ -135,14 +127,20 @@ export class ExchangeAuditComponent {
 		var vm = this;
 		var exchangeId = vm.selectedExchange.exchangeId;
 
-		vm.exchangeAuditService.postToExchange(exchangeId, exchangeName).subscribe(
+		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, exchangeName).subscribe(
 			(result) => {
 				vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
 
 				//re-load the events for the exchange, as we'll have added to them
 				this.loadExchangeEvents(vm.selectedExchange);
+				this.busyPostingToExchange = null;
 			},
-			(error) => vm.log.error('Failed to post to ' + exchangeName + ' exchange', error, 'Post to Exchange')
+			(error) => {
+				vm.log.error('Failed to post to ' + exchangeName + ' exchange', error, 'Post to Exchange')
+
+				//clear down to say we're not busy
+				this.busyPostingToExchange = null;
+			}
 		)
 	}
 
