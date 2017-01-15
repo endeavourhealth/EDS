@@ -129,16 +129,21 @@ public abstract class AbstractTransformer {
     protected static Integer createEnterpriseId(ResourceByExchangeBatch resource) throws Exception {
         String resourceType = resource.getResourceType();
         UUID resourceId = resource.getResourceId();
+        return createEnterpriseId(resourceType, resourceId);
+    }
+
+    protected static Integer createEnterpriseId(String resourceType, UUID resourceId) throws Exception {
+
         int enterpriseId = getNextId(resourceType);
         idMappingRepository.saveEnterpriseIdMapping(resourceType, resourceId, new Integer(enterpriseId));
-        addIdToCache(resource.getResourceType(), resource.getResourceId(), enterpriseId);
+        addIdToCache(resourceType, resourceId, enterpriseId);
         return enterpriseId;
     }
 
-    protected static void setEnterpriseId(String resourceType, UUID resourceId, Integer enterpriseId) throws Exception {
+    /*protected static void setEnterpriseId(String resourceType, UUID resourceId, Integer enterpriseId) throws Exception {
         idMappingRepository.saveEnterpriseIdMapping(resourceType, resourceId, enterpriseId);
         addIdToCache(resourceType, resourceId, enterpriseId);
-    }
+    }*/
 
     private static Integer checkCacheForId(String resourceType, UUID resourceId) throws Exception {
         return (Integer)cache.get(resourceType + "/" + resourceId);

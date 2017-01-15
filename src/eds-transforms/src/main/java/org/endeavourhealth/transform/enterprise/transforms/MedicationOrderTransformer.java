@@ -125,11 +125,10 @@ public class MedicationOrderTransformer extends AbstractTransformer {
                         //the test pack contains medication orders (i.e. issueRecords) that point to medication statements (i.e. drugRecords)
                         //that don't exist, so log it out and just skip this bad record
                         if (enterprisePractitionerUuid == null) {
-                            LOG.warn("Skipping " + fhir.getResourceType() + " " + fhir.getId() + " as it refers to a MedicationStatement that doesn't exist");
-                            return;
+                            LOG.warn("" + fhir.getResourceType() + " " + fhir.getId() + " as it refers to a MedicationStatement that doesn't exist");
+                        } else {
+                            model.setMedicationStatementId(enterprisePractitionerUuid);
                         }
-
-                        model.setMedicationStatementId(enterprisePractitionerUuid);
                     }
                 }
             }
