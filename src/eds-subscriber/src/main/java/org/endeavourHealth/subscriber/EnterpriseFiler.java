@@ -83,18 +83,18 @@ public class EnterpriseFiler {
             file(data.getEpisodeOfCare(), connection);
             file(data.getAppointment(), connection);
             file(data.getEncounter(), connection);
-            file(data.getCondition(), connection);
-            file(data.getProcedure(), connection);
+            //file(data.getCondition(), connection);
+            //file(data.getProcedure(), connection);
             file(data.getReferralRequest(), connection);
             file(data.getProcedureRequest(), connection);
             file(data.getObservation(), connection);
             file(data.getMedicationStatement(), connection);
             file(data.getMedicationOrder(), connection);
-            file(data.getImmunization(), connection);
-            file(data.getFamilyMemberHistory(), connection);
+            //file(data.getImmunization(), connection);
+            //file(data.getFamilyMemberHistory(), connection);
             file(data.getAllergyIntolerance(), connection);
-            file(data.getDiagnosticOrder(), connection);
-            file(data.getDiagnosticReport(), connection);
+            //file(data.getDiagnosticOrder(), connection);
+            //file(data.getDiagnosticReport(), connection);
 
         } catch (SQLException ex) {
 
@@ -258,6 +258,13 @@ public class EnterpriseFiler {
             }
 
         } else if (fieldCls == Boolean.class) {
+            if (value == null) {
+                statement.setNull(index, Types.BOOLEAN);
+            } else {
+                statement.setBoolean(index, ((Boolean)value).booleanValue());
+            }
+
+        } else if (fieldCls == Boolean.TYPE) {
             if (value == null) {
                 statement.setNull(index, Types.BOOLEAN);
             } else {
