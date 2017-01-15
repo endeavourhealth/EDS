@@ -12,7 +12,7 @@ INSERT INTO config
 (app_id, config_id, config_data)
 VALUES
 ('global', 'logback', '<?xml version="1.0" encoding="UTF-8"?>
-<configuration scan="true" scanPeriod="30 seconds">
+<configuration>
 
   <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>

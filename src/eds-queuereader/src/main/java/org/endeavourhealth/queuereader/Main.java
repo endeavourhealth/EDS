@@ -1,25 +1,15 @@
 package org.endeavourhealth.queuereader;
 
-import com.datastax.driver.core.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
-import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
-import org.endeavourhealth.core.data.CassandraConnector;
-import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
-import org.endeavourhealth.core.data.audit.models.Exchange;
 import org.endeavourhealth.core.data.audit.models.ExchangeByService;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.enterprise.EnterpriseFhirTransformer;
 import org.slf4j.Logger;
@@ -28,10 +18,8 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -47,6 +35,11 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.Initialize("queuereader");
 
+		/*if (args[0].equalsIgnoreCase("TestLogging")) {
+			testLogging();
+			return;
+		}*/
+
 		/*if (args[0].equalsIgnoreCase("FixExchanges")) {
 			fixMissingExchanges();
 			return;
@@ -57,10 +50,10 @@ public class Main {
 			return;
 		}*/
 
-		if (args[0].equalsIgnoreCase("FixExchangeProtocols")) {
+		/*if (args[0].equalsIgnoreCase("FixExchangeProtocols")) {
 			fixExchangeProtocols();
 			return;
-		}
+		}*/
 
 		//hack to get the Enterprise data streaming
 		try {
@@ -95,7 +88,26 @@ public class Main {
 		LOG.info("EDS Queue reader running");
 	}
 
-	private static void fixExchangeProtocols() {
+	/*private static void testLogging() {
+
+		while (true) {
+			System.out.println("Checking logging at " + System.currentTimeMillis());
+			try {
+				Thread.sleep(4000);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			LOG.trace("trace logging");
+			LOG.debug("debug logging");
+			LOG.info("info logging");
+			LOG.warn("warn logging");
+			LOG.error("error logging");
+		}
+
+	}
+*/
+	/*private static void fixExchangeProtocols() {
 		LOG.info("Fixing exchange protocols");
 
 		AuditRepository auditRepository = new AuditRepository();
@@ -103,11 +115,6 @@ public class Main {
 		Session session = CassandraConnector.getInstance().getSession();
 		Statement stmt = new SimpleStatement("SELECT exchange_id FROM audit.Exchange LIMIT 1000;");
 		stmt.setFetchSize(100);
-
-/*
-		List<Exchange> exchanges = new AuditRepository().getAllExchanges();
-		for (Exchange exchange: exchanges) {
-*/
 
 		ResultSet rs = session.execute(stmt);
 		while (!rs.isExhausted()) {
@@ -198,7 +205,7 @@ public class Main {
 		}
 
 		LOG.info("Finished fixing exchange protocols");
-	}
+	}*/
 
 	/*private static void fixExchangeHeaders() {
 		LOG.info("Fixing exchange headers");

@@ -202,6 +202,9 @@ public abstract class ClinicalCodeTransformer {
                 fhirConcept.addCoding(CodingHelper.createCoding(FhirUri.CODE_SYSTEM_SNOMED_CT, snomedTerm, snomedConceptId.toString()));
             }
 
+            //although not supported by FHIR, we should store the description ID we've been given somewhere
+            fhirConcept.addCoding(CodingHelper.createCoding(FhirUri.CODE_SYSTEM_SNOMED_DESCRIPTION_ID, "", snomedDescriptionId.toString()));
+
             //store the coding in Cassandra
             csvHelper.addClinicalCode(codeId, fhirConcept, codeType, readTerm,
                     readCode, snomedConceptId, snomedDescriptionId, snomedTerm,

@@ -54,6 +54,7 @@ public class FhirExtensionUri {
 
     //extensions specific to Encounter resource
     public final static String ENCOUNTER_SOURCE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-encounter_source";
+    public final static String ENCOUNTER_INCOMPLETE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-encounter_incomplete";
 
     //extensions specific to MedicationStatement (profile is MedicationAuthorisation) resource
     public final static String MEDICATION_AUTHORISATION_PRIVATE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-privateprescription-extension";

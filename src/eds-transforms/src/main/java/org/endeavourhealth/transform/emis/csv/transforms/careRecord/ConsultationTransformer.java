@@ -120,6 +120,12 @@ public class ConsultationTransformer {
             fhirEncounter.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ENCOUNTER_SOURCE, fhirCodeableConcept));
         }
 
+        //since complete consultations are by far the default, only record the incomplete extension if it's not complete
+        if (!parser.getComplete()) {
+            BooleanType b = new BooleanType(false);
+            fhirEncounter.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ENCOUNTER_INCOMPLETE, b));
+        }
+
         csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirEncounter);
     }
 

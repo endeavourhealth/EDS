@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class PractitionerTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(PractitionerTransformer.class);
@@ -27,10 +26,6 @@ public class PractitionerTransformer extends AbstractTransformer {
 
         //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
         if (model.getSaveMode() == SaveMode.UPSERT) {
-
-            if (resource.getResourceId().equals(UUID.fromString("fff936b4-e8db-429b-9450-28dc4bdbc2d2"))) {
-                LOG.debug("Processing practitioner and version " + resource.getVersion());
-            }
 
             Practitioner fhir = (Practitioner)deserialiseResouce(resource);
 
@@ -52,10 +47,6 @@ public class PractitionerTransformer extends AbstractTransformer {
                 Reference organisationReference = role.getManagingOrganization();
                 Integer enterpriseOrgId = findEnterpriseId(organisationReference);
 
-                if (resource.getResourceId().equals(UUID.fromString("fff936b4-e8db-429b-9450-28dc4bdbc2d2"))) {
-                    LOG.debug("Processing practitioner from " + organisationReference + " got enterprise ID " + enterpriseOrgId);
-                }
-
                 if (enterpriseOrgId == null) {
                     LOG.warn("" + fhir.getResourceType() + " " + fhir.getId() + " refers to " + organisationReference.getReference() + " that doesn't exist");
                 } else {
@@ -64,18 +55,10 @@ public class PractitionerTransformer extends AbstractTransformer {
             }
         }
 
-        if (resource.getResourceId().equals(UUID.fromString("fff936b4-e8db-429b-9450-28dc4bdbc2d2"))) {
-            LOG.debug("Processing practitioner from org ID is " + model.getOrganizationId() + " role code " + model.getRoleCode() + " role desc " + model.getRoleDesc() + " enterpriseOrganisationUuid = " + enterpriseOrganisationUuid);
-        }
-
         //the EMIS test data has practitioners that point to non-exist organisations,
         //so, in order to file them in enterprise, we sub in the main org ID
         if (model.getOrganizationId() == 0) {
             model.setOrganizationId(enterpriseOrganisationUuid);
-
-            if (resource.getResourceId().equals(UUID.fromString("fff936b4-e8db-429b-9450-28dc4bdbc2d2"))) {
-                LOG.debug("Processing practitioner and set org id to enterpriseOrganisationUuid = " + enterpriseOrganisationUuid);
-            }
         }
 
         data.getPractitioner().add(model);
