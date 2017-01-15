@@ -1,12 +1,13 @@
 package org.endeavourhealth.queuereader;
 
+import com.datastax.driver.core.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.endeavourhealth.core.data.CassandraConnector;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
-import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
@@ -98,13 +99,23 @@ public class Main {
 		LOG.info("Fixing exchange protocols");
 
 		AuditRepository auditRepository = new AuditRepository();
-		ServiceRepository serviceRepository = new ServiceRepository();
-		OrganisationRepository organisationRepository = new OrganisationRepository();
 
+		Session session = CassandraConnector.getInstance().getSession();
+		Statement stmt = new SimpleStatement("SELECT exchange_id FROM audit.Exchange LIMIT 1000;");
+		stmt.setFetchSize(100);
+
+/*
 		List<Exchange> exchanges = new AuditRepository().getAllExchanges();
 		for (Exchange exchange: exchanges) {
+*/
 
-			LOG.info("Processing exchange " + exchange.getExchangeId());
+		ResultSet rs = session.execute(stmt);
+		while (!rs.isExhausted()) {
+			Row row = rs.one();
+			UUID exchangeId = row.get(0, UUID.class);
+
+			LOG.info("Processing exchange " + exchangeId);
+			Exchange exchange = auditRepository.getExchange(exchangeId);
 
 			String headerJson = exchange.getHeaders();
 			HashMap<String, String> headers = null;
