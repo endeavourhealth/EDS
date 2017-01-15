@@ -7,13 +7,13 @@ import org.endeavourhealth.core.utility.Resources;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.hl7.fhir.instance.model.Address;
 import org.hl7.fhir.instance.model.Identifier;
 import org.hl7.fhir.instance.model.Patient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
@@ -45,21 +45,32 @@ public class PatientTransformer extends AbstractTransformer {
 
             model.setOrganizationId(enterpriseOrganisationUuid);
 
-            Calendar cal = Calendar.getInstance();
+            //Calendar cal = Calendar.getInstance();
 
             Date dob = fhirPatient.getBirthDate();
-            cal.setTime(dob);
+            model.setDateOfBirth(convertDate(dob));
+            /*cal.setTime(dob);
             int yearOfBirth = cal.get(Calendar.YEAR);
-            model.setYearOfBirth(yearOfBirth);
+            model.setYearOfBirth(yearOfBirth);*/
 
             if (fhirPatient.hasDeceasedDateTimeType()) {
                 Date dod = fhirPatient.getDeceasedDateTimeType().getValue();
-                cal.setTime(dod);
+                model.setDateOfDeath(convertDate(dod));
+                /*cal.setTime(dod);
                 int yearOfDeath = cal.get(Calendar.YEAR);
-                model.setYearOfDeath(new Integer(yearOfDeath));
+                model.setYearOfDeath(new Integer(yearOfDeath));*/
             }
 
             model.setPatientGenderId(fhirPatient.getGender().ordinal());
+
+            if (fhirPatient.hasAddress()) {
+                for (Address address: fhirPatient.getAddress()) {
+                    if (address.getUse().equals(Address.AddressUse.HOME)) {
+                        String postcode = address.getPostalCode();
+                        model.setPostcode(postcode);
+                    }
+                }
+            }
 
             //moved all reg-specific stuff to the EpisodeOfCare table, where it belongs
             /*if (fhirPatient.hasCareProvider()) {

@@ -21,7 +21,8 @@ public class DiagnosticOrderTransformer extends AbstractTransformer {
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  Integer enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.core.xml.enterprise.DiagnosticOrder model = new org.endeavourhealth.core.xml.enterprise.DiagnosticOrder();
+        //org.endeavourhealth.core.xml.enterprise.DiagnosticOrder model = new org.endeavourhealth.core.xml.enterprise.DiagnosticOrder();
+        org.endeavourhealth.core.xml.enterprise.Observation model = new org.endeavourhealth.core.xml.enterprise.Observation();
 
         if (!mapIdAndMode(resource, model)) {
             return;
@@ -77,9 +78,13 @@ public class DiagnosticOrderTransformer extends AbstractTransformer {
             //add the raw original code, to assist in data checking
             String originalCode = findOriginalCode(item.getCode());
             model.setOriginalCode(originalCode);
+
+            //add original term too, for easy display of results
+            String originalTerm = item.getCode().getText();
+            model.setOriginalTerm(originalTerm);
         }
 
-        data.getDiagnosticOrder().add(model);
+        data.getObservation().add(model);
     }
 
 

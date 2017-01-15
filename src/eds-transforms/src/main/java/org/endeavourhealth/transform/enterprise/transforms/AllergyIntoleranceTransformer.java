@@ -76,6 +76,10 @@ public class AllergyIntoleranceTransformer extends AbstractTransformer {
             //add the raw original code, to assist in data checking
             String originalCode = findOriginalCode(fhir.getSubstance());
             model.setOriginalCode(originalCode);
+
+            //add original term too, for easy display of results
+            String originalTerm = fhir.getSubstance().getText();
+            model.setOriginalTerm(originalTerm);
         }
 
         data.getAllergyIntolerance().add(model);

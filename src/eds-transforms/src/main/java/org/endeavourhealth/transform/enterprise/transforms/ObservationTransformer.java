@@ -78,6 +78,10 @@ public class ObservationTransformer extends AbstractTransformer {
             //add the raw original code, to assist in data checking
             String originalCode = findOriginalCode(fhir.getCode());
             model.setOriginalCode(originalCode);
+
+            //add original term too, for easy display of results
+            String originalTerm = fhir.getCode().getText();
+            model.setOriginalTerm(originalTerm);
         }
 
         data.getObservation().add(model);

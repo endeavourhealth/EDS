@@ -22,7 +22,8 @@ public class SpecimenTransformer extends AbstractTransformer {
                           Map<String, ResourceByExchangeBatch> otherResources,
                           Integer enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.core.xml.enterprise.Specimen model = new org.endeavourhealth.core.xml.enterprise.Specimen();
+        //org.endeavourhealth.core.xml.enterprise.Specimen model = new org.endeavourhealth.core.xml.enterprise.Specimen();
+        org.endeavourhealth.core.xml.enterprise.Observation model = new org.endeavourhealth.core.xml.enterprise.Observation();
 
         if (!mapIdAndMode(resource, model)) {
             return;
@@ -81,9 +82,13 @@ public class SpecimenTransformer extends AbstractTransformer {
             //add the raw original code, to assist in data checking
             String originalCode = findOriginalCode(fhir.getType());
             model.setOriginalCode(originalCode);
+
+            //add original term too, for easy display of results
+            String originalTerm = fhir.getType().getText();
+            model.setOriginalTerm(originalTerm);
         }
 
-        data.getSpecimen().add(model);
+        data.getObservation().add(model);
     }
 }
 

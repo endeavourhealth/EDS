@@ -66,6 +66,10 @@ public class MedicationOrderTransformer extends AbstractTransformer {
             Long snomedConceptId = findSnomedConceptId(fhir.getMedicationCodeableConcept());
             model.setDmdId(snomedConceptId);
 
+            //add term too, for easy display of results
+            String originalTerm = fhir.getMedicationCodeableConcept().getText();
+            model.setOriginalTerm(originalTerm);
+
             if (fhir.hasDosageInstruction()) {
                 if (fhir.getDosageInstruction().size() > 1) {
                     throw new TransformException("Cannot support MedicationStatements with more than one dose " + fhir.getId());

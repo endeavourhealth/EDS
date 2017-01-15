@@ -61,6 +61,10 @@ public class MedicationStatementTransformer extends AbstractTransformer {
             Long snomedConceptId = findSnomedConceptId(fhir.getMedicationCodeableConcept());
             model.setDmdId(snomedConceptId);
 
+            //add term too, for easy display of results
+            String originalTerm = fhir.getMedicationCodeableConcept().getText();
+            model.setOriginalTerm(originalTerm);
+
             if (fhir.hasStatus()) {
                 MedicationStatement.MedicationStatementStatus fhirStatus = fhir.getStatus();
                 model.setIsActive(fhirStatus == MedicationStatement.MedicationStatementStatus.ACTIVE);

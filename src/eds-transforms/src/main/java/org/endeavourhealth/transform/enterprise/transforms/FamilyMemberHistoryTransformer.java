@@ -23,7 +23,8 @@ public class FamilyMemberHistoryTransformer extends AbstractTransformer {
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  Integer enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.core.xml.enterprise.FamilyMemberHistory model = new org.endeavourhealth.core.xml.enterprise.FamilyMemberHistory();
+        //org.endeavourhealth.core.xml.enterprise.FamilyMemberHistory model = new org.endeavourhealth.core.xml.enterprise.FamilyMemberHistory();
+        org.endeavourhealth.core.xml.enterprise.Observation model = new org.endeavourhealth.core.xml.enterprise.Observation();
 
         if (!mapIdAndMode(resource, model)) {
             return;
@@ -79,9 +80,13 @@ public class FamilyMemberHistoryTransformer extends AbstractTransformer {
             //add the raw original code, to assist in data checking
             String originalCode = findOriginalCode(condition.getCode());
             model.setOriginalCode(originalCode);
+
+            //add original term too, for easy display of results
+            String originalTerm = condition.getCode().getText();
+            model.setOriginalTerm(originalTerm);
         }
 
-        data.getFamilyMemberHistory().add(model);
+        data.getObservation().add(model);
     }
 
 

@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.Immunization;
+import org.endeavourhealth.core.xml.enterprise.Observation;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.Reference;
@@ -20,7 +20,8 @@ public class ImmunisationTransformer extends AbstractTransformer {
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  Integer enterpriseOrganisationUuid) throws Exception {
 
-        Immunization model = new Immunization();
+        //Immunization model = new Immunization();
+        Observation model = new Observation();
 
         if (!mapIdAndMode(resource, model)) {
             return;
@@ -69,9 +70,13 @@ public class ImmunisationTransformer extends AbstractTransformer {
             //add the raw original code, to assist in data checking
             String originalCode = findOriginalCode(fhir.getVaccineCode());
             model.setOriginalCode(originalCode);
+
+            //add original term too, for easy display of results
+            String originalTerm = fhir.getVaccineCode().getText();
+            model.setOriginalTerm(originalTerm);
         }
 
-        data.getImmunization().add(model);
+        data.getObservation().add(model);
     }
 
 

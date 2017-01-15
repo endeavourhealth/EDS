@@ -22,7 +22,8 @@ public class DiagnosticReportTransformer extends AbstractTransformer {
                           Map<String, ResourceByExchangeBatch> otherResources,
                           Integer enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.core.xml.enterprise.DiagnosticReport model = new org.endeavourhealth.core.xml.enterprise.DiagnosticReport();
+        //org.endeavourhealth.core.xml.enterprise.DiagnosticReport model = new org.endeavourhealth.core.xml.enterprise.DiagnosticReport();
+        org.endeavourhealth.core.xml.enterprise.Observation model = new org.endeavourhealth.core.xml.enterprise.Observation();
 
         if (!mapIdAndMode(resource, model)) {
             return;
@@ -75,8 +76,12 @@ public class DiagnosticReportTransformer extends AbstractTransformer {
             //add the raw original code, to assist in data checking
             String originalCode = findOriginalCode(fhir.getCode());
             model.setOriginalCode(originalCode);
+
+            //add original term too, for easy display of results
+            String originalTerm = fhir.getCode().getText();
+            model.setOriginalTerm(originalTerm);
         }
 
-        data.getDiagnosticReport().add(model);
+        data.getObservation().add(model);
     }
 }

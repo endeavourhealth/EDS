@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.enterprise.transforms;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.schema.EncounterParticipantType;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -77,6 +78,25 @@ public class EncounterTransformer extends AbstractTransformer {
                 DateTimeType dt = period.getStartElement();
                 model.setClinicalEffectiveDate(convertDate(dt.getValue()));
                 model.setDatePrecisionId(convertDatePrecision(dt.getPrecision()));
+            }
+
+            if (fhir.hasExtension()) {
+                for (Extension extension: fhir.getExtension()) {
+                    if (extension.getUrl().equals(FhirExtensionUri.ENCOUNTER_SOURCE)) {
+                        CodeableConcept codeableConcept = (CodeableConcept)extension.getValue();
+
+                        Long snomedConceptId = findSnomedConceptId(codeableConcept);
+                        model.setSnomedConceptId(snomedConceptId);
+
+                        //add the raw original code, to assist in data checking
+                        String originalCode = findOriginalCode(codeableConcept);
+                        model.setOriginalCode(originalCode);
+
+                        //add original term too, for easy display of results
+                        String originalTerm = codeableConcept.getText();
+                        model.setOriginalTerm(originalTerm);
+                    }
+                }
             }
         }
 

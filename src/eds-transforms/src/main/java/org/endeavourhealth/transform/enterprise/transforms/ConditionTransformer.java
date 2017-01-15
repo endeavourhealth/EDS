@@ -3,11 +3,11 @@ package org.endeavourhealth.transform.enterprise.transforms;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.Condition;
 import org.hl7.fhir.instance.model.DateTimeType;
-import org.hl7.fhir.instance.model.Extension;
 import org.hl7.fhir.instance.model.Reference;
+import org.hl7.fhir.instance.model.UriType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +22,8 @@ public class ConditionTransformer extends AbstractTransformer {
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  Integer enterpriseOrganisationUuid) throws Exception {
 
-        org.endeavourhealth.core.xml.enterprise.Condition model = new org.endeavourhealth.core.xml.enterprise.Condition();
+        //org.endeavourhealth.core.xml.enterprise.Condition model = new org.endeavourhealth.core.xml.enterprise.Condition();
+        org.endeavourhealth.core.xml.enterprise.Observation model = new org.endeavourhealth.core.xml.enterprise.Observation();
 
         if (!mapIdAndMode(resource, model)) {
             return;
@@ -69,9 +70,18 @@ public class ConditionTransformer extends AbstractTransformer {
             Long snomedConceptId = findSnomedConceptId(fhir.getCode());
             model.setSnomedConceptId(snomedConceptId);
 
+            //if it's a problem set the boolean to say so
+            if (fhir.hasMeta()) {
+                for (UriType uriType: fhir.getMeta().getProfile()) {
+                    if (uriType.getValue().equals(FhirUri.PROFILE_URI_PROBLEM)) {
+                        model.setIsProblem(true);
+                    }
+                }
+            }
+
             //if a condition is part of a problem but has the same code as the problem itself,
             //then we know it's a review, since EMIS re-records the diagnostic code for reviews
-            model.setIsReview(new Boolean(false));
+/*            model.setIsReview(new Boolean(false));
 
             if (fhir.hasExtension()) {
                 for (Extension extension: fhir.getExtension()) {
@@ -87,14 +97,18 @@ public class ConditionTransformer extends AbstractTransformer {
                         }
                     }
                 }
-            }
+            }*/
 
             //add the raw original code, to assist in data checking
             String originalCode = findOriginalCode(fhir.getCode());
             model.setOriginalCode(originalCode);
+
+            //add original term too, for easy display of results
+            String originalTerm = fhir.getCode().getText();
+            model.setOriginalTerm(originalTerm);
         }
 
-        data.getCondition().add(model);
+        data.getObservation().add(model);
     }
 
 
