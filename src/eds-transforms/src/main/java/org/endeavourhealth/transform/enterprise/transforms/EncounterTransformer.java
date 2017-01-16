@@ -1,7 +1,9 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.xml.enterprise.Appointment;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.Practitioner;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.schema.EncounterParticipantType;
@@ -34,7 +36,7 @@ public class EncounterTransformer extends AbstractTransformer {
             model.setOrganizationId(enterpriseOrganisationUuid);
 
             Reference patientReference = fhir.getPatient();
-            Integer enterprisePatientUuid = findEnterpriseId(patientReference);
+            Integer enterprisePatientUuid = findEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Patient(), patientReference);
 
             //the test pack has data that refers to deleted or missing patients, so if we get a null
             //patient ID here, then skip this resource
@@ -61,7 +63,7 @@ public class EncounterTransformer extends AbstractTransformer {
 
                     if (primary) {
                         Reference practitionerReference = participantComponent.getIndividual();
-                        Integer enterprisePractitionerUuid = findEnterpriseId(practitionerReference);
+                        Integer enterprisePractitionerUuid = findEnterpriseId(new Practitioner(), practitionerReference);
                         model.setPractitionerId(enterprisePractitionerUuid);
                     }
                 }
@@ -69,7 +71,7 @@ public class EncounterTransformer extends AbstractTransformer {
 
             if (fhir.hasAppointment()) {
                 Reference appointmentReference = fhir.getAppointment();
-                Integer enterpriseAppointmentUuid = findEnterpriseId(appointmentReference);
+                Integer enterpriseAppointmentUuid = findEnterpriseId(new Appointment(), appointmentReference);
                 model.setAppointmentId(enterpriseAppointmentUuid);
             }
 

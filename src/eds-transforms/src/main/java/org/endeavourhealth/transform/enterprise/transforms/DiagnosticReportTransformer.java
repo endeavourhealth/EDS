@@ -1,8 +1,7 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.SaveMode;
+import org.endeavourhealth.core.xml.enterprise.*;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.DiagnosticReport;
@@ -37,7 +36,7 @@ public class DiagnosticReportTransformer extends AbstractTransformer {
             model.setOrganizationId(enterpriseOrganisationUuid);
 
             Reference patientReference = fhir.getSubject();
-            Integer enterprisePatientUuid = findEnterpriseId(patientReference);
+            Integer enterprisePatientUuid = findEnterpriseId(new Patient(), patientReference);
 
             //the test pack has data that refers to deleted or missing patients, so if we get a null
             //patient ID here, then skip this resource
@@ -50,7 +49,7 @@ public class DiagnosticReportTransformer extends AbstractTransformer {
 
             if (fhir.hasEncounter()) {
                 Reference encounterReference = fhir.getEncounter();
-                Integer enterpriseEncounterUuid = findEnterpriseId(encounterReference);
+                Integer enterpriseEncounterUuid = findEnterpriseId(new Encounter(), encounterReference);
                 model.setEncounterId(enterpriseEncounterUuid);
             }
 
@@ -58,7 +57,7 @@ public class DiagnosticReportTransformer extends AbstractTransformer {
                 for (Extension extension: fhir.getExtension()) {
                     if (extension.getUrl().equals(FhirExtensionUri.DIAGNOSTIC_REPORT_FILED_BY)) {
                         Reference practitionerReference = (Reference)extension.getValue();
-                        Integer enterprisePractitionerUuid = findEnterpriseId(practitionerReference);
+                        Integer enterprisePractitionerUuid = findEnterpriseId(new Practitioner(), practitionerReference);
                         model.setPractitionerId(enterprisePractitionerUuid);
                     }
                 }

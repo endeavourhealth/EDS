@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.Practitioner;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.schema.RegistrationType;
@@ -33,12 +34,12 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
             model.setOrganizationId(enterpriseOrganisationUuid);
 
             Reference patientReference = fhirEpisode.getPatient();
-            Integer enterprisePatientUuid = findEnterpriseId(patientReference);
+            Integer enterprisePatientUuid = findEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Patient(), patientReference);
             model.setPatientId(enterprisePatientUuid);
 
             if (fhirEpisode.hasCareManager()) {
-                Reference reference = fhirEpisode.getCareManager();
-                Integer enterprisePractitionerUuid = findEnterpriseId(reference);
+                Reference practitionerReference = fhirEpisode.getCareManager();
+                Integer enterprisePractitionerUuid = findEnterpriseId(new Practitioner(), practitionerReference);
                 model.setUsualGpPractitionerId(enterprisePractitionerUuid);
             }
 

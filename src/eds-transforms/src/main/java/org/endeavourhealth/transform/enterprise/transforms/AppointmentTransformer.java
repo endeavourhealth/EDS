@@ -2,7 +2,9 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
+import org.endeavourhealth.core.xml.enterprise.Practitioner;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
+import org.endeavourhealth.core.xml.enterprise.Schedule;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.ReferenceComponents;
@@ -42,7 +44,7 @@ public class AppointmentTransformer extends AbstractTransformer {
                     ReferenceComponents components = ReferenceHelper.getReferenceComponents(reference);
 
                     if (components.getResourceType() == ResourceType.Patient) {
-                        Integer enterprisePatientUuid = findEnterpriseId(reference);
+                        Integer enterprisePatientUuid = findEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Patient(), reference);
 
                         //the test pack has data that refers to deleted or missing patients, so if we get a null
                         //patient ID here, then skip this resource
@@ -54,7 +56,7 @@ public class AppointmentTransformer extends AbstractTransformer {
                         model.setPatientId(enterprisePatientUuid);
 
                     } else if (components.getResourceType() == ResourceType.Practitioner) {
-                        Integer enterprisePractitionerUuid = findEnterpriseId(reference);
+                        Integer enterprisePractitionerUuid = findEnterpriseId(new Practitioner(), reference);
                         model.setPractitionerId(enterprisePractitionerUuid);
 
                     }
@@ -69,7 +71,7 @@ public class AppointmentTransformer extends AbstractTransformer {
             if (fhirSlot != null) {
 
                 Reference scheduleReference = fhirSlot.getSchedule();
-                Integer enterpriseScheduleUuid = findEnterpriseId(scheduleReference);
+                Integer enterpriseScheduleUuid = findEnterpriseId(new Schedule(), scheduleReference);
                 model.setScheduleId(enterpriseScheduleUuid);
             }
 

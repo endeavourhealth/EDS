@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.xml.enterprise.Encounter;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
@@ -36,7 +37,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
             model.setOrganizationId(enterpriseOrganisationUuid);
 
             Reference patientReference = fhir.getPatient();
-            Integer enterprisePatientUuid = findEnterpriseId(patientReference);
+            Integer enterprisePatientUuid = findEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Patient(), patientReference);
 
             //the test pack has data that refers to deleted or missing patients, so if we get a null
             //patient ID here, then skip this resource
@@ -49,13 +50,13 @@ public class ReferralRequestTransformer extends AbstractTransformer {
 
             if (fhir.hasEncounter()) {
                 Reference encounterReference = (Reference)fhir.getEncounter();
-                Integer enterpriseEncounterUuid = findEnterpriseId(encounterReference);
+                Integer enterpriseEncounterUuid = findEnterpriseId(new Encounter(), encounterReference);
                 model.setEncounterId(enterpriseEncounterUuid);
             }
 
             if (fhir.hasRequester()) {
                 Reference practitionerReference = fhir.getRequester();
-                Integer enterprisePractitionerUuid = findEnterpriseId(practitionerReference);
+                Integer enterprisePractitionerUuid = findEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Practitioner(), practitionerReference);
                 model.setPractitionerId(enterprisePractitionerUuid);
             }
 
@@ -75,7 +76,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                 //the requester can be an organisation or practitioner
                 if (resourceType == ResourceType.Organization) {
 
-                    Integer enterpriseId = findEnterpriseId(requesterReference);
+                    Integer enterpriseId = findEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Organization(), requesterReference);
                     model.setRequesterOrganizationId(enterpriseId);
 
                 } else if (resourceType == ResourceType.Practitioner) {
@@ -83,7 +84,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                     Practitioner fhirPractitioner = (Practitioner)findResource(requesterReference, otherResources);
                     Practitioner.PractitionerPractitionerRoleComponent role = fhirPractitioner.getPractitionerRole().get(0);
                     Reference organisationReference = role.getManagingOrganization();
-                    Integer enterpriseId = findEnterpriseId(organisationReference);
+                    Integer enterpriseId = findEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Organization(), organisationReference);
                     if (enterpriseId != null) {
                         model.setRequesterOrganizationId(enterpriseId);
                     }
@@ -102,7 +103,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
 
                     //the EMIS test pack contains referrals that point to recipient organisations that don't exist,
                     //so we need to handle the failure to find the organisation
-                    Integer enterpriseId = findEnterpriseId(recipientReference);
+                    Integer enterpriseId = findEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Organization(), recipientReference);
                     if (enterpriseId != null) {
                         model.setRecipientOrganizationId(enterpriseId);
                     }
@@ -111,7 +112,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                     Practitioner fhirPractitioner = (Practitioner)findResource(recipientReference, otherResources);
                     Practitioner.PractitionerPractitionerRoleComponent role = fhirPractitioner.getPractitionerRole().get(0);
                     Reference organisationReference = role.getManagingOrganization();
-                    Integer enterpriseId = findEnterpriseId(organisationReference);
+                    Integer enterpriseId = findEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Organization(), organisationReference);
                     if (enterpriseId != null) {
                         model.setRecipientOrganizationId(enterpriseId);
                     }

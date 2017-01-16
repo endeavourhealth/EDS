@@ -45,7 +45,7 @@ public class PractitionerTransformer extends AbstractTransformer {
                 }
 
                 Reference organisationReference = role.getManagingOrganization();
-                Integer enterpriseOrgId = findEnterpriseId(organisationReference);
+                Integer enterpriseOrgId = findEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Organization(), organisationReference);
 
                 if (enterpriseOrgId == null) {
                     LOG.warn("" + fhir.getResourceType() + " " + fhir.getId() + " refers to " + organisationReference.getReference() + " that doesn't exist");

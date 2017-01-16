@@ -34,7 +34,7 @@ public class ScheduleTransformer extends AbstractTransformer {
 
             if (fhir.hasActor()) {
                 Reference actorReference = fhir.getActor();
-                Integer enterpriseActorUuid = findEnterpriseId(actorReference);
+                Integer enterpriseActorUuid = findEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Practitioner(), actorReference);
                 if (enterpriseActorUuid != null) {
                     model.setPractitionerId(enterpriseActorUuid);
                 }

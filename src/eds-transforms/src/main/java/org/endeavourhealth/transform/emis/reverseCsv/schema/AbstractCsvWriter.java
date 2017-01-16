@@ -31,7 +31,7 @@ public abstract class AbstractCsvWriter {
     }
 
     protected void printRecord(String... columns) throws IOException {
-        csvPrinter.printRecord(columns);
+        csvPrinter.printRecord((Object[])columns);
     }
 
     protected String convertDate(Date d) {

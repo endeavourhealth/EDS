@@ -68,7 +68,7 @@ public class OrganisationTransformer extends AbstractTransformer {
                     org.hl7.fhir.instance.model.Organization partOfOrganisation = (org.hl7.fhir.instance.model.Organization)findResource(partOfReference, otherResources);
 
                     if (partOfOrganisation != null) {
-                        Integer partOfEnterpriseId = findEnterpriseId(partOfOrganisation);
+                        Integer partOfEnterpriseId = findEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Organization(), partOfOrganisation);
 
                         //because we can't guarantee what order we'll process organisations in, we may process
                         //child orgs before we process parent ones, in which case we won't have allocated
@@ -76,7 +76,7 @@ public class OrganisationTransformer extends AbstractTransformer {
                         if (partOfEnterpriseId == null) {
                             String partOfType = partOfOrganisation.getResourceType().toString();
                             UUID partOfId = UUID.fromString(partOfReference.getId());
-                            partOfEnterpriseId = createEnterpriseId(partOfType, partOfId);
+                            partOfEnterpriseId = createEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Organization(), partOfType, partOfId);
                         }
 
                         model.setParentOrganizationId(partOfEnterpriseId);

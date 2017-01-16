@@ -99,44 +99,46 @@ public abstract class AbstractTransformer {
         return null;
     }
 
-    protected static Integer findEnterpriseId(Resource resource) throws Exception {
+    protected static <T extends BaseRecord> Integer findEnterpriseId(T enterpriseTable, Resource resource) throws Exception {
         String resourceType = resource.getResourceType().toString();
         UUID resourceId = UUID.fromString(resource.getId());
-        return findEnterpriseId(resourceType, resourceId);
+        return findEnterpriseId(enterpriseTable, resourceType, resourceId);
     }
 
-    protected static Integer findEnterpriseId(Reference reference) throws Exception {
+    protected static <T extends BaseRecord> Integer findEnterpriseId(T enterpriseTable, Reference reference) throws Exception {
         ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
         String resourceType = comps.getResourceType().toString();
         UUID resourceId = UUID.fromString(comps.getId());
-        return findEnterpriseId(resourceType, resourceId);
+        return findEnterpriseId(enterpriseTable, resourceType, resourceId);
     }
 
-    protected static Integer findEnterpriseId(ResourceByExchangeBatch resource) throws Exception {
-        return findEnterpriseId(resource.getResourceType(), resource.getResourceId());
+    protected static <T extends BaseRecord> Integer findEnterpriseId(T enterpriseTable, ResourceByExchangeBatch resource) throws Exception {
+        return findEnterpriseId(enterpriseTable, resource.getResourceType(), resource.getResourceId());
     }
 
-    private static Integer findEnterpriseId(String resourceType, UUID resourceId) throws Exception {
-        Integer ret = checkCacheForId(resourceType, resourceId);
+    private static <T extends BaseRecord> Integer findEnterpriseId(T enterpriseTable, String resourceType, UUID resourceId) throws Exception {
+        String enterpriseTableName = enterpriseTable.getClass().getSimpleName();
+        Integer ret = checkCacheForId(enterpriseTableName, resourceType, resourceId);
         if (ret == null) {
-            ret = idMappingRepository.getEnterpriseIdMappingId(resourceType, resourceId);
+            ret = idMappingRepository.getEnterpriseIdMappingId(enterpriseTableName, resourceType, resourceId);
         }
         return ret;
     }
 
 
 
-    protected static Integer createEnterpriseId(ResourceByExchangeBatch resource) throws Exception {
+    protected static <T extends BaseRecord> Integer createEnterpriseId(T enterpriseTable, ResourceByExchangeBatch resource) throws Exception {
         String resourceType = resource.getResourceType();
         UUID resourceId = resource.getResourceId();
-        return createEnterpriseId(resourceType, resourceId);
+        return createEnterpriseId(enterpriseTable, resourceType, resourceId);
     }
 
-    protected static Integer createEnterpriseId(String resourceType, UUID resourceId) throws Exception {
-
+    protected static <T extends BaseRecord> Integer createEnterpriseId(T enterpriseTable, String resourceType, UUID resourceId) throws Exception {
+        String enterpriseTableName = enterpriseTable.getClass().getSimpleName();
         int enterpriseId = getNextId(resourceType);
-        idMappingRepository.saveEnterpriseIdMapping(resourceType, resourceId, new Integer(enterpriseId));
-        addIdToCache(resourceType, resourceId, enterpriseId);
+        idMappingRepository.saveEnterpriseIdMax(enterpriseTableName, new Integer(enterpriseId));
+        idMappingRepository.saveEnterpriseIdMapping(enterpriseTableName, resourceType, resourceId, new Integer(enterpriseId));
+        addIdToCache(enterpriseTableName, resourceType, resourceId, enterpriseId);
         return enterpriseId;
     }
 
@@ -145,11 +147,11 @@ public abstract class AbstractTransformer {
         addIdToCache(resourceType, resourceId, enterpriseId);
     }*/
 
-    private static Integer checkCacheForId(String resourceType, UUID resourceId) throws Exception {
-        return (Integer)cache.get(resourceType + "/" + resourceId);
+    private static Integer checkCacheForId(String enterpriseTableName, String resourceType, UUID resourceId) throws Exception {
+        return (Integer)cache.get(enterpriseTableName + ":" + resourceType + "/" + resourceId);
     }
-    private static void addIdToCache(String resourceType, UUID resourceId, Integer toCache) throws Exception {
-        cache.put(resourceType + "/" + resourceId, toCache);
+    private static void addIdToCache(String enterpriseTableName, String resourceType, UUID resourceId, Integer toCache) throws Exception {
+        cache.put(enterpriseTableName + ":" + resourceType + "/" + resourceId, toCache);
     }
 
     protected static Resource deserialiseResouce(ResourceByExchangeBatch resourceByExchangeBatch) throws Exception {
@@ -187,7 +189,7 @@ public abstract class AbstractTransformer {
     }
 
     protected static boolean mapIdAndMode(ResourceByExchangeBatch resource, BaseRecord baseRecord) throws Exception {
-        Integer enterpriseId = findEnterpriseId(resource);
+        Integer enterpriseId = findEnterpriseId(baseRecord, resource);
 
         if (resource.getIsDeleted()) {
 
@@ -205,7 +207,7 @@ public abstract class AbstractTransformer {
 
             if (enterpriseId == null) {
                 //if we don't have an schema ID, the resource is new, so should be an INSERT transaction
-                enterpriseId = createEnterpriseId(resource);
+                enterpriseId = createEnterpriseId(baseRecord, resource);
             }
             baseRecord.setId(enterpriseId);
 

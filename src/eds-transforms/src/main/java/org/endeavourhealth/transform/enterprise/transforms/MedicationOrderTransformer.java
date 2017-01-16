@@ -2,11 +2,14 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.SaveMode;
+import org.endeavourhealth.core.xml.enterprise.Encounter;
+import org.endeavourhealth.core.xml.enterprise.*;
+import org.endeavourhealth.core.xml.enterprise.MedicationStatement;
+import org.endeavourhealth.core.xml.enterprise.Practitioner;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.MedicationOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +38,7 @@ public class MedicationOrderTransformer extends AbstractTransformer {
             model.setOrganizationId(enterpriseOrganisationUuid);
 
             Reference patientReference = fhir.getPatient();
-            Integer enterprisePatientUuid = findEnterpriseId(patientReference);
+            Integer enterprisePatientUuid = findEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Patient(), patientReference);
 
             //the test pack has data that refers to deleted or missing patients, so if we get a null
             //patient ID here, then skip this resource
@@ -48,13 +51,13 @@ public class MedicationOrderTransformer extends AbstractTransformer {
 
             if (fhir.hasPrescriber()) {
                 Reference practitionerReference = fhir.getPrescriber();
-                Integer enterprisePractitionerUuid = findEnterpriseId(practitionerReference);
+                Integer enterprisePractitionerUuid = findEnterpriseId(new Practitioner(), practitionerReference);
                 model.setPractitionerId(enterprisePractitionerUuid);
             }
 
             if (fhir.hasEncounter()) {
                 Reference encounterReference = fhir.getEncounter();
-                Integer enterpriseEncounterUuid = findEnterpriseId(encounterReference);
+                Integer enterpriseEncounterUuid = findEnterpriseId(new Encounter(), encounterReference);
                 model.setEncounterId(enterpriseEncounterUuid);
             }
 
@@ -120,7 +123,7 @@ public class MedicationOrderTransformer extends AbstractTransformer {
 
                     } else if (extension.getUrl().equals(FhirExtensionUri.MEDICATION_ORDER_AUTHORISATION)) {
                         Reference medicationStatementReference = (Reference)extension.getValue();
-                        Integer enterprisePractitionerUuid = findEnterpriseId(medicationStatementReference);
+                        Integer enterprisePractitionerUuid = findEnterpriseId(new MedicationStatement(), medicationStatementReference);
 
                         //the test pack contains medication orders (i.e. issueRecords) that point to medication statements (i.e. drugRecords)
                         //that don't exist, so log it out and just skip this bad record

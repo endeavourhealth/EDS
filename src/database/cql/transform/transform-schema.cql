@@ -11,6 +11,7 @@ DROP MATERIALIZED VIEW IF EXISTS resource_id_map_by_eds_id;
 DROP TABLE IF EXISTS resource_id_map;
 
 DROP TABLE IF EXISTS enterprise_id_map;
+DROP TABLE IF EXISTS enterprise_id_max;
 DROP TABLE IF EXISTS enterprise_organisation_id_map;
 
 CREATE TABLE emis_csv_code_map (
@@ -59,12 +60,19 @@ WHERE service_id IS NOT NULL
 PRIMARY KEY((resource_type, eds_id), service_id, system_id, source_id);
 
 CREATE TABLE enterprise_id_map (
+    enterprise_table_name text,
 	resource_type text, 
 	resource_id UUID, 
 	enterprise_id int, 
-PRIMARY KEY ((resource_type), resource_id));
+PRIMARY KEY ((enterprise_table_name), resource_type, resource_id));
 
 CREATE INDEX enterprise_id ON transform.enterprise_id_map (enterprise_id);
+
+CREATE TABLE enterprise_id_max (
+    enterprise_table_name text,
+	max_enterprise_id int,
+PRIMARY KEY ((enterprise_table_name)));
+
 	  
 CREATE TABLE enterprise_organisation_id_map (
 	organisation_ods_code text, 

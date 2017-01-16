@@ -1,8 +1,7 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.SaveMode;
+import org.endeavourhealth.core.xml.enterprise.*;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.Condition;
 import org.hl7.fhir.instance.model.DateTimeType;
@@ -37,7 +36,7 @@ public class ConditionTransformer extends AbstractTransformer {
             model.setOrganizationId(enterpriseOrganisationUuid);
 
             Reference patientReference = fhir.getPatient();
-            Integer enterprisePatientUuid = findEnterpriseId(patientReference);
+            Integer enterprisePatientUuid = findEnterpriseId(new Patient(), patientReference);
 
             //the test pack has data that refers to deleted or missing patients, so if we get a null
             //patient ID here, then skip this resource
@@ -50,13 +49,13 @@ public class ConditionTransformer extends AbstractTransformer {
 
             if (fhir.hasEncounter()) {
                 Reference encounterReference = fhir.getEncounter();
-                Integer enterpriseEncounterUuid = findEnterpriseId(encounterReference);
+                Integer enterpriseEncounterUuid = findEnterpriseId(new Encounter(), encounterReference);
                 model.setEncounterId(enterpriseEncounterUuid);
             }
 
             if (fhir.hasAsserter()) {
                 Reference practitionerReference = fhir.getAsserter();
-                Integer enterprisePractitionerUuid = findEnterpriseId(practitionerReference);
+                Integer enterprisePractitionerUuid = findEnterpriseId(new Practitioner(), practitionerReference);
                 model.setPractitionerId(enterprisePractitionerUuid);
             }
 
