@@ -312,10 +312,10 @@ public class Main {
 			UUID exchangeId = exchangeByService.getExchangeId();
 
 			//this one had 90,000 batches and doesn't need doing again
-			if (exchangeId.equals(UUID.fromString("b9b93be0-afd8-11e6-8c16-c1d5a00342f3"))) {
+			/*if (exchangeId.equals(UUID.fromString("b9b93be0-afd8-11e6-8c16-c1d5a00342f3"))) {
 				LOG.info("Skipping exchange " + exchangeId);
 				continue;
-			}
+			}*/
 
 			List<ExchangeBatch> exchangeBatches = new ExchangeBatchRepository().retrieveForExchangeId(exchangeId);
 			LOG.info("Processing exchange " + exchangeId + " with " + exchangeBatches.size() + " batches");
