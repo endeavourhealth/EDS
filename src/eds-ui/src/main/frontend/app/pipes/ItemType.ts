@@ -26,7 +26,7 @@ export class ItemTypeIdToStringPipe implements PipeTransform {
 			case ItemType.System:
 				return 'System';
 			case ItemType.CountReport:
-				return 'Count report';
+				return 'Validation report';
 		}
 	};
 }
