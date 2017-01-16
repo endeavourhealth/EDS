@@ -1,0 +1,118 @@
+<div class="modal-header">
+	<button type="button" class="close" (click)="cancel()" aria-hidden="true">&times;</button>
+	<h4 class="modal-title">Code Picker</h4>
+</div>
+<div class="modal-body">
+	<form endUserRole="form" class="container-fluid">
+		<!-- Search -->
+		<div class="row">
+			<div class="form-group col-md-4"></div>
+			<div class="form-group col-md-4">
+				<label class="control-label">Search Criteria</label>
+				<div class="input-group">
+					<input type="text" class="form-control" placeholder="Search term" aria-describedby="searchTerm"
+								 [(ngModel)]="searchData" (keyup)="$event.keyCode == 13 && search()" autofocus name="searchData">
+					<span class="input-group-addon" (click)="search()" style="cursor: pointer">
+						<i class="fa fa-search" id="searchTerm" aria-hidden="true"></i>
+					</span>
+				</div>
+			</div>
+			<div class="form-group col-md-4"></div>
+		</div>
+
+		<!-- Matches -->
+		<div class="row">
+			<div class="form-group col-md-4">
+				<label class="control-label">Parents</label> <small class="text-muted">(Dbl click to navigate up)</small>
+				<div class="scroll-box-150 form-control">
+					<div *ngFor="let parent of parents"
+							 (dblclick)="displayCode(parent, true)"
+							 class="hover-box show-child-on-hover striped"
+							 [ngClass]="{'previous-selection': parent?.code == previousSelection?.code}">
+						{{ getTerm(parent.code) }}
+						<button type="button" class="btn btn-xs btn-success pull-right" (click)="addToSelection(parent)" *ngIf="!singleCode">
+							<span class="fa fa-sm fa-plus"></span>
+						</button>
+					</div>
+				</div>
+			</div>
+			<div class="form-group col-md-4">
+				<label class="control-label">Codes</label>
+				<div class="scroll-box-150 form-control">
+					<div *ngFor="let match of searchResults"
+							 (click)="displayCode(match, false)"
+							 class="hover-box show-child-on-hover striped"
+							 [ngClass]="{'selection': match?.code == highlightedMatch?.code}">
+						 {{ getTerm(match.code) }}
+						<button type="button" class="btn btn-xs btn-success pull-right child-to-show" (click)="addToSelection(match)" *ngIf="!singleCode">
+							<span class="fa fa-sm fa-plus"></span>
+						</button>
+					</div>
+				</div>
+			</div>
+			<div class="form-group col-md-4">
+				<label class="control-label">Children</label> <small class="text-muted">(Dbl click to navigate down)</small>
+				<div class="scroll-box-150 form-control">
+					<div *ngFor="let child of children"
+							 (dblclick)="displayCode(child, true)"
+							 class="hover-box show-child-on-hover striped"
+							 [ngClass]="{'previous-selection': child?.code == previousSelection?.code}">
+						{{ getTerm(child.code) }}
+						<button type="button" class="btn btn-xs btn-success pull-right child-to-show" (click)="addToSelection(child)" *ngIf="!singleCode">
+							<span class="fa fa-sm fa-plus"></span>
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Selection -->
+		<div class="row" [hidden]="singleCode">
+			<div class="form-group col-md-6">
+				<label class="control-label">Selected codes</label>
+				<div class="scroll-box-150 form-control">
+					<div *ngFor="let selection of resultData"
+							 (click)="displayExclusionTree(selection)"
+							 class="hover-box show-child-on-hover striped"
+							 [ngClass]="{'selection': selection == highlightedSelection}">
+						{{ getTerm(selection.code) }}
+						<span class="label label-success" *ngIf="selection.includeChildren && (!selection.exclusion || selection.exclusion.length == 0)">All children</span>
+						<span class="label label-warning" *ngIf="selection.includeChildren && (selection.exclusion && selection.exclusion.length > 0)">Some children</span>
+						<span class="label label-danger" *ngIf="!selection.includeChildren">No children</span>
+						<button type="button" class="btn btn-xs btn-danger pull-right child-to-show" (click)="removeFromSelection(selection)">
+							<span class="fa fa-sm fa-minus"></span>
+						</button>
+					</div>
+				</div>
+			</div>
+			<div class="form-group col-md-6">
+				<label class="control-label">Inclusions/Exclusions</label>
+				<div class="scroll-box-150 form-control">
+
+					<Tree [nodes]="exclusionTreeData" [options]="options">
+						<template #treeNodeTemplate let-node>
+								<span class="folder-item">
+									<span class="text-success fa fa-check-circle-o"
+												(click)="untickNode(node)"
+												*ngIf="node.codeSetValue.includeChildren && (!node.codeSetValue.exclusion || node.codeSetValue.exclusion.length == 0)"> </span>
+									<span class="text-warning fa fa-times-circle-o"
+												(click)="tickNode(node)"
+												*ngIf="node.codeSetValue.includeChildren && (node.codeSetValue.exclusion && node.codeSetValue.exclusion.length > 0)"> </span>
+									<span class="text-danger fa fa-ban"
+												(click)="tickNode(node)"
+												*ngIf="!node.codeSetValue.includeChildren"> </span>
+									<span>{{getTerm(node.codeSetValue.code)}}</span>
+							</span>
+						</template>
+					</Tree>
+				</div>
+			</div>
+		</div>
+	</form>
+</div>
+<div class="modal-footer">
+	<button type="button" class="btn"
+					(click)="cancel()">Cancel</button>
+	<button type="button" class="btn btn-primary"
+					(click)="ok();">Ok</button>
+</div>

@@ -100,6 +100,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
         DataSet dataSet = libraryItem.getDataSet();
         Protocol protocol = libraryItem.getProtocol();
         System system = libraryItem.getSystem();
+        CountReport countReport = libraryItem.getCountReport();
 
         LOG.trace("SavingLibraryItem UUID {}, Name {} FolderUuid", libraryItemUuid, name, folderUuid);
 
@@ -123,6 +124,8 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
         } else if (system != null) {
             type = DefinitionItemType.System;
             system.setName(name);
+        } else if (countReport != null) {
+            type = DefinitionItemType.CountReport;
         } else {
             //if we've been passed no proper content, we might just be wanting to rename an existing item,
             //so work out the type from what's on the DB already

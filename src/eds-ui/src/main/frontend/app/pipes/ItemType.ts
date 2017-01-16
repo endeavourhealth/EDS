@@ -25,6 +25,8 @@ export class ItemTypeIdToStringPipe implements PipeTransform {
 				return 'Data protocol';
 			case ItemType.System:
 				return 'System';
+			case ItemType.CountReport:
+				return 'Count report';
 		}
 	};
 }
@@ -53,6 +55,8 @@ export class ItemTypeIdToIconPipe implements PipeTransform {
 				return 'fa-share-alt';
 			case ItemType.System:
 				return 'fa-laptop';
+			case ItemType.CountReport:
+				return 'fa-calculator';
 		}
 	};
 }

@@ -70,16 +70,8 @@ export class QueryEditComponent {
 			rule: []
 		}
 
-		this.libraryItem = {
-			uuid: null,
-			name: null,
-			description: null,
+		this.libraryItem = <LibraryItem> {
 			folderUuid: transition.params()['itemUuid'],
-			query: this.query,
-			codeSet: null,
-			dataSet: null,
-			protocol: null,
-			system: null
 		};
 
 		this.createModel(this.libraryItem);

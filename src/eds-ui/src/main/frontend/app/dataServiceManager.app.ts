@@ -19,6 +19,8 @@ import {QueryModule} from "./query/query.module";
 import {ProtocolModule} from "./protocol/protocol.module";
 import {DataSetModule} from "./dataSet/dataSet.module";
 import {CodeSetModule} from "./codeSet/codeSet.module";
+import {CountReportModule} from "./countReport/countReport.module";
+import {ExchangeAuditModule} from "./exchangeAudit/exchangeAudit.module";
 // State components
 import {DashboardComponent} from "./dashboard/dashboard.component";
 import {OrganisationListComponent} from "./organisations/organisationList.component";
@@ -37,13 +39,14 @@ import {ProtocolEditComponent} from "./protocol/protocolEditor.component";
 import {DataSetEditComponent} from "./dataSet/dataSetEditor.component";
 import {CodeSetEditComponent} from "./codeSet/codeSetEditor.component";
 import {TransformErrorsComponent} from "./transformErrors/transformErrors.component";
+import {CountReportEditComponent} from "./countReport/countReport.component";
 import {ExchangeAuditComponent} from "./exchangeAudit/exchangeAudit.component";
-import {ExchangeAuditModule} from "./exchangeAudit/exchangeAudit.module";
 
 @NgModule(
 	Application.Define({
 		modules: [
 			FlowchartModule,
+
 			DashboardModule,
 			LibraryModule,
 			OrganisationsModule,
@@ -60,6 +63,7 @@ import {ExchangeAuditModule} from "./exchangeAudit/exchangeAudit.module";
 			ProtocolModule,
 			DataSetModule,
 			CodeSetModule,
+			CountReportModule,
 			ExchangeAuditModule
 		],
 		states: [
@@ -80,7 +84,8 @@ import {ExchangeAuditModule} from "./exchangeAudit/exchangeAudit.module";
 			{name: 'app.dataSetEdit', url: '/dataSetEdit/:itemAction/:itemUuid', component: DataSetEditComponent},
 			{name: 'app.codeSetEdit', url: '/codeSetEdit/:itemAction/:itemUuid', component: CodeSetEditComponent},
 			{name: 'app.transformErrors', url: '/transformErrors', component: TransformErrorsComponent},
-			{name: 'app.exchangeAudit', url: '/exchangeAudit/:serviceUuid', component: ExchangeAuditComponent}
+			{name: 'app.exchangeAudit', url: '/exchangeAudit/:serviceUuid', component: ExchangeAuditComponent},
+			{name: 'app.countReportEdit', url: '/countReportEdit/:itemAction/:itemUuid', component: CountReportEditComponent}
 		],
 		defaultState : { state: 'app.dashboard', params: {} }
 	})

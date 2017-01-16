@@ -123,3 +123,12 @@ VALUES
 	"description": "Default fallback group, all remaining"
 }
 ]');
+
+INSERT INTO config
+(app_id, config_id, config_data)
+VALUES
+('global', 'coding','{
+   "url" : "jdbc:postgresql://localhost:5432/coding",
+   "username" : "postgres",
+   "password" : ""
+}');

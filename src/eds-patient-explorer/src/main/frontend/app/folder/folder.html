@@ -1,0 +1,7 @@
+<Tree [nodes]="treeData" [options]="options" (onActivate)="selectNode($event.node.data)" (onInitialized)="treeInitialized()">
+	<template #treeNodeTemplate let-node>
+		<div ngbDropdown class="show-child-on-hover folder-item">
+		<span>{{ node.data.folderName }}</span>
+		</div>
+	</template>
+</Tree>

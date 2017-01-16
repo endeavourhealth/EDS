@@ -1,0 +1,42 @@
+<div class="module">
+	<div class="container-fluid">
+		<div class="module-heading">
+			Validation Report
+			<div class="pull-right">
+				<button type="button" class="btn btn-sm btn-success" (click)="save(false)">Save</button>
+				<button type="button" class="btn btn-sm btn-warning" (click)="save(true)">Save & Close</button>
+				<button type="button" class="btn btn-sm btn-danger" (click)="close()">Cancel</button>
+			</div>
+		</div>
+		<div class="module-body">
+			<form>
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label for="name">Name</label>
+						<input type="text" class="form-control" id="name" [(ngModel)]="libraryItem.name" name="name">
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-12">
+						<label for="description">Description</label>
+						<textarea class="form-control" id="description" [(ngModel)]="libraryItem.description" name="description"></textarea>
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-12">
+						<label>Select :RunDate, p.id, p.nhs_number </label>
+						<textarea class="form-control" id="fields" [(ngModel)]="libraryItem.countReport.fields" name="tables"></textarea>
+					</div>
+					<div class="form-group col-md-12">
+						<label>From patient p, episode_of_care eoc </label>
+						<textarea rows="5" class="form-control" id="tables" [(ngModel)]="libraryItem.countReport.tables" name="tables"></textarea>
+					</div>
+					<div class="form-group col-md-12">
+						<label>Where eoc.date_registered < :RunDate and eoc.date_registered_end_date >= :RunDate </label>
+						<textarea rows="10" class="form-control" id="query" [(ngModel)]="libraryItem.countReport.query" name="query"></textarea>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>

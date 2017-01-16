@@ -126,7 +126,8 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
                     && itemType != DefinitionItemType.Query
                     && itemType != DefinitionItemType.DataSet
                     && itemType != DefinitionItemType.Protocol
-                    && itemType != DefinitionItemType.System) {
+                    && itemType != DefinitionItemType.System
+                    && itemType != DefinitionItemType.CountReport) {
                 throw new BadRequestException("Library folder UUID " + containingFolderUuid + " cannot contain a " + itemType);
             }
         } else {

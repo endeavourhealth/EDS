@@ -19,3 +19,8 @@ INSERT INTO config
 (app_id, config_id, config_data)
 VALUES
 ('eds-patient-explorer', 'keycloak_proxy_pass', 'bd285adbc36842d7a27088e93c36c13e29ed69fa63a6' );
+
+INSERT INTO config
+(app_id, config_id, config_data)
+VALUES
+('eds-patient-explorer', 'enterprise-lite-db', 'jdbc:postgresql://localhost/enterprise_data?user=postgres&password=')

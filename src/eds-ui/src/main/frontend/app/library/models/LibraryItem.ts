@@ -3,6 +3,7 @@ import {Protocol} from "../../protocol/models/Protocol";
 import {DataSet} from "../../dataSet/models/Dataset";
 import {CodeSet} from "../../tests/models/CodeSet";
 import {Query} from "../../query/models/Query";
+import {CountReport} from "../../countReport/models/CountReport";
 
 export class LibraryItem {
 	uuid:string;
@@ -16,4 +17,5 @@ export class LibraryItem {
 	dataSet:DataSet;
 	protocol:Protocol;
 	system:System;
+	countReport:CountReport;
 }

@@ -367,6 +367,8 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
 
             } else if (itemType == DefinitionItemType.System) {
 
+            } else if (itemType == DefinitionItemType.CountReport) {
+
             } else {
                 throw new RuntimeException("Unexpected content " + item + " in folder");
             }

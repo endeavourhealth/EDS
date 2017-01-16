@@ -70,6 +70,9 @@ export class LibraryComponent {
 			case ItemType.CodeSet:
 				this.$state.go('app.codeSetEdit', {itemUuid: $event.uuid, itemAction: $event.action});
 				break;
+			case ItemType.CountReport:
+				this.$state.go('app.countReportEdit', {itemUuid: $event.uuid, itemAction: $event.action});
+				break;
 			default:
 				this.log.error('Invalid item type', $event.type, 'Item ' + $event.action);
 				break;
