@@ -168,4 +168,14 @@ public class DataLayer implements IDBDigestLogger {
 
         pgStoredProc.execute();
     }
+
+    public boolean claimChannelForwarderMutex(int channelId, int instanceId) throws PgStoredProcException {
+
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("log.claim_channel_forwarder_mutex")
+                .addParameter("_channel_id", channelId)
+                .addParameter("_instance_id", instanceId);
+
+        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getBoolean("claim_channel_forwarder_mutex"));
+    }
 }

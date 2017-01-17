@@ -43,7 +43,9 @@ class HL7Channel {
         messageReceiver = new HL7MessageReceiver(configuration, dbChannel, connectionManager);
         exceptionHandler = new HL7ExceptionHandler(configuration, dbChannel, connectionManager);
         service = context.newServer(dbChannel.getPortNumber(), false);
-        channelForwarder = new HL7ChannelForwarder();
+        channelForwarder = new HL7ChannelForwarder(configuration, dbChannel);
+        channelForwarder.start();
+
 
         service.registerApplication("*", "*", messageReceiver);
         service.registerConnectionListener(connectionManager);
@@ -57,6 +59,7 @@ class HL7Channel {
 
     public void stop() {
         LOG.info("Stopping channel " + dbChannel.getChannelName() + " on port " + Integer.toString(dbChannel.getPortNumber()));
+        channelForwarder.stop();
         connectionManager.closeConnections();
         service.stopAndWait();
     }
