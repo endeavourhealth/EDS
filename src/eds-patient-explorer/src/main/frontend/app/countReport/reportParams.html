@@ -4,6 +4,7 @@
 </div>
 <div class="modal-body">
     <form endUserRole="form" class="container-fluid">
+
         <div class="row">
             <div class="form-group col-md-6">
                 <label class="control-label">Run Date <small>(mandatory)</small></label>
@@ -23,6 +24,7 @@
                   name="EffectiveDate"></datetime>
             </div>
         </div>
+
         <div class="row" [hidden]="hide(snomedCode) && hide(originalCode)">
             <div class="form-group col-md-6" [hidden]="hide(snomedCode)">
                 <label class="control-label">SNOMED Code</label>
@@ -39,6 +41,7 @@
                 <input type="text" class="form-control" placeholder="All" [(ngModel)]="originalCode" name="OriginalCode">
             </div>
         </div>
+
         <div class="row" [hidden]="hide(valueMin) && hide(valueMax)">
             <div class="form-group col-md-6" [hidden]="hide(valueMin)">
                 <label class="control-label">Value minimum <small>(inclusive)</small></label>
@@ -49,6 +52,24 @@
                 <input type="number" class="form-control" autofocus placeholder="No maximum" [(ngModel)]="valueMax" name="ValueMax">
             </div>
         </div>
+
+        <div class="row" [hidden]="hide(authType) && hide(dmdCode)">
+            <div class="form-group col-md-6" [hidden]="hide(authType)">
+                <label class="control-label">Authorization type</label>
+                <select id="module" class="form-control" [(ngModel)]="authType" name="AuthType">
+                    <option value="null">Any type</option>
+                    <option value="0">Acute</option>
+                    <option value="1">Repeat</option>
+                    <option value="2">Repeat dispensing</option>
+                    <option value="3">Automatic</option>
+                </select>
+            </div>
+            <div class="form-group col-md-6" [hidden]="hide(dmdCode)">
+                <label class="control-label">DM&D Code</label>
+                <input type="number" class="form-control" autofocus placeholder="No maximum" [(ngModel)]="dmdCode" name="DmdCode">
+            </div>
+        </div>
+
     </form>
 </div>
 

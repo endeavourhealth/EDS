@@ -18,6 +18,8 @@ export class ReportParamsDialog implements OnInit {
     valueMax : number;
     valueMin : number;
     snomedCode : CodeSetValue;
+    authType : string;
+    dmdCode : number;
 
     public static open(modalService: NgbModal, query: string) {
         const modalRef = modalService.open(ReportParamsDialog, {backdrop: "static", size: 'lg'});
@@ -39,8 +41,9 @@ export class ReportParamsDialog implements OnInit {
         if (this.query.indexOf(':EffectiveDate') >= 0) this.effectiveDate = null;
         if (this.query.indexOf(':SnomedCode') >= 0) this.snomedCode = null;
         if (this.query.indexOf(':OriginalCode') >= 0) this.originalCode = null;
-        if (this.query.indexOf(':ValueMin') >= 0) this.valueMin= null;
-        if (this.query.indexOf(':ValueMax') >= 0) this.valueMax= null;
+        if (this.query.indexOf(':ValueMin') >= 0) this.valueMin = null;
+        if (this.query.indexOf(':ValueMax') >= 0) this.valueMax = null;
+        if (this.query.indexOf(':AuthType') >= 0) this.authType = null;
     }
 
     selectSnomed() {
@@ -76,6 +79,7 @@ export class ReportParamsDialog implements OnInit {
         params.OriginalCode = (this.originalCode) ? "'" + this.originalCode + "'" : 'null';
         params.ValueMin = (this.valueMin) ? this.valueMin : 'null';
         params.ValueMax = (this.valueMax) ? this.valueMax  : 'null';
+        params.AuthType = (this.authType) ? "'" + this.authType +"'" : 'null';
 
         this.activeModal.close(params);
         console.log('OK Pressed');
