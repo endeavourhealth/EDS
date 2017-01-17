@@ -13,6 +13,7 @@ import {CodingService} from "../coding/coding.service";
 export class ReportParamsDialog implements OnInit {
     @Input() query;
     runDate : Date;
+    effectiveDate : Date;
     originalCode : string;
     valueMax : number;
     valueMin : number;
@@ -31,6 +32,11 @@ export class ReportParamsDialog implements OnInit {
         // work out prompts from query text
         this.runDate = new Date();
 
+        if (!this.query)
+            return;
+
+        // Check query for remaining prompts
+        if (this.query.indexOf(':EffectiveDate') >= 0) this.effectiveDate = null;
         if (this.query.indexOf(':SnomedCode') >= 0) this.snomedCode = null;
         if (this.query.indexOf(':OriginalCode') >= 0) this.originalCode = null;
         if (this.query.indexOf(':ValueMin') >= 0) this.valueMin= null;
@@ -52,14 +58,20 @@ export class ReportParamsDialog implements OnInit {
         )
     }
 
+    setEffectiveDate($event) {
+        if ($event)
+            this.effectiveDate = $event;
+    }
+
     hide(item : any) {
-        return typeof(item) === 'undefined';
+        return item === undefined;
     }
 
     ok() {
         let params : any = {};
 
         params.RunDate = "'" + moment(this.runDate).format('DD/MM/YYYY') + "'";
+        params.EffectiveDate = (this.effectiveDate) ? "'" + moment(this.effectiveDate).format('DD/MM/YYYY') + "'" : 'null';
         params.SnomedCode = (this.snomedCode) ? this.snomedCode.code : 'null';
         params.OriginalCode = (this.originalCode) ? "'" + this.originalCode + "'" : 'null';
         params.ValueMin = (this.valueMin) ? this.valueMin : 'null';

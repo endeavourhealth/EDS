@@ -5,9 +5,22 @@
 <div class="modal-body">
     <form endUserRole="form" class="container-fluid">
         <div class="row">
-            <div class="form-group col-md-12">
+            <div class="form-group col-md-6">
                 <label class="control-label">Run Date <small>(mandatory)</small></label>
-                <datetime [timepicker]="false" [(ngModel)]="runDate" [datepicker]="{ icon: 'fa fa-calendar', autoclose: true, todayBtn: 'linked', format: 'dd-M-yyyy', todayHighlight: true }" name="RunDate"></datetime>
+                <datetime
+                  [timepicker]="false"
+                  [(ngModel)]="runDate"
+                  [datepicker]="{ icon: 'fa fa-calendar', autoclose: true, todayBtn: 'linked', format: 'dd-M-yyyy', todayHighlight: true }"
+                  name="RunDate"></datetime>
+            </div>
+            <div class="form-group col-md-6" [hidden]="hide(effectiveDate)">
+                <label class="control-label">Effective Date</label>
+                <datetime
+                  [timepicker]="false"
+                  [ngModel]="effectiveDate"
+                  (ngModelChange)="setEffectiveDate($event)"
+                  [datepicker]="{ icon: 'fa fa-calendar', autoclose: true, todayBtn: 'linked', format: 'dd-M-yyyy', todayHighlight: true }"
+                  name="EffectiveDate"></datetime>
             </div>
         </div>
         <div class="row" [hidden]="hide(snomedCode) && hide(originalCode)">

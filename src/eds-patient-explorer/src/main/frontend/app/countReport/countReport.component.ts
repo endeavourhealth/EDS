@@ -91,7 +91,7 @@ export class CountReportComponent {
 		vm.countReportService.exportNHSNumbers(reportId)
 			.subscribe(
 				(result) => {
-					vm.logger.success('NHS numbers successfully exported', result, 'Export NHS numbers');
+					vm.logger.success('NHS numbers successfully exported', reportId, 'Export NHS numbers');
 					let filename = 'Report_'+reportId+'_NHS.csv';
 					vm.downloadFile(filename, result)
 				},
@@ -105,7 +105,7 @@ export class CountReportComponent {
 		vm.countReportService.exportData(reportId)
 			.subscribe(
 			(result) => {
-				vm.logger.success('Data successfully exported', result, 'Export data');
+				vm.logger.success('Data successfully exported', reportId, 'Export data');
 				let filename = 'Report_'+reportId+'_Dat.csv';
 				vm.downloadFile(filename, result)
 			},

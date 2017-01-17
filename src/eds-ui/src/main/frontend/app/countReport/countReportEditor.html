@@ -27,13 +27,25 @@
 						<label>Select :RunDate, p.id, p.nhs_number </label>
 						<textarea class="form-control" id="fields" [(ngModel)]="libraryItem.countReport.fields" name="fields"></textarea>
 					</div>
+				</div>
+				<div class="row">
 					<div class="form-group col-md-12">
 						<label>From patient p, episode_of_care eoc </label>
 						<textarea rows="5" class="form-control" id="tables" [(ngModel)]="libraryItem.countReport.tables" name="tables"></textarea>
 					</div>
+				</div>
+				<div class="row">
 					<div class="form-group col-md-12">
 						<label>Where eoc.date_registered < :RunDate and eoc.date_registered_end_date >= :RunDate </label>
 						<textarea rows="10" class="form-control" id="query" [(ngModel)]="libraryItem.countReport.query" name="query"></textarea>
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-12">
+						<small>
+							<b>Prompts (precede with ":")</b>
+							RunDate, EffectiveDate, SnomedCode, OriginalCode, ValueMin, ValueMax
+						</small>
 					</div>
 				</div>
 			</form>

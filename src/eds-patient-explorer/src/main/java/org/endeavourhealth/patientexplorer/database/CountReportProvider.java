@@ -106,7 +106,7 @@ public class CountReportProvider {
 	}
 
 	public List<String> getNHSExport(UUID reportUuid) throws Exception {
-		return getResults(reportUuid, "id");
+		return getResults(reportUuid, "run_date, internal_patient_id, nhs_number");
 	}
 
 	public List<String> getDataExport(UUID reportUuid) throws Exception {

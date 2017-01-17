@@ -60,6 +60,9 @@ export class CountReportEditComponent {
 			description: '',
 			folderUuid: folderUuid,
 			countReport: {
+				fields : '',
+				tables : '',
+				query : '',
 				count : 0,
 				status : 'Not Run'
 			} as CountReport
