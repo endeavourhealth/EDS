@@ -1,9 +1,9 @@
-import {TransformErrorSummary} from "./TransformErrorSummary";
-import {TransformErrorDetail} from "./TransformErrorDetail";
-import {TransformErrorsService} from "./transformErrors.service";
+import {TransformErrorSummary} from "./../exchangeAudit/TransformErrorSummary";
+import {TransformErrorDetail} from "./../exchangeAudit/TransformErrorDetail";
 import {LoggerService} from "../common/logger.service";
 import {StateService} from "ui-router-ng2";
 import {Component} from "@angular/core";
+import {ExchangeAuditService} from "../exchangeAudit/exchangeAudit.service";
 
 @Component({
 	template : require('./transformErrors.html')
@@ -16,19 +16,25 @@ export class TransformErrorsComponent {
 	selectExchangeErrorDetail:TransformErrorDetail;
 
 
-	constructor(protected transformErrorService:TransformErrorsService,
+	constructor(protected exchangeAuditService:ExchangeAuditService,
 				protected logger:LoggerService,
 				protected $state : StateService) {
 
 		this.refreshSummaries();
 	}
+	/*constructor(protected transformErrorService:TransformErrorsService,
+				protected logger:LoggerService,
+				protected $state : StateService) {
+
+		this.refreshSummaries();
+	}*/
 
 	refreshSummaries() {
 		var vm = this;
 		vm.transformErrorSummaries = null;
 		vm.selectedSummary = null;
 
-		vm.transformErrorService.getTransformErrorSummaries()
+		vm.exchangeAuditService.getTransformErrorSummaries()
 			.subscribe(
 				(data) => {
 					vm.transformErrorSummaries = data;
@@ -52,7 +58,7 @@ export class TransformErrorsComponent {
 		var serviceId = summary.serviceId;
 		var systemId = summary.systemId;
 
-		vm.transformErrorService.rerunFirst(serviceId, systemId)
+		vm.exchangeAuditService.rerunFirstExchangeInError(serviceId, systemId)
 			.subscribe(
 				(replacement) => vm.refreshSummariesKeepingSelection(summary, replacement)
 			);
@@ -63,7 +69,7 @@ export class TransformErrorsComponent {
 		var serviceId = summary.serviceId;
 		var systemId = summary.systemId;
 
-		vm.transformErrorService.rerunAll(serviceId, systemId)
+		vm.exchangeAuditService.rerunAllExchangesInError(serviceId, systemId)
 			.subscribe(
 				() => vm.refreshSummariesKeepingSelection(summary, null)
 			);
@@ -109,9 +115,12 @@ export class TransformErrorsComponent {
 		var systemId = vm.selectedSummary.systemId;
 		var exchangeId = vm.selectedSummary.exchangeIds[vm.selectedExchangeIndex - 1];
 
-		vm.transformErrorService.getTransformErrorDetail(serviceId, systemId, exchangeId)
+		vm.exchangeAuditService.getTransformErrorDetail(serviceId, systemId, exchangeId, true, true)
 			.subscribe(
-				(data) => vm.selectExchangeErrorDetail = data
+				(data) => {
+					vm.selectExchangeErrorDetail = data[0];
+				},
+				(error) => vm.logger.error('Failed to retrieve transform audit', error, 'View Exchanges')
 			);
 	}
 

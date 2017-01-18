@@ -30,6 +30,8 @@ public class EnterpriseFiler {
 
     private static final String ZIP_ENTRY = "EnterpriseData.xml";
 
+    private static String keywordEscapeChar = null; //different DBs use different chars to escape keywords (" on pg, ` on mysql)
+
     public static void file(String base64) throws Exception {
 
         byte[] bytes = Base64.getDecoder().decode(base64);
@@ -361,7 +363,9 @@ public class EnterpriseFiler {
 
             //the Appointment table has a column called "left" which is a keyword, so we may as well escape
             //all column names to prevent this error
-            sb.append("\"" + columnName + "\" = ?");
+            //mySQL uses different sscape chars, so move into config
+            sb.append(keywordEscapeChar + columnName + keywordEscapeChar + " = ?");
+            //sb.append("\"" + columnName + "\" = ?");
             //sb.append(columnName + " = ?");
         }
         sb.append(" where id = ?");
@@ -411,19 +415,39 @@ public class EnterpriseFiler {
 
     private static Connection openConnection() throws Exception {
 
-        //force the driver to be loaded
-        Class.forName("org.postgresql.Driver");
+        JsonNode config = ConfigManager.getConfigurationAsJson("patient_database", "enterprise");
 
-        JsonNode config = ConfigManager.getConfigurationAsJson("postgres", "enterprise");
+        String driverClass = config.get("driverClass").asText();
         String url = config.get("url").asText();
         String username = config.get("username").asText();
         String password = config.get("password").asText();
+
+        keywordEscapeChar = config.get("keywordEscapeChar").asText();
+
+        //force the driver to be loaded
+        Class.forName(driverClass);
 
         Connection conn = DriverManager.getConnection(url, username, password);
         conn.setAutoCommit(false);
 
         return conn;
     }
+
+    /*private static Connection openConnection() throws Exception {
+
+        JsonNode config = ConfigManager.getConfigurationAsJson("postgres", "enterprise");
+        String url = config.get("url").asText();
+        String username = config.get("username").asText();
+        String password = config.get("password").asText();
+
+        //force the driver to be loaded
+        Class.forName("org.postgresql.Driver");
+
+        Connection conn = DriverManager.getConnection(url, username, password);
+        conn.setAutoCommit(false);
+
+        return conn;
+    }*/
 
 
 

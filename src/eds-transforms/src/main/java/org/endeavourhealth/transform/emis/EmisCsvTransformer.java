@@ -57,7 +57,8 @@ public abstract class EmisCsvTransformer {
     public static final String TIME_FORMAT = "hh:mm:ss";
     public static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
 
-    public static List<UUID> transform(UUID exchangeId, String exchangeBody, UUID serviceId, UUID systemId, TransformError transformError, TransformError previousErrors,
+    public static void transform(UUID exchangeId, String exchangeBody, UUID serviceId, UUID systemId,
+                                       TransformError transformError, List<UUID> batchIds, TransformError previousErrors,
                                        String sharedStoragePath, int maxFilingThreads) throws Exception {
 
         //for EMIS CSV, the exchange body will be a list of files received
@@ -74,7 +75,7 @@ public abstract class EmisCsvTransformer {
         //validateVersion(version);
 
         //the processor is responsible for saving FHIR resources
-        CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId, transformError, maxFilingThreads);
+        CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId, transformError, batchIds, maxFilingThreads);
 
         Map<Class, List<AbstractCsvParser>> allParsers = new HashMap<>();
 
@@ -115,7 +116,7 @@ public abstract class EmisCsvTransformer {
         }
 
         LOG.trace("Completed transform for service {} - waiting for resources to commit to DB", serviceId);
-        return processor.getBatchIdsCreated();
+        processor.waitToFinish();
     }
 
     private static void closeParsers(Map<Class, List<AbstractCsvParser>> allParsers) {
@@ -411,9 +412,6 @@ public abstract class EmisCsvTransformer {
         for (Class cls: allParsers.keySet()) {
             List<AbstractCsvParser> parsers = allParsers.get(cls);
             for (AbstractCsvParser parser: parsers) {
-
-                //we've already used some of the parsers already, so reset them to the start
-                parser.reset();
 
                 String fileName = parser.getFile().getName();
                 String processingIdStr = parser.getFile().getParent();

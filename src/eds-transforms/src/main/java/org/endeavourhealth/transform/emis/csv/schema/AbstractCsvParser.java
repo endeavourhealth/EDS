@@ -82,19 +82,20 @@ public abstract class AbstractCsvParser implements AutoCloseable {
     public void close() throws IOException {
         if (csvReader != null) {
             csvReader.close();
+            csvReader = null;
         }
     }
 
-    public void reset() throws Exception {
+    /*public void reset() throws Exception {
 
-        //if we've only read the header, don't bother resetting
+        //if we've opened the parser but only read the header, don't bother resetting
         if (getCurrentLineNumber() <= 1) {
             return;
         }
 
         close();
         open();
-    }
+    }*/
 
     protected abstract String[] getCsvHeaders(String version);
 
@@ -135,6 +136,10 @@ public abstract class AbstractCsvParser implements AutoCloseable {
         }
 
         this.csvRecord = null;
+
+        //automatically close the parser once we reach the end, to cut down on memory use
+        close();
+
         return false;
     }
 

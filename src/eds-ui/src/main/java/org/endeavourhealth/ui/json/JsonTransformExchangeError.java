@@ -12,6 +12,10 @@ public class JsonTransformExchangeError {
     private UUID exchangeId = null;
     private Date transformStart = null;
     private Date transformEnd = null;
+    private Integer numberBatchIdsCreated = null;
+    private boolean hadErrors;
+    private boolean resubmitted;
+    private Date deleted = null;
     private List<String> lines = null;
 
     public UUID getExchangeId() {
@@ -36,6 +40,38 @@ public class JsonTransformExchangeError {
 
     public void setTransformEnd(Date transformEnd) {
         this.transformEnd = transformEnd;
+    }
+
+    public Integer getNumberBatchIdsCreated() {
+        return numberBatchIdsCreated;
+    }
+
+    public void setNumberBatchIdsCreated(Integer numberBatchIdsCreated) {
+        this.numberBatchIdsCreated = numberBatchIdsCreated;
+    }
+
+    public boolean isHadErrors() {
+        return hadErrors;
+    }
+
+    public void setHadErrors(boolean hadErrors) {
+        this.hadErrors = hadErrors;
+    }
+
+    public boolean isResubmitted() {
+        return resubmitted;
+    }
+
+    public void setResubmitted(boolean resubmitted) {
+        this.resubmitted = resubmitted;
+    }
+
+    public Date getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Date deleted) {
+        this.deleted = deleted;
     }
 
     public List<String> getLines() {

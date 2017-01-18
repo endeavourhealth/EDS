@@ -35,6 +35,7 @@ public class CsvProcessor {
     private final TransformError transformError;
     //private final ExchangeTransformAudit transformAudit;
     //private final Map<String, String> resourceTypes; //although a set would be idea, a map allows safe multi-thread access
+    private final List<UUID> batchIdsCreated;
 
     //batch IDs
     private ReentrantLock batchIdLock = new ReentrantLock();
@@ -49,13 +50,15 @@ public class CsvProcessor {
     private Map<UUID, AtomicInteger> countResourcesDeleted = new ConcurrentHashMap<>();
 
 
-    public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId, TransformError transformError, int maxFilingThreads) {
+    public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId, TransformError transformError,
+                        List<UUID> batchIdsCreated, int maxFilingThreads) {
         this.exchangeId = exchangeId;
         this.serviceId = serviceId;
         this.systemId = systemId;
         this.storageService = new FhirStorageService(serviceId, systemId);
         this.exchangeBatchRepository = new ExchangeBatchRepository();
         this.transformError = transformError;
+        this.batchIdsCreated = batchIdsCreated;
         this.threadPool = new ThreadPool(maxFilingThreads, 50000);
     }
 
@@ -125,6 +128,8 @@ public class CsvProcessor {
                 //make sure to check if it's still null, as another thread may have created the ID while we were waiting to batchIdLock
                 if (adminBatchId == null) {
                     adminBatchId = UUIDs.timeBased();
+                    batchIdsCreated.add(adminBatchId);
+
                     saveExchangeBatch(adminBatchId);
 
                     countResourcesDeleted.put(adminBatchId, new AtomicInteger());
@@ -148,6 +153,8 @@ public class CsvProcessor {
                 if (patientBatchId == null) {
                     patientBatchId = UUIDs.timeBased();
                     patientBatchIdMap.put(patientId, patientBatchId);
+                    batchIdsCreated.add(patientBatchId);
+
                     saveExchangeBatch(patientBatchId);
 
                     countResourcesDeleted.put(patientBatchId, new AtomicInteger());
@@ -171,7 +178,7 @@ public class CsvProcessor {
      * called after all content has been processed. It blocks until all operations have
      * been completed in the thread pool, then returns the distinct batch IDs created
      */
-    public List<UUID> getBatchIdsCreated() throws Exception {
+    public void waitToFinish() throws Exception {
 
         //wait for all tasks to be completed
         List<CallableError> errors = threadPool.waitAndStop();
@@ -183,7 +190,7 @@ public class CsvProcessor {
         //log out counts of what we processed
         logResults();
 
-        return getAllBatchIds();
+        //return getAllBatchIds();
     }
 
     private void handleErrors(List<CallableError> errors) throws Exception {
@@ -255,7 +262,7 @@ public class CsvProcessor {
         LOG.info("CSV processing completed, saving {} resources and deleting {} over {} distinct patients for service {}", totalSaved, totalDeleted, patientBatchIdMap.size(), serviceId);
     }
 
-    private List<UUID> getAllBatchIds() {
+    /*private List<UUID> getAllBatchIds() {
         List<UUID> batchIds = new ArrayList<>();
         if (adminBatchId != null) {
             batchIds.add(adminBatchId);
@@ -266,7 +273,7 @@ public class CsvProcessor {
             batchIds.add(batchId);
         }
         return batchIds;
-    }
+    }*/
 
     private static boolean isPatientResource(Resource resource) {
         Class cls = resource.getClass();

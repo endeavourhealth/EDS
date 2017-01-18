@@ -906,7 +906,7 @@ public class EmisCsvHelper {
 
         if (updatedProblem.hasExtension()) {
             for (Extension extension: updatedProblem.getExtension()) {
-                updatedProblem.addExtension(extension);
+                existingProblem.addExtension(extension);
             }
         }
 

@@ -16,7 +16,7 @@ public abstract class HeaderKeys {
 	// Derrived from the SenderLocalIdentifier
 	public static final String SenderServiceUuid = "SenderServiceUuid";
 	public static final String SenderOrganisationUuid = "SenderOrganisationUuid";
-
+	public static final String SenderSystemUuid = "SenderSystemUuid";
 
 	public static final String MessageFormat = "MessageFormat";
 

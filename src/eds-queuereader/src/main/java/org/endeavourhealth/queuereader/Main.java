@@ -1,15 +1,30 @@
 package org.endeavourhealth.queuereader;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.endeavourhealth.core.data.admin.LibraryRepository;
+import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
+import org.endeavourhealth.core.data.admin.models.ActiveItem;
+import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
+import org.endeavourhealth.core.data.audit.models.Exchange;
 import org.endeavourhealth.core.data.audit.models.ExchangeByService;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
+import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.System;
+import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
+import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.enterprise.EnterpriseFhirTransformer;
 import org.slf4j.Logger;
@@ -18,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,19 +59,19 @@ public class Main {
 		/*if (args[0].equalsIgnoreCase("FixExchanges")) {
 			fixMissingExchanges();
 			return;
-		}
+		}*/
 
 		if (args[0].equalsIgnoreCase("FixExchangeHeaders")) {
 			fixExchangeHeaders();
 			return;
-		}*/
+		}
 
 		/*if (args[0].equalsIgnoreCase("FixExchangeProtocols")) {
 			fixExchangeProtocols();
 			return;
 		}*/
 
-		//hack to get the Enterprise data streaming
+			//hack to get the Enterprise data streaming
 		try {
 			UUID serviceUuid = UUID.fromString(args[0]);
 			startEnterpriseStream(serviceUuid);
@@ -274,15 +290,104 @@ public class Main {
 		LOG.info("Finished fixing exchange headers");
 	}*/
 
+	private static void fixExchangeHeaders() {
+		LOG.info("Fixing exchange headers");
+
+		AuditRepository auditRepository = new AuditRepository();
+		ServiceRepository serviceRepository = new ServiceRepository();
+		OrganisationRepository organisationRepository = new OrganisationRepository();
+		LibraryRepository libraryRepository = new LibraryRepository();
+
+		List<Exchange> exchanges = new AuditRepository().getAllExchanges();
+		for (Exchange exchange: exchanges) {
+
+			String headerJson = exchange.getHeaders();
+			HashMap<String, String> headers = null;
+			try {
+				headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+			} catch (Exception ex) {
+				LOG.error("Failed to parse headers for exchange " + exchange.getExchangeId(), ex);
+				continue;
+			}
+
+			String serviceIdStr = headers.get(HeaderKeys.SenderServiceUuid);
+			if (Strings.isNullOrEmpty(serviceIdStr)) {
+				LOG.error("Failed to find service ID for exchange " + exchange.getExchangeId());
+				continue;
+			}
+
+			boolean changed = false;
+
+			UUID serviceId = UUID.fromString(serviceIdStr);
+			Service service = serviceRepository.getById(serviceId);
+			try {
+				List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+
+				for (JsonServiceInterfaceEndpoint endpoint : endpoints) {
+
+					UUID endpointSystemId = endpoint.getSystemUuid();
+					String endpointInterfaceId = endpoint.getTechnicalInterfaceUuid().toString();
+
+					ActiveItem activeItem = libraryRepository.getActiveItemByItemId(endpointSystemId);
+					Item item = libraryRepository.getItemByKey(endpointSystemId, activeItem.getAuditId());
+					LibraryItem libraryItem = QueryDocumentSerializer.readLibraryItemFromXml(item.getXmlContent());
+					System system = libraryItem.getSystem();
+					for (TechnicalInterface technicalInterface : system.getTechnicalInterface()) {
+
+						if (endpointInterfaceId.equals(technicalInterface.getUuid())) {
+
+							if (!headers.containsKey(HeaderKeys.SourceSystem)) {
+								headers.put(HeaderKeys.SourceSystem, technicalInterface.getMessageFormat());
+								changed = true;
+							}
+							if (!headers.containsKey(HeaderKeys.SystemVersion)) {
+								headers.put(HeaderKeys.SystemVersion, technicalInterface.getMessageFormatVersion());
+								changed = true;
+							}
+							if (!headers.containsKey(HeaderKeys.SenderSystemUuid)) {
+								headers.put(HeaderKeys.SenderSystemUuid, endpointSystemId.toString());
+								changed = true;
+							}
+						}
+					}
+
+				}
+			} catch (Exception e) {
+				LOG.error("Failed to find endpoint details for " + exchange.getExchangeId());
+				continue;
+			}
+
+			if (changed) {
+				try {
+					headerJson = ObjectMapperPool.getInstance().writeValueAsString(headers);
+				} catch (JsonProcessingException e) {
+					//not throwing this exception further up, since it should never happen
+					//and means we don't need to litter try/catches everywhere this is called from
+					LOG.error("Failed to write exchange headers to Json", e);
+					continue;
+				}
+
+				exchange.setHeaders(headerJson);
+				auditRepository.save(exchange);
+
+				LOG.info("Fixed exchange " + exchange.getExchangeId());
+			}
+		}
+
+		LOG.info("Finished fixing exchange headers");
+	}
+
 	private static void testConnection() {
 		try {
-			//force the driver to be loaded
-			Class.forName("org.postgresql.Driver");
 
-			JsonNode config = ConfigManager.getConfigurationAsJson("postgres", "enterprise");
+			JsonNode config = ConfigManager.getConfigurationAsJson("patient_database", "enterprise");
+			String driverClass = config.get("driverClass").asText();
 			String url = config.get("url").asText();
 			String username = config.get("username").asText();
 			String password = config.get("password").asText();
+
+			//force the driver to be loaded
+			Class.forName(driverClass);
 
 			Connection conn = DriverManager.getConnection(url, username, password);
 			conn.setAutoCommit(false);
@@ -293,6 +398,28 @@ public class Main {
 			LOG.error("", e);
 		}
 	}
+	/*private static void testConnection() {
+		try {
+
+			JsonNode config = ConfigManager.getConfigurationAsJson("postgres", "enterprise");
+			String url = config.get("url").asText();
+			String username = config.get("username").asText();
+			String password = config.get("password").asText();
+
+			//force the driver to be loaded
+			Class.forName("org.postgresql.Driver");
+
+			Connection conn = DriverManager.getConnection(url, username, password);
+			conn.setAutoCommit(false);
+			LOG.info("Connection ok");
+
+			conn.close();
+		} catch (Exception e) {
+			LOG.error("", e);
+		}
+	}*/
+
+
 	private static void startEnterpriseStream(UUID serviceId) throws Exception {
 
 		LOG.info("Starting Enterprise Streaming for " + serviceId);

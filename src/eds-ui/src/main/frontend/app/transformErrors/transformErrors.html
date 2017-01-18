@@ -69,6 +69,9 @@
 
                             <div *ngIf="selectExchangeErrorDetail">
                                 <h4>Exchange {{selectExchangeErrorDetail.exchangeId}}, transformed on {{selectExchangeErrorDetail.transformStart | date:'dd-MMM-yyyy HH:mm:ss'}}</h4>
+                                <div *ngIf="selectExchangeErrorDetail.numberBatchIdsCreated">
+                                    {{selectExchangeErrorDetail.numberBatchIdsCreated}} batch IDs created
+                                </div>
 
                                 <code>
                                     <div *ngFor="let line of selectExchangeErrorDetail.lines">

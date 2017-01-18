@@ -20,7 +20,6 @@ import {Exchange} from "./Exchange";
 import {ServiceService} from "../services/service.service";
 import {Subscription} from "rxjs/Subscription";
 
-
 @Component({
 	template : require('./exchangeAudit.html')
 })
@@ -77,20 +76,12 @@ export class ExchangeAuditComponent {
 	}
 
 
-
-	/*createMissingData() {
-		var vm = this;
-		vm.exchangeAuditService.createMissingData().subscribe(
-			(result) => vm.log.success('Data created', null, 'Create Missing Data'),
-			(error) => vm.log.error('Failed to create data', error, 'Create Missing Data')
-		)
-	}*/
-
 	selectExchange(exchange : Exchange) {
 
 		var vm = this;
 		vm.selectedExchange = exchange;
 		vm.loadExchangeEventsIfRequired(exchange);
+		vm.loadTransformAuditsIfRequired(exchange);
 	}
 
 	private loadExchangeEventsIfRequired(exchange: Exchange) {
@@ -111,6 +102,31 @@ export class ExchangeAuditComponent {
 			},
 			(error) => vm.log.error('Failed to retrieve exchange events', error, 'View Exchanges')
 		)
+	}
+
+	private loadTransformAuditsIfRequired(exchange: Exchange) {
+
+		//if they're already loaded, just return out
+		if (exchange.transformAudits) {
+			return;
+		}
+
+		var serviceId = exchange.headers['SenderServiceUuid'];
+		var systemId = exchange.headers['SenderSystemUuid'];
+		var exchangeId = exchange.exchangeId;
+
+		//if we don't have either of the UUIDs, we can't load the transform history
+		if (!serviceId || !systemId) {
+			return;
+		}
+
+		var vm = this;
+		vm.exchangeAuditService.getTransformErrorDetail(serviceId, systemId, exchangeId, false, false).subscribe(
+			(result) => {
+				exchange.transformAudits = result;
+			},
+			(error) => vm.log.error('Failed to retrieve transform audits', error, 'View Exchanges')
+		);
 	}
 
 	getSelectedExchangeHeaderKeys(): string[] {

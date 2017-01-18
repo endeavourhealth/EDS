@@ -62,6 +62,7 @@ CREATE TABLE exchange_transform_audit
     error_xml TEXT,
 	resubmitted BOOLEAN,
 	deleted TIMESTAMP,
+	number_batches_created INT,
     PRIMARY KEY ((service_id, system_id), exchange_id, version)
 ) WITH CLUSTERING ORDER BY (exchange_id ASC, version DESC);
 

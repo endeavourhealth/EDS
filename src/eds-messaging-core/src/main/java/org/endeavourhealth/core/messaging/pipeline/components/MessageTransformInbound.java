@@ -2,26 +2,16 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.datastax.driver.core.utils.UUIDs;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.MessageTransformInboundConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.ServiceRepository;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.Item;
-import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.data.audit.models.ExchangeTransformErrorState;
-import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.System;
-import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
-import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.TransformError;
@@ -35,7 +25,7 @@ import java.util.*;
 public class MessageTransformInbound extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(MessageTransformInbound.class);
 
-	private static final ServiceRepository serviceRepository = new ServiceRepository();
+	//private static final ServiceRepository serviceRepository = new ServiceRepository();
 	private static final LibraryRepository libraryRepository = new LibraryRepository();
 
 	private MessageTransformInboundConfig config;
@@ -44,7 +34,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		this.config = config;
 	}
 
-	private UUID findSystemId(Service service, String software, String messageVersion, UUID exchangeId) throws Exception {
+	/*private UUID findSystemId(Service service, String software, String messageVersion, UUID exchangeId) throws Exception {
 
 		List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
 		for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
@@ -68,10 +58,10 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		}
 
-		throw new PipelineException("Failed to find SystemId for service " + service.getId() + ", message "
+		throw new PipelineException("Failed to find SystemId for service " + service.getId() + ", software "
 				+ software + " and version " + messageVersion
 				+ " when processing exchange " + exchangeId);
-	}
+	}*/
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
@@ -82,11 +72,11 @@ public class MessageTransformInbound extends PipelineComponent {
 			String software = exchange.getHeader(HeaderKeys.SourceSystem);
 			String messageVersion = exchange.getHeader(HeaderKeys.SystemVersion);
 
-			//find the organisation UUIDs covered by the service
-			Service service = serviceRepository.getById(serviceId);
-
 			//find the system ID by using values from the message header
-			UUID systemId = findSystemId(service, software, messageVersion, exchange.getExchangeId());
+			//the system ID is now set in the exchange header when we open the envelope
+			UUID systemId = UUID.fromString(exchange.getHeader(HeaderKeys.SenderSystemUuid));
+			/*Service service = serviceRepository.getById(serviceId);
+			UUID systemId = findSystemId(service, software, messageVersion, exchange.getExchangeId());*/
 
 			List<UUID> batchIds = transform(serviceId, systemId, exchange, software, messageVersion);
 
@@ -100,7 +90,6 @@ public class MessageTransformInbound extends PipelineComponent {
 			exchange.setException(e);
 			LOG.error("Error", e);
 			throw new PipelineException("Error performing inbound transform", e);
-
 		}
 	}
 
@@ -110,7 +99,7 @@ public class MessageTransformInbound extends PipelineComponent {
 								String software,
 								String messageVersion) throws Exception {
 
-		List<UUID> batchIds = null;
+		List<UUID> batchIds = new ArrayList<>();
 
 		//create the object that audits the transform and stores any errors
 		Date transformStarted = new Date();
@@ -127,16 +116,16 @@ public class MessageTransformInbound extends PipelineComponent {
 			try {
 
 				if (software.equalsIgnoreCase("EMISCSV")) {
-					batchIds = processEmisCsvTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, previousErrors);
+					processEmisCsvTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
 
 				} else if (software.equalsIgnoreCase("EmisOpen")) {
-					batchIds = processEmisOpenTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, previousErrors);
+					processEmisOpenTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
 
 				} else if (software.equalsIgnoreCase("OpenHR")) {
-					batchIds = processEmisOpenHrTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, previousErrors);
+					processEmisOpenHrTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
 
 				} else if (software.equalsIgnoreCase("TPPExtractService")) {
-					batchIds = processTppXmlTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, previousErrors);
+					processTppXmlTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
 
 				} else {
 					throw new SoftwareNotSupportedException(software, messageVersion);
@@ -167,7 +156,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		updateErrorState(errorState, serviceId, systemId, exchange.getExchangeId(), currentErrors);
 
 		//save the audit of this transform, including errors
-		createTransformAudit(serviceId, systemId, exchange.getExchangeId(), transformStarted, currentErrors);
+		createTransformAudit(serviceId, systemId, exchange.getExchangeId(), transformStarted, currentErrors, batchIds);
 
 		return batchIds;
 	}
@@ -266,7 +255,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		//return false;
 	}
 
-	private static void createTransformAudit(UUID serviceId, UUID systemId, UUID exchangeId, Date transformStarted, TransformError transformError) {
+	private static void createTransformAudit(UUID serviceId, UUID systemId, UUID exchangeId, Date transformStarted, TransformError transformError, List<UUID> batchIds) {
 		ExchangeTransformAudit transformAudit = new ExchangeTransformAudit();
 		transformAudit.setServiceId(serviceId);
 		transformAudit.setSystemId(systemId);
@@ -274,6 +263,10 @@ public class MessageTransformInbound extends PipelineComponent {
 		transformAudit.setVersion(UUIDs.timeBased());
 		transformAudit.setStarted(transformStarted);
 		transformAudit.setEnded(new Date());
+
+		if (!batchIds.isEmpty()) {
+			transformAudit.setNumberBatchesCreated(batchIds.size());
+		}
 
 		if (transformError.getError().size() > 0) {
 			transformAudit.setErrorXml(TransformErrorSerializer.writeToXml(transformError));
@@ -285,9 +278,9 @@ public class MessageTransformInbound extends PipelineComponent {
 	private static String convertUUidsToStrings(List<UUID> uuids) throws PipelineException {
 
 		//transforms may return null lists, if they didn't insert any new data, so just handle the null
-		if (uuids == null) {
+		/*if (uuids == null) {
 			uuids = new ArrayList<>();
-		}
+		}*/
 
 		try {
 			return ObjectMapperPool.getInstance().writeValueAsString(uuids.toArray());
@@ -296,8 +289,8 @@ public class MessageTransformInbound extends PipelineComponent {
 		}
 	}
 
-	private List<UUID> processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-											   String software, TransformError currentErrors,
+	private void processEmisCsvTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
+											   String software, TransformError currentErrors, List<UUID> batchIds,
 											   TransformError previousErrors) throws Exception {
 
 		//get our configuration options
@@ -307,28 +300,25 @@ public class MessageTransformInbound extends PipelineComponent {
 		String exchangeBody = exchange.getBody();
 		UUID exchangeId = exchange.getExchangeId();
 
-		return EmisCsvTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors, previousErrors,
-											sharedStoragePath, maxFilingThreads);
+		EmisCsvTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
+									batchIds, previousErrors, sharedStoragePath, maxFilingThreads);
 	}
 
-	private List<UUID> processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-											  String software, TransformError currentErrors,
+	private void processTppXmlTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
+											  String software, TransformError currentErrors, List<UUID> batchIds,
 											  TransformError previousErrors) throws Exception {
 		//TODO - plug in TPP XML transform
-		return null;
 	}
 
-	private List<UUID> processEmisOpenTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-												String software, TransformError currentErrors,
+	private void processEmisOpenTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
+												String software, TransformError currentErrors, List<UUID> batchIds,
 												TransformError previousErrors) throws Exception {
 		//TODO - plug in EMIS OPEN transform
-		return null;
 	}
 
-	private List<UUID> processEmisOpenHrTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
-												  String software, TransformError currentErrors,
+	private void processEmisOpenHrTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
+												  String software, TransformError currentErrors, List<UUID> batchIds,
 												  TransformError previousErrors) throws Exception {
 		//TODO - plug in OpenHR transform
-		return null;
 	}
 }
