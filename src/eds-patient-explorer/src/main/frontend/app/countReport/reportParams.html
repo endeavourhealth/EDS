@@ -56,12 +56,26 @@
         <div class="row" [hidden]="hide(authType) && hide(dmdCode)">
             <div class="form-group col-md-6" [hidden]="hide(authType)">
                 <label class="control-label">Authorization type</label>
-                <select id="module" class="form-control" [(ngModel)]="authType" name="AuthType">
+                <select class="form-control" [(ngModel)]="authType" name="AuthType">
                     <option value="null">Any type</option>
                     <option value="0">Acute</option>
                     <option value="1">Repeat</option>
                     <option value="2">Repeat dispensing</option>
                     <option value="3">Automatic</option>
+                </select>
+            </div>
+            <div class="form-group col-md-6" [hidden]="hide(dmdCode)">
+                <label class="control-label">DM&D Code</label>
+                <input type="number" class="form-control" autofocus placeholder="No maximum" [(ngModel)]="dmdCode" name="DmdCode">
+            </div>
+        </div>
+
+        <div class="row" [hidden]="hide(encounterType) && hide(referralType)">
+            <div class="form-group col-md-6" [hidden]="hide(encounterType)">
+                <label class="control-label">Encounter type</label>
+                <select class="form-control" [(ngModel)]="encounterType" name="EncounterType">
+                    <option value="null">Any type</option>
+                    <option *ngFor="let encounterType of encounterTypes" value="{{encounterType.id}}">{{encounterType.preferredTerm}}</option>
                 </select>
             </div>
             <div class="form-group col-md-6" [hidden]="hide(dmdCode)">

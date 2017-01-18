@@ -4,6 +4,7 @@ import {Observable} from "rxjs";
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 import {LibraryItem} from "../library/models/LibraryItem";
 import {ReportParams} from "./models/ReportParams";
+import {Concept} from "../coding/models/Concept";
 
 @Injectable()
 export class CountReportService extends BaseHttp2Service {
@@ -28,6 +29,10 @@ export class CountReportService extends BaseHttp2Service {
 		let params = new URLSearchParams();
 		params.set('uuid', uuid);
 		return this.httpGet('api/countReport/exportData', {search: params});
+	}
+
+	getEncounterTypeCodes():Observable<Concept[]> {
+		return this.httpGet('api/countReport/encounterType');
 	}
 
 }

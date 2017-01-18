@@ -10,7 +10,8 @@ import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.patientexplorer.database.CountReportProvider;
-import org.endeavourhealth.patientexplorer.models.JsonReportParams;
+import org.endeavourhealth.patientexplorer.database.models.ConceptEntity;
+import org.endeavourhealth.patientexplorer.models.JsonConcept;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +21,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Path("/countReport")
 public final class CountReportEndpoint extends AbstractEndpoint {
@@ -76,6 +78,21 @@ public final class CountReportEndpoint extends AbstractEndpoint {
 
         return Response
             .ok(ret, MediaType.TEXT_PLAIN_TYPE)
+            .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/encounterType")
+    public Response getEncounterTypes(@Context SecurityContext sc) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Encounter Types");
+        LOG.debug("getEncounterTypes");
+
+        List<ConceptEntity> data = countReportProvider.getEncounterTypes();
+        List<JsonConcept> ret = data.stream().map(JsonConcept::new).collect(Collectors.toList());
+
+        return Response
+            .ok(ret, MediaType.APPLICATION_JSON_TYPE)
             .build();
     }
 }

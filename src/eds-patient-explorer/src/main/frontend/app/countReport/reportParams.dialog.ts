@@ -1,10 +1,11 @@
+import moment = require("moment");
 import {Component, Input, OnInit} from "@angular/core";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
-import {ReportParams} from "./models/ReportParams";
-import moment = require("moment");
 import {CodePickerDialog} from "../coding/codePicker.dialog";
 import {CodeSetValue} from "../coding/models/CodeSetValue";
 import {CodingService} from "../coding/coding.service";
+import {Concept} from "../coding/models/Concept";
+import {CountReportService} from "./countReport.service";
 
 @Component({
     selector: 'ngbd-modal-content',
@@ -12,14 +13,19 @@ import {CodingService} from "../coding/coding.service";
 })
 export class ReportParamsDialog implements OnInit {
     @Input() query;
+
+    encounterTypes : Concept[];
+
     runDate : Date;
     effectiveDate : Date;
     originalCode : string;
     valueMax : number;
     valueMin : number;
     snomedCode : CodeSetValue;
-    authType : string;
+    authType : number;
     dmdCode : number;
+    encounterType : number;
+    referralType : number;
 
     public static open(modalService: NgbModal, query: string) {
         const modalRef = modalService.open(ReportParamsDialog, {backdrop: "static", size: 'lg'});
@@ -27,7 +33,11 @@ export class ReportParamsDialog implements OnInit {
         return modalRef;
     }
 
-    constructor(protected modalService : NgbModal, protected activeModal: NgbActiveModal, protected codingService : CodingService ) {
+    constructor(protected modalService : NgbModal,
+                protected activeModal: NgbActiveModal,
+                protected codingService : CodingService,
+                protected countReportService : CountReportService) {
+        this.loadEncounterTypes();
     }
 
     ngOnInit(): void {
@@ -44,6 +54,29 @@ export class ReportParamsDialog implements OnInit {
         if (this.query.indexOf(':ValueMin') >= 0) this.valueMin = null;
         if (this.query.indexOf(':ValueMax') >= 0) this.valueMax = null;
         if (this.query.indexOf(':AuthType') >= 0) this.authType = null;
+        // DM&D
+        if (this.query.indexOf(':EncounterType') >= 0) this.encounterType = null;
+        // Referral type
+    }
+
+    loadEncounterTypes() {
+        let vm = this;
+        vm.countReportService.getEncounterTypeCodes()
+          .subscribe(
+            (result) => {
+                vm.encounterTypes = result
+                for (let concept of vm.encounterTypes) {
+                    if (concept.id == null)
+                        concept.preferredTerm = '<NULL>';
+                    else
+                        vm.codingService.getPreferredTerm(concept.id)
+                          .subscribe(
+                            (result) => concept.preferredTerm = result.preferredTerm,
+                            (error) => concept.preferredTerm = '<Unknown>'
+                          );
+                }
+            }
+          );
     }
 
     selectSnomed() {
@@ -79,7 +112,10 @@ export class ReportParamsDialog implements OnInit {
         params.OriginalCode = (this.originalCode) ? "'" + this.originalCode + "'" : 'null';
         params.ValueMin = (this.valueMin) ? this.valueMin : 'null';
         params.ValueMax = (this.valueMax) ? this.valueMax  : 'null';
-        params.AuthType = (this.authType) ? "'" + this.authType +"'" : 'null';
+        params.AuthType = (this.authType) ? this.authType : 'null';
+        // DM & D
+        params.EncounterType = (this.encounterType) ? this.encounterType : 'null';
+        // Referral type
 
         this.activeModal.close(params);
         console.log('OK Pressed');

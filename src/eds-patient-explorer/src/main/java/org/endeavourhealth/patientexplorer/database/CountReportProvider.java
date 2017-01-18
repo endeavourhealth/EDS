@@ -8,6 +8,8 @@ import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.QueryDocument;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
+import org.endeavourhealth.patientexplorer.database.models.ConceptEntity;
+import org.endeavourhealth.patientexplorer.models.JsonConcept;
 import org.endeavourhealth.patientexplorer.models.JsonReportParams;
 import org.postgresql.util.PSQLException;
 import org.slf4j.Logger;
@@ -139,6 +141,23 @@ public class CountReportProvider {
 			result.add(row);
 		}
 		statement.close();
+
+		return result;
+	}
+
+	public List<ConceptEntity> getEncounterTypes() throws Exception {
+		List<ConceptEntity> result = new ArrayList<>();
+		Connection conn = getConnection();
+
+		PreparedStatement statement = conn.prepareStatement("SELECT DISTINCT snomed_concept_id FROM encounter");
+		ResultSet resultSet = statement.executeQuery();
+
+		while (resultSet.next()) {
+			ConceptEntity concept = new ConceptEntity();
+			concept.setCode(resultSet.getString(1));
+			concept.setDisplay("Loading...");
+			result.add(concept);
+		}
 
 		return result;
 	}
