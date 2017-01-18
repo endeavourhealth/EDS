@@ -109,4 +109,8 @@ public final class Configuration
     public DbConfiguration getDbConfiguration() {
         return dbConfiguration;
     }
+
+    public int getInstanceId() {
+        return this.dbConfiguration.getInstanceId();
+    }
 }

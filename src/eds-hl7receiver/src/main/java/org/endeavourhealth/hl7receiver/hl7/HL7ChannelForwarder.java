@@ -59,7 +59,7 @@ public class HL7ChannelForwarder implements Runnable {
                 gotLock = getLock();
                 lastLockTried = LocalDateTime.now();
 
-                while ((!stopRequested) && (LocalDateTime.now().isAfter(lastLockTried.plusSeconds(LOCK_RECLAIM_INTERVAL_SECONDS)))) {
+                while ((!stopRequested) && (LocalDateTime.now().isBefore(lastLockTried.plusSeconds(LOCK_RECLAIM_INTERVAL_SECONDS)))) {
 
                     if (gotLock) {
 
@@ -71,19 +71,25 @@ public class HL7ChannelForwarder implements Runnable {
             }
         }
         catch (Exception e) {
-            LOG.error("Fatal exception in channel forwarder for channel " + dbChannel.getChannelName() + " for instance " + configuration.getDbConfiguration().getInstanceId(), e);
+            LOG.error("Fatal exception in channel forwarder {} for instance {}", new Object[] { dbChannel.getChannelName(), configuration.getInstanceId(), e });
         }
 
         releaseLock();
     }
 
-    private boolean getLock() throws PgStoredProcException {
-        return dataLayer.claimChannelForwarderMutex(dbChannel.getChannelId(), configuration.getDbConfiguration().getInstanceId(), LOCK_BREAK_OTHERS_SECONDS);
+    private boolean getLock() {
+        try {
+            return dataLayer.claimChannelForwarderLock(dbChannel.getChannelId(), configuration.getInstanceId(), LOCK_BREAK_OTHERS_SECONDS);
+        } catch (Exception e) {
+            LOG.error("Exception getting lock in channel forwarder for channel {} for instance {}", new Object[] { dbChannel.getChannelName(), configuration.getInstanceId(), e });
+        }
+
+        return false;
     }
 
     private void releaseLock() {
         try {
-            dataLayer.releaseChannelForwarderMutex(dbChannel.getChannelId(), configuration.getDbConfiguration().getInstanceId());
+            dataLayer.releaseChannelForwarderLock(dbChannel.getChannelId(), configuration.getInstanceId());
         } catch (Exception e) {
             LOG.error("Exception releasing lock in channel forwarder for channel " + dbChannel.getChannelName() + " for instance " + configuration.getDbConfiguration().getInstanceId(), e);
         }

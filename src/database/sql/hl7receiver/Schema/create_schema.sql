@@ -167,15 +167,15 @@ create table log.error_digest
 	constraint log_errordigest_logclass_logmethod_logmessage_exception_uq unique (log_class, log_method, log_message, exception)
 );
 
-create table log.channel_forwarder_mutex
+create table log.channel_forwarder_lock
 (
 	channel_id integer not null,
 	instance_id integer not null,
 	heartbeat_date timestamp not null,
 	
-	constraint log_channelforwarder_channelid_pk primary key (channel_id),
-	constraint log_channelforwarder_channelid_fk foreign key (channel_id) references configuration.channel (channel_id),
-	constraint log_channelforwarder_instanceid_fk foreign key (instance_id) references log.instance (instance_id)
+	constraint log_channelforwarderlock_channelid_pk primary key (channel_id),
+	constraint log_channelforwarderlock_channelid_fk foreign key (channel_id) references configuration.channel (channel_id),
+	constraint log_channelforwarderlock_instanceid_fk foreign key (instance_id) references log.instance (instance_id)
 );
 
 /*

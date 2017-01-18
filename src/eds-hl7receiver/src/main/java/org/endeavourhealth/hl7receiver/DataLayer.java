@@ -169,21 +169,21 @@ public class DataLayer implements IDBDigestLogger {
         pgStoredProc.execute();
     }
 
-    public boolean claimChannelForwarderMutex(int channelId, int instanceId, int breakOthersMutexSeconds) throws PgStoredProcException {
+    public boolean claimChannelForwarderLock(int channelId, int instanceId, int breakOthersLockSeconds) throws PgStoredProcException {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("log.claim_channel_forwarder_mutex")
+                .setName("log.claim_channel_forwarder_lock")
                 .addParameter("_channel_id", channelId)
                 .addParameter("_instance_id", instanceId)
-                .addParameter("_break_others_mutex_seconds", breakOthersMutexSeconds);
+                .addParameter("_break_others_lock_seconds", breakOthersLockSeconds);
 
-        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getBoolean("claim_channel_forwarder_mutex"));
+        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getBoolean("claim_channel_forwarder_lock"));
     }
 
-    public void releaseChannelForwarderMutex(int channelId, int instanceId) throws PgStoredProcException {
+    public void releaseChannelForwarderLock(int channelId, int instanceId) throws PgStoredProcException {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("log.release_channel_forwarder_mutex")
+                .setName("log.release_channel_forwarder_lock")
                 .addParameter("_channel_id", channelId)
                 .addParameter("_instance_id", instanceId);
 
