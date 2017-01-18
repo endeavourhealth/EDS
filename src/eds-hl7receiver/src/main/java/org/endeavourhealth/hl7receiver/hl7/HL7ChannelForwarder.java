@@ -1,9 +1,11 @@
 package org.endeavourhealth.hl7receiver.hl7;
 
+import org.endeavourhealth.core.eds.EdsSender;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
 import org.endeavourhealth.hl7receiver.model.db.DbMessage;
+import org.endeavourhealth.hl7receiver.model.db.DbNotificationStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +17,7 @@ public class HL7ChannelForwarder implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(HL7ChannelForwarder.class);
     private static final int LOCK_RECLAIM_INTERVAL_SECONDS = 60;
     private static final int LOCK_BREAK_OTHERS_SECONDS = 360;
+    private static final int THREAD_SLEEP_TIME_MILLIS = 1000;
 
     private Thread thread;
     private Configuration configuration;
@@ -62,13 +65,22 @@ public class HL7ChannelForwarder implements Runnable {
 
                 while ((!stopRequested) && (LocalDateTime.now().isBefore(lastLockTried.plusSeconds(LOCK_RECLAIM_INTERVAL_SECONDS)))) {
 
-                    if (gotLock) {
-
-                        DbMessage message = dataLayer.getNextUnnotifiedMessage(dbChannel.getChannelId(), configuration.getInstanceId());
-
-                    } else {
-                        Thread.sleep(1000);
+                    if (!gotLock) {
+                        Thread.sleep(THREAD_SLEEP_TIME_MILLIS);
+                        continue;
                     }
+
+                    DbMessage message = dataLayer.getNextUnnotifiedMessage(dbChannel.getChannelId(), configuration.getInstanceId());
+
+                    if (message == null) {
+                        Thread.sleep(THREAD_SLEEP_TIME_MILLIS);
+                        continue;
+                    }
+
+                    sendMessage(message);
+
+                    dataLayer.updateMessageStatus(message.getMessageId(), DbNotificationStatus.SUCCEEDED);
+
 
                 }
             }
@@ -78,6 +90,10 @@ public class HL7ChannelForwarder implements Runnable {
         }
 
         releaseLock(gotLock);
+    }
+
+    private void sendMessage(DbMessage dbMessage) {
+
     }
 
     private boolean getLock(boolean currentlyHaveLock) {

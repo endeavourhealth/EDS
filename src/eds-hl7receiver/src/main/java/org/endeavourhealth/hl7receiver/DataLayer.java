@@ -206,6 +206,16 @@ public class DataLayer implements IDBDigestLogger {
                                 .setMessageDate(resultSet.getTimestamp("message_date").toLocalDateTime())
                                 .setInboundMessageType(resultSet.getString("inbound_message_type"))
                                 .setInboundPayload(resultSet.getString("inbound_payload"))
-                                .setNotificationStatusId(resultSet.getInt("notification_status_id")));
+                                .setNotificationStatusId(DbNotificationStatus.fromValue(resultSet.getInt("notification_status_id"))));
+    }
+
+    public void updateMessageStatus(int messageId, DbNotificationStatus notificationStatusId) throws PgStoredProcException {
+
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("log.update_message_status")
+                .addParameter("_message_id", messageId)
+                .addParameter("_notification_status_id", notificationStatusId.intValue());
+
+        pgStoredProc.execute();
     }
 }
