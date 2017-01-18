@@ -7,6 +7,7 @@ import org.endeavourhealth.hl7receiver.model.db.*;
 
 import javax.sql.DataSource;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -169,15 +170,15 @@ public class DataLayer implements IDBDigestLogger {
         pgStoredProc.execute();
     }
 
-    public boolean claimChannelForwarderLock(int channelId, int instanceId, int breakOthersLockSeconds) throws PgStoredProcException {
+    public boolean getChannelForwarderLock(int channelId, int instanceId, int breakOthersLockSeconds) throws PgStoredProcException {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
-                .setName("log.claim_channel_forwarder_lock")
+                .setName("log.get_channel_forwarder_lock")
                 .addParameter("_channel_id", channelId)
                 .addParameter("_instance_id", instanceId)
                 .addParameter("_break_others_lock_seconds", breakOthersLockSeconds);
 
-        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getBoolean("claim_channel_forwarder_lock"));
+        return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getBoolean("get_channel_forwarder_lock"));
     }
 
     public void releaseChannelForwarderLock(int channelId, int instanceId) throws PgStoredProcException {
@@ -188,5 +189,23 @@ public class DataLayer implements IDBDigestLogger {
                 .addParameter("_instance_id", instanceId);
 
         pgStoredProc.execute();
+    }
+
+    public DbMessage getNextUnnotifiedMessage(int channelId, int instanceId) throws PgStoredProcException {
+
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("log.get_next_unnotified_message")
+                .addParameter("_channel_id", channelId)
+                .addParameter("_instance_id", instanceId);
+
+        return pgStoredProc.executeSingleOrEmptyRow((resultSet) ->
+                        new DbMessage()
+                                .setMessageId(resultSet.getInt("message_id"))
+                                .setMessageControlId(resultSet.getString("message_control_id"))
+                                .setMessageSequenceNumber(resultSet.getString("message_sequence_number"))
+                                .setMessageDate(resultSet.getTimestamp("message_date").toLocalDateTime())
+                                .setInboundMessageType(resultSet.getString("inbound_message_type"))
+                                .setInboundPayload(resultSet.getString("inbound_payload"))
+                                .setNotificationStatusId(resultSet.getInt("notification_status_id")));
     }
 }

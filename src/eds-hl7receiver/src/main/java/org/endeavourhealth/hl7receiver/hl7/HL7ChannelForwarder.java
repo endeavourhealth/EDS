@@ -3,6 +3,7 @@ package org.endeavourhealth.hl7receiver.hl7;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
+import org.endeavourhealth.hl7receiver.model.db.DbMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +64,8 @@ public class HL7ChannelForwarder implements Runnable {
 
                     if (gotLock) {
 
+                        DbMessage message = dataLayer.getNextUnnotifiedMessage(dbChannel.getChannelId(), configuration.getInstanceId());
+
                     } else {
                         Thread.sleep(1000);
                     }
@@ -79,7 +82,7 @@ public class HL7ChannelForwarder implements Runnable {
 
     private boolean getLock(boolean currentlyHaveLock) {
         try {
-            boolean gotLock = dataLayer.claimChannelForwarderLock(dbChannel.getChannelId(), configuration.getInstanceId(), LOCK_BREAK_OTHERS_SECONDS);
+            boolean gotLock = dataLayer.getChannelForwarderLock(dbChannel.getChannelId(), configuration.getInstanceId(), LOCK_BREAK_OTHERS_SECONDS);
 
             if (firstLockAttempt || (currentlyHaveLock != gotLock))
                 LOG.info((gotLock ? "G" : "Not g") + "ot lock on channel {} for instance {}", dbChannel.getChannelName(), configuration.getMachineName());

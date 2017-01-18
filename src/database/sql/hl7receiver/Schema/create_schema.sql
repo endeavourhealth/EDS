@@ -293,7 +293,5 @@ insert into dictionary.notification_status
 )
 values
 (1, 'Notification not attempted'),
-(2, 'Attempting notification'),
-(3, 'Notification failed'),
-(4, 'Re-attempting notification'),
+(-1, 'Notification failed'),
 (9, 'Notification succeeded');

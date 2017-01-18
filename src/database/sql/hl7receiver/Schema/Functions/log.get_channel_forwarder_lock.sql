@@ -1,5 +1,5 @@
 
-create or replace function log.claim_channel_forwarder_lock
+create or replace function log.get_channel_forwarder_lock
 (
 	_channel_id integer,
 	_instance_id integer,
