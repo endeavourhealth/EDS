@@ -169,13 +169,24 @@ public class DataLayer implements IDBDigestLogger {
         pgStoredProc.execute();
     }
 
-    public boolean claimChannelForwarderMutex(int channelId, int instanceId) throws PgStoredProcException {
+    public boolean claimChannelForwarderMutex(int channelId, int instanceId, int breakOthersMutexSeconds) throws PgStoredProcException {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("log.claim_channel_forwarder_mutex")
                 .addParameter("_channel_id", channelId)
-                .addParameter("_instance_id", instanceId);
+                .addParameter("_instance_id", instanceId)
+                .addParameter("_break_others_mutex_seconds", breakOthersMutexSeconds);
 
         return pgStoredProc.executeSingleRow((resultSet) -> resultSet.getBoolean("claim_channel_forwarder_mutex"));
+    }
+
+    public void releaseChannelForwarderMutex(int channelId, int instanceId) throws PgStoredProcException {
+
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("log.release_channel_forwarder_mutex")
+                .addParameter("_channel_id", channelId)
+                .addParameter("_instance_id", instanceId);
+
+        pgStoredProc.execute();
     }
 }

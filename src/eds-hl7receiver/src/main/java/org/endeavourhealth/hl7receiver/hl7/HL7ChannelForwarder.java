@@ -1,5 +1,6 @@
 package org.endeavourhealth.hl7receiver.hl7;
 
+import org.endeavourhealth.core.postgres.PgStoredProcException;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
@@ -12,6 +13,8 @@ import java.time.LocalDateTime;
 public class HL7ChannelForwarder implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(HL7ChannelForwarder.class);
+    private static final int LOCK_RECLAIM_INTERVAL_SECONDS = 60;
+    private static final int LOCK_BREAK_OTHERS_SECONDS = 360;
 
     private Thread thread;
     private Configuration configuration;
@@ -27,6 +30,8 @@ public class HL7ChannelForwarder implements Runnable {
     }
 
     public void start() {
+        LOG.info("Starting channel forwarder {}", dbChannel.getChannelName());
+
         if (thread == null)
             thread = new Thread(this);
 
@@ -36,6 +41,7 @@ public class HL7ChannelForwarder implements Runnable {
     public void stop() {
         stopRequested = true;
         try {
+            LOG.info("Stopping channel forwarder {}", dbChannel.getChannelName());
             thread.join(10000);
         } catch (Exception e) {
             LOG.error("Error stopping channel forwarder for channel", e);
@@ -45,26 +51,41 @@ public class HL7ChannelForwarder implements Runnable {
     @Override
     public void run() {
         try {
-            boolean claimedMutex = false;
-            LocalDateTime claimedDateTime = null;
+            boolean gotLock = false;
+            LocalDateTime lastLockTried = null;
 
             while (!stopRequested) {
 
-                claimedMutex = dataLayer.claimChannelForwarderMutex(dbChannel.getChannelId(), configuration.getDbConfiguration().getInstanceId());
+                gotLock = getLock();
+                lastLockTried = LocalDateTime.now();
 
-                if (claimedMutex) {
-                    claimedDateTime = LocalDateTime.now();
+                while ((!stopRequested) && (LocalDateTime.now().isAfter(lastLockTried.plusSeconds(LOCK_RECLAIM_INTERVAL_SECONDS)))) {
 
-                    while (claimedDateTime.plusSeconds(10).isAfter(LocalDateTime.now()) && (!stopRequested)) {
+                    if (gotLock) {
 
+                    } else {
                         Thread.sleep(1000);
-
                     }
+
                 }
             }
         }
         catch (Exception e) {
             LOG.error("Fatal exception in channel forwarder for channel " + dbChannel.getChannelName() + " for instance " + configuration.getDbConfiguration().getInstanceId(), e);
+        }
+
+        releaseLock();
+    }
+
+    private boolean getLock() throws PgStoredProcException {
+        return dataLayer.claimChannelForwarderMutex(dbChannel.getChannelId(), configuration.getDbConfiguration().getInstanceId(), LOCK_BREAK_OTHERS_SECONDS);
+    }
+
+    private void releaseLock() {
+        try {
+            dataLayer.releaseChannelForwarderMutex(dbChannel.getChannelId(), configuration.getDbConfiguration().getInstanceId());
+        } catch (Exception e) {
+            LOG.error("Exception releasing lock in channel forwarder for channel " + dbChannel.getChannelName() + " for instance " + configuration.getDbConfiguration().getInstanceId(), e);
         }
     }
 }

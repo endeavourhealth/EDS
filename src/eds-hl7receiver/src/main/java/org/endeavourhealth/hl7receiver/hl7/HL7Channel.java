@@ -44,8 +44,6 @@ class HL7Channel {
         exceptionHandler = new HL7ExceptionHandler(configuration, dbChannel, connectionManager);
         service = context.newServer(dbChannel.getPortNumber(), false);
         channelForwarder = new HL7ChannelForwarder(configuration, dbChannel);
-        channelForwarder.start();
-
 
         service.registerApplication("*", "*", messageReceiver);
         service.registerConnectionListener(connectionManager);
@@ -54,6 +52,7 @@ class HL7Channel {
 
     public void start() throws InterruptedException {
         LOG.info("Starting channel " + dbChannel.getChannelName() + " on port " + Integer.toString(dbChannel.getPortNumber()));
+        channelForwarder.start();
         service.startAndWait();
     }
 

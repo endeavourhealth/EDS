@@ -2,7 +2,8 @@
 create or replace function log.claim_channel_forwarder_mutex
 (
 	_channel_id integer,
-	_instance_id integer
+	_instance_id integer,
+	_break_others_mutex_seconds integer
 )
 returns boolean
 as $$
@@ -14,56 +15,52 @@ begin
 
 	_channel_claimed = false;
 
-	lock table log.channel_forwarder in access exclusive mode;
+	lock table log.channel_forwarder_mutex in access exclusive mode;
 
-	--
-	-- get the last channel forwarder for this channel
-	--
 	select
 		instance_id, heartbeat_date into _current_instance_id, _last_heartbeat_date
-	from log.channel_forwarder
+	from log.channel_forwarder_mutex
 	where channel_id = _channel_id
-	order by heartbeat_date desc
-	limit 1;
+	order by heartbeat_date desc;
 
-	if (_current_instance_id = _instance_id)
+	if (_current_instance_id is null)
 	then
-		--
-		-- if its on our instance, update the heartbeat
-		--
-		update log.channel_forwarder
-		set heartbeat_date = now()
-		where channel_id = _channel_id
-		and instance_id = _instance_id
-		and heartbeat_date = _last_heartbeat_date;
+	
+		insert into log.channel_forwarder_mutex
+		(
+			channel_id,
+			instance_id,
+			heartbeat_date
+		)
+		values
+		(
+			_channel_id,
+			_instance_id,
+			now()
+		);
 		
 		_channel_claimed = true;
-	else
-		--
-		-- if its not on our instance
-		--
-		if ((_current_instance_id is null) or (_current_instance_id != _instance_id and _last_heartbeat_date <= (now() - interval '5 minute')))
-		then
-			--
-			-- if the channel has never been assigned an instance
-			-- or if last heartbeat was more than 5 minutes, take over the channel
-			--
-			insert into log.channel_forwarder
-			(
-				channel_id,
-				instance_id,
-				heartbeat_date
-			)
-			values
-			(
-				_channel_id,
-				_instance_id,
-				now()
-			);
 		
-			_channel_claimed = true;
+	elseif (_current_instance_id = _instance_id)
+	then
+	
+		update log.channel_forwarder_mutex
+		set heartbeat_date = now()
+		where channel_id = _channel_id;
+		
+		_channel_claimed = true;
+		
+	elseif ((_current_instance_id != _instance_id) and (_last_heartbeat_date <= (now() - (_break_others_mutex_seconds * interval '1 second'))))
+	then
+	
+		update log.channel_forwarder_mutex
+		set
+			instance_id = _instance_id,
+			heartbeat_date = now()
+		where channel_id = _channel_id;
 
-		end if;
+		_channel_claimed = true;
+		
 	end if;
 
 	return _channel_claimed;
