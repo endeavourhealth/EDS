@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class HL7ChannelForwarder implements Runnable {
 
@@ -92,7 +93,11 @@ public class HL7ChannelForwarder implements Runnable {
         releaseLock(gotLock);
     }
 
-    private void sendMessage(DbMessage dbMessage) {
+    private boolean sendMessage(DbMessage dbMessage) {
+
+        UUID messageUuid = UUID.randomUUID();
+
+        return true;
 
     }
 

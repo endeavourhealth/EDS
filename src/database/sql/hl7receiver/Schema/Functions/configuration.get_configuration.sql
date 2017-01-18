@@ -10,6 +10,7 @@ declare
 	log_instance refcursor;
 	configuration_channel refcursor;
 	configuration_channel_message_type refcursor;
+	configuration_eds refcursor;
 begin
 
 	insert into log.instance
@@ -70,6 +71,24 @@ begin
 	from configuration.channel_message_type t;
 	
 	return next configuration_channel_message_type;
+
+	------------------------------------------------------
+	configuration_eds = 'configuration_eds';
 	
+	open configuration_eds for
+	select
+		e.eds_url,
+		e.software_content_type,
+		e.software_version,
+		e.use_keycloak,
+		e.keycloak_token_uri,
+		e.keycloak_realm,
+		e.keycloak_username,
+		e.keycloak_password,
+		e.keycloak_clientid
+	from configuration.eds e;
+	
+	return next configuration_eds;
+		
 end;
 $$ language plpgsql;
