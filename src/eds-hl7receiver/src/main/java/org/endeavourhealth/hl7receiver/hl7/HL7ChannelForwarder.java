@@ -1,6 +1,5 @@
 package org.endeavourhealth.hl7receiver.hl7;
 
-import org.endeavourhealth.core.postgres.PgStoredProcException;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
@@ -21,6 +20,7 @@ public class HL7ChannelForwarder implements Runnable {
     private DbChannel dbChannel;
     private DataLayer dataLayer;
     private volatile boolean stopRequested = false;
+    private boolean firstLockAttempt = true;
 
     public HL7ChannelForwarder(Configuration configuration, DbChannel dbChannel) throws SQLException {
         this.configuration = configuration;
@@ -50,13 +50,13 @@ public class HL7ChannelForwarder implements Runnable {
 
     @Override
     public void run() {
-        try {
-            boolean gotLock = false;
-            LocalDateTime lastLockTried = null;
+        boolean gotLock = false;
+        LocalDateTime lastLockTried = null;
 
+        try {
             while (!stopRequested) {
 
-                gotLock = getLock();
+                gotLock = getLock(gotLock);
                 lastLockTried = LocalDateTime.now();
 
                 while ((!stopRequested) && (LocalDateTime.now().isBefore(lastLockTried.plusSeconds(LOCK_RECLAIM_INTERVAL_SECONDS)))) {
@@ -74,24 +74,34 @@ public class HL7ChannelForwarder implements Runnable {
             LOG.error("Fatal exception in channel forwarder {} for instance {}", new Object[] { dbChannel.getChannelName(), configuration.getInstanceId(), e });
         }
 
-        releaseLock();
+        releaseLock(gotLock);
     }
 
-    private boolean getLock() {
+    private boolean getLock(boolean currentlyHaveLock) {
         try {
-            return dataLayer.claimChannelForwarderLock(dbChannel.getChannelId(), configuration.getInstanceId(), LOCK_BREAK_OTHERS_SECONDS);
+            boolean gotLock = dataLayer.claimChannelForwarderLock(dbChannel.getChannelId(), configuration.getInstanceId(), LOCK_BREAK_OTHERS_SECONDS);
+
+            if (firstLockAttempt || (currentlyHaveLock != gotLock))
+                LOG.info((gotLock ? "G" : "Not g") + "ot lock on channel {} for instance {}", dbChannel.getChannelName(), configuration.getMachineName());
+
+            firstLockAttempt = false;
+
+            return gotLock;
         } catch (Exception e) {
-            LOG.error("Exception getting lock in channel forwarder for channel {} for instance {}", new Object[] { dbChannel.getChannelName(), configuration.getInstanceId(), e });
+            LOG.error("Exception getting lock in channel forwarder for channel {} for instance {}", new Object[] { dbChannel.getChannelName(), configuration.getMachineName(), e });
         }
 
         return false;
     }
 
-    private void releaseLock() {
+    private void releaseLock(boolean currentlyHaveLock) {
         try {
+            if (currentlyHaveLock)
+                LOG.info("Releasing lock on channel {} for instance {}", dbChannel.getChannelName(), configuration.getMachineName());
+
             dataLayer.releaseChannelForwarderLock(dbChannel.getChannelId(), configuration.getInstanceId());
         } catch (Exception e) {
-            LOG.error("Exception releasing lock in channel forwarder for channel " + dbChannel.getChannelName() + " for instance " + configuration.getDbConfiguration().getInstanceId(), e);
+            LOG.error("Exception releasing lock in channel forwarder for channel {} for instance {}", new Object[] { e, dbChannel.getChannelName(), configuration.getMachineName() });
         }
     }
 }
