@@ -12,6 +12,7 @@ import org.endeavourhealth.hl7receiver.model.db.DbMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -77,7 +78,7 @@ public class HL7ChannelForwarder implements Runnable {
                         continue;
                     }
 
-                    DbMessage message = dataLayer.getNextUnnotifiedMessage(dbChannel.getChannelId(), configuration.getInstanceId());
+                    DbMessage message = getNextMessage();
 
                     if (message == null) {
                         Thread.sleep(THREAD_SLEEP_TIME_MILLIS);
@@ -99,27 +100,56 @@ public class HL7ChannelForwarder implements Runnable {
         releaseLock(gotLock);
     }
 
-    private void processMessage(DbMessage dbMessage) throws IOException, HL7Exception {
+    private void processMessage(DbMessage dbMessage) {
+        String requestNotification = null;
+        String responseNotification = null;
 
-        initializeKeycloak();
+        try {
+            initialiseKeycloak();
 
-        if (stopRequested)
-            return;
+            if (stopRequested)
+                return;
 
-        String envelope = buildEnvelope(dbMessage);
+            requestNotification = buildEnvelope(dbMessage);
 
-        if (stopRequested)
-            return;
+            if (stopRequested)
+                return;
 
-        sendMessage(envelope);
+            responseNotification = sendMessage(requestNotification);
+
+            addNotificationStatus(dbMessage, requestNotification, responseNotification, null);
+
+        } catch (Exception e) {
+            LOG.error("Error processing message id {} in channel forwarder {} for instance {}", new Object[] { dbMessage.getMessageId(), dbChannel.getChannelName(), configuration.getInstanceId(), e });
+
+            addNotificationStatus(dbMessage, requestNotification, responseNotification, e);
+        }
     }
 
-    private void sendMessage(String envelope) throws IOException {
+    private void addNotificationStatus(DbMessage dbMessage, String requestNotification, String responseNotification, Exception exception) {
+        try {
+            dataLayer.addNotificationStatus(dbMessage.getMessageId());
+        } catch (Exception e) {
+            LOG.error("Error adding {} notification status for message id {} in channel forwarder {} for instance {}", new Object[] { (true ? "SUCCESS" : "FAIL"), dbMessage.getMessageId(), dbChannel.getChannelName(), configuration.getInstanceId(), e });
+        }
+    }
+
+    private DbMessage getNextMessage() {
+        try {
+            return dataLayer.getNextUnnotifiedMessage(dbChannel.getChannelId(), configuration.getInstanceId());
+        } catch (Exception e) {
+            LOG.error("Error getting next unnotified message in channel forwarder {} for instance {} ", new Object[] { dbChannel.getChannelName(), configuration.getInstanceId(), e });
+        }
+
+        return null;
+    }
+
+    private String sendMessage(String envelope) throws IOException {
 
         String edsUrl = configuration.getDbConfiguration().getDbEds().getEdsUrl();
         boolean useKeycloak = configuration.getDbConfiguration().getDbEds().isUseKeycloak();
 
-        String response = EdsSender.notifyEds(edsUrl, useKeycloak, envelope);
+        return EdsSender.notifyEds(edsUrl, useKeycloak, envelope);
     }
 
     private String buildEnvelope(DbMessage dbMessage) throws IOException {
@@ -160,7 +190,7 @@ public class HL7ChannelForwarder implements Runnable {
         }
     }
 
-    private void initializeKeycloak() throws HL7Exception {
+    private void initialiseKeycloak() throws HL7Exception {
 
         if (!this.lastInitialisedKeycloak.plusHours(KEYCLOAK_REINITIALISATION_WINDOW_HOURS).isBefore(LocalDateTime.now()))
             return;

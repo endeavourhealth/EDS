@@ -51,13 +51,13 @@ class HL7Channel {
     }
 
     public void start() throws InterruptedException {
-        LOG.info("Starting channel " + dbChannel.getChannelName() + " on port " + Integer.toString(dbChannel.getPortNumber()));
+        LOG.info("Starting channel {} on port {}", dbChannel.getChannelName(), dbChannel.getPortNumber());
         channelForwarder.start();
         service.startAndWait();
     }
 
     public void stop() {
-        LOG.info("Stopping channel " + dbChannel.getChannelName() + " on port " + Integer.toString(dbChannel.getPortNumber()));
+        LOG.info("Stopping channel {} on port {}", dbChannel.getChannelName(), dbChannel.getPortNumber());
         channelForwarder.stop();
         connectionManager.closeConnections();
         service.stopAndWait();

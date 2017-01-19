@@ -70,7 +70,7 @@ class HL7ConnectionManager implements ConnectionListener {
             connectionId = dataLayer.openConnection(configuration.getDbConfiguration().getInstanceId(), dbChannel.getChannelId(), dbChannel.getPortNumber(), remoteHost, remotePort);
 
         } catch (PgStoredProcException e) {
-            LOG.error("Could not write new connection to database for channel " + dbChannel.getChannelName() + ". Closing inbound connection", e);
+            LOG.error("Could not write new connection to database for channel {}. Closing inbound connection", new Object[] { dbChannel.getChannelName(), e });
             connection.close();
         }
 
@@ -83,14 +83,14 @@ class HL7ConnectionManager implements ConnectionListener {
         String remoteHost = connection.getRemoteAddress().getHostAddress();
         Integer remotePort = connection.getRemotePort();
 
-        LOG.info("Connection closed on channel " + dbChannel.getChannelName() + " from remote host " + remoteHost + " using remote port " + remotePort.toString());
+        LOG.info("Connection closed on channel {} from remote host {} using remote port {}", new Object[] { dbChannel.getChannelName(), remoteHost, remotePort.toString()});
 
         Integer connectionId = this.connectionIds.remove(new HL7Connection(connection));
 
         try {
             dataLayer.closeConnection(connectionId);
         } catch (Exception e) {
-            LOG.error("Could not close connection on channel " + dbChannel.getChannelName(), e);
+            LOG.error("Could not close connection on channel {}", new Object[] { dbChannel.getChannelName(), e });
         }
     }
 }
