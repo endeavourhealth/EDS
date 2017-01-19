@@ -11,8 +11,7 @@ returns table
 	message_sequence_number varchar,
 	message_date timestamp,
 	inbound_message_type varchar,
-	inbound_payload varchar,
-	notification_status_id smallint
+	inbound_payload varchar
 )
 as $$
 begin
@@ -36,14 +35,11 @@ begin
 		m.message_sequence_number,
 		m.message_date,
 		m.inbound_message_type,
-		m.inbound_payload,
-		m.notification_status_id
+		m.inbound_payload
 	from log.message m
-	where channel_id = _channel_id
-	and m.notification_status_id in 
-	(
-		1, -1
-	)
+	left outer join log.message_notification_status s on m.message_id = s.message_id and s.was_success = true
+	where m.channel_id = _channel_id
+	and s.message_id is null
 	order by m.message_date desc, m.log_date desc
 	limit 1;
 	

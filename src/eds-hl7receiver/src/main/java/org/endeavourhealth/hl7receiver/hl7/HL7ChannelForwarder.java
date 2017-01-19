@@ -9,7 +9,6 @@ import org.endeavourhealth.hl7receiver.DataLayer;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
 import org.endeavourhealth.hl7receiver.model.db.DbEds;
 import org.endeavourhealth.hl7receiver.model.db.DbMessage;
-import org.endeavourhealth.hl7receiver.model.db.DbNotificationStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,8 +112,6 @@ public class HL7ChannelForwarder implements Runnable {
             return;
 
         sendMessage(envelope);
-
-        //dataLayer.updateMessageStatus(dbMessage.getMessageId(), DbNotificationStatus.SUCCEEDED);
     }
 
     private void sendMessage(String envelope) throws IOException {

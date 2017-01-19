@@ -9,7 +9,6 @@ public class DbMessage {
     private LocalDateTime messageDate;
     private String inboundMessageType;
     private String inboundPayload;
-    private DbNotificationStatus notificationStatusId;
 
     public int getMessageId() {
         return messageId;
@@ -62,15 +61,6 @@ public class DbMessage {
 
     public DbMessage setInboundPayload(String inboundPayload) {
         this.inboundPayload = inboundPayload;
-        return this;
-    }
-
-    public DbNotificationStatus getNotificationStatusId() {
-        return notificationStatusId;
-    }
-
-    public DbMessage setNotificationStatusId(DbNotificationStatus notificationStatusId) {
-        this.notificationStatusId = notificationStatusId;
         return this;
     }
 }

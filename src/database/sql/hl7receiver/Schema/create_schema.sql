@@ -24,15 +24,6 @@ create table dictionary.message_type
 	constraint dictionary_messagetype_description_ck check (char_length(trim(description)) > 0)
 );
 
-create table dictionary.notification_status
-(
-	notification_status_id integer not null,
-	notification_status varchar(100) not null,
-	
-	constraint dictionary_notificationstatus_notificationstatusid_pk primary key (notification_status_id),
-	constraint dictionary_notificationstatus_notificationstatus_ck check (char_length(trim(notification_status)) > 0)
-);
-
 create table configuration.channel
 (
 	channel_id integer not null,
@@ -146,15 +137,35 @@ create table log.message
 	inbound_payload varchar not null,
 	outbound_message_type varchar(100) not null,
 	outbound_payload varchar not null,
-	notification_status_id smallint not null,
 	
 	constraint log_message_messageid_pk primary key (message_id),
 	constraint log_message_channelid_connectionid_fk foreign key (channel_id, connection_id) references log.connection (channel_id, connection_id),
 	constraint log_message_inboundmessagetype_fk foreign key (channel_id, inbound_message_type) references configuration.channel_message_type (channel_id, message_type),
 	constraint log_message_outboundmessagetype_fk foreign key (channel_id, outbound_message_type) references configuration.channel_message_type (channel_id, message_type),
-	constraint log_message_messagecontrolid_ck check (char_length(trim(message_control_id)) > 0),
-	constraint log_message_notificationstatus_fk foreign key (notification_status_id) references dictionary.notification_status (notification_status_id)
+	constraint log_message_messagecontrolid_ck check (char_length(trim(message_control_id)) > 0)
 );
+
+create table log.message_notification_status
+(
+	message_id integer not null,
+	attempt_id integer not null,
+	was_success boolean not null,
+	instance_id integer not null,
+	log_date timestamp not null,
+	request_message_uuid uuid not null,
+	request_message varchar null,
+	response_message varchar null,
+	exception_message varchar null,
+
+	constraint log_messagenotificationstatus_messageid_attemptid_pk primary key (message_id, attempt_id),
+	constraint log_messagenotificationstatus_messageid_fk foreign key (message_id) references log.message (message_id),
+	constraint log_messagenotificationstatus_attemptid_ck check (attempt_id > 0),
+	constraint log_messagenotificationstatus_instanceid_fk foreign key (instance_id) references log.instance (instance_id)
+);
+
+create unique index log_messagenotificationstatus_messageid_wassuccess_uq 
+on log.message_notification_status (message_id, was_success) 
+where was_success = true;
 
 create table log.dead_letter
 (
@@ -213,8 +224,6 @@ create table log.channel_forwarder_lock
 	constraint log_channelforwarderlock_channelid_fk foreign key (channel_id) references configuration.channel (channel_id),
 	constraint log_channelforwarderlock_instanceid_fk foreign key (instance_id) references log.instance (instance_id)
 );
-
-
 
 /*
 	insert data
@@ -323,16 +332,6 @@ insert into dictionary.message_type (message_type, description) values
 ('ACK^A49', 'Acknowledgement to change patient account number'),
 ('ACK^A50', 'Acknowledgement to change visit number'),
 ('ACK^A51', 'Acknowledgement to change alternate visit ID');
-
-insert into dictionary.notification_status
-(
-	notification_status_id,
-	notification_status
-)
-values
-(1, 'Notification not attempted'),
-(-1, 'Notification failed'),
-(9, 'Notification succeeded');
 
 insert into configuration.notification_retry_interval (interval_seconds) values 
 (5), 
