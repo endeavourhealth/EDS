@@ -1,14 +1,19 @@
 package org.endeavourhealth.hl7receiver.hl7;
 
+import ca.uhn.hl7v2.HL7Exception;
+import org.apache.http.Header;
 import org.endeavourhealth.core.eds.EdsSender;
+import org.endeavourhealth.core.keycloak.KeycloakClient;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
+import org.endeavourhealth.hl7receiver.model.db.DbEds;
 import org.endeavourhealth.hl7receiver.model.db.DbMessage;
 import org.endeavourhealth.hl7receiver.model.db.DbNotificationStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -19,6 +24,7 @@ public class HL7ChannelForwarder implements Runnable {
     private static final int LOCK_RECLAIM_INTERVAL_SECONDS = 60;
     private static final int LOCK_BREAK_OTHERS_SECONDS = 360;
     private static final int THREAD_SLEEP_TIME_MILLIS = 1000;
+    private static final int KEYCLOAK_REINITIALISATION_WINDOW_HOURS = 1;
 
     private Thread thread;
     private Configuration configuration;
@@ -26,6 +32,7 @@ public class HL7ChannelForwarder implements Runnable {
     private DataLayer dataLayer;
     private volatile boolean stopRequested = false;
     private boolean firstLockAttempt = true;
+    private LocalDateTime lastInitialisedKeycloak = LocalDateTime.MIN;
 
     public HL7ChannelForwarder(Configuration configuration, DbChannel dbChannel) throws SQLException {
         this.configuration = configuration;
@@ -78,9 +85,9 @@ public class HL7ChannelForwarder implements Runnable {
                         continue;
                     }
 
-                    sendMessage(message);
+                    processMessage(message);
 
-                    dataLayer.updateMessageStatus(message.getMessageId(), DbNotificationStatus.SUCCEEDED);
+
 
 
                 }
@@ -93,12 +100,39 @@ public class HL7ChannelForwarder implements Runnable {
         releaseLock(gotLock);
     }
 
-    private boolean sendMessage(DbMessage dbMessage) {
+    private void processMessage(DbMessage dbMessage) throws IOException, HL7Exception {
 
+        initializeKeycloak();
+
+        if (stopRequested)
+            return;
+
+        String envelope = buildEnvelope(dbMessage);
+
+        if (stopRequested)
+            return;
+
+        sendMessage(envelope);
+
+        //dataLayer.updateMessageStatus(dbMessage.getMessageId(), DbNotificationStatus.SUCCEEDED);
+    }
+
+    private void sendMessage(String envelope) throws IOException {
+
+        String edsUrl = configuration.getDbConfiguration().getDbEds().getEdsUrl();
+        boolean useKeycloak = configuration.getDbConfiguration().getDbEds().isUseKeycloak();
+
+        String response = EdsSender.notifyEds(edsUrl, useKeycloak, envelope);
+    }
+
+    private String buildEnvelope(DbMessage dbMessage) throws IOException {
         UUID messageUuid = UUID.randomUUID();
+        String organisationId = dbChannel.getEdsServiceIdentifier();
+        String sourceSoftware = configuration.getDbConfiguration().getDbEds().getSoftwareContentType();
+        String sourceSoftwareVersion = configuration.getDbConfiguration().getDbEds().getSoftwareVersion();
+        String payload = dbMessage.getInboundPayload();
 
-        return true;
-
+        return EdsSender.buildEnvelope(messageUuid, organisationId, sourceSoftware, sourceSoftwareVersion, payload);
     }
 
     private boolean getLock(boolean currentlyHaveLock) {
@@ -127,5 +161,38 @@ public class HL7ChannelForwarder implements Runnable {
         } catch (Exception e) {
             LOG.error("Exception releasing lock in channel forwarder for channel {} for instance {}", new Object[] { e, dbChannel.getChannelName(), configuration.getMachineName() });
         }
+    }
+
+    private void initializeKeycloak() throws HL7Exception {
+
+        if (!this.lastInitialisedKeycloak.plusHours(KEYCLOAK_REINITIALISATION_WINDOW_HOURS).isBefore(LocalDateTime.now()))
+            return;
+
+        final DbEds dbEds = configuration.getDbConfiguration().getDbEds();
+
+        if (dbEds.isUseKeycloak()) {
+            LOG.trace("Initialising keycloak at: {}", dbEds.getKeycloakTokenUri());
+
+            try {
+                KeycloakClient.init(dbEds.getKeycloakTokenUri(),
+                        dbEds.getKeycloakRealm(),
+                        dbEds.getKeycloakUsername(),
+                        dbEds.getKeycloakPassword(),
+                        dbEds.getKeycloakClientId());
+
+                Header response = KeycloakClient.instance().getAuthorizationHeader();
+
+                LOG.trace("Keycloak initialised");
+
+            } catch (IOException e) {
+                LOG.error("Error initialising keycloak", e);
+                throw new HL7Exception("Error initialising keycloak", e);
+            }
+
+        } else {
+            LOG.trace("Keycloak is not enabled");
+        }
+
+        this.lastInitialisedKeycloak = LocalDateTime.now();
     }
 }
