@@ -11,6 +11,7 @@ declare
 	configuration_channel refcursor;
 	configuration_channel_message_type refcursor;
 	configuration_eds refcursor;
+	configuration_notification_retry_interval refcursor;
 begin
 
 	insert into log.instance
@@ -55,7 +56,8 @@ begin
 		c.receiving_application,
 		c.receiving_facility,
 		c.port_number,
-		c.notes
+		c.notes,
+		c.eds_service_identifier
 	from configuration.channel c;
 	
 	return next configuration_channel;
@@ -89,6 +91,18 @@ begin
 	from configuration.eds e;
 	
 	return next configuration_eds;
-		
+	
+	------------------------------------------------------
+	configuration_notification_retry_interval = 'configuration_notification_retry_interval';
+	
+	open configuration_notification_retry_interval for
+	select
+		interval_seconds
+	from configuration.notification_retry_interval;
+	
+	return next configuration_notification_retry_interval;
+	
+	------------------------------------------------------
+	
 end;
 $$ language plpgsql;

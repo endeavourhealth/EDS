@@ -12,6 +12,7 @@ public class DbChannel {
     private String sendingFacility;
     private String receivingApplication;
     private String receivingFacility;
+    private String edsServiceIdentifier;
     private List<DbChannelMessageType> dbChannelMessageTypes;
 
     public String getSendingApplication() {
@@ -103,6 +104,15 @@ public class DbChannel {
 
     public DbChannel setNotes(String notes) {
         this.notes = notes;
+        return this;
+    }
+
+    public String getEdsServiceIdentifier() {
+        return edsServiceIdentifier;
+    }
+
+    public DbChannel setEdsServiceIdentifier(String edsServiceIdentifier) {
+        this.edsServiceIdentifier = edsServiceIdentifier;
         return this;
     }
 

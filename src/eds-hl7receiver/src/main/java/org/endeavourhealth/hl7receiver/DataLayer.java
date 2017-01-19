@@ -42,7 +42,8 @@ public class DataLayer implements IDBDigestLogger {
                         .setSendingFacility(resultSet.getString("sending_facility"))
                         .setReceivingApplication(resultSet.getString("receiving_application"))
                         .setReceivingFacility(resultSet.getString("receiving_facility"))
-                        .setNotes(resultSet.getString("notes")));
+                        .setNotes(resultSet.getString("notes"))
+                        .setEdsServiceIdentifier(resultSet.getString("eds_service_identifier")));
 
         List<DbChannelMessageType> dbChannelMessageTypes = pgStoredProc.executeMultiQuery((resultSet) ->
                 new DbChannelMessageType()
@@ -50,7 +51,8 @@ public class DataLayer implements IDBDigestLogger {
                         .setMessageType(resultSet.getString("message_type"))
                         .setAllowed(resultSet.getBoolean("is_allowed")));
 
-        pgStoredProc.executeMultiQuerySingleRow((resultSet) ->
+
+        DbEds dbEds = pgStoredProc.executeMultiQuerySingleRow((resultSet) ->
                 new DbEds()
                     .setEdsUrl(resultSet.getString("eds_url"))
                     .setSoftwareContentType(resultSet.getString("software_content_type"))
@@ -62,16 +64,22 @@ public class DataLayer implements IDBDigestLogger {
                     .setKeycloakPassword(resultSet.getString("keycloak_password"))
                     .setKeycloakClientId(resultSet.getString("keycloak_clientid")));
 
-        for (DbChannel dbChannel : dbChannels) {
-            dbChannel.setDbChannelMessageTypes(
-                    dbChannelMessageTypes
-                            .stream()
-                            .filter(t -> t.getChannelId() == dbChannel.getChannelId())
-                            .collect(Collectors.toList()));
-        }
+        List<DbNotificationRetryInterval> dbNotificationRetryIntervals = pgStoredProc.executeMultiQuery((resultSet) ->
+                new DbNotificationRetryInterval()
+                    .setIntervalSeconds(resultSet.getInt("interval_seconds")));
+
+        // assemble data
+
+        dbChannels.forEach(s ->
+                s.setDbChannelMessageTypes(dbChannelMessageTypes
+                        .stream()
+                        .filter(t -> t.getChannelId() == s.getChannelId())
+                        .collect(Collectors.toList())));
 
         return dbConfiguration
-                .setDbChannels(dbChannels);
+                .setDbChannels(dbChannels)
+                .setDbEds(dbEds)
+                .setDbNotificationRetryInterval(dbNotificationRetryIntervals);
     }
 
     public int openConnection(int instanceId, int channelId, int localPort, String remoteHost, int remotePort) throws PgStoredProcException {

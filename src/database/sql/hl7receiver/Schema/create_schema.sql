@@ -93,6 +93,13 @@ create table configuration.eds
 	constraint configuration_configurationeds_keycloakclientid_ck check (keycloak_clientid is null or (char_length(trim(keycloak_clientid)) > 0))
 );
 
+create table configuration.notification_retry_interval
+(
+	interval_seconds integer not null,
+	
+	constraint configuration_notificationretryinterval_intervalseconds_pk primary key (interval_seconds)
+);
+
 create table log.instance
 (
 	instance_id integer not null,
@@ -206,6 +213,8 @@ create table log.channel_forwarder_lock
 	constraint log_channelforwarderlock_channelid_fk foreign key (channel_id) references configuration.channel (channel_id),
 	constraint log_channelforwarderlock_instanceid_fk foreign key (instance_id) references log.instance (instance_id)
 );
+
+
 
 /*
 	insert data
@@ -324,3 +333,13 @@ values
 (1, 'Notification not attempted'),
 (-1, 'Notification failed'),
 (9, 'Notification succeeded');
+
+insert into configuration.notification_retry_interval (interval_seconds) values 
+(5), 
+(30), 
+(120), 
+(300), 
+(1200), 
+(3600), 
+(7200), 
+(14400);
