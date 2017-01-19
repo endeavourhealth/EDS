@@ -44,13 +44,16 @@ create table configuration.channel
 	sending_facility varchar(100),
 	receiving_application varchar(100),
 	receiving_facility varchar(100),
+	eds_service_identifier varchar(100) not null,
 	notes varchar(1000) not null,
 
 	constraint configuration_channel_channelid_pk primary key (channel_id),
 	constraint configuration_channel_channelname_uq unique (channel_name),
 	constraint configuration_channel_portnumber_uq unique (port_number),
 	constraint configuration_channel_portnumber_ck check (port_number > 0),
-	constraint configuration_channel_channelname_ck check (char_length(trim(channel_name)) > 0)
+	constraint configuration_channel_channelname_ck check (char_length(trim(channel_name)) > 0),
+	constraint configuration_eds_edsserviceidentifier_uq unique (eds_service_identifier),
+	constraint configuration_eds_edsserviceidentifier_ck check (char_length(trim(eds_service_identifier)) > 0)
 );
 
 create table configuration.channel_message_type
@@ -62,6 +65,32 @@ create table configuration.channel_message_type
 	constraint configuration_channelmessagetype_channelid_messagetype_pk primary key (channel_id, message_type),
 	constraint configuration_channelmessagetype_channelid_fk foreign key (channel_id) references configuration.channel (channel_id),
 	constraint configuration_channelmessagetype_messagetype_fk foreign key (message_type) references dictionary.message_type (message_type)
+);
+
+create table configuration.eds
+(
+	single_row_lock boolean,
+	eds_url varchar(1000) not null,
+	software_content_type varchar(100) not null,
+	software_version varchar(100) not null,
+	use_keycloak boolean not null,
+	keycloak_token_uri varchar(500) null,
+	keycloak_realm varchar(100) null,
+	keycloak_username varchar(100) null,
+	keycloak_password varchar(100) null,
+	keycloak_clientid varchar(100) null,
+
+	constraint configuration_eds_singlerowlock_pk primary key (single_row_lock),
+	constraint configuration_eds_singlerowlock_ck check (single_row_lock = true),
+	constraint configuration_eds_edsurl_ck check (char_length(trim(eds_url)) > 0),
+	constraint configuration_eds_softwarecontenttype_ck check (char_length(trim(software_content_type)) > 0),
+	constraint configuration_eds_softwareversion_ck check (char_length(trim(software_version)) > 0),
+	constraint configuration_configurationeds_usekeycloak_keycloaktokenuri_keycloakrealm_keycloakusername_keycloakpassword_keycloakclientid_ck check ((not use_keycloak) or (keycloak_token_uri is not null and keycloak_realm is not null and keycloak_username is not null and keycloak_password is not null and keycloak_clientid is not null)),
+	constraint configuration_configurationeds_keycloaktokenuri_ck check (keycloak_token_uri is null or (char_length(trim(keycloak_token_uri)) > 0)),
+	constraint configuration_configurationeds_keycloakrealm_ck check (keycloak_realm is null or (char_length(trim(keycloak_realm)) > 0)),
+	constraint configuration_configurationeds_keycloakusername_ck check (keycloak_username is null or (char_length(trim(keycloak_username)) > 0)),
+	constraint configuration_configurationeds_keycloakpassword_ck check (keycloak_password is null or (char_length(trim(keycloak_password)) > 0)),
+	constraint configuration_configurationeds_keycloakclientid_ck check (keycloak_clientid is null or (char_length(trim(keycloak_clientid)) > 0))
 );
 
 create table log.instance

@@ -6,6 +6,7 @@ public class DbConfiguration {
 
     private Integer instanceId;
     private List<DbChannel> dbChannels;
+    private DbEds dbEds;
 
     public Integer getInstanceId() {
         return instanceId;
@@ -22,6 +23,15 @@ public class DbConfiguration {
 
     public DbConfiguration setDbChannels(List<DbChannel> dbChannels) {
         this.dbChannels = dbChannels;
+        return this;
+    }
+
+    public DbEds getDbEds() {
+        return dbEds;
+    }
+
+    public DbConfiguration setDbEds(DbEds dbEds) {
+        this.dbEds = dbEds;
         return this;
     }
 }
