@@ -13,12 +13,11 @@ VALUES
 INSERT INTO config
 (app_id, config_id, config_data)
 VALUES
-('eds-ui', 'keycloak_proxy_user', 'eds-ui' );
-
-INSERT INTO config
-(app_id, config_id, config_data)
-VALUES
-('eds-ui', 'keycloak_proxy_pass', 'bd285adbc36842d7a27088e93c36c13e29ed69fa63a6' );
+('eds-ui', 'keycloak_proxy', '{
+ "user" : "eds-ui",
+ "pass" : "bd285adbc36842d7a27088e93c36c13e29ed69fa63a6",
+ "url" : "https://keycloak.eds.c.healthforge.io/auth"
+}');
 
 INSERT INTO config
 (app_id, config_id, config_data)
