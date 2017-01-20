@@ -228,11 +228,17 @@ public class DataLayer implements IDBDigestLogger {
                                 .setInboundPayload(resultSet.getString("inbound_payload")));
     }
 
-    public void addNotificationStatus(int messageId) throws PgStoredProcException {
+    public void addNotificationStatus(int messageId, boolean wasSuccess, int instanceId, UUID requestMessageUuid, String requestMessage, String responseMessage, String exceptionMessage) throws PgStoredProcException {
 
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("log.add_notification_status")
-                .addParameter("_message_id", messageId);
+                .addParameter("_message_id", messageId)
+                .addParameter("_was_success", wasSuccess)
+                .addParameter("_instance_id", instanceId)
+                .addParameter("_request_message_uuid", requestMessageUuid)
+                .addParameter("_request_message", requestMessage)
+                .addParameter("_response_message", responseMessage)
+                .addParameter("_exception_message", exceptionMessage);
 
         pgStoredProc.execute();
     }

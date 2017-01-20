@@ -1,6 +1,7 @@
 package org.endeavourhealth.hl7receiver.hl7;
 
 import ca.uhn.hl7v2.HL7Exception;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.endeavourhealth.core.eds.EdsSender;
 import org.endeavourhealth.core.keycloak.KeycloakClient;
@@ -78,6 +79,9 @@ public class HL7ChannelForwarder implements Runnable {
                         continue;
                     }
 
+                    if (stopRequested)
+                        return;
+
                     DbMessage message = getNextMessage();
 
                     if (message == null) {
@@ -85,11 +89,10 @@ public class HL7ChannelForwarder implements Runnable {
                         continue;
                     }
 
+                    if (stopRequested)
+                        return;
+
                     processMessage(message);
-
-
-
-
                 }
             }
         }
@@ -103,6 +106,7 @@ public class HL7ChannelForwarder implements Runnable {
     private void processMessage(DbMessage dbMessage) {
         String requestNotification = null;
         String responseNotification = null;
+        UUID messageUuid = UUID.randomUUID();
 
         try {
             initialiseKeycloak();
@@ -110,25 +114,31 @@ public class HL7ChannelForwarder implements Runnable {
             if (stopRequested)
                 return;
 
-            requestNotification = buildEnvelope(dbMessage);
+            requestNotification = buildEnvelope(dbMessage, messageUuid);
 
             if (stopRequested)
                 return;
 
             responseNotification = sendMessage(requestNotification);
 
-            addNotificationStatus(dbMessage, requestNotification, responseNotification, null);
+            addNotificationStatus(dbMessage, messageUuid, requestNotification, responseNotification, true, null);
 
         } catch (Exception e) {
             LOG.error("Error processing message id {} in channel forwarder {} for instance {}", new Object[] { dbMessage.getMessageId(), dbChannel.getChannelName(), configuration.getInstanceId(), e });
 
-            addNotificationStatus(dbMessage, requestNotification, responseNotification, e);
+            addNotificationStatus(dbMessage, messageUuid, requestNotification, responseNotification, false, e);
         }
     }
 
-    private void addNotificationStatus(DbMessage dbMessage, String requestNotification, String responseNotification, Exception exception) {
+    private void addNotificationStatus(DbMessage dbMessage, UUID requestMessageUuid, String requestMessage, String responseMessage, boolean wasSuccess, Exception exception) {
         try {
-            dataLayer.addNotificationStatus(dbMessage.getMessageId());
+            String exceptionMessage = HL7ExceptionHandler.constructFormattedException(exception);
+
+            if (StringUtils.isBlank(exceptionMessage))
+                exceptionMessage = null;
+
+            dataLayer.addNotificationStatus(dbMessage.getMessageId(), wasSuccess, configuration.getInstanceId(), requestMessageUuid, requestMessage, responseMessage, exceptionMessage);
+
         } catch (Exception e) {
             LOG.error("Error adding {} notification status for message id {} in channel forwarder {} for instance {}", new Object[] { (true ? "SUCCESS" : "FAIL"), dbMessage.getMessageId(), dbChannel.getChannelName(), configuration.getInstanceId(), e });
         }
@@ -152,8 +162,8 @@ public class HL7ChannelForwarder implements Runnable {
         return EdsSender.notifyEds(edsUrl, useKeycloak, envelope);
     }
 
-    private String buildEnvelope(DbMessage dbMessage) throws IOException {
-        UUID messageUuid = UUID.randomUUID();
+    private String buildEnvelope(DbMessage dbMessage, UUID messageUuid) throws IOException {
+
         String organisationId = dbChannel.getEdsServiceIdentifier();
         String sourceSoftware = configuration.getDbConfiguration().getDbEds().getSoftwareContentType();
         String sourceSoftwareVersion = configuration.getDbConfiguration().getDbEds().getSoftwareVersion();
