@@ -87,7 +87,7 @@ VALUES
 ('global', 'rabbit', '{
 	"username" : "guest",
 	"password" : "guest",
-	"nodes"	: "127.0.0.1:15672",
+	"nodes"	: "127.0.0.1:5672",
 	"managementPortOffset" : "10000"
 }');
 
