@@ -35,9 +35,11 @@ begin
 		m.message_sequence_number,
 		m.message_date,
 		m.inbound_message_type,
-		m.inbound_payload
+		m.inbound_payload,
+		coalesce(s2.request_message_uiid, uuid_generate_v4()) as request_message_uuid
 	from log.message m
-	left outer join log.message_notification_status s on m.message_id = s.message_id and s.was_success = true
+	left outer join log.message_notification_status s1 on m.message_id = s1.message_id and s.was_success = true
+	left outer join log.message_notification_status s2 on m.message_id = s2.message_id and s2.attempt_id = 1
 	where m.channel_id = _channel_id
 	and s.message_id is null
 	order by m.message_date desc, m.log_date desc

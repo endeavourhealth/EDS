@@ -28,8 +28,7 @@ begin
 		inbound_message_type,
 		inbound_payload,
 		outbound_message_type,
-		outbound_payload,
-		notification_status_id
+		outbound_payload
 	)
 	values
 	(
@@ -42,8 +41,7 @@ begin
 		_inbound_message_type,
 		_inbound_payload,
 		_outbound_message_type,
-		_outbound_payload,
-		1
+		_outbound_payload
 	)
 	returning message_id into _message_id;
 	

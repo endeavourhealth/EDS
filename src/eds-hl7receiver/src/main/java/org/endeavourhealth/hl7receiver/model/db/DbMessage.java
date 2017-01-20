@@ -1,6 +1,7 @@
 package org.endeavourhealth.hl7receiver.model.db;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class DbMessage {
     private int messageId;
@@ -9,6 +10,7 @@ public class DbMessage {
     private LocalDateTime messageDate;
     private String inboundMessageType;
     private String inboundPayload;
+    private UUID requestMessageUuid;
 
     public int getMessageId() {
         return messageId;
@@ -61,6 +63,15 @@ public class DbMessage {
 
     public DbMessage setInboundPayload(String inboundPayload) {
         this.inboundPayload = inboundPayload;
+        return this;
+    }
+
+    public UUID getRequestMessageUuid() {
+        return requestMessageUuid;
+    }
+
+    public DbMessage setRequestMessageUuid(UUID requestMessageUuid) {
+        this.requestMessageUuid = requestMessageUuid;
         return this;
     }
 }

@@ -47,8 +47,10 @@ public class HL7ChannelForwarder implements Runnable {
     public void start() {
         LOG.info("Starting channel forwarder {}", dbChannel.getChannelName());
 
-        if (thread == null)
+        if (thread == null) {
             thread = new Thread(this);
+            thread.setName(dbChannel.getChannelName() + "-HL7ChannelForward");
+        }
 
         thread.start();
     }
@@ -151,7 +153,7 @@ public class HL7ChannelForwarder implements Runnable {
     private boolean processMessage(DbMessage dbMessage) {
         String requestNotification = null;
         String responseNotification = null;
-        UUID messageUuid = UUID.randomUUID();
+        UUID messageUuid = dbMessage.getRequestMessageUuid();
 
         try {
             initialiseKeycloak();

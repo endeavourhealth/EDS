@@ -223,7 +223,8 @@ public class DataLayer implements IDBDigestLogger {
                                 .setMessageSequenceNumber(resultSet.getString("message_sequence_number"))
                                 .setMessageDate(resultSet.getTimestamp("message_date").toLocalDateTime())
                                 .setInboundMessageType(resultSet.getString("inbound_message_type"))
-                                .setInboundPayload(resultSet.getString("inbound_payload")));
+                                .setInboundPayload(resultSet.getString("inbound_payload"))
+                                .setRequestMessageUuid(UUID.fromString(resultSet.getString("request_message_uiid"))));
     }
 
     public void addNotificationStatus(int messageId, boolean wasSuccess, int instanceId, UUID requestMessageUuid, String requestMessage, String responseMessage, String exceptionMessage) throws PgStoredProcException {
