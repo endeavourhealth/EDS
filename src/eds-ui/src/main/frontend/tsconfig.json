@@ -8,6 +8,7 @@
 		"experimentalDecorators": true,
 		"noImplicitAny": false,
 		"suppressImplicitAnyIndexErrors": true,
+		"removeComments": true,
 		"rootDir": ".",
 		"outDir":"../webapp",
 		"lib": ["es2015", "dom"]
