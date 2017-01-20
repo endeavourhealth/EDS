@@ -7,7 +7,6 @@ import org.endeavourhealth.hl7receiver.model.db.*;
 
 import javax.sql.DataSource;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -64,9 +63,8 @@ public class DataLayer implements IDBDigestLogger {
                     .setKeycloakPassword(resultSet.getString("keycloak_password"))
                     .setKeycloakClientId(resultSet.getString("keycloak_clientid")));
 
-        List<DbNotificationRetryInterval> dbNotificationRetryIntervals = pgStoredProc.executeMultiQuery((resultSet) ->
-                new DbNotificationRetryInterval()
-                    .setIntervalSeconds(resultSet.getInt("interval_seconds")));
+        List<Integer> dbNotificationAttemptIntervalsSeconds = pgStoredProc.executeMultiQuery((resultSet) ->
+                resultSet.getInt("interval_seconds"));
 
         // assemble data
 
@@ -79,7 +77,7 @@ public class DataLayer implements IDBDigestLogger {
         return dbConfiguration
                 .setDbChannels(dbChannels)
                 .setDbEds(dbEds)
-                .setDbNotificationRetryInterval(dbNotificationRetryIntervals);
+                .setDbNotificationAttemptIntervalsSeconds(dbNotificationAttemptIntervalsSeconds);
     }
 
     public int openConnection(int instanceId, int channelId, int localPort, String remoteHost, int remotePort) throws PgStoredProcException {

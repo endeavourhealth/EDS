@@ -13,10 +13,11 @@ import org.endeavourhealth.hl7receiver.model.db.DbMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 public class HL7ChannelForwarder implements Runnable {
@@ -26,6 +27,7 @@ public class HL7ChannelForwarder implements Runnable {
     private static final int LOCK_BREAK_OTHERS_SECONDS = 360;
     private static final int THREAD_SLEEP_TIME_MILLIS = 1000;
     private static final int KEYCLOAK_REINITIALISATION_WINDOW_HOURS = 1;
+    private static final Integer[] DEFAULT_RETRY_INTERVALS_SECONDS = new Integer[] { 0, 10, 60 };
 
     private Thread thread;
     private Configuration configuration;
@@ -34,12 +36,12 @@ public class HL7ChannelForwarder implements Runnable {
     private volatile boolean stopRequested = false;
     private boolean firstLockAttempt = true;
     private LocalDateTime lastInitialisedKeycloak = LocalDateTime.MIN;
+    private List<Integer> attemptScheduleSeconds = null;
 
     public HL7ChannelForwarder(Configuration configuration, DbChannel dbChannel) throws SQLException {
         this.configuration = configuration;
         this.dbChannel = dbChannel;
         this.dataLayer = new DataLayer(configuration.getDatabaseConnection());
-
     }
 
     public void start() {
@@ -64,35 +66,49 @@ public class HL7ChannelForwarder implements Runnable {
     @Override
     public void run() {
         boolean gotLock = false;
-        LocalDateTime lastLockTried = null;
+        LocalDateTime lastLockTriedTime = null;
+        DbMessage message = null;
+        Integer attemptIntervalSeconds = getFirstAttemptIntervalSeconds();
+        LocalDateTime gotMessageTime = null;
 
         try {
             while (!stopRequested) {
 
                 gotLock = getLock(gotLock);
-                lastLockTried = LocalDateTime.now();
+                lastLockTriedTime = LocalDateTime.now();
 
-                while ((!stopRequested) && (LocalDateTime.now().isBefore(lastLockTried.plusSeconds(LOCK_RECLAIM_INTERVAL_SECONDS)))) {
+                while ((!stopRequested) && (lastLockTriedTime.plusSeconds(LOCK_RECLAIM_INTERVAL_SECONDS).isAfter(LocalDateTime.now()))) {
 
-                    if (!gotLock) {
+                    if (gotLock) {
+
+                        if (message == null) {
+                            message = getNextMessage();
+                            gotMessageTime = LocalDateTime.now();
+                        }
+
+                        if (stopRequested)
+                            return;
+
+                        if (message != null) {
+
+                            if (gotMessageTime.plusSeconds(attemptIntervalSeconds).isBefore(LocalDateTime.now())) {
+
+                                attemptIntervalSeconds = getNextAttemptIntervalSeconds(attemptIntervalSeconds);
+
+                                boolean success = processMessage(message);
+
+                                if (success) {
+                                    message = null;
+                                    attemptIntervalSeconds = getFirstAttemptIntervalSeconds();
+                                }
+                            }
+
+                        } else {  // messageToProcess == null
+                            Thread.sleep(THREAD_SLEEP_TIME_MILLIS);
+                        }
+                    } else {  // not gotLock
                         Thread.sleep(THREAD_SLEEP_TIME_MILLIS);
-                        continue;
                     }
-
-                    if (stopRequested)
-                        return;
-
-                    DbMessage message = getNextMessage();
-
-                    if (message == null) {
-                        Thread.sleep(THREAD_SLEEP_TIME_MILLIS);
-                        continue;
-                    }
-
-                    if (stopRequested)
-                        return;
-
-                    processMessage(message);
                 }
             }
         }
@@ -103,7 +119,36 @@ public class HL7ChannelForwarder implements Runnable {
         releaseLock(gotLock);
     }
 
-    private void processMessage(DbMessage dbMessage) {
+    private Integer getFirstAttemptIntervalSeconds() {
+        return getAttemptScheduleSeconds().get(0);
+    }
+
+    private Integer getNextAttemptIntervalSeconds(Integer currentAttemptIntervalSeconds) {
+
+        List<Integer> attemptSchedule = getAttemptScheduleSeconds();
+
+        int currentIndex = getAttemptScheduleSeconds().indexOf(currentAttemptIntervalSeconds);
+
+        if ((currentIndex + 1) < (attemptSchedule.size()))
+            return getAttemptScheduleSeconds().get(currentIndex + 1);
+
+        return currentAttemptIntervalSeconds;  // if the last interval, keep using that
+    }
+
+    private List<Integer> getAttemptScheduleSeconds() {
+        if (attemptScheduleSeconds == null) {
+            attemptScheduleSeconds = configuration
+                    .getDbConfiguration()
+                    .getDbNotificationAttemptIntervalsSeconds();
+
+            if (attemptScheduleSeconds.size() == 0)
+                attemptScheduleSeconds = Arrays.asList(DEFAULT_RETRY_INTERVALS_SECONDS);
+        }
+
+        return attemptScheduleSeconds;
+    }
+
+    private boolean processMessage(DbMessage dbMessage) {
         String requestNotification = null;
         String responseNotification = null;
         UUID messageUuid = UUID.randomUUID();
@@ -112,22 +157,26 @@ public class HL7ChannelForwarder implements Runnable {
             initialiseKeycloak();
 
             if (stopRequested)
-                return;
+                return false;
 
             requestNotification = buildEnvelope(dbMessage, messageUuid);
 
             if (stopRequested)
-                return;
+                return false;
 
             responseNotification = sendMessage(requestNotification);
 
             addNotificationStatus(dbMessage, messageUuid, requestNotification, responseNotification, true, null);
+
+            return true;
 
         } catch (Exception e) {
             LOG.error("Error processing message id {} in channel forwarder {} for instance {}", new Object[] { dbMessage.getMessageId(), dbChannel.getChannelName(), configuration.getInstanceId(), e });
 
             addNotificationStatus(dbMessage, messageUuid, requestNotification, responseNotification, false, e);
         }
+
+        return false;
     }
 
     private void addNotificationStatus(DbMessage dbMessage, UUID requestMessageUuid, String requestMessage, String responseMessage, boolean wasSuccess, Exception exception) {

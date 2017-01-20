@@ -84,11 +84,11 @@ create table configuration.eds
 	constraint configuration_configurationeds_keycloakclientid_ck check (keycloak_clientid is null or (char_length(trim(keycloak_clientid)) > 0))
 );
 
-create table configuration.notification_retry_interval
+create table configuration.notification_attempt_interval
 (
 	interval_seconds integer not null,
 	
-	constraint configuration_notificationretryinterval_intervalseconds_pk primary key (interval_seconds)
+	constraint configuration_notificationattemptinterval_intervalseconds_pk primary key (interval_seconds)
 );
 
 create table log.instance
@@ -333,7 +333,8 @@ insert into dictionary.message_type (message_type, description) values
 ('ACK^A50', 'Acknowledgement to change visit number'),
 ('ACK^A51', 'Acknowledgement to change alternate visit ID');
 
-insert into configuration.notification_retry_interval (interval_seconds) values 
+insert into configuration.notification_attempt_interval (interval_seconds) values 
+(0),
 (5), 
 (30), 
 (120), 

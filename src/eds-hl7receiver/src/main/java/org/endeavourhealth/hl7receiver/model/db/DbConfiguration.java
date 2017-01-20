@@ -7,7 +7,7 @@ public class DbConfiguration {
     private Integer instanceId;
     private List<DbChannel> dbChannels;
     private DbEds dbEds;
-    private List<DbNotificationRetryInterval> dbNotificationRetryIntervals;
+    private List<Integer> dbNotificationAttemptIntervalsSeconds;
 
     public Integer getInstanceId() {
         return instanceId;
@@ -36,12 +36,12 @@ public class DbConfiguration {
         return this;
     }
 
-    public List<DbNotificationRetryInterval> getDbNotificationRetryIntervals() {
-        return dbNotificationRetryIntervals;
+    public List<Integer> getDbNotificationAttemptIntervalsSeconds() {
+        return dbNotificationAttemptIntervalsSeconds;
     }
 
-    public DbConfiguration setDbNotificationRetryInterval(List<DbNotificationRetryInterval> dbNotificationRetryIntervals) {
-        this.dbNotificationRetryIntervals = dbNotificationRetryIntervals;
+    public DbConfiguration setDbNotificationAttemptIntervalsSeconds(List<Integer> dbNotificationAttemptIntervalsSeconds) {
+        this.dbNotificationAttemptIntervalsSeconds = dbNotificationAttemptIntervalsSeconds;
         return this;
     }
 }
