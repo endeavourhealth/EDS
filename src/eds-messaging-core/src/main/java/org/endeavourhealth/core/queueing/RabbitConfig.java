@@ -11,6 +11,7 @@ public class RabbitConfig {
 	private String password = null;
 	private String username = null;
 	private String nodes = null;
+	private String managementNodes = null;
 
 	private static RabbitConfig instance;
 
@@ -30,6 +31,21 @@ public class RabbitConfig {
 			this.username = rabbitConfig.get("username").asText();
 			this.password = rabbitConfig.get("password").asText();
 
+			//the management API is on a different port on each node, which we can
+			//calculate from the port offset in the configuration
+			int portOffset = rabbitConfig.get("managementPortOffset").asInt();
+			String[] nodeArray = nodes.split(" *, *");
+			for (int i=0; i<nodeArray.length; i++) {
+				String node = nodeArray[i];
+				int idx = node.indexOf(':');
+				String host = node.substring(0, idx);
+				String port = node.substring(idx+1);
+				int portInt = Integer.parseInt(port) + portOffset;
+				node = host + ":" + portInt;
+				nodeArray[i] = node;
+			}
+			this.managementNodes = String.join(",", nodeArray);
+
 		} catch (Exception e) {
 			LOG.error("Failed to load rabbit config", e);
 		}
@@ -45,6 +61,10 @@ public class RabbitConfig {
 
 	public String getNodes() {
 		return nodes;
+	}
+
+	public String getManagementNodes() {
+		return managementNodes;
 	}
 
 	/*private static final Logger LOG = LoggerFactory.getLogger(RabbitConfig.class);

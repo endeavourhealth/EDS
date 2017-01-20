@@ -1,8 +1,8 @@
 package org.endeavourhealth.transform.emis.reverseCsv.transforms;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.transform.common.AbstractCsvWriter;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.SexConverter;
-import org.endeavourhealth.transform.emis.reverseCsv.schema.AbstractCsvWriter;
 import org.endeavourhealth.transform.emis.reverseCsv.schema.admin.Patient;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.IdentifierHelper;

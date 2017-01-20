@@ -7,8 +7,8 @@ import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.transform.EnterpriseIdMapRepository;
 import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
+import org.endeavourhealth.transform.common.AbstractCsvWriter;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.reverseCsv.schema.AbstractCsvWriter;
 import org.endeavourhealth.transform.emis.reverseCsv.schema.admin.Location;
 import org.endeavourhealth.transform.emis.reverseCsv.schema.admin.Patient;
 import org.endeavourhealth.transform.emis.reverseCsv.schema.appointment.Session;
@@ -75,9 +75,9 @@ public class EmisReverseCsvTransformer {
     private static Map<Class, AbstractCsvWriter> createWriters(CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
 
         List<AbstractCsvWriter> writers = new ArrayList<>();
-        writers.add(new Location(csvFormat, dateFormat, timeFormat));
-        writers.add(new Session(csvFormat, dateFormat, timeFormat));
-        writers.add(new Patient(csvFormat, dateFormat, timeFormat));
+        writers.add(new Location("Admin_Location.csv", csvFormat, dateFormat, timeFormat));
+        writers.add(new Session("Appointment_Session.csv", csvFormat, dateFormat, timeFormat));
+        writers.add(new Patient("Admin_Patient.csv", csvFormat, dateFormat, timeFormat));
 
         //hash the writers by class, for faster lookup later
         Map<Class, AbstractCsvWriter> ret = new HashMap<>();

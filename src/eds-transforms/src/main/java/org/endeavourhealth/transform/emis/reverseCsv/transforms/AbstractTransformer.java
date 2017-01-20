@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.reverseCsv.transforms;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMapByEdsId;
-import org.endeavourhealth.transform.emis.reverseCsv.schema.AbstractCsvWriter;
+import org.endeavourhealth.transform.common.AbstractCsvWriter;
 import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.Resource;
 

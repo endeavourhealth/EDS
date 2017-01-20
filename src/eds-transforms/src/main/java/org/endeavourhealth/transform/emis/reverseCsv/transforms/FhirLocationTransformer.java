@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.emis.reverseCsv.transforms;
 
-import org.endeavourhealth.transform.emis.reverseCsv.schema.AbstractCsvWriter;
+import org.endeavourhealth.transform.common.AbstractCsvWriter;
 import org.hl7.fhir.instance.model.Resource;
 
 import java.util.Map;

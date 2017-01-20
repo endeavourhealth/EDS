@@ -7,6 +7,7 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.data.config.ConfigManager;
+import org.endeavourhealth.core.queueing.RabbitConfig;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
@@ -34,13 +35,22 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	private final HttpAuthenticationFeature rabbitAuth;
 	{
 		try {
+			String user = RabbitConfig.getInstance().getUsername();
+			String pass = RabbitConfig.getInstance().getPassword();
+
+			rabbitAuth = HttpAuthenticationFeature.basic(user, pass);
+		} catch (Exception e) {
+			throw new IllegalStateException("Unable to load rabbit config", e);
+		}
+
+		/*try {
 			String rabbitConfigJson = ConfigManager.getConfiguration("rabbit");
 			JsonNode rabbitConfig = ObjectMapperPool.getInstance().readTree(rabbitConfigJson);
 
 			rabbitAuth = HttpAuthenticationFeature.basic(rabbitConfig.get("username").asText(), rabbitConfig.get("password").asText());
 		} catch (Exception e) {
 			throw new IllegalStateException("Unable to load rabbit config", e);
-		}
+		}*/
 
 	}
 
@@ -87,8 +97,18 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 		JsonNode rabbitConfig = ObjectMapperPool.getInstance().readTree(rabbitConfigJson);
 
 		List<JsonRabbitNode> ret = new ArrayList<>();
-		for (String node : rabbitConfig.get("nodes").asText().split(",", -1))
+
+		String nodes = RabbitConfig.getInstance().getManagementNodes();
+		for (String node : nodes.split(" *, *")) {
 			ret.add(new JsonRabbitNode(node, 0));
+		}
+
+		/*String rabbitConfigJson = ConfigManager.getConfiguration("rabbit");
+		JsonNode rabbitConfig = ObjectMapperPool.getInstance().readTree(rabbitConfigJson);
+
+		List<JsonRabbitNode> ret = new ArrayList<>();
+		for (String node : rabbitConfig.get("nodes").asText().split(",", -1))
+			ret.add(new JsonRabbitNode(node, 0));*/
 
 
 		clearLogbackMarkers();

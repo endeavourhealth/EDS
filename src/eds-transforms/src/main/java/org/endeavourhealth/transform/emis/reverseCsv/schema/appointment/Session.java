@@ -1,12 +1,12 @@
 package org.endeavourhealth.transform.emis.reverseCsv.schema.appointment;
 
 import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.emis.reverseCsv.schema.AbstractCsvWriter;
+import org.endeavourhealth.transform.common.AbstractCsvWriter;
 
 public class Session extends AbstractCsvWriter {
 
-    public Session(CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
-        super(csvFormat, dateFormat, timeFormat);
+    public Session(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
+        super(fileName, csvFormat, dateFormat, timeFormat);
     }
     
     public void writeLine(String appointmentSessionGuid,

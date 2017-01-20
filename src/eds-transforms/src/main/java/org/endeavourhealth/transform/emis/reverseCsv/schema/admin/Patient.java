@@ -1,14 +1,14 @@
 package org.endeavourhealth.transform.emis.reverseCsv.schema.admin;
 
 import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.emis.reverseCsv.schema.AbstractCsvWriter;
+import org.endeavourhealth.transform.common.AbstractCsvWriter;
 
 import java.util.Date;
 
 public class Patient extends AbstractCsvWriter {
 
-    public Patient(CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
-        super(csvFormat, dateFormat, timeFormat);
+    public Patient(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
+        super(fileName, csvFormat, dateFormat, timeFormat);
     }
 
     public void writeLine(String patientGuid,
