@@ -2,25 +2,25 @@ package org.endeavourhealth.patientexplorer.database;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
+import org.endeavourhealth.core.data.admin.OrganisationRepository;
+import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.Item;
+import org.endeavourhealth.core.data.admin.models.Organisation;
+import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.QueryDocument;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.patientexplorer.database.models.ConceptEntity;
-import org.endeavourhealth.patientexplorer.models.JsonConcept;
-import org.endeavourhealth.patientexplorer.models.JsonReportParams;
+import org.endeavourhealth.patientexplorer.models.JsonPractitioner;
 import org.postgresql.util.PSQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.datatype.DatatypeFactory;
-import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.IOException;
 import java.sql.*;
-import java.sql.Date;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -29,7 +29,11 @@ public class CountReportProvider {
 
 	private Connection _conn = null;
 
-	public LibraryItem runReport(UUID reportUuid, Map<String,String> reportParams) throws Exception {
+	public LibraryItem runReport(UUID reportUuid, UUID organisationUuid, Map<String,String> reportParams) throws Exception {
+		ServiceRepository svcRepo = new ServiceRepository();
+		Service svc = svcRepo.getById(organisationUuid);
+		String odsCode = svc.getLocalIdentifier();
+
 		LOG.trace("GettingLibraryItem for UUID {}", reportUuid);
 		LibraryRepository repository = new LibraryRepository();
 		ActiveItem activeItem = repository.getActiveItemByItemId(reportUuid);
@@ -65,10 +69,12 @@ public class CountReportProvider {
 				query += "," + countReport.getCountReport().getFields();
 
 			query += " FROM patient p JOIN episode_of_care eoc ON eoc.patient_id = p.id ";
+			query += " JOIN organization org ON org.id = p.organization_id ";
 			if (countReport.getCountReport().getTables() != null)
 				query += countReport.getCountReport().getTables();
 
 			query += " WHERE eoc.date_registered < :RunDate AND (eoc.date_registered_end IS NULL OR eoc.date_registered_end >= :RunDate) ";
+			query += " AND org.ods_code = '"+ odsCode + "' ";
 			if (countReport.getCountReport().getQuery() != null)
 				query += countReport.getCountReport().getQuery();
 
@@ -149,14 +155,40 @@ public class CountReportProvider {
 		List<ConceptEntity> result = new ArrayList<>();
 		Connection conn = getConnection();
 
-		PreparedStatement statement = conn.prepareStatement("SELECT DISTINCT snomed_concept_id FROM encounter");
+		PreparedStatement statement = conn.prepareStatement("SELECT DISTINCT snomed_concept_id, original_term FROM encounter");
 		ResultSet resultSet = statement.executeQuery();
 
 		while (resultSet.next()) {
 			ConceptEntity concept = new ConceptEntity();
 			concept.setCode(resultSet.getString(1));
-			concept.setDisplay("Loading...");
+			if (resultSet.getString(2) == null)
+				concept.setDisplay("[NULL]");
+			else
+				concept.setDisplay(resultSet.getString(2));
 			result.add(concept);
+		}
+
+		return result;
+	}
+
+	public List<JsonPractitioner> searchPractitioner(String searchData, UUID organisationUuid) throws Exception {
+		ServiceRepository svcRepo = new ServiceRepository();
+		Service svc = svcRepo.getById(organisationUuid);
+		String odsCode = svc.getLocalIdentifier();
+
+		List<JsonPractitioner> result = new ArrayList<>();
+		Connection conn = getConnection();
+
+		PreparedStatement statement = conn.prepareStatement("SELECT p.id, p.name FROM practitioner p JOIN organization o ON o.id = p.organization_id WHERE o.ods_code = ? AND p.name LIKE ?");
+		statement.setString(1, odsCode);
+		statement.setString(2, "%" + searchData + "%");
+		ResultSet resultSet = statement.executeQuery();
+
+		while (resultSet.next()) {
+			JsonPractitioner practitioner = new JsonPractitioner();
+			practitioner.setId(resultSet.getInt(1));
+			practitioner.setName(resultSet.getString(2));
+			result.add(practitioner);
 		}
 
 		return result;

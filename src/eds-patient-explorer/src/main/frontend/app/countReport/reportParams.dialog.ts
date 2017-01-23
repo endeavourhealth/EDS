@@ -6,6 +6,8 @@ import {CodeSetValue} from "../coding/models/CodeSetValue";
 import {CodingService} from "../coding/coding.service";
 import {Concept} from "../coding/models/Concept";
 import {CountReportService} from "./countReport.service";
+import {Practitioner} from "../practitioner/models/Practitioner";
+import {PractitionerPickerDialog} from "../practitioner/practitionerPicker.dialog";
 
 @Component({
     selector: 'ngbd-modal-content',
@@ -23,6 +25,7 @@ export class ReportParamsDialog implements OnInit {
     valueMin : number;
     snomedCode : CodeSetValue;
     authType : number;
+    practitioner : Practitioner;
     dmdCode : number;
     encounterType : number;
     referralType : number;
@@ -54,6 +57,7 @@ export class ReportParamsDialog implements OnInit {
         if (this.query.indexOf(':ValueMin') >= 0) this.valueMin = null;
         if (this.query.indexOf(':ValueMax') >= 0) this.valueMax = null;
         if (this.query.indexOf(':AuthType') >= 0) this.authType = null;
+        if (this.query.indexOf(':Practitioner') >= 0) this.practitioner = null;
         // DM&D
         if (this.query.indexOf(':EncounterType') >= 0) this.encounterType = null;
         // Referral type
@@ -63,19 +67,7 @@ export class ReportParamsDialog implements OnInit {
         let vm = this;
         vm.countReportService.getEncounterTypeCodes()
           .subscribe(
-            (result) => {
-                vm.encounterTypes = result
-                for (let concept of vm.encounterTypes) {
-                    if (concept.id == null)
-                        concept.preferredTerm = '<NULL>';
-                    else
-                        vm.codingService.getPreferredTerm(concept.id)
-                          .subscribe(
-                            (result) => concept.preferredTerm = result.preferredTerm,
-                            (error) => concept.preferredTerm = '<Unknown>'
-                          );
-                }
-            }
+            (result) => vm.encounterTypes = result
           );
     }
 
@@ -92,6 +84,22 @@ export class ReportParamsDialog implements OnInit {
                 );
           }
         )
+    }
+
+    clearSnomed() {
+        this.snomedCode = null;
+    }
+
+    selectPractitioner() {
+        var vm = this;
+        PractitionerPickerDialog.open(vm.modalService)
+          .result.then(
+          (result) => vm.practitioner = result
+        );
+    }
+
+    clearPractitioner() {
+        this.practitioner = null;
     }
 
     setEffectiveDate($event) {
@@ -113,6 +121,7 @@ export class ReportParamsDialog implements OnInit {
         params.ValueMin = (this.valueMin) ? this.valueMin : 'null';
         params.ValueMax = (this.valueMax) ? this.valueMax  : 'null';
         params.AuthType = (this.authType) ? this.authType : 'null';
+        params.Practitioner = (this.practitioner) ? this.practitioner.id : 'null';
         // DM & D
         params.EncounterType = (this.encounterType) ? this.encounterType : 'null';
         // Referral type

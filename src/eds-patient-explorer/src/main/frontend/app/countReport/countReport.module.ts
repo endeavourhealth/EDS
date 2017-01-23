@@ -9,6 +9,7 @@ import {LibraryModule} from "../library/library.module";
 import {CountReportService} from "./countReport.service";
 import {ReportParamsDialog} from "./reportParams.dialog";
 import {CodingModule} from "../coding/coding.module";
+import {PractitionerModule} from "../practitioner/practitioner.module";
 
 @NgModule({
 	imports:[
@@ -20,6 +21,7 @@ import {CodingModule} from "../coding/coding.module";
 		FolderModule,
 		LibraryModule,
 		CodingModule,
+		PractitionerModule,
 	],
 	declarations:[
 		CountReportComponent,

@@ -12,6 +12,8 @@ import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.patientexplorer.database.CountReportProvider;
 import org.endeavourhealth.patientexplorer.database.models.ConceptEntity;
 import org.endeavourhealth.patientexplorer.models.JsonConcept;
+import org.endeavourhealth.patientexplorer.models.JsonPractitioner;
+import org.endeavourhealth.transform.enterprise.outputModels.Practitioner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,14 +35,14 @@ public final class CountReportEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/runReport")
-    public Response runReport(@Context SecurityContext sc, @QueryParam("uuid") UUID reportId, String reportParamsJson) throws Exception {
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Run, "Report",
+    public Response runReport(@Context SecurityContext sc, @QueryParam("reportUuid") UUID reportId, @QueryParam("organisationUuid") UUID organisationUuid, String reportParamsJson) throws Exception {
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), organisationUuid, AuditAction.Run, "Report",
             "uuid", reportId,
             "params", reportParamsJson);
         LOG.debug("runReport");
 
         Map<String, String> reportParams = ObjectMapperPool.getInstance().readValue(reportParamsJson, new TypeReference<Map<String,String>>(){});
-        LibraryItem ret = countReportProvider.runReport(reportId, reportParams);
+        LibraryItem ret = countReportProvider.runReport(reportId, organisationUuid, reportParams);
 
         return Response
             .ok(ret, MediaType.APPLICATION_JSON_TYPE)

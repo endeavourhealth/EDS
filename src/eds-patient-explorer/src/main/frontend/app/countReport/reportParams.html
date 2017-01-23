@@ -53,6 +53,19 @@
             </div>
         </div>
 
+        <div class="row" [hidden]="hide(practitioner)">
+            <div class="form-group col-md-12">
+                <label class="control-label">Practitioner</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="All" [ngModel]="practitioner?.name" name="SnomedCode" readonly>
+                    <span class="input-group-btn">
+                        <button type="button" class="btn btn-default" (click)="selectPractitioner()"><span class="fa fa-search"></span></button>
+                        <button type="button" class="btn btn-default" (click)="clearPractitioner()"><span class="fa fa-times"></span></button>
+                    </span>
+                </div>
+            </div>
+        </div>
+
         <div class="row" [hidden]="hide(authType) && hide(dmdCode)">
             <div class="form-group col-md-6" [hidden]="hide(authType)">
                 <label class="control-label">Authorization type</label>

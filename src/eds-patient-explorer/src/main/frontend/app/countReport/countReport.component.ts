@@ -6,11 +6,10 @@ import {LibraryService} from "../library/library.service";
 import {LibraryItem} from "../library/models/LibraryItem";
 import {LoggerService} from "../common/logger.service";
 import {CountReportService} from "./countReport.service";
-import {ReportParams} from "./models/ReportParams";
 import {ReportParamsDialog} from "./reportParams.dialog";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-import {Enumerable} from "linqts/dist/linq";
 import {ItemType} from "../folder/models/ItemType";
+import {SecurityService} from "../security/security.service";
 
 @Component({
 	template : require('./countReports.html')
@@ -24,6 +23,7 @@ export class CountReportComponent {
 	constructor(
 		protected $modal : NgbModal,
 		protected logger : LoggerService,
+		protected securityService : SecurityService,
 		protected countReportService : CountReportService,
 		protected libraryService : LibraryService) {
 	}
@@ -75,7 +75,8 @@ export class CountReportComponent {
 
 	executeReport(params : Map<string, string>) {
 		var vm = this;
-		vm.countReportService.runReport(this.libraryItem.uuid, params)
+		var organisationUuid : string = vm.securityService.getCurrentUser().organisation;
+		vm.countReportService.runReport(this.libraryItem.uuid, organisationUuid, params)
 			.subscribe(
 				(result) => {
 					vm.logger.success('Report successfully run', result, 'Run report');
