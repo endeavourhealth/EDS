@@ -12,8 +12,6 @@ import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.patientexplorer.database.CountReportProvider;
 import org.endeavourhealth.patientexplorer.database.models.ConceptEntity;
 import org.endeavourhealth.patientexplorer.models.JsonConcept;
-import org.endeavourhealth.patientexplorer.models.JsonPractitioner;
-import org.endeavourhealth.transform.enterprise.outputModels.Practitioner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +23,9 @@ import javax.ws.rs.core.SecurityContext;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * REST API for count reports.  Provides all methods on the path "/countReport"
+ */
 @Path("/countReport")
 public final class CountReportEndpoint extends AbstractEndpoint {
 
@@ -32,33 +33,48 @@ public final class CountReportEndpoint extends AbstractEndpoint {
     private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsPatientExplorerModule.CountReport);
     private static final CountReportProvider countReportProvider = new CountReportProvider();
 
+    /**
+     * Run a predefined count report
+     * @param sc                Security context (provided)
+     * @param reportUuid          UUID of the report to run
+     * @param organisationUuid  UUID of the service/organisation to restrict the report to
+     * @param reportParamsJson  Appropriate report filtering parameters
+     * @return  LibraryItem definition of the report that ran
+     * @throws Exception
+     */
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/runReport")
-    public Response runReport(@Context SecurityContext sc, @QueryParam("reportUuid") UUID reportId, @QueryParam("organisationUuid") UUID organisationUuid, String reportParamsJson) throws Exception {
+    public Response runReport(@Context SecurityContext sc, @QueryParam("reportUuid") UUID reportUuid, @QueryParam("organisationUuid") UUID organisationUuid, String reportParamsJson) throws Exception {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), organisationUuid, AuditAction.Run, "Report",
-            "uuid", reportId,
+            "uuid", reportUuid,
             "params", reportParamsJson);
         LOG.debug("runReport");
 
         Map<String, String> reportParams = ObjectMapperPool.getInstance().readValue(reportParamsJson, new TypeReference<Map<String,String>>(){});
-        LibraryItem ret = countReportProvider.runReport(reportId, organisationUuid, reportParams);
+        LibraryItem ret = countReportProvider.runReport(reportUuid, organisationUuid, reportParams);
 
         return Response
             .ok(ret, MediaType.APPLICATION_JSON_TYPE)
             .build();
     }
 
-
+    /**
+     * Export a list of NHS Numbers resulting from the most recent run of a report
+     * @param sc        Security context (provided)
+     * @param uuid  UUID of the report to export
+     * @return  Line-break separated list of NHS Numbers
+     * @throws Exception
+     */
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/exportNHS")
-    public Response exportNHSNumbers(@Context SecurityContext sc, @QueryParam("uuid") UUID reportId) throws Exception {
+    public Response exportNHSNumbers(@Context SecurityContext sc, @QueryParam("uuid") UUID uuid) throws Exception {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Run, "Export NHS Numbers",
-            "uuid", reportId);
+            "uuid", uuid);
         LOG.debug("exportNHS");
 
-        List<String> data = countReportProvider.getNHSExport(reportId);
+        List<String> data = countReportProvider.getNHSExport(uuid);
         String ret = StringUtils.join(data, "\n");
 
         return Response
@@ -66,16 +82,22 @@ public final class CountReportEndpoint extends AbstractEndpoint {
             .build();
     }
 
-
+    /**
+     * Export the data resulting from the most recent run of a report
+     * @param sc        Security context (provided)
+     * @param uuid  UUID of the report to export
+     * @return  CSV export of the report data
+     * @throws Exception
+     */
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/exportData")
-    public Response exportData(@Context SecurityContext sc, @QueryParam("uuid") UUID reportId) throws Exception {
+    public Response exportData(@Context SecurityContext sc, @QueryParam("uuid") UUID uuid) throws Exception {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Run, "Export Data",
-            "uuid", reportId);
+            "uuid", uuid);
         LOG.debug("exportData");
 
-        List<String> data = countReportProvider.getDataExport(reportId);
+        List<String> data = countReportProvider.getDataExport(uuid);
         String ret = StringUtils.join(data, "\n");
 
         return Response
@@ -83,6 +105,12 @@ public final class CountReportEndpoint extends AbstractEndpoint {
             .build();
     }
 
+    /**
+     * Retrieve a distinct list of encounter types (based on code AND term)
+     * @param sc Security context (provided)
+     * @return  A JSON array of Concepts
+     * @throws Exception
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/encounterType")

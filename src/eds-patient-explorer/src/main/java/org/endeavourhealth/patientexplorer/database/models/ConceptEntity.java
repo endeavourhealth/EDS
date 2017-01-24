@@ -74,7 +74,7 @@ public class ConceptEntity {
 
     @Override
     public int hashCode() {
-        int result = (int) (pid ^ (pid >>> 32));
+        int result = (pid ^ (pid >>> 32));
         result = 31 * result + (code != null ? code.hashCode() : 0);
         result = 31 * result + (codesystem_pid ^ (codesystem_pid >>> 32));
         result = 31 * result + (display != null ? display.hashCode() : 0);

@@ -28,14 +28,12 @@ import {FamilyHistoryConditionComponent} from "./components/familyHistoryConditi
 import {CareHistoryComponent} from "./components/careHistory.component";
 import {InvestigationsComponent} from "./components/investigations.component";
 import {CodeTooltipComponent} from "./components/codeTooltip.component";
-import {BusyModule} from "angular2-busy";
 
 @NgModule({
 	imports : [
 		BrowserModule,
 		FormsModule,
 		NgbModule,
-		BusyModule,
 
 		TreeModule,
 	],

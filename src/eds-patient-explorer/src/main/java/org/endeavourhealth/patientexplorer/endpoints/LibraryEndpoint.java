@@ -72,7 +72,6 @@ public final class LibraryEndpoint extends AbstractEndpoint {
         LibraryRepository repository = new LibraryRepository();
 
         UUID folderUuid = UUID.fromString(uuidStr);
-        UUID orgUuid = getOrganisationUuidFromToken(sc);
 
         LOG.trace("GettingFolderContents for folder {}", folderUuid);
 

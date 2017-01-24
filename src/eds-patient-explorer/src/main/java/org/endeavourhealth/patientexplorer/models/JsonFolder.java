@@ -31,21 +31,9 @@ public final class JsonFolder implements Comparable {
         this.hasChildren = hasChildren;
 
         if (contentCount > 0) {
-            this.contentCount = new Integer(contentCount);
+            this.contentCount = contentCount;
         }
     }
-    /*public JsonFolder(DbFolder folder, int count)
-    {
-        this.uuid = folder.getPrimaryUuid();
-        this.folderName = folder.getTitle();
-        this.folderType = new Integer(folder.getFolderType());
-        this.parentFolderUuid = folder.getParentFolderUuid();
-        this.hasChildren = folder.getHasChildren();
-        if (count > -1)
-        {
-            contentCount = new Integer(count);
-        }
-    }*/
 
     /**
      * gets/sets

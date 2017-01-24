@@ -37,5 +37,5 @@
 
 <div class="modal-footer">
 	<button type="button" class="btn bnt-default" (click)="cancel()">Cancel</button>
-	<button type="button" class="btn btn-primary" *ngIf="!editMode" (click)="ok()" [disabled]="selectedPractitioner == null">OK</button>
+	<button type="button" class="btn btn-primary" (click)="ok()" [disabled]="selectedPractitioner == null">OK</button>
 </div>
