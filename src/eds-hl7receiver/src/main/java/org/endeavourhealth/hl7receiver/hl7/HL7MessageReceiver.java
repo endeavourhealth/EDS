@@ -45,7 +45,7 @@ class HL7MessageReceiver implements ReceivingApplication {
         try {
             connectionId = connectionManager.getConnectionId(map);
 
-            hl7KeyFields = HL7KeyFields.parse(message);
+            hl7KeyFields = HL7KeyFields.parse(message, dbChannel);
 
             if (connectionId == null)
                 throw new MessageProcessingException("Could not determine connection");
@@ -60,7 +60,7 @@ class HL7MessageReceiver implements ReceivingApplication {
                 throw new MessageProcessingException("Message type is not allowed");
 
             response = message.generateACK();
-            hl7KeyFieldsResponse = HL7KeyFields.parse(response);
+            hl7KeyFieldsResponse = HL7KeyFields.parse(response, dbChannel);
 
             dataLayer.logMessage(
                     dbChannel.getChannelId(),
@@ -86,7 +86,7 @@ class HL7MessageReceiver implements ReceivingApplication {
 
                 try {
                     negativeResponse = message.generateACK(AcknowledgmentCode.AE, new HL7Exception(e1.getMessage(), e1));
-                    negativeResponseKeyFields = HL7KeyFields.parse(negativeResponse);
+                    negativeResponseKeyFields = HL7KeyFields.parse(negativeResponse, dbChannel);
 
                 } catch (Exception e2) {
                     LOG.error("Error generating negative acknowledgement", e2);

@@ -3,6 +3,7 @@ package org.endeavourhealth.hl7receiver.hl7;
 import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HapiContext;
 import ca.uhn.hl7v2.app.HL7Service;
+import ca.uhn.hl7v2.validation.impl.NoValidation;
 import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
@@ -39,6 +40,7 @@ class HL7Channel {
         this.dataLayer = new DataLayer(configuration.getDatabaseConnection());
 
         context = new DefaultHapiContext();
+        context.setValidationContext(new NoValidation());
         connectionManager = new HL7ConnectionManager(configuration, dbChannel);
         messageReceiver = new HL7MessageReceiver(configuration, dbChannel, connectionManager);
         exceptionHandler = new HL7ExceptionHandler(configuration, dbChannel, connectionManager);

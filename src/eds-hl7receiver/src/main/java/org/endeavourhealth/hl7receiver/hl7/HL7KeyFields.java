@@ -2,19 +2,26 @@ package org.endeavourhealth.hl7receiver.hl7;
 
 import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HL7Exception;
+import ca.uhn.hl7v2.model.Composite;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.primitive.CommonTS;
+import ca.uhn.hl7v2.model.v23.datatype.CX;
 import ca.uhn.hl7v2.model.v23.datatype.TS;
 import ca.uhn.hl7v2.util.Terser;
+import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.hl7receiver.model.db.DbChannel;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 class HL7KeyFields {
 
     private static final String MSH_SEGMENT_NAME = "MSH";
+    private static final String PID_SEGMENT_NAME = "PID";
     private static final int MSH_SENDING_APPLICATION_FIELD = 3;
     private static final int MSH_SENDING_FACILITY_FIELD = 4;
     private static final int MSH_RECEIVING_APPLICATION_FIELD = 5;
@@ -23,6 +30,10 @@ class HL7KeyFields {
     private static final int MSH_MESSAGE_TYPE_FIELD = 9;
     private static final int MSH_MESSAGE_CONTROL_ID_FIELD = 10;
     private static final int MSH_SEQUENCE_NUMBER_FIELD = 13;
+    private static final int PID_EXTERNAL_PID_FIELD = 2;
+    private static final int PID_INTERNAL_PID_FIELD = 3;
+    private static final int PID_ASSIGNING_AUTHORITY_COMPONENT = 3;
+    private static final int PID_VALUE_COMPONENT = 0;
 
     private String encodedMessage;
     private String sendingApplication;
@@ -33,8 +44,10 @@ class HL7KeyFields {
     private String messageType;
     private String messageControlId;
     private String sequenceNumber;
+    private String externalPid;
+    private String internalPid;
 
-    public static HL7KeyFields parse(Message message) throws HL7Exception {
+    public static HL7KeyFields parse(Message message, DbChannel channel) throws HL7Exception {
 
         Terser terser = new Terser(message);
 
@@ -50,7 +63,43 @@ class HL7KeyFields {
         hl7KeyFields.messageControlId = getFieldAsString(terser, MSH_SEGMENT_NAME, MSH_MESSAGE_CONTROL_ID_FIELD);
         hl7KeyFields.sequenceNumber = getFieldAsString(terser, MSH_SEGMENT_NAME, MSH_SEQUENCE_NUMBER_FIELD);
 
+        hl7KeyFields.externalPid = getPidWithAssigningAuthority(terser, PID_EXTERNAL_PID_FIELD, channel.getExternalPidAssigningAuthority());
+        hl7KeyFields.internalPid = getPidWithAssigningAuthority(terser, PID_INTERNAL_PID_FIELD, channel.getInternalPidAssigningAuthority());
+
         return hl7KeyFields;
+    }
+
+    private static String getPidWithAssigningAuthority(Terser terser, int pidFieldNumber, String assigningAuthority) throws HL7Exception {
+
+        if (StringUtils.isBlank(assigningAuthority))
+            return null;
+
+        if (!hasSegment(terser, PID_SEGMENT_NAME))
+            return null;
+
+        Type[] fieldRepeats = getField(terser, PID_SEGMENT_NAME, pidFieldNumber);
+
+        if (fieldRepeats == null)
+            return null;
+
+        for (Type field : fieldRepeats) {
+            if (field == null)
+                continue;
+
+            if (!Composite.class.isAssignableFrom(field.getClass()))
+                continue;
+
+            Composite compositeField = ((Composite) field);
+
+            String assigningAuthorityComponent = compositeField.getComponent(PID_ASSIGNING_AUTHORITY_COMPONENT).encode();
+
+            if (!assigningAuthority.equals(assigningAuthorityComponent))
+                continue;
+
+            return compositeField.getComponent(PID_VALUE_COMPONENT).encode();
+        }
+
+        return null;
     }
 
     private static LocalDateTime getFieldAsDate(Terser terser, String segmentName, int fieldNumber) throws HL7Exception {
@@ -61,6 +110,18 @@ class HL7KeyFields {
     }
 
     private static String getFieldAsString(Terser terser, String segmentName, int fieldNumber) throws HL7Exception {
+        Type[] types = getField(terser, segmentName, fieldNumber);
+
+        if (types == null)
+            return null;
+
+        if (types.length == 0)
+            return null;
+
+        return types[0].encode();
+    }
+
+    private static Type[] getField(Terser terser, String segmentName, int fieldNumber) throws HL7Exception {
         Segment segment = terser.getSegment(segmentName);
 
         if (segment == null)
@@ -71,10 +132,16 @@ class HL7KeyFields {
         if (types == null)
             return null;
 
-        if (types.length == 0)
-            return null;
+        return types;
+    }
 
-        return types[0].encode();
+    private static boolean hasSegment(Terser terser, String segmentName) {
+        try {
+            terser.getSegment(segmentName);
+            return true;
+        } catch (HL7Exception e) {
+            return false;
+        }
     }
 
     public String getEncodedMessage() {
@@ -112,4 +179,8 @@ class HL7KeyFields {
     public String getSequenceNumber() {
         return sequenceNumber;
     }
+
+    public String getExternalPid() { return externalPid; }
+
+    public String getInternalPid() { return internalPid; }
 }
