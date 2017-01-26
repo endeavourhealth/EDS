@@ -55,9 +55,10 @@ begin
 		c.sending_facility,
 		c.receiving_application,
 		c.receiving_facility,
-		c.port_number,
-		c.notes,
-		c.eds_service_identifier
+		c.ext_pid_assigning_auth,
+		c.int_pid_assigning_auth,
+		c.eds_service_identifier,
+		c.notes
 	from configuration.channel c;
 	
 	return next configuration_channel;

@@ -13,12 +13,14 @@ insert into configuration.channel
 	sending_facility,
 	receiving_application,
 	receiving_facility,
+	ext_pid_assigning_auth,
+	int_pid_assigning_auth,
 	eds_service_identifier,
 	notes
 )
 values
-(1, 'HOMERTON', 8900, true, false, 'HOMERTON_TIE', 'HOMERTON', 'EDS', 'ENDEAVOUR', 'RQX', ''),
-(2, 'BARTS', 8901, true, false, 'BLT_TIE', 'BLT', 'EDS', 'ENDEAVOUR', 'R1H', '');
+(1, 'HOMERTON', 8900, true, false, 'HOMERTON_TIE', 'HOMERTON', 'EDS', 'ENDEAVOUR', 'NHS', 'Homerton Case Note Number', 'RQX', ''),
+(2, 'BARTS', 8901, true, false, 'BLT_TIE', 'BLT', 'EDS', 'ENDEAVOUR', null, null, 'R1H', '');
 
 insert into configuration.channel_message_type
 (

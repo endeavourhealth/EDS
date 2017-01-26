@@ -41,8 +41,10 @@ public class DataLayer implements IDBDigestLogger {
                         .setSendingFacility(resultSet.getString("sending_facility"))
                         .setReceivingApplication(resultSet.getString("receiving_application"))
                         .setReceivingFacility(resultSet.getString("receiving_facility"))
-                        .setNotes(resultSet.getString("notes"))
-                        .setEdsServiceIdentifier(resultSet.getString("eds_service_identifier")));
+                        .setExternalPidAssigningAuthority(resultSet.getString("ext_pid_assigning_auth"))
+                        .setInternalPidAssigningAuthority(resultSet.getString("int_pid_assigning_auth"))
+                        .setEdsServiceIdentifier(resultSet.getString("eds_service_identifier"))
+                        .setNotes(resultSet.getString("notes")));
 
         List<DbChannelMessageType> dbChannelMessageTypes = pgStoredProc.executeMultiQuery((resultSet) ->
                 new DbChannelMessageType()

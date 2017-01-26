@@ -15,6 +15,14 @@ import java.time.ZoneId;
 class HL7KeyFields {
 
     private static final String MSH_SEGMENT_NAME = "MSH";
+    private static final int MSH_SENDING_APPLICATION_FIELD = 3;
+    private static final int MSH_SENDING_FACILITY_FIELD = 4;
+    private static final int MSH_RECEIVING_APPLICATION_FIELD = 5;
+    private static final int MSH_RECEIVING_FACILITY_FIELD = 6;
+    private static final int MSH_MESSAGE_DATE_TIME_FIELD = 7;
+    private static final int MSH_MESSAGE_TYPE_FIELD = 9;
+    private static final int MSH_MESSAGE_CONTROL_ID_FIELD = 10;
+    private static final int MSH_SEQUENCE_NUMBER_FIELD = 13;
 
     private String encodedMessage;
     private String sendingApplication;
@@ -33,14 +41,14 @@ class HL7KeyFields {
         HL7KeyFields hl7KeyFields = new HL7KeyFields();
 
         hl7KeyFields.encodedMessage = new DefaultHapiContext().getPipeParser().encode(message);
-        hl7KeyFields.sendingApplication = getFieldAsString(terser, MSH_SEGMENT_NAME, 3);
-        hl7KeyFields.sendingFacility = getFieldAsString(terser, MSH_SEGMENT_NAME, 4);
-        hl7KeyFields.receivingApplication = getFieldAsString(terser, MSH_SEGMENT_NAME, 5);
-        hl7KeyFields.receivingFacility = getFieldAsString(terser, MSH_SEGMENT_NAME, 6);
-        hl7KeyFields.messageDateTime = getFieldAsDate(terser, MSH_SEGMENT_NAME, 7);
-        hl7KeyFields.messageType = getFieldAsString(terser, MSH_SEGMENT_NAME, 9);
-        hl7KeyFields.messageControlId = getFieldAsString(terser, MSH_SEGMENT_NAME, 10);
-        hl7KeyFields.sequenceNumber = getFieldAsString(terser, MSH_SEGMENT_NAME, 13);
+        hl7KeyFields.sendingApplication = getFieldAsString(terser, MSH_SEGMENT_NAME, MSH_SENDING_APPLICATION_FIELD);
+        hl7KeyFields.sendingFacility = getFieldAsString(terser, MSH_SEGMENT_NAME, MSH_SENDING_FACILITY_FIELD);
+        hl7KeyFields.receivingApplication = getFieldAsString(terser, MSH_SEGMENT_NAME, MSH_RECEIVING_APPLICATION_FIELD);
+        hl7KeyFields.receivingFacility = getFieldAsString(terser, MSH_SEGMENT_NAME, MSH_RECEIVING_FACILITY_FIELD);
+        hl7KeyFields.messageDateTime = getFieldAsDate(terser, MSH_SEGMENT_NAME, MSH_MESSAGE_DATE_TIME_FIELD);
+        hl7KeyFields.messageType = getFieldAsString(terser, MSH_SEGMENT_NAME, MSH_MESSAGE_TYPE_FIELD);
+        hl7KeyFields.messageControlId = getFieldAsString(terser, MSH_SEGMENT_NAME, MSH_MESSAGE_CONTROL_ID_FIELD);
+        hl7KeyFields.sequenceNumber = getFieldAsString(terser, MSH_SEGMENT_NAME, MSH_SEQUENCE_NUMBER_FIELD);
 
         return hl7KeyFields;
     }

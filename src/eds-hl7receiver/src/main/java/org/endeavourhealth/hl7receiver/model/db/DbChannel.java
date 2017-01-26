@@ -12,7 +12,11 @@ public class DbChannel {
     private String sendingFacility;
     private String receivingApplication;
     private String receivingFacility;
+    private String externalPidAssigningAuthority;
+    private String internalPidAssigningAuthority;
     private String edsServiceIdentifier;
+    private String notes;
+
     private List<DbChannelMessageType> dbChannelMessageTypes;
 
     public String getSendingApplication() {
@@ -50,8 +54,6 @@ public class DbChannel {
         this.receivingFacility = receivingFacility;
         return this;
     }
-
-    private String notes;
 
     public int getChannelId() {
         return channelId;
@@ -98,12 +100,21 @@ public class DbChannel {
         return this;
     }
 
-    public String getNotes() {
-        return notes;
+    public String getExternalPidAssigningAuthority() {
+        return externalPidAssigningAuthority;
     }
 
-    public DbChannel setNotes(String notes) {
-        this.notes = notes;
+    public DbChannel setExternalPidAssigningAuthority(String externalPidAssigningAuthority) {
+        this.externalPidAssigningAuthority = externalPidAssigningAuthority;
+        return this;
+    }
+
+    public String getInternalPidAssigningAuthority() {
+        return internalPidAssigningAuthority;
+    }
+
+    public DbChannel setInternalPidAssigningAuthority(String internalPidAssigningAuthority) {
+        this.internalPidAssigningAuthority = internalPidAssigningAuthority;
         return this;
     }
 
@@ -113,6 +124,15 @@ public class DbChannel {
 
     public DbChannel setEdsServiceIdentifier(String edsServiceIdentifier) {
         this.edsServiceIdentifier = edsServiceIdentifier;
+        return this;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public DbChannel setNotes(String notes) {
+        this.notes = notes;
         return this;
     }
 
