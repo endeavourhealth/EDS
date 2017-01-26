@@ -89,19 +89,19 @@ public final class JsonFolderContent implements Comparable {
     }
 
     public Date getLastModified() {
-        return new Date(lastModified.getTime());
+        return this.lastModified == null ? null : new Date(lastModified.getTime());
     }
 
     public void setLastModified(Date lastModified) {
-        this.lastModified = new Date(lastModified.getTime());
+        this.lastModified = lastModified == null ? null : new Date(lastModified.getTime());
     }
 
     public Date getLastRun() {
-        return new Date(lastRun.getTime());
+        return this.lastRun == null ? null : new Date(lastRun.getTime());
     }
 
     public void setLastRun(Date lastRun) {
-        this.lastRun = new Date(lastRun.getTime());
+        this.lastRun = lastRun == null ? null : new Date(lastRun.getTime());
     }
 
     public Boolean getIsScheduled() {

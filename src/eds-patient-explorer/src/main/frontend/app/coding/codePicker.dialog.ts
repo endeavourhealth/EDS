@@ -1,25 +1,29 @@
 import {CodeSetValue} from "./models/CodeSetValue";
 import {ExclusionTreeNode} from "./models/ExclusionTreeNode";
-import {Input, Component} from "@angular/core";
+import {Input, Component, OnInit} from "@angular/core";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 import {ITreeOptions} from "angular2-tree-component";
 import {CodingService} from "./coding.service";
+import {LoggerService} from "../common/logger.service";
 
 @Component({
 	selector: 'ngbd-modal-content',
 	template: require('./codePicker.html')
 })
-export class CodePickerDialog {
-	public static open(modalService: NgbModal, selection : CodeSetValue[], singleCode? : boolean) {
+export class CodePickerDialog implements OnInit {
+	public static open(modalService: NgbModal, selection : CodeSetValue[], singleCode? : boolean, rootCode? : CodeSetValue) {
 		const modalRef = modalService.open(CodePickerDialog, { backdrop : "static", size : "lg"});
 		modalRef.componentInstance.resultData = selection;
 		modalRef.componentInstance.singleCode = singleCode;
+		modalRef.componentInstance.rootCode = rootCode;
 
 		return modalRef;
 	}
 
 	@Input() resultData;
 	@Input() singleCode? : boolean;
+	@Input() rootCode? : CodeSetValue;
+
 	options : ITreeOptions;
 
 	highlightedMatch : CodeSetValue;
@@ -36,12 +40,17 @@ export class CodePickerDialog {
 	exclusionTreeData : ExclusionTreeNode[];
 
 	constructor(protected activeModal : NgbActiveModal,
+							protected logger : LoggerService,
 							private codingService : CodingService) {
 		this.termCache = {};
 		this.options = {
 			childrenField : 'exclusion',
 			idField : 'code'
 		}
+	}
+
+	ngOnInit(): void {
+		this.loadRoot();
 	}
 
 	search() {
@@ -56,10 +65,28 @@ export class CodePickerDialog {
 			});
 	}
 
+	loadRoot() {
+		let vm = this;
+		if (!vm.rootCode)
+			return;
+
+		vm.parents = [this.rootCode];
+		vm.codingService.getCodeChildren(this.rootCode.code)
+			.subscribe(
+				(result) => vm.searchResults = result
+			);
+	}
+
 	displayCode(itemToDisplay : CodeSetValue, replace : boolean) {
 		var vm = this;
 
-		if (vm.highlightedMatch) {
+		// Prevent navigation above the root code if given
+		if (vm.rootCode && (vm.rootCode.code == itemToDisplay.code)) {
+			vm.logger.warning('You cannot navigate above the root', vm.rootCode, 'Cannot select parent');
+			return;
+		}
+
+		if (vm.highlightedMatch && !vm.singleCode) {
 			vm.previousSelection = vm.highlightedMatch;
 		}
 
