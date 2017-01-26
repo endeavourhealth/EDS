@@ -72,36 +72,6 @@ public class PatientTransformer extends AbstractTransformer {
                 }
             }
 
-            //moved all reg-specific stuff to the EpisodeOfCare table, where it belongs
-            /*if (fhirPatient.hasCareProvider()) {
-                for (Reference reference: fhirPatient.getCareProvider()) {
-                    ResourceType resourceType = ReferenceHelper.getResourceType(reference);
-                    if (resourceType == ResourceType.Practitioner) {
-                        Integer enterprisePractitionerUuid = findEnterpriseId(reference);
-                        model.setUsualGpPractitionerId(enterprisePractitionerUuid);
-                    }
-                }
-            }
-
-            if (fhirPatient.hasExtension()) {
-                for (Extension extension: fhirPatient.getExtension()) {
-                    if (extension.getUrl().equals(FhirExtensionUri.PATIENT_REGISTRATION_TYPE)) {
-                        Coding coding = (Coding)extension.getValue();
-                        RegistrationType fhirRegistrationType = RegistrationType.fromCode(coding.getCode());
-                        model.setRegistrationTypeId(fhirRegistrationType.ordinal());
-                    }
-                }
-            }
-
-            model.setDateRegistered(convertDate(new Date()));
-         *//*   Period period = fhirEpisode.getPeriod();
-            if (period.hasStart()) {
-                model.setDateRegistered(convertDate(period.getStart()));
-            }
-            if (period.hasEnd()) {
-                model.setDateRegisteredEnd(convertDate(period.getEnd()));
-            }*/
-
             model.setPseudoId(pseudonomise(fhirPatient));
 
             //adding NHS number to allow data checking

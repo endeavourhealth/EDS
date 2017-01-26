@@ -21,4 +21,5 @@ public class FhirValueSetUri {
     public final static String VALUE_SET_REFERRAL_REQUEST_SEND_MODE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-referral-request-send-mode";
     public final static String VALUE_SET_ETHNIC_CATEGORY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-ethnic-category-extension";
     public final static String VALUE_SET_REFERRAL_PRIORITY = "http://endeavourhealth.org/fhir/ValueSet/primarycare-referral-request-priority";
+    public final static String VALUE_SET_REFERRAL_TYPE = "http://endeavourhealth.org/fhir/ValueSet/primarycare-referral-type";
 }

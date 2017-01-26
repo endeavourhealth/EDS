@@ -65,7 +65,8 @@ public class ObservationReferralTransformer {
 
         String serviceType = parser.getReferralServiceType();
         if (!Strings.isNullOrEmpty(serviceType)) {
-            fhirReferral.addServiceRequested(CodeableConceptHelper.createCodeableConcept(serviceType));
+            //after discussion, the serviceType (e.g. "advice", "management" should go into the type field
+            fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(serviceType));
         }
 
         String mode = parser.getReferralMode();

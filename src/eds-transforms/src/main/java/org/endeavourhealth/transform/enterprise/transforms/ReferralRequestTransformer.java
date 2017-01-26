@@ -66,8 +66,16 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                 model.setDatePrecisionId(convertDatePrecision(dt.getPrecision()));
             }
 
-            Long snomedConceptId = findSnomedConceptId(fhir.getType());
-            model.setSnomedConceptId(snomedConceptId);
+            //changed where the observation code is stored
+            if (fhir.hasServiceRequested()) {
+                if (fhir.getServiceRequested().size() > 1) {
+                    throw new TransformException("Transform doesn't support referrals with multiple service codes " + fhir.getId());
+                }
+                Long snomedConceptId = findSnomedConceptId(fhir.getServiceRequested().get(0));
+                model.setSnomedConceptId(snomedConceptId);
+            }
+            /*Long snomedConceptId = findSnomedConceptId(fhir.getType());
+            model.setSnomedConceptId(snomedConceptId);*/
 
             if (fhir.hasRequester()) {
                 Reference requesterReference = fhir.getRequester();
@@ -133,19 +141,18 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                     }
                 }
             }
-
-            if (fhir.hasServiceRequested()) {
-                for (CodeableConcept codeableConcept: fhir.getServiceRequested()) {
-                    if (!Strings.isNullOrEmpty(codeableConcept.getText())) {
-                        model.setServiceRequested(codeableConcept.getText());
-                    } else {
-                        for (Coding coding: codeableConcept.getCoding()) {
-                            model.setServiceRequested(coding.getDisplay());
-                        }
+/*
+            if (fhir.hasType()) {
+                CodeableConcept codeableConcept = fhir.getType();
+                if (!Strings.isNullOrEmpty(codeableConcept.getText())) {
+                    model.setServiceRequested(codeableConcept.getText());
+                } else {
+                    for (Coding coding: codeableConcept.getCoding()) {
+                        model.setServiceRequested(coding.getDisplay());
                     }
                 }
             }
-
+*/
             if (fhir.hasExtension()) {
                 for (Extension extension: fhir.getExtension()) {
                     if (extension.getUrl().equals(FhirExtensionUri.REFERRAL_REQUEST_SEND_MODE)) {
