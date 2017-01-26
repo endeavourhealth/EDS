@@ -7,16 +7,12 @@ import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.Segment;
 import ca.uhn.hl7v2.model.Type;
 import ca.uhn.hl7v2.model.primitive.CommonTS;
-import ca.uhn.hl7v2.model.v23.datatype.CX;
-import ca.uhn.hl7v2.model.v23.datatype.TS;
 import ca.uhn.hl7v2.util.Terser;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 class HL7KeyFields {
 
@@ -63,8 +59,10 @@ class HL7KeyFields {
         hl7KeyFields.messageControlId = getFieldAsString(terser, MSH_SEGMENT_NAME, MSH_MESSAGE_CONTROL_ID_FIELD);
         hl7KeyFields.sequenceNumber = getFieldAsString(terser, MSH_SEGMENT_NAME, MSH_SEQUENCE_NUMBER_FIELD);
 
-        hl7KeyFields.externalPid = getPidWithAssigningAuthority(terser, PID_EXTERNAL_PID_FIELD, channel.getExternalPidAssigningAuthority());
-        hl7KeyFields.internalPid = getPidWithAssigningAuthority(terser, PID_INTERNAL_PID_FIELD, channel.getInternalPidAssigningAuthority());
+        if (hasSegment(terser, PID_SEGMENT_NAME)) {
+            hl7KeyFields.externalPid = getPidWithAssigningAuthority(terser, PID_EXTERNAL_PID_FIELD, channel.getExternalPidAssigningAuthority());
+            hl7KeyFields.internalPid = getPidWithAssigningAuthority(terser, PID_INTERNAL_PID_FIELD, channel.getInternalPidAssigningAuthority());
+        }
 
         return hl7KeyFields;
     }
