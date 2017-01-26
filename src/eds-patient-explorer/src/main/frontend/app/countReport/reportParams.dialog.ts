@@ -8,13 +8,14 @@ import {Concept} from "../coding/models/Concept";
 import {CountReportService} from "./countReport.service";
 import {Practitioner} from "../practitioner/models/Practitioner";
 import {PractitionerPickerDialog} from "../practitioner/practitionerPicker.dialog";
+import {CountReport} from "./models/CountReport";
 
 @Component({
     selector: 'ngbd-modal-content',
     template: require('./reportParams.html')
 })
 export class ReportParamsDialog implements OnInit {
-    @Input() query;
+    @Input() countReport : CountReport;
 
     encounterTypes : Concept[];
 
@@ -24,15 +25,15 @@ export class ReportParamsDialog implements OnInit {
     valueMax : number;
     valueMin : number;
     snomedCode : CodeSetValue;
+    rootCode : CodeSetValue = null;
     authType : number;
     practitioner : Practitioner;
     dmdCode : number;
     encounterType : number;
-    referralType : number;
 
-    public static open(modalService: NgbModal, query: string) {
+    public static open(modalService: NgbModal, countReport: CountReport) {
         const modalRef = modalService.open(ReportParamsDialog, {backdrop: "static", size: 'lg'});
-        modalRef.componentInstance.query = query;
+        modalRef.componentInstance.countReport = countReport;
         return modalRef;
     }
 
@@ -47,20 +48,21 @@ export class ReportParamsDialog implements OnInit {
         // work out prompts from query text
         this.runDate = new Date();
 
-        if (!this.query)
+        if (!this.countReport)
             return;
 
         // Check query for remaining prompts
-        if (this.query.indexOf(':EffectiveDate') >= 0) this.effectiveDate = null;
-        if (this.query.indexOf(':SnomedCode') >= 0) this.snomedCode = null;
-        if (this.query.indexOf(':OriginalCode') >= 0) this.originalCode = null;
-        if (this.query.indexOf(':ValueMin') >= 0) this.valueMin = null;
-        if (this.query.indexOf(':ValueMax') >= 0) this.valueMax = null;
-        if (this.query.indexOf(':AuthType') >= 0) this.authType = null;
-        if (this.query.indexOf(':Practitioner') >= 0) this.practitioner = null;
+        if (this.countReport.query.indexOf(':EffectiveDate') >= 0) this.effectiveDate = null;
+        if (this.countReport.query.indexOf(':SnomedCode') >= 0) this.snomedCode = null;
+        if (this.countReport.query.indexOf(':OriginalCode') >= 0) this.originalCode = null;
+        if (this.countReport.query.indexOf(':ValueMin') >= 0) this.valueMin = null;
+        if (this.countReport.query.indexOf(':ValueMax') >= 0) this.valueMax = null;
+        if (this.countReport.query.indexOf(':AuthType') >= 0) this.authType = null;
+        if (this.countReport.query.indexOf(':Practitioner') >= 0) this.practitioner = null;
         // DM&D
-        if (this.query.indexOf(':EncounterType') >= 0) this.encounterType = null;
-        // Referral type
+        if (this.countReport.query.indexOf(':EncounterType') >= 0) this.encounterType = null;
+
+        if (this.countReport.tables.indexOf('referral_request') >= 0) this.rootCode = {code : '3457005', term : 'Patient referral'} as CodeSetValue;
     }
 
     loadEncounterTypes() {
@@ -73,7 +75,7 @@ export class ReportParamsDialog implements OnInit {
 
     selectSnomed() {
         var vm = this;
-        CodePickerDialog.open(vm.modalService, [], true)
+        CodePickerDialog.open(vm.modalService, [], true, this.rootCode)
           .result.then(
           (result) => {
               vm.snomedCode = result[0];

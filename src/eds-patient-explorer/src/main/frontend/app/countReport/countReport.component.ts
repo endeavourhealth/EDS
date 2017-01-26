@@ -67,7 +67,7 @@ export class CountReportComponent {
 	runReport() {
 		var vm = this;
 		// Get param list from query
-		ReportParamsDialog.open(vm.$modal, this.libraryItem.countReport.query)
+		ReportParamsDialog.open(vm.$modal, this.libraryItem.countReport)
 			.result.then(function (params) {
 			vm.executeReport(params);
 		});
