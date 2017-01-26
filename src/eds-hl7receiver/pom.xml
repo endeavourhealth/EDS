@@ -94,6 +94,11 @@
         </dependency>
         <!-- end specifically included -->
 
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+            <version>1.7.22</version>
+        </dependency>
     </dependencies>
 
     <build>
