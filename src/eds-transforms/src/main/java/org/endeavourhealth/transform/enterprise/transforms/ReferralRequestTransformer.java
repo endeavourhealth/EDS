@@ -141,6 +141,8 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                     }
                 }
             }
+
+            //to restore
 /*
             if (fhir.hasType()) {
                 CodeableConcept codeableConcept = fhir.getType();
