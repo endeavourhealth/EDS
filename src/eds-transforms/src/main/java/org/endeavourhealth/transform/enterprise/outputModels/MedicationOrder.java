@@ -4,9 +4,9 @@ import org.apache.commons.csv.CSVFormat;
 
 import java.util.Date;
 
-public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
+public class MedicationOrder extends AbstractEnterpriseCsvWriter {
 
-    public AllergyIntolerance(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
+    public MedicationOrder(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
         super(fileName, csvFormat, dateFormat, timeFormat);
     }
 
@@ -23,8 +23,13 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                             Integer practitionerId,
                             Date clinicalEffectiveDate,
                             Integer datePrecisionId,
-                            Long snomedConceptId,
-                            String originalCode,
+                            Long dmdId,
+                            String dose,
+                            Double quantityValue,
+                            String quantityUnit,
+                            Integer durationDays,
+                            Double estimatedCost,
+                            Integer medicationStatementId,
                             String originalTerm) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
@@ -35,8 +40,13 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                 convertInt(practitionerId),
                 convertDate(clinicalEffectiveDate),
                 convertInt(datePrecisionId),
-                convertLong(snomedConceptId),
-                originalCode,
+                convertLong(dmdId),
+                dose,
+                convertDouble(quantityValue),
+                quantityUnit,
+                convertInt(durationDays),
+                convertDouble(estimatedCost),
+                convertInt(medicationStatementId),
                 originalTerm);
     }
 
@@ -51,8 +61,13 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                 "practitioner_id",
                 "clinical_effective_date",
                 "date_precision_id",
-                "snomed_concept_id",
-                "original_code",
+                "dmd_id",
+                "dose",
+                "quantity_value",
+                "quantity_unit",
+                "duration_days",
+                "estimated_cost",
+                "medication_statement_id",
                 "original_term"
         };
     }
@@ -70,6 +85,11 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                 Integer.class,
                 Long.class,
                 String.class,
+                Double.class,
+                String.class,
+                Integer.class,
+                Double.class,
+                Integer.class,
                 String.class
         };
     }

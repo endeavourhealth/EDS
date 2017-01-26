@@ -8,6 +8,8 @@ import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.transform.fhir.schema.ReferralPriority;
+import org.endeavourhealth.transform.fhir.schema.ReferralType;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,8 +73,19 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                 if (fhir.getServiceRequested().size() > 1) {
                     throw new TransformException("Transform doesn't support referrals with multiple service codes " + fhir.getId());
                 }
-                Long snomedConceptId = findSnomedConceptId(fhir.getServiceRequested().get(0));
+                CodeableConcept fhirServiceRequested = fhir.getServiceRequested().get(0);
+                Long snomedConceptId = findSnomedConceptId(fhirServiceRequested);
                 model.setSnomedConceptId(snomedConceptId);
+
+
+                //add the raw original code, to assist in data checking
+                String originalCode = findOriginalCode(fhirServiceRequested);
+                model.setOriginalCode(originalCode);
+
+                //add original term too, for easy display of results
+                String originalTerm = fhirServiceRequested.getText();
+                model.setOriginalTerm(originalTerm);
+
             }
             /*Long snomedConceptId = findSnomedConceptId(fhir.getType());
             model.setSnomedConceptId(snomedConceptId);*/
@@ -133,28 +146,22 @@ public class ReferralRequestTransformer extends AbstractTransformer {
 
             if (fhir.hasPriority()) {
                 CodeableConcept codeableConcept = fhir.getPriority();
-                if (!Strings.isNullOrEmpty(codeableConcept.getText())) {
-                    model.setPriority(codeableConcept.getText());
-                } else {
-                    for (Coding coding: codeableConcept.getCoding()) {
-                        model.setPriority(coding.getDisplay());
-                    }
+                if (codeableConcept.hasCoding()) {
+                    Coding coding = (Coding)codeableConcept.getCoding().get(0);
+                    ReferralPriority fhirReferralPriority = ReferralPriority.fromCode(coding.getCode());
+                    model.setPriorityId(fhirReferralPriority.ordinal());
                 }
             }
 
-            //to restore
-/*
             if (fhir.hasType()) {
                 CodeableConcept codeableConcept = fhir.getType();
-                if (!Strings.isNullOrEmpty(codeableConcept.getText())) {
-                    model.setServiceRequested(codeableConcept.getText());
-                } else {
-                    for (Coding coding: codeableConcept.getCoding()) {
-                        model.setServiceRequested(coding.getDisplay());
-                    }
+                if (codeableConcept.hasCoding()) {
+                    Coding coding = (Coding)codeableConcept.getCoding().get(0);
+                    ReferralType fhirReferralType = ReferralType.fromCode(coding.getCode());
+                    model.setTypeId(fhirReferralType.ordinal());
                 }
             }
-*/
+
             if (fhir.hasExtension()) {
                 for (Extension extension: fhir.getExtension()) {
                     if (extension.getUrl().equals(FhirExtensionUri.REFERRAL_REQUEST_SEND_MODE)) {
@@ -169,9 +176,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                 }
             }
 
-            //add the raw original code, to assist in data checking
-            String originalCode = findOriginalCode(fhir.getType());
-            model.setOriginalCode(originalCode);
+
         }
 
         data.getReferralRequest().add(model);

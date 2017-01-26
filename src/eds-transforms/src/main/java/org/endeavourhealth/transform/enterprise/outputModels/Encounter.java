@@ -4,9 +4,9 @@ import org.apache.commons.csv.CSVFormat;
 
 import java.util.Date;
 
-public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
+public class Encounter extends AbstractEnterpriseCsvWriter {
 
-    public AllergyIntolerance(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
+    public Encounter(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
         super(fileName, csvFormat, dateFormat, timeFormat);
     }
 
@@ -19,8 +19,8 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
     public void writeUpsert(int id,
                             int organisationId,
                             int patientId,
-                            Integer encounterId,
                             Integer practitionerId,
+                            Integer appointmentId,
                             Date clinicalEffectiveDate,
                             Integer datePrecisionId,
                             Long snomedConceptId,
@@ -31,8 +31,8 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                 "" + id,
                 "" + organisationId,
                 "" + patientId,
-                convertInt(encounterId),
                 convertInt(practitionerId),
+                convertInt(appointmentId),
                 convertDate(clinicalEffectiveDate),
                 convertInt(datePrecisionId),
                 convertLong(snomedConceptId),
@@ -47,8 +47,8 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                 "id",
                 "organization_id",
                 "patient_id",
-                "encounter_id",
                 "practitioner_id",
+                "appointment_id",
                 "clinical_effective_date",
                 "date_precision_id",
                 "snomed_concept_id",

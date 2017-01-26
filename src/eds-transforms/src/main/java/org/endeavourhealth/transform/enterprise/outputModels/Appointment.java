@@ -1,11 +1,10 @@
 package org.endeavourhealth.transform.enterprise.outputModels;
 
 import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.common.AbstractCsvWriter;
 
 import java.util.Date;
 
-public class Appointment extends AbstractCsvWriter {
+public class Appointment extends AbstractEnterpriseCsvWriter {
 
     public Appointment(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
         super(fileName, csvFormat, dateFormat, timeFormat);
@@ -20,29 +19,35 @@ public class Appointment extends AbstractCsvWriter {
     public void writeUpsert(int id,
                             int organisationId,
                             int patientId,
-                            Integer encounterId,
                             Integer practitionerId,
-                            Date clinicalEffectiveDate,
-                            Integer datePrecisionId,
-                            Long snomedConceptId,
-                            String originalCode,
-                            String originalTerm) throws Exception {
+                            Integer scheduleId,
+                            Date startDate,
+                            Integer plannedDuration,
+                            Integer actualDuration,
+                            int status,
+                            Integer patientWait,
+                            Integer patientDelay,
+                            Date sentIn,
+                            Date left) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
                 "" + id,
                 "" + organisationId,
                 "" + patientId,
-                convertInt(encounterId),
                 convertInt(practitionerId),
-                convertDate(clinicalEffectiveDate),
-                convertInt(datePrecisionId),
-                convertLong(snomedConceptId),
-                originalCode,
-                originalTerm);
+                convertInt(scheduleId),
+                convertDate(startDate),
+                convertInt(plannedDuration),
+                convertInt(actualDuration),
+                "" + status,
+                convertInt(patientWait),
+                convertInt(patientDelay),
+                convertDate(sentIn),
+                convertDate(left));
     }
 
     @Override
-    protected String[] getCsvHeaders() {
+    public String[] getCsvHeaders() {
         return new String[] {
                 "save_mode",
                 "id",
@@ -59,20 +64,25 @@ public class Appointment extends AbstractCsvWriter {
                 "sent_in",
                 "left"
         };
+    }
 
-        /**
-         *                     <xs:element name="" type="xs:int"/>
-         <xs:element name="" type="xs:int"/>
-         <xs:element name="" type="xs:int" minOccurs="0"/>
-         <xs:element name="" type="xs:int" minOccurs="0"/>
-         <xs:element name="" type="xs:dateTime" minOccurs="0"/>
-         <xs:element name="" type="xs:int" minOccurs="0"/>
-         <xs:element name="" type="xs:int" minOccurs="0"/>
-         <xs:element name="" type="xs:int"/>
-         <xs:element name="" type="xs:int" minOccurs="0"/>
-         <xs:element name="" type="xs:int" minOccurs="0"/>
-         <xs:element name="" type="xs:dateTime" minOccurs="0"/>
-         <xs:element name="" type="xs:dateTime" minOccurs="0"/>
-         */
+    @Override
+    public Class[] getColumnTypes() {
+        return new Class[] {
+                String.class,
+                Integer.TYPE,
+                Integer.TYPE,
+                Integer.TYPE,
+                Integer.class,
+                Integer.class,
+                Date.class,
+                Integer.class,
+                Integer.class,
+                Integer.TYPE,
+                Integer.class,
+                Integer.class,
+                Date.class,
+                Date.class
+        };
     }
 }

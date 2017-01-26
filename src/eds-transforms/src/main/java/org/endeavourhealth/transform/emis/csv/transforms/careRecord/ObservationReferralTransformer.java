@@ -8,14 +8,19 @@ import org.endeavourhealth.transform.emis.csv.schema.careRecord.ObservationRefer
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.ReferralPriority;
 import org.endeavourhealth.transform.fhir.schema.ReferralRequestSendMode;
+import org.endeavourhealth.transform.fhir.schema.ReferralType;
 import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.ReferralRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 
 public class ObservationReferralTransformer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ObservationReferralTransformer.class);
 
     public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
@@ -56,6 +61,7 @@ public class ObservationReferralTransformer {
         if (!Strings.isNullOrEmpty(urgency)) {
             ReferralPriority fhirPriority = convertUrgency(urgency);
             if (fhirPriority != null) {
+                LOG.warn("Unammped Emis referral priority {}", urgency);
                 fhirReferral.setPriority(CodeableConceptHelper.createCodeableConcept(fhirPriority));
             } else {
                 //if the CSV urgency couldn't be mapped to a FHIR priority, then we can use free-text
@@ -65,8 +71,13 @@ public class ObservationReferralTransformer {
 
         String serviceType = parser.getReferralServiceType();
         if (!Strings.isNullOrEmpty(serviceType)) {
-            //after discussion, the serviceType (e.g. "advice", "management" should go into the type field
-            fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(serviceType));
+            ReferralType type = convertTye(serviceType);
+            if (type != null) {
+                LOG.warn("Unammped Emis referral tyoe {}", serviceType);
+                fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(type));
+            } else {
+                fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(serviceType));
+            }
         }
 
         String mode = parser.getReferralMode();
@@ -121,6 +132,34 @@ public class ObservationReferralTransformer {
         //and we'll finish the job when we get to that.
         csvHelper.cacheReferral(observationGuid, patientGuid, fhirReferral);
 
+    }
+
+    private static ReferralType convertTye(String type) throws Exception {
+
+        if (type.equalsIgnoreCase("Unknown")) {
+            return ReferralType.UNKNOWN;
+
+        } else if (type.equalsIgnoreCase("Assessment")) {
+            return ReferralType.ASSESSMENT;
+
+        } else if (type.equalsIgnoreCase("Investigation")) {
+            return ReferralType.INVESTIGATION;
+
+        } else if (type.equalsIgnoreCase("Management advice")) {
+            return ReferralType.MANAGEMENT_ADVICE;
+
+        } else if (type.equalsIgnoreCase("Patient reassurance")) {
+            return ReferralType.PATIENT_REASSURANCE;
+
+        } else if (type.equalsIgnoreCase("Self referral")) {
+            return ReferralType.SELF_REFERRAL;
+
+        } else if (type.equalsIgnoreCase("Treatment")) {
+            return ReferralType.TREATMENT;
+
+        } else {
+            return null;
+        }
     }
 
     private static ReferralPriority convertUrgency(String urgency) throws Exception {

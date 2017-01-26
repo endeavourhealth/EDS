@@ -60,6 +60,11 @@ public class CodeableConceptHelper {
         return new CodeableConcept().addCoding(CodingHelper.createCoding(referralPriority));
     }
 
+    public static CodeableConcept createCodeableConcept(ReferralType referralType) {
+        return new CodeableConcept().addCoding(CodingHelper.createCoding(referralType));
+    }
+
+
     public static CodeableConcept createCodeableConcept(String text) {
         return new CodeableConcept().setText(text);
     }

@@ -106,6 +106,13 @@ public class CodingHelper {
                 .setCode(referralPriority.getCode());
     }
 
+    public static Coding createCoding(ReferralType referralType) {
+        return new Coding()
+                .setSystem(referralType.getSystem())
+                .setDisplay(referralType.getDescription())
+                .setCode(referralType.getCode());
+    }
+
     public static Coding createCoding(String system, String term, String code) {
         return new Coding()
                 .setSystem(system)

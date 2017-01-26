@@ -1,9 +1,8 @@
 package org.endeavourhealth.transform.enterprise.outputModels;
 
 import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.common.AbstractCsvWriter;
 
-public class Organization extends AbstractCsvWriter {
+public class Organization extends AbstractEnterpriseCsvWriter {
 
     public Organization(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
         super(fileName, csvFormat, dateFormat, timeFormat);
@@ -34,7 +33,7 @@ public class Organization extends AbstractCsvWriter {
     }
 
     @Override
-    protected String[] getCsvHeaders() {
+    public String[] getCsvHeaders() {
         return new String[] {
                 "save_mode",
                 "id",
@@ -46,4 +45,19 @@ public class Organization extends AbstractCsvWriter {
                 "parent_organization_id"
         };
     }
+
+    @Override
+    public Class[] getColumnTypes() {
+        return new Class[] {
+                String.class,
+                Integer.TYPE,
+                String.class,
+                String.class,
+                String.class,
+                String.class,
+                String.class,
+                Integer.class
+        };
+    }
+
 }

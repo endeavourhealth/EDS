@@ -68,6 +68,24 @@ public abstract class AbstractCsvWriter {
         }
     }
 
+    protected String convertDouble(Double d) {
+        if (d == null) {
+            return null;
+        } else {
+            return d.toString();
+        }
+    }
+
+    protected String convertBoolean(Boolean b) {
+        if (b == null) {
+            return null;
+        } else if (b.booleanValue()) {
+            return "TRUE";
+        } else {
+            return "FALSE";
+        }
+    }
+
     protected String convertBoolean(boolean b) {
         if (b) {
             return "TRUE";

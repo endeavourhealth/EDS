@@ -26,4 +26,13 @@ public enum ReferralPriority {
         this.description = description;
     }
 
+    public static ReferralPriority fromCode(String v) {
+        for (ReferralPriority c: ReferralPriority.values()) {
+            if (c.getCode().equalsIgnoreCase(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
+    }
+
 }

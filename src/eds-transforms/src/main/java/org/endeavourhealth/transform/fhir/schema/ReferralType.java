@@ -4,23 +4,13 @@ import org.endeavourhealth.transform.fhir.FhirValueSetUri;
 
 public enum ReferralType {
 
-    WHITE_BRITISH("A", "British"),
-    WHITE_IRISH("B", "Irish"),
-    OTHER_WHITE("C", "Any other White background"),
-    MIXED_CARIBBEAN("D", "White and Black Caribbean"),
-    MIXED_AFRICAN("E", "White and Black African"),
-    MIXED_ASIAN("F", "White and Asian"),
-    OTHER_MIXED("G", "Any other mixed background"),
-    ASIAN_INDIAN("H", "Indian"),
-    ASIAN_PAKISTANI("J", "Pakistani"),
-    ASIAN_BANGLADESHI("K", "Bangladeshi"),
-    OTHER_ASIAN("L", "Any other Asian background"),
-    BLACK_CARIBBEAN("M", "Caribbean"),
-    BLACK_AFRICAN("N", "African"),
-    OTHER_BLACK("P", "Any other Black background"),
-    CHINESE("R", "Chinese"),
-    OTHER("S", "Any other ethnic group"),
-    NOT_STATED("Z", "Not stated");
+    UNKNOWN("U", "Unknown"),
+    ASSESSMENT("A", "Assessment"),
+    INVESTIGATION("I", "Investigation"),
+    MANAGEMENT_ADVICE("M", "Management advice"),
+    PATIENT_REASSURANCE("R", "Patient reassurance"),
+    SELF_REFERRAL("S", "Self referral"),
+    TREATMENT("T", "Treatment");
 
     private String code = null;
     private String description = null;
@@ -32,11 +22,20 @@ public enum ReferralType {
         return description;
     }
     public String getSystem() {
-        return FhirValueSetUri.VALUE_SET_ETHNIC_CATEGORY;
+        return FhirValueSetUri.VALUE_SET_REFERRAL_TYPE;
     }
 
     ReferralType(String code, String description) {
         this.code = code;
         this.description = description;
+    }
+
+    public static ReferralType fromCode(String v) {
+        for (ReferralType c: ReferralType.values()) {
+            if (c.getCode().equalsIgnoreCase(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
     }
 }

@@ -70,33 +70,6 @@ public class EnterpriseFhirTransformer {
             LOG.info("=============================================batch ID " + batchId + " org ID " + orgNationalId + " ========================================");
         }
 
-       /* if (true) {
-            List<String> keys = new ArrayList<>();
-            Map<String, Integer> counts = new HashMap<>();
-            UUID batchId = null;
-
-            for (ResourceByExchangeBatch batch: resources) {
-                batchId = batch.getBatchId();
-                String resourceType = batch.getResourceType();
-                Integer count = counts.get(resourceType);
-                if (count == null) {
-                    keys.add(resourceType);
-                    count = new Integer(0);
-                }
-
-                int newCount = count.intValue() + 1;
-                counts.put(resourceType, new Integer(newCount));
-            }
-
-*//*            String[] keyArray = keys.toArray(new String[]{});
-            Arrays.sort(keyArray);
-            for (String key: keyArray) {
-                LOG.info(key + " -> " + counts.get(key));
-            }*//*
-            //return data;
-        }*/
-
-
         //we detect whether we're doing an update or insert, based on whether we're previously mapped
         //a reference to a resource, so we need to transform the resources in a specific order, so
         //that we transform resources before we ones that refer to them

@@ -1,11 +1,10 @@
 package org.endeavourhealth.transform.enterprise.outputModels;
 
 import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.common.AbstractCsvWriter;
 
 import java.util.Date;
 
-public class Schedule extends AbstractCsvWriter {
+public class Schedule extends AbstractEnterpriseCsvWriter {
 
     public Schedule(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
         super(fileName, csvFormat, dateFormat, timeFormat);
@@ -34,7 +33,7 @@ public class Schedule extends AbstractCsvWriter {
     }
 
     @Override
-    protected String[] getCsvHeaders() {
+    public String[] getCsvHeaders() {
         return new String[] {
                 "save_mode",
                 "id",
@@ -43,6 +42,19 @@ public class Schedule extends AbstractCsvWriter {
                 "start_date",
                 "type",
                 "location"
+        };
+    }
+
+    @Override
+    public Class[] getColumnTypes() {
+        return new Class[] {
+                String.class,
+                Integer.TYPE,
+                Integer.TYPE,
+                Integer.class,
+                Date.class,
+                String.class,
+                String.class
         };
     }
 }

@@ -4,9 +4,9 @@ import org.apache.commons.csv.CSVFormat;
 
 import java.util.Date;
 
-public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
+public class Observation extends AbstractEnterpriseCsvWriter {
 
-    public AllergyIntolerance(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
+    public Observation(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
         super(fileName, csvFormat, dateFormat, timeFormat);
     }
 
@@ -24,7 +24,10 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                             Date clinicalEffectiveDate,
                             Integer datePrecisionId,
                             Long snomedConceptId,
+                            Double value,
+                            String units,
                             String originalCode,
+                            boolean isProblem,
                             String originalTerm) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
@@ -36,7 +39,10 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                 convertDate(clinicalEffectiveDate),
                 convertInt(datePrecisionId),
                 convertLong(snomedConceptId),
+                convertDouble(value),
+                units,
                 originalCode,
+                convertBoolean(isProblem),
                 originalTerm);
     }
 
@@ -52,7 +58,10 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                 "clinical_effective_date",
                 "date_precision_id",
                 "snomed_concept_id",
+                "value",
+                "units",
                 "original_code",
+                "isProblem",
                 "original_term"
         };
     }
@@ -69,7 +78,10 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                 Date.class,
                 Integer.class,
                 Long.class,
+                Double.class,
                 String.class,
+                String.class,
+                Boolean.TYPE,
                 String.class
         };
     }
