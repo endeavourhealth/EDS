@@ -16,9 +16,11 @@ public class EkbManager {
                     " from " +
                     "    ConceptEntity c" +
                     " where" +
-                    "    c.display like :term " +
+                    "    upper(c.display) like :term " +
                     " order by "+
                     "    length(c.display) ";
+
+        term = term.toUpperCase();
 
         Query query = entityManager.createQuery(sql, ConceptEntity.class)
                 .setParameter("term", "%"+term+"%")

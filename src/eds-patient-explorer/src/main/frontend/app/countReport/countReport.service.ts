@@ -35,4 +35,12 @@ export class CountReportService extends BaseHttp2Service {
 		return this.httpGet('api/countReport/encounterType');
 	}
 
+	getReferralTypes():Observable<Concept[]> {
+		return this.httpGet('api/countReport/referralTypes');
+	}
+
+	getReferralPriorities():Observable<Concept[]> {
+		return this.httpGet('api/countReport/referralPriorities');
+	}
+
 }

@@ -18,6 +18,8 @@ export class ReportParamsDialog implements OnInit {
     @Input() countReport : CountReport;
 
     encounterTypes : Concept[];
+    referralTypes : Concept[];
+    referralPriorities : Concept[];
 
     runDate : Date;
     effectiveDate : Date;
@@ -25,11 +27,15 @@ export class ReportParamsDialog implements OnInit {
     valueMax : number;
     valueMin : number;
     snomedCode : CodeSetValue;
-    rootCode : CodeSetValue = null;
     authType : number;
     practitioner : Practitioner;
     dmdCode : number;
     encounterType : number;
+    referralSnomedCode : CodeSetValue;
+    referralOriginalCode : string;
+    referralType : number;
+    referralPriority : number;
+
 
     public static open(modalService: NgbModal, countReport: CountReport) {
         const modalRef = modalService.open(ReportParamsDialog, {backdrop: "static", size: 'lg'});
@@ -42,6 +48,8 @@ export class ReportParamsDialog implements OnInit {
                 protected codingService : CodingService,
                 protected countReportService : CountReportService) {
         this.loadEncounterTypes();
+        this.loadReferralTypes();
+        this.loadReferralPriorities();
     }
 
     ngOnInit(): void {
@@ -61,8 +69,10 @@ export class ReportParamsDialog implements OnInit {
         if (this.countReport.query.indexOf(':Practitioner') >= 0) this.practitioner = null;
         // DM&D
         if (this.countReport.query.indexOf(':EncounterType') >= 0) this.encounterType = null;
-
-        if (this.countReport.tables.indexOf('referral_request') >= 0) this.rootCode = {code : '3457005', term : 'Patient referral'} as CodeSetValue;
+        if (this.countReport.query.indexOf(':ReferralSnomedCode') >= 0) this.referralSnomedCode = null;
+        if (this.countReport.query.indexOf(':ReferralOriginalCode') >= 0) this.referralOriginalCode = null;
+        if (this.countReport.query.indexOf(':ReferralType') >= 0) this.referralType = null;
+        if (this.countReport.query.indexOf(':ReferralPriority') >=0 ) this.referralPriority = null;
     }
 
     loadEncounterTypes() {
@@ -73,9 +83,25 @@ export class ReportParamsDialog implements OnInit {
           );
     }
 
+    loadReferralTypes() {
+        let vm = this;
+        vm.countReportService.getReferralTypes()
+					.subscribe(
+            (result) => vm.referralTypes = result
+          );
+    }
+
+    loadReferralPriorities() {
+        let vm = this;
+        vm.countReportService.getReferralPriorities()
+					.subscribe(
+            (result) => vm.referralPriorities = result
+          );
+    }
+
     selectSnomed() {
         var vm = this;
-        CodePickerDialog.open(vm.modalService, [], true, this.rootCode)
+        CodePickerDialog.open(vm.modalService, [], true)
           .result.then(
           (result) => {
               vm.snomedCode = result[0];
@@ -91,6 +117,26 @@ export class ReportParamsDialog implements OnInit {
     clearSnomed() {
         this.snomedCode = null;
     }
+
+    selectReferralSnomed() {
+        var vm = this;
+        CodePickerDialog.open(vm.modalService, [], true, {code : '3457005', term : 'Patient referral'} as CodeSetValue)
+					.result.then(
+          (result) => {
+              vm.referralSnomedCode = result[0];
+              vm.referralSnomedCode.term = 'Loading...';
+              vm.codingService.getPreferredTerm(vm.referralSnomedCode.code)
+								.subscribe(
+                  (term) => vm.referralSnomedCode.term = term.preferredTerm
+                );
+          }
+        )
+    }
+
+    clearReferralSnomed() {
+        this.referralSnomedCode = null;
+    }
+
 
     selectPractitioner() {
         var vm = this;
@@ -126,7 +172,10 @@ export class ReportParamsDialog implements OnInit {
         params.Practitioner = (this.practitioner) ? this.practitioner.id : 'null';
         // DM & D
         params.EncounterType = (this.encounterType) ? this.encounterType : 'null';
-        // Referral type
+        params.ReferralSnomedCode = (this.referralSnomedCode) ? this.referralSnomedCode.code : 'null';
+        params.ReferralOriginalCode = (this.referralOriginalCode) ? "'" + this.referralOriginalCode + "'" : 'null';
+        params.ReferralType = (this.referralType) ? this.referralType : 'null';
+        params.ReferralPriority = (this.referralPriority) ? this.referralPriority : 'null';
 
         this.activeModal.close(params);
         console.log('OK Pressed');

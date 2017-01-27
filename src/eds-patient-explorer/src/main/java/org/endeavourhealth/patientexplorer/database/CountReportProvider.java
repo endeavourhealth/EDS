@@ -182,27 +182,39 @@ public class CountReportProvider {
 	}
 
 	public List<ConceptEntity> getEncounterTypes() throws Exception {
-		List<ConceptEntity> result = new ArrayList<>();
 		Connection conn = getConnection();
 
 		PreparedStatement statement = conn.prepareStatement("SELECT DISTINCT snomed_concept_id, original_term FROM encounter");
 		try {
 			ResultSet resultSet = statement.executeQuery();
-
-			while (resultSet.next()) {
-				ConceptEntity concept = new ConceptEntity();
-				concept.setCode(resultSet.getString(1));
-				if (resultSet.getString(2) == null)
-					concept.setDisplay("[NULL]");
-				else
-					concept.setDisplay(resultSet.getString(2));
-				result.add(concept);
-			}
+			return buildConceptEntityList(resultSet);
 		} finally {
 			statement.close();
 		}
+	}
 
-		return result;
+	public List<ConceptEntity> getReferralTypes() throws Exception {
+		Connection conn = getConnection();
+
+		PreparedStatement statement = conn.prepareStatement("SELECT id, value FROM referral_request_type");
+		try {
+			ResultSet resultSet = statement.executeQuery();
+			return buildConceptEntityList(resultSet);
+		} finally {
+			statement.close();
+		}
+	}
+
+	public List<ConceptEntity> getReferralPriorities() throws Exception {
+		Connection conn = getConnection();
+
+		PreparedStatement statement = conn.prepareStatement("SELECT id, value FROM referral_request_priority");
+		try {
+			ResultSet resultSet = statement.executeQuery();
+			return buildConceptEntityList(resultSet);
+		} finally {
+			statement.close();
+		}
 	}
 
 	public List<JsonPractitioner> searchPractitioner(String searchData, UUID organisationUuid) throws Exception {
@@ -228,6 +240,22 @@ public class CountReportProvider {
 			}
 		} finally {
 			statement.close();
+		}
+
+		return result;
+	}
+
+	private List<ConceptEntity> buildConceptEntityList(ResultSet resultSet) throws SQLException {
+		List<ConceptEntity> result = new ArrayList<>();
+
+		while (resultSet.next()) {
+			ConceptEntity concept = new ConceptEntity();
+			concept.setCode(resultSet.getString(1));
+			if (resultSet.getString(2) == null)
+				concept.setDisplay("[NULL]");
+			else
+				concept.setDisplay(resultSet.getString(2));
+			result.add(concept);
 		}
 
 		return result;

@@ -46,17 +46,23 @@ public final class CountReportEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/runReport")
     public Response runReport(@Context SecurityContext sc, @QueryParam("reportUuid") UUID reportUuid, @QueryParam("organisationUuid") UUID organisationUuid, String reportParamsJson) throws Exception {
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), organisationUuid, AuditAction.Run, "Report",
-            "uuid", reportUuid,
-            "params", reportParamsJson);
-        LOG.debug("runReport");
+        try {
+            userAudit.save(SecurityUtils.getCurrentUserId(sc), organisationUuid, AuditAction.Run, "Report",
+                "uuid", reportUuid,
+                "params", reportParamsJson);
+            LOG.debug("runReport");
 
-        Map<String, String> reportParams = ObjectMapperPool.getInstance().readValue(reportParamsJson, new TypeReference<Map<String,String>>(){});
-        LibraryItem ret = countReportProvider.runReport(reportUuid, organisationUuid, reportParams);
+            Map<String, String> reportParams = ObjectMapperPool.getInstance().readValue(reportParamsJson, new TypeReference<Map<String, String>>() {
+            });
+            LibraryItem ret = countReportProvider.runReport(reportUuid, organisationUuid, reportParams);
 
-        return Response
-            .ok(ret, MediaType.APPLICATION_JSON_TYPE)
-            .build();
+            return Response
+                .ok(ret, MediaType.APPLICATION_JSON_TYPE)
+                .build();
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw e;
+        }
     }
 
     /**
@@ -70,6 +76,7 @@ public final class CountReportEndpoint extends AbstractEndpoint {
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/exportNHS")
     public Response exportNHSNumbers(@Context SecurityContext sc, @QueryParam("uuid") UUID uuid) throws Exception {
+        try {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Run, "Export NHS Numbers",
             "uuid", uuid);
         LOG.debug("exportNHS");
@@ -80,6 +87,11 @@ public final class CountReportEndpoint extends AbstractEndpoint {
         return Response
             .ok(ret, MediaType.TEXT_PLAIN_TYPE)
             .build();
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw e;
+        }
+
     }
 
     /**
@@ -93,6 +105,7 @@ public final class CountReportEndpoint extends AbstractEndpoint {
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/exportData")
     public Response exportData(@Context SecurityContext sc, @QueryParam("uuid") UUID uuid) throws Exception {
+        try {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Run, "Export Data",
             "uuid", uuid);
         LOG.debug("exportData");
@@ -103,6 +116,11 @@ public final class CountReportEndpoint extends AbstractEndpoint {
         return Response
             .ok(ret, MediaType.TEXT_PLAIN_TYPE)
             .build();
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw e;
+        }
+
     }
 
     /**
@@ -115,6 +133,7 @@ public final class CountReportEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/encounterType")
     public Response getEncounterTypes(@Context SecurityContext sc) throws Exception {
+        try {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Encounter Types");
         LOG.debug("getEncounterTypes");
 
@@ -124,5 +143,61 @@ public final class CountReportEndpoint extends AbstractEndpoint {
         return Response
             .ok(ret, MediaType.APPLICATION_JSON_TYPE)
             .build();
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * Retrieve a distinct list of referral types
+     * @param sc Security context (provided)
+     * @return  A JSON array of Concepts
+     * @throws Exception
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/referralTypes")
+    public Response getReferralTypes(@Context SecurityContext sc) throws Exception {
+        try {
+            userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Referral Types");
+            LOG.debug("getReferralTypes");
+
+            List<ConceptEntity> data = countReportProvider.getReferralTypes();
+            List<JsonConcept> ret = data.stream().map(JsonConcept::new).collect(Collectors.toList());
+
+            return Response
+                .ok(ret, MediaType.APPLICATION_JSON_TYPE)
+                .build();
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * Retrieve a distinct list of referral priorities
+     * @param sc Security context (provided)
+     * @return  A JSON array of Concepts
+     * @throws Exception
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/referralPriorities")
+    public Response getReferralPriorities(@Context SecurityContext sc) throws Exception {
+        try {
+            userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Referral Priorities");
+            LOG.debug("getReferralPriorities");
+
+            List<ConceptEntity> data = countReportProvider.getReferralPriorities();
+            List<JsonConcept> ret = data.stream().map(JsonConcept::new).collect(Collectors.toList());
+
+            return Response
+                .ok(ret, MediaType.APPLICATION_JSON_TYPE)
+                .build();
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw e;
+        }
     }
 }

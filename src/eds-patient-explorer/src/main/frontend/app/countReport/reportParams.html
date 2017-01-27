@@ -7,7 +7,7 @@
 
         <div class="row">
             <div class="form-group col-md-6">
-                <label class="control-label">Run Date <small>(mandatory)</small></label>
+                <label class="control-label">Run date <small>(mandatory)</small></label>
                 <datetime
                   [timepicker]="false"
                   [(ngModel)]="runDate"
@@ -15,7 +15,7 @@
                   name="RunDate"></datetime>
             </div>
             <div class="form-group col-md-6" [hidden]="hide(effectiveDate)">
-                <label class="control-label">Effective Date</label>
+                <label class="control-label">Effective date</label>
                 <datetime
                   [timepicker]="false"
                   [ngModel]="effectiveDate"
@@ -27,7 +27,7 @@
 
         <div class="row" [hidden]="hide(snomedCode) && hide(originalCode)">
             <div class="form-group col-md-6" [hidden]="hide(snomedCode)">
-                <label class="control-label">SNOMED Code</label>
+                <label class="control-label">SNOMED code</label>
                 <div class="input-group">
                 <input type="text" class="form-control" placeholder="All" [ngModel]="snomedCode?.term" name="SnomedCode" readonly>
                     <span class="input-group-btn">
@@ -37,7 +37,7 @@
                 </div>
             </div>
             <div class="form-group col-md-6" [hidden]="hide(originalCode)">
-                <label class="control-label">Original Code</label>
+                <label class="control-label">Original code</label>
                 <input type="text" class="form-control" placeholder="All" [(ngModel)]="originalCode" name="OriginalCode">
             </div>
         </div>
@@ -50,6 +50,40 @@
             <div class="form-group col-md-6" [hidden]="hide(valueMax)">
                 <label class="control-label">Value maximum <small>(inclusive)</small></label>
                 <input type="number" class="form-control" autofocus placeholder="No maximum" [(ngModel)]="valueMax" name="ValueMax">
+            </div>
+        </div>
+
+        <div class="row" [hidden]="hide(referralSnomedCode) && hide(referralOriginalCode)">
+            <div class="form-group col-md-6" [hidden]="hide(referralSnomedCode)">
+                <label class="control-label">Referral service type</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="All" [ngModel]="referralSnomedCode?.term" name="ReferralSnomedCode" readonly>
+                    <span class="input-group-btn">
+                        <button type="button" class="btn btn-default" (click)="selectReferralSnomed()"><span class="fa fa-search"></span></button>
+                        <button type="button" class="btn btn-default" (click)="clearReferralSnomed()"><span class="fa fa-times"></span></button>
+                    </span>
+                </div>
+            </div>
+            <div class="form-group col-md-6" [hidden]="hide(referralOriginalCode)">
+                <label class="control-label">Original code</label>
+                <input type="text" class="form-control" placeholder="All" [(ngModel)]="referralOriginalCode" name="ReferralOriginalCode">
+            </div>
+        </div>
+
+        <div class="row" [hidden]="hide(referralType) && hide(referralPriority)">
+            <div class="form-group col-md-6" [hidden]="hide(referralType)">
+                <label class="control-label">Referral type</label>
+                <select class="form-control" [(ngModel)]="referralType" name="ReferralType">
+                    <option value="null">Any type</option>
+                    <option *ngFor="let referralType of referralTypes" value="{{referralType.id}}">{{referralType.preferredTerm}}</option>
+                </select>
+            </div>
+            <div class="form-group col-md-6" [hidden]="hide(referralPriority)">
+                <label class="control-label">Referral priority</label>
+                <select class="form-control" [(ngModel)]="referralPriority" name="ReferralPriority">
+                    <option value="null">Any type</option>
+                    <option *ngFor="let referralPriority of referralPriorities" value="{{referralPriority.id}}">{{referralPriority.preferredTerm}}</option>
+                </select>
             </div>
         </div>
 
@@ -83,17 +117,13 @@
             </div>
         </div>
 
-        <div class="row" [hidden]="hide(encounterType) && hide(referralType)">
+        <div class="row" [hidden]="hide(encounterType)">
             <div class="form-group col-md-6" [hidden]="hide(encounterType)">
                 <label class="control-label">Encounter type</label>
                 <select class="form-control" [(ngModel)]="encounterType" name="EncounterType">
                     <option value="null">Any type</option>
                     <option *ngFor="let encounterType of encounterTypes" value="{{encounterType.id}}">{{encounterType.preferredTerm}}</option>
                 </select>
-            </div>
-            <div class="form-group col-md-6" [hidden]="hide(dmdCode)">
-                <label class="control-label">DM&D Code</label>
-                <input type="number" class="form-control" autofocus placeholder="No maximum" [(ngModel)]="dmdCode" name="DmdCode">
             </div>
         </div>
 
