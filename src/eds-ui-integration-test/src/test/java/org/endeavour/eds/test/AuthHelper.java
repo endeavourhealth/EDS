@@ -27,7 +27,7 @@ public class AuthHelper {
     public static void auth(boolean forceInit, String username, String password) {
         synchronized (AuthHelper.class) {
             if (!isInit || forceInit) {
-                KeycloakClient.init("http://localhost:9080/auth", "endeavour", username, password, "eds-ui");
+                KeycloakClient.init("https://auth.endeavourhealth.net/auth", "endeavour", username, password, "eds-ui");
                 LOG.info("Authenticated, user = {}", username);
                 isInit = true;
             }
