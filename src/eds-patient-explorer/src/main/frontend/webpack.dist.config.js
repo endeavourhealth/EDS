@@ -1,16 +1,12 @@
-// var webpack = require('webpack');
+var webpack = require('webpack');
 var config  = require('./webpack.config');
 
 config.devtool = 'false';
 
-// config.plugins = config.plugins.concat([
-// 	new webpack.optimize.UglifyJsPlugin({
-// 		mangle: false,
-// 		sourceMap: true,
-// 		compress: {
-// 			warnings: false
-// 		}
-// 	})
-// ]);
+config.plugins = config.plugins.concat([
+	new webpack.DefinePlugin({
+		PRODUCTION: JSON.stringify(true)
+	})
+]);
 
 module.exports = config;

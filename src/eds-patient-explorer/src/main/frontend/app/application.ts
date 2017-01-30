@@ -26,7 +26,6 @@ import {LayoutModule} from "./layout/layout.module";
 // Top level component
 import {ShellComponent} from "./layout/shell.component";
 
-//enableProdMode(); //Uncomment for production
 
 // *** USE JQUERY TO BOOTSTRAP APPLICATION ONCE KEYCLOAK IS AUTHORIZED ***
 export class Application {
@@ -60,6 +59,13 @@ export class Application {
 
 	public static Run(ApplicationModule: any) {
 		$('document').ready(function () {
+
+			if (PRODUCTION) {
+				console.log('Production mode');
+				enableProdMode(); //Uncomment for production
+			} else {
+				console.log('Development mode');
+			}
 
 			var wellKnownConfig: WellKnownConfig = WellKnownConfig.factory();
 
@@ -101,3 +107,6 @@ export class Application {
 		});
 	}
 }
+
+// Declare here but set via WebPack Define plugin
+var PRODUCTION;
