@@ -13,14 +13,16 @@ insert into configuration.channel
 	sending_facility,
 	receiving_application,
 	receiving_facility,
-	ext_pid_assigning_auth,
-	int_pid_assigning_auth,
+	pid1_field,
+	pid1_assigning_auth,
+	pid2_field,
+	pid2_assigning_auth,
 	eds_service_identifier,
 	notes
 )
 values
-(1, 'HOMERTON', 8900, true, false, 'HOMERTON_TIE', 'HOMERTON', 'EDS', 'ENDEAVOUR', 'NHS', 'Homerton Case Note Number', 'RQX', ''),
-(2, 'BARTS', 8901, true, false, 'BLT_TIE', 'BLT', 'EDS', 'ENDEAVOUR', null, null, 'R1H', '');
+(1, 'HOMERTON', 8900, true, false, 'HOMERTON_TIE', 'HOMERTON', 'EDS', 'ENDEAVOUR', 2, 'NHS', 3, 'Homerton Case Note Number', 'RQX', ''),
+(2, 'BARTS', 8901, true, false, 'BLT_TIE', 'BLT', 'EDS', 'ENDEAVOUR', null, null, null, null, 'R1H', '');
 
 insert into configuration.channel_message_type
 (
@@ -29,6 +31,8 @@ insert into configuration.channel_message_type
 	is_allowed
 )
 values
+(1, 'ADT^A01', true),
+(1, 'ACK^A01', true),
 (1, 'ADT^A04', true),
 (1, 'ACK^A04', true);
 

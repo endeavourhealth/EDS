@@ -12,8 +12,10 @@ public class DbChannel {
     private String sendingFacility;
     private String receivingApplication;
     private String receivingFacility;
-    private String externalPidAssigningAuthority;
-    private String internalPidAssigningAuthority;
+    private Integer pid1Field;
+    private String pid1AssigningAuthority;
+    private Integer pid2Field;
+    private String pid2AssigningAuthority;
     private String edsServiceIdentifier;
     private String notes;
 
@@ -100,21 +102,39 @@ public class DbChannel {
         return this;
     }
 
-    public String getExternalPidAssigningAuthority() {
-        return externalPidAssigningAuthority;
+    public Integer getPid1Field() {
+        return pid1Field;
     }
 
-    public DbChannel setExternalPidAssigningAuthority(String externalPidAssigningAuthority) {
-        this.externalPidAssigningAuthority = externalPidAssigningAuthority;
+    public DbChannel setPid1Field(Integer pid1Field) {
+        this.pid1Field = pid1Field;
         return this;
     }
 
-    public String getInternalPidAssigningAuthority() {
-        return internalPidAssigningAuthority;
+    public String getPid1AssigningAuthority() {
+        return pid1AssigningAuthority;
     }
 
-    public DbChannel setInternalPidAssigningAuthority(String internalPidAssigningAuthority) {
-        this.internalPidAssigningAuthority = internalPidAssigningAuthority;
+    public DbChannel setPid1AssigningAuthority(String pid1AssigningAuthority) {
+        this.pid1AssigningAuthority = pid1AssigningAuthority;
+        return this;
+    }
+
+    public Integer getPid2Field() {
+        return pid2Field;
+    }
+
+    public DbChannel setPid2Field(Integer pid2Field) {
+        this.pid2Field = pid2Field;
+        return this;
+    }
+
+    public String getPid2AssigningAuthority() {
+        return pid2AssigningAuthority;
+    }
+
+    public DbChannel setPid2AssigningAuthority(String pid2AssigningAuthority) {
+        this.pid2AssigningAuthority = pid2AssigningAuthority;
         return this;
     }
 

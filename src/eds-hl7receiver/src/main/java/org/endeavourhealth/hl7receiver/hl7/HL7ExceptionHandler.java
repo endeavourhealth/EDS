@@ -50,6 +50,8 @@ class HL7ExceptionHandler implements ReceivingApplicationExceptionHandler {
                     null,
                     null,
                     null,
+                    null,
+                    null,
                     incomingMessage,
                     null,
                     outgoingMessage,

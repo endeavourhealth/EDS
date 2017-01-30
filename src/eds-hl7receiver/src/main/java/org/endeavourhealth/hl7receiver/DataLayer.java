@@ -1,5 +1,6 @@
 package org.endeavourhealth.hl7receiver;
 
+import org.endeavourhealth.core.postgres.PgResultSet;
 import org.endeavourhealth.core.postgres.PgStoredProc;
 import org.endeavourhealth.core.postgres.PgStoredProcException;
 import org.endeavourhealth.hl7receiver.logging.IDBDigestLogger;
@@ -41,8 +42,10 @@ public class DataLayer implements IDBDigestLogger {
                         .setSendingFacility(resultSet.getString("sending_facility"))
                         .setReceivingApplication(resultSet.getString("receiving_application"))
                         .setReceivingFacility(resultSet.getString("receiving_facility"))
-                        .setExternalPidAssigningAuthority(resultSet.getString("ext_pid_assigning_auth"))
-                        .setInternalPidAssigningAuthority(resultSet.getString("int_pid_assigning_auth"))
+                        .setPid1Field(PgResultSet.getInteger(resultSet, "pid1_field"))
+                        .setPid1AssigningAuthority(resultSet.getString("pid1_assigning_auth"))
+                        .setPid2Field(PgResultSet.getInteger(resultSet, "pid2_field"))
+                        .setPid2AssigningAuthority(resultSet.getString("pid2_assigning_auth"))
                         .setEdsServiceIdentifier(resultSet.getString("eds_service_identifier"))
                         .setNotes(resultSet.getString("notes")));
 
@@ -110,6 +113,8 @@ public class DataLayer implements IDBDigestLogger {
             String messageControlId,
             String messageSequenceNumber,
             LocalDateTime messageDateTime,
+            String pid1,
+            String pid2,
             String inboundMessageType,
             String inboundPayload,
             String outboundMessageType,
@@ -122,6 +127,8 @@ public class DataLayer implements IDBDigestLogger {
                 .addParameter("_message_control_id", messageControlId)
                 .addParameter("_message_sequence_number", messageSequenceNumber)
                 .addParameter("_message_date", messageDateTime)
+                .addParameter("_pid1", pid1)
+                .addParameter("_pid2", pid2)
                 .addParameter("_inbound_message_type", inboundMessageType)
                 .addParameter("_inbound_payload", inboundPayload)
                 .addParameter("_outbound_message_type", outboundMessageType)
@@ -145,6 +152,8 @@ public class DataLayer implements IDBDigestLogger {
             String messageControlId,
             String messageSequenceNumber,
             LocalDateTime messageDate,
+            String pid1,
+            String pid2,
             String inboundMessageType,
             String inboundPayload,
             String outboundMessageType,
@@ -168,6 +177,8 @@ public class DataLayer implements IDBDigestLogger {
                 .addParameter("_message_control_id", messageControlId)
                 .addParameter("_message_sequence_number", messageSequenceNumber)
                 .addParameter("_message_date", messageDate)
+                .addParameter("_pid1", pid1)
+                .addParameter("_pid2", pid2)
                 .addParameter("_inbound_message_type", inboundMessageType)
                 .addParameter("_inbound_payload", inboundPayload)
                 .addParameter("_outbound_message_type", outboundMessageType)

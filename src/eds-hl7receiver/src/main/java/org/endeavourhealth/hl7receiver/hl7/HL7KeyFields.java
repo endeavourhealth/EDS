@@ -26,8 +26,6 @@ class HL7KeyFields {
     private static final int MSH_MESSAGE_TYPE_FIELD = 9;
     private static final int MSH_MESSAGE_CONTROL_ID_FIELD = 10;
     private static final int MSH_SEQUENCE_NUMBER_FIELD = 13;
-    private static final int PID_EXTERNAL_PID_FIELD = 2;
-    private static final int PID_INTERNAL_PID_FIELD = 3;
     private static final int PID_ASSIGNING_AUTHORITY_COMPONENT = 3;
     private static final int PID_VALUE_COMPONENT = 0;
 
@@ -40,8 +38,8 @@ class HL7KeyFields {
     private String messageType;
     private String messageControlId;
     private String sequenceNumber;
-    private String externalPid;
-    private String internalPid;
+    private String pid1;
+    private String pid2;
 
     public static HL7KeyFields parse(Message message, DbChannel channel) throws HL7Exception {
 
@@ -60,16 +58,16 @@ class HL7KeyFields {
         hl7KeyFields.sequenceNumber = getFieldAsString(terser, MSH_SEGMENT_NAME, MSH_SEQUENCE_NUMBER_FIELD);
 
         if (hasSegment(terser, PID_SEGMENT_NAME)) {
-            hl7KeyFields.externalPid = getPidWithAssigningAuthority(terser, PID_EXTERNAL_PID_FIELD, channel.getExternalPidAssigningAuthority());
-            hl7KeyFields.internalPid = getPidWithAssigningAuthority(terser, PID_INTERNAL_PID_FIELD, channel.getInternalPidAssigningAuthority());
+            hl7KeyFields.pid1 = getPidWithAssigningAuthority(terser, channel.getPid1Field(), channel.getPid1AssigningAuthority());
+            hl7KeyFields.pid2 = getPidWithAssigningAuthority(terser, channel.getPid2Field(), channel.getPid2AssigningAuthority());
         }
 
         return hl7KeyFields;
     }
 
-    private static String getPidWithAssigningAuthority(Terser terser, int pidFieldNumber, String assigningAuthority) throws HL7Exception {
+    private static String getPidWithAssigningAuthority(Terser terser, Integer pidFieldNumber, String assigningAuthority) throws HL7Exception {
 
-        if (StringUtils.isBlank(assigningAuthority))
+        if ((pidFieldNumber == null) || (StringUtils.isBlank(assigningAuthority)))
             return null;
 
         if (!hasSegment(terser, PID_SEGMENT_NAME))
@@ -178,7 +176,7 @@ class HL7KeyFields {
         return sequenceNumber;
     }
 
-    public String getExternalPid() { return externalPid; }
+    public String getPid1() { return pid1; }
 
-    public String getInternalPid() { return internalPid; }
+    public String getPid2() { return pid2; }
 }
