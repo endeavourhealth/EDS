@@ -102,6 +102,18 @@ public class IdHelper {
      * returns true to indicate the resource is new to us, false otherwise
      */
     public static boolean mapIds(UUID serviceId, UUID systemId, Resource resource, boolean mapResourceId) throws Exception {
+        return getIdMapper(resource).mapIds(resource, serviceId, systemId, mapResourceId);
+    }
+
+    /**
+     * returns the patient ID of the resource or null if it doesn't have one. If called with
+     * a resource that doesn't support a patient ID, an exception is thrown
+     */
+    public static String getPatientId(Resource resource) throws Exception {
+        return getIdMapper(resource).getPatientId(resource);
+    }
+
+    private static BaseIdMapper getIdMapper(Resource resource) throws Exception {
 
         BaseIdMapper mapper = idMappers.get(resource.getClass());
         if (mapper == null) {
@@ -114,26 +126,23 @@ public class IdHelper {
                 throw new TransformException("Exception creating ID Mapper for " + clsName, ex);
             }
         }
-
-        return mapper.mapIds(resource, serviceId, systemId, mapResourceId);
+        return mapper;
     }
 
-
-
-    public static Reference convertLocallyUniqueReferenceToEdsReference(Reference localReference, CsvProcessor csvProcessor) {
+    public static Reference convertLocallyUniqueReferenceToEdsReference(Reference localReference, FhirResourceFiler fhirResourceFiler) {
         ReferenceComponents components = ReferenceHelper.getReferenceComponents(localReference);
         String locallyUniqueId = components.getId();
         ResourceType resourceType = components.getResourceType();
 
-        String globallyUniqueId = getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
-                csvProcessor.getSystemId(),
+        String globallyUniqueId = getOrCreateEdsResourceIdString(fhirResourceFiler.getServiceId(),
+                fhirResourceFiler.getSystemId(),
                 resourceType,
                 locallyUniqueId);
 
         return ReferenceHelper.createReference(resourceType, globallyUniqueId);
     }
 
-    public static Reference convertEdsReferenceToLocallyUniqueReference(Reference edsReference, CsvProcessor csvProcessor) {
+    public static Reference convertEdsReferenceToLocallyUniqueReference(Reference edsReference, FhirResourceFiler fhirResourceFiler) {
         ReferenceComponents components = ReferenceHelper.getReferenceComponents(edsReference);
         ResourceType resourceType = components.getResourceType();
         ResourceIdMapByEdsId mapping = repository.getResourceIdMapByEdsId(resourceType.toString(), components.getId());
@@ -141,4 +150,5 @@ public class IdHelper {
 
         return ReferenceHelper.createReference(resourceType, emisId);
     }
+
 }

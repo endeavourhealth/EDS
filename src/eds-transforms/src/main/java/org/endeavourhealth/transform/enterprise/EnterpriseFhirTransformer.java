@@ -22,8 +22,7 @@ public class EnterpriseFhirTransformer {
 
     //private static final String ZIP_ENTRY = "EnterpriseData.xml";
 
-    public static String transformFromFhir(UUID serviceId,
-                                           UUID orgId,
+    public static String transformFromFhir(UUID senderOrganisationUuid,
                                            UUID batchId,
                                            Map<ResourceType, List<UUID>> resourceIds) throws Exception {
 
@@ -31,21 +30,22 @@ public class EnterpriseFhirTransformer {
         List<ResourceByExchangeBatch> resourcesByExchangeBatch = new ResourceRepository().getResourcesForBatch(batchId);
         List<ResourceByExchangeBatch> filteredResources = filterResources(resourcesByExchangeBatch, resourceIds);
 
-        OutputContainer data = tranformResources(filteredResources, orgId);
+        //we need to find the sender organisation national ID for the data in the batch
+        Organisation org = new OrganisationRepository().getById(senderOrganisationUuid);
+        String orgNationalId = org.getNationalId();
+
+        OutputContainer data = tranformResources(filteredResources, orgNationalId);
 
         byte[] bytes = data.writeToZip();
         return Base64.getEncoder().encodeToString(bytes);
     }
 
-    private static OutputContainer tranformResources(List<ResourceByExchangeBatch> resources, UUID orgId) throws Exception {
+    private static OutputContainer tranformResources(List<ResourceByExchangeBatch> resources, String orgNationalId) throws Exception {
 
         //hash the resources by eference to them, so the transforms can quickly look up dependant resources
         Map<String, ResourceByExchangeBatch> resourcesMap = hashResourcesByReference(resources);
 
         OutputContainer data = new OutputContainer();
-
-        Organisation org = new OrganisationRepository().getById(orgId);
-        String orgNationalId = org.getNationalId();
 
         //we detect whether we're doing an update or insert, based on whether we're previously mapped
         //a reference to a resource, so we need to transform the resources in a specific order, so

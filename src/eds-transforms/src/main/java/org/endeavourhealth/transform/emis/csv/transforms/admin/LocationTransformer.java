@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.admin.Location;
@@ -16,7 +16,7 @@ public class LocationTransformer {
 
     public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
 
@@ -25,16 +25,16 @@ public class LocationTransformer {
             while (parser.nextRecord()) {
 
                 try {
-                    createResource((Location)parser, csvProcessor, csvHelper);
+                    createResource((Location)parser, fhirResourceFiler, csvHelper);
                 } catch (Exception ex) {
-                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
                 }
             }
         }
     }
 
     private static void createResource(Location parser,
-                                       CsvProcessor csvProcessor,
+                                       FhirResourceFiler fhirResourceFiler,
                                        EmisCsvHelper csvHelper) throws Exception {
 
         org.hl7.fhir.instance.model.Location fhirLocation = new org.hl7.fhir.instance.model.Location();
@@ -44,7 +44,7 @@ public class LocationTransformer {
         fhirLocation.setId(locationGuid);
 
         if (parser.getDeleted()) {
-            csvProcessor.deleteAdminResource(parser.getCurrentState(), fhirLocation);
+            fhirResourceFiler.deleteAdminResource(parser.getCurrentState(), fhirLocation);
 
             //this resource exists in our admin resource cache, so we can populate the
             //main database when new practices come on, so we need to update that too
@@ -113,7 +113,7 @@ public class LocationTransformer {
             fhirLocation.setManagingOrganization(csvHelper.createOrganisationReference(organisationGuid));
         }
 
-        csvProcessor.saveAdminResource(parser.getCurrentState(), fhirLocation);
+        fhirResourceFiler.saveAdminResource(parser.getCurrentState(), fhirLocation);
 
         //this resource exists in our admin resource cache, so we can populate the
         //main database when new practices come on, so we need to update that too

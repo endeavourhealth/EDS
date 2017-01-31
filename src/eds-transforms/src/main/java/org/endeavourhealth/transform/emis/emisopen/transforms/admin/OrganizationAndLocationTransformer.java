@@ -34,6 +34,7 @@ public class OrganizationAndLocationTransformer
     private static Organization createOrganization(LocationType locationType, TypeOfLocationType typeOfLocationType) throws TransformException
     {
         Organization organization = new Organization();
+        organization.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ORGANIZATION));
 
         organization.setId(locationType.getGUID());
         organization.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ORGANIZATION));
@@ -55,6 +56,7 @@ public class OrganizationAndLocationTransformer
     private static Location createLocation(LocationType locationType) throws TransformException
     {
         Location location = new Location();
+        location.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_LOCATION));
 
         location.setId(locationType.getGUID());
         location.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_LOCATION));

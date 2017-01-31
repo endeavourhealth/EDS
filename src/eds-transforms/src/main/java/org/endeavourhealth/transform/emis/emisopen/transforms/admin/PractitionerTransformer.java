@@ -29,6 +29,7 @@ public class PractitionerTransformer
     private static Practitioner createPractitioner(PersonType personType, String organisationGuid) throws TransformException
     {
         Practitioner practitioner = new Practitioner();
+        practitioner.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PRACTITIONER));
 
         practitioner.setId(personType.getGUID());
         practitioner.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PRACTITIONER));

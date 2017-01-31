@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.admin.Organisation;
@@ -17,7 +17,7 @@ public class OrganisationTransformer {
 
     public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
         for (AbstractCsvParser parser: parsers.get(Organisation.class)) {
@@ -25,16 +25,16 @@ public class OrganisationTransformer {
             while (parser.nextRecord()) {
 
                 try {
-                    createResource((Organisation)parser, csvProcessor, csvHelper);
+                    createResource((Organisation)parser, fhirResourceFiler, csvHelper);
                 } catch (Exception ex) {
-                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
                 }
             }
         }
      }
 
     private static void createResource(Organisation parser,
-                                       CsvProcessor csvProcessor,
+                                       FhirResourceFiler fhirResourceFiler,
                                        EmisCsvHelper csvHelper) throws Exception {
 
         Organization fhirOrganisation = new Organization();
@@ -79,7 +79,7 @@ public class OrganisationTransformer {
         Reference fhirReference = csvHelper.createLocationReference(mainLocationGuid);
         fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ORGANISATION_MAIN_LOCATION, fhirReference));
 
-        csvProcessor.saveAdminResource(parser.getCurrentState(), fhirOrganisation);
+        fhirResourceFiler.saveAdminResource(parser.getCurrentState(), fhirOrganisation);
 
         //this resource exists in our admin resource cache, so we can populate the
         //main database when new practices come on, so we need to update that too

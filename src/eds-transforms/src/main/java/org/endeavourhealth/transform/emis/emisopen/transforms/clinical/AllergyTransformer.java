@@ -15,8 +15,9 @@ final class AllergyTransformer
     public static AllergyIntolerance transform(EventType eventType, String patientUuid) throws TransformException
     {
         AllergyIntolerance allergy = new AllergyIntolerance();
-        allergy.setId(eventType.getGUID());
         allergy.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ALLERGY_INTOLERANCE));
+
+        allergy.setId(eventType.getGUID());
 
         allergy.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientUuid));
         allergy.setRecorder(ReferenceHelper.createReference(ResourceType.Practitioner, eventType.getOriginalAuthor().getUser().getGUID()));

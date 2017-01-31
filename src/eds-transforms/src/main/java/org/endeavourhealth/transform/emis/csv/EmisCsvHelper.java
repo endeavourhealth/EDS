@@ -9,7 +9,7 @@ import org.endeavourhealth.core.data.transform.EmisRepository;
 import org.endeavourhealth.core.data.transform.models.EmisAdminResourceCache;
 import org.endeavourhealth.core.data.transform.models.EmisCsvCodeMap;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.ClinicalCodeNotFoundException;
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
@@ -300,10 +300,10 @@ public class EmisCsvHelper {
     }
 
 
-    public Resource retrieveResource(String locallyUniqueId, ResourceType resourceType, CsvProcessor csvProcessor) throws Exception {
+    public Resource retrieveResource(String locallyUniqueId, ResourceType resourceType, FhirResourceFiler fhirResourceFiler) throws Exception {
 
-        UUID globallyUniqueId = IdHelper.getEdsResourceId(csvProcessor.getServiceId(),
-                csvProcessor.getSystemId(),
+        UUID globallyUniqueId = IdHelper.getEdsResourceId(fhirResourceFiler.getServiceId(),
+                fhirResourceFiler.getSystemId(),
                 resourceType,
                 locallyUniqueId);
         if (globallyUniqueId == null) {
@@ -328,23 +328,23 @@ public class EmisCsvHelper {
      * to past parent observations. These linkages are saved against the parent observation,
      * so we need to retrieve them off the main repository, amend them and save them
      */
-    public void processRemainingObservationParentChildLinks(CsvProcessor csvProcessor) throws Exception {
+    public void processRemainingObservationParentChildLinks(FhirResourceFiler fhirResourceFiler) throws Exception {
 
         for (String locallyUniqueId : observationChildMap.keySet()) {
             List<String> childObservationIds = observationChildMap.get(locallyUniqueId);
 
-            updateExistingObservationWithNewChildLinks(locallyUniqueId, childObservationIds, csvProcessor);
+            updateExistingObservationWithNewChildLinks(locallyUniqueId, childObservationIds, fhirResourceFiler);
         }
     }
 
 
     private void updateExistingObservationWithNewChildLinks(String locallyUniqueObservationId,
                                                             List<String> childResourceRelationships,
-                                                            CsvProcessor csvProcessor) throws Exception {
+                                                            FhirResourceFiler fhirResourceFiler) throws Exception {
 
         Observation fhirObservation;
         try {
-            fhirObservation = (Observation) retrieveResource(locallyUniqueObservationId, ResourceType.Observation, csvProcessor);
+            fhirObservation = (Observation) retrieveResource(locallyUniqueObservationId, ResourceType.Observation, fhirResourceFiler);
         } catch (ResourceNotFoundException|ResourceDeletedException e) {
             //if the resource can't be found, it's because that EMIS observation record was saved as something other
             //than a FHIR Observation (example in the CSV test files is an Allergy that is linked to another Allergy)
@@ -359,7 +359,7 @@ public class EmisCsvHelper {
         for (String referenceValue : childResourceRelationships) {
 
             Reference reference = ReferenceHelper.createReference(referenceValue);
-            Reference globallyUniqueReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, csvProcessor);
+            Reference globallyUniqueReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, fhirResourceFiler);
 
             //check if the parent observation doesn't already have our ob linked to it
             boolean alreadyLinked = false;
@@ -382,7 +382,7 @@ public class EmisCsvHelper {
 
         if (changed) {
             //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
-            csvProcessor.savePatientResource(null, false, patientGuid, fhirObservation);
+            fhirResourceFiler.savePatientResource(null, false, patientGuid, fhirObservation);
         }
     }
 
@@ -411,22 +411,22 @@ public class EmisCsvHelper {
      * called at the end of the transform, to update pre-existing Problem resources with references to new
      * clinical resources that are in those problems
      */
-    public void processRemainingProblemRelationships(CsvProcessor csvProcessor) throws Exception {
+    public void processRemainingProblemRelationships(FhirResourceFiler fhirResourceFiler) throws Exception {
 
         for (String problemLocallyUniqueId : problemChildMap.keySet()) {
             List<String> childResourceRelationships = problemChildMap.get(problemLocallyUniqueId);
 
-            addRelationshipsToExistingProblem(problemLocallyUniqueId, childResourceRelationships, csvProcessor);
+            addRelationshipsToExistingProblem(problemLocallyUniqueId, childResourceRelationships, fhirResourceFiler);
         }
     }
 
     private void addRelationshipsToExistingProblem(String problemLocallyUniqueId,
                                                    List<String> childResourceRelationships,
-                                                   CsvProcessor csvProcessor) throws Exception {
+                                                   FhirResourceFiler fhirResourceFiler) throws Exception {
 
         Condition fhirProblem;
         try {
-            fhirProblem = (Condition) retrieveResource(problemLocallyUniqueId, ResourceType.Condition, csvProcessor);
+            fhirProblem = (Condition) retrieveResource(problemLocallyUniqueId, ResourceType.Condition, fhirResourceFiler);
         } catch (ResourceNotFoundException|ResourceDeletedException ex) {
             //it's possible to create medication items that are linked to non-existent problems in Emis Web,
             //so ignore any data
@@ -440,14 +440,14 @@ public class EmisCsvHelper {
 
         for (String referenceValue : childResourceRelationships) {
             Reference reference = ReferenceHelper.createReference(referenceValue);
-            Reference globallyUniqueReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, csvProcessor);
+            Reference globallyUniqueReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, fhirResourceFiler);
             references.add(globallyUniqueReference);
         }
 
         if (addLinkedItemsToProblem(fhirProblem, references)) {
 
             //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
-            csvProcessor.savePatientResource(null, false, patientGuid, fhirProblem);
+            fhirResourceFiler.savePatientResource(null, false, patientGuid, fhirProblem);
         }
     }
 
@@ -593,21 +593,21 @@ public class EmisCsvHelper {
      * called at the end of the transform. If the sessionPractitionerMap contains any entries that haven't been processed
      * then we have changes to the staff in a previously saved FHIR Schedule, so we need to amend that Schedule
      */
-    public void processRemainingSessionPractitioners(CsvProcessor csvProcessor) throws Exception {
+    public void processRemainingSessionPractitioners(FhirResourceFiler fhirResourceFiler) throws Exception {
 
         for (String sessionGuid : sessionPractitionerMap.keySet()) {
             SessionPractitioners practitioners = sessionPractitionerMap.get(sessionGuid);
             if (!practitioners.isProcessedSession()) {
-                updateExistingScheduleWithNewPractitioners(sessionGuid, practitioners, csvProcessor);
+                updateExistingScheduleWithNewPractitioners(sessionGuid, practitioners, fhirResourceFiler);
             }
         }
     }
 
-    private void updateExistingScheduleWithNewPractitioners(String sessionGuid, SessionPractitioners practitioners, CsvProcessor csvProcessor) throws Exception {
+    private void updateExistingScheduleWithNewPractitioners(String sessionGuid, SessionPractitioners practitioners, FhirResourceFiler fhirResourceFiler) throws Exception {
 
         Schedule fhirSchedule = null;
         try {
-            fhirSchedule = (Schedule)retrieveResource(sessionGuid, ResourceType.Schedule, csvProcessor);
+            fhirSchedule = (Schedule)retrieveResource(sessionGuid, ResourceType.Schedule, fhirResourceFiler);
         } catch (ResourceDeletedException|ResourceNotFoundException ex) {
             //because the SessionUser file doesn't have an OrganisationGuid column, we can't split that file
             //so we will be trying to update the practitioners on sessions that don't exist. So if we get
@@ -637,8 +637,8 @@ public class EmisCsvHelper {
         for (String emisUserGuid: practitioners.getEmisUserGuidsToSave()) {
 
             //we're updating an existing FHIR resource, so need to explicitly map the EMIS user GUID to an EDS ID
-            String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
-                    csvProcessor.getSystemId(),
+            String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(fhirResourceFiler.getServiceId(),
+                    fhirResourceFiler.getSystemId(),
                     ResourceType.Practitioner,
                     emisUserGuid);
             Reference referenceToAdd = ReferenceHelper.createReference(ResourceType.Practitioner, globallyUniqueId);
@@ -651,8 +651,8 @@ public class EmisCsvHelper {
         for (String emisUserGuid: practitioners.getEmisUserGuidsToDelete()) {
 
             //we're updating an existing FHIR resource, so need to explicitly map the EMIS user GUID to an EDS ID
-            String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
-                    csvProcessor.getSystemId(),
+            String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(fhirResourceFiler.getServiceId(),
+                    fhirResourceFiler.getSystemId(),
                     ResourceType.Practitioner,
                     emisUserGuid);
 
@@ -673,7 +673,7 @@ public class EmisCsvHelper {
             }
         }
 
-        csvProcessor.saveAdminResource(null, false, fhirSchedule);
+        fhirResourceFiler.saveAdminResource(null, false, fhirSchedule);
     }
 
     public void cacheOrganisationLocationMap(String locationGuid, String orgGuid, boolean mainLocation) {
@@ -703,13 +703,13 @@ public class EmisCsvHelper {
      * that weren't handled when we went through the Location file (i.e. changes in the OrganisationLocation file
      * with no corresponding changes in the Location file)
      */
-    public void processRemainingOrganisationLocationMappings(CsvProcessor csvProcessor) throws Exception {
+    public void processRemainingOrganisationLocationMappings(FhirResourceFiler fhirResourceFiler) throws Exception {
 
         for (String locationGuid: organisationLocationMap.keySet()) {
 
             Location fhirLocation = null;
             try {
-                fhirLocation = (Location) retrieveResource(locationGuid, ResourceType.Location, csvProcessor);
+                fhirLocation = (Location) retrieveResource(locationGuid, ResourceType.Location, fhirResourceFiler);
             } catch (ResourceDeletedException|ResourceNotFoundException ex) {
                 //if the location has been deleted, it doesn't matter, and the emis data integrity issues
                 //mean we may have references to unknown locations
@@ -721,15 +721,15 @@ public class EmisCsvHelper {
             String organisationGuid = organisationGuids.get(0);
 
             //the resource has already been through the ID mapping process, so we need to manually map the organisation ID
-            String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(csvProcessor.getServiceId(),
-                    csvProcessor.getSystemId(),
+            String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(fhirResourceFiler.getServiceId(),
+                    fhirResourceFiler.getSystemId(),
                     ResourceType.Organization,
                     organisationGuid);
 
             Reference reference = ReferenceHelper.createReference(ResourceType.Organization, globallyUniqueId);
             fhirLocation.setManagingOrganization(reference);
 
-            csvProcessor.saveAdminResource(null, false, fhirLocation);
+            fhirResourceFiler.saveAdminResource(null, false, fhirLocation);
         }
     }
 
@@ -771,7 +771,7 @@ public class EmisCsvHelper {
      * when the transform is complete, if there's any values left in the ethnicity and marital status maps,
      * then we need to update pre-existing patients with new data
      */
-    public void processRemainingEthnicitiesAndMartialStatuses(CsvProcessor csvProcessor) throws Exception {
+    public void processRemainingEthnicitiesAndMartialStatuses(FhirResourceFiler fhirResourceFiler) throws Exception {
 
         HashSet<String> patientGuids = new HashSet<>(ethnicityMap.keySet());
         patientGuids.addAll(new HashSet<>(maritalStatusMap.keySet()));
@@ -782,7 +782,7 @@ public class EmisCsvHelper {
             DateAndCode maritalStatus = maritalStatusMap.get(patientGuid);
 
             try {
-                Patient fhirPatient = (Patient) retrieveResource(createUniqueId(patientGuid, null), ResourceType.Patient, csvProcessor);
+                Patient fhirPatient = (Patient) retrieveResource(createUniqueId(patientGuid, null), ResourceType.Patient, fhirResourceFiler);
 
                 if (ethnicity != null) {
 
@@ -804,7 +804,7 @@ public class EmisCsvHelper {
                     fhirPatient.setMaritalStatus(maritalStatus.getCodeableConcept());
                 }
 
-                csvProcessor.savePatientResource(null, false, patientGuid, fhirPatient);
+                fhirResourceFiler.savePatientResource(null, false, patientGuid, fhirPatient);
 
             } catch (ResourceDeletedException ex) {
                 //if we try to update the ethnicity on a deleted patient, we'll get this exception, which is fine to ignore
@@ -843,13 +843,13 @@ public class EmisCsvHelper {
      * Locations and Staff once, with the very first organisation, and when a second organisation is added to
      * the extract, none of that data is re-sent, so we have to create those resources for the new org
      */
-    public void applyAdminResourceCache(CsvProcessor csvProcessor) throws Exception {
+    public void applyAdminResourceCache(FhirResourceFiler fhirResourceFiler) throws Exception {
 
         List<EmisAdminResourceCache> cachedResources = mappingRepository.getCachedResources(dataSharingAgreementGuid);
         for (EmisAdminResourceCache cachedResource: cachedResources) {
 
             Resource fhirResource = new JsonParser().parse(cachedResource.getResourceData());
-            csvProcessor.saveAdminResource(null, fhirResource);
+            fhirResourceFiler.saveAdminResource(null, fhirResource);
         }
     }
 
@@ -858,7 +858,7 @@ public class EmisCsvHelper {
      * when something about the problem only has changed (e.g. ending a problem). This is called at the end
      * of the transform to handle those changes to problems that weren't handled when we processed the Observation file.
      */
-    public void processRemainingProblems(CsvProcessor csvProcessor) throws Exception {
+    public void processRemainingProblems(FhirResourceFiler fhirResourceFiler) throws Exception {
 
         for (String locallyUniqueId: problemMap.keySet()) {
 
@@ -871,10 +871,10 @@ public class EmisCsvHelper {
             //that's now been deleted from being a problem, but the root Observation itself has not (i.e.
             //the problem has been down-graded from being a problem to just an observation)
             if (isCondition(fhirProblem)) {
-                downgradeExistingProblemToCondition(locallyUniqueId, csvProcessor);
+                downgradeExistingProblemToCondition(locallyUniqueId, fhirResourceFiler);
 
             } else {
-                updateExistingProblem(fhirProblem, csvProcessor);
+                updateExistingProblem(fhirProblem, fhirResourceFiler);
 
             }
         }
@@ -883,13 +883,13 @@ public class EmisCsvHelper {
     /**
      * updates an existing problem with new data we've received, when we didn't also get an update in the Observation file
      */
-    private void updateExistingProblem(Condition updatedProblem, CsvProcessor csvProcessor) throws Exception {
+    private void updateExistingProblem(Condition updatedProblem, FhirResourceFiler fhirResourceFiler) throws Exception {
 
         String locallyUniqueId = updatedProblem.getId();
 
         Condition existingProblem = null;
         try {
-            existingProblem = (Condition)retrieveResource(locallyUniqueId, ResourceType.Condition, csvProcessor);
+            existingProblem = (Condition)retrieveResource(locallyUniqueId, ResourceType.Condition, fhirResourceFiler);
         } catch (ResourceDeletedException|ResourceNotFoundException ex) {
             //emis seem to send bulk data containing deleted records, so ignore any attempt to downgrade
             //a problem that doesn't actually exist
@@ -923,7 +923,7 @@ public class EmisCsvHelper {
                         //the references in our updated problem are only locally unique references, so we need
                         //to manually convert them to globally unique ones, since we're saving an existing resource
                         //that's already been ID mapped
-                        Reference globallyUniqueReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(previousReference, csvProcessor);
+                        Reference globallyUniqueReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(previousReference, fhirResourceFiler);
                         globalReferences.add(globallyUniqueReference);
                     }
 
@@ -933,18 +933,18 @@ public class EmisCsvHelper {
         }
 
         String patientId = getPatientGuidFromUniqueId(locallyUniqueId);
-        csvProcessor.savePatientResource(null, false, patientId, existingProblem);
+        fhirResourceFiler.savePatientResource(null, false, patientId, existingProblem);
     }
 
     /**
      * down-grades an existing problem to a regular condition, by changing the profile URI and removing all
      * the problem-specific data, leaving just the original condition
      */
-    private void downgradeExistingProblemToCondition(String locallyUniqueId, CsvProcessor csvProcessor) throws Exception {
+    private void downgradeExistingProblemToCondition(String locallyUniqueId, FhirResourceFiler fhirResourceFiler) throws Exception {
 
         Condition existingProblem = null;
         try {
-            existingProblem = (Condition)retrieveResource(locallyUniqueId, ResourceType.Condition, csvProcessor);
+            existingProblem = (Condition)retrieveResource(locallyUniqueId, ResourceType.Condition, fhirResourceFiler);
         } catch (ResourceDeletedException|ResourceNotFoundException ex) {
             //emis seem to send bulk data containing deleted records, so ignore any attempt to downgrade
             //a problem that doesn't actually exist
@@ -956,7 +956,7 @@ public class EmisCsvHelper {
         removeAllProblemSpecificFields(existingProblem);
 
         String patientId = getPatientGuidFromUniqueId(locallyUniqueId);
-        csvProcessor.savePatientResource(null, false, patientId, existingProblem);
+        fhirResourceFiler.savePatientResource(null, false, patientId, existingProblem);
     }
     private void removeAllProblemSpecificFields(Condition fhirProblem) {
 

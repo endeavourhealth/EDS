@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.common.idmappers;
 
 import org.endeavourhealth.transform.common.IdHelper;
+import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
 import org.endeavourhealth.transform.fhir.ReferenceComponents;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
@@ -15,6 +16,8 @@ public abstract class BaseIdMapper {
 
 
     public abstract boolean mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception;
+
+    public abstract String getPatientId(Resource resource) throws PatientResourceException;
 
     /**
      * maps the ID, extensions and contained resources in a FHIR resource

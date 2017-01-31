@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
@@ -22,7 +22,7 @@ public class ConsultationTransformer {
 
     public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
         for (AbstractCsvParser parser: parsers.get(Consultation.class)) {
@@ -30,16 +30,16 @@ public class ConsultationTransformer {
             while (parser.nextRecord()) {
 
                 try {
-                    createResource((Consultation)parser, csvProcessor, csvHelper, version);
+                    createResource((Consultation)parser, fhirResourceFiler, csvHelper, version);
                 } catch (Exception ex) {
-                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
                 }
             }
         }
     }
 
     private static void createResource(Consultation parser,
-                                        CsvProcessor csvProcessor,
+                                        FhirResourceFiler fhirResourceFiler,
                                         EmisCsvHelper csvHelper,
                                         String version) throws Exception {
 
@@ -55,7 +55,7 @@ public class ConsultationTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(parser.getCurrentState(), patientGuid, fhirEncounter);
+            fhirResourceFiler.deletePatientResource(parser.getCurrentState(), patientGuid, fhirEncounter);
             return;
         }
 
@@ -126,7 +126,7 @@ public class ConsultationTransformer {
             fhirEncounter.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ENCOUNTER_INCOMPLETE, b));
         }
 
-        csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirEncounter);
+        fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirEncounter);
     }
 
     private static Period createPeriod(Date date, String precision) throws Exception {

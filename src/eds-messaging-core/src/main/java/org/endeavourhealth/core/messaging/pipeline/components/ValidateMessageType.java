@@ -8,7 +8,6 @@ import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.xml.QueryDocument.*;
-import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +71,12 @@ public class ValidateMessageType extends PipelineComponent {
 				//with the UUID, so we need to manually load it to get the extra details
 				String technicalInterfaceUuidStr = serviceContract.getTechnicalInterface().getUuid();
 				String systemUuidStr = serviceContract.getSystem().getUuid();
-				TechnicalInterface technicalInterface = findTechnicalInterfaceDetails(systemUuidStr, technicalInterfaceUuidStr);
+				TechnicalInterface technicalInterface = null;
+				try {
+					technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetails(systemUuidStr, technicalInterfaceUuidStr);
+				} catch (Exception ex) {
+					throw new PipelineException("Failed to retrieve technical interface", ex);
+				}
 				//TechnicalInterface technicalInterface = serviceContract.getTechnicalInterface();
 
 				if (!technicalInterface.getMessageFormat().equals(sourceSystem)) {
@@ -99,31 +103,7 @@ public class ValidateMessageType extends PipelineComponent {
 		LOG.debug("Message validated");
 	}
 
-	private static TechnicalInterface findTechnicalInterfaceDetails(String systemUuidStr, String technicalInterfaceUuidStr) throws PipelineException {
 
-		UUID systemUuid = UUID.fromString(systemUuidStr);
-
-		LibraryItem libraryItem = null;
-		try {
-			libraryItem = LibraryRepositoryHelper.getLibraryItem(systemUuid);
-		} catch (Exception e) {
-			throw new PipelineException("Failed to read library item for " + systemUuidStr, e);
-		}
-
-		System system = libraryItem.getSystem();
-		TechnicalInterface technicalInterface = system
-				.getTechnicalInterface()
-				.stream()
-				.filter(ti -> ti.getUuid().equals(technicalInterfaceUuidStr))
-				.findFirst()
-				.get();
-
-		if (technicalInterface == null) {
-			throw new PipelineException("Failed to find technical interface for system " + systemUuidStr + " and technical interface " + technicalInterfaceUuidStr);
-		}
-
-		return technicalInterface;
-	}
 
 	/*@Override
 	public void process(Exchange exchange) throws PipelineException {

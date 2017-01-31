@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.ObservationReferral;
@@ -24,7 +24,7 @@ public class ObservationReferralTransformer {
 
     public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
         for (AbstractCsvParser parser: parsers.get(ObservationReferral.class)) {
@@ -32,16 +32,16 @@ public class ObservationReferralTransformer {
             while (parser.nextRecord()) {
 
                 try {
-                    createResource((ObservationReferral)parser, csvProcessor, csvHelper);
+                    createResource((ObservationReferral)parser, fhirResourceFiler, csvHelper);
                 } catch (Exception ex) {
-                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
                 }
             }
         }
     }
 
     private static void createResource(ObservationReferral parser,
-                                       CsvProcessor csvProcessor,
+                                       FhirResourceFiler fhirResourceFiler,
                                        EmisCsvHelper csvHelper) throws Exception {
 
         ReferralRequest fhirReferral = new ReferralRequest();

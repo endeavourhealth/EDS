@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
@@ -23,7 +23,7 @@ public class DrugRecordTransformer {
 
     public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
         for (AbstractCsvParser parser: parsers.get(DrugRecord.class)) {
@@ -31,16 +31,16 @@ public class DrugRecordTransformer {
             while (parser.nextRecord()) {
 
                 try {
-                    createResource((DrugRecord)parser, csvProcessor, csvHelper, version);
+                    createResource((DrugRecord)parser, fhirResourceFiler, csvHelper, version);
                 } catch (Exception ex) {
-                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
                 }
             }
         }
     }
 
     private static void createResource(DrugRecord parser,
-                                       CsvProcessor csvProcessor,
+                                       FhirResourceFiler fhirResourceFiler,
                                        EmisCsvHelper csvHelper,
                                        String version) throws Exception {
 
@@ -56,7 +56,7 @@ public class DrugRecordTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(parser.getCurrentState(), patientGuid, fhirMedicationStatement);
+            fhirResourceFiler.deletePatientResource(parser.getCurrentState(), patientGuid, fhirMedicationStatement);
             return;
         }
 
@@ -152,7 +152,7 @@ public class DrugRecordTransformer {
         Coding fhirCoding = CodingHelper.createCoding(fhirAuthorisationType);
         fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE, fhirCoding));
 
-        csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirMedicationStatement);
+        fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirMedicationStatement);
     }
 
 }

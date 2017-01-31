@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMapByEdsId;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.appointment.Session;
@@ -17,7 +17,7 @@ public class SessionTransformer {
 
     public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
         for (AbstractCsvParser parser: parsers.get(Session.class)) {
@@ -25,16 +25,16 @@ public class SessionTransformer {
             while (parser.nextRecord()) {
 
                 try {
-                    createResource((Session)parser, csvProcessor, csvHelper);
+                    createResource((Session)parser, fhirResourceFiler, csvHelper);
                 } catch (Exception ex) {
-                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
                 }
             }
         }
     }
 
     private static void createResource(Session parser,
-                                       CsvProcessor csvProcessor,
+                                       FhirResourceFiler fhirResourceFiler,
                                        EmisCsvHelper csvHelper) throws Exception {
 
         Schedule fhirSchedule = new Schedule();
@@ -45,7 +45,7 @@ public class SessionTransformer {
 
         //handle deleted sessions
         if (parser.getDeleted()) {
-            csvProcessor.deleteAdminResource(parser.getCurrentState(), fhirSchedule);
+            fhirResourceFiler.deleteAdminResource(parser.getCurrentState(), fhirSchedule);
             return;
         }
 
@@ -73,7 +73,7 @@ public class SessionTransformer {
         //and we need to carry over the practitioners from our previous instance
         if (userGuids.isEmpty()) {
             try {
-                Schedule fhirScheduleOld = (Schedule)csvHelper.retrieveResource(sessionGuid, ResourceType.Schedule, csvProcessor);
+                Schedule fhirScheduleOld = (Schedule)csvHelper.retrieveResource(sessionGuid, ResourceType.Schedule, fhirResourceFiler);
 
                 ResourceIdMapRepository repository = new ResourceIdMapRepository();
 
@@ -117,6 +117,6 @@ public class SessionTransformer {
             }
         }
 
-        csvProcessor.saveAdminResource(parser.getCurrentState(), fhirSchedule);
+        fhirResourceFiler.saveAdminResource(parser.getCurrentState(), fhirSchedule);
     }
 }

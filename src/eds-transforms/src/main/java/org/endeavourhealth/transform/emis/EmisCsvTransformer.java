@@ -6,7 +6,7 @@ import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.TransformError;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.exceptions.FileFormatException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -75,7 +75,7 @@ public abstract class EmisCsvTransformer {
         //validateVersion(version);
 
         //the processor is responsible for saving FHIR resources
-        CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId, transformError, batchIds, maxFilingThreads);
+        FhirResourceFiler processor = new FhirResourceFiler(exchangeId, serviceId, systemId, transformError, batchIds, maxFilingThreads);
 
         Map<Class, List<AbstractCsvParser>> allParsers = new HashMap<>();
 
@@ -342,66 +342,66 @@ public abstract class EmisCsvTransformer {
 
     private static void transformParsers(String version,
                                         Map<Class, List<AbstractCsvParser>> parsers,
-                                        CsvProcessor csvProcessor,
+                                        FhirResourceFiler fhirResourceFiler,
                                         TransformError previousErrors,
                                          int maxFilingThreads) throws Exception {
 
         EmisCsvHelper csvHelper = new EmisCsvHelper(findDataSharingAgreementGuid(parsers));
 
         //if this is the first extract for this organisation, we need to apply all the content of the admin resource cache
-        if (!new AuditRepository().isServiceStarted(csvProcessor.getServiceId(), csvProcessor.getSystemId())) {
-            LOG.trace("Applying admin resource cache for service {} and system {}", csvProcessor.getServiceId(), csvProcessor.getSystemId());
-            csvHelper.applyAdminResourceCache(csvProcessor);
+        if (!new AuditRepository().isServiceStarted(fhirResourceFiler.getServiceId(), fhirResourceFiler.getSystemId())) {
+            LOG.trace("Applying admin resource cache for service {} and system {}", fhirResourceFiler.getServiceId(), fhirResourceFiler.getSystemId());
+            csvHelper.applyAdminResourceCache(fhirResourceFiler);
         }
 
         //these transforms don't create resources themselves, but cache data that the subsequent ones rely on
-        ClinicalCodeTransformer.transform(version, parsers, csvProcessor, csvHelper, maxFilingThreads);
-        DrugCodeTransformer.transform(version, parsers, csvProcessor, csvHelper, maxFilingThreads);
-        OrganisationLocationTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        SessionUserTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        ObservationPreTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        DrugRecordPreTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        IssueRecordPreTransformer.transform(version, parsers, csvProcessor, csvHelper);
+        ClinicalCodeTransformer.transform(version, parsers, fhirResourceFiler, csvHelper, maxFilingThreads);
+        DrugCodeTransformer.transform(version, parsers, fhirResourceFiler, csvHelper, maxFilingThreads);
+        OrganisationLocationTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        SessionUserTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        ObservationPreTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        DrugRecordPreTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        IssueRecordPreTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
 
         //before getting onto the files that actually create FHIR resources, we need to
         //work out what record numbers to process, if we're re-running a transform
         findRecordsToProcess(parsers, previousErrors);
 
         //run the transforms for non-patient resources
-        LocationTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        OrganisationTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        UserInRoleTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        SessionTransformer.transform(version, parsers, csvProcessor, csvHelper);
+        LocationTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        OrganisationTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        UserInRoleTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        SessionTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
 
         //note the order of these transforms is important, as consultations should be before obs etc.
-        PatientTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        ConsultationTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        IssueRecordTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        DrugRecordTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        SlotTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        DiaryTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        ObservationReferralTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        ProblemTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        ObservationTransformer.transform(version, parsers, csvProcessor, csvHelper);
+        PatientTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        ConsultationTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        IssueRecordTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        DrugRecordTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        SlotTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        DiaryTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        ObservationReferralTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        ProblemTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        ObservationTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
 
         //if we have any new Obs, Conditions, Medication etc. that reference pre-existing parent obs or problems,
         //then we need to retrieve the existing resources and update them
-        csvHelper.processRemainingObservationParentChildLinks(csvProcessor);
+        csvHelper.processRemainingObservationParentChildLinks(fhirResourceFiler);
 
         //if we have any new Obs etc. that refer to pre-existing problems, we need to update the existing FHIR Problem
-        csvHelper.processRemainingProblemRelationships(csvProcessor);
+        csvHelper.processRemainingProblemRelationships(fhirResourceFiler);
 
         //if we have any changes to the staff in pre-existing sessions, we need to update the existing FHIR Schedules
-        csvHelper.processRemainingSessionPractitioners(csvProcessor);
+        csvHelper.processRemainingSessionPractitioners(fhirResourceFiler);
 
         //process any changes to ethnicity or marital status, without a change to the Patient
-        csvHelper.processRemainingEthnicitiesAndMartialStatuses(csvProcessor);
+        csvHelper.processRemainingEthnicitiesAndMartialStatuses(fhirResourceFiler);
 
         //process any changes to Org-Location links without a change to the Location itself
-        csvHelper.processRemainingOrganisationLocationMappings(csvProcessor);
+        csvHelper.processRemainingOrganisationLocationMappings(fhirResourceFiler);
 
         //process any changes to Problems that didn't have an associated Observation change too
-        csvHelper.processRemainingProblems(csvProcessor);
+        csvHelper.processRemainingProblems(fhirResourceFiler);
     }
 
 

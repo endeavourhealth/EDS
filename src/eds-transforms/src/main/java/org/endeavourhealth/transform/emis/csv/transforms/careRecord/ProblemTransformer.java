@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
@@ -25,7 +25,7 @@ public class ProblemTransformer {
 
     public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
         for (AbstractCsvParser parser: parsers.get(Problem.class)) {
@@ -33,9 +33,9 @@ public class ProblemTransformer {
             while (parser.nextRecord()) {
 
                 try {
-                    createResource((Problem)parser, csvProcessor, csvHelper, version);
+                    createResource((Problem)parser, fhirResourceFiler, csvHelper, version);
                 } catch (Exception ex) {
-                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
                 }
             }
         }
@@ -43,7 +43,7 @@ public class ProblemTransformer {
     }
 
     private static void createResource(Problem parser,
-                                       CsvProcessor csvProcessor,
+                                       FhirResourceFiler fhirResourceFiler,
                                        EmisCsvHelper csvHelper,
                                        String version) throws Exception {
 
@@ -128,7 +128,7 @@ public class ProblemTransformer {
         }
 
         //carry over linked items from any previous instance of this problem
-        List<Reference> previousReferences = findPreviousLinkedReferences(csvHelper, csvProcessor, fhirProblem.getId());
+        List<Reference> previousReferences = findPreviousLinkedReferences(csvHelper, fhirResourceFiler, fhirProblem.getId());
         if (previousReferences != null && !previousReferences.isEmpty()) {
             csvHelper.addLinkedItemsToProblem(fhirProblem, previousReferences);
         }
@@ -144,13 +144,13 @@ public class ProblemTransformer {
         csvHelper.cacheProblem(observationGuid, patientGuid, fhirProblem);
     }
 
-    private static List<Reference> findPreviousLinkedReferences(EmisCsvHelper csvHelper, CsvProcessor csvProcessor, String problemId) throws Exception {
+    private static List<Reference> findPreviousLinkedReferences(EmisCsvHelper csvHelper, FhirResourceFiler fhirResourceFiler, String problemId) throws Exception {
         try {
 
             ResourceIdMapRepository repository = new ResourceIdMapRepository();
             List<Reference> ret = new ArrayList<>();
 
-            Condition previousVersion = (Condition)csvHelper.retrieveResource(problemId, ResourceType.Condition, csvProcessor);
+            Condition previousVersion = (Condition)csvHelper.retrieveResource(problemId, ResourceType.Condition, fhirResourceFiler);
 
             if (previousVersion.hasContained()) {
                 for (Resource contained: previousVersion.getContained()) {
@@ -161,7 +161,7 @@ public class ProblemTransformer {
 
                             //the reference we have has already been mapped to an EDS ID, so we need to un-map it
                             //back to the source ID, so the ID mapper can safely map it when we save the resource
-                            Reference unmappedReference = IdHelper.convertEdsReferenceToLocallyUniqueReference(previousReference, csvProcessor);
+                            Reference unmappedReference = IdHelper.convertEdsReferenceToLocallyUniqueReference(previousReference, fhirResourceFiler);
                             ret.add(unmappedReference);
                         }
                     }

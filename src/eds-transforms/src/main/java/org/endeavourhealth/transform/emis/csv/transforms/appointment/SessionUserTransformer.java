@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
@@ -13,7 +13,7 @@ public class SessionUserTransformer {
 
     public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
         //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
@@ -23,7 +23,7 @@ public class SessionUserTransformer {
             while (parser.nextRecord()) {
 
                 try {
-                    createSessionUserMapping((SessionUser)parser, csvProcessor, csvHelper);
+                    createSessionUserMapping((SessionUser)parser, fhirResourceFiler, csvHelper);
                 } catch (Exception ex) {
                     throw new TransformException(parser.getCurrentState().toString(), ex);
                 }
@@ -32,7 +32,7 @@ public class SessionUserTransformer {
     }
 
     private static void createSessionUserMapping(SessionUser parser,
-                                                 CsvProcessor csvProcessor,
+                                                 FhirResourceFiler fhirResourceFiler,
                                                  EmisCsvHelper csvHelper) throws Exception {
 
         boolean deleted = parser.getdDeleted();

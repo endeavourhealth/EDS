@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
@@ -15,7 +15,7 @@ public class DrugRecordPreTransformer {
 
     public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
         //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
@@ -25,7 +25,7 @@ public class DrugRecordPreTransformer {
             while (parser.nextRecord()) {
 
                 try {
-                    processLine((DrugRecord)parser, csvProcessor, csvHelper);
+                    processLine((DrugRecord)parser, fhirResourceFiler, csvHelper);
                 } catch (Exception ex) {
                     throw new TransformException(parser.getCurrentState().toString(), ex);
                 }
@@ -34,7 +34,7 @@ public class DrugRecordPreTransformer {
     }
 
     private static void processLine(DrugRecord parser,
-                                    CsvProcessor csvProcessor,
+                                    FhirResourceFiler fhirResourceFiler,
                                     EmisCsvHelper csvHelper) throws Exception {
 
         if (parser.getDeleted() || parser.getIsConfidential()) {

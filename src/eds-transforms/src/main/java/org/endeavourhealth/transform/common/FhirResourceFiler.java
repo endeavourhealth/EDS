@@ -21,9 +21,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class CsvProcessor {
+public class FhirResourceFiler {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CsvProcessor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FhirResourceFiler.class);
 
     private static Set<Class> patientResourceClasses = null;
 
@@ -50,8 +50,8 @@ public class CsvProcessor {
     private Map<UUID, AtomicInteger> countResourcesDeleted = new ConcurrentHashMap<>();
 
 
-    public CsvProcessor(UUID exchangeId, UUID serviceId, UUID systemId, TransformError transformError,
-                        List<UUID> batchIdsCreated, int maxFilingThreads) {
+    public FhirResourceFiler(UUID exchangeId, UUID serviceId, UUID systemId, TransformError transformError,
+                             List<UUID> batchIdsCreated, int maxFilingThreads) {
         this.exchangeId = exchangeId;
         this.serviceId = serviceId;
         this.systemId = systemId;
@@ -101,7 +101,7 @@ public class CsvProcessor {
         for (Resource resource: resources) {
             //validate we're treating the resource properly as admin / patient
             if (isPatientResource(resource) != expectingPatientResource) {
-                throw new PatientResourceException(resource.getResourceType(), expectingPatientResource);
+                throw new PatientResourceException(resource, expectingPatientResource);
             }
 
             /*String resourceType = resource.getResourceType().toString();
@@ -275,7 +275,7 @@ public class CsvProcessor {
         return batchIds;
     }*/
 
-    private static boolean isPatientResource(Resource resource) {
+    public static boolean isPatientResource(Resource resource) {
         Class cls = resource.getClass();
 
         if (patientResourceClasses == null) {

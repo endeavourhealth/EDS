@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.admin.UserInRole;
@@ -18,7 +18,7 @@ public class UserInRoleTransformer {
 
     public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
         for (AbstractCsvParser parser: parsers.get(UserInRole.class)) {
@@ -26,16 +26,16 @@ public class UserInRoleTransformer {
             while (parser.nextRecord()) {
 
                 try {
-                    createResource((UserInRole)parser, csvProcessor, csvHelper);
+                    createResource((UserInRole)parser, fhirResourceFiler, csvHelper);
                 } catch (Exception ex) {
-                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
+                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
                 }
             }
         }
     }
 
     private static void createResource(UserInRole parser,
-                                       CsvProcessor csvProcessor,
+                                       FhirResourceFiler fhirResourceFiler,
                                        EmisCsvHelper csvHelper) throws Exception {
 
         Practitioner fhirPractitioner = new Practitioner();
@@ -80,7 +80,7 @@ public class UserInRoleTransformer {
         String roleCode = parser.getJobCategoryCode();
         fhirRole.setRole(CodeableConceptHelper.createCodeableConcept(FhirValueSetUri.VALUE_SET_JOB_ROLE_CODES, roleName, roleCode));
 
-        csvProcessor.saveAdminResource(parser.getCurrentState(), fhirPractitioner);
+        fhirResourceFiler.saveAdminResource(parser.getCurrentState(), fhirPractitioner);
 
         //this resource exists in our admin resource cache, so we can populate the
         //main database when new practices come on, so we need to update that too

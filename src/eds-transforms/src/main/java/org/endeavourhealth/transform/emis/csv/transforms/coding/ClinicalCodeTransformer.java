@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
 import org.endeavourhealth.core.data.admin.CodeRepository;
 import org.endeavourhealth.core.data.admin.models.SnomedLookup;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.CallableError;
@@ -30,7 +30,7 @@ public abstract class ClinicalCodeTransformer {
 
     public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper,
                                  int maxFilingThreads) throws Exception {
 
@@ -46,7 +46,7 @@ public abstract class ClinicalCodeTransformer {
                 while (parser.nextRecord()) {
 
                     try {
-                        transform((ClinicalCode)parser, csvProcessor, csvHelper, threadPool, version);
+                        transform((ClinicalCode)parser, fhirResourceFiler, csvHelper, threadPool, version);
                     } catch (Exception ex) {
                         throw new TransformException(parser.getCurrentState().toString(), ex);
                     }
@@ -73,7 +73,7 @@ public abstract class ClinicalCodeTransformer {
     }
 
     private static void transform(ClinicalCode parser,
-                                  CsvProcessor csvProcessor,
+                                  FhirResourceFiler fhirResourceFiler,
                                   EmisCsvHelper csvHelper,
                                   ThreadPool threadPool,
                                   String version) throws Exception {

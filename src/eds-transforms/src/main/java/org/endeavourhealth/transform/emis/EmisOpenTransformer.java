@@ -11,14 +11,17 @@ import org.endeavourhealth.transform.emis.emisopen.transforms.admin.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.clinical.EventTransformer;
 import org.endeavourhealth.transform.emis.emisopen.transforms.clinical.MedicationOrderTransformer;
 import org.endeavourhealth.transform.emis.emisopen.transforms.clinical.MedicationStatementTransformer;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Appointment;
+import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.Schedule;
+import org.hl7.fhir.instance.model.Slot;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public final class EmisOpenTransformer
 {
-    public List<Resource> toFhirFullRecord(String eomMedicalRecord38Xml) throws TransformException
+    public static List<Resource> toFhirFullRecord(String eomMedicalRecord38Xml) throws TransformException
     {
         MedicalRecordType emisOpenMedicalRecord = XmlHelper.deserialize(eomMedicalRecord38Xml, MedicalRecordType.class);
 
@@ -43,19 +46,19 @@ public final class EmisOpenTransformer
         return result;
     }
 
-    public List<Schedule> toFhirSchedules(String eopenSchedulesXml) throws TransformException
+    public static List<Schedule> toFhirSchedules(String eopenSchedulesXml) throws TransformException
     {
         AppointmentSessionList appointmentSessionList = XmlHelper.deserialize(eopenSchedulesXml, AppointmentSessionList.class);
         return ScheduleTransformer.transform(appointmentSessionList);
     }
 
-    public List<Slot> toFhirSlots(String eopenSlotsXml) throws TransformException
+    public static List<Slot> toFhirSlots(String eopenSlotsXml) throws TransformException
     {
         SlotListStruct slotListStruct = XmlHelper.deserialize(eopenSlotsXml, SlotListStruct.class);
         return SlotTransformer.transform(slotListStruct);
     }
 
-    public List<Appointment> toFhirAppointments(String patientId, String eopenAppointmentsXml) throws TransformException
+    public static List<Appointment> toFhirAppointments(String patientId, String eopenAppointmentsXml) throws TransformException
     {
         PatientAppointmentList patientAppointmentList = XmlHelper.deserialize(eopenAppointmentsXml, PatientAppointmentList.class);
         return AppointmentTransformer.transform(patientId, patientAppointmentList);

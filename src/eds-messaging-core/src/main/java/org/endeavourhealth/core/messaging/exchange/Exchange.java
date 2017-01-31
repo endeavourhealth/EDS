@@ -1,5 +1,7 @@
 package org.endeavourhealth.core.messaging.exchange;
 
+import com.google.common.base.Strings;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -12,14 +14,15 @@ public class Exchange {
 	private String body;
 
 	public Exchange(UUID exchangeId, String body) {
-		this.exchangeId = exchangeId;
-		this.headers = new HashMap<>();
-		this.body = body;
+		this(exchangeId, body, new HashMap<>());
 	}
 
-	/**
-	 * gets/sets
-     */
+	public Exchange(UUID exchangeId, String body, Map<String, String> headers) {
+		this.exchangeId = exchangeId;
+		this.body = body;
+		this.headers = headers;
+	}
+
 	public String getBody() {
 		return body;
 	}
@@ -36,14 +39,6 @@ public class Exchange {
 		this.exchangeId = exchangeId;
 	}
 
-	public void setHeader(String key, String value) {
-		headers.put(key, value);
-	}
-
-	public String getHeader(String key) {
-		return headers.get(key);
-	}
-
 	public Map<String, String> getHeaders() {
 		return headers;
 	}
@@ -54,5 +49,23 @@ public class Exchange {
 
 	public void setException(Exception exception) {
 		this.exception = exception;
+	}
+
+
+	public void setHeader(String key, String value) {
+		headers.put(key, value);
+	}
+
+	public String getHeader(String key) {
+		return headers.get(key);
+	}
+
+	public UUID getHeaderAsUuid(String key) {
+		String s = getHeader(key);
+		if (Strings.isNullOrEmpty(s)) {
+			return null;
+		} else {
+			return UUID.fromString(s);
+		}
 	}
 }

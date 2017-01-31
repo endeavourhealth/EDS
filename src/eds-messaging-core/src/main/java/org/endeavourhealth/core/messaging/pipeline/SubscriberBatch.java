@@ -15,9 +15,12 @@ public class SubscriberBatch {
 		endpoints = new ArrayList<>();
 	}
 
-
 	public List<String> getEndpoints() {
 		return endpoints;
+	}
+
+	public void setEndpoints(List<String> endpoints) {
+		this.endpoints = endpoints;
 	}
 
 	public UUID getOutputMessageId() {

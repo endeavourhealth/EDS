@@ -9,7 +9,9 @@ import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -56,6 +58,16 @@ public final class AuditWriter {
         exchangeToSave.setBody(body);
 
         repository.save(exchangeToSave);
+    }
+
+    public static Exchange readExchange(UUID exchangeId) throws IOException {
+        org.endeavourhealth.core.data.audit.models.Exchange dbExchange = repository.getExchange(exchangeId);
+        String body = dbExchange.getBody();
+        String headersJson = dbExchange.getHeaders();
+
+        Map<String, String> headersMap = ObjectMapperPool.getInstance().readValue(headersJson, HashMap.class);
+
+        return new Exchange(exchangeId, body, headersMap);
     }
 
     /*public static void writeAuditEvent(Exchange ex, AuditEvent event) throws Exception {
