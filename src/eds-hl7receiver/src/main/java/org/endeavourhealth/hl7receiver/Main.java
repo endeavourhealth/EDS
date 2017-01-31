@@ -1,5 +1,6 @@
 package org.endeavourhealth.hl7receiver;
 
+import org.endeavourhealth.core.data.config.ConfigManagerException;
 import org.endeavourhealth.hl7receiver.hl7.HL7Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,12 @@ public class Main {
             LOG.info("Shutdown");
             System.exit(0);
 
-        } catch (Exception e) {
+        } catch (ConfigManagerException cme) {
+            System.err.println("Fatal exception occurred initializing ConfigManager [" + cme.getClass().getName() + "] " + cme.getMessage());
+		    LOG.error("Fatal exception occurred initializing ConfigManager", cme);
+            System.exit(-2);
+        }
+        catch (Exception e) {
 			LOG.error("Fatal exception occurred", e);
 			System.exit(-1);
 		}
