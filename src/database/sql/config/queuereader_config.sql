@@ -16,10 +16,10 @@ VALUES
         <PostMessageToLog>
             <EventType>Transform_End</EventType>
         </PostMessageToLog>
-        <PostMessageToExchange>
+        <!--<PostMessageToExchange>
             <Exchange>EdsResponse</Exchange>
             <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
-        </PostMessageToExchange>
+        </PostMessageToExchange>-->
         <PostMessageToExchange>
             <Exchange>EdsProtocol</Exchange>
             <RoutingHeader>SenderLocalIdentifier</RoutingHeader>
