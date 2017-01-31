@@ -1,38 +1,408 @@
 package org.endeavourhealth.subscriber;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
+import com.google.common.io.Files;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.config.ConfigManager;
-import org.endeavourhealth.core.xml.EnterpriseSerializer;
-import org.endeavourhealth.core.xml.enterprise.BaseRecord;
-import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
-import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Date;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class EnterpriseFiler {
     private static final Logger LOG = LoggerFactory.getLogger(EnterpriseFiler.class);
 
-    private static final String ZIP_ENTRY = "EnterpriseData.xml";
+    private static final String COLUMN_CLASS_MAPPINGS = "ColumnClassMappings.json";
+    private static final String DATE_FORMAT = "yyyy-MM-dd";
+    private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
+
+    private static final String COL_SAVE_MODE = "save_mode";
+    private static final String COL_ID = "id";
+
+    private static final String UPSERT = "Upsert";
+    private static final String DELETE = "Delete";
+
+    //private static final String ZIP_ENTRY = "EnterpriseData.xml";
 
     private static String keywordEscapeChar = null; //different DBs use different chars to escape keywords (" on pg, ` on mysql)
 
     public static void file(String base64) throws Exception {
+
+        byte[] bytes = Base64.getDecoder().decode(base64);
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+        ZipInputStream zis = new ZipInputStream(bais);
+
+        JsonNode columnClassMappings = null;
+
+        Connection connection = openConnection();
+
+        try {
+            while (true) {
+                ZipEntry entry = zis.getNextEntry();
+                if (entry == null) {
+                    break;
+                }
+
+                String entryFileName = entry.getName();
+                byte[] entryBytes = readZipEntry(zis);
+
+                if (entryFileName.equals(COLUMN_CLASS_MAPPINGS)) {
+                    String jsonStr = new String(entryBytes);
+                    columnClassMappings = ObjectMapperPool.getInstance().readTree(jsonStr);
+
+                } else {
+                    fileCsvData(entryFileName, entryBytes, columnClassMappings, connection);
+                }
+            }
+        } finally {
+            if (zis != null) {
+                zis.close();
+            }
+            if (connection != null) {
+                connection.close();
+            }
+        }
+    }
+
+    private static byte[] readZipEntry(ZipInputStream zis) throws Exception {
+
+        byte[] buffer = new byte[2048];
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        BufferedOutputStream bos = new BufferedOutputStream(baos, buffer.length);
+
+        int len = 0;
+        while ((len = zis.read(buffer)) > 0) {
+            bos.write(buffer, 0, len);
+        }
+
+        bos.flush();
+        bos.close();
+
+        return baos.toByteArray();
+    }
+
+    private static void fileCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection) throws Exception {
+
+        String tableName = Files.getNameWithoutExtension(entryFileName);
+
+        try (
+            ByteArrayInputStream bais = new ByteArrayInputStream(csvBytes);
+            InputStreamReader isr = new InputStreamReader(bais);
+            CSVParser csvParser = new CSVParser(isr, CSV_FORMAT.withHeader());
+        ) {
+
+            //find out what columns we've got
+            Map<String, Integer> csvHeaderMap = csvParser.getHeaderMap();
+            List<String> columns = new ArrayList<>();
+            HashMap<String, Class> columnClasses = new HashMap<>();
+            createHeaderColumnMap(csvHeaderMap, entryFileName, allColumnClassMappings, columns, columnClasses);
+
+            //since we're dealing with small volumes, we can just read keep all the records in memory
+            List<CSVRecord> upserts = new ArrayList<>();
+            List<CSVRecord> deletes = new ArrayList<>();
+
+            Iterator<CSVRecord> csvIterator = csvParser.iterator();
+            while (csvIterator.hasNext()) {
+                CSVRecord csvRecord = csvIterator.next();
+                String saveMode = csvRecord.get(COL_SAVE_MODE);
+
+                if (saveMode.equalsIgnoreCase(DELETE)) {
+                    deletes.add(csvRecord);
+                } else {
+                    upserts.add(csvRecord);
+                }
+            }
+
+            fileUpserts(upserts, columns, columnClasses, tableName, connection);
+            fileDeletes(deletes, columns, columnClasses, tableName, connection);
+        }
+    }
+
+    private static void createHeaderColumnMap(Map<String, Integer> csvHeaderMap,
+                                                String entryFileName,
+                                                JsonNode allColumnClassMappings,
+                                                List<String> columns,
+                                                HashMap<String, Class> columnClasses) throws Exception {
+        //get the column names, ordered
+        String[] arr = new String[csvHeaderMap.size()];
+        for (String column: csvHeaderMap.keySet()) {
+            Integer index = csvHeaderMap.get(column);
+            arr[index.intValue()] = column;
+        }
+        for (String column: arr) {
+            columns.add(column);
+        }
+
+        //sort out column classes
+        JsonNode columnClassMappings = allColumnClassMappings.get(entryFileName);
+
+        for (String column: csvHeaderMap.keySet()) {
+            String className = columnClassMappings.get(column).asText();
+            Class cls = null;
+
+            //getting the name of the primative types returns "int", but
+            //this doesn't work in reverse, trying to get them using Class.forName("int")
+            //so we have to manually check for these primative types
+            if (className.equals("int")) {
+                cls = Integer.TYPE;
+            } else if (className.equals("boolean")) {
+                cls = Boolean.TYPE;
+            } else {
+                cls = Class.forName(className);
+            }
+
+            columnClasses.put(column, cls);
+        }
+    }
+
+    private static void fileDeletes(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
+                                    String tableName, Connection connection) throws Exception {
+
+        if (csvRecords.isEmpty()) {
+            return;
+        }
+
+        PreparedStatement delete = connection.prepareStatement("delete from " + tableName + " where id = ?");
+
+        for (CSVRecord csvRecord: csvRecords) {
+
+            addToStatement(delete, csvRecord, COL_ID, columnClasses, 1);
+            delete.addBatch();
+        }
+
+        delete.executeBatch();
+        connection.commit();
+    }
+
+    private static void addToStatement(PreparedStatement statement, CSVRecord csvRecord, String column, HashMap<String, Class> columnClasses, int index) throws Exception {
+
+        String value = csvRecord.get(column);
+        Class fieldCls = columnClasses.get(column);
+
+        if (fieldCls == String.class) {
+            if (Strings.isNullOrEmpty(value)) {
+                statement.setNull(index, Types.VARCHAR);
+            } else {
+                statement.setString(index, (String)value);
+            }
+
+        } else if (fieldCls == Date.class) {
+            if (Strings.isNullOrEmpty(value)) {
+                statement.setNull(index, Types.DATE);
+            } else {
+                Date d = new SimpleDateFormat(DATE_FORMAT).parse(value);
+                statement.setTimestamp(index, new Timestamp(d.getTime()));
+            }
+
+        } else if (fieldCls == BigDecimal.class) {
+            if (Strings.isNullOrEmpty(value)) {
+                statement.setNull(index, Types.DECIMAL);
+            } else {
+                BigDecimal bd = new BigDecimal(value);
+                statement.setBigDecimal(index, bd);
+            }
+
+        } else if (fieldCls == Integer.class
+            || fieldCls == Integer.TYPE) {
+
+            if (Strings.isNullOrEmpty(value)) {
+                statement.setNull(index, Types.INTEGER);
+            } else {
+                int i = Integer.parseInt(value);
+                statement.setInt(index, i);
+            }
+
+        } else if (fieldCls == Long.class) {
+
+            if (Strings.isNullOrEmpty(value)) {
+                statement.setNull(index, Types.INTEGER);
+            } else {
+                long l = Long.parseLong(value);
+                statement.setLong(index, l);
+            }
+
+        } else if (fieldCls == Boolean.class
+            || fieldCls == Boolean.TYPE) {
+
+            if (Strings.isNullOrEmpty(value)) {
+                statement.setNull(index, Types.BOOLEAN);
+            } else {
+                boolean b = Boolean.parseBoolean(value);
+                statement.setBoolean(index, b);
+            }
+
+        } else {
+            throw new Exception("Unsupported value class " + fieldCls);
+        }
+    }
+
+    private static void fileUpserts(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
+                                    String tableName, Connection connection) throws Exception {
+
+        if (csvRecords.isEmpty()) {
+            return;
+        }
+
+        //first try treating all the objects as inserts
+        try {
+            fileInserts(csvRecords, columns, columnClasses, tableName, connection);
+
+        } catch (SQLException ex) {
+            //if we get a SQL Exception, then it's probably because one of the objects is an update, so we try to
+            //save each object separately first as an insert, then as an update
+            connection.rollback();
+
+            //if we have only one record, just try performing an update
+            if (csvRecords.size() == 1) {
+                CSVRecord singleRecord = csvRecords.get(0);
+                List<CSVRecord> singleRecords = new ArrayList<>();
+                singleRecords.add(singleRecord);
+
+                try {
+                    fileUpdates(singleRecords, columns, columnClasses, tableName, connection);
+
+                } catch (SQLException ex3) {
+                    String s = "Failed to insert or update " + tableName + " record: ";
+                    for (String column: columns) {
+                        s += singleRecord.get(column) + ", ";
+                    }
+
+                    //we've got two exceptions in scope - the original insert exception and the update exception
+                    //so we need to log both. Since only one can be wrapped in the exception we throw, we
+                    //log the other one out here
+                    LOG.error("", ex);
+
+                    throw new Exception(s, ex3);
+                }
+
+            } else {
+                //if we have multilple records, try inserting them one at a time
+                for (CSVRecord csvRecord: csvRecords) {
+                    List<CSVRecord> singleRecord = new ArrayList<>();
+                    singleRecord.add(csvRecord);
+
+                    fileUpserts(singleRecord, columns, columnClasses, tableName, connection);
+                }
+            }
+        }
+    }
+
+    private static void fileInserts(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
+                                    String tableName, Connection connection) throws Exception {
+
+        if (csvRecords.isEmpty()) {
+            return;
+        }
+
+        int tableColumns = columns.size()-1; //substract one because we don't save the save_mode
+        String parameters = createParameters(tableColumns);
+
+        PreparedStatement insert = connection.prepareStatement("insert into " + tableName + " values (" + parameters + ")");
+
+        for (CSVRecord csvRecord: csvRecords) {
+
+            int index = 1;
+            for (String column: columns) {
+                if (!column.equals(COL_SAVE_MODE)) {
+                    addToStatement(insert, csvRecord, column, columnClasses, index);
+                    index ++;
+                }
+            }
+
+            insert.addBatch();
+        }
+
+        insert.executeBatch();
+        connection.commit();
+    }
+
+    private static String createParameters(int num) {
+        StringBuilder sb = new StringBuilder();
+        for (int i=0; i<num; i++) {
+            if (i > 0) {
+                sb.append(",");
+            }
+            sb.append("?");
+        }
+        return sb.toString();
+    }
+
+    private static void fileUpdates(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
+                                    String tableName, Connection connection) throws Exception {
+
+        if (csvRecords.isEmpty()) {
+            return;
+        }
+
+        //build the update statement
+        StringBuilder sb = new StringBuilder();
+        sb.append("update " + tableName + " set ");
+
+        boolean addComma = false;
+        for (String column: columns) {
+
+            if (column.equals(COL_SAVE_MODE)
+                    || column.equals(COL_ID)) {
+                continue;
+            }
+
+            if (addComma) {
+                sb.append(", ");
+            }
+            addComma = true;
+
+            sb.append(keywordEscapeChar + column + keywordEscapeChar + " = ?");
+        }
+        sb.append(" where " + COL_ID + " = ?");
+
+        PreparedStatement update = connection.prepareStatement(sb.toString());
+
+        //populate the statement with the updates
+        for (CSVRecord csvRecord: csvRecords) {
+
+            //add all the updated columns
+            int index = 1;
+            for (String column: columns) {
+
+                if (column.equals(COL_SAVE_MODE)
+                        || column.equals(COL_ID)) {
+                    continue;
+                }
+
+                addToStatement(update, csvRecord, column, columnClasses, index);
+                index ++;
+            }
+
+            //then add the ID
+            addToStatement(update, csvRecord, COL_ID, columnClasses, index);
+            update.addBatch();
+        }
+
+        //execute the update, making sure the update count is what we ex[ect
+        int[] updateCounts = update.executeBatch();
+        if (updateCounts[0] != csvRecords.size()) {
+            throw new SQLException("Failed to update the right number of rows. Expected " + csvRecords.size() + " Got " + updateCounts[0]);
+        }
+
+        connection.commit();
+    }
+
+    /*public static void file(String base64) throws Exception {
 
         byte[] bytes = Base64.getDecoder().decode(base64);
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
@@ -200,27 +570,6 @@ public class EnterpriseFiler {
             } else {
                 statement.setString(index, (String)value);
             }
-
-            /*//UUIDs are also represented as Strings in the objects, so we need a way to know which fields should be treated
-            //as Strings and which as UUIDs. Not ideal, but works for the schema.
-            String fieldName = field.getName();
-            if (fieldName.equals("id")
-                    || fieldName.endsWith("Id")) {
-
-                if (value == null) {
-                    statement.setNull(index, Types.OTHER);
-                } else {
-                    statement.setObject(index, UUID.fromString((String)value));
-                }
-
-            } else {
-
-                if (value == null) {
-                    statement.setNull(index, Types.VARCHAR);
-                } else {
-                    statement.setString(index, (String)value);
-                }
-            }*/
 
         } else if (fieldCls == XMLGregorianCalendar.class) {
             if (value == null) {
@@ -411,7 +760,7 @@ public class EnterpriseFiler {
         insert.executeBatch();
 
         connection.commit();
-    }
+    }*/
 
     private static Connection openConnection() throws Exception {
 
@@ -433,42 +782,5 @@ public class EnterpriseFiler {
         return conn;
     }
 
-    /*private static Connection openConnection() throws Exception {
-
-        JsonNode config = ConfigManager.getConfigurationAsJson("postgres", "enterprise");
-        String url = config.get("url").asText();
-        String username = config.get("username").asText();
-        String password = config.get("password").asText();
-
-        //force the driver to be loaded
-        Class.forName("org.postgresql.Driver");
-
-        Connection conn = DriverManager.getConnection(url, username, password);
-        conn.setAutoCommit(false);
-
-        return conn;
-    }*/
-
-
-
-    /*private static Connection openConnection() throws Exception {
-        SubscriberConfiguration config = ConfigurationProvider.getInstance().getConfiguration();
-        PostgreSQLConnection dbConfig = config.getPostgreSQLConnection();
-
-        Class.forName("org.postgresql.Driver"); //load the driver
-
-        String url = "jdbc:postgresql://" + dbConfig.getHostname() + ":" + dbConfig.getPort() + "/" + dbConfig.getDatabase();
-        String user = dbConfig.getUsername();
-        String pass = dbConfig.getPassword();
-
-        Connection conn = DriverManager.getConnection(url, user, pass);
-        conn.setAutoCommit(false);
-
-        if (dbConfig.getSchema() != null) {
-            conn.setSchema(dbConfig.getSchema());
-        }
-
-        return conn;
-    }*/
 
 }

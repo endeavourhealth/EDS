@@ -2,10 +2,8 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.xml.enterprise.Encounter;
-import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.SaveMode;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.fhir.schema.ReferralPriority;
@@ -14,6 +12,7 @@ import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
 import java.util.Map;
 
 public class ReferralRequestTransformer extends AbstractTransformer {
@@ -21,6 +20,184 @@ public class ReferralRequestTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(ReferralRequestTransformer.class);
 
     public void transform(ResourceByExchangeBatch resource,
+                          OutputContainer data,
+                          Map<String, ResourceByExchangeBatch> otherResources,
+                          Integer enterpriseOrganisationUuid) throws Exception {
+
+        org.endeavourhealth.transform.enterprise.outputModels.ReferralRequest model = data.getReferralRequests();
+
+        Integer enterpriseId = mapId(resource, model);
+        if (enterpriseId == null) {
+            return;
+            
+        } else if (resource.getIsDeleted()) {
+            model.writeDelete(enterpriseId.intValue());
+            
+        } else {
+
+            ReferralRequest fhir = (ReferralRequest)deserialiseResouce(resource);
+
+            Reference patientReference = fhir.getPatient();
+            Integer enterprisePatientUuid = findEnterpriseId(data.getPatients(), patientReference);
+
+            //the test pack has data that refers to deleted or missing patients, so if we get a null
+            //patient ID here, then skip this resource
+            if (enterprisePatientUuid == null) {
+                LOG.warn("Skipping " + fhir.getResourceType() + " " + fhir.getId() + " as no Enterprise patient ID could be found for it");
+                return;
+            }
+
+            int id;
+            int organizationId;
+            int patientId;
+            Integer encounterId = null;
+            Integer practitionerId = null;
+            Date clinicalEffectiveDate = null;
+            Integer datePrecisionId = null;
+            Long snomedConceptId = null;
+            Integer requesterOrganizationId = null;
+            Integer recipientOrganizationId = null;
+            Integer priorityId = null;
+            Integer typeId = null;
+            String mode = null;
+            Boolean outgoing = null;
+            String originalCode = null;
+            String originalTerm = null;
+
+            id = enterpriseId.intValue();
+            organizationId = enterpriseOrganisationUuid.intValue();
+            patientId = enterprisePatientUuid.intValue();
+
+            if (fhir.hasEncounter()) {
+                Reference encounterReference = (Reference)fhir.getEncounter();
+                encounterId = findEnterpriseId(data.getEncounters(), encounterReference);
+            }
+
+            if (fhir.hasRequester()) {
+                Reference practitionerReference = fhir.getRequester();
+                practitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
+            }
+
+            if (fhir.hasDateElement()) {
+                DateTimeType dt = fhir.getDateElement();
+                clinicalEffectiveDate = dt.getValue();
+                datePrecisionId = convertDatePrecision(dt.getPrecision());
+            }
+
+            //changed where the observation code is stored
+            if (fhir.hasServiceRequested()) {
+                if (fhir.getServiceRequested().size() > 1) {
+                    throw new TransformException("Transform doesn't support referrals with multiple service codes " + fhir.getId());
+                }
+                CodeableConcept fhirServiceRequested = fhir.getServiceRequested().get(0);
+                snomedConceptId = findSnomedConceptId(fhirServiceRequested);
+
+                //add the raw original code, to assist in data checking
+                originalCode = findOriginalCode(fhirServiceRequested);
+
+                //add original term too, for easy display of results
+                originalTerm = fhirServiceRequested.getText();
+            }
+            /*Long snomedConceptId = findSnomedConceptId(fhir.getType());
+            model.setSnomedConceptId(snomedConceptId);*/
+
+            if (fhir.hasRequester()) {
+                Reference requesterReference = fhir.getRequester();
+                ResourceType resourceType = ReferenceHelper.getResourceType(requesterReference);
+
+                //the requester can be an organisation or practitioner
+                if (resourceType == ResourceType.Organization) {
+                    requesterOrganizationId = findEnterpriseId(data.getOrganisations(), requesterReference);
+
+                } else if (resourceType == ResourceType.Practitioner) {
+
+                    Practitioner fhirPractitioner = (Practitioner)findResource(requesterReference, otherResources);
+                    Practitioner.PractitionerPractitionerRoleComponent role = fhirPractitioner.getPractitionerRole().get(0);
+                    Reference organisationReference = role.getManagingOrganization();
+                    requesterOrganizationId = findEnterpriseId(data.getOrganisations(), organisationReference);
+                }
+            }
+
+            if (fhir.hasRecipient()) {
+                if (fhir.getRecipient().size() > 1) {
+                    throw new TransformException("Cannot handle referral requests with more than one recipient " + fhir.getId());
+                }
+                Reference recipientReference = fhir.getRecipient().get(0);
+                ResourceType resourceType = ReferenceHelper.getResourceType(recipientReference);
+
+                //the recipient can be an organisation or practitioner
+                if (resourceType == ResourceType.Organization) {
+                    //the EMIS test pack contains referrals that point to recipient organisations that don't exist,
+                    //so we need to handle the failure to find the organisation
+                    recipientOrganizationId = findEnterpriseId(data.getOrganisations(), recipientReference);
+                    
+                } else if (resourceType == ResourceType.Practitioner) {
+
+                    Practitioner fhirPractitioner = (Practitioner)findResource(recipientReference, otherResources);
+                    Practitioner.PractitionerPractitionerRoleComponent role = fhirPractitioner.getPractitionerRole().get(0);
+                    Reference organisationReference = role.getManagingOrganization();
+                    recipientOrganizationId = findEnterpriseId(data.getOrganisations(), organisationReference);
+                }
+            }
+
+            //base the outgoing flag simply on whether the recipient ID matches the owning ID
+            if (requesterOrganizationId != null) {
+                outgoing = requesterOrganizationId.intValue() == organizationId;
+            }
+
+            if (fhir.hasPriority()) {
+                CodeableConcept codeableConcept = fhir.getPriority();
+                if (codeableConcept.hasCoding()) {
+                    Coding coding = codeableConcept.getCoding().get(0);
+                    ReferralPriority fhirReferralPriority = ReferralPriority.fromCode(coding.getCode());
+                    priorityId = fhirReferralPriority.ordinal();
+                }
+            }
+
+            if (fhir.hasType()) {
+                CodeableConcept codeableConcept = fhir.getType();
+                if (codeableConcept.hasCoding()) {
+                    Coding coding = codeableConcept.getCoding().get(0);
+                    ReferralType fhirReferralType = ReferralType.fromCode(coding.getCode());
+                    typeId = fhirReferralType.ordinal();
+                }
+            }
+
+            if (fhir.hasExtension()) {
+                for (Extension extension: fhir.getExtension()) {
+                    if (extension.getUrl().equals(FhirExtensionUri.REFERRAL_REQUEST_SEND_MODE)) {
+                        CodeableConcept cc = (CodeableConcept)extension.getValue();
+                        if (!Strings.isNullOrEmpty(cc.getText())) {
+                            mode = cc.getText();
+                        } else {
+                            Coding coding = cc.getCoding().get(0);
+                            mode = coding.getDisplay();
+                        }
+                    }
+                }
+            }
+
+            model.writeUpsert(id, 
+                organizationId,
+                patientId,
+                encounterId,
+                practitionerId,
+                clinicalEffectiveDate,
+                datePrecisionId,
+                snomedConceptId,
+                requesterOrganizationId,
+                recipientOrganizationId,
+                priorityId,
+                typeId,
+                mode,
+                outgoing,
+                originalCode,
+                originalTerm);
+        }
+    }
+
+
+    /*public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  Integer enterpriseOrganisationUuid) throws Exception {
@@ -87,8 +264,8 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                 model.setOriginalTerm(originalTerm);
 
             }
-            /*Long snomedConceptId = findSnomedConceptId(fhir.getType());
-            model.setSnomedConceptId(snomedConceptId);*/
+            *//*Long snomedConceptId = findSnomedConceptId(fhir.getType());
+            model.setSnomedConceptId(snomedConceptId);*//*
 
             if (fhir.hasRequester()) {
                 Reference requesterReference = fhir.getRequester();
@@ -181,7 +358,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
 
         data.getReferralRequest().add(model);
     }
-
+*/
 
 }
 

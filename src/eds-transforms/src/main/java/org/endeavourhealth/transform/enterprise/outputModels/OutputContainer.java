@@ -12,10 +12,14 @@ import java.util.zip.ZipOutputStream;
 
 public class OutputContainer {
 
-    public static final String UPSERT = "Upsert";
-    public static final String DELETE = "Delete";
+    static final String UPSERT = "Upsert";
+    static final String DELETE = "Delete";
 
-    public static final String COLUMN_CLASS_MAPPINGS = "ColumnClassMappings.json";
+    private static final String DATE_FORMAT = "yyyy-MM-dd";
+    private static final String TIME_FORMAT = "hh:mm:ss";
+    private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
+
+    private static final String COLUMN_CLASS_MAPPINGS = "ColumnClassMappings.json";
 
     private final Organization organisations;
     private final Practitioner practitioners;
@@ -28,9 +32,13 @@ public class OutputContainer {
     private final ProcedureRequest procedureRequests;
     private final Observation observations;
     private final MedicationStatement medicationStatements;
-    private final MedicationOrder medicationOrder;
+    private final MedicationOrder medicationOrders;
     private final AllergyIntolerance allergyIntolerances;
 
+
+    public OutputContainer() throws Exception {
+        this(CSV_FORMAT, DATE_FORMAT, TIME_FORMAT);
+    }
 
     public OutputContainer(CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
 
@@ -45,7 +53,7 @@ public class OutputContainer {
         procedureRequests = new ProcedureRequest("procedure_request.csv", csvFormat, dateFormat, timeFormat);
         observations = new Observation("observation.csv", csvFormat, dateFormat, timeFormat);
         medicationStatements = new MedicationStatement("medication_statement.csv", csvFormat, dateFormat, timeFormat);
-        medicationOrder = new MedicationOrder("medication_order.csv", csvFormat, dateFormat, timeFormat);
+        medicationOrders = new MedicationOrder("medication_order.csv", csvFormat, dateFormat, timeFormat);
         allergyIntolerances = new AllergyIntolerance("allergy_intolerance.csv", csvFormat, dateFormat, timeFormat);
     }
 
@@ -56,28 +64,43 @@ public class OutputContainer {
         //may as well zip the data, since it will compress well
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ZipOutputStream zos = new ZipOutputStream(baos);
-
+        
+        //the first entry is a json file giving us the target class names for each column
         ObjectNode columnClassMappingJson = new ObjectNode(JsonNodeFactory.instance);
 
-        writeZipEntry(organisations, zos, columnClassMappingJson);
-        writeZipEntry(practitioners, zos, columnClassMappingJson);
-        writeZipEntry(schedules, zos, columnClassMappingJson);
-        writeZipEntry(patients, zos, columnClassMappingJson);
-        writeZipEntry(episodesOfCare, zos, columnClassMappingJson);
-        writeZipEntry(appointments, zos, columnClassMappingJson);
-        writeZipEntry(encounters, zos, columnClassMappingJson);
-        writeZipEntry(referralRequests, zos, columnClassMappingJson);
-        writeZipEntry(procedureRequests, zos, columnClassMappingJson);
-        writeZipEntry(observations, zos, columnClassMappingJson);
-        writeZipEntry(medicationStatements, zos, columnClassMappingJson);
-        writeZipEntry(medicationOrder, zos, columnClassMappingJson);
-        writeZipEntry(allergyIntolerances, zos, columnClassMappingJson);
+        writeColumnClassMappings(organisations, columnClassMappingJson);
+        writeColumnClassMappings(practitioners, columnClassMappingJson);
+        writeColumnClassMappings(schedules, columnClassMappingJson);
+        writeColumnClassMappings(patients, columnClassMappingJson);
+        writeColumnClassMappings(episodesOfCare, columnClassMappingJson);
+        writeColumnClassMappings(appointments, columnClassMappingJson);
+        writeColumnClassMappings(encounters, columnClassMappingJson);
+        writeColumnClassMappings(referralRequests, columnClassMappingJson);
+        writeColumnClassMappings(procedureRequests, columnClassMappingJson);
+        writeColumnClassMappings(observations, columnClassMappingJson);
+        writeColumnClassMappings(medicationStatements, columnClassMappingJson);
+        writeColumnClassMappings(medicationOrders, columnClassMappingJson);
+        writeColumnClassMappings(allergyIntolerances, columnClassMappingJson);
 
-        //write the mappings entry
         String jsonStr = ObjectMapperPool.getInstance().writeValueAsString(columnClassMappingJson);
         zos.putNextEntry(new ZipEntry(COLUMN_CLASS_MAPPINGS));
         zos.write(jsonStr.getBytes());
         zos.flush();
+        
+        //then write the CSV files        
+        writeZipEntry(organisations, zos);
+        writeZipEntry(practitioners, zos);
+        writeZipEntry(schedules, zos);
+        writeZipEntry(patients, zos);
+        writeZipEntry(episodesOfCare, zos);
+        writeZipEntry(appointments, zos);
+        writeZipEntry(encounters, zos);
+        writeZipEntry(referralRequests, zos);
+        writeZipEntry(procedureRequests, zos);
+        writeZipEntry(observations, zos);
+        writeZipEntry(medicationStatements, zos);
+        writeZipEntry(medicationOrders, zos);
+        writeZipEntry(allergyIntolerances, zos);
 
         //close
         zos.close();
@@ -86,15 +109,15 @@ public class OutputContainer {
         return baos.toByteArray();
 
     }
+    
+    private static void writeColumnClassMappings(AbstractEnterpriseCsvWriter csvWriter, ObjectNode columnClassMappingJson) throws Exception {
 
-    private static void writeZipEntry(AbstractEnterpriseCsvWriter csvWriter, ZipOutputStream zipOutputStream, ObjectNode columnClassMappingJson) throws Exception {
+        //we only write CSV files with rows, so don't bother writing their column mappings either
+        if (csvWriter.isEmpty()) {
+            return;
+        }
 
-        byte[] bytes = csvWriter.close();
         String fileName = csvWriter.getFileName();
-
-        zipOutputStream.putNextEntry(new ZipEntry(fileName));
-        zipOutputStream.write(bytes);
-        zipOutputStream.flush();
 
         //write out the column object mappings
         String[] columnNames = csvWriter.getCsvHeaders();
@@ -110,6 +133,21 @@ public class OutputContainer {
             Class cls = classes[i];
             jsonObject.put(columnName, cls.getName());
         }
+    }
+
+    private static void writeZipEntry(AbstractEnterpriseCsvWriter csvWriter, ZipOutputStream zipOutputStream) throws Exception {
+
+        //don't bother writing empty CSV files
+        if (csvWriter.isEmpty()) {
+            return;
+        }
+
+        byte[] bytes = csvWriter.close();
+        String fileName = csvWriter.getFileName();
+
+        zipOutputStream.putNextEntry(new ZipEntry(fileName));
+        zipOutputStream.write(bytes);
+        zipOutputStream.flush();
     }
 
     public Organization getOrganisations() {
@@ -156,8 +194,8 @@ public class OutputContainer {
         return medicationStatements;
     }
 
-    public MedicationOrder getMedicationOrder() {
-        return medicationOrder;
+    public MedicationOrder getMedicationOrders() {
+        return medicationOrders;
     }
 
     public AllergyIntolerance getAllergyIntolerances() {

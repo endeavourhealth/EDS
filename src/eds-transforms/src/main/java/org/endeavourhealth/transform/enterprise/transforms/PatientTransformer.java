@@ -4,8 +4,7 @@ import OpenPseudonymiser.Crypto;
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.utility.Resources;
-import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.SaveMode;
+import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.Address;
 import org.hl7.fhir.instance.model.Identifier;
@@ -28,6 +27,75 @@ public class PatientTransformer extends AbstractTransformer {
     private static byte[] saltBytes = null;
 
     public void transform(ResourceByExchangeBatch resource,
+                          OutputContainer data,
+                          Map<String, ResourceByExchangeBatch> otherResources,
+                          Integer enterpriseOrganisationUuid) throws Exception {
+
+        org.endeavourhealth.transform.enterprise.outputModels.Patient model = data.getPatients();
+
+        Integer enterpriseId = mapId(resource, model);
+        if (enterpriseId == null) {
+            return;
+
+        } else if (resource.getIsDeleted()) {
+            model.writeDelete(enterpriseId.intValue());
+
+        } else {
+            Patient fhirPatient = (Patient)deserialiseResouce(resource);
+
+            int id;
+            int organizationId;
+            int patientGenderId;
+            String pseudoId = null;
+            String nhsNumber = null;
+            Date dateOfBirth = null;
+            Date dateOfDeath = null;
+            String postcode = null;
+
+            id = enterpriseId.intValue();
+            organizationId = enterpriseOrganisationUuid.intValue();
+
+            //Calendar cal = Calendar.getInstance();
+
+            dateOfBirth = fhirPatient.getBirthDate();
+            /*cal.setTime(dob);
+            int yearOfBirth = cal.get(Calendar.YEAR);
+            model.setYearOfBirth(yearOfBirth);*/
+
+            if (fhirPatient.hasDeceasedDateTimeType()) {
+                dateOfDeath = fhirPatient.getDeceasedDateTimeType().getValue();
+                /*cal.setTime(dod);
+                int yearOfDeath = cal.get(Calendar.YEAR);
+                model.setYearOfDeath(new Integer(yearOfDeath));*/
+            }
+
+            patientGenderId = fhirPatient.getGender().ordinal();
+
+            if (fhirPatient.hasAddress()) {
+                for (Address address: fhirPatient.getAddress()) {
+                    if (address.getUse().equals(Address.AddressUse.HOME)) {
+                        postcode = address.getPostalCode();
+                    }
+                }
+            }
+
+            pseudoId = pseudonomise(fhirPatient);
+
+            //adding NHS number to allow data checking
+            nhsNumber = findNhsNumber(fhirPatient);
+
+            model.writeUpsert(id,
+                organizationId,
+                patientGenderId,
+                pseudoId,
+                nhsNumber,
+                dateOfBirth,
+                dateOfDeath,
+                postcode);
+        }
+    }
+
+    /*public void transform(ResourceByExchangeBatch resource,
                           EnterpriseData data,
                           Map<String, ResourceByExchangeBatch> otherResources,
                           Integer enterpriseOrganisationUuid) throws Exception {
@@ -49,16 +117,16 @@ public class PatientTransformer extends AbstractTransformer {
 
             Date dob = fhirPatient.getBirthDate();
             model.setDateOfBirth(convertDate(dob));
-            /*cal.setTime(dob);
+            *//*cal.setTime(dob);
             int yearOfBirth = cal.get(Calendar.YEAR);
-            model.setYearOfBirth(yearOfBirth);*/
+            model.setYearOfBirth(yearOfBirth);*//*
 
             if (fhirPatient.hasDeceasedDateTimeType()) {
                 Date dod = fhirPatient.getDeceasedDateTimeType().getValue();
                 model.setDateOfDeath(convertDate(dod));
-                /*cal.setTime(dod);
+                *//*cal.setTime(dod);
                 int yearOfDeath = cal.get(Calendar.YEAR);
-                model.setYearOfDeath(new Integer(yearOfDeath));*/
+                model.setYearOfDeath(new Integer(yearOfDeath));*//*
             }
 
             model.setPatientGenderId(fhirPatient.getGender().ordinal());
@@ -80,7 +148,7 @@ public class PatientTransformer extends AbstractTransformer {
         }
 
         data.getPatient().add(model);
-    }
+    }*/
 
     private static String findNhsNumber(Patient fhirPatient) {
         if (fhirPatient.hasIdentifier()) {

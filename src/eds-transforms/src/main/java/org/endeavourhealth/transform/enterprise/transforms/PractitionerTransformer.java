@@ -1,8 +1,7 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.SaveMode;
+import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.endeavourhealth.transform.fhir.FhirValueSetUri;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -14,6 +13,67 @@ public class PractitionerTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(PractitionerTransformer.class);
 
     public void transform(ResourceByExchangeBatch resource,
+                          OutputContainer data,
+                          Map<String, ResourceByExchangeBatch> otherResources,
+                          Integer enterpriseOrganisationUuid) throws Exception {
+
+        org.endeavourhealth.transform.enterprise.outputModels.Practitioner model = data.getPractitioners();
+
+        Integer enterpriseId = mapId(resource, model);
+        if (enterpriseId == null) {
+            return;
+
+        } else if (resource.getIsDeleted()) {
+            model.writeDelete(enterpriseId.intValue());
+
+        } else {
+
+            Practitioner fhir = (Practitioner)deserialiseResouce(resource);
+
+            int id;
+            int organizaationId;
+            String name = null;
+            String roleCode = null;
+            String roleDesc = null;
+
+            id = enterpriseId.intValue();
+
+            if (fhir.hasName()) {
+                HumanName fhirName = fhir.getName();
+                name = fhirName.getText();
+            }
+
+            Integer practitionerEnterpriseOrgId = null;
+
+            for (Practitioner.PractitionerPractitionerRoleComponent role : fhir.getPractitionerRole()) {
+
+                CodeableConcept cc = role.getRole();
+                for (Coding coding : cc.getCoding()) {
+                    if (coding.getSystem().equals(FhirValueSetUri.VALUE_SET_JOB_ROLE_CODES)) {
+                        roleCode = coding.getCode();
+                        roleDesc = coding.getDisplay();
+                    }
+                }
+
+                Reference organisationReference = role.getManagingOrganization();
+                practitionerEnterpriseOrgId = findEnterpriseId(data.getOrganisations(), organisationReference);
+            }
+
+            if (practitionerEnterpriseOrgId == null) {
+                practitionerEnterpriseOrgId = enterpriseOrganisationUuid;
+            }
+
+            organizaationId = practitionerEnterpriseOrgId.intValue();
+
+            model.writeUpsert(id,
+                organizaationId,
+                name,
+                roleCode,
+                roleDesc);
+        }
+    }
+
+    /*public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  Integer enterpriseOrganisationUuid) throws Exception {
@@ -62,5 +122,5 @@ public class PractitionerTransformer extends AbstractTransformer {
         }
 
         data.getPractitioner().add(model);
-    }
+    }*/
 }

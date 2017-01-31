@@ -19,7 +19,7 @@ public class Organization extends AbstractEnterpriseCsvWriter {
                           String name,
                           String typeCode,
                           String typeDesc,
-                          String postCode,
+                          String postcode,
                           Integer parentOrganisationId) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
@@ -28,7 +28,7 @@ public class Organization extends AbstractEnterpriseCsvWriter {
                 name,
                 typeCode,
                 typeDesc,
-                postCode,
+                postcode,
                 convertInt(parentOrganisationId));
     }
 

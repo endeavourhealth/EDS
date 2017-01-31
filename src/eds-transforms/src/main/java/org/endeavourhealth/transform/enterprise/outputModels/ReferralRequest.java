@@ -17,7 +17,7 @@ public class ReferralRequest extends AbstractEnterpriseCsvWriter {
     }
 
     public void writeUpsert(int id,
-                            int organizaationId,
+                            int organizationId,
                             int patientId,
                             Integer encounterId,
                             Integer practitionerId,
@@ -35,7 +35,7 @@ public class ReferralRequest extends AbstractEnterpriseCsvWriter {
 
         super.printRecord(OutputContainer.UPSERT,
                 "" + id,
-                "" + organizaationId,
+                "" + organizationId,
                 "" + patientId,
                 convertInt(encounterId),
                 convertInt(practitionerId),

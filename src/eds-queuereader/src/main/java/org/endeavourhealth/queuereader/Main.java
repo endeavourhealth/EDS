@@ -424,7 +424,7 @@ public class Main {
 
 		LOG.info("Starting Enterprise Streaming for " + serviceId);
 
-		LOG.info("Testing postgre connection");
+		LOG.info("Testing database connection");
 		testConnection();
 
 		Service service = new ServiceRepository().getById(serviceId);
@@ -447,10 +447,10 @@ public class Main {
 			List<ExchangeBatch> exchangeBatches = new ExchangeBatchRepository().retrieveForExchangeId(exchangeId);
 			LOG.info("Processing exchange " + exchangeId + " with " + exchangeBatches.size() + " batches");
 
-			for (ExchangeBatch exchangeBatch : exchangeBatches) {
-
+			for (int j=0; j<exchangeBatches.size(); j++) {
+				ExchangeBatch exchangeBatch = exchangeBatches.get(j);
 				UUID batchId = exchangeBatch.getBatchId();
-				LOG.info("Processing exchange " + exchangeId + " and batch " + batchId);
+				LOG.info("Processing exchange " + exchangeId + " and batch " + batchId + " " + (j+1) + "/" + exchangeBatches.size());
 
 				try {
 					String outbound = EnterpriseFhirTransformer.transformFromFhir(serviceId, orgId, batchId, null);
@@ -461,6 +461,7 @@ public class Main {
 				}
 			}
 		}
+
 	}
 
 	/*private static void fixMissingExchanges() {

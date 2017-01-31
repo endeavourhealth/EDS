@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.xml.enterprise.*;
+import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.Condition;
 import org.hl7.fhir.instance.model.DateTimeType;
@@ -10,6 +10,8 @@ import org.hl7.fhir.instance.model.UriType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+import java.util.Date;
 import java.util.Map;
 
 public class ConditionTransformer extends AbstractTransformer {
@@ -17,6 +19,101 @@ public class ConditionTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(ConditionTransformer.class);
 
     public void transform(ResourceByExchangeBatch resource,
+                          OutputContainer data,
+                          Map<String, ResourceByExchangeBatch> otherResources,
+                          Integer enterpriseOrganisationUuid) throws Exception {
+
+        org.endeavourhealth.transform.enterprise.outputModels.Observation model = data.getObservations();
+
+        Integer enterpriseId = mapId(resource, model);
+        if (enterpriseId == null) {
+            return;
+
+        } else if (resource.getIsDeleted()) {
+            model.writeDelete(enterpriseId.intValue());
+
+        } else {
+
+            Condition fhir = (Condition)deserialiseResouce(resource);
+
+            Reference patientReference = fhir.getPatient();
+            Integer enterprisePatientUuid = findEnterpriseId(data.getPatients(), patientReference);
+
+            //the test pack has data that refers to deleted or missing patients, so if we get a null
+            //patient ID here, then skip this resource
+            if (enterprisePatientUuid == null) {
+                LOG.warn("Skipping " + fhir.getResourceType() + " " + fhir.getId() + " as no Enterprise patient ID could be found for it");
+                return;
+            }
+
+            int id;
+            int organisationId;
+            int patientId;
+            Integer encounterId = null;
+            Integer practitionerId = null;
+            Date clinicalEffectiveDate = null;
+            Integer datePrecisionId = null;
+            Long snomedConceptId = null;
+            BigDecimal value = null;
+            String units = null;
+            String originalCode = null;
+            boolean isProblem = false;
+            String originalTerm = null;
+
+            id = enterpriseId.intValue();
+            organisationId = enterpriseOrganisationUuid.intValue();
+            patientId = enterprisePatientUuid.intValue();
+
+            if (fhir.hasEncounter()) {
+                Reference encounterReference = fhir.getEncounter();
+                encounterId = findEnterpriseId(data.getEncounters(), encounterReference);
+            }
+
+            if (fhir.hasAsserter()) {
+                Reference practitionerReference = fhir.getAsserter();
+                practitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
+            }
+
+            if (fhir.hasOnsetDateTimeType()) {
+                DateTimeType dt = fhir.getOnsetDateTimeType();
+                clinicalEffectiveDate = dt.getValue();
+                datePrecisionId = convertDatePrecision(dt.getPrecision());
+            }
+
+            snomedConceptId = findSnomedConceptId(fhir.getCode());
+
+            //if it's a problem set the boolean to say so
+            if (fhir.hasMeta()) {
+                for (UriType uriType: fhir.getMeta().getProfile()) {
+                    if (uriType.getValue().equals(FhirUri.PROFILE_URI_PROBLEM)) {
+                        isProblem = true;
+                    }
+                }
+            }
+
+            //add the raw original code, to assist in data checking
+            originalCode = findOriginalCode(fhir.getCode());
+
+            //add original term too, for easy display of results
+            originalTerm = fhir.getCode().getText();
+
+            model.writeUpsert(id,
+                    organisationId,
+                    patientId,
+                    encounterId,
+                    practitionerId,
+                    clinicalEffectiveDate,
+                    datePrecisionId,
+                    snomedConceptId,
+                    value,
+                    units,
+                    originalCode,
+                    isProblem,
+                    originalTerm);
+        }
+    }
+
+    /*public void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
                                  Integer enterpriseOrganisationUuid) throws Exception {
@@ -78,26 +175,6 @@ public class ConditionTransformer extends AbstractTransformer {
                 }
             }
 
-            //if a condition is part of a problem but has the same code as the problem itself,
-            //then we know it's a review, since EMIS re-records the diagnostic code for reviews
-/*            model.setIsReview(new Boolean(false));
-
-            if (fhir.hasExtension()) {
-                for (Extension extension: fhir.getExtension()) {
-                    if (extension.getUrl().equals(FhirExtensionUri.CONDITION_PART_OF_PROBLEM)) {
-                        Reference problemReference = (Reference)extension.getValue();
-                        Condition fhirProblem = (Condition)findResource(problemReference, otherResources);
-                        if (fhirProblem != null) {
-
-                            Long problemSnomedConceptId = findSnomedConceptId(fhirProblem.getCode());
-                            if (snomedConceptId.equals(problemSnomedConceptId)) {
-                                model.setIsReview(new Boolean(true));
-                            }
-                        }
-                    }
-                }
-            }*/
-
             //add the raw original code, to assist in data checking
             String originalCode = findOriginalCode(fhir.getCode());
             model.setOriginalCode(originalCode);
@@ -108,7 +185,7 @@ public class ConditionTransformer extends AbstractTransformer {
         }
 
         data.getObservation().add(model);
-    }
+    }*/
 
 
 }
