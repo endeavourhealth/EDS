@@ -75,10 +75,10 @@ public class ObservationReferralTransformer {
         if (!Strings.isNullOrEmpty(urgency)) {
             ReferralPriority fhirPriority = convertUrgency(urgency);
             if (fhirPriority != null) {
-                LOG.warn("Unammped Emis referral priority {}", urgency);
                 fhirReferral.setPriority(CodeableConceptHelper.createCodeableConcept(fhirPriority));
             } else {
                 //if the CSV urgency couldn't be mapped to a FHIR priority, then we can use free-text
+                LOG.warn("Unmapped Emis referral priority {}", urgency);
                 fhirReferral.setPriority(CodeableConceptHelper.createCodeableConcept(urgency));
             }
         }
@@ -87,9 +87,9 @@ public class ObservationReferralTransformer {
         if (!Strings.isNullOrEmpty(serviceType)) {
             ReferralType type = convertTye(serviceType);
             if (type != null) {
-                LOG.warn("Unammped Emis referral tyoe {}", serviceType);
                 fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(type));
             } else {
+                LOG.warn("Unmapped Emis referral type {}", serviceType);
                 fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(serviceType));
             }
         }
