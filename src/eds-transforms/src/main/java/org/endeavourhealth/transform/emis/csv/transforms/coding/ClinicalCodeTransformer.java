@@ -29,6 +29,35 @@ public abstract class ClinicalCodeTransformer {
     private static CodeRepository repository = new CodeRepository();
 
     public static void transform(String version,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
+                                 EmisCsvHelper csvHelper,
+                                 int maxFilingThreads) throws Exception {
+
+        //because we have to hit a third party web resource, we use a thread pool to support
+        //threading these calls to improve performance
+        ThreadPool threadPool = new ThreadPool(maxFilingThreads, 50000);
+
+        //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
+        //to parse any record in this file it a critical error
+        try {
+            AbstractCsvParser parser = parsers.get(ClinicalCode.class);
+            while (parser.nextRecord()) {
+
+                try {
+                    transform((ClinicalCode)parser, fhirResourceFiler, csvHelper, threadPool, version);
+                } catch (Exception ex) {
+                    throw new TransformException(parser.getCurrentState().toString(), ex);
+                }
+            }
+
+        } finally {
+            List<CallableError> errors = threadPool.waitAndStop();
+            handleErrors(errors);
+        }
+    }
+
+    /*public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
                                  FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper,
@@ -57,7 +86,7 @@ public abstract class ClinicalCodeTransformer {
             List<CallableError> errors = threadPool.waitAndStop();
             handleErrors(errors);
         }
-    }
+    }*/
 
     private static void handleErrors(List<CallableError> errors) throws Exception {
         if (errors == null || errors.isEmpty()) {

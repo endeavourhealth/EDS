@@ -18,8 +18,36 @@ import java.util.concurrent.Callable;
 
 public class DrugCodeTransformer {
 
-
     public static void transform(String version,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
+                                 EmisCsvHelper csvHelper,
+                                 int maxFilingThreads) throws Exception {
+
+        //inserting the entries into the IdCodeMap table is a lot slower than the rest of this
+        //file, so split up the saving over a few threads
+        ThreadPool threadPool = new ThreadPool(maxFilingThreads, 50000);
+
+        //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
+        //to parse any record in this file it a critical error
+        try {
+            AbstractCsvParser parser = parsers.get(DrugCode.class);
+            while (parser.nextRecord()) {
+
+                try {
+                    transform((DrugCode)parser, fhirResourceFiler, csvHelper, threadPool);
+                } catch (Exception ex) {
+                    throw new TransformException(parser.getCurrentState().toString(), ex);
+                }
+            }
+
+        } finally {
+            List<CallableError> errors = threadPool.waitAndStop();
+            handleErrors(errors);
+        }
+    }
+
+    /*public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
                                FhirResourceFiler fhirResourceFiler,
                                EmisCsvHelper csvHelper,
@@ -48,7 +76,7 @@ public class DrugCodeTransformer {
             List<CallableError> errors = threadPool.waitAndStop();
             handleErrors(errors);
         }
-    }
+    }*/
 
     private static void transform(DrugCode parser,
                                   FhirResourceFiler fhirResourceFiler,

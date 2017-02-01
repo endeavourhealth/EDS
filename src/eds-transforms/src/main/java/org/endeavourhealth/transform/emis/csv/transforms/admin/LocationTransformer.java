@@ -15,6 +15,21 @@ import java.util.Map;
 public class LocationTransformer {
 
     public static void transform(String version,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
+                                 EmisCsvHelper csvHelper) throws Exception {
+
+        AbstractCsvParser parser = parsers.get(Location.class);
+        while (parser.nextRecord()) {
+
+            try {
+                createResource((Location)parser, fhirResourceFiler, csvHelper);
+            } catch (Exception ex) {
+                fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
+            }
+        }
+    }
+    /*public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
                                  FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
@@ -31,7 +46,7 @@ public class LocationTransformer {
                 }
             }
         }
-    }
+    }*/
 
     private static void createResource(Location parser,
                                        FhirResourceFiler fhirResourceFiler,

@@ -17,6 +17,21 @@ import java.util.UUID;
 public class SlotTransformer {
 
     public static void transform(String version,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
+                                 EmisCsvHelper csvHelper) throws Exception {
+
+        AbstractCsvParser parser = parsers.get(Slot.class);
+        while (parser.nextRecord()) {
+
+            try {
+                createSlotAndAppointment((Slot)parser, fhirResourceFiler, csvHelper);
+            } catch (Exception ex) {
+                fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
+            }
+        }
+    }
+    /*public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
                                  FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
@@ -32,7 +47,7 @@ public class SlotTransformer {
                 }
             }
         }
-    }
+    }*/
 
     private static void createSlotAndAppointment(Slot parser,
                                                  FhirResourceFiler fhirResourceFiler,

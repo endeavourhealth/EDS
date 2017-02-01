@@ -24,6 +24,21 @@ import java.util.Map;
 public class ProblemTransformer {
 
     public static void transform(String version,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
+                                 EmisCsvHelper csvHelper) throws Exception {
+
+        AbstractCsvParser parser = parsers.get(Problem.class);
+        while (parser.nextRecord()) {
+
+            try {
+                createResource((Problem)parser, fhirResourceFiler, csvHelper, version);
+            } catch (Exception ex) {
+                fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
+            }
+        }
+    }
+    /*public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
                                  FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
@@ -40,7 +55,7 @@ public class ProblemTransformer {
             }
         }
 
-    }
+    }*/
 
     private static void createResource(Problem parser,
                                        FhirResourceFiler fhirResourceFiler,

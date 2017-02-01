@@ -15,7 +15,6 @@ import org.hl7.fhir.instance.model.ReferralRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Map;
 
 public class ObservationReferralTransformer {
@@ -23,6 +22,21 @@ public class ObservationReferralTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(ObservationReferralTransformer.class);
 
     public static void transform(String version,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
+                                 EmisCsvHelper csvHelper) throws Exception {
+
+        AbstractCsvParser parser = parsers.get(ObservationReferral.class);
+        while (parser.nextRecord()) {
+
+            try {
+                createResource((ObservationReferral)parser, fhirResourceFiler, csvHelper);
+            } catch (Exception ex) {
+                fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
+            }
+        }
+    }
+    /*public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
                                  FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
@@ -38,7 +52,7 @@ public class ObservationReferralTransformer {
                 }
             }
         }
-    }
+    }*/
 
     private static void createResource(ObservationReferral parser,
                                        FhirResourceFiler fhirResourceFiler,

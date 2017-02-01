@@ -6,12 +6,29 @@ import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.appointment.SessionUser;
 
-import java.util.List;
 import java.util.Map;
 
 public class SessionUserTransformer {
 
     public static void transform(String version,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
+                                 EmisCsvHelper csvHelper) throws Exception {
+
+        //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
+        //to parse any record in this file it a critical error
+        AbstractCsvParser parser = parsers.get(SessionUser.class);
+
+        while (parser.nextRecord()) {
+
+            try {
+                createSessionUserMapping((SessionUser)parser, fhirResourceFiler, csvHelper);
+            } catch (Exception ex) {
+                throw new TransformException(parser.getCurrentState().toString(), ex);
+            }
+        }
+    }
+    /*public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
                                  FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
@@ -29,7 +46,7 @@ public class SessionUserTransformer {
                 }
             }
         }
-    }
+    }*/
 
     private static void createSessionUserMapping(SessionUser parser,
                                                  FhirResourceFiler fhirResourceFiler,

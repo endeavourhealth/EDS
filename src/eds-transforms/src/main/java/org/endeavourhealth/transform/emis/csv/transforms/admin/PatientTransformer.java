@@ -21,6 +21,21 @@ import java.util.Map;
 public class PatientTransformer {
 
     public static void transform(String version,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
+                                 EmisCsvHelper csvHelper) throws Exception {
+
+        AbstractCsvParser parser = parsers.get(Patient.class);
+        while (parser.nextRecord()) {
+
+            try {
+                createResource((Patient)parser, fhirResourceFiler, csvHelper, version);
+            } catch (Exception ex) {
+                fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
+            }
+        }
+    }
+    /*public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
                                  FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
@@ -36,7 +51,7 @@ public class PatientTransformer {
                 }
             }
         }
-    }
+    }*/
 
     private static void createResource(Patient parser,
                                       FhirResourceFiler fhirResourceFiler,

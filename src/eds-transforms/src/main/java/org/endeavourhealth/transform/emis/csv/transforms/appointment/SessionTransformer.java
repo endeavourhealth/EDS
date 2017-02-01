@@ -16,6 +16,21 @@ import java.util.Map;
 public class SessionTransformer {
 
     public static void transform(String version,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
+                                 EmisCsvHelper csvHelper) throws Exception {
+
+        AbstractCsvParser parser = parsers.get(Session.class);
+        while (parser.nextRecord()) {
+
+            try {
+                createResource((Session)parser, fhirResourceFiler, csvHelper);
+            } catch (Exception ex) {
+                fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
+            }
+        }
+    }
+    /*public static void transform(String version,
                                  Map<Class, List<AbstractCsvParser>> parsers,
                                  FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
@@ -31,7 +46,7 @@ public class SessionTransformer {
                 }
             }
         }
-    }
+    }*/
 
     private static void createResource(Session parser,
                                        FhirResourceFiler fhirResourceFiler,
