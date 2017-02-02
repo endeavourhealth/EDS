@@ -38,24 +38,6 @@ public class ProblemTransformer {
             }
         }
     }
-    /*public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 FhirResourceFiler fhirResourceFiler,
-                                 EmisCsvHelper csvHelper) throws Exception {
-
-        for (AbstractCsvParser parser: parsers.get(Problem.class)) {
-
-            while (parser.nextRecord()) {
-
-                try {
-                    createResource((Problem)parser, fhirResourceFiler, csvHelper, version);
-                } catch (Exception ex) {
-                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
-                }
-            }
-        }
-
-    }*/
 
     private static void createResource(Problem parser,
                                        FhirResourceFiler fhirResourceFiler,

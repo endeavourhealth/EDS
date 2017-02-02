@@ -27,26 +27,7 @@ public class OrganisationLocationTransformer {
             }
         }
     }
-    /*public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 FhirResourceFiler fhirResourceFiler,
-                                 EmisCsvHelper csvHelper) throws Exception {
 
-        //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
-        //to parse any record in this file it a critical error
-        for (AbstractCsvParser parser: parsers.get(OrganisationLocation.class)) {
-
-            while (parser.nextRecord()) {
-
-                try {
-                    createLocationOrganisationMapping((OrganisationLocation)parser, fhirResourceFiler, csvHelper);
-                } catch (Exception ex) {
-                    throw new TransformException(parser.getCurrentState().toString(), ex);
-                }
-            }
-        }
-
-    }*/
 
     private static void createLocationOrganisationMapping(OrganisationLocation parser,
                                                           FhirResourceFiler fhirResourceFiler,

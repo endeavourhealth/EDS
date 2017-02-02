@@ -29,24 +29,7 @@ public class LocationTransformer {
             }
         }
     }
-    /*public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 FhirResourceFiler fhirResourceFiler,
-                                 EmisCsvHelper csvHelper) throws Exception {
 
-
-        for (AbstractCsvParser parser: parsers.get(Location.class)) {
-
-            while (parser.nextRecord()) {
-
-                try {
-                    createResource((Location)parser, fhirResourceFiler, csvHelper);
-                } catch (Exception ex) {
-                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
-                }
-            }
-        }
-    }*/
 
     private static void createResource(Location parser,
                                        FhirResourceFiler fhirResourceFiler,

@@ -30,23 +30,6 @@ public class UserInRoleTransformer {
             }
         }
     }
-    /*public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 FhirResourceFiler fhirResourceFiler,
-                                 EmisCsvHelper csvHelper) throws Exception {
-
-        for (AbstractCsvParser parser: parsers.get(UserInRole.class)) {
-
-            while (parser.nextRecord()) {
-
-                try {
-                    createResource((UserInRole)parser, fhirResourceFiler, csvHelper);
-                } catch (Exception ex) {
-                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
-                }
-            }
-        }
-    }*/
 
     private static void createResource(UserInRole parser,
                                        FhirResourceFiler fhirResourceFiler,

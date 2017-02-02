@@ -37,25 +37,7 @@ public class ObservationPreTransformer {
             }
         }
     }
-    /*public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 FhirResourceFiler fhirResourceFiler,
-                                 EmisCsvHelper csvHelper) throws Exception {
 
-        //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
-        //to parse any record in this file it a critical error
-        for (AbstractCsvParser parser: parsers.get(Observation.class)) {
-
-            while (parser.nextRecord()) {
-
-                try {
-                    processLine((Observation)parser, csvHelper, fhirResourceFiler, version);
-                } catch (Exception ex) {
-                    throw new TransformException(parser.getCurrentState().toString(), ex);
-                }
-            }
-        }
-    }*/
 
     private static void processLine(Observation parser, EmisCsvHelper csvHelper, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
 

@@ -35,23 +35,7 @@ public class DrugRecordTransformer {
             }
         }
     }
-    /*public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 FhirResourceFiler fhirResourceFiler,
-                                 EmisCsvHelper csvHelper) throws Exception {
 
-        for (AbstractCsvParser parser: parsers.get(DrugRecord.class)) {
-
-            while (parser.nextRecord()) {
-
-                try {
-                    createResource((DrugRecord)parser, fhirResourceFiler, csvHelper, version);
-                } catch (Exception ex) {
-                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
-                }
-            }
-        }
-    }*/
 
     private static void createResource(DrugRecord parser,
                                        FhirResourceFiler fhirResourceFiler,

@@ -29,23 +29,7 @@ public class OrganisationTransformer {
             }
         }
      }
-    /*public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 FhirResourceFiler fhirResourceFiler,
-                                 EmisCsvHelper csvHelper) throws Exception {
 
-        for (AbstractCsvParser parser: parsers.get(Organisation.class)) {
-
-            while (parser.nextRecord()) {
-
-                try {
-                    createResource((Organisation)parser, fhirResourceFiler, csvHelper);
-                } catch (Exception ex) {
-                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
-                }
-            }
-        }
-     }*/
 
     private static void createResource(Organisation parser,
                                        FhirResourceFiler fhirResourceFiler,

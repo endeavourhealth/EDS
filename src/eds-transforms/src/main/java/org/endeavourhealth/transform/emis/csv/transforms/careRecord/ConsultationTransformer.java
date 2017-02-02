@@ -34,23 +34,6 @@ public class ConsultationTransformer {
             }
         }
     }
-    /*public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 FhirResourceFiler fhirResourceFiler,
-                                 EmisCsvHelper csvHelper) throws Exception {
-
-        for (AbstractCsvParser parser: parsers.get(Consultation.class)) {
-
-            while (parser.nextRecord()) {
-
-                try {
-                    createResource((Consultation)parser, fhirResourceFiler, csvHelper, version);
-                } catch (Exception ex) {
-                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
-                }
-            }
-        }
-    }*/
 
     private static void createResource(Consultation parser,
                                         FhirResourceFiler fhirResourceFiler,

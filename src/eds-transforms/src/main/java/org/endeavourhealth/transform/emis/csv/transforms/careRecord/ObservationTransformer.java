@@ -49,31 +49,6 @@ public class ObservationTransformer {
             }
         }
     }
-    /*public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 FhirResourceFiler fhirResourceFiler,
-                                 EmisCsvHelper csvHelper) throws Exception {
-
-        for (AbstractCsvParser parser: parsers.get(Observation.class)) {
-
-            while (parser.nextRecord()) {
-
-                try {
-
-                    //depending whether deleting or saving, we go through a different path to find what
-                    //the target resource type should be
-                    Observation observationParser = (Observation)parser;
-                    if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
-                        deleteResource(version, observationParser, fhirResourceFiler, csvHelper);
-                    } else {
-                        createResource(version, observationParser, fhirResourceFiler, csvHelper);
-                    }
-                } catch (Exception ex) {
-                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
-                }
-            }
-        }
-    }*/
 
     private static void deleteResource(String version,
                                        Observation parser,

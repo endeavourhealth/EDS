@@ -33,23 +33,7 @@ public class IssueRecordTransformer {
             }
         }
     }
-    /*public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 FhirResourceFiler fhirResourceFiler,
-                                 EmisCsvHelper csvHelper) throws Exception {
 
-        for (AbstractCsvParser parser: parsers.get(IssueRecord.class)) {
-
-            while (parser.nextRecord()) {
-
-                try {
-                    createResource((IssueRecord)parser, fhirResourceFiler, csvHelper, version);
-                } catch (Exception ex) {
-                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
-                }
-            }
-        }
-    }*/
 
     private static void createResource(IssueRecord parser,
                                        FhirResourceFiler fhirResourceFiler,

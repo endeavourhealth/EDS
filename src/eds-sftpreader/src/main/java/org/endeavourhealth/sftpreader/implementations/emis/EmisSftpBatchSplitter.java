@@ -113,6 +113,12 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
                     //join them back together
                     reorderedFile = joinFiles(fileName, orgDir);
 
+                    //if the file was empty, there won't be a reordered file, so just drop out, and let the
+                    //thing that creates empty files pick this up
+                    if (reorderedFile == null) {
+                        break;
+                    }
+
                 } else {
                     //if we have split and re-ordered the file, just copy it into this org dir
                     File orgFile = new File(orgDir, fileName);
@@ -127,7 +133,7 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
             for (File f: orgDir.listFiles()) {
                 if (f.isDirectory()
                         && f.listFiles().length == 0) {
-                    f.delete();
+                    deleteRecursive(f);
                 }
             }
 
@@ -135,7 +141,7 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
             //isn't any data for that org in the extract. So we'll have just created a folder for that org
             //and it'll now be empty. So delete any empty org directory.
             if (orgDir.listFiles().length == 0) {
-                orgDir.delete();
+                deleteRecursive(orgDir);
             }
         }
 
@@ -193,10 +199,15 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
 
         //delete all the separate files
         for (File orgProcessingIdFile: separateFiles) {
-            orgProcessingIdFile.delete();
+            deleteRecursive(orgProcessingIdFile);
         }
 
-        return joinedFile;
+        //if there was nothing to join, this file won't exist
+        if (joinedFile.exists()) {
+            return joinedFile;
+        } else {
+            return null;
+        }
     }
 
     private static List<File> orderFilesByNumber(File rootDir) {
@@ -224,126 +235,6 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
 
         return ret;
     }
-
-    /*@Override
-    public List<BatchSplit> splitBatch(Batch batch, DataLayer db, DbConfiguration dbConfiguration) throws Exception {
-
-        String path = FilenameUtils.concat(dbConfiguration.getLocalRootPath(), batch.getLocalRelativePath());
-        File srcDir = new File(path);
-
-        LOG.trace("Splitting CSV files in {}", srcDir);
-
-        if (!srcDir.exists()) {
-            throw new FileNotFoundException("Source directory " + srcDir + " doesn't exist");
-        }
-
-        //split into a sub-folder called "split"
-        path = FilenameUtils.concat(path, SPLIT_FOLDER);
-        File dstDir = new File(path);
-
-        if (dstDir.exists()) {
-            //if the folder does exist, delete all content within it, since if we're re-splitting a file
-            //we want to make sure that all previous content is deleted
-            deleteRecursive(dstDir);
-        }
-
-        if (!dstDir.mkdirs()) {
-            throw new FileNotFoundException("Failed to create destination directory " + dstDir);
-        }
-
-        //even if there's no clinical content (e.g. observations), we want a sub-folder for each organisation in our
-        //sharing agreement, so we apply any changes to orgs, staff or locations
-        createOrgFolders(dstDir, dbConfiguration, batch);
-
-        //scan through the files in the folder and works out which are admin and which are clinical
-        List<String> processingIdFiles = new ArrayList<>();
-        List<String> orgAndProcessingIdFiles = new ArrayList<>();
-        List<String> orgIdFiles = new ArrayList<>();
-        identifyFiles(batch, srcDir, orgAndProcessingIdFiles, processingIdFiles, orgIdFiles, dbConfiguration);
-
-        //split the clinical files by org and processing ID, which creates the org ID -> processing ID folder structure
-        for (String fileName: orgAndProcessingIdFiles) {
-            File f = new File(srcDir, fileName);
-            LOG.trace("Splitting {} into {}", f, dstDir);
-            splitFile(f, dstDir, CSV_FORMAT, SPLIT_COLUMN_ORG, SPLIT_COLUMN_PROCESSING_ID);
-        }
-
-        //for the files with just a processing ID, each org folder we want a copy of the non-clinical data, so split those files for each org
-        for (File orgDir : dstDir.listFiles()) {
-
-            for (String fileName : processingIdFiles) {
-                File f = new File(srcDir, fileName);
-                LOG.trace("Splitting {} into {}", f, orgDir);
-                splitFile(f, orgDir, CSV_FORMAT, SPLIT_COLUMN_PROCESSING_ID);
-            }
-        }
-
-        //for the file with just an org ID, splitting by org ID will leave the split copies in the org ID folders,
-        //which we then need to copy into the org ID -> processing ID sub-folders
-        for (String fileName: orgIdFiles) {
-            File f = new File(srcDir, fileName);
-            LOG.trace("Splitting {} into {}", f, dstDir);
-            splitFile(f, dstDir, CSV_FORMAT, SPLIT_COLUMN_ORG);
-
-            for (File orgDir : dstDir.listFiles()) {
-                f = new File(orgDir, fileName);
-
-                for (File processingDir : orgDir.listFiles()) {
-                    if (processingDir.isDirectory()) {
-
-                        File dst = new File(processingDir, fileName);
-
-                        Files.copy(f.toPath(), dst.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        //Files.copy(f.toPath(), dst.toPath());
-                    }
-                }
-
-                f.delete();
-
-                //the sharing agreements file always has a row per org in the data sharing agreement, even if there
-                //isn't any data for that org in the extract. So we'll have just created a folder for that org
-                //and it'll now be empty. So delete any empty org directory.
-                if (orgDir.listFiles().length == 0) {
-                    orgDir.delete();
-                }
-            }
-        }
-
-        //the splitter only creates files when required, so we'll have incomplete file sets,
-        //so create any missing files, so there's a full set of files in every folder
-        for (BatchFile batchFile: batch.getBatchFiles()) {
-            File f = new File(srcDir, batchFile.getDecryptedFilename());
-            createMissingFiles(f, dstDir);
-        }
-
-        LOG.trace("Completed CSV file splitting from {} to {}", srcDir, dstDir);
-
-        //we need to parse the organisation file, to store the mappings for later
-        saveAllOdsCodes(db, dbConfiguration, batch);
-
-        //build a list of the folders containing file sets, to return
-        List<BatchSplit> ret = new ArrayList<>();
-
-        for (File orgDir : dstDir.listFiles()) {
-
-            String orgGuid = orgDir.getName();
-            String localPath = FilenameUtils.concat(batch.getLocalRelativePath(), SPLIT_FOLDER);
-            localPath = FilenameUtils.concat(localPath, orgGuid);
-
-            //we need to find the ODS code for the EMIS org GUID. When we have a full extract, we can find that mapping
-            //in the Organisation CSV file, but for deltas, we use the key-value-pair table which is populated when we get the deltas
-            String odsCode = findOdsCode(orgGuid, db);
-
-            BatchSplit batchSplit = new BatchSplit();
-            batchSplit.setBatchId(batch.getBatchId());
-            batchSplit.setLocalRelativePath(localPath);
-            batchSplit.setOrganisationId(odsCode);
-
-            ret.add(batchSplit);
-        }
-
-        return ret;
-    }*/
 
     /**
      * goes through the sharing agreements file to find the org GUIDs of those orgs activated in the sharing agreement
@@ -383,40 +274,6 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
 
         return ret;
     }
-
-    /*private void createOrgFolders(File dstDir, DbConfiguration dbConfiguration, Batch batch) throws Exception {
-
-        File sharingAgreementFile = null;
-        for (BatchFile batchFile: batch.getBatchFiles()) {
-            if (batchFile.getFileTypeIdentifier().equalsIgnoreCase("Agreements_SharingOrganisation")) {
-                String path = FilenameUtils.concat(dbConfiguration.getLocalRootPath(), batch.getLocalRelativePath());
-                path = FilenameUtils.concat(path, batchFile.getDecryptedFilename());
-                sharingAgreementFile = new File(path);
-            }
-        }
-
-        CSVParser csvParser = CSVParser.parse(sharingAgreementFile, Charset.defaultCharset(), CSV_FORMAT.withHeader());
-        try {
-            Iterator<CSVRecord> csvIterator = csvParser.iterator();
-
-            while (csvIterator.hasNext()) {
-                CSVRecord csvRecord = csvIterator.next();
-
-                String orgGuid = csvRecord.get("OrganisationGuid");
-                String activated = csvRecord.get("IsActivated");
-                if (activated.equalsIgnoreCase("true")) {
-
-                    File orgDir = new File(dstDir, orgGuid);
-                    if (!orgDir.exists()) {
-                        orgDir.mkdirs();
-                    }
-                }
-            }
-        } finally {
-            csvParser.close();
-        }
-
-    }*/
 
     /**
      * file.delete() only works on empty directories, so we need to make sure they're empty first
@@ -531,24 +388,6 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
             }
         }
     }
-
-    /*private static void createMissingFiles(File srcFile, File dstDir) throws Exception {
-
-        //read in the first line of the source file, as we use that as the content for the empty files
-        String headers = readFileHeaders(srcFile);
-        String fileName = srcFile.getName();
-
-        //iterate through any directories, creating any missing files in their sub-directories
-        for (File orgDir: dstDir.listFiles()) {
-            if (orgDir.isDirectory()) {
-                for (File processingDir: orgDir.listFiles()) {
-                    if (processingDir.isDirectory()) {
-                        createMissingFile(fileName, headers, processingDir);
-                    }
-                }
-            }
-        }
-    }*/
 
     private static void createMissingFile(String fileName, String headers, File dstDir) throws Exception {
 

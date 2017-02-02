@@ -36,23 +36,6 @@ public class ObservationReferralTransformer {
             }
         }
     }
-    /*public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 FhirResourceFiler fhirResourceFiler,
-                                 EmisCsvHelper csvHelper) throws Exception {
-
-        for (AbstractCsvParser parser: parsers.get(ObservationReferral.class)) {
-
-            while (parser.nextRecord()) {
-
-                try {
-                    createResource((ObservationReferral)parser, fhirResourceFiler, csvHelper);
-                } catch (Exception ex) {
-                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
-                }
-            }
-        }
-    }*/
 
     private static void createResource(ObservationReferral parser,
                                        FhirResourceFiler fhirResourceFiler,

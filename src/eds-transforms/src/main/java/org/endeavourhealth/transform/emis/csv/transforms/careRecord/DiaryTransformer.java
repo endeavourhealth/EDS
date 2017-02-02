@@ -36,23 +36,7 @@ public class DiaryTransformer {
             }
         }
     }
-    /*public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 FhirResourceFiler fhirResourceFiler,
-                                 EmisCsvHelper csvHelper) throws Exception {
 
-        for (AbstractCsvParser parser: parsers.get(Diary.class)) {
-
-            while (parser.nextRecord()) {
-
-                try {
-                    createResource((Diary)parser, fhirResourceFiler, csvHelper, version);
-                } catch (Exception ex) {
-                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
-                }
-            }
-        }
-    }*/
 
     private static void createResource(Diary parser,
                                        FhirResourceFiler fhirResourceFiler,

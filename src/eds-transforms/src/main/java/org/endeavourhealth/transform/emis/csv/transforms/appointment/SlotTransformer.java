@@ -31,23 +31,7 @@ public class SlotTransformer {
             }
         }
     }
-    /*public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 FhirResourceFiler fhirResourceFiler,
-                                 EmisCsvHelper csvHelper) throws Exception {
 
-        for (AbstractCsvParser parser: parsers.get(Slot.class)) {
-
-            while (parser.nextRecord()) {
-
-                try {
-                    createSlotAndAppointment((Slot)parser, fhirResourceFiler, csvHelper);
-                } catch (Exception ex) {
-                    fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
-                }
-            }
-        }
-    }*/
 
     private static void createSlotAndAppointment(Slot parser,
                                                  FhirResourceFiler fhirResourceFiler,
