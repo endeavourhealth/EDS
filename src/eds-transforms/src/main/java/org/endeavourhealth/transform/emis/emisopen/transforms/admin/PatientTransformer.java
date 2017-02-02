@@ -4,10 +4,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.RegistrationType;
-import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.hl7.fhir.instance.model.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.SexConverter;
+import org.endeavourhealth.transform.fhir.ContactPointCreater;
+import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.NameConverter;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +25,7 @@ public class PatientTransformer
             throw new TransformException("Registration element is null");
 
         Patient target = new Patient();
+        target.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PATIENT));
 
         if (StringUtils.isBlank(source.getGUID()))
             throw new TransformException("Patient GUID is empty");

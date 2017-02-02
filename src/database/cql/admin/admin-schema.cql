@@ -4,6 +4,9 @@ CREATE KEYSPACE admin WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replicat
 
 USE admin;
 
+DROP TABLE IF EXISTS patient_cohort;
+
+
 CREATE TABLE snomed_lookup (
     concept_id text,
     type_id text,
@@ -276,6 +279,18 @@ CREATE TABLE queuedMessage
 	PRIMARY KEY (id)
 );
 
+CREATE TABLE patient_cohort (
+    protocol_id UUID,
+    service_id UUID,
+    patient_id UUID,
+    version TIMEUUID,
+    inserted TIMESTAMP,
+    in_cohort BOOLEAN,
+    PRIMARY KEY ((protocol_id, service_id), patient_id, version)
+) WITH CLUSTERING ORDER BY (patient_id ASC, version DESC);
+
+
+
 INSERT INTO dependency_type
 (id, description)
 VALUES 
@@ -480,6 +495,8 @@ c3e5f788-b44a-4a2f-8a6f-80a5b2023693,6226dbb5-ea0f-4e3a-b7db-0e08a485c6e4,'EMIS 
 </libraryItem>
 ');
 
+
+
 INSERT INTO admin.active_item (id,organisation_id,item_type_id,audit_id,is_deleted,item_id) VALUES (
 acbf49b3-f9ce-485a-8df6-de8216e1d2b6,b6ff900d-8fcd-43d8-af37-5db3a87a6ef6,7,5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52,false,76ce138a-1e61-4cf4-9340-faff5cb0c8c2);
 INSERT INTO admin.active_item (id,organisation_id,item_type_id,audit_id,is_deleted,item_id) VALUES (
@@ -528,3 +545,4 @@ INSERT INTO admin.item_dependency (item_id,audit_id,dependent_item_id,dependency
 c3e5f788-b44a-4a2f-8a6f-80a5b2023693,6226dbb5-ea0f-4e3a-b7db-0e08a485c6e4,76ce138a-1e61-4cf4-9340-faff5cb0c8c2,1);
 INSERT INTO admin.item_dependency (item_id,audit_id,dependent_item_id,dependency_type_id) VALUES (
 76ce138a-1e61-4cf4-9340-faff5cb0c8c2,5e1a9072-2559-41a4-bc9b-2fbf1e0e1b52,96448ff1-903b-4b1c-b306-4c04c7b3e0bc,0);
+

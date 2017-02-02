@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.common;
 
+import com.google.common.io.Files;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
@@ -7,6 +8,7 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -18,6 +20,7 @@ public abstract class AbstractCsvWriter {
     private final CSVPrinter csvPrinter;
     private final DateFormat dateFormat;
     private final DateFormat timeFormat;
+    private int rowCount;
 
     public AbstractCsvWriter(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
 
@@ -30,10 +33,12 @@ public abstract class AbstractCsvWriter {
         this.fileName = fileName;
         this.dateFormat = new SimpleDateFormat(dateFormat);
         this.timeFormat = new SimpleDateFormat(timeFormat);
+        this.rowCount = 0;
     }
 
     protected void printRecord(String... columns) throws IOException {
         csvPrinter.printRecord((Object[])columns);
+        rowCount ++;
     }
 
     protected String convertDate(Date d) {
@@ -68,7 +73,7 @@ public abstract class AbstractCsvWriter {
         }
     }
 
-    protected String convertDouble(Double d) {
+    protected String convertBigDecimal(BigDecimal d) {
         if (d == null) {
             return null;
         } else {
@@ -105,6 +110,10 @@ public abstract class AbstractCsvWriter {
         return fileName;
     }
 
+    public String getFileNameWithoutExtension() {
+        return Files.getNameWithoutExtension(fileName);
+    }
+
     /*public String getFileName() {
         Class cls = getClass();
         Package p = cls.getPackage();
@@ -116,4 +125,8 @@ public abstract class AbstractCsvWriter {
     }*/
 
     protected abstract String[] getCsvHeaders();
+
+    public boolean isEmpty() {
+        return rowCount == 0;
+    }
 }

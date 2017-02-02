@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -16,32 +16,30 @@ import org.endeavourhealth.transform.fhir.schema.MaritalStatus;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 public class ObservationPreTransformer {
 
     public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
         //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
         //to parse any record in this file it a critical error
-        for (AbstractCsvParser parser: parsers.get(Observation.class)) {
+        AbstractCsvParser parser = parsers.get(Observation.class);
+        while (parser.nextRecord()) {
 
-            while (parser.nextRecord()) {
-
-                try {
-                    processLine((Observation)parser, csvHelper, csvProcessor, version);
-                } catch (Exception ex) {
-                    throw new TransformException(parser.getCurrentState().toString(), ex);
-                }
+            try {
+                processLine((Observation)parser, csvHelper, fhirResourceFiler, version);
+            } catch (Exception ex) {
+                throw new TransformException(parser.getCurrentState().toString(), ex);
             }
         }
     }
 
-    private static void processLine(Observation parser, EmisCsvHelper csvHelper, CsvProcessor csvProcessor, String version) throws Exception {
+
+    private static void processLine(Observation parser, EmisCsvHelper csvHelper, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
 
         if (parser.getDeleted() || parser.getIsConfidential()) {
             return;
@@ -93,7 +91,7 @@ public class ObservationPreTransformer {
             //if this record is linked to a problem, store this relationship in the helper
             String observationGuid = parser.getObservationGuid();
             String patientGuid = parser.getPatientGuid();
-            ResourceType resourceType = ObservationTransformer.getTargetResourceType(parser, csvProcessor, csvHelper);
+            ResourceType resourceType = ObservationTransformer.getTargetResourceType(parser, fhirResourceFiler, csvHelper);
 
             csvHelper.cacheProblemRelationship(problemGuid,
                     patientGuid,

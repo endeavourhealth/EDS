@@ -18,8 +18,9 @@ final class ObservationTransformer
     public static Observation transform(EventType eventType, String patientUuid) throws TransformException
     {
         Observation observation = new Observation();
-        observation.setId(eventType.getGUID());
         observation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_OBSERVATION));
+
+        observation.setId(eventType.getGUID());
 
         observation.setSubject(ReferenceHelper.createReference(ResourceType.Patient, patientUuid));
         observation.addPerformer(ReferenceHelper.createReference(ResourceType.Practitioner, eventType.getOriginalAuthor().getUser().getGUID()));

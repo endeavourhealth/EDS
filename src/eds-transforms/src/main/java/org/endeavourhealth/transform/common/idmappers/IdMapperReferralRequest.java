@@ -1,7 +1,9 @@
 package org.endeavourhealth.transform.common.idmappers;
 
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.ReferralRequest;
 import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.ResourceType;
 
 import java.util.UUID;
 
@@ -30,5 +32,15 @@ public class IdMapperReferralRequest extends BaseIdMapper {
         }
 
         return super.mapCommonResourceFields(referralRequest, serviceId, systemId, mapResourceId);
+    }
+
+    @Override
+    public String getPatientId(Resource resource) {
+
+        ReferralRequest referralRequest = (ReferralRequest)resource;
+        if (referralRequest.hasPatient()) {
+            return ReferenceHelper.getReferenceId(referralRequest.getPatient(), ResourceType.Patient);
+        }
+        return null;
     }
 }

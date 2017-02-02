@@ -8,6 +8,7 @@ import org.endeavourhealth.sftpreader.DataLayer;
 import org.endeavourhealth.sftpreader.implementations.SftpBatchSplitter;
 import org.endeavourhealth.sftpreader.model.db.*;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpFilenameParseException;
+import org.endeavourhealth.sftpreader.utilities.CsvJoiner;
 import org.endeavourhealth.sftpreader.utilities.CsvSplitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +17,7 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class EmisSftpBatchSplitter extends SftpBatchSplitter {
 
@@ -33,7 +31,7 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
     private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
 
     /**
-     * splits the 17 EMIS extract files we use by org GUID and processing ID, so
+     * splits the EMIS extract files we use by org GUID and processing ID, so
      * we have a directory structure of dstDir -> org GUID -> processing ID
      * returns a list of directories containing split file sets
      */
@@ -63,61 +61,87 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
             throw new FileNotFoundException("Failed to create destination directory " + dstDir);
         }
 
-        //even if there's no clinical content (e.g. observations), we want a sub-folder for each organisation in our
-        //sharing agreement, so we apply any changes to orgs, staff or locations
-        createOrgFolders(dstDir, dbConfiguration, batch);
-
         //scan through the files in the folder and works out which are admin and which are clinical
         List<String> processingIdFiles = new ArrayList<>();
         List<String> orgAndProcessingIdFiles = new ArrayList<>();
         List<String> orgIdFiles = new ArrayList<>();
         identifyFiles(batch, srcDir, orgAndProcessingIdFiles, processingIdFiles, orgIdFiles, dbConfiguration);
 
+        //split the org ID-only files so we have a directory per organisation ID
+        for (String fileName: orgIdFiles) {
+            File f = new File(srcDir, fileName);
+            LOG.trace("Splitting {} into {}", f, dstDir);
+            splitFile(f, dstDir, CSV_FORMAT, SPLIT_COLUMN_ORG);
+        }
+
+        //splitting the sharing agreements file will have created a folder for every org listed,
+        //including the non-active ones in there. So delete any folder for orgs that aren't active in the
+        //sharing agreement
+        Set<File> expectedOrgFolders = findExpectedOrgFolders(dstDir, dbConfiguration, batch);
+        for (File orgDir: dstDir.listFiles()) {
+            if (!expectedOrgFolders.contains(orgDir)) {
+                deleteRecursive(orgDir);
+            }
+        }
+
         //split the clinical files by org and processing ID, which creates the org ID -> processing ID folder structure
         for (String fileName: orgAndProcessingIdFiles) {
             File f = new File(srcDir, fileName);
             LOG.trace("Splitting {} into {}", f, dstDir);
             splitFile(f, dstDir, CSV_FORMAT, SPLIT_COLUMN_ORG, SPLIT_COLUMN_PROCESSING_ID);
-        }
 
-        //for the files with just a processing ID, each org folder we want a copy of the non-clinical data, so split those files for each org
-        for (File orgDir : dstDir.listFiles()) {
-
-            for (String fileName : processingIdFiles) {
-                File f = new File(srcDir, fileName);
-                LOG.trace("Splitting {} into {}", f, orgDir);
-                splitFile(f, orgDir, CSV_FORMAT, SPLIT_COLUMN_PROCESSING_ID);
+            //having split the file, we then want to join the files back together so we have one per
+            //organisation but ordered by processing ID
+            for (File orgDir: dstDir.listFiles()) {
+                joinFiles(fileName, orgDir);
             }
         }
 
-        //for the file with just an org ID, splitting by org ID will leave the split copies in the org ID folders,
-        //which we then need to copy into the org ID -> processing ID sub-folders
-        for (String fileName: orgIdFiles) {
+        //for the files with just a processing ID, each org folder we want a copy of the non-clinical data, but in processing ID order
+        for (String fileName : processingIdFiles) {
             File f = new File(srcDir, fileName);
-            LOG.trace("Splitting {} into {}", f, dstDir);
-            splitFile(f, dstDir, CSV_FORMAT, SPLIT_COLUMN_ORG);
 
-            for (File orgDir : dstDir.listFiles()) {
-                f = new File(orgDir, fileName);
+            File reorderedFile = null;
 
-                for (File processingDir : orgDir.listFiles()) {
-                    if (processingDir.isDirectory()) {
+            for (File orgDir: dstDir.listFiles()) {
 
-                        File dst = new File(processingDir, fileName);
+                //if we've not split and re-ordered the file, do it now into this org dir
+                if (reorderedFile == null) {
+                    LOG.trace("Splitting {} into {}", f, orgDir);
+                    splitFile(f, orgDir, CSV_FORMAT, SPLIT_COLUMN_PROCESSING_ID);
 
-                        Files.copy(f.toPath(), dst.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        //Files.copy(f.toPath(), dst.toPath());
+                    //join them back together
+                    reorderedFile = joinFiles(fileName, orgDir);
+
+                    //if the file was empty, there won't be a reordered file, so just drop out, and let the
+                    //thing that creates empty files pick this up
+                    if (reorderedFile == null) {
+                        break;
                     }
-                }
 
-                f.delete();
-
-                //the sharing agreements file always has a row per org in the data sharing agreement, even if there
-                //isn't any data for that org in the extract. So we'll have just created a folder for that org
-                //and it'll now be empty. So delete any empty org directory.
-                if (orgDir.listFiles().length == 0) {
-                    orgDir.delete();
+                } else {
+                    //if we have split and re-ordered the file, just copy it into this org dir
+                    File orgFile = new File(orgDir, fileName);
+                    Files.copy(reorderedFile.toPath(), orgFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 }
+            }
+        }
+
+        //each org dir with have loads of empty folders for the processing IDs, so delete them
+        for (File orgDir : dstDir.listFiles()) {
+
+            for (File f: orgDir.listFiles()) {
+                if (f.isDirectory()
+                        && f.listFiles().length == 0) {
+                    deleteRecursive(f);
+                }
+            }
+
+            //the sharing agreements file always has a row per org in the data sharing agreement, even if there
+            //isn't any data for that org in the extract. So we'll have just created a folder for that org
+            //and it'll now be empty. So delete any empty org directory.
+            if (orgDir.listFiles().length == 0) {
+                deleteRecursive(orgDir);
             }
         }
 
@@ -157,7 +181,65 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
         return ret;
     }
 
-    private void createOrgFolders(File dstDir, DbConfiguration dbConfiguration, Batch batch) throws Exception {
+    private static File joinFiles(String fileName, File directory) throws Exception {
+        File joinedFile = new File(directory, fileName);
+
+        List<File> separateFiles = new ArrayList<>();
+
+        for (File orgProcessingIdDir: orderFilesByNumber(directory)) {
+            File orgProcessingIdFile = new File(orgProcessingIdDir, fileName);
+            if (orgProcessingIdFile.exists()
+                    && orgProcessingIdFile.isFile()) {
+                separateFiles.add(orgProcessingIdFile);
+            }
+        }
+
+        CsvJoiner joiner = new CsvJoiner(separateFiles, joinedFile, CSV_FORMAT);
+        joiner.go();
+
+        //delete all the separate files
+        for (File orgProcessingIdFile: separateFiles) {
+            deleteRecursive(orgProcessingIdFile);
+        }
+
+        //if there was nothing to join, this file won't exist
+        if (joinedFile.exists()) {
+            return joinedFile;
+        } else {
+            return null;
+        }
+    }
+
+    private static List<File> orderFilesByNumber(File rootDir) {
+
+        //the org directory contains a sub-directory for each processing ID, which must be processed in order
+        List<Integer> processingIds = new ArrayList<>();
+        Map<Integer, File> hmFiles = new HashMap<>();
+
+        for (File file: rootDir.listFiles()) {
+            if (file.isDirectory()) {
+                Integer processingId = Integer.valueOf(file.getName());
+                processingIds.add(processingId);
+                hmFiles.put(processingId, file);
+            }
+        }
+
+        Collections.sort(processingIds);
+
+        List<File> ret = new ArrayList<>();
+
+        for (Integer processingId: processingIds) {
+            File f = hmFiles.get(processingId);
+            ret.add(f);
+        }
+
+        return ret;
+    }
+
+    /**
+     * goes through the sharing agreements file to find the org GUIDs of those orgs activated in the sharing agreement
+     */
+    private Set<File> findExpectedOrgFolders(File dstDir, DbConfiguration dbConfiguration, Batch batch) throws Exception {
 
         File sharingAgreementFile = null;
         for (BatchFile batchFile: batch.getBatchFiles()) {
@@ -165,8 +247,11 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
                 String path = FilenameUtils.concat(dbConfiguration.getLocalRootPath(), batch.getLocalRelativePath());
                 path = FilenameUtils.concat(path, batchFile.getDecryptedFilename());
                 sharingAgreementFile = new File(path);
+                break;
             }
         }
+
+        Set<File> ret = new HashSet<>();
 
         CSVParser csvParser = CSVParser.parse(sharingAgreementFile, Charset.defaultCharset(), CSV_FORMAT.withHeader());
         try {
@@ -180,15 +265,14 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
                 if (activated.equalsIgnoreCase("true")) {
 
                     File orgDir = new File(dstDir, orgGuid);
-                    if (!orgDir.exists()) {
-                        orgDir.mkdirs();
-                    }
+                    ret.add(orgDir);
                 }
             }
         } finally {
             csvParser.close();
         }
 
+        return ret;
     }
 
     /**
@@ -300,11 +384,7 @@ public class EmisSftpBatchSplitter extends SftpBatchSplitter {
         //iterate through any directories, creating any missing files in their sub-directories
         for (File orgDir: dstDir.listFiles()) {
             if (orgDir.isDirectory()) {
-                for (File processingDir: orgDir.listFiles()) {
-                    if (processingDir.isDirectory()) {
-                        createMissingFile(fileName, headers, processingDir);
-                    }
-                }
+                createMissingFile(fileName, headers, orgDir);
             }
         }
     }

@@ -31,9 +31,9 @@ public final class MedicationStatementTransformer
     private static MedicationStatement transform(MedicationType medicationType, String patientUuid) throws TransformException
     {
         MedicationStatement medicationStatement = new MedicationStatement();
-        medicationStatement.setId(medicationType.getGUID());
         medicationStatement.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_AUTHORISATION));
 
+        medicationStatement.setId(medicationType.getGUID());
         medicationStatement.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientUuid));
 
         medicationStatement.setInformationSource(ReferenceHelper.createReference(ResourceType.Practitioner, medicationType.getAuthorisedUserID().getGUID()));

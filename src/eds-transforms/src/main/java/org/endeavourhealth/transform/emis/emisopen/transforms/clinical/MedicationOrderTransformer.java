@@ -32,8 +32,9 @@ public final class MedicationOrderTransformer
     private static MedicationOrder transform(IssueType issueType, String patientUuid) throws TransformException
     {
         MedicationOrder medicationOrder = new MedicationOrder();
-        medicationOrder.setId(issueType.getGUID());
         medicationOrder.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_ORDER));
+
+        medicationOrder.setId(issueType.getGUID());
 
         medicationOrder.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientUuid));
         medicationOrder.setPrescriber(ReferenceHelper.createReference(ResourceType.Practitioner, issueType.getAuthorisedUserID().getGUID()));

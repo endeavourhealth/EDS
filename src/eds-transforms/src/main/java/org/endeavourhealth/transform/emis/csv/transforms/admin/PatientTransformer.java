@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
@@ -21,25 +21,24 @@ import java.util.Map;
 public class PatientTransformer {
 
     public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        for (AbstractCsvParser parser: parsers.get(Patient.class)) {
+        AbstractCsvParser parser = parsers.get(Patient.class);
+        while (parser.nextRecord()) {
 
-            while (parser.nextRecord()) {
-
-                try {
-                    createResource((Patient)parser, csvProcessor, csvHelper, version);
-                } catch (Exception ex) {
-                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
-                }
+            try {
+                createResource((Patient)parser, fhirResourceFiler, csvHelper, version);
+            } catch (Exception ex) {
+                fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
             }
         }
     }
 
+
     private static void createResource(Patient parser,
-                                      CsvProcessor csvProcessor,
+                                      FhirResourceFiler fhirResourceFiler,
                                       EmisCsvHelper csvHelper,
                                        String version) throws Exception {
 
@@ -63,7 +62,7 @@ public class PatientTransformer {
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
             //save both resources together, so the patient is defintiely saved before the episode
-            csvProcessor.deletePatientResource(parser.getCurrentState(), patientGuid, fhirPatient, fhirEpisode);
+            fhirResourceFiler.deletePatientResource(parser.getCurrentState(), patientGuid, fhirPatient, fhirEpisode);
             return;
         }
 
@@ -215,7 +214,7 @@ public class PatientTransformer {
             }
         }
 
-        transformEthnicityAndMaritalStatus(fhirPatient, patientGuid, csvHelper, csvProcessor);
+        transformEthnicityAndMaritalStatus(fhirPatient, patientGuid, csvHelper, fhirResourceFiler);
 
         String orgUuid = parser.getOrganisationGuid();
         fhirEpisode.setManagingOrganization(csvHelper.createOrganisationReference(orgUuid));
@@ -238,13 +237,13 @@ public class PatientTransformer {
         }
 
         //save both resources together, so the patient is defintiely saved before the episode
-        csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirPatient, fhirEpisode);
+        fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirPatient, fhirEpisode);
     }
 
     private static void transformEthnicityAndMaritalStatus(org.hl7.fhir.instance.model.Patient fhirPatient,
                                                         String patientGuid,
                                                         EmisCsvHelper csvHelper,
-                                                        CsvProcessor csvProcessor) throws Exception {
+                                                        FhirResourceFiler fhirResourceFiler) throws Exception {
 
         CodeableConcept fhirEthnicity = csvHelper.findEthnicity(patientGuid);
         CodeableConcept fhirMaritalStatus = csvHelper.findMaritalStatus(patientGuid);
@@ -253,7 +252,7 @@ public class PatientTransformer {
         //so need to see if we have one previously saved that we should carry over
         if (fhirEthnicity == null || fhirMaritalStatus == null) {
             try {
-                org.hl7.fhir.instance.model.Patient oldFhirPatient = (org.hl7.fhir.instance.model.Patient)csvHelper.retrieveResource(patientGuid, ResourceType.Patient, csvProcessor);
+                org.hl7.fhir.instance.model.Patient oldFhirPatient = (org.hl7.fhir.instance.model.Patient)csvHelper.retrieveResource(patientGuid, ResourceType.Patient, fhirResourceFiler);
 
                 if (fhirEthnicity == null) {
                     for (Extension extension: oldFhirPatient.getExtension()) {

@@ -5,9 +5,8 @@ import org.apache.jcs.access.exception.CacheException;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.transform.EnterpriseIdMapRepository;
-import org.endeavourhealth.core.xml.enterprise.BaseRecord;
-import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.SaveMode;
+import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
+import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceComponents;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
@@ -16,10 +15,6 @@ import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.datatype.DatatypeFactory;
-import javax.xml.datatype.XMLGregorianCalendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,17 +44,22 @@ public abstract class AbstractTransformer {
     }
 
     public abstract void transform(ResourceByExchangeBatch resource,
+                                   OutputContainer data,
+                                   Map<String, ResourceByExchangeBatch> otherResources,
+                                   Integer enterpriseOrganisationUuid) throws Exception;
+
+    /*public abstract void transform(ResourceByExchangeBatch resource,
                                  EnterpriseData data,
                                  Map<String, ResourceByExchangeBatch> otherResources,
-                                 Integer enterpriseOrganisationUuid) throws Exception;
+                                 Integer enterpriseOrganisationUuid) throws Exception;*/
 
 
-    protected static XMLGregorianCalendar convertDate(Date date) throws Exception {
+    /*protected static XMLGregorianCalendar convertDate(Date date) throws Exception {
 
         GregorianCalendar c = new GregorianCalendar();
         c.setTime(date);
         return DatatypeFactory.newInstance().newXMLGregorianCalendar(c);
-    }
+    }*/
 
     protected static Integer convertDatePrecision(TemporalPrecisionEnum precision) throws Exception {
         return new Integer(precision.getCalendarConstant());
@@ -99,7 +99,50 @@ public abstract class AbstractTransformer {
         return null;
     }
 
-    protected static <T extends BaseRecord> Integer findEnterpriseId(T enterpriseTable, Resource resource) throws Exception {
+    protected static Integer findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, Resource resource) throws Exception {
+        String resourceType = resource.getResourceType().toString();
+        UUID resourceId = UUID.fromString(resource.getId());
+        return findEnterpriseId(csvWriter, resourceType, resourceId);
+    }
+
+    protected static Integer findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, Reference reference) throws Exception {
+        ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
+        String resourceType = comps.getResourceType().toString();
+        UUID resourceId = UUID.fromString(comps.getId());
+        return findEnterpriseId(csvWriter, resourceType, resourceId);
+    }
+
+    protected static  Integer findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, ResourceByExchangeBatch resource) throws Exception {
+        return findEnterpriseId(csvWriter, resource.getResourceType(), resource.getResourceId());
+    }
+
+    private static Integer findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, UUID resourceId) throws Exception {
+        String enterpriseTableName = csvWriter.getFileNameWithoutExtension();
+        Integer ret = checkCacheForId(enterpriseTableName, resourceType, resourceId);
+        if (ret == null) {
+            ret = idMappingRepository.getEnterpriseIdMappingId(enterpriseTableName, resourceType, resourceId);
+        }
+        return ret;
+    }
+
+
+
+    protected static Integer createEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, ResourceByExchangeBatch resource) throws Exception {
+        String resourceType = resource.getResourceType();
+        UUID resourceId = resource.getResourceId();
+        return createEnterpriseId(csvWriter, resourceType, resourceId);
+    }
+
+    protected static Integer createEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, UUID resourceId) throws Exception {
+        String enterpriseTableName = csvWriter.getFileNameWithoutExtension();
+        int enterpriseId = getNextId(enterpriseTableName);
+        idMappingRepository.saveEnterpriseIdMax(enterpriseTableName, new Integer(enterpriseId));
+        idMappingRepository.saveEnterpriseIdMapping(enterpriseTableName, resourceType, resourceId, new Integer(enterpriseId));
+        addIdToCache(enterpriseTableName, resourceType, resourceId, enterpriseId);
+        return enterpriseId;
+    }
+
+    /*protected static <T extends BaseRecord> Integer findEnterpriseId(T enterpriseTable, Resource resource) throws Exception {
         String resourceType = resource.getResourceType().toString();
         UUID resourceId = UUID.fromString(resource.getId());
         return findEnterpriseId(enterpriseTable, resourceType, resourceId);
@@ -140,12 +183,9 @@ public abstract class AbstractTransformer {
         idMappingRepository.saveEnterpriseIdMapping(enterpriseTableName, resourceType, resourceId, new Integer(enterpriseId));
         addIdToCache(enterpriseTableName, resourceType, resourceId, enterpriseId);
         return enterpriseId;
-    }
-
-    /*protected static void setEnterpriseId(String resourceType, UUID resourceId, Integer enterpriseId) throws Exception {
-        idMappingRepository.saveEnterpriseIdMapping(resourceType, resourceId, enterpriseId);
-        addIdToCache(resourceType, resourceId, enterpriseId);
     }*/
+
+
 
     private static Integer checkCacheForId(String enterpriseTableName, String resourceType, UUID resourceId) throws Exception {
         return (Integer)cache.get(enterpriseTableName + ":" + resourceType + "/" + resourceId);
@@ -188,7 +228,32 @@ public abstract class AbstractTransformer {
         }
     }
 
-    protected static boolean mapIdAndMode(ResourceByExchangeBatch resource, BaseRecord baseRecord) throws Exception {
+    protected static Integer mapId(ResourceByExchangeBatch resource, AbstractEnterpriseCsvWriter csvWriter) throws Exception {
+        Integer enterpriseId = findEnterpriseId(csvWriter, resource);
+
+        if (resource.getIsDeleted()) {
+
+            //if it's a delete, but we've never sent it to enterprise, return false so we know not to send it now
+            if (enterpriseId == null) {
+                return null;
+            }
+
+            return enterpriseId;
+
+        } else {
+
+            if (enterpriseId == null) {
+                //if we don't have an schema ID, the resource is new, so should be an INSERT transaction
+                enterpriseId = createEnterpriseId(csvWriter, resource);
+            }
+
+            return enterpriseId;
+        }
+    }
+
+
+
+    /*protected static boolean mapIdAndMode(ResourceByExchangeBatch resource, BaseRecord baseRecord) throws Exception {
         Integer enterpriseId = findEnterpriseId(baseRecord, resource);
 
         if (resource.getIsDeleted()) {
@@ -215,19 +280,19 @@ public abstract class AbstractTransformer {
         }
 
         return true;
-    }
+    }*/
 
-    private static int getNextId(String resourceType) {
+    private static int getNextId(String enterpriseTableName) {
 
-        AtomicInteger ai = maxIdMap.get(resourceType);
+        AtomicInteger ai = maxIdMap.get(enterpriseTableName);
         if (ai == null) {
             futuresLock.lock();
 
-            ai = maxIdMap.get(resourceType);
+            ai = maxIdMap.get(enterpriseTableName);
             if (ai == null) {
-                int lastVal = idMappingRepository.getMaxEnterpriseId(resourceType);
+                int lastVal = idMappingRepository.getMaxEnterpriseId(enterpriseTableName);
                 ai = new AtomicInteger(lastVal);
-                maxIdMap.put(resourceType, ai);
+                maxIdMap.put(enterpriseTableName, ai);
             }
 
             futuresLock.unlock();

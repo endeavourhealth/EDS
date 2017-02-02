@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.ObservationReferral;
@@ -15,7 +15,6 @@ import org.hl7.fhir.instance.model.ReferralRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Map;
 
 public class ObservationReferralTransformer {
@@ -23,25 +22,23 @@ public class ObservationReferralTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(ObservationReferralTransformer.class);
 
     public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        for (AbstractCsvParser parser: parsers.get(ObservationReferral.class)) {
+        AbstractCsvParser parser = parsers.get(ObservationReferral.class);
+        while (parser.nextRecord()) {
 
-            while (parser.nextRecord()) {
-
-                try {
-                    createResource((ObservationReferral)parser, csvProcessor, csvHelper);
-                } catch (Exception ex) {
-                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
-                }
+            try {
+                createResource((ObservationReferral)parser, fhirResourceFiler, csvHelper);
+            } catch (Exception ex) {
+                fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
             }
         }
     }
 
     private static void createResource(ObservationReferral parser,
-                                       CsvProcessor csvProcessor,
+                                       FhirResourceFiler fhirResourceFiler,
                                        EmisCsvHelper csvHelper) throws Exception {
 
         ReferralRequest fhirReferral = new ReferralRequest();
@@ -61,10 +58,10 @@ public class ObservationReferralTransformer {
         if (!Strings.isNullOrEmpty(urgency)) {
             ReferralPriority fhirPriority = convertUrgency(urgency);
             if (fhirPriority != null) {
-                LOG.warn("Unammped Emis referral priority {}", urgency);
                 fhirReferral.setPriority(CodeableConceptHelper.createCodeableConcept(fhirPriority));
             } else {
                 //if the CSV urgency couldn't be mapped to a FHIR priority, then we can use free-text
+                LOG.warn("Unmapped Emis referral priority {}", urgency);
                 fhirReferral.setPriority(CodeableConceptHelper.createCodeableConcept(urgency));
             }
         }
@@ -73,9 +70,9 @@ public class ObservationReferralTransformer {
         if (!Strings.isNullOrEmpty(serviceType)) {
             ReferralType type = convertTye(serviceType);
             if (type != null) {
-                LOG.warn("Unammped Emis referral tyoe {}", serviceType);
                 fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(type));
             } else {
+                LOG.warn("Unmapped Emis referral type {}", serviceType);
                 fhirReferral.setType(CodeableConceptHelper.createCodeableConcept(serviceType));
             }
         }

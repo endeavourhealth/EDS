@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
@@ -14,31 +14,29 @@ import org.endeavourhealth.transform.fhir.QuantityHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 public class IssueRecordTransformer {
 
     public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        for (AbstractCsvParser parser: parsers.get(IssueRecord.class)) {
+        AbstractCsvParser parser = parsers.get(IssueRecord.class);
+        while (parser.nextRecord()) {
 
-            while (parser.nextRecord()) {
-
-                try {
-                    createResource((IssueRecord)parser, csvProcessor, csvHelper, version);
-                } catch (Exception ex) {
-                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
-                }
+            try {
+                createResource((IssueRecord)parser, fhirResourceFiler, csvHelper, version);
+            } catch (Exception ex) {
+                fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
             }
         }
     }
 
+
     private static void createResource(IssueRecord parser,
-                                       CsvProcessor csvProcessor,
+                                       FhirResourceFiler fhirResourceFiler,
                                        EmisCsvHelper csvHelper,
                                        String version) throws Exception {
 
@@ -54,7 +52,7 @@ public class IssueRecordTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(parser.getCurrentState(), patientGuid, fhirMedication);
+            fhirResourceFiler.deletePatientResource(parser.getCurrentState(), patientGuid, fhirMedication);
             return;
         }
 
@@ -124,7 +122,7 @@ public class IssueRecordTransformer {
             fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(enteredDateTime)));
         }
 
-        csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirMedication);
+        fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirMedication);
 
 /*
         //if this record is linked to a problem, store this relationship in the helper

@@ -15,8 +15,9 @@ final class ImmunisationTransformer
     public static Immunization transform(EventType eventType, String patientUuid) throws TransformException
     {
         Immunization immunization = new Immunization();
-        immunization.setId(eventType.getGUID());
         immunization.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_IMMUNIZATION));
+
+        immunization.setId(eventType.getGUID());
 
         immunization.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientUuid));
         immunization.setPerformer(ReferenceHelper.createReference(ResourceType.Practitioner, eventType.getOriginalAuthor().getUser().getGUID()));

@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.enterprise.outputModels;
 
 import org.apache.commons.csv.CSVFormat;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 public class Observation extends AbstractEnterpriseCsvWriter {
@@ -24,7 +25,7 @@ public class Observation extends AbstractEnterpriseCsvWriter {
                             Date clinicalEffectiveDate,
                             Integer datePrecisionId,
                             Long snomedConceptId,
-                            Double value,
+                            BigDecimal value,
                             String units,
                             String originalCode,
                             boolean isProblem,
@@ -39,7 +40,7 @@ public class Observation extends AbstractEnterpriseCsvWriter {
                 convertDate(clinicalEffectiveDate),
                 convertInt(datePrecisionId),
                 convertLong(snomedConceptId),
-                convertDouble(value),
+                convertBigDecimal(value),
                 units,
                 originalCode,
                 convertBoolean(isProblem),
@@ -61,7 +62,7 @@ public class Observation extends AbstractEnterpriseCsvWriter {
                 "value",
                 "units",
                 "original_code",
-                "isProblem",
+                "is_problem",
                 "original_term"
         };
     }
@@ -78,7 +79,7 @@ public class Observation extends AbstractEnterpriseCsvWriter {
                 Date.class,
                 Integer.class,
                 Long.class,
-                Double.class,
+                BigDecimal.class,
                 String.class,
                 String.class,
                 Boolean.TYPE,

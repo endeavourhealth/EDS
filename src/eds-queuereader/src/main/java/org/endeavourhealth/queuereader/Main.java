@@ -1,30 +1,18 @@
 package org.endeavourhealth.queuereader;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
-import org.endeavourhealth.core.cache.ObjectMapperPool;
+import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
-import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
-import org.endeavourhealth.core.data.audit.models.Exchange;
 import org.endeavourhealth.core.data.audit.models.ExchangeByService;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
-import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.System;
-import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
-import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.enterprise.EnterpriseFhirTransformer;
 import org.slf4j.Logger;
@@ -33,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -61,10 +48,10 @@ public class Main {
 			return;
 		}*/
 
-		if (args[0].equalsIgnoreCase("FixExchangeHeaders")) {
+		/*if (args[0].equalsIgnoreCase("FixExchangeHeaders")) {
 			fixExchangeHeaders();
 			return;
-		}
+		}*/
 
 		/*if (args[0].equalsIgnoreCase("FixExchangeProtocols")) {
 			fixExchangeProtocols();
@@ -290,7 +277,7 @@ public class Main {
 		LOG.info("Finished fixing exchange headers");
 	}*/
 
-	private static void fixExchangeHeaders() {
+	/*private static void fixExchangeHeaders() {
 		LOG.info("Fixing exchange headers");
 
 		AuditRepository auditRepository = new AuditRepository();
@@ -375,7 +362,7 @@ public class Main {
 		}
 
 		LOG.info("Finished fixing exchange headers");
-	}
+	}*/
 
 	private static void testConnection() {
 		try {
@@ -424,7 +411,7 @@ public class Main {
 
 		LOG.info("Starting Enterprise Streaming for " + serviceId);
 
-		LOG.info("Testing postgre connection");
+		LOG.info("Testing database connection");
 		testConnection();
 
 		Service service = new ServiceRepository().getById(serviceId);
@@ -438,6 +425,10 @@ public class Main {
 		//for (ExchangeByService exchangeByService: exchangeByServiceList) {
 			UUID exchangeId = exchangeByService.getExchangeId();
 
+			Exchange exchange = AuditWriter.readExchange(exchangeId);
+			String senderOrgUuidStr = exchange.getHeader(HeaderKeys.SenderOrganisationUuid);
+			UUID senderOrgUuid = UUID.fromString(senderOrgUuidStr);
+
 			//this one had 90,000 batches and doesn't need doing again
 			/*if (exchangeId.equals(UUID.fromString("b9b93be0-afd8-11e6-8c16-c1d5a00342f3"))) {
 				LOG.info("Skipping exchange " + exchangeId);
@@ -447,13 +438,13 @@ public class Main {
 			List<ExchangeBatch> exchangeBatches = new ExchangeBatchRepository().retrieveForExchangeId(exchangeId);
 			LOG.info("Processing exchange " + exchangeId + " with " + exchangeBatches.size() + " batches");
 
-			for (ExchangeBatch exchangeBatch : exchangeBatches) {
-
+			for (int j=0; j<exchangeBatches.size(); j++) {
+				ExchangeBatch exchangeBatch = exchangeBatches.get(j);
 				UUID batchId = exchangeBatch.getBatchId();
-				LOG.info("Processing exchange " + exchangeId + " and batch " + batchId);
+				LOG.info("Processing exchange " + exchangeId + " and batch " + batchId + " " + (j+1) + "/" + exchangeBatches.size());
 
 				try {
-					String outbound = EnterpriseFhirTransformer.transformFromFhir(serviceId, orgId, batchId, null);
+					String outbound = EnterpriseFhirTransformer.transformFromFhir(senderOrgUuid, batchId, null);
 					EnterpriseFiler.file(outbound);
 
 				} catch (Exception ex) {
@@ -461,6 +452,7 @@ public class Main {
 				}
 			}
 		}
+
 	}
 
 	/*private static void fixMissingExchanges() {

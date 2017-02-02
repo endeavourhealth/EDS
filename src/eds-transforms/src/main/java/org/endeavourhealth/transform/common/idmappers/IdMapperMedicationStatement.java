@@ -1,11 +1,15 @@
 package org.endeavourhealth.transform.common.idmappers;
 
+import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
+import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.MedicationStatement;
 import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.ResourceType;
 
 import java.util.UUID;
 
 public class IdMapperMedicationStatement extends BaseIdMapper {
+
     @Override
     public boolean mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         MedicationStatement medicationStatement = (MedicationStatement)resource;
@@ -50,5 +54,15 @@ public class IdMapperMedicationStatement extends BaseIdMapper {
         }
 
         return super.mapCommonResourceFields(medicationStatement, serviceId, systemId, mapResourceId);
+    }
+
+    @Override
+    public String getPatientId(Resource resource) throws PatientResourceException {
+
+        MedicationStatement medicationStatement = (MedicationStatement)resource;
+        if (medicationStatement.hasPatient()) {
+            return ReferenceHelper.getReferenceId(medicationStatement.getPatient(), ResourceType.Patient);
+        }
+        return null;
     }
 }

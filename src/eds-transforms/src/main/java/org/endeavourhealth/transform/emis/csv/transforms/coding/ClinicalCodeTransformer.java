@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
 import org.endeavourhealth.core.data.admin.CodeRepository;
 import org.endeavourhealth.core.data.admin.models.SnomedLookup;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
 import org.endeavourhealth.transform.emis.csv.CallableError;
@@ -29,8 +29,8 @@ public abstract class ClinicalCodeTransformer {
     private static CodeRepository repository = new CodeRepository();
 
     public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper,
                                  int maxFilingThreads) throws Exception {
 
@@ -41,15 +41,13 @@ public abstract class ClinicalCodeTransformer {
         //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
         //to parse any record in this file it a critical error
         try {
-            for (AbstractCsvParser parser: parsers.get(ClinicalCode.class)) {
+            AbstractCsvParser parser = parsers.get(ClinicalCode.class);
+            while (parser.nextRecord()) {
 
-                while (parser.nextRecord()) {
-
-                    try {
-                        transform((ClinicalCode)parser, csvProcessor, csvHelper, threadPool, version);
-                    } catch (Exception ex) {
-                        throw new TransformException(parser.getCurrentState().toString(), ex);
-                    }
+                try {
+                    transform((ClinicalCode)parser, fhirResourceFiler, csvHelper, threadPool, version);
+                } catch (Exception ex) {
+                    throw new TransformException(parser.getCurrentState().toString(), ex);
                 }
             }
 
@@ -58,6 +56,7 @@ public abstract class ClinicalCodeTransformer {
             handleErrors(errors);
         }
     }
+
 
     private static void handleErrors(List<CallableError> errors) throws Exception {
         if (errors == null || errors.isEmpty()) {
@@ -73,7 +72,7 @@ public abstract class ClinicalCodeTransformer {
     }
 
     private static void transform(ClinicalCode parser,
-                                  CsvProcessor csvProcessor,
+                                  FhirResourceFiler fhirResourceFiler,
                                   EmisCsvHelper csvHelper,
                                   ThreadPool threadPool,
                                   String version) throws Exception {

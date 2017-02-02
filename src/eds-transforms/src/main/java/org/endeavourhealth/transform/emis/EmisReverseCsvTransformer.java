@@ -6,7 +6,6 @@ import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.transform.EnterpriseIdMapRepository;
-import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
 import org.endeavourhealth.transform.common.AbstractCsvWriter;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.reverseCsv.schema.admin.Location;
@@ -143,12 +142,12 @@ public class EmisReverseCsvTransformer {
         return ret;
     }
 
-    private static EnterpriseData tranformResources(List<ResourceByExchangeBatch> resources, UUID orgId, Map<Class, AbstractCsvWriter> writers) throws Exception {
+    private static void tranformResources(List<ResourceByExchangeBatch> resources, UUID orgId, Map<Class, AbstractCsvWriter> writers) throws Exception {
 
         //hash the resources by reference to them, so we can process in a specific order
         Map<String, ResourceByExchangeBatch> resourcesMap = hashResourcesByReference(resources);
 
-        EnterpriseData data = new EnterpriseData();
+
 
         Organisation org = new OrganisationRepository().getById(orgId);
         String orgNationalId = org.getNationalId();
@@ -199,7 +198,6 @@ public class EmisReverseCsvTransformer {
             }
         }
 
-        return data;
     }
 
     private static void tranformResources(ResourceType resourceType,

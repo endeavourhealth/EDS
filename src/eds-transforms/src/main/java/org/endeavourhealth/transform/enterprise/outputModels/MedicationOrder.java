@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.enterprise.outputModels;
 
 import org.apache.commons.csv.CSVFormat;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 public class MedicationOrder extends AbstractEnterpriseCsvWriter {
@@ -25,10 +26,10 @@ public class MedicationOrder extends AbstractEnterpriseCsvWriter {
                             Integer datePrecisionId,
                             Long dmdId,
                             String dose,
-                            Double quantityValue,
+                            BigDecimal quantityValue,
                             String quantityUnit,
                             Integer durationDays,
-                            Double estimatedCost,
+                            BigDecimal estimatedCost,
                             Integer medicationStatementId,
                             String originalTerm) throws Exception {
 
@@ -42,10 +43,10 @@ public class MedicationOrder extends AbstractEnterpriseCsvWriter {
                 convertInt(datePrecisionId),
                 convertLong(dmdId),
                 dose,
-                convertDouble(quantityValue),
+                convertBigDecimal(quantityValue),
                 quantityUnit,
                 convertInt(durationDays),
-                convertDouble(estimatedCost),
+                convertBigDecimal(estimatedCost),
                 convertInt(medicationStatementId),
                 originalTerm);
     }
@@ -85,10 +86,10 @@ public class MedicationOrder extends AbstractEnterpriseCsvWriter {
                 Integer.class,
                 Long.class,
                 String.class,
-                Double.class,
+                BigDecimal.class,
                 String.class,
                 Integer.class,
-                Double.class,
+                BigDecimal.class,
                 Integer.class,
                 String.class
         };

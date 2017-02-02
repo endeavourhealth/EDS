@@ -1,21 +1,91 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.xml.enterprise.EnterpriseData;
-import org.endeavourhealth.core.xml.enterprise.Practitioner;
-import org.endeavourhealth.core.xml.enterprise.SaveMode;
+import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.schema.RegistrationType;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
 import java.util.Map;
 
 public class EpisodeOfCareTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(EpisodeOfCareTransformer.class);
 
     public void transform(ResourceByExchangeBatch resource,
+                          OutputContainer data,
+                          Map<String, ResourceByExchangeBatch> otherResources,
+                          Integer enterpriseOrganisationUuid) throws Exception {
+
+        org.endeavourhealth.transform.enterprise.outputModels.EpisodeOfCare model = data.getEpisodesOfCare();
+
+        Integer enterpriseId = mapId(resource, model);
+        if (enterpriseId == null) {
+            return;
+
+        } else if (resource.getIsDeleted()) {
+            model.writeDelete(enterpriseId.intValue());
+
+        } else {
+            EpisodeOfCare fhirEpisode = (EpisodeOfCare)deserialiseResouce(resource);
+
+            Reference patientReference = fhirEpisode.getPatient();
+            Integer enterprisePatientUuid = findEnterpriseId(data.getPatients(), patientReference);
+
+            int id;
+            int organisationId;
+            int patientId;
+            int registrationTypeId;
+            Date dateRegistered = null;
+            Date dateRegisteredEnd = null;
+            Integer usualGpPractitionerId = null;
+
+            id = enterpriseId.intValue();
+            organisationId = enterpriseOrganisationUuid.intValue();
+            patientId = enterprisePatientUuid.intValue();
+
+            if (fhirEpisode.hasCareManager()) {
+                Reference practitionerReference = fhirEpisode.getCareManager();
+                usualGpPractitionerId = findEnterpriseId(data.getPractitioners(), practitionerReference);
+            }
+
+            //the registration type is a field on the Patient resource, even though it should really be part of the episode
+            RegistrationType fhirRegistrationType = null;
+
+            Patient fhirPatient = (Patient)findResource(fhirEpisode.getPatient(), otherResources);
+            if (fhirPatient.hasExtension()) {
+                for (Extension extension: fhirPatient.getExtension()) {
+                    if (extension.getUrl().equals(FhirExtensionUri.PATIENT_REGISTRATION_TYPE)) {
+                        Coding coding = (Coding)extension.getValue();
+                        fhirRegistrationType = RegistrationType.fromCode(coding.getCode());
+
+                    }
+                }
+            }
+
+            registrationTypeId = fhirRegistrationType.ordinal();
+
+            Period period = fhirEpisode.getPeriod();
+            if (period.hasStart()) {
+                dateRegistered = period.getStart();
+            }
+            if (period.hasEnd()) {
+                dateRegisteredEnd = period.getEnd();
+            }
+
+            model.writeUpsert(id,
+                organisationId,
+                patientId,
+                registrationTypeId,
+                dateRegistered,
+                dateRegisteredEnd,
+                usualGpPractitionerId);
+        }
+    }
+
+    /*public void transform(ResourceByExchangeBatch resource,
                           EnterpriseData data,
                           Map<String, ResourceByExchangeBatch> otherResources,
                           Integer enterpriseOrganisationUuid) throws Exception {
@@ -65,7 +135,7 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
         }
 
         data.getEpisodeOfCare().add(model);
-    }
+    }*/
 
 
 }

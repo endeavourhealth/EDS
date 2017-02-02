@@ -16,8 +16,9 @@ final class FamilyHistoryTransformer
     public static FamilyMemberHistory transform(EventType eventType, String patientUuid) throws TransformException
     {
         FamilyMemberHistory familyMemberHistory = new FamilyMemberHistory();
-        familyMemberHistory.setId(eventType.getGUID());
         familyMemberHistory.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_FAMILY_MEMBER_HISTORY));
+
+        familyMemberHistory.setId(eventType.getGUID());
         familyMemberHistory.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientUuid));
 
         familyMemberHistory.setRelationship(getRelationship(eventType));

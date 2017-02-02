@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.common.idmappers;
 
+import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
 import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.Resource;
 
@@ -35,5 +36,12 @@ public class IdMapperPatient extends BaseIdMapper {
         }
 
         return super.mapCommonResourceFields(patient, serviceId, systemId, mapResourceId);
+    }
+
+    @Override
+    public String getPatientId(Resource resource) throws PatientResourceException {
+
+        Patient patient = (Patient)resource;
+        return patient.getId();
     }
 }

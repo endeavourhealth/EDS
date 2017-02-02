@@ -5,12 +5,12 @@ import java.io.File;
 public class CsvCurrentState {
 
     private String fileName;
-    private String fileDir;
+    //private String fileDir;
     private Long recordNumber;
 
     public CsvCurrentState(File file, long recordNumber) {
         this.fileName = file.getName();
-        this.fileDir = file.getParent();
+        //this.fileDir = file.getParent();
         this.recordNumber = new Long(recordNumber);
     }
 
@@ -18,19 +18,26 @@ public class CsvCurrentState {
         return fileName;
     }
 
-    public String getFileDir() {
+    /*public String getFileDir() {
         return fileDir;
-    }
+    }*/
 
     public Long getRecordNumber() {
         return recordNumber;
     }
 
     public String toString() {
-        String ret = fileDir + "/" + fileName;
+        String ret = fileName;
         if (recordNumber != null) {
             ret += " line: " + recordNumber;
         }
         return ret;
     }
+    /*public String toString() {
+        String ret = fileDir + "/" + fileName;
+        if (recordNumber != null) {
+            ret += " line: " + recordNumber;
+        }
+        return ret;
+    }*/
 }

@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
@@ -17,25 +17,24 @@ import java.util.UUID;
 public class SlotTransformer {
 
     public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                                 CsvProcessor csvProcessor,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        for (AbstractCsvParser parser: parsers.get(Slot.class)) {
+        AbstractCsvParser parser = parsers.get(Slot.class);
+        while (parser.nextRecord()) {
 
-            while (parser.nextRecord()) {
-
-                try {
-                    createSlotAndAppointment((Slot)parser, csvProcessor, csvHelper);
-                } catch (Exception ex) {
-                    csvProcessor.logTransformRecordError(ex, parser.getCurrentState());
-                }
+            try {
+                createSlotAndAppointment((Slot)parser, fhirResourceFiler, csvHelper);
+            } catch (Exception ex) {
+                fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
             }
         }
     }
 
+
     private static void createSlotAndAppointment(Slot parser,
-                                                 CsvProcessor csvProcessor,
+                                                 FhirResourceFiler fhirResourceFiler,
                                                  EmisCsvHelper csvHelper) throws Exception {
 
         String patientGuid = parser.getPatientGuid();
@@ -47,7 +46,7 @@ public class SlotTransformer {
 
         //the EMIS data contains thousands of appointments that refer to patients we don't have, so I'm explicitly
         //handling this here, and ignoring any Slot record that is in this state
-        UUID patientEdsId = IdHelper.getEdsResourceId(csvProcessor.getServiceId(), csvProcessor.getSystemId(), ResourceType.Patient, patientGuid);
+        UUID patientEdsId = IdHelper.getEdsResourceId(fhirResourceFiler.getServiceId(), fhirResourceFiler.getSystemId(), ResourceType.Patient, patientGuid);
         if (patientEdsId == null) {
             return;
         }
@@ -66,7 +65,7 @@ public class SlotTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted()) {
-            csvProcessor.deletePatientResource(parser.getCurrentState(), patientGuid, fhirSlot, fhirAppointment);
+            fhirResourceFiler.deletePatientResource(parser.getCurrentState(), patientGuid, fhirSlot, fhirAppointment);
             return;
         }
 
@@ -147,6 +146,6 @@ public class SlotTransformer {
             fhirAppointment.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.APPOINTMENT_LEFT, new DateTimeType(leftTime)));
         }
 
-        csvProcessor.savePatientResource(parser.getCurrentState(), patientGuid, fhirSlot, fhirAppointment);
+        fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirSlot, fhirAppointment);
     }
 }

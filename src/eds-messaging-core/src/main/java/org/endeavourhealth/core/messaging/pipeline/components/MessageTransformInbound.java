@@ -15,8 +15,12 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.TransformError;
+import org.endeavourhealth.transform.common.FhirDeltaResourceFilter;
+import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.common.exceptions.SoftwareNotSupportedException;
 import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.transform.emis.EmisOpenTransformer;
+import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,16 +119,16 @@ public class MessageTransformInbound extends PipelineComponent {
 
 			try {
 
-				if (software.equalsIgnoreCase("EMISCSV")) {
+				if (software.equalsIgnoreCase(MessageFormat.EMIS_CSV)) {
 					processEmisCsvTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
 
-				} else if (software.equalsIgnoreCase("EmisOpen")) {
+				} else if (software.equalsIgnoreCase(MessageFormat.EMIS_OPEN)) {
 					processEmisOpenTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
 
-				} else if (software.equalsIgnoreCase("OpenHR")) {
+				} else if (software.equalsIgnoreCase(MessageFormat.EMIS_OPEN_HR)) {
 					processEmisOpenHrTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
 
-				} else if (software.equalsIgnoreCase("TPPExtractService")) {
+				} else if (software.equalsIgnoreCase(MessageFormat.TPP_CSV)) {
 					processTppXmlTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
 
 				} else {
@@ -313,7 +317,20 @@ public class MessageTransformInbound extends PipelineComponent {
 	private void processEmisOpenTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
 												String software, TransformError currentErrors, List<UUID> batchIds,
 												TransformError previousErrors) throws Exception {
-		//TODO - plug in EMIS OPEN transform
+
+		//config
+		int maxFilingThreads = config.getFilingThreadLimit();
+
+		//payload
+		String xmlPayload = exchange.getBody();
+		UUID exchangeId = exchange.getExchangeId();
+
+		//transform from XML -> FHIR
+		List<Resource> resources = EmisOpenTransformer.toFhirFullRecord(xmlPayload);
+
+		//map IDs, compute delta and file
+		FhirDeltaResourceFilter filer = new FhirDeltaResourceFilter(serviceId, systemId, maxFilingThreads);
+		filer.process(resources, exchangeId, currentErrors, batchIds);
 	}
 
 	private void processEmisOpenHrTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,

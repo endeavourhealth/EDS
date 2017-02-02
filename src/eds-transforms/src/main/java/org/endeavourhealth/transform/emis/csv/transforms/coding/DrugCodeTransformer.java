@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.CallableError;
 import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
@@ -18,11 +18,10 @@ import java.util.concurrent.Callable;
 
 public class DrugCodeTransformer {
 
-
     public static void transform(String version,
-                                 Map<Class, List<AbstractCsvParser>> parsers,
-                               CsvProcessor csvProcessor,
-                               EmisCsvHelper csvHelper,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
+                                 EmisCsvHelper csvHelper,
                                  int maxFilingThreads) throws Exception {
 
         //inserting the entries into the IdCodeMap table is a lot slower than the rest of this
@@ -32,15 +31,13 @@ public class DrugCodeTransformer {
         //unlike most of the other parsers, we don't handle record-level exceptions and continue, since a failure
         //to parse any record in this file it a critical error
         try {
-            for (AbstractCsvParser parser: parsers.get(DrugCode.class)) {
+            AbstractCsvParser parser = parsers.get(DrugCode.class);
+            while (parser.nextRecord()) {
 
-                while (parser.nextRecord()) {
-
-                    try {
-                        transform((DrugCode)parser, csvProcessor, csvHelper, threadPool);
-                    } catch (Exception ex) {
-                        throw new TransformException(parser.getCurrentState().toString(), ex);
-                    }
+                try {
+                    transform((DrugCode)parser, fhirResourceFiler, csvHelper, threadPool);
+                } catch (Exception ex) {
+                    throw new TransformException(parser.getCurrentState().toString(), ex);
                 }
             }
 
@@ -51,7 +48,7 @@ public class DrugCodeTransformer {
     }
 
     private static void transform(DrugCode parser,
-                                  CsvProcessor csvProcessor,
+                                  FhirResourceFiler fhirResourceFiler,
                                   EmisCsvHelper csvHelper,
                                   ThreadPool threadPool) throws Exception {
 

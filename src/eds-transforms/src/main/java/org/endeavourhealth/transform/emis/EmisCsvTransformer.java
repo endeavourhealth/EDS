@@ -6,7 +6,7 @@ import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.Error;
 import org.endeavourhealth.core.xml.transformError.TransformError;
-import org.endeavourhealth.transform.common.CsvProcessor;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.exceptions.FileFormatException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -58,8 +58,8 @@ public abstract class EmisCsvTransformer {
     public static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
 
     public static void transform(UUID exchangeId, String exchangeBody, UUID serviceId, UUID systemId,
-                                       TransformError transformError, List<UUID> batchIds, TransformError previousErrors,
-                                       String sharedStoragePath, int maxFilingThreads) throws Exception {
+                                 TransformError transformError, List<UUID> batchIds, TransformError previousErrors,
+                                 String sharedStoragePath, int maxFilingThreads) throws Exception {
 
         //for EMIS CSV, the exchange body will be a list of files received
         String[] files = exchangeBody.split(java.lang.System.lineSeparator());
@@ -71,40 +71,25 @@ public abstract class EmisCsvTransformer {
 
         //we ignore the version already set in the exchange header, as Emis change versions without any notification,
         //so we dynamically work out the version when we load the first set of files
-        String version = null;
+        String version = determineVersion(orgDirectory);;
         //validateVersion(version);
 
         //the processor is responsible for saving FHIR resources
-        CsvProcessor processor = new CsvProcessor(exchangeId, serviceId, systemId, transformError, batchIds, maxFilingThreads);
+        FhirResourceFiler processor = new FhirResourceFiler(exchangeId, serviceId, systemId, transformError, batchIds, maxFilingThreads);
 
-        Map<Class, List<AbstractCsvParser>> allParsers = new HashMap<>();
+        Map<Class, AbstractCsvParser> allParsers = new HashMap<>();
 
         try {
 
-            List<File> processingIdDirectories = getProcessingIdDirectoriesInOrder(orgDirectory);
-            for (int i=0; i<processingIdDirectories.size(); i++) {
-                File processingIdDirectory = processingIdDirectories.get(i);
+            List<AbstractCsvParser> parsers = new ArrayList<>();
 
-                if (version == null) {
-                    version = determineVersion(processingIdDirectory);
-                }
+            //validate the files and, if this the first batch, open the parsers to validate the file contents (columns)
+            validateAndOpenParsers(orgDirectory, version, true, parsers);
 
-                List<AbstractCsvParser> parsers = new ArrayList<>();
-
-                //validate the files and, if this the first batch, open the parsers to validate the file contents (columns)
-                boolean openParsers = i==0;
-                validateAndOpenParsers(processingIdDirectory, version, openParsers, parsers);
-
-                //add the parsers to the larger map, keyed on class
-                for (AbstractCsvParser parser: parsers) {
-                    Class cls = parser.getClass();
-                    List list = allParsers.get(cls);
-                    if (list == null) {
-                        list = new ArrayList<>();
-                        allParsers.put(cls, list);
-                    }
-                    list.add(parser);
-                }
+            //add the parsers to the larger map, keyed on class
+            for (AbstractCsvParser parser: parsers) {
+                Class cls = parser.getClass();
+                allParsers.put(cls, parser);
             }
 
             LOG.trace("Transforming EMIS CSV content in {}", orgDirectory);
@@ -112,22 +97,15 @@ public abstract class EmisCsvTransformer {
 
         } finally {
 
-            closeParsers(allParsers);
+            closeParsers(allParsers.values());
         }
 
         LOG.trace("Completed transform for service {} - waiting for resources to commit to DB", serviceId);
         processor.waitToFinish();
     }
 
-    private static void closeParsers(Map<Class, List<AbstractCsvParser>> allParsers) {
 
-        for (Class cls: allParsers.keySet()) {
-            List<AbstractCsvParser> parsers = allParsers.get(cls);
-            closeParsers(parsers);
-        }
-    }
-
-    private static void closeParsers(List<AbstractCsvParser> parsers) {
+    private static void closeParsers(Collection<AbstractCsvParser> parsers) {
         for (AbstractCsvParser parser : parsers) {
             try {
                 parser.close();
@@ -136,30 +114,6 @@ public abstract class EmisCsvTransformer {
             }
         }
     }
-
-    private static List<File> getProcessingIdDirectoriesInOrder(File rootDir) {
-
-        //the org directory contains a sub-directory for each processing ID, which must be processed in order
-        List<Integer> processingIds = new ArrayList<>();
-        Map<Integer, File> hmFiles = new HashMap<>();
-        for (File file: rootDir.listFiles()) {
-            Integer processingId = Integer.valueOf(file.getName());
-            processingIds.add(processingId);
-            hmFiles.put(processingId, file);
-        }
-
-        Collections.sort(processingIds);
-
-        List<File> ret = new ArrayList<>();
-
-        for (Integer processingId: processingIds) {
-            File f = hmFiles.get(processingId);
-            ret.add(f);
-        }
-
-        return ret;
-    }
-
 
     /**
      * the Emis schema changes without notice, so rather than define the version in the SFTP reader,
@@ -192,19 +146,7 @@ public abstract class EmisCsvTransformer {
         throw new TransformException("Unable to determine version for EMIS CSV", lastException);
     }
 
-    /*private static void validateVersion(String version) throws Exception {
 
-        if (!version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_0)
-                && !version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_1)
-                && !version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_3)
-                && !version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_4)) {
-            throw new TransformException("Unsupported version for EMIS CSV: " + version);
-        }
-    }*/
-
-    /**
-     * validates that all the files in the array are in the expected directory structure of org folder -> processing ID folder
-     */
     private static File validateAndFindCommonDirectory(String sharedStoragePath, String[] files) throws Exception {
         String organisationDir = null;
 
@@ -217,8 +159,7 @@ public abstract class EmisCsvTransformer {
             //LOG.info("Successfully found file {} in shared storage {}", file, sharedStoragePath);
 
             try {
-                File processingIdDir = f.getParentFile();
-                File orgDir = processingIdDir.getParentFile();
+                File orgDir = f.getParentFile();
 
                 if (organisationDir == null) {
                     organisationDir = orgDir.getAbsolutePath();
@@ -321,14 +262,13 @@ public abstract class EmisCsvTransformer {
     }
 
 
-    private static String findDataSharingAgreementGuid(Map<Class, List<AbstractCsvParser>> parsers) throws Exception {
+    private static String findDataSharingAgreementGuid(Map<Class, AbstractCsvParser> parsers) throws Exception {
 
         //we need a file name to work out the data sharing agreement ID, so just the first file we can find
         File f = parsers
                 .values()
                 .iterator()
                 .next()
-                .get(0)
                 .getFile();
 
         String name = Files.getNameWithoutExtension(f.getName());
@@ -339,90 +279,84 @@ public abstract class EmisCsvTransformer {
         return toks[4];
     }
 
-
     private static void transformParsers(String version,
-                                        Map<Class, List<AbstractCsvParser>> parsers,
-                                        CsvProcessor csvProcessor,
-                                        TransformError previousErrors,
+                                         Map<Class, AbstractCsvParser> parsers,
+                                         FhirResourceFiler fhirResourceFiler,
+                                         TransformError previousErrors,
                                          int maxFilingThreads) throws Exception {
 
         EmisCsvHelper csvHelper = new EmisCsvHelper(findDataSharingAgreementGuid(parsers));
 
         //if this is the first extract for this organisation, we need to apply all the content of the admin resource cache
-        if (!new AuditRepository().isServiceStarted(csvProcessor.getServiceId(), csvProcessor.getSystemId())) {
-            LOG.trace("Applying admin resource cache for service {} and system {}", csvProcessor.getServiceId(), csvProcessor.getSystemId());
-            csvHelper.applyAdminResourceCache(csvProcessor);
+        if (!new AuditRepository().isServiceStarted(fhirResourceFiler.getServiceId(), fhirResourceFiler.getSystemId())) {
+            LOG.trace("Applying admin resource cache for service {} and system {}", fhirResourceFiler.getServiceId(), fhirResourceFiler.getSystemId());
+            csvHelper.applyAdminResourceCache(fhirResourceFiler);
         }
 
         //these transforms don't create resources themselves, but cache data that the subsequent ones rely on
-        ClinicalCodeTransformer.transform(version, parsers, csvProcessor, csvHelper, maxFilingThreads);
-        DrugCodeTransformer.transform(version, parsers, csvProcessor, csvHelper, maxFilingThreads);
-        OrganisationLocationTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        SessionUserTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        ObservationPreTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        DrugRecordPreTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        IssueRecordPreTransformer.transform(version, parsers, csvProcessor, csvHelper);
+        ClinicalCodeTransformer.transform(version, parsers, fhirResourceFiler, csvHelper, maxFilingThreads);
+        DrugCodeTransformer.transform(version, parsers, fhirResourceFiler, csvHelper, maxFilingThreads);
+        OrganisationLocationTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        SessionUserTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        ObservationPreTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        DrugRecordPreTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        IssueRecordPreTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
 
         //before getting onto the files that actually create FHIR resources, we need to
         //work out what record numbers to process, if we're re-running a transform
         findRecordsToProcess(parsers, previousErrors);
 
         //run the transforms for non-patient resources
-        LocationTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        OrganisationTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        UserInRoleTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        SessionTransformer.transform(version, parsers, csvProcessor, csvHelper);
+        LocationTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        OrganisationTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        UserInRoleTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        SessionTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
 
         //note the order of these transforms is important, as consultations should be before obs etc.
-        PatientTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        ConsultationTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        IssueRecordTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        DrugRecordTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        SlotTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        DiaryTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        ObservationReferralTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        ProblemTransformer.transform(version, parsers, csvProcessor, csvHelper);
-        ObservationTransformer.transform(version, parsers, csvProcessor, csvHelper);
+        PatientTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        ConsultationTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        IssueRecordTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        DrugRecordTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        SlotTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        DiaryTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        ObservationReferralTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        ProblemTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        ObservationTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
 
         //if we have any new Obs, Conditions, Medication etc. that reference pre-existing parent obs or problems,
         //then we need to retrieve the existing resources and update them
-        csvHelper.processRemainingObservationParentChildLinks(csvProcessor);
+        csvHelper.processRemainingObservationParentChildLinks(fhirResourceFiler);
 
         //if we have any new Obs etc. that refer to pre-existing problems, we need to update the existing FHIR Problem
-        csvHelper.processRemainingProblemRelationships(csvProcessor);
+        csvHelper.processRemainingProblemRelationships(fhirResourceFiler);
 
         //if we have any changes to the staff in pre-existing sessions, we need to update the existing FHIR Schedules
-        csvHelper.processRemainingSessionPractitioners(csvProcessor);
+        csvHelper.processRemainingSessionPractitioners(fhirResourceFiler);
 
         //process any changes to ethnicity or marital status, without a change to the Patient
-        csvHelper.processRemainingEthnicitiesAndMartialStatuses(csvProcessor);
+        csvHelper.processRemainingEthnicitiesAndMartialStatuses(fhirResourceFiler);
 
         //process any changes to Org-Location links without a change to the Location itself
-        csvHelper.processRemainingOrganisationLocationMappings(csvProcessor);
+        csvHelper.processRemainingOrganisationLocationMappings(fhirResourceFiler);
 
         //process any changes to Problems that didn't have an associated Observation change too
-        csvHelper.processRemainingProblems(csvProcessor);
+        csvHelper.processRemainingProblems(fhirResourceFiler);
     }
 
 
-
-
-    public static void findRecordsToProcess(Map<Class, List<AbstractCsvParser>> allParsers, TransformError previousErrors) throws Exception {
+    public static void findRecordsToProcess(Map<Class, AbstractCsvParser> allParsers, TransformError previousErrors) throws Exception {
 
         for (Class cls: allParsers.keySet()) {
-            List<AbstractCsvParser> parsers = allParsers.get(cls);
-            for (AbstractCsvParser parser: parsers) {
+            AbstractCsvParser parser = allParsers.get(cls);
 
-                String fileName = parser.getFile().getName();
-                String processingIdStr = parser.getFile().getParent();
+            String fileName = parser.getFile().getName();
 
-                Set<Long> recordNumbers = findRecordNumbersToProcess(fileName, processingIdStr, previousErrors);
-                parser.setRecordNumbersToProcess(recordNumbers);
-            }
+            Set<Long> recordNumbers = findRecordNumbersToProcess(fileName, previousErrors);
+            parser.setRecordNumbersToProcess(recordNumbers);
         }
     }
 
-    private static Set<Long> findRecordNumbersToProcess(String fileName, String processingIdStr, TransformError previousErrors) {
+    private static Set<Long> findRecordNumbersToProcess(String fileName, TransformError previousErrors) {
 
         //if we're running for the first time, then return null to process the full file
         if (previousErrors == null) {
@@ -434,34 +368,21 @@ public abstract class EmisCsvTransformer {
             return null;
         }
 
-        //if we previously had a processing ID-level error, then we want to process the full file
-        /*for (Error error: previousErrors.getError()) {
-
-            String errorProcessingId = TransformErrorUtility.findArgumentValue(error, TransformErrorUtility.ARG_EMIS_CSV_PROCESSING_ID);
-            if (errorProcessingId.equals(processingIdStr)
-                    && !TransformErrorUtility.containsArgument(error, TransformErrorUtility.ARG_EMIS_CSV_FILE)) {
-                return null;
-            }
-        }*/
-
         //if we make it to here, we only want to process specific record numbers in our file, or even none, if there were
         //no previous errors processing this specific file
         HashSet<Long> recordNumbers = new HashSet<>();
 
         for (Error error: previousErrors.getError()) {
 
-            String errorProcessingId = TransformErrorUtility.findArgumentValue(error, TransformErrorUtility.ARG_EMIS_CSV_DIRECTORY);
-            if (errorProcessingId.equals(processingIdStr)) {
+            String errorFileName = TransformErrorUtility.findArgumentValue(error, TransformErrorUtility.ARG_EMIS_CSV_FILE);
+            if (errorFileName.equals(fileName)) {
 
-                String errorFileName = TransformErrorUtility.findArgumentValue(error, TransformErrorUtility.ARG_EMIS_CSV_FILE);
-                if (errorFileName.equals(fileName)) {
-
-                    String errorRecordNumber = TransformErrorUtility.findArgumentValue(error, TransformErrorUtility.ARG_EMIS_CSV_RECORD_NUMBER);
-                    recordNumbers.add(new Long(errorRecordNumber));
-                }
+                String errorRecordNumber = TransformErrorUtility.findArgumentValue(error, TransformErrorUtility.ARG_EMIS_CSV_RECORD_NUMBER);
+                recordNumbers.add(new Long(errorRecordNumber));
             }
         }
 
         return recordNumbers;
     }
+
 }
