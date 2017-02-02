@@ -93,7 +93,8 @@ export class QueueingListComponent {
 	}
 
 	bindingExists(item: RabbitBinding) {
-		if ($.grep(this.routings, function(e:Routing) { return e.routeKey === item.routing_key; }).length === 0)
+		let matches : Routing[] = $.grep(this.routings, function(e:Routing) { return e.routeKey === item.routing_key; });
+		if (!matches || matches.length === 0)
 			return false;
 		return true;
 	}
