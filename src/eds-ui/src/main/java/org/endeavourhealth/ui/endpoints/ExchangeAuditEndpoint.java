@@ -171,7 +171,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         UUID exchangeUuid = exchange.getExchangeId();
 
-        if (multicastHeader.equalsIgnoreCase(HeaderKeys.BatchIds)) {
+        if (multicastHeader.equalsIgnoreCase(HeaderKeys.BatchIdsJson)) {
 
             ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
             List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
@@ -182,7 +182,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                     .collect(Collectors.toList());
             try {
                 String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchUuids.toArray());
-                exchange.setHeader(HeaderKeys.BatchIds, batchUuidsStr);
+                exchange.setHeader(HeaderKeys.BatchIdsJson, batchUuidsStr);
 
             } catch (JsonProcessingException e) {
                 LOG.error("Failed to populate batch IDs for exchange " + exchangeUuid, e);

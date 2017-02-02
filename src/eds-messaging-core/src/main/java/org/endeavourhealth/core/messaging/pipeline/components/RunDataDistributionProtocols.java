@@ -10,6 +10,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +33,14 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
 		// Get the batch Id and list of protocols to run on it
-		String batchId = exchange.getHeader(HeaderKeys.BatchIds);
+		//String batchId = exchange.getHeader(HeaderKeys.BatchIdsJson);
+		String batchId = null;
+		String batchIdJson = exchange.getHeader(HeaderKeys.BatchIdsJson);
+		try {
+			batchId = ObjectMapperPool.getInstance().readValue(batchIdJson, String.class);
+		} catch (Exception ex) {
+			throw new PipelineException("Error reading from JSON " + batchIdJson, ex);
+		}
 
 		List<LibraryItem> protocolsToRun = getProtocols(exchange);
 		//LibraryItem[] protocolsToRun = getProtocols(exchange);
@@ -41,16 +49,26 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		// Run each protocol, creating a transformation batch for each
 		// (Contains list of relevant resources and subscriber service contracts)
 		for (LibraryItem protocol : protocolsToRun) {
+
+			List<ServiceContract> subscribers = protocol
+					.getProtocol()
+					.getServiceContract()
+					.stream()
+					.filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
+					.collect(Collectors.toList());
+
+			//if there's no subscribers on this protocol, just skip it
+			if (subscribers.isEmpty()) {
+				continue;
+			}
+
 			TransformBatch transformBatch = new TransformBatch();
 			transformBatch.setBatchId(UUID.fromString(batchId));
 			transformBatch.setProtocolId(UUID.fromString(protocol.getUuid()));
-			transformBatch.getSubscribers().addAll(
-				protocol.getProtocol().getServiceContract().stream()
-					.filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
-					.collect(Collectors.toList())
-			);
-			// Run DDP
-			// Add relevant resources to transformBatch.getResourceIds()
+			transformBatch.setSubscribers(subscribers);
+
+			//TODO - apply protocol cohort filtering
+			//TODO - apply protocol dataset filtering
 
 			transformBatches.add(transformBatch);
 		}

@@ -646,7 +646,7 @@ public class Main {
 			}*//*
 
 			try {
-				headers.remove(HeaderKeys.BatchIds);
+				headers.remove(HeaderKeys.BatchIdsJson);
 				String newHeaderJson = ObjectMapperPool.getInstance().writeValueAsString(headers);
 				exchange.setHeaders(newHeaderJson);
 
@@ -656,7 +656,7 @@ public class Main {
 				LOG.error("Failed to populate batch IDs for exchange " + exchangeUuid, e);
 			}
 
-			if (!headers.containsKey(HeaderKeys.BatchIds)) {
+			if (!headers.containsKey(HeaderKeys.BatchIdsJson)) {
 
 				//fix the batch IDs not being in the exchange
 				List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
@@ -668,7 +668,7 @@ public class Main {
 							.collect(Collectors.toList());
 					try {
 						String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchUuids.toArray());
-						headers.put(HeaderKeys.BatchIds, batchUuidsStr);
+						headers.put(HeaderKeys.BatchIdsJson, batchUuidsStr);
 						String newHeaderJson = ObjectMapperPool.getInstance().writeValueAsString(headers);
 						exchange.setHeaders(newHeaderJson);
 

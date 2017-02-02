@@ -86,7 +86,7 @@ public class MessageTransformInbound extends PipelineComponent {
 
 			//update the Exchange with the batch IDs, for the next step in the pipeline
 			String batchIdString = convertUUidsToStrings(batchIds);
-			exchange.setHeader(HeaderKeys.BatchIds, batchIdString);
+			exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
 
 			LOG.trace("Message transformed (inbound)");
 

@@ -74,8 +74,12 @@ public class OrganisationTransformer {
         }
 
         String mainLocationGuid = parser.getMainLocationGuid();
-        Reference fhirReference = csvHelper.createLocationReference(mainLocationGuid);
-        fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ORGANISATION_MAIN_LOCATION, fhirReference));
+
+        //latest Emis data (31 Jan 2017) has a null record for this value, so handle it being missing
+        if (!Strings.isNullOrEmpty(mainLocationGuid)) {
+            Reference fhirReference = csvHelper.createLocationReference(mainLocationGuid);
+            fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ORGANISATION_MAIN_LOCATION, fhirReference));
+        }
 
         fhirResourceFiler.saveAdminResource(parser.getCurrentState(), fhirOrganisation);
 

@@ -36,7 +36,15 @@ public class TransformBatch {
 		return resourceIds;
 	}
 
+	public void setResourceIds(Map<ResourceType, List<UUID>> resourceIds) {
+		this.resourceIds = resourceIds;
+	}
+
 	public List<ServiceContract> getSubscribers() {
 		return subscribers;
+	}
+
+	public void setSubscribers(List<ServiceContract> subscribers) {
+		this.subscribers = subscribers;
 	}
 }
