@@ -21,7 +21,7 @@ public abstract class HeaderKeys {
 	public static final String MessageFormat = "MessageFormat";
 
 	// Transform
-	public static final String BatchIdsJson = "BatchIdsJson";
+	public static final String BatchIdsJson = "BatchIds";
 	public static final String DestinationAddress = "DestinationAddress";
 	public static final String TransformBatch = "TransformBatch";
 	public static final String Protocols = "Protocols";
