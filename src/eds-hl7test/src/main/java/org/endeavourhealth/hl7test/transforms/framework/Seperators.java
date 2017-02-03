@@ -65,6 +65,13 @@ public class Seperators {
         return this;
     }
 
+    public String getMsh2Field() {
+        return this.getComponentSeperator() +
+                this.getRepetitionSeperator() +
+                this.getEscapeCharacter() +
+                this.getSubcomponentSeperator();
+    }
+
     public boolean areSeperatorsUnique() {
         List<String> seperators = Arrays.asList(this.fieldSeperator, this.componentSeperator, this.repetitionSeperator, this.escapeCharacter, this.subcomponentSeperator);
         return (seperators.stream().distinct().count() == seperators.size());

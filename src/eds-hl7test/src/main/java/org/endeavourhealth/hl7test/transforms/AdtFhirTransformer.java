@@ -2,7 +2,7 @@ package org.endeavourhealth.hl7test.transforms;
 
 import org.endeavourhealth.hl7test.transforms.framework.Message;
 import org.endeavourhealth.hl7test.transforms.framework.ParseException;
-import org.endeavourhealth.hl7test.transforms.framework.segments.MshSegment;
+import org.endeavourhealth.hl7test.transforms.framework.namedsegments.MshSegment;
 
 public class AdtFhirTransformer {
     public static String transform(String adtMessage) throws ParseException {
@@ -11,6 +11,8 @@ public class AdtFhirTransformer {
 
         MshSegment segment = (MshSegment)message.getSegment("MSH");
 
-        return segment.getEncodingCharacters();
+        return "Sending application " + segment.getSendingApplication()
+                + "\n" + segment.getDateTimeOfMessage().toString()
+                + "\n" + segment.getMessageType();
     }
 }

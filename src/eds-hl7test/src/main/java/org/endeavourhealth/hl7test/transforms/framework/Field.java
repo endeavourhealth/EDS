@@ -1,20 +1,29 @@
 package org.endeavourhealth.hl7test.transforms.framework;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class Field {
+    private static final int FIRST = 0;
+
     private String field;
     private Seperators seperators;
-    protected List<String> components;
+    protected List<List<String>> repetitionsAndComponents = new ArrayList<>();
+
+    private Field() {
+    }
 
     public Field(String field, Seperators seperators) {
+        Validate.notNull(field);
+        Validate.notNull(seperators);
+
         this.field = field;
         this.seperators = seperators;
+
+        this.parse();
     }
 
     public String getAsString() {
@@ -23,17 +32,18 @@ public class Field {
 
     public String getComponent(int componentNumber) {
         int componentIndex = componentNumber - 1;
-
-        if ((componentIndex >= 0) && (componentIndex < (components.size() - 1)))
-            return components.get(componentIndex);
-
-        return null;
+        return Helpers.getSafely(Helpers.getSafely(this.repetitionsAndComponents, FIRST), componentIndex);
     }
 
     private void parse() {
-        this.components = new ArrayList<>();
+        if (this.field.equals(this.seperators.getMsh2Field())) {
+            this.repetitionsAndComponents = Arrays.asList(new List[]{(Arrays.asList(new String[]{this.field}))});
+            return;
+        }
 
-        components = Arrays.stream(StringUtils.split(this.field, seperators.getComponentSeperator()))
-                .collect(Collectors.toList());
+        List<String> fieldRepetitions = Helpers.split(this.field, seperators.getRepetitionSeperator(), true);
+
+        for (String fieldRepetition : fieldRepetitions)
+            this.repetitionsAndComponents.add(Helpers.split(fieldRepetition, seperators.getComponentSeperator(), true));
     }
 }

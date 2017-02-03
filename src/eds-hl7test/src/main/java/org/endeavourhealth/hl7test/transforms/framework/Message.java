@@ -1,7 +1,6 @@
 package org.endeavourhealth.hl7test.transforms.framework;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.hl7test.transforms.framework.segments.Segment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,7 +15,7 @@ public class Message {
 
     private String message;
     private Seperators seperators;
-    private List<Segment> segments;
+    private List<Segment> segments = new ArrayList<>();;
 
     public Message(String message) throws ParseException {
         if (StringUtils.isBlank(message))
@@ -29,12 +28,7 @@ public class Message {
 
     public Segment getSegment(String segmentName) throws ParseException {
         List<Segment> segments = getSegments(segmentName);
-
-        if (segments != null)
-            if (segments.size() > 0)
-                return segments.get(FIRST);
-
-        return null;
+        return Helpers.getSafely(segments, FIRST);
     }
 
     public List<Segment> getSegments(String segmentName) throws ParseException {
@@ -100,9 +94,7 @@ public class Message {
     }
 
     private void parseSegments() throws ParseException {
-        this.segments = new ArrayList<>();
-
-        List<String> lines = Arrays.asList(StringUtils.split(this.message, this.seperators.getLineSeperator()));
+        List<String> lines = Helpers.split(this.message, this.seperators.getLineSeperator(), false);
 
         for (String line : lines)
             this.segments.add(Segment.parse(line, this.seperators));
