@@ -1,12 +1,14 @@
 package org.endeavourhealth.hl7test.transforms.framework;
 
 import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.hl7test.transforms.framework.segments.Segment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class Parser {
+public class Message {
     private static final String CR = "\r";
     private static final String LF = "\n";
     private static final int FIRST = 0;
@@ -16,12 +18,39 @@ public class Parser {
     private Seperators seperators;
     private List<Segment> segments;
 
-    public Parser(String message) throws ParseException {
+    public Message(String message) throws ParseException {
         if (StringUtils.isBlank(message))
             throw new ParseException("message is blank");
 
-        this.message = message;
+        parse(message);
+    }
 
+    //region ** Accessors **
+
+    public Segment getSegment(String segmentName) throws ParseException {
+        List<Segment> segments = getSegments(segmentName);
+
+        if (segments != null)
+            if (segments.size() > 0)
+                return segments.get(FIRST);
+
+        return null;
+    }
+
+    public List<Segment> getSegments(String segmentName) throws ParseException {
+        if (StringUtils.isBlank(segmentName))
+            throw new ParseException("segmentName is blank");
+
+        return this.segments
+                .stream()
+                .filter(t -> t.getSegmentName().equals(segmentName))
+                .collect(Collectors.toList());
+    }
+
+    //region ** Parsing **
+
+    private void parse(String message) throws ParseException {
+        this.message = message;
         normaliseLineEndings();
         detectSeperators();
         parseSegments();
@@ -42,7 +71,6 @@ public class Parser {
     }
 
     private void detectSeperators() throws ParseException {
-
         this.seperators = new Seperators();
 
         this.seperators.setLineSeperator(CR);
@@ -72,15 +100,13 @@ public class Parser {
     }
 
     private void parseSegments() throws ParseException {
-        this.segments = new ArrayList<Segment>();
+        this.segments = new ArrayList<>();
 
         List<String> lines = Arrays.asList(StringUtils.split(this.message, this.seperators.getLineSeperator()));
 
         for (String line : lines)
-            this.segments.add(new Segment(line, this.seperators));
+            this.segments.add(Segment.parse(line, this.seperators));
     }
 
-    public Segment getFirstSegment() {
-        return this.segments.get(0);
-    }
+    //endregion
 }
