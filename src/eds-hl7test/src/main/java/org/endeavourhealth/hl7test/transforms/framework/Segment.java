@@ -54,6 +54,24 @@ public class Segment {
         return Helpers.getSafely(this.fields, fieldIndex);
     }
 
+    public <T extends Datatype> T getFieldDatatype(int fieldNumber, Class<T> datatype) {
+        Field field = getField(fieldNumber);
+
+        if (field == null)
+            return null;
+
+        return field.getDatatype(datatype);
+    }
+
+    public <T extends Datatype> List<T> getFieldDatatypes(int fieldNumber, Class<T> datatype) {
+        Field field = getField(fieldNumber);
+
+        if (field == null)
+            return null;
+
+        return field.getDatatypes(datatype);
+    }
+
     public String getComponentAsString(int fieldNumber, int componentNumber) {
         Field field = getField(fieldNumber);
 

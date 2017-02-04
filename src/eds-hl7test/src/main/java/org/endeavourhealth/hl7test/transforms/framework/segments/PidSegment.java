@@ -10,19 +10,9 @@ public class PidSegment extends Segment {
         super(segment, seperators);
     }
 
-    public int getSetID() throws ParseException {
-        return this.getFieldAsInteger(1);
-    }
-
-    public Field getExternalPatientIdField() {
-        return this.getField(2);
-    }
-
-    public List<Cx> getInternalPatientIdField() throws ParseException {
-        Field field = this.getField(3);
-
-        return field.getDatatypes(Cx.class);
-    }
+    public int getSetID() throws ParseException { return this.getFieldAsInteger(1); }
+    public Cx getExternalPatientId() { return this.getFieldDatatype(2, Cx.class); }
+    public List<Cx> getInternalPatientId() throws ParseException { return this.getFieldDatatypes(3, Cx.class); }
 
     public String AlternatePatientID;
 

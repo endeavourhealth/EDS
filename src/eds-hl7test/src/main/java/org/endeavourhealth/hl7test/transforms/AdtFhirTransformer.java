@@ -22,12 +22,12 @@ public class AdtFhirTransformer {
         s += "receiving application:  " + mshSegment.getReceivingApplication() + "\n";
         s += "message name:  " + mshSegment.getMessageType() + "\n";
 
+        s += "External patient ID" + pidSegment.getExternalPatientId().getId() + " " + pidSegment.getExternalPatientId().getAssigningAuthority() + "\n";
 
-
-        List<Cx> patientIds = pidSegment.getInternalPatientIdField();
+        List<Cx> patientIds = pidSegment.getInternalPatientId();
 
         for (Cx cx : patientIds) {
-            s += "External patient ID" + cx.getId() + " " + cx.getAssigningAuthority() + "\n";
+            s += "Internal patient ID" + cx.getId() + " " + cx.getAssigningAuthority() + "\n";
         }
 
         return s;

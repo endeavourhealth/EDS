@@ -5,6 +5,7 @@ import org.apache.commons.lang3.Validate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Field {
     private static final int FIRST = 0;
@@ -51,30 +52,26 @@ public class Field {
         return new Datatype(getFirstGenericDatatype());
     }
 
-    public <T extends Datatype> T getDatatype(Class<T> datatype) throws ParseException {
+    public <T extends Datatype> T getDatatype(Class<T> datatype) {
         Validate.notNull(datatype);
 
         return Datatype.instantiate(datatype, getFirstGenericDatatype());
     }
 
-    public List<Datatype> getDatatypes() throws ParseException {
-        List<Datatype> result = new ArrayList<>();
-
-        for (GenericDatatype genericDatatype : this.genericDatatypes)
-            result.add(new Datatype(genericDatatype));
-
-        return result;
+    public List<Datatype> getDatatypes() {
+        return this.genericDatatypes
+                .stream()
+                .map(t -> new Datatype(t))
+                .collect(Collectors.toList());
     }
 
-    public <T extends Datatype> List<T> getDatatypes(Class<T> dt) throws ParseException {
-        Validate.notNull(dt);
+    public <T extends Datatype> List<T> getDatatypes(Class<T> datatype) {
+        Validate.notNull(datatype);
 
-        List<T> result = new ArrayList<>();
-
-        for (GenericDatatype genericDatatype : this.genericDatatypes)
-            result.add(Datatype.instantiate(dt, genericDatatype));
-
-        return result;
+        return this.genericDatatypes
+                .stream()
+                .map(t -> Datatype.instantiate(datatype, t))
+                .collect(Collectors.toList());
     }
 
     //////////////////  Parsers  //////////////////

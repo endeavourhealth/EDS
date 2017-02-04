@@ -15,12 +15,7 @@ public class MshSegment extends Segment {
     public String getEncodingCharacters() {
         return this.getFieldAsString(2);
     }
-    public String getSendingApplication() {
-        return this.getComponentAsString(3, 1);
-    }
-    public Field getSendingApplicationField() {
-        return this.getField(3);
-    }
+    public String getSendingApplication() { return this.getComponentAsString(3, 1); }
     public String getSendingFacility() { return this.getComponentAsString(4, 1); }
     public String getReceivingApplication() { return this.getComponentAsString(5, 1); };
     public String getReceivingFacility() { return this.getComponentAsString(6, 1); };

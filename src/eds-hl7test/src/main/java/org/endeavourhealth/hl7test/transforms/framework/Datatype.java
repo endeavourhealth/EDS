@@ -13,12 +13,12 @@ public class Datatype {
         this.datatype = datatype;
     }
 
-    public static <T extends Datatype> T instantiate(Class<T> dt, GenericDatatype datatype) throws ParseException {
+    public static <T extends Datatype> T instantiate(Class<T> dt, GenericDatatype datatype) {
         try {
             Constructor<T> constructor = dt.getConstructor(GenericDatatype.class);
             return constructor.newInstance(datatype);
         } catch (Exception e) {
-            throw new ParseException("Could not instantiate " + dt.getName(), e);
+            throw new RuntimeException("Could not instantiate " + dt.getName(), e);
         }
     }
 }
