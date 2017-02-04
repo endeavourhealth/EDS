@@ -1,9 +1,9 @@
 package org.endeavourhealth.hl7test.transforms.framework;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -11,29 +11,29 @@ public class Message {
     private static final String CR = "\r";
     private static final String LF = "\n";
     private static final int FIRST = 0;
-    private static final String MSG_SEGMENT_NAME = "MSH";
+    private static final String MSH_SEGMENT_NAME = "MSH";
 
     private String message;
     private Seperators seperators;
     private List<Segment> segments = new ArrayList<>();;
 
+    //////////////////  Constructors  //////////////////
+
     public Message(String message) throws ParseException {
-        if (StringUtils.isBlank(message))
-            throw new ParseException("message is blank");
+        Validate.notBlank(message);
 
         parse(message);
     }
 
-    //region ** Accessors **
+    //////////////////  Accessors  //////////////////
 
-    public Segment getSegment(String segmentName) throws ParseException {
+    public Segment getSegment(String segmentName) {
         List<Segment> segments = getSegments(segmentName);
         return Helpers.getSafely(segments, FIRST);
     }
 
-    public List<Segment> getSegments(String segmentName) throws ParseException {
-        if (StringUtils.isBlank(segmentName))
-            throw new ParseException("segmentName is blank");
+    public List<Segment> getSegments(String segmentName) {
+        Validate.notBlank(segmentName);
 
         return this.segments
                 .stream()
@@ -41,10 +41,9 @@ public class Message {
                 .collect(Collectors.toList());
     }
 
-    //region ** Parsing **
+    //////////////////  Parsing //////////////////
 
     private void parse(String message) throws ParseException {
-        this.message = message;
         normaliseLineEndings();
         detectSeperators();
         parseSegments();
@@ -67,17 +66,15 @@ public class Message {
     private void detectSeperators() throws ParseException {
         this.seperators = new Seperators();
 
-        this.seperators.setLineSeperator(CR);
+        String firstLine = StringUtils.split(this.message, this.seperators.getLineSeperator())[FIRST];
 
-        String firstLine = StringUtils.split(this.message, CR)[FIRST];
+        if (!firstLine.startsWith(MSH_SEGMENT_NAME))
+            throw new ParseException("message does not start with " + MSH_SEGMENT_NAME);
 
-        if (!firstLine.startsWith(MSG_SEGMENT_NAME))
-            throw new ParseException("message does not start with " + MSG_SEGMENT_NAME);
-
-        String firstLineWithoutSegmentName = StringUtils.removeStart(firstLine, MSG_SEGMENT_NAME);
+        String firstLineWithoutSegmentName = StringUtils.removeStart(firstLine, MSH_SEGMENT_NAME);
 
         if (firstLineWithoutSegmentName.length() < 5)
-            throw new ParseException(MSG_SEGMENT_NAME + " does not encoding characters");
+            throw new ParseException(MSH_SEGMENT_NAME + " does not encoding characters");
 
         this.seperators
                 .setFieldSeperator(firstLineWithoutSegmentName.substring(0, 1))
@@ -94,11 +91,9 @@ public class Message {
     }
 
     private void parseSegments() throws ParseException {
-        List<String> lines = Helpers.split(this.message, this.seperators.getLineSeperator(), false);
+        List<String> lines = Helpers.split(this.message, this.seperators.getLineSeperator());
 
         for (String line : lines)
             this.segments.add(Segment.parse(line, this.seperators));
     }
-
-    //endregion
 }

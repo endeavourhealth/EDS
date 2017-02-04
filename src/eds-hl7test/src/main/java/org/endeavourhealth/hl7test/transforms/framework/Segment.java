@@ -19,7 +19,7 @@ public class Segment {
     private String segmentName;
     protected List<Field> fields = new ArrayList<>();
 
-    //region ** Constructors **
+    //////////////////  Constructors  //////////////////
 
     public static Segment parse(String segment, Seperators seperators) throws ParseException {
         Validate.notBlank(segment);
@@ -42,9 +42,8 @@ public class Segment {
         this.parse();
     }
 
-    //endregion
+    //////////////////  Accessors  //////////////////
 
-    //region ** Accessors **
     public String getSegmentName() {
         return this.segmentName;
     }
@@ -91,9 +90,7 @@ public class Segment {
         return field.getAsString();
     }
 
-    //endregion
-
-    //region ** Parsing **
+    //////////////////  Parsing  //////////////////
 
     private static String getSegmentName(String segment, Seperators seperators) throws ParseException {
         List<String> tokens = Arrays.asList(StringUtils.split(segment, seperators.getFieldSeperator()));
@@ -108,7 +105,7 @@ public class Segment {
         this.segmentName = getSegmentName(segment, seperators);
 
         List<String> tokens =
-                Helpers.split(segment, seperators.getFieldSeperator(), true)
+                Helpers.split(segment, seperators.getFieldSeperator())
                 .stream()
                 .skip(1)
                 .collect(Collectors.toList());
@@ -119,6 +116,4 @@ public class Segment {
         for (String token : tokens)
             this.fields.add(new Field(token, this.seperators));
     }
-
-    //endregion
 }

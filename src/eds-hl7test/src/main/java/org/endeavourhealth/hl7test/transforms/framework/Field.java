@@ -41,9 +41,9 @@ public class Field {
             return;
         }
 
-        List<String> fieldRepetitions = Helpers.split(this.field, seperators.getRepetitionSeperator(), true);
+        List<String> fieldRepetitions = Helpers.split(this.field, seperators.getRepetitionSeperator());
 
         for (String fieldRepetition : fieldRepetitions)
-            this.repetitionsAndComponents.add(Helpers.split(fieldRepetition, seperators.getComponentSeperator(), true));
+            this.repetitionsAndComponents.add(Helpers.split(fieldRepetition, seperators.getComponentSeperator()));
     }
 }

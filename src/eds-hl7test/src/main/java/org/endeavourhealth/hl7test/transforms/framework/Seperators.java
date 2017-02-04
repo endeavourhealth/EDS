@@ -4,7 +4,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Seperators {
-    private String lineSeperator;
+    private static final String CR = "\r";
+
+    private String lineSeperator = CR;
     private String fieldSeperator;
     private String componentSeperator;
     private String repetitionSeperator;
@@ -13,11 +15,6 @@ public class Seperators {
 
     public String getLineSeperator() {
         return lineSeperator;
-    }
-
-    public Seperators setLineSeperator(String lineSeperator) {
-        this.lineSeperator = lineSeperator;
-        return this;
     }
 
     public String getFieldSeperator() {
