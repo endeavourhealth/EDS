@@ -2,6 +2,7 @@ package org.endeavourhealth.hl7test.transforms;
 
 import org.endeavourhealth.hl7test.transforms.framework.ParseException;
 import org.endeavourhealth.hl7test.transforms.framework.datatypes.Cx;
+import org.endeavourhealth.hl7test.transforms.framework.datatypes.Xpn;
 import org.endeavourhealth.hl7test.transforms.framework.messages.AdtMessage;
 import org.endeavourhealth.hl7test.transforms.framework.segments.MshSegment;
 import org.endeavourhealth.hl7test.transforms.framework.segments.PidSegment;
@@ -26,9 +27,11 @@ public class AdtFhirTransformer {
 
         List<Cx> patientIds = pidSegment.getInternalPatientId();
 
-        for (Cx cx : patientIds) {
+        for (Cx cx : patientIds)
             s += "Internal patient ID" + cx.getId() + " " + cx.getAssigningAuthority() + "\n";
-        }
+
+        for (Xpn xpn : pidSegment.getPatientNames())
+            s += "Patient name " + xpn.getFamilyName() + " " + xpn.getGivenName() + " " + xpn.getPrefix();
 
         return s;
     }

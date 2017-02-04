@@ -13,6 +13,10 @@ public class Datatype {
         this.datatype = datatype;
     }
 
+    public String getComponent(int componentNumber) {
+        return this.datatype.getComponent(componentNumber);
+    }
+
     public static <T extends Datatype> T instantiate(Class<T> dt, GenericDatatype datatype) {
         try {
             Constructor<T> constructor = dt.getConstructor(GenericDatatype.class);

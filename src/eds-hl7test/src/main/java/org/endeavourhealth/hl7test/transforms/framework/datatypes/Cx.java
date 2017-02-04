@@ -9,10 +9,10 @@ public class Cx extends Datatype {
         super(datatype);
     }
 
-    public String getId() { return datatype.getComponent(1); }
-    public String getCheckDigit() { return datatype.getComponent(2); }
-    public String getCheckDigitCodeScheme() { return datatype.getComponent(3); }
-    public String getAssigningAuthority() { return datatype.getComponent(4); }
-    public String getIdentifierTypeCode() { return datatype.getComponent(5); }
-    public String getAssigningFacility() { return datatype.getComponent(6); }
+    public String getId() { return this.getComponent(1); }
+    public String getCheckDigit() { return this.getComponent(2); }
+    public String getCheckDigitCodeScheme() { return this.getComponent(3); }
+    public String getAssigningAuthority() { return this.getComponent(4); }
+    public String getIdentifierTypeCode() { return this.getComponent(5); }
+    public String getAssigningFacility() { return this.getComponent(6); }
 }
