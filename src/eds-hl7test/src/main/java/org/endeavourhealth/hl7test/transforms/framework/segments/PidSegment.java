@@ -1,9 +1,9 @@
-package org.endeavourhealth.hl7test.transforms.framework.namedsegments;
+package org.endeavourhealth.hl7test.transforms.framework.segments;
 
-import org.endeavourhealth.hl7test.transforms.framework.Field;
-import org.endeavourhealth.hl7test.transforms.framework.ParseException;
-import org.endeavourhealth.hl7test.transforms.framework.Segment;
-import org.endeavourhealth.hl7test.transforms.framework.Seperators;
+import org.endeavourhealth.hl7test.transforms.framework.*;
+import org.endeavourhealth.hl7test.transforms.framework.datatypes.Cx;
+
+import java.util.List;
 
 public class PidSegment extends Segment {
     public PidSegment(String segment, Seperators seperators) throws ParseException {
@@ -14,9 +14,15 @@ public class PidSegment extends Segment {
         return this.getFieldAsInteger(1);
     }
 
-    public Field ExternalPatientID;
+    public Field getExternalPatientIdField() {
+        return this.getField(2);
+    }
 
-    public String InternalPatientID;
+    public List<Cx> getInternalPatientIdField() throws ParseException {
+        Field field = this.getField(3);
+
+        return field.getDatatypes(Cx.class);
+    }
 
     public String AlternatePatientID;
 

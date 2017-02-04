@@ -2,7 +2,7 @@ package org.endeavourhealth.hl7test.transforms.framework;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.endeavourhealth.hl7test.transforms.framework.namedsegments.SegmentName;
+import org.endeavourhealth.hl7test.transforms.framework.segments.SegmentName;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -90,7 +90,7 @@ public class Segment {
         return field.getAsString();
     }
 
-    //////////////////  Parsing  //////////////////
+    //////////////////  Parsers  //////////////////
 
     private static String getSegmentName(String segment, Seperators seperators) throws ParseException {
         List<String> tokens = Arrays.asList(StringUtils.split(segment, seperators.getFieldSeperator()));

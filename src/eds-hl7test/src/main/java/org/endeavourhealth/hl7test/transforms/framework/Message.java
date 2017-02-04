@@ -2,6 +2,7 @@ package org.endeavourhealth.hl7test.transforms.framework;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.endeavourhealth.hl7test.transforms.framework.segments.SegmentName;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,10 +23,23 @@ public class Message {
     public Message(String message) throws ParseException {
         Validate.notBlank(message);
 
-        parse(message);
+        this.message = message;
+        parse();
     }
 
     //////////////////  Accessors  //////////////////
+
+    public Segment getSegment(SegmentName segmentName) {
+        List<Segment> segments = getSegments(segmentName);
+        return Helpers.getSafely(segments, FIRST);
+    }
+
+    public List<Segment> getSegments(SegmentName segmentName) {
+        Validate.notNull(segmentName);
+        Validate.isTrue(!segmentName.equals(SegmentName.UNNAMED));
+
+        return getSegments(segmentName.getValue());
+    }
 
     public Segment getSegment(String segmentName) {
         List<Segment> segments = getSegments(segmentName);
@@ -41,9 +55,9 @@ public class Message {
                 .collect(Collectors.toList());
     }
 
-    //////////////////  Parsing //////////////////
+    //////////////////  Parsers  //////////////////
 
-    private void parse(String message) throws ParseException {
+    private void parse() throws ParseException {
         normaliseLineEndings();
         detectSeperators();
         parseSegments();

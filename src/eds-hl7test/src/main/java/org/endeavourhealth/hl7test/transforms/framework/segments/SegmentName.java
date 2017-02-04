@@ -1,4 +1,4 @@
-package org.endeavourhealth.hl7test.transforms.framework.namedsegments;
+package org.endeavourhealth.hl7test.transforms.framework.segments;
 
 import org.endeavourhealth.hl7test.transforms.framework.ParseException;
 import org.endeavourhealth.hl7test.transforms.framework.Segment;

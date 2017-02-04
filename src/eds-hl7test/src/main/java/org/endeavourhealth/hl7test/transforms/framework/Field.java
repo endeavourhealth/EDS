@@ -1,9 +1,9 @@
 package org.endeavourhealth.hl7test.transforms.framework;
 
+import com.mchange.v2.cfg.PropertiesConfigSource;
 import org.apache.commons.lang3.Validate;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class Field {
@@ -11,7 +11,9 @@ public class Field {
 
     private String field;
     private Seperators seperators;
-    protected List<List<String>> repetitionsAndComponents = new ArrayList<>();
+    protected List<GenericDatatype> genericDatatypes = new ArrayList<>();
+
+    //////////////////  Constructors  //////////////////
 
     private Field() {
     }
@@ -26,24 +28,66 @@ public class Field {
         this.parse();
     }
 
+    //////////////////  Accessors  //////////////////
+
     public String getAsString() {
         return field;
     }
 
     public String getComponent(int componentNumber) {
-        int componentIndex = componentNumber - 1;
-        return Helpers.getSafely(Helpers.getSafely(this.repetitionsAndComponents, FIRST), componentIndex);
+        GenericDatatype genericDatatype = getFirstGenericDatatype();
+
+        if (genericDatatype == null)
+            return null;
+
+        return genericDatatype.getComponent(componentNumber);
     }
+
+    private GenericDatatype getFirstGenericDatatype() {
+        return Helpers.getSafely(this.genericDatatypes, FIRST);
+    }
+
+    public Datatype getDatatype() {
+        return new Datatype(getFirstGenericDatatype());
+    }
+
+    public <T extends Datatype> T getDatatype(Class<T> datatype) throws ParseException {
+        Validate.notNull(datatype);
+
+        return Datatype.instantiate(datatype, getFirstGenericDatatype());
+    }
+
+    public List<Datatype> getDatatypes() throws ParseException {
+        List<Datatype> result = new ArrayList<>();
+
+        for (GenericDatatype genericDatatype : this.genericDatatypes)
+            result.add(new Datatype(genericDatatype));
+
+        return result;
+    }
+
+    public <T extends Datatype> List<T> getDatatypes(Class<T> dt) throws ParseException {
+        Validate.notNull(dt);
+
+        List<T> result = new ArrayList<>();
+
+        for (GenericDatatype genericDatatype : this.genericDatatypes)
+            result.add(Datatype.instantiate(dt, genericDatatype));
+
+        return result;
+    }
+
+    //////////////////  Parsers  //////////////////
 
     private void parse() {
         if (this.field.equals(this.seperators.getMsh2Field())) {
-            this.repetitionsAndComponents = Arrays.asList(new List[]{(Arrays.asList(new String[]{this.field}))});
+            this.genericDatatypes.add(new GenericDatatype(this.field, this.seperators));
             return;
         }
 
         List<String> fieldRepetitions = Helpers.split(this.field, seperators.getRepetitionSeperator());
 
         for (String fieldRepetition : fieldRepetitions)
-            this.repetitionsAndComponents.add(Helpers.split(fieldRepetition, seperators.getComponentSeperator()));
+            this.genericDatatypes.add(new GenericDatatype(fieldRepetition, this.seperators));
     }
 }
