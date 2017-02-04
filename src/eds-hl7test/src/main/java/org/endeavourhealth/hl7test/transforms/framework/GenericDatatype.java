@@ -29,6 +29,10 @@ public class GenericDatatype {
 
     //////////////////  Accessors  //////////////////
 
+    public String getAsString() {
+        return this.datatype;
+    }
+
     public String getComponent(int componentNumber) {
         int componentIndex = componentNumber - 1;
         return Helpers.getSafely(this.components, componentIndex);
