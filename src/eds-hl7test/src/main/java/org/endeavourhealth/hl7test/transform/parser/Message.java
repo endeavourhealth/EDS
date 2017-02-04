@@ -1,8 +1,8 @@
-package org.endeavourhealth.hl7test.transforms.framework;
+package org.endeavourhealth.hl7test.transform.parser;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.endeavourhealth.hl7test.transforms.framework.segments.SegmentName;
+import org.endeavourhealth.hl7test.transform.parser.segments.SegmentName;
 
 import java.util.ArrayList;
 import java.util.List;

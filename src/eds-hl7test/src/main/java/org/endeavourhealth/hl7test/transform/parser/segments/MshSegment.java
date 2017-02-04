@@ -1,6 +1,6 @@
-package org.endeavourhealth.hl7test.transforms.framework.segments;
+package org.endeavourhealth.hl7test.transform.parser.segments;
 
-import org.endeavourhealth.hl7test.transforms.framework.*;
+import org.endeavourhealth.hl7test.transform.parser.*;
 
 import java.time.LocalDateTime;
 
@@ -26,7 +26,7 @@ public class MshSegment extends Segment {
     public String getMessageControlId() { return this.getFieldAsString(10); }
     public String getProcessingId() { return this.getFieldAsString(11); }
     public String getVersionId() { return this.getFieldAsString(12); }
-    public String getSequenceNumber() { return this.getFieldAsString(13); }
+    public Integer getSequenceNumber() throws ParseException { return this.getFieldAsInteger(13); }
     public String getContinuationPointer() { return this.getFieldAsString(14); }
     public String getAcceptAcknowledgmentType() { return this.getFieldAsString(15); }
     public String getApplicationAcknowledgmentType() { return this.getFieldAsString(16); }

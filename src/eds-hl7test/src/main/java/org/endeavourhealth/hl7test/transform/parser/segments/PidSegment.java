@@ -1,7 +1,7 @@
-package org.endeavourhealth.hl7test.transforms.framework.segments;
+package org.endeavourhealth.hl7test.transform.parser.segments;
 
-import org.endeavourhealth.hl7test.transforms.framework.*;
-import org.endeavourhealth.hl7test.transforms.framework.datatypes.*;
+import org.endeavourhealth.hl7test.transform.parser.*;
+import org.endeavourhealth.hl7test.transform.parser.datatypes.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,44 +24,26 @@ public class PidSegment extends Segment {
     public List<Xad> getAddresses() { return this.getFieldAsDatatypes(11, Xad.class); }
 
     /*
-
-
     CountyCode
-
     PhoneNumberHome
-
     PhoneNumberBusiness
-
     PrimaryLanguage
-
     MaritalStatus
-
     Religion
-
     PatientAccountNumber
-
     SSNNumberPatient
-
     DriversLicenseNumber
-
     MothersIdentifier
-
     EthnicGroup
-
     BirthPlace
-
     MultipleBirthIndicator
-
     BirthOrder
-
     Citizenship
-
     VeteransMilitaryStatus
-
             Nationality
-
     PatientDeathDateandTime
-
     PatientDeathIndicator
 */
+
+    public Ce getNationality() { return this.getFieldAsDatatype(28, Ce.class); }
 }

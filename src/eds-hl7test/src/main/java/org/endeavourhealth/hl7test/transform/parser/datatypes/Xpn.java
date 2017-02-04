@@ -1,7 +1,7 @@
-package org.endeavourhealth.hl7test.transforms.framework.datatypes;
+package org.endeavourhealth.hl7test.transform.parser.datatypes;
 
-import org.endeavourhealth.hl7test.transforms.framework.Datatype;
-import org.endeavourhealth.hl7test.transforms.framework.GenericDatatype;
+import org.endeavourhealth.hl7test.transform.parser.Datatype;
+import org.endeavourhealth.hl7test.transform.parser.GenericDatatype;
 
 public class Xpn extends Datatype {
     public Xpn(GenericDatatype datatype) {

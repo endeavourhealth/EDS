@@ -26,9 +26,9 @@
             <version>${commons-lang3.version}</version>
         </dependency>
         <dependency>
-            <groupId>ca.uhn.hapi</groupId>
-            <artifactId>hapi-base</artifactId>
-            <version>${hapi.version}</version>
+            <groupId>me.fhir</groupId>
+            <artifactId>fhir-dstu2</artifactId>
+            <version>${fhir-dstu2.version}</version>
         </dependency>
     </dependencies>
 
