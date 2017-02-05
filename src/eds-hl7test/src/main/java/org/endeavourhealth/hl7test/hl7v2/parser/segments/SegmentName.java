@@ -1,8 +1,8 @@
-package org.endeavourhealth.hl7test.transform.parser.segments;
+package org.endeavourhealth.hl7test.hl7v2.parser.segments;
 
-import org.endeavourhealth.hl7test.transform.parser.ParseException;
-import org.endeavourhealth.hl7test.transform.parser.Segment;
-import org.endeavourhealth.hl7test.transform.parser.Seperators;
+import org.endeavourhealth.hl7test.hl7v2.parser.ParseException;
+import org.endeavourhealth.hl7test.hl7v2.parser.Segment;
+import org.endeavourhealth.hl7test.hl7v2.parser.Seperators;
 
 public enum SegmentName {
     MSH("MSH"),

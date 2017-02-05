@@ -1,4 +1,4 @@
-package org.endeavourhealth.hl7test.transform.parser;
+package org.endeavourhealth.hl7test.hl7v2.parser;
 
 import java.util.Arrays;
 import java.util.List;

@@ -1,11 +1,11 @@
-package org.endeavourhealth.hl7test.transform;
+package org.endeavourhealth.hl7test.hl7v2;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
-import org.endeavourhealth.hl7test.transform.parser.messages.AdtMessage;
-import org.endeavourhealth.hl7test.transform.transform.MshTransform;
-import org.endeavourhealth.hl7test.transform.transform.PidTransform;
+import org.endeavourhealth.hl7test.hl7v2.parser.messages.AdtMessage;
+import org.endeavourhealth.hl7test.hl7v2.transform.MessageHeaderTransform;
+import org.endeavourhealth.hl7test.hl7v2.transform.PatientTransform;
 import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.Bundle;
 import org.hl7.fhir.instance.model.Resource;
@@ -13,15 +13,15 @@ import org.hl7.fhir.instance.model.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AdtTransform {
+public class AdtMessageTransform {
     public static String transform(String adtMessage) throws Exception {
 
         AdtMessage sourceMessage = new AdtMessage(adtMessage);
 
         List<Resource> targetResources = new ArrayList<>();
 
-        targetResources.add(MshTransform.toFhir(sourceMessage.getMshSegment()));
-        targetResources.add(PidTransform.toFhir(sourceMessage.getPidSegment()));
+        targetResources.add(MessageHeaderTransform.fromHl7v2(sourceMessage.getMshSegment()));
+        targetResources.add(PatientTransform.fromHl7v2(sourceMessage.getPidSegment()));
 
 
         Bundle targetBundle = createBundle(targetResources);

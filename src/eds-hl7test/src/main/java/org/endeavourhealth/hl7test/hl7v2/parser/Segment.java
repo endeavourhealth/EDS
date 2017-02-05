@@ -1,8 +1,8 @@
-package org.endeavourhealth.hl7test.transform.parser;
+package org.endeavourhealth.hl7test.hl7v2.parser;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.endeavourhealth.hl7test.transform.parser.segments.SegmentName;
+import org.endeavourhealth.hl7test.hl7v2.parser.segments.SegmentName;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

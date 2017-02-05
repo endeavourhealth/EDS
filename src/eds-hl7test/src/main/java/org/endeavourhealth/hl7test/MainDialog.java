@@ -1,7 +1,7 @@
 package org.endeavourhealth.hl7test;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.endeavourhealth.hl7test.transform.AdtTransform;
+import org.endeavourhealth.hl7test.hl7v2.AdtMessageTransform;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -26,7 +26,7 @@ public class MainDialog {
                     testPaneTextArea2.setText("");
                     testPaneTextArea2.repaint();
                     testPaneTextArea2.revalidate();
-                    testPaneTextArea2.setText(AdtTransform.transform(testPane1TextArea.getText()));
+                    testPaneTextArea2.setText(AdtMessageTransform.transform(testPane1TextArea.getText()));
                 } catch (Exception e1) {
                     testPaneTextArea2.setText("[" + e1.getClass() + "] " + e1.getMessage() + "\r\n" + ExceptionUtils.getStackTrace(e1));
                 }
