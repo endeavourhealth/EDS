@@ -2,6 +2,7 @@ package org.endeavourhealth.hl7test.hl7v2.parser;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
@@ -29,6 +30,10 @@ public class Helpers {
             return list.get(index);
 
         return null;
+    }
+
+    public static String formatString(String pattern, Object ... arguments) {
+        return MessageFormat.format(pattern, arguments);
     }
 
     public static List<String> split(String str, String seperator) {

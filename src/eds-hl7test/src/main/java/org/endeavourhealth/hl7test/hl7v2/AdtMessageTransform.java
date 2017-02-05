@@ -21,7 +21,7 @@ public class AdtMessageTransform {
         List<Resource> targetResources = new ArrayList<>();
 
         targetResources.add(MessageHeaderTransform.fromHl7v2(sourceMessage.getMshSegment()));
-        targetResources.add(PatientTransform.fromHl7v2(sourceMessage.getPidSegment()));
+        targetResources.add(PatientTransform.fromHl7v2(sourceMessage));
 
 
         Bundle targetBundle = createBundle(targetResources);

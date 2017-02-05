@@ -1,5 +1,6 @@
 package org.endeavourhealth.hl7test.hl7v2.parser;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 import java.util.ArrayList;
@@ -54,12 +55,18 @@ public class Field {
     public <T extends Datatype> T getDatatype(Class<T> datatype) {
         Validate.notNull(datatype);
 
+        GenericDatatype genericDatatype = getFirstGenericDatatype();
+
+        if (StringUtils.isEmpty(genericDatatype.getAsString()))        // should we create a datatype where the field is blank?
+            return null;
+
         return Datatype.instantiate(datatype, getFirstGenericDatatype());
     }
 
     public List<Datatype> getDatatypes() {
         return this.genericDatatypes
                 .stream()
+                .filter(t -> !StringUtils.isEmpty(t.getAsString()))    // should we create a datatype where the field is blank?
                 .map(t -> new Datatype(t))
                 .collect(Collectors.toList());
     }
