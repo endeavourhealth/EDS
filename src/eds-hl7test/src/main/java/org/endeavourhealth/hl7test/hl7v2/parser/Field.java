@@ -66,7 +66,6 @@ public class Field {
     public List<Datatype> getDatatypes() {
         return this.genericDatatypes
                 .stream()
-                .filter(t -> !StringUtils.isEmpty(t.getAsString()))    // should we create a datatype where the field is blank?
                 .map(t -> new Datatype(t))
                 .collect(Collectors.toList());
     }
@@ -76,6 +75,7 @@ public class Field {
 
         return this.genericDatatypes
                 .stream()
+                .filter(t -> !StringUtils.isEmpty(t.getAsString()))    // should we create a datatype where the field is blank?
                 .map(t -> Datatype.instantiate(datatype, t))
                 .collect(Collectors.toList());
     }

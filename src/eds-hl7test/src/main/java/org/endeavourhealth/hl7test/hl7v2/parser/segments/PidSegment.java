@@ -19,7 +19,7 @@ public class PidSegment extends Segment {
     public List<Xpn> getMothersMaidenNames() { return this.getFieldAsDatatypes(6, Xpn.class); }
     public LocalDateTime getDateOfBirth() throws ParseException { return this.getFieldAsDate(7); }
     public String getSex() { return this.getFieldAsString(8); }
-    public Xpn getPatientAlias() { return this.getFieldAsDatatype(9, Xpn.class); }
+    public List<Xpn> getPatientAlias() { return this.getFieldAsDatatypes(9, Xpn.class); }
     public Ce getRace() { return this.getFieldAsDatatype(10, Ce.class); }
     public List<Xad> getAddresses() { return this.getFieldAsDatatypes(11, Xad.class); }
 
