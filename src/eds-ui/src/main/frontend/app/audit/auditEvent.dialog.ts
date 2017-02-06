@@ -1,5 +1,5 @@
 import {Component, Input} from "@angular/core";
-import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
+import {NgbModal, NgbActiveModal, NgbModalOptions} from "@ng-bootstrap/ng-bootstrap";
 import {AuditEvent} from "./models/AuditEvent";
 
 @Component({
@@ -8,7 +8,7 @@ import {AuditEvent} from "./models/AuditEvent";
 })
 export class AuditEventDialog {
 	public static open(modalService: NgbModal, title : string, auditEvent : AuditEvent) {
-		const modalRef = modalService.open(AuditEventDialog, { backdrop : "static"});
+		const modalRef = modalService.open(AuditEventDialog, { backdrop : "static"} as NgbModalOptions);
 		modalRef.componentInstance.title = title;
 		modalRef.componentInstance.auditEvent = auditEvent;
 

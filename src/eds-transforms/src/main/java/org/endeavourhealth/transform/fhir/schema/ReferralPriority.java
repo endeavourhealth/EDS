@@ -6,7 +6,8 @@ public enum ReferralPriority {
 
     ROUTINE("1", "Routine"),
     URGENT("2", "Urgent"),
-    TWO_WEEK_WAIT("3", "Two Week Wait");
+    TWO_WEEK_WAIT("3", "Two Week Wait"),
+    SOON("4", "Soon");
 
     private String code = null;
     private String description = null;

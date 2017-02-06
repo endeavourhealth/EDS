@@ -1,6 +1,6 @@
 import {Routing} from "./Routing";
 import {Component, Input} from "@angular/core";
-import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
+import {NgbModal, NgbActiveModal, NgbModalOptions} from "@ng-bootstrap/ng-bootstrap";
 
 @Component({
 	selector : 'ngbd-modal-content',
@@ -8,7 +8,7 @@ import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 })
 export class QueueEditDialog {
 	public static open(modalService: NgbModal, routing : Routing) {
-		const modalRef = modalService.open(QueueEditDialog, { backdrop : "static"});
+		const modalRef = modalService.open(QueueEditDialog, { backdrop : "static"} as NgbModalOptions);
 		modalRef.componentInstance.resultData = jQuery.extend(true, [], routing);
 
 		return modalRef;
