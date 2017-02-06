@@ -1,9 +1,9 @@
-package org.endeavourhealth.hl7test.hl7v2.transform.converters;
+package org.endeavourhealth.transform.hl7v2.transform.converters;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.endeavourhealth.hl7test.hl7v2.parser.datatypes.Xpn;
-import org.endeavourhealth.hl7test.hl7v2.transform.TransformException;
+import org.endeavourhealth.transform.hl7v2.parser.datatypes.Xpn;
+import org.endeavourhealth.transform.hl7v2.transform.TransformException;
 import org.hl7.fhir.instance.model.HumanName;
 
 public class NameConverter {

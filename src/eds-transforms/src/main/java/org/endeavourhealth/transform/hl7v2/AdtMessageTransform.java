@@ -1,11 +1,11 @@
-package org.endeavourhealth.hl7test.hl7v2;
+package org.endeavourhealth.transform.hl7v2;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
-import org.endeavourhealth.hl7test.hl7v2.parser.messages.AdtMessage;
-import org.endeavourhealth.hl7test.hl7v2.transform.MessageHeaderTransform;
-import org.endeavourhealth.hl7test.hl7v2.transform.PatientTransform;
+import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
+import org.endeavourhealth.transform.hl7v2.transform.MessageHeaderTransform;
+import org.endeavourhealth.transform.hl7v2.transform.PatientTransform;
 import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.Bundle;
 import org.hl7.fhir.instance.model.Resource;

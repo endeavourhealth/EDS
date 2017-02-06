@@ -1,7 +1,7 @@
-package org.endeavourhealth.hl7test.hl7v2.parser.segments;
+package org.endeavourhealth.transform.hl7v2.parser.segments;
 
-import org.endeavourhealth.hl7test.hl7v2.parser.*;
-import org.endeavourhealth.hl7test.hl7v2.parser.datatypes.*;
+import org.endeavourhealth.transform.hl7v2.parser.*;
+import org.endeavourhealth.transform.hl7v2.parser.datatypes.*;
 
 import java.time.LocalDateTime;
 import java.util.List;

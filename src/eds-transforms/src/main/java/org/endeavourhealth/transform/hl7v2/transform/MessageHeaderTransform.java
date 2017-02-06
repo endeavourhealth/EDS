@@ -1,8 +1,8 @@
-package org.endeavourhealth.hl7test.hl7v2.transform;
+package org.endeavourhealth.transform.hl7v2.transform;
 
-import org.endeavourhealth.hl7test.hl7v2.parser.Helpers;
-import org.endeavourhealth.hl7test.hl7v2.parser.ParseException;
-import org.endeavourhealth.hl7test.hl7v2.parser.segments.MshSegment;
+import org.endeavourhealth.transform.hl7v2.parser.Helpers;
+import org.endeavourhealth.transform.hl7v2.parser.ParseException;
+import org.endeavourhealth.transform.hl7v2.parser.segments.MshSegment;
 import org.hl7.fhir.instance.model.*;
 
 import java.time.LocalDateTime;

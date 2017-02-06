@@ -1,4 +1,4 @@
-package org.endeavourhealth.hl7test.hl7v2.parser;
+package org.endeavourhealth.transform.hl7v2.parser;
 
 public class RuntimeParseException extends RuntimeException {
     public RuntimeParseException() {

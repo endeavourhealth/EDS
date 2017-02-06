@@ -1,14 +1,13 @@
-package org.endeavourhealth.hl7test.hl7v2.transform;
+package org.endeavourhealth.transform.hl7v2.transform;
 
-import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.hl7test.hl7v2.parser.Helpers;
-import org.endeavourhealth.hl7test.hl7v2.parser.ParseException;
-import org.endeavourhealth.hl7test.hl7v2.parser.datatypes.Cx;
-import org.endeavourhealth.hl7test.hl7v2.parser.datatypes.Xpn;
-import org.endeavourhealth.hl7test.hl7v2.parser.messages.AdtMessage;
-import org.endeavourhealth.hl7test.hl7v2.parser.segments.MshSegment;
-import org.endeavourhealth.hl7test.hl7v2.parser.segments.PidSegment;
-import org.endeavourhealth.hl7test.hl7v2.transform.converters.NameConverter;
+import org.endeavourhealth.transform.hl7v2.parser.Helpers;
+import org.endeavourhealth.transform.hl7v2.parser.ParseException;
+import org.endeavourhealth.transform.hl7v2.parser.datatypes.Cx;
+import org.endeavourhealth.transform.hl7v2.parser.datatypes.Xpn;
+import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
+import org.endeavourhealth.transform.hl7v2.parser.segments.MshSegment;
+import org.endeavourhealth.transform.hl7v2.parser.segments.PidSegment;
+import org.endeavourhealth.transform.hl7v2.transform.converters.NameConverter;
 import org.hl7.fhir.instance.model.Identifier;
 import org.hl7.fhir.instance.model.Patient;
 

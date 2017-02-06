@@ -1,7 +1,7 @@
 package org.endeavourhealth.hl7test;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.endeavourhealth.hl7test.hl7v2.AdtMessageTransform;
+import org.endeavourhealth.transform.hl7v2.AdtMessageTransform;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
