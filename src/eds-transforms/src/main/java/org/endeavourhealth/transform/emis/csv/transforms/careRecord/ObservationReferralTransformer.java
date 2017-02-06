@@ -154,6 +154,21 @@ public class ObservationReferralTransformer {
         } else if (type.equalsIgnoreCase("Treatment")) {
             return ReferralType.TREATMENT;
 
+        } else if (type.equalsIgnoreCase("Outpatient")) {
+            return ReferralType.OUTPATIENT;
+
+        } else if (type.equalsIgnoreCase("Community Care")) {
+            return ReferralType.COMMUNITY_CARE;
+
+        } else if (type.equalsIgnoreCase("Performance of a procedure / operation")) {
+            return ReferralType.PROCEDURE;
+
+        } else if (type.equalsIgnoreCase("Admission")) {
+            return ReferralType.ADMISSION;
+
+        } else if (type.equalsIgnoreCase("Day Care")) {
+            return ReferralType.DAY_CARE;
+
         } else {
             return null;
         }
@@ -170,6 +185,9 @@ public class ObservationReferralTransformer {
 
         } else if (urgency.equalsIgnoreCase("2 Week Wait")) {
             return ReferralPriority.TWO_WEEK_WAIT;
+
+        } else if (urgency.equalsIgnoreCase("Soon")) {
+            return ReferralPriority.SOON;
 
         } else {
             return null;

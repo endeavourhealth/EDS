@@ -6,6 +6,7 @@ import org.endeavourhealth.transform.hl7v2.parser.Seperators;
 
 public enum SegmentName {
     MSH("MSH"),
+    EVN("EVN"),
     PID("PID"),
     UNNAMED("UNNAMED");
 
@@ -41,6 +42,7 @@ public enum SegmentName {
         switch (segmentName) {
             case MSH: return new MshSegment(segment, seperators);
             case PID: return new PidSegment(segment, seperators);
+            case EVN: return new EvnSegment(segment, seperators);
             case UNNAMED:
             default: return new Segment(segment, seperators);
         }

@@ -115,7 +115,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="hover-box show-child-on-hover" *ngFor="let transformAudit of selectedExchange.transformAudits">
+                                <tr class="hover-box show-child-on-hover" (click)="showTransformErrors(transformAudit);" *ngFor="let transformAudit of selectedExchange.transformAudits">
                                     <td>{{transformAudit.transformStart | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
                                     <td>{{transformAudit.transformEnd | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
                                     <td>{{transformAudit.numberBatchIdsCreated}}</td>

@@ -1,0 +1,36 @@
+<div class="modal-header">
+    <button type="button" class="close" (click)="close()" aria-hidden="true">&times;</button>
+    <h4 class="modal-title">Transform Errors</h4>
+</div>
+
+<div class="modal-body">
+
+
+     <div class="row">
+         <div class="col-md-12">
+
+             <!--if still loading the data, say so-->
+             <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
+             <span *ngIf="busyPostingToExchange">LOADING...</span>
+
+             <code>
+                 <div *ngFor="let line of lines">
+                     <div *ngIf="line.length > 0">
+                         {{line}}<br/>
+                     </div>
+
+                     <div *ngIf="line.length == 0">
+                         &nbsp;<br/>
+                     </div>
+                 </div>
+             </code>
+
+         </div>
+     </div>
+
+
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn" (click)="close()">Close</button>
+</div>

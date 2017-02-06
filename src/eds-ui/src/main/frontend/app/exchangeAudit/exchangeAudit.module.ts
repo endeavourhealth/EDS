@@ -5,6 +5,7 @@ import {ExchangeAuditComponent} from "./exchangeAudit.component";
 import {ExchangeAuditService} from "./exchangeAudit.service";
 import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {FormatBoolean} from "./format-boolean";
+import {TransformErrorsDialog} from "./transformErrors.dialog";
 
 @NgModule({
 	imports : [
@@ -13,7 +14,12 @@ import {FormatBoolean} from "./format-boolean";
 		NgbModule
 	],
 	declarations : [
-		ExchangeAuditComponent, FormatBoolean
+		ExchangeAuditComponent,
+		FormatBoolean,
+		TransformErrorsDialog
+	],
+	entryComponents : [
+		TransformErrorsDialog
 	],
 	providers : [
 		ExchangeAuditService

@@ -10,7 +10,12 @@ public enum ReferralType {
     MANAGEMENT_ADVICE("M", "Management advice"),
     PATIENT_REASSURANCE("R", "Patient reassurance"),
     SELF_REFERRAL("S", "Self referral"),
-    TREATMENT("T", "Treatment");
+    TREATMENT("T", "Treatment"),
+    OUTPATIENT("O", "Outpatient"),
+    PROCEDURE("P", "Performance of a procedure / operation"),
+    COMMUNITY_CARE("C", "Community Care"),
+    ADMISSION("M", "Admission"),
+    DAY_CARE("D", "Day Care");
 
     private String code = null;
     private String description = null;
