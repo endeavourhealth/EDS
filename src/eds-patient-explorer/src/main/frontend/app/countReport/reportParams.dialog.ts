@@ -23,6 +23,10 @@ export class ReportParamsDialog implements OnInit {
 
     runDate : Date;
     effectiveDate : Date;
+    regType : number;
+    gender : number;
+    dobMin : Date;
+    dobMax : Date;
     originalCode : string;
     valueMax : number;
     valueMin : number;
@@ -62,6 +66,10 @@ export class ReportParamsDialog implements OnInit {
         // Check query for remaining prompts
         if (this.countReport.query.indexOf(':EffectiveDate') >= 0) this.effectiveDate = null;
         if (this.countReport.query.indexOf(':SnomedCode') >= 0) this.snomedCode = null;
+        if (this.countReport.query.indexOf(':RegistrationType') >= 0) this.regType = null;
+        if (this.countReport.query.indexOf(':Gender') >= 0) this.gender = null;
+        if (this.countReport.query.indexOf(':DobMin') >= 0) this.dobMin = null;
+        if (this.countReport.query.indexOf(':DobMax') >= 0) this.dobMax = null;
         if (this.countReport.query.indexOf(':OriginalCode') >= 0) this.originalCode = null;
         if (this.countReport.query.indexOf(':ValueMin') >= 0) this.valueMin = null;
         if (this.countReport.query.indexOf(':ValueMax') >= 0) this.valueMax = null;
@@ -164,6 +172,10 @@ export class ReportParamsDialog implements OnInit {
 
         params.RunDate = "'" + moment(this.runDate).format('DD/MM/YYYY') + "'";
         params.EffectiveDate = (this.effectiveDate) ? "'" + moment(this.effectiveDate).format('DD/MM/YYYY') + "'" : 'null';
+        params.RegistrationType = (this.regType) ? this.regType : 'null';
+        params.Gender = (this.gender) ? this.gender : 'null';
+        params.DobMin = (this.dobMin) ? "'" + moment(this.dobMin).format('DD/MM/YYYY') + "'" : 'null';
+        params.DobMax = (this.dobMax) ? "'" + moment(this.dobMax).format('DD/MM/YYYY') + "'" : 'null';
         params.SnomedCode = (this.snomedCode) ? this.snomedCode.code : 'null';
         params.OriginalCode = (this.originalCode) ? "'" + this.originalCode + "'" : 'null';
         params.ValueMin = (this.valueMin) ? this.valueMin : 'null';
