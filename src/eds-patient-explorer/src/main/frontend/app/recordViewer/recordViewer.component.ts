@@ -14,6 +14,8 @@ import {UIImmunisation} from "./models/resources/clinical/UIImmunisation";
 import {UIFamilyHistory} from "./models/resources/clinical/UIFamilyHistory";
 import {UIMedicationStatement} from "./models/resources/clinical/UIMedicationStatement";
 import {Subscription} from "rxjs";
+import {LoggerService} from "../common/logger.service";
+import {SecurityService} from "../security/security.service";
 
 @Component({
 		template : require('./recordViewer.html')
@@ -23,8 +25,10 @@ export class RecordViewerComponent {
 		public patient: UIPatientRecord;
 		busy: Subscription;
 
-		constructor(private $modal: NgbModal, protected recordViewerService: RecordViewerService) {
-				this.showPatientFind();
+		constructor(private $modal: NgbModal,
+								protected logger : LoggerService,
+								protected securityService : SecurityService,
+								protected recordViewerService: RecordViewerService) {
 		}
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -32,10 +36,14 @@ export class RecordViewerComponent {
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		public showPatientFind(): void {
 				let ctrl = this;
-				PatientFindDialog
+				if (ctrl.securityService.currentUser.organisation) {
+					PatientFindDialog
 						.open(ctrl.$modal)
 						.result
-						.then((result: UIPatient) => ctrl.setPatient(result));
+						.then((result: UIPatient) => { if (result) ctrl.setPatient(result) });
+					} else {
+					ctrl.logger.warning('Select a service', null, 'No service selected');
+				}
 		}
 
 		public setPatient(patient: UIPatient): void {

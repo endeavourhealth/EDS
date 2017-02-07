@@ -66,11 +66,17 @@ export class CountReportComponent {
 
 	runReport() {
 		var vm = this;
-		// Get param list from query
-		ReportParamsDialog.open(vm.$modal, this.libraryItem.countReport)
-			.result.then(function (params) {
-			vm.executeReport(params);
-		});
+		if (vm.securityService.currentUser.organisation) {
+			// Get param list from query
+			ReportParamsDialog.open(vm.$modal, this.libraryItem.countReport)
+				.result.then((params) => {
+					if (params)
+						vm.executeReport(params);
+				}
+			);
+		} else {
+			vm.logger.warning('Select a service', null, 'No service selected');
+		}
 	}
 
 	executeReport(params : Map<string, string>) {
