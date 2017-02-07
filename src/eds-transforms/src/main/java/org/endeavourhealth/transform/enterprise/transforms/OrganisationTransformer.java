@@ -63,7 +63,13 @@ public class OrganisationTransformer extends AbstractTransformer {
                 new EnterpriseIdMapRepository().saveEnterpriseOrganisationIdMapping(extractOrgOdsCode, enterpriseId);
             }
 
-            name = fhir.getName();
+            //we have at least one Emis org without a name, which is against their spec, but we need to handle it
+            if (fhir.hasName()) {
+                name = fhir.getName();
+            } else {
+                name = "";
+            }
+            //name = fhir.getName();
 
             if (fhir.hasPartOf()) {
 
