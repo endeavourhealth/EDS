@@ -135,8 +135,11 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 			String zippedCsvs = FhirToEnterpriseCsvTransformer.transformFromFhir(senderOrganisationUuid, batchId, resourceIds);
 
-			//we file the data directly, so return null to end the pipeline
-			EnterpriseFiler.file(zippedCsvs);
+			//file the data directly, so return null to end the pipeline
+			if (!Strings.isNullOrEmpty(zippedCsvs)) {
+				EnterpriseFiler.file(zippedCsvs);
+			}
+
 			return null;
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
