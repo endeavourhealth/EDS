@@ -8,16 +8,8 @@ import org.endeavourhealth.transform.hl7v2.parser.datatypes.Xpn;
 import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
 import org.endeavourhealth.transform.hl7v2.parser.segments.MshSegment;
 import org.endeavourhealth.transform.hl7v2.parser.segments.PidSegment;
-import org.endeavourhealth.transform.hl7v2.transform.converters.AddressConverter;
-import org.endeavourhealth.transform.hl7v2.transform.converters.DateHelper;
-import org.endeavourhealth.transform.hl7v2.transform.converters.IdentifierConverter;
-import org.endeavourhealth.transform.hl7v2.transform.converters.NameConverter;
-import org.hl7.fhir.instance.model.BooleanType;
-import org.hl7.fhir.instance.model.DateTimeType;
-import org.hl7.fhir.instance.model.Identifier;
-import org.hl7.fhir.instance.model.Patient;
-
-import java.time.LocalDateTime;
+import org.endeavourhealth.transform.hl7v2.transform.converters.*;
+import org.hl7.fhir.instance.model.*;
 
 public class PatientTransform {
 
@@ -31,6 +23,23 @@ public class PatientTransform {
 
         addNames(sourcePid, target);
 
+        setBirthAndDeath(sourcePid, target);
+
+        setSex(sourcePid, target);
+
+        addAddresses(sourcePid, target);
+
+        return target;
+    }
+
+    private static void setSex(PidSegment sourcePid, Patient target) throws TransformException {
+        if (StringUtils.isEmpty(sourcePid.getSex()))
+            return;
+
+        target.setGender(SexConverter.convert(sourcePid.getSex()));
+    }
+
+    private static void setBirthAndDeath(PidSegment sourcePid, Patient target) throws ParseException, TransformException {
         if (sourcePid.getDateOfBirth() != null)
             target.setBirthDate(DateHelper.fromLocalDateTime(sourcePid.getDateOfBirth()));
 
@@ -38,21 +47,20 @@ public class PatientTransform {
             target.setDeceased(new DateTimeType(DateHelper.fromLocalDateTime(sourcePid.getDateOfDeath())));
         else if (isDeceased(sourcePid.getDeathIndicator()))
             target.setDeceased(new BooleanType(true));
-
-
-
-        addAddresses(sourcePid, target);
-
-
-
-        return target;
     }
 
-    private static boolean isDeceased(String deathIndicator) {
-        if (StringUtils.isNotEmpty(deathIndicator))
-            return (deathIndicator.trim().toLowerCase().substring(0, 1).equals("y"));
+    private static boolean isDeceased(String deathIndicator) throws TransformException {
+        if (StringUtils.isEmpty(deathIndicator))
+            return false;
 
-        return false;
+        String indicator = deathIndicator.trim().toLowerCase().substring(0, 1);
+
+        if (indicator.equals("y"))
+            return true;
+        else if (indicator.equals("n"))
+            return false;
+
+        throw new TransformException(indicator + " not recognised as a death indicator");
     }
 
     private static void addAddresses(PidSegment sourcePid, Patient target) throws TransformException {
