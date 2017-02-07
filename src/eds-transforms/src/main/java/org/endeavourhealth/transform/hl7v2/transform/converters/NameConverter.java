@@ -1,7 +1,6 @@
 package org.endeavourhealth.transform.hl7v2.transform.converters;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.IXpn;
 import org.endeavourhealth.transform.hl7v2.transform.TransformException;
 import org.hl7.fhir.instance.model.HumanName;
@@ -25,13 +24,15 @@ public class NameConverter {
         if (StringUtils.isNotBlank(source.getSuffix()))
             humanName.addSuffix(formatTitle(source.getSuffix()));
 
-        humanName.setUse(convertNameTypeCode(source.getNameTypeCode()));
+        if (StringUtils.isNotBlank(source.getNameTypeCode()))
+            humanName.setUse(convertNameTypeCode(source.getNameTypeCode()));
 
         return humanName;
     }
 
     private static HumanName.NameUse convertNameTypeCode(String nameTypeCode) throws TransformException {
-        Validate.notNull(nameTypeCode);
+        if (nameTypeCode == null)
+            nameTypeCode = "";
 
         nameTypeCode = nameTypeCode.trim().toLowerCase();
 
@@ -80,43 +81,23 @@ public class NameConverter {
         if (title == null)
             return null;
 
-        String result = formatName(title);
+        String result = StringHelper.formatName(title);
 
         result = result.replace(".", "");
 
         return result;
     }
 
-    public static String formatName(String name) {
-        if (name == null)
-            return null;
-
-        name = trimBetweenWords(name);
-
-        String result = "";
-
-        boolean previousWasLetter = false;
-
-        for (int i = 0; i < name.length(); i++) {
-
-            char character = name.charAt(i);
-
-            if (previousWasLetter)
-                result += Character.toString(character).toLowerCase();
-            else
-                result += Character.toString(character).toUpperCase();
-
-            previousWasLetter = (Character.isLetter(character));
-        }
-
-        return result;
+    private static String formatName(String name) {
+        return StringHelper.formatName(name);
     }
+
 
     public static String formatSurname(String surname) {
         if (surname == null)
             return null;
 
-        String result = formatName(surname);
+        String result = StringHelper.formatName(surname);
 
         result = upperCaseAfterFragment(result, "Mc");
         result = upperCaseAfterFragment(result, "Mac");
@@ -148,9 +129,5 @@ public class NameConverter {
         }
 
         return stringBuilder.toString();
-    }
-
-    private static String trimBetweenWords(String str) {
-        return str.replaceAll("\\s+"," ");
     }
 }

@@ -29,6 +29,14 @@ public class Message {
 
     //////////////////  Accessors  //////////////////
 
+    public boolean hasSegment(String segmentName) {
+        return (getSegments(segmentName).size() > 0);
+    }
+
+    public boolean hasSegment(SegmentName segmentName) {
+        return (getSegments(segmentName).size() > 0);
+    }
+
     public Segment getSegment(SegmentName segmentName) {
         List<Segment> segments = getSegments(segmentName);
         return Helpers.getSafely(segments, FIRST);
