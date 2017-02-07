@@ -26,9 +26,9 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class EmisReverseCsvTransformer {
+public class FhirToEmisCsvTransformer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EmisReverseCsvTransformer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FhirToEmisCsvTransformer.class);
 
     public static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT;
     public static final String DATE_FORMAT_YYYY_MM_DD = "yyyy-MM-dd"; //EMIS spec says "dd/MM/yyyy", but test data is different

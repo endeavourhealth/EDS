@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.schema.prescribing;
 
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 
 import java.io.File;
@@ -9,13 +9,13 @@ import java.util.Date;
 
 public class DrugRecord extends AbstractCsvParser {
     public DrugRecord(String version, File f, boolean openParser) throws Exception {
-        super(version, f, openParser, EmisCsvTransformer.CSV_FORMAT, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
+        super(version, f, openParser, EmisCsvToFhirTransformer.CSV_FORMAT, EmisCsvToFhirTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvToFhirTransformer.TIME_FORMAT);
     }
 
     @Override
     protected String[] getCsvHeaders(String version) {
 
-        if (version.equals(EmisCsvTransformer.VERSION_5_0)) {
+        if (version.equals(EmisCsvToFhirTransformer.VERSION_5_0)) {
             return new String[]{
                     "DrugRecordGuid",
                     "PatientGuid",
@@ -40,7 +40,7 @@ public class DrugRecord extends AbstractCsvParser {
                     "Deleted",
                     "ProcessingId"
             };
-        } else if (version.equals(EmisCsvTransformer.VERSION_5_1)) {
+        } else if (version.equals(EmisCsvToFhirTransformer.VERSION_5_1)) {
             return new String[]{
                     "DrugRecordGuid",
                     "PatientGuid",

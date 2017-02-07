@@ -27,7 +27,6 @@ export class TransformErrorsDialog  {
     public static open(modalService: NgbModal, serviceId: string, systemId: string, transformAudit: TransformErrorDetail) {
 
         const modalRef = modalService.open(TransformErrorsDialog, { backdrop : "static", size : "lg"} as NgbModalOptions);
-        //const modalRef = modalService.open(TransformErrorsDialog, { backdrop : "static", size : "lg"});
 
         modalRef.componentInstance.transformAudit = transformAudit;
         modalRef.componentInstance.systemId = systemId;

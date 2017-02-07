@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation;
@@ -78,7 +78,7 @@ public class ConsultationTransformer {
 
         //in the earliest version of the extract, we only got the entered date and not time
         Date enteredDateTime = null;
-        if (version.equals(EmisCsvTransformer.VERSION_5_0)) {
+        if (version.equals(EmisCsvToFhirTransformer.VERSION_5_0)) {
             enteredDateTime = parser.getEnteredDate();
         } else {
             enteredDateTime = parser.getEnteredDateTime();

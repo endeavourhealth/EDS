@@ -11,7 +11,8 @@ import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.CallableError;
 import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.endeavourhealth.transform.emis.csv.ThreadPool;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +26,7 @@ public class FhirResourceFiler {
 
     private static final Logger LOG = LoggerFactory.getLogger(FhirResourceFiler.class);
 
-    private static Set<Class> patientResourceClasses = null;
+    private static Set<ResourceType> patientResourceTypes = null;
 
     private final UUID exchangeId;
     private final UUID serviceId;
@@ -276,38 +277,41 @@ public class FhirResourceFiler {
     }*/
 
     public static boolean isPatientResource(Resource resource) {
-        Class cls = resource.getClass();
+        return isPatientResource(resource.getResourceType());
+    }
 
-        if (patientResourceClasses == null) {
-            Set<Class> set = new HashSet<>();
-            set.add(AllergyIntolerance.class);
-            set.add(Appointment.class);
-            set.add(Condition.class);
-            set.add(DiagnosticOrder.class);
-            set.add(DiagnosticReport.class);
-            set.add(Encounter.class);
-            set.add(EpisodeOfCare.class);
-            set.add(FamilyMemberHistory.class);
-            set.add(Immunization.class);
-            set.add(MedicationOrder.class);
-            set.add(MedicationStatement.class);
-            set.add(Observation.class);
-            set.add(Order.class);
-            set.add(Patient.class);
-            set.add(Procedure.class);
-            set.add(ProcedureRequest.class);
-            set.add(ReferralRequest.class);
-            set.add(RelatedPerson.class);
-            set.add(Specimen.class);
+    public static boolean isPatientResource(ResourceType type) {
+
+        if (patientResourceTypes == null) {
+            Set<ResourceType> set = new HashSet<>();
+            set.add(ResourceType.AllergyIntolerance);
+            set.add(ResourceType.Appointment);
+            set.add(ResourceType.Condition);
+            set.add(ResourceType.DiagnosticOrder);
+            set.add(ResourceType.DiagnosticReport);
+            set.add(ResourceType.Encounter);
+            set.add(ResourceType.EpisodeOfCare);
+            set.add(ResourceType.FamilyMemberHistory);
+            set.add(ResourceType.Immunization);
+            set.add(ResourceType.MedicationOrder);
+            set.add(ResourceType.MedicationStatement);
+            set.add(ResourceType.Observation);
+            set.add(ResourceType.Order);
+            set.add(ResourceType.Patient);
+            set.add(ResourceType.Procedure);
+            set.add(ResourceType.ProcedureRequest);
+            set.add(ResourceType.ReferralRequest);
+            set.add(ResourceType.RelatedPerson);
+            set.add(ResourceType.Specimen);
 
             //although Slot isn't technically linked to a patient, it is saved at the same time as
             //Appointment resources, so should be treated as one
-            set.add(Slot.class);
+            set.add(ResourceType.Slot);
 
-            patientResourceClasses = set;
+            patientResourceTypes = set;
         }
 
-        return patientResourceClasses.contains(cls);
+        return patientResourceTypes.contains(type);
     }
 
     public UUID getServiceId() {

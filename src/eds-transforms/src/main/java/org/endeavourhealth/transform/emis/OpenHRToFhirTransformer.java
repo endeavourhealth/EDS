@@ -13,7 +13,7 @@ import org.hl7.fhir.instance.model.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OpenHRTransformer
+public class OpenHRToFhirTransformer
 {
     public List<Resource> toFhirFullRecord(String openHRXml) throws TransformException
     {

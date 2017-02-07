@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.emis.csv.schema.coding;
 
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 
 import java.io.File;
@@ -8,13 +8,13 @@ import java.io.File;
 public class ClinicalCode extends AbstractCsvParser {
 
     public ClinicalCode(String version, File f, boolean openParser) throws Exception {
-        super(version, f, openParser, EmisCsvTransformer.CSV_FORMAT, EmisCsvTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformer.TIME_FORMAT);
+        super(version, f, openParser, EmisCsvToFhirTransformer.CSV_FORMAT, EmisCsvToFhirTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvToFhirTransformer.TIME_FORMAT);
     }
 
     @Override
     protected String[] getCsvHeaders(String version) {
 
-        if (version.equals(EmisCsvTransformer.VERSION_5_4)) {
+        if (version.equals(EmisCsvToFhirTransformer.VERSION_5_4)) {
             return new String[]{
                     "CodeId",
                     "Term",
