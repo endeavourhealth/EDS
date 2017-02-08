@@ -28,6 +28,9 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
 
         //retrieve our resources
         List<ResourceByExchangeBatch> filteredResources = getResources(batchId, resourceIds);
+        if (filteredResources.isEmpty()) {
+            return null;
+        }
 
         //we need to find the sender organisation national ID for the data in the batch
         Organisation org = new OrganisationRepository().getById(senderOrganisationUuid);

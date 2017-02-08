@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace Endeavour.EmisWebPollerService
@@ -24,7 +19,8 @@ namespace Endeavour.EmisWebPollerService
 
                 Configuration.Configuration configuration = LoadConfiguration();
 
-                ProcessPassword(configuration);
+                ProcessPartnerApiPassword(configuration);
+                ProcessKeycloakPassword(configuration);
 
                 Log.Write("Configuration values:");
 
@@ -38,7 +34,7 @@ namespace Endeavour.EmisWebPollerService
             }
         }
 
-        private static void ProcessPassword(Configuration.Configuration configuration)
+        private static void ProcessPartnerApiPassword(Configuration.Configuration configuration)
         {
             if (configuration.IsPartnerApiPasswordEncrypted)
             {
@@ -56,35 +52,59 @@ namespace Endeavour.EmisWebPollerService
             {
                 string password = configuration.PartnerApiPassword;
 
-                EncryptAndSavePasswordToConfiguration(configuration);
+                EncryptAndSavePartnerApiPasswordToConfiguration(configuration);
 
                 configuration.PartnerApiPassword = password;
                 configuration.IsPartnerApiPasswordEncrypted = false;
             }
         }
 
+        private static void ProcessKeycloakPassword(Configuration.Configuration configuration)
+        {
+            if (configuration.IsKeycloakPasswordEncrypted)
+            {
+                try
+                {
+                    configuration.KeycloakPassword = EncryptionHelper.DecryptStringAES(configuration.KeycloakPassword, configuration.KeycloakUserName);
+                    configuration.IsKeycloakPasswordEncrypted = false;
+                }
+                catch (Exception e)
+                {
+                    throw new ConfigurationException("Could not decrypt KeycloakPassword", e);
+                }
+            }
+            else
+            {
+                string password = configuration.KeycloakPassword;
+
+                EncryptAndSaveKeycloakPasswordToConfiguration(configuration);
+
+                configuration.KeycloakPassword = password;
+                configuration.IsKeycloakPasswordEncrypted = false;
+            }
+        }
+
         private static void LogConfigurationValues(Configuration.Configuration configuration)
         {
             string partnerApiPasswordKey = Utilities.GetMemberName((Configuration.Configuration c) => c.PartnerApiPassword);
+            string keycloakPasswordKey = Utilities.GetMemberName((Configuration.Configuration c) => c.KeycloakPassword);
 
             foreach (var configurationValue in GetConfigurationValues(configuration))
             {
                 string value = configurationValue.Value;
 
-                if (configurationValue.Key == partnerApiPasswordKey)
-                    value = new string('X', value.Length);
+                if (configurationValue.Key == partnerApiPasswordKey || configurationValue.Key == keycloakPasswordKey)
+                    value = new string('*', value.Length);
 
                 Log.Write("  " + configurationValue.Key + " = " + value);
             }
         }
 
-        private static void EncryptAndSavePasswordToConfiguration(Configuration.Configuration configuration)
+        private static void EncryptAndSavePartnerApiPasswordToConfiguration(Configuration.Configuration configuration)
         {
             string encryptedPassword = EncryptionHelper.EncryptStringAES(configuration.PartnerApiPassword, configuration.PartnerApiUserName);
 
-            string configurationXml = Utilities.LoadTextFile(FilePaths.ConfigurationFilePath);
-
-            XDocument configurationDocument = XmlHelper.LoadToDocument(configurationXml);
+            XDocument configurationDocument = GetConfigurationDocument();
 
             string partnerApiPasswordElementName = Utilities.GetMemberName((Configuration.Configuration c) => c.PartnerApiPassword);
             string isPartnerApiPasswordEncryptedName = Utilities.GetMemberName((Configuration.Configuration c) => c.IsPartnerApiPasswordEncrypted);
@@ -92,8 +112,33 @@ namespace Endeavour.EmisWebPollerService
             UpdateConfigurationValue(configurationDocument, partnerApiPasswordElementName, encryptedPassword);
             UpdateConfigurationValue(configurationDocument, isPartnerApiPasswordEncryptedName, bool.TrueString.ToLower());
 
-            string xml = XmlHelper.SaveFromDocument(configurationDocument);
+            SaveConfigurationDocument(configurationDocument);
+        }
 
+        private static void EncryptAndSaveKeycloakPasswordToConfiguration(Configuration.Configuration configuration)
+        {
+            string encryptedPassword = EncryptionHelper.EncryptStringAES(configuration.KeycloakPassword, configuration.KeycloakUserName);
+
+            XDocument configurationDocument = GetConfigurationDocument();
+
+            string keycloakPasswordElementName = Utilities.GetMemberName((Configuration.Configuration c) => c.KeycloakPassword);
+            string isPartnerKeycloakEncryptedName = Utilities.GetMemberName((Configuration.Configuration c) => c.IsKeycloakPasswordEncrypted);
+
+            UpdateConfigurationValue(configurationDocument, keycloakPasswordElementName, encryptedPassword);
+            UpdateConfigurationValue(configurationDocument, isPartnerKeycloakEncryptedName, bool.TrueString.ToLower());
+
+            SaveConfigurationDocument(configurationDocument);
+        }
+
+        private static XDocument GetConfigurationDocument()
+        {
+            string configurationXml = Utilities.LoadTextFile(FilePaths.ConfigurationFilePath);
+            return XmlHelper.LoadToDocument(configurationXml);
+        }
+
+        private static void SaveConfigurationDocument(XDocument configurationDocument)
+        {
+            string xml = XmlHelper.SaveFromDocument(configurationDocument);
             Utilities.SaveTextFile(FilePaths.ConfigurationFilePath, xml);
         }
 
@@ -119,8 +164,8 @@ namespace Endeavour.EmisWebPollerService
         private static Dictionary<string, string> GetConfigurationValues(Configuration.Configuration configuration)
         {
             return typeof(Configuration.Configuration)
-                .GetProperties()
-                .ToDictionary(t => t.Name, t => t.GetValue(configuration, null).ToString());
+                .GetFields()
+                .ToDictionary(t => t.Name, t => t.GetValue(configuration).ToString());
         }
 
         private static void SaveNewConfiguration()
