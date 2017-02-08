@@ -21,7 +21,7 @@ insert into configuration.channel
 	notes
 )
 values
-(1, 'HOMERTON', 8900, true, false, 'HOMERTON_TIE', 'HOMERTON', 'EDS', 'ENDEAVOUR', 2, 'NHS', 3, 'Homerton Case Note Number', 'RQX', ''),
+(1, 'HOMERTON', 8900, true, false, 'P0241', 'HOMERTON', 'HOMERTON_TIE', 'HOMERTON', 2, 'NHS', 3, 'Homerton Case Note Number', 'RQX', ''),
 (2, 'BARTS', 8901, true, false, 'BLT_TIE', 'BLT', 'EDS', 'ENDEAVOUR', null, null, null, null, 'R1H', '');
 
 insert into configuration.channel_message_type
