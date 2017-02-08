@@ -71,7 +71,7 @@ public class HL7ChannelForwarder implements Runnable {
         LocalDateTime lastLockTriedTime = null;
         DbMessage message = null;
         Integer attemptIntervalSeconds = getFirstAttemptIntervalSeconds();
-        LocalDateTime gotMessageTime = null;
+        LocalDateTime lastAttemptTime = null;
 
         try {
             while (!stopRequested) {
@@ -85,7 +85,7 @@ public class HL7ChannelForwarder implements Runnable {
 
                         if (message == null) {
                             message = getNextMessage();
-                            gotMessageTime = LocalDateTime.now();
+                            lastAttemptTime = LocalDateTime.now();
                         }
 
                         if (stopRequested)
@@ -93,8 +93,9 @@ public class HL7ChannelForwarder implements Runnable {
 
                         if (message != null) {
 
-                            if (gotMessageTime.plusSeconds(attemptIntervalSeconds).isBefore(LocalDateTime.now())) {
+                            if (lastAttemptTime.plusSeconds(attemptIntervalSeconds).isBefore(LocalDateTime.now())) {
 
+                                lastAttemptTime = LocalDateTime.now();
                                 attemptIntervalSeconds = getNextAttemptIntervalSeconds(attemptIntervalSeconds);
 
                                 boolean success = processMessage(message);
