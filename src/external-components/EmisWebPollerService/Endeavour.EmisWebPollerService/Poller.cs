@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Endeavour.EmisWebPollerService
 {
@@ -90,7 +86,7 @@ namespace Endeavour.EmisWebPollerService
 
                 string patientRecord = GetPatientRecord(nextPatientId);
 
-                SendToEndeavourDataService(patientRecord);
+                SendToEndeavourDataService(nextPatientId, patientRecord);
 
                 _state.RemovePatient(nextPatientId);
             }
@@ -163,9 +159,13 @@ namespace Endeavour.EmisWebPollerService
             return patientIds.ToArray();
         }
 
-        private void SendToEndeavourDataService(string patientXml)
+        private void SendToEndeavourDataService(int patientId, string patientXml)
         {
-            HttpWebResponse response = Utilities.HttpPost(_configuration.EndeavourServiceEndpoint, patientXml);
+            ServerApi.Send(_configuration.EndeavourServiceEndpoint,
+                patientId,
+                _configuration.OdsCode,
+                patientXml);
+            Log.Write($"Patient Sent: {patientId}");
         }
     }
 }

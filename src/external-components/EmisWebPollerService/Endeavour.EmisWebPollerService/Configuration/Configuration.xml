@@ -2,35 +2,58 @@
 <Endeavour.EmisWebPollerService xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="Configuration.xsd">
   <Configuration>
     
-		<!-- Endeavour endpoint for receiving patient records -->
-		<EndeavourServiceEndpoint>http://127.0.0.1:8080/api/v0.1/Bulk/Patient</EndeavourServiceEndpoint>
+    <!-- Endeavour endpoint for receiving patient records -->
+    <EndeavourServiceEndpoint>https://deveds.endeavourhealth.net/eds-api/api/PostMessageAsync</EndeavourServiceEndpoint>
+
+    <!-- Endeavour Keycloak endpoint -->
+    <KeycloakBaseUrl>https://devauth.endeavourhealth.net/auth</KeycloakBaseUrl>
+
+    <!-- Endeavour Keycloak Realm -->
+    <KeycloakRealm>endeavour</KeycloakRealm>
+
+    <!-- Endeavour Keycloak ClientId -->
+    <KeycloakClientId>eds-ui</KeycloakClientId>
+
+    <!-- Endeavour Keycloak UserName -->
+    <KeycloakUserName>professional</KeycloakUserName>
+
+    <!-- Endeavour Keycloak Password -->
+    <KeycloakPassword>password</KeycloakPassword>
+
+    <!-- Whether the KeycloakPassword is encrypted or not -->
+    <!-- If the password is not encrypted, set the value to false, and the poller will encrypt it on first run -->
+    <IsKeycloakPasswordEncrypted>false</IsKeycloakPasswordEncrypted>
+
+    <!-- ODS code for the organisation this is running at -->
+    <!-- Note: used as the source.name in the MessageHeader resouse sent in the Bundle to the Endeavour Service Api -->
+    <OdsCode>Y00001</OdsCode>
+
+    <!-- Number of milliseconds for Windows service thread to sleep for after completing one cycle -->
+    <!-- Note: setting this too high will lead in the service becoming unresponsive -->
+    <ServiceThreadSleepMilliseconds>1000</ServiceThreadSleepMilliseconds>
     
-		<!-- Number of minutes for Windows service thread to sleep for after completing one cycle -->
-		<!-- Note: setting this too high will lead in the service becoming unresponsive -->
-		<ServiceThreadSleepMilliseconds>1000</ServiceThreadSleepMilliseconds>
+    <!-- EMIS Web CDB number for the site this is running at -->
+    <EmisWebCdb>50002</EmisWebCdb>
     
-		<!-- EMIS Web CDB number for the site this is running at -->
-		<EmisWebCdb>50002</EmisWebCdb>
+    <!-- IP address of EMIS' EMAS server.  This is provided by EMIS -->
+    <EmisWebIPAddress>185.13.72.90</EmisWebIPAddress>
     
-		<!-- IP address of EMIS' EMAS server.  This is provided by EMIS -->
-		<EmisWebIPAddress>127.0.0.1</EmisWebIPAddress>
+    <!-- Endeavour Health Partner API key.  Also provided by EMIS. -->
+    <PartnerApiKey>417fd2ff-aeba-46e7-82b6-9ceb496dcfdf</PartnerApiKey>
     
-		<!-- Endeavour Health Partner API key.  Also provided by EMIS. -->
-		<PartnerApiKey>417fd2ff-aeba-46e7-82b6-9ceb496dcfdf</PartnerApiKey>
+    <!-- Partner API username.  This is specific to the site being installed at. -->
+    <PartnerApiUserName>emistest</PartnerApiUserName>
     
-		<!-- Partner API username.  This is specific to the site being installed at. -->
-		<PartnerApiUserName>emistest</PartnerApiUserName>
+    <!-- Encrypted partner API password.  This is specific to the site being installed at. -->
+    <!-- Note: this may be different from the same as the client login password -->
+    <PartnerApiPassword>Emis1234</PartnerApiPassword>
     
-		<!-- Encrypted partner API password.  This is specific to the site being installed at. -->
-		<!-- Note: this may be different from the same as the client login password -->
-		<PartnerApiPassword>Emis1234</PartnerApiPassword>
+    <!-- Whether the PartnerApiPassword is encrypted or not -->
+    <!-- If the password is not encrypted, set the value to false, and the poller will encrypt it on first run -->
+    <IsPartnerApiPasswordEncrypted>false</IsPartnerApiPasswordEncrypted>
+
+    <!-- Number of minutes to wait between each synchronization check -->
+    <SynchronizationFrequencyMinutes>15</SynchronizationFrequencyMinutes>
     
-		<!-- Whether the PartnerApiPassword is encrypted or not -->
-		<!-- If the password is not encrypted, set the value to false, and the poller will encrypt it on first run -->
-		<IsPartnerApiPasswordEncrypted>false</IsPartnerApiPasswordEncrypted>
-    
-		<!-- Partner API password.  This is specific to the site being installed at. -->
-		<SynchronizationFrequencyMinutes>1</SynchronizationFrequencyMinutes>
-    
-	</Configuration>
+  </Configuration>
 </Endeavour.EmisWebPollerService>

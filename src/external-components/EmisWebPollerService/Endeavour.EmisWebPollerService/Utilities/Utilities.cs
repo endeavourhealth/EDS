@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Net;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Endeavour.EmisWebPollerService
 {
@@ -81,33 +76,11 @@ namespace Endeavour.EmisWebPollerService
             throw new ArgumentException("Expression is not a member access", "expression");
         }
 
-        public static HttpWebResponse HttpPost(string url, string data)
+        public static string EncodeToBase64String(string stringToEncode)
         {
-            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(data);
-
-            WebRequest request = WebRequest.Create(url);
-            request.Method = "POST";
-
-            request.ContentLength = bytes.Length;
-
-            using (Stream contentStream = request.GetRequestStream())
-                contentStream.Write(bytes, 0, bytes.Length);
-
-            HttpWebResponse response = null;
-
-            try
-            {
-                response = (HttpWebResponse)request.GetResponse();
-            }
-            catch (WebException e)
-            {
-                response = e.Response as HttpWebResponse;
-
-                if (response == null)
-                    throw;
-            }
-
-            return response;
+            var plainTextBytes = Encoding.UTF8.GetBytes(stringToEncode);
+            return Convert.ToBase64String(plainTextBytes);
         }
+
     }
 }

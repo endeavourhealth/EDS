@@ -27,7 +27,7 @@ namespace Endeavour.EmisWebPollerService
                 
                 string logFilePath = Path.Combine(FilePaths.LogPath, GetLogFileName());
 
-                Utilities.AppendToTextFile(logFilePath, DateTime.Now.ToString() + " " + text + Environment.NewLine);
+                Utilities.AppendToTextFile(logFilePath, DateTime.UtcNow.ToString() + " " + text + Environment.NewLine);
             }
             catch (Exception e)
             {
