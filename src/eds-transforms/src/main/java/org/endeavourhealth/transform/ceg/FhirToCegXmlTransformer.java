@@ -22,9 +22,9 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class CegFhirTransformer {
+public class FhirToCegXmlTransformer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CegFhirTransformer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FhirToCegXmlTransformer.class);
 
     public static String transformFromFhir(UUID serviceId,
                                            UUID orgNationalId,

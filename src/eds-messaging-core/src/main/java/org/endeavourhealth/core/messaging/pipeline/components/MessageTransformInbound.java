@@ -18,8 +18,8 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.FhirDeltaResourceFilter;
 import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.common.exceptions.SoftwareNotSupportedException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
-import org.endeavourhealth.transform.emis.EmisOpenTransformer;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.emis.EmisOpenToFhirTransformer;
 import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -304,7 +304,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		String exchangeBody = exchange.getBody();
 		UUID exchangeId = exchange.getExchangeId();
 
-		EmisCsvTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
+		EmisCsvToFhirTransformer.transform(exchangeId, exchangeBody, serviceId, systemId, currentErrors,
 									batchIds, previousErrors, sharedStoragePath, maxFilingThreads);
 	}
 
@@ -326,7 +326,7 @@ public class MessageTransformInbound extends PipelineComponent {
 		UUID exchangeId = exchange.getExchangeId();
 
 		//transform from XML -> FHIR
-		List<Resource> resources = EmisOpenTransformer.toFhirFullRecord(xmlPayload);
+		List<Resource> resources = EmisOpenToFhirTransformer.toFhirFullRecord(xmlPayload);
 
 		//map IDs, compute delta and file
 		FhirDeltaResourceFilter filer = new FhirDeltaResourceFilter(serviceId, systemId, maxFilingThreads);

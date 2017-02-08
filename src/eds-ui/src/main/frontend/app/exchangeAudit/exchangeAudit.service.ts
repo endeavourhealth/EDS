@@ -70,4 +70,14 @@ export class ExchangeAuditService extends BaseHttp2Service {
         return this.httpPost('api/exchangeAudit/rerunAllExchangesInError', request);
     }
 
+    getTransformErrorLines(serviceId:string, systemId:string, exchangeId:string, version:string) : Observable<string[]> {
+        var params = new URLSearchParams();
+        params.append('serviceId', serviceId);
+        params.append('systemId', systemId);
+        params.append('exchangeId', exchangeId);
+        params.append('version', version);
+
+        return this.httpGet('api/exchangeAudit/getTransformErrorLines', { search : params});
+    }
+
 }

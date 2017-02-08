@@ -44,9 +44,9 @@ import java.lang.reflect.Constructor;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public abstract class EmisCsvTransformer {
+public abstract class EmisCsvToFhirTransformer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EmisCsvTransformer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EmisCsvToFhirTransformer.class);
 
     public static final String VERSION_5_4 = "5.4"; //version being received live from Emis as of Dec 2016
     public static final String VERSION_5_3 = "5.3"; //version being received live from Emis as of Nov 2016

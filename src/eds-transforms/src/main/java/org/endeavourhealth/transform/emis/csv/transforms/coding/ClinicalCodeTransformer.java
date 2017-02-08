@@ -4,7 +4,7 @@ import org.endeavourhealth.core.data.admin.CodeRepository;
 import org.endeavourhealth.core.data.admin.models.SnomedLookup;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.CallableError;
 import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -89,7 +89,7 @@ public abstract class ClinicalCodeTransformer {
 
         //the parent code ID was added after 5.3
         Long parentCodeId = null;
-        if (version.equals(EmisCsvTransformer.VERSION_5_4)) {
+        if (version.equals(EmisCsvToFhirTransformer.VERSION_5_4)) {
             parentCodeId = parser.getParentCodeId();
         }
 

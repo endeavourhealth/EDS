@@ -6,7 +6,7 @@ import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
@@ -55,8 +55,8 @@ public class ProblemTransformer {
         fhirProblem.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //the deleted fields isn't present in the test pack, so need to check the version first
-        if (!version.equals(EmisCsvTransformer.VERSION_5_0)
-            && !version.equals(EmisCsvTransformer.VERSION_5_1)
+        if (!version.equals(EmisCsvToFhirTransformer.VERSION_5_0)
+            && !version.equals(EmisCsvToFhirTransformer.VERSION_5_1)
             && parser.getDeleted()) {
 
             //if we have a row in the Problem file that's deleted but the row in the Observation file

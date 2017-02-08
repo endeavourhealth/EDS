@@ -19,7 +19,7 @@ import org.hl7.fhir.instance.model.Slot;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class EmisOpenTransformer
+public final class EmisOpenToFhirTransformer
 {
     public static List<Resource> toFhirFullRecord(String eomMedicalRecord38Xml) throws TransformException
     {

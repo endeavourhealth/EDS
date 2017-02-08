@@ -14,7 +14,7 @@ import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
-import org.endeavourhealth.transform.enterprise.EnterpriseFhirTransformer;
+import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -444,7 +444,7 @@ public class Main {
 				LOG.info("Processing exchange " + exchangeId + " and batch " + batchId + " " + (j+1) + "/" + exchangeBatches.size());
 
 				try {
-					String outbound = EnterpriseFhirTransformer.transformFromFhir(senderOrgUuid, batchId, null);
+					String outbound = FhirToEnterpriseCsvTransformer.transformFromFhir(senderOrgUuid, batchId, null);
 					EnterpriseFiler.file(outbound);
 
 				} catch (Exception ex) {

@@ -5,9 +5,7 @@ import {Service} from "../services/models/Service";
 import {Organisation} from "../organisations/models/Organisation";
 import {System} from "../system/models/System";
 import {TechnicalInterface} from "../system/models/TechnicalInterface";
-/*import {Endpoint} from "./models/Endpoint";*/
 import {AdminService} from "../administration/admin.service";
-/*import {ServiceService} from "./service.service";*/
 import {OrganisationPickerDialog} from "../organisations/organisationPicker.dialog";
 import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
 import {LoggerService} from "../common/logger.service";
@@ -19,6 +17,8 @@ import {ExchangeAuditService} from "./exchangeAudit.service";
 import {Exchange} from "./Exchange";
 import {ServiceService} from "../services/service.service";
 import {Subscription} from "rxjs/Subscription";
+import {TransformErrorDetail} from "./TransformErrorDetail";
+import {TransformErrorsDialog} from "./transformErrors.dialog";
 
 @Component({
 	template : require('./exchangeAudit.html')
@@ -160,4 +160,17 @@ export class ExchangeAuditComponent {
 		)
 	}
 
+	showTransformErrors(transformAudit: TransformErrorDetail) {
+
+		if (!transformAudit.hadErrors) {
+			this.log.success('No errors to view');
+			return;
+		}
+
+		var serviceId = this.selectedExchange.headers['SenderServiceUuid'];
+		var systemId = this.selectedExchange.headers['SenderSystemUuid'];
+
+		var vm = this;
+		TransformErrorsDialog.open(vm.$modal, serviceId, systemId, transformAudit);
+	}
 }

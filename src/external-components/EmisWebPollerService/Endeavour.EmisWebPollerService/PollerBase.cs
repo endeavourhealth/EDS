@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Endeavour.EmisWebPollerService.Keycloak;
+using System;
 using System.Reflection;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Endeavour.EmisWebPollerService
 {
@@ -16,7 +13,7 @@ namespace Endeavour.EmisWebPollerService
         protected volatile bool _stopping = false;
         protected Configuration.Configuration _configuration;
         private DateTime _lastSynchronization = DateTime.MinValue;
-        private const int ServiceThreadSleepMillisecondsDefault = 1 * 1000;
+        private const int ServiceThreadSleepMillisecondsDefault = 1000;
         private const int SynchronizationFrequencyMinutesDefault = 15;
 
         public PollerBase(string serviceName, Action requestServiceStopCallback)
@@ -52,6 +49,7 @@ namespace Endeavour.EmisWebPollerService
             {
                 WriteStartupLog();
                 ReadConfiguration();
+                InitialiseKeycloak();
 
                 while (!_stopping)
                 {
@@ -122,6 +120,15 @@ namespace Endeavour.EmisWebPollerService
             _configuration = ConfigurationManager.ReadConfiguration();
         }
 
+        private void InitialiseKeycloak()
+        {
+            KeycloakClient.Init(_configuration.KeycloakBaseUrl,
+                _configuration.KeycloakRealm,
+                _configuration.KeycloakUserName,
+                _configuration.KeycloakPassword,
+                _configuration.KeycloakClientId);
+        }
+
         public static int GetSynchronizationFrequencyMinutes(Configuration.Configuration configuration)
         {
             int minutes = SynchronizationFrequencyMinutesDefault;
@@ -134,12 +141,12 @@ namespace Endeavour.EmisWebPollerService
 
         public static int GetServiceThreadSleepMilliseconds(Configuration.Configuration configuration)
         {
-            int minutes = ServiceThreadSleepMillisecondsDefault;
+            int milliseconds = ServiceThreadSleepMillisecondsDefault;
 
             if (configuration != null)
-                minutes = configuration.SynchronizationFrequencyMinutes;
+                milliseconds = configuration.ServiceThreadSleepMilliseconds;
 
-            return minutes;
+            return milliseconds;
         }
 
     }

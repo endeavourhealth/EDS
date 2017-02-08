@@ -2,20 +2,24 @@ package org.endeavourhealth.transform.hl7v2.parser.messages;
 
 import org.endeavourhealth.transform.hl7v2.parser.Message;
 import org.endeavourhealth.transform.hl7v2.parser.ParseException;
-import org.endeavourhealth.transform.hl7v2.parser.segments.MshSegment;
-import org.endeavourhealth.transform.hl7v2.parser.segments.PidSegment;
-import org.endeavourhealth.transform.hl7v2.parser.segments.SegmentName;
+import org.endeavourhealth.transform.hl7v2.parser.segments.*;
 
 public class AdtMessage extends Message {
     public AdtMessage(String message) throws ParseException {
         super(message);
     }
 
+    public boolean hasMshSegment() {
+        return super.hasSegment(SegmentName.MSH);
+    }
+    public boolean hasEvnSegment() { return super.hasSegment(SegmentName.EVN); }
+    public boolean hasPidSegment() { return super.hasSegment(SegmentName.PID); }
+    public boolean hasPd1Segment() { return super.hasSegment(SegmentName.PD1); }
+
     public MshSegment getMshSegment() {
         return (MshSegment) super.getSegment(SegmentName.MSH);
     }
-
-    public PidSegment getPidSegment() {
-        return (PidSegment)super.getSegment(SegmentName.PID);
-    }
+    public EvnSegment getEvnSegment() { return (EvnSegment) super.getSegment(SegmentName.EVN); }
+    public PidSegment getPidSegment() { return (PidSegment) super.getSegment(SegmentName.PID); }
+    public Pd1Segment getPd1Segment() { return (Pd1Segment) super.getSegment(SegmentName.PD1); }
 }

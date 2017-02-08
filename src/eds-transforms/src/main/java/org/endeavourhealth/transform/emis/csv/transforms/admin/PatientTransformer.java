@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.admin.Patient;
@@ -201,8 +201,8 @@ public class PatientTransformer {
                 //have to handle the mis-spelling of the column name in EMIS test pack
                 //String externalOrgGuid = patientParser.getExternalUsualGPOrganisation();
                 String externalOrgGuid = null;
-                if (version.equals(EmisCsvTransformer.VERSION_5_0)
-                        || version.equals(EmisCsvTransformer.VERSION_5_1)) {
+                if (version.equals(EmisCsvToFhirTransformer.VERSION_5_0)
+                        || version.equals(EmisCsvToFhirTransformer.VERSION_5_1)) {
                     externalOrgGuid = parser.getExternalUsusalGPOrganisation();
                 } else {
                     externalOrgGuid = parser.getExternalUsualGPOrganisation();

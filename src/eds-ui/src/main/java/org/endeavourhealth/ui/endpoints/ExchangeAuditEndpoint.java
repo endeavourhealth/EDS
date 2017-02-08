@@ -409,6 +409,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
             JsonTransformExchangeError jsonObj = new JsonTransformExchangeError();
             jsonObj.setExchangeId(exchangeId);
+            jsonObj.setVersion(transformAudit.getVersion());
             jsonObj.setTransformStart(transformAudit.getStarted());
             jsonObj.setTransformEnd(transformAudit.getEnded());
             jsonObj.setNumberBatchIdsCreated(transformAudit.getNumberBatchesCreated());
@@ -581,6 +582,41 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
         }
 
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/getTransformErrorLines")
+    public Response getTransformErrorLines(@Context SecurityContext sc,
+                                             @QueryParam("serviceId") String serviceIdStr,
+                                             @QueryParam("systemId") String systemIdStr,
+                                             @QueryParam("exchangeId") String exchangeIdStr,
+                                             @QueryParam("version") String versionStr) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Get Transform Error Lines",
+                "Exchange Id", exchangeIdStr,
+                "Version", versionStr);
+
+        LOG.trace("getTransformErrorLines for exchange ID " + exchangeIdStr + " and version " + versionStr);
+
+        UUID serviceId = UUID.fromString(serviceIdStr);
+        UUID systemId = UUID.fromString(systemIdStr);
+        UUID exchangeId = UUID.fromString(exchangeIdStr);
+        UUID version = UUID.fromString(versionStr);
+
+        ExchangeTransformAudit transformAudit = auditRepository.getExchangeTransformAudit(serviceId, systemId, exchangeId, version);
+
+        List<String> lines = formatTransformAuditError(transformAudit);
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(lines)
+                .build();
     }
 }
 

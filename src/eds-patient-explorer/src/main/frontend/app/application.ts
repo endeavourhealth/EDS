@@ -2,7 +2,7 @@ import '../content/css/index.css';
 import '../content/less/index.less';
 
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
-import { enableProdMode } from '@angular/core';
+import {enableProdMode, ErrorHandler} from '@angular/core';
 
 import {WellKnownConfig} from "./security/models/WellKnownConfig";
 import {AuthConfig} from "./security/models/AuthConfig";
@@ -25,6 +25,7 @@ import {LayoutModule} from "./layout/layout.module";
 
 // Top level component
 import {ShellComponent} from "./layout/shell.component";
+import {EdsErrorHandler} from "./common/errorHandler.service";
 
 
 // *** USE JQUERY TO BOOTSTRAP APPLICATION ONCE KEYCLOAK IS AUTHORIZED ***
@@ -51,7 +52,8 @@ export class Application {
 					provide: Http,
 					useFactory: (backend: XHRBackend, defaultOptions: RequestOptions) => new AuthHttpService(backend, defaultOptions),
 					deps: [XHRBackend, RequestOptions]
-				}
+				},
+				{ provide: ErrorHandler, useClass: EdsErrorHandler}
 			],
 			bootstrap: [ UIView ]
 		};

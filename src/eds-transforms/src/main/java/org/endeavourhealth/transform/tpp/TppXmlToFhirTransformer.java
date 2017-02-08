@@ -1,14 +1,17 @@
 package org.endeavourhealth.transform.tpp;
 
-import org.endeavourhealth.transform.tpp.xml.schema.*;
-import org.endeavourhealth.transform.tpp.xml.transforms.*;
 import org.endeavourhealth.core.utility.XmlSerializer;
+import org.endeavourhealth.transform.tpp.xml.schema.Metadata;
+import org.endeavourhealth.transform.tpp.xml.schema.Patient;
+import org.endeavourhealth.transform.tpp.xml.schema.PatientRecord;
+import org.endeavourhealth.transform.tpp.xml.transforms.MetadataTransformer;
+import org.endeavourhealth.transform.tpp.xml.transforms.PatientTransformer;
 import org.hl7.fhir.instance.model.Resource;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public final class TppXmlTransformer {
+public final class TppXmlToFhirTransformer {
 
     private static final String XSD = "TppPatientRecord.xsd";
 

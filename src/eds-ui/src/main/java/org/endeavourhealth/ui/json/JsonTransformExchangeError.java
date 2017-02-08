@@ -10,6 +10,7 @@ import java.util.UUID;
 public class JsonTransformExchangeError {
 
     private UUID exchangeId = null;
+    private UUID version = null;
     private Date transformStart = null;
     private Date transformEnd = null;
     private Integer numberBatchIdsCreated = null;
@@ -24,6 +25,14 @@ public class JsonTransformExchangeError {
 
     public void setExchangeId(UUID exchangeId) {
         this.exchangeId = exchangeId;
+    }
+
+    public UUID getVersion() {
+        return version;
+    }
+
+    public void setVersion(UUID version) {
+        this.version = version;
     }
 
     public Date getTransformStart() {

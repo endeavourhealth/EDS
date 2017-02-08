@@ -3,7 +3,8 @@ package org.endeavourhealth.transform.hl7v2.parser.datatypes;
 import org.endeavourhealth.transform.hl7v2.parser.Datatype;
 import org.endeavourhealth.transform.hl7v2.parser.GenericDatatype;
 
-public class Xpn extends Datatype {
+// extended person name
+public class Xpn extends Datatype implements IXpn {
     public Xpn(GenericDatatype datatype) {
         super(datatype);
     }

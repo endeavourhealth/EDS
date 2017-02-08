@@ -21,8 +21,16 @@ export class TopnavComponent {
 		vm.currentUser = this.securityService.getCurrentUser();
 		vm.layoutService.getServiceName(vm.currentUser.organisation)
 			.subscribe(
-				(result) => vm.currentOrgRole = new OrgRole(vm.currentUser.organisation, result),
-				(error) => vm.currentOrgRole = new OrgRole(null, 'Not selected')
+				(result) => {
+					if (result)
+						vm.currentOrgRole = new OrgRole(vm.currentUser.organisation, result)
+					else
+						vm.currentUser.organisation = null;
+				},
+				(error) => {
+					vm.currentUser.organisation = null;
+					vm.currentOrgRole = new OrgRole(null, 'Not selected');
+					}
 			);
 	}
 

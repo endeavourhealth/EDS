@@ -5,7 +5,7 @@ import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.exceptions.FieldNotEmptyException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
@@ -145,8 +145,8 @@ public class ObservationTransformer {
                                        EmisCsvHelper csvHelper) throws Exception {
 
         //the code ID should NEVER be null, but the test data has nulls, so adding this to handle those rows gracefully
-        if ((version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_0)
-                || version.equalsIgnoreCase(EmisCsvTransformer.VERSION_5_1))
+        if ((version.equalsIgnoreCase(EmisCsvToFhirTransformer.VERSION_5_0)
+                || version.equalsIgnoreCase(EmisCsvToFhirTransformer.VERSION_5_1))
                 && parser.getCodeId() == null) {
             return;
         }

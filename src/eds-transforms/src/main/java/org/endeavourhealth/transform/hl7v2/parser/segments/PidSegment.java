@@ -46,4 +46,6 @@ public class PidSegment extends Segment {
 */
 
     public Ce getNationality() { return this.getFieldAsDatatype(28, Ce.class); }
+    public LocalDateTime getDateOfDeath() throws ParseException { return this.getFieldAsDate(29); }
+    public String getDeathIndicator() { return this.getFieldAsString(30); }
 }

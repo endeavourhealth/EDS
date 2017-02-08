@@ -20,7 +20,8 @@ import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
 import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.common.MessageFormat;
-import org.endeavourhealth.transform.enterprise.EnterpriseFhirTransformer;
+import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
+import org.endeavourhealth.transform.vitrucare.FhirToVitruCareXmlTransformer;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,16 +133,19 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 			UUID senderOrganisationUuid = exchange.getHeaderAsUuid(HeaderKeys.SenderOrganisationUuid);
 
-			String outbound = EnterpriseFhirTransformer.transformFromFhir(senderOrganisationUuid, batchId, resourceIds);
-			EnterpriseFiler.file(outbound);
+			String zippedCsvs = FhirToEnterpriseCsvTransformer.transformFromFhir(senderOrganisationUuid, batchId, resourceIds);
 
-			//we file the data directly, so return null to end the pipeline
+			//file the data directly, so return null to end the pipeline
+			if (!Strings.isNullOrEmpty(zippedCsvs)) {
+				EnterpriseFiler.file(zippedCsvs);
+			}
+
 			return null;
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
 
-			//TODO - transform FHIR to Vitrucare
-			return null;
+			String xml = FhirToVitruCareXmlTransformer.transformFromFhir(batchId, resourceIds);
+			return xml;
 
 		} else {
 			throw new PipelineException("Unsupported outbound software " + software + " for exchange " + exchange.getExchangeId());

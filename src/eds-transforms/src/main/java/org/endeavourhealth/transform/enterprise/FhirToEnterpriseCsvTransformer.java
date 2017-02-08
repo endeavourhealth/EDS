@@ -2,9 +2,9 @@ package org.endeavourhealth.transform.enterprise;
 
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
-import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.transform.EnterpriseIdMapRepository;
+import org.endeavourhealth.transform.common.FhirToXTransformerBase;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.endeavourhealth.transform.enterprise.transforms.*;
@@ -16,9 +16,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public class EnterpriseFhirTransformer {
+public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EnterpriseFhirTransformer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FhirToEnterpriseCsvTransformer.class);
 
     //private static final String ZIP_ENTRY = "EnterpriseData.xml";
 
@@ -27,8 +27,10 @@ public class EnterpriseFhirTransformer {
                                            Map<ResourceType, List<UUID>> resourceIds) throws Exception {
 
         //retrieve our resources
-        List<ResourceByExchangeBatch> resourcesByExchangeBatch = new ResourceRepository().getResourcesForBatch(batchId);
-        List<ResourceByExchangeBatch> filteredResources = filterResources(resourcesByExchangeBatch, resourceIds);
+        List<ResourceByExchangeBatch> filteredResources = getResources(batchId, resourceIds);
+        if (filteredResources.isEmpty()) {
+            return null;
+        }
 
         //we need to find the sender organisation national ID for the data in the batch
         Organisation org = new OrganisationRepository().getById(senderOrganisationUuid);
@@ -275,37 +277,5 @@ public class EnterpriseFhirTransformer {
     }
 
 
-    private static List<ResourceByExchangeBatch> filterResources(List<ResourceByExchangeBatch> allResources,
-                                                                 Map<ResourceType, List<UUID>> resourceIds) throws Exception {
 
-        List<ResourceByExchangeBatch> ret = new ArrayList<>();
-
-        for (ResourceByExchangeBatch resource: allResources) {
-            UUID resourceId = resource.getResourceId();
-            ResourceType resourceType = ResourceType.valueOf(resource.getResourceType());
-
-            //the map of resource IDs tells us the resources that passed the protocol and should be passed
-            //to the subscriber. However, any resources that should be deleted should be passed, whether the
-            //protocol says to include it or not, since it may have previously been passed to the subscriber anyway
-            if (resource.getIsDeleted()) {
-                ret.add(resource);
-
-            } else {
-
-                //during testing, the resource ID is null, so handle this
-                if (resourceIds == null) {
-                    ret.add(resource);
-                    continue;
-                }
-
-                List<UUID> uuidsToKeep = resourceIds.get(resourceType);
-                if (uuidsToKeep != null
-                        || uuidsToKeep.contains(resourceId)) {
-                    ret.add(resource);
-                }
-            }
-        }
-
-        return ret;
-    }
 }

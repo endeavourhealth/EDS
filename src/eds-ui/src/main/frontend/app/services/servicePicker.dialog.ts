@@ -2,7 +2,7 @@ import {Component, Input} from "@angular/core";
 import {Service} from "./models/Service";
 import {LoggerService} from "../common/logger.service";
 import {ServiceService} from "./service.service";
-import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
+import {NgbModal, NgbActiveModal, NgbModalOptions} from "@ng-bootstrap/ng-bootstrap";
 
 @Component({
 	selector: 'ngbd-modal-content',
@@ -10,7 +10,7 @@ import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 })
 export class ServicePickerDialog  {
 	public static open(modalService: NgbModal, services : Service[]) {
-	const modalRef = modalService.open(ServicePickerDialog, { backdrop : "static"});
+	const modalRef = modalService.open(ServicePickerDialog, { backdrop : "static"} as NgbModalOptions);
 	modalRef.componentInstance.resultData = jQuery.extend(true, [], services);
 
 	return modalRef;

@@ -29,7 +29,7 @@ public class CountReportProvider {
 
 	private Connection _conn = null;
 
-	public LibraryItem runReport(UUID reportUuid, UUID organisationUuid, Map<String,String> reportParams) throws Exception {
+	public LibraryItem runReport(UUID userUuid, UUID reportUuid, UUID organisationUuid, Map<String,String> reportParams) throws Exception {
 		ServiceRepository svcRepo = new ServiceRepository();
 		Service svc = svcRepo.getById(organisationUuid);
 		String odsCode = svc.getLocalIdentifier();
@@ -53,7 +53,7 @@ public class CountReportProvider {
 			PreparedStatement statement = null;
 
 			// Clear old results
-			String tablename = "rep_" + reportUuid.toString().replace('-','_');
+			String tablename = "rep_" + userUuid.toString().replace("-","") + "_" + reportUuid.toString().replace("-","");
 			dropReportTable(conn, tablename);
 
 			// Build query
@@ -139,17 +139,17 @@ public class CountReportProvider {
 		}
 	}
 
-	public List<String> getNHSExport(UUID reportUuid) throws Exception {
-		return getResults(reportUuid, "run_date, internal_patient_id, nhs_number");
+	public List<String> getNHSExport(UUID userUuid, UUID reportUuid) throws Exception {
+		return getResults(userUuid, reportUuid, "run_date, internal_patient_id, nhs_number");
 	}
 
-	public List<String> getDataExport(UUID reportUuid) throws Exception {
-		return getResults(reportUuid, "*");
+	public List<String> getDataExport(UUID userUuid, UUID reportUuid) throws Exception {
+		return getResults(userUuid, reportUuid, "*");
 	}
 
-	private List<String> getResults(UUID reportUuid, String fields) throws Exception {
+	private List<String> getResults(UUID userUuid, UUID reportUuid, String fields) throws Exception {
 		List<String> result = new ArrayList<>();
-		String tablename = "rep_" + reportUuid.toString().replace('-','_');
+		String tablename = "rep_" + userUuid.toString().replace("-","") + "_" + reportUuid.toString().replace("-","");
 
 		Connection conn = getConnection();
 		PreparedStatement statement = conn.prepareStatement("SELECT "+fields+" FROM " + tablename);
