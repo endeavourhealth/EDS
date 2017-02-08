@@ -75,7 +75,10 @@ VALUES
   </root>
 
   <!-- specify a shutdown hook for logging, so all loggers are flushed before app exit -->
-  <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+  <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook">
+	<!-- 8-Feb-2017 Jonny R Added delay to ensure we capture log messages during shutdown -->
+  	<delay>5000</delay>
+  </shutdownHook>
 
 </configuration>' );
 
