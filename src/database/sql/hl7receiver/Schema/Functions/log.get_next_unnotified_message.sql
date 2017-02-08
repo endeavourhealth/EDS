@@ -43,7 +43,7 @@ begin
 	left outer join log.message_notification_status s2 on m.message_id = s2.message_id and s2.attempt_id = 1
 	where m.channel_id = _channel_id
 	and s1.message_id is null
-	order by m.message_date desc, m.log_date desc
+	order by m.message_date asc, m.log_date asc
 	limit 1;
 	
 end;
