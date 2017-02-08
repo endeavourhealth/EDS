@@ -47,14 +47,15 @@ public final class CountReportEndpoint extends AbstractEndpoint {
     @Path("/runReport")
     public Response runReport(@Context SecurityContext sc, @QueryParam("reportUuid") UUID reportUuid, @QueryParam("organisationUuid") UUID organisationUuid, String reportParamsJson) throws Exception {
         try {
-            userAudit.save(SecurityUtils.getCurrentUserId(sc), organisationUuid, AuditAction.Run, "Report",
+            UUID userUuid = SecurityUtils.getCurrentUserId(sc);
+            userAudit.save(userUuid, organisationUuid, AuditAction.Run, "Report",
                 "uuid", reportUuid,
                 "params", reportParamsJson);
             LOG.debug("runReport");
 
             Map<String, String> reportParams = ObjectMapperPool.getInstance().readValue(reportParamsJson, new TypeReference<Map<String, String>>() {
             });
-            LibraryItem ret = countReportProvider.runReport(reportUuid, organisationUuid, reportParams);
+            LibraryItem ret = countReportProvider.runReport(userUuid, reportUuid, organisationUuid, reportParams);
 
             return Response
                 .ok(ret, MediaType.APPLICATION_JSON_TYPE)
@@ -77,16 +78,17 @@ public final class CountReportEndpoint extends AbstractEndpoint {
     @Path("/exportNHS")
     public Response exportNHSNumbers(@Context SecurityContext sc, @QueryParam("uuid") UUID uuid) throws Exception {
         try {
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Run, "Export NHS Numbers",
-            "uuid", uuid);
-        LOG.debug("exportNHS");
+            UUID userUuid = SecurityUtils.getCurrentUserId(sc);
+            userAudit.save(userUuid, getOrganisationUuidFromToken(sc), AuditAction.Run, "Export NHS Numbers",
+                "uuid", uuid);
+            LOG.debug("exportNHS");
 
-        List<String> data = countReportProvider.getNHSExport(uuid);
-        String ret = StringUtils.join(data, "\n");
+            List<String> data = countReportProvider.getNHSExport(userUuid, uuid);
+            String ret = StringUtils.join(data, "\n");
 
-        return Response
-            .ok(ret, MediaType.TEXT_PLAIN_TYPE)
-            .build();
+            return Response
+                .ok(ret, MediaType.TEXT_PLAIN_TYPE)
+                .build();
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw e;
@@ -106,16 +108,17 @@ public final class CountReportEndpoint extends AbstractEndpoint {
     @Path("/exportData")
     public Response exportData(@Context SecurityContext sc, @QueryParam("uuid") UUID uuid) throws Exception {
         try {
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Run, "Export Data",
-            "uuid", uuid);
-        LOG.debug("exportData");
+            UUID userUuid = SecurityUtils.getCurrentUserId(sc);
+            userAudit.save(userUuid, getOrganisationUuidFromToken(sc), AuditAction.Run, "Export Data",
+                "uuid", uuid);
+            LOG.debug("exportData");
 
-        List<String> data = countReportProvider.getDataExport(uuid);
-        String ret = StringUtils.join(data, "\n");
+            List<String> data = countReportProvider.getDataExport(userUuid, uuid);
+            String ret = StringUtils.join(data, "\n");
 
-        return Response
-            .ok(ret, MediaType.TEXT_PLAIN_TYPE)
-            .build();
+            return Response
+                .ok(ret, MediaType.TEXT_PLAIN_TYPE)
+                .build();
         } catch (Exception e) {
             LOG.error(e.getMessage());
             throw e;
