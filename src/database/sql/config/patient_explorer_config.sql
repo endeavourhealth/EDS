@@ -29,3 +29,12 @@ INSERT INTO config
 (app_id, config_id, config_data)
 VALUES
 ('eds-patient-explorer', 'application', '{ "appUrl" : "http://localhost:8080" }');
+
+INSERT INTO config
+(app_id, config_id, config_data)
+VALUES
+('eds-patient-explorer', 'enterprise-lite','{
+    "username" : "postgres",
+    "password" : "",
+    "url"    : "jdbc:postgresql://localhost:5432/enterprise_data"
+}');

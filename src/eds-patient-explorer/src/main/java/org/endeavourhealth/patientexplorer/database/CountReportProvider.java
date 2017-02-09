@@ -273,7 +273,7 @@ public class CountReportProvider {
 
 	private Connection getConnection() throws SQLException, IOException {
 		if (_conn == null) {
-			JsonNode config = ConfigManager.getConfigurationAsJson("postgres", "enterprise");
+			JsonNode config = ConfigManager.getConfigurationAsJson("enterprise-lite");
 			String url = config.get("url").asText();
 			String username = config.get("username").asText();
 			String password = config.get("password").asText();
