@@ -22,29 +22,22 @@ public class PidSegment extends Segment {
     public List<Xpn> getPatientAlias() { return this.getFieldAsDatatypes(9, Xpn.class); }
     public Ce getRace() { return this.getFieldAsDatatype(10, Ce.class); }
     public List<Xad> getAddresses() { return this.getFieldAsDatatypes(11, Xad.class); }
-
-    /*
-    CountyCode
-    PhoneNumberHome
-    PhoneNumberBusiness
-    PrimaryLanguage
-    MaritalStatus
-    Religion
-    PatientAccountNumber
-    SSNNumberPatient
-    DriversLicenseNumber
-    MothersIdentifier
-    EthnicGroup
-    BirthPlace
-    MultipleBirthIndicator
-    BirthOrder
-    Citizenship
-    VeteransMilitaryStatus
-            Nationality
-    PatientDeathDateandTime
-    PatientDeathIndicator
-*/
-
+    public String getCountryCode() { return this.getFieldAsString(12); }
+    public List<Xtn> getHomeTelephones() { return this.getFieldAsDatatypes(13, Xtn.class); }
+    public List<Xtn> getBusinessTelephones() { return this.getFieldAsDatatypes(14, Xtn.class); }
+    public Ce getPrimaryLanguage() { return this.getFieldAsDatatype(15, Ce.class); }
+    public Ce getMaritalStatus() { return this.getFieldAsDatatype(16, Ce.class); }
+    public Ce getReligion() { return this.getFieldAsDatatype(17, Ce.class); }
+    public Cx getPatientAccountNumber() { return this.getFieldAsDatatype(18, Cx.class); }
+    public String getSsnNumber() { return this.getFieldAsString(19); }
+    public String getDriversLicenseNumber() { return this.getFieldAsString(20); }
+    public List<Cx> getMothersIdentifiers() { return this.getFieldAsDatatypes(21, Cx.class); }
+    public List<Ce> getEthnicGroups() { return this.getFieldAsDatatypes(22, Ce.class); }
+    public String getBirthPlace() { return this.getFieldAsString(23); }
+    public String getMultipleBirthIndicator() { return this.getFieldAsString(24); }
+    public String getBirthOrder() { return this.getFieldAsString(25); }
+    public List<Ce> getCitizenship() { return this.getFieldAsDatatypes(26, Ce.class); }
+    public List<Ce> getVeteransMilitaryStatus() { return this.getFieldAsDatatypes(27, Ce.class); }
     public Ce getNationality() { return this.getFieldAsDatatype(28, Ce.class); }
     public LocalDateTime getDateOfDeath() throws ParseException { return this.getFieldAsDate(29); }
     public String getDeathIndicator() { return this.getFieldAsString(30); }
