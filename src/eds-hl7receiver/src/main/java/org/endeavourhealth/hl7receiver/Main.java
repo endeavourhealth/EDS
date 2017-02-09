@@ -44,7 +44,7 @@ public class Main {
 
             if (serviceManager != null)
                 serviceManager.stop();
-        
+
 	    } catch (Exception e) {
             printToErrorConsole("Exception occurred during shutdown", e);
 	        LOG.error("Exception occurred during shutdown", e);

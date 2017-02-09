@@ -104,8 +104,10 @@ public class HL7ChannelForwarder implements Runnable {
                                     message = null;
                                     attemptIntervalSeconds = getFirstAttemptIntervalSeconds();
                                 }
-                            }
 
+                            } else { // next attempt time not yet
+                                Thread.sleep(THREAD_SLEEP_TIME_MILLIS);
+                            }
                         } else {  // messageToProcess == null
                             Thread.sleep(THREAD_SLEEP_TIME_MILLIS);
                         }
