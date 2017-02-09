@@ -31,4 +31,13 @@ public enum MaritalStatus {
         this.code = code;
         this.description = description;
     }
+
+    public static MaritalStatus fromCode(String v) {
+        for (MaritalStatus c: MaritalStatus.values()) {
+            if (c.code.equalsIgnoreCase(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
+    }
 }

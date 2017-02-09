@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.common;
 
+import com.google.common.base.Strings;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
@@ -9,7 +10,9 @@ import org.hl7.fhir.instance.model.TemporalPrecisionEnum;
 import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
 public class DateConverter
 {
@@ -34,14 +37,16 @@ public class DateConverter
         }
     }
 
-    public static Date getDate(String dateString) throws TransformException
-    {
-        try
-        {
-            return DateConverter.EMISOPEN_DATEFORMAT.parse(dateString);
+    public static Date getDate(String dateString) throws TransformException {
+
+        if (Strings.isNullOrEmpty(dateString)) {
+            return null;
         }
-        catch (ParseException e)
-        {
+
+        try {
+            return DateConverter.EMISOPEN_DATEFORMAT.parse(dateString);
+
+        } catch (ParseException e) {
             throw new TransformException("Could not parse date", e);
         }
     }

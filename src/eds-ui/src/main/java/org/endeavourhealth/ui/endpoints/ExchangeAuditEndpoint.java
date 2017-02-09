@@ -7,6 +7,7 @@ import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
+import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.Item;
@@ -20,9 +21,13 @@ import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
+import org.endeavourhealth.core.messaging.pipeline.components.RunDataDistributionProtocols;
 import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.utility.StreamExtension;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.transformError.Arg;
 import org.endeavourhealth.core.xml.transformError.Error;
@@ -31,6 +36,7 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.queuereader.ConfigDeserialiser;
 import org.endeavourhealth.ui.json.*;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,7 +184,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
             List<UUID> batchUuids = batches
                     .stream()
-                    .map(t -> t.getExchangeId())
+                    .map(t -> t.getBatchId())
                     .collect(Collectors.toList());
             try {
                 String batchUuidsStr = ObjectMapperPool.getInstance().writeValueAsString(batchUuids.toArray());
@@ -190,20 +196,46 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         } else if (multicastHeader.equalsIgnoreCase(HeaderKeys.TransformBatch)) {
 
-            //hack to bypass the generation of transform batches
-            //throw new BadRequestException("Mutlicasting using transform batch not supported");
-
             List<TransformBatch> transformBatches = new ArrayList<>();
+
+            String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
 
             ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
             List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeUuid);
-            for (ExchangeBatch batch: batches) {
 
-                //the only bit of data we can populate is the batch ID
-                TransformBatch transformBatch = new TransformBatch();
-                transformBatch.setBatchId(batch.getBatchId());
+            for (String protocolId: protocolIds) {
 
-                transformBatches.add(transformBatch);
+                UUID protocolUuid = UUID.fromString(protocolId);
+                LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItem(protocolUuid);
+                List<ServiceContract> subscribers = libraryItem
+                        .getProtocol()
+                        .getServiceContract()
+                        .stream()
+                        .filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
+                        .collect(Collectors.toList());
+
+                //if there's no subscribers on this protocol, just skip it
+                if (subscribers.isEmpty()) {
+                    continue;
+                }
+
+                for (ExchangeBatch batch: batches) {
+
+                    String batchId = batch.getBatchId().toString();
+                    Map<ResourceType, List<UUID>> filteredResources = RunDataDistributionProtocols.filterResources(libraryItem.getProtocol(), batchId);
+                    if (filteredResources.isEmpty()) {
+                        continue;
+                    }
+
+                    //the only bit of data we can populate is the batch ID
+                    TransformBatch transformBatch = new TransformBatch();
+                    transformBatch.setBatchId(batch.getBatchId());
+                    transformBatch.setProtocolId(UUID.fromString(protocolId));
+                    transformBatch.setSubscribers(subscribers);
+                    transformBatch.setResourceIds(filteredResources);
+
+                    transformBatches.add(transformBatch);
+                }
             }
 
             try {
@@ -223,6 +255,8 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         }
 
     }
+
+
 
     private PostMessageToExchangeConfig findExchangeConfig(String exchangeName) throws Exception {
 

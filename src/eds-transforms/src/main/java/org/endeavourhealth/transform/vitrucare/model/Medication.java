@@ -1,7 +1,10 @@
 
 package org.endeavourhealth.transform.vitrucare.model;
 
-import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSchemaType;
+import javax.xml.bind.annotation.XmlType;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 
@@ -15,12 +18,12 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="productId" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;element name="productName" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;element name="startDate" type="{http://www.w3.org/2001/XMLSchema}date"/>
- *         &lt;element name="endDate" type="{http://www.w3.org/2001/XMLSchema}date"/>
- *         &lt;element name="dose" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;element name="quanity" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="productId" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="productName" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="startDate" type="{http://www.w3.org/2001/XMLSchema}date" minOccurs="0"/>
+ *         &lt;element name="endDate" type="{http://www.w3.org/2001/XMLSchema}date" minOccurs="0"/>
+ *         &lt;element name="dose" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="quanity" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -40,19 +43,13 @@ import javax.xml.datatype.XMLGregorianCalendar;
 })
 public class Medication {
 
-    @XmlElement(required = true)
     protected String productId;
-    @XmlElement(required = true)
     protected String productName;
-    @XmlElement(required = true)
     @XmlSchemaType(name = "date")
     protected XMLGregorianCalendar startDate;
-    @XmlElement(required = true)
     @XmlSchemaType(name = "date")
     protected XMLGregorianCalendar endDate;
-    @XmlElement(required = true)
     protected String dose;
-    @XmlElement(required = true)
     protected String quanity;
 
     /**

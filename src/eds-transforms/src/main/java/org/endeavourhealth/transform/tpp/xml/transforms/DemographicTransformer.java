@@ -102,21 +102,21 @@ public class DemographicTransformer {
 
         String homeTel = tppDemographics.getHomeTelephone();
         if (!Strings.isNullOrEmpty(homeTel)) {
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.HOME, homeTel);
             fhirPatient.addTelecom(contactPoint);
         }
 
         String workTel = tppDemographics.getWorkTelephone();
         if (!Strings.isNullOrEmpty(workTel)) {
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.WORK, workTel);
             fhirPatient.addTelecom(contactPoint);
         }
 
         String mobTel = tppDemographics.getMobileTelephone();
         if (!Strings.isNullOrEmpty(mobTel)) {
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.MOBILE, mobTel);
             fhirPatient.addTelecom(contactPoint);
         }
@@ -124,7 +124,7 @@ public class DemographicTransformer {
         String altTel = tppDemographics.getAlternateTelephone();
         if (!Strings.isNullOrEmpty(altTel)) {
             //treat alternative number as a second home number
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.HOME, altTel);
             fhirPatient.addTelecom(contactPoint);
         }
@@ -132,7 +132,7 @@ public class DemographicTransformer {
         String email = tppDemographics.getEmailAddress();
         if (!Strings.isNullOrEmpty(email)) {
             //assume the email address is a home email, rather than work
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.EMAIL,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.EMAIL,
                     ContactPoint.ContactPointUse.HOME, email);
             fhirPatient.addTelecom(contactPoint);
         }

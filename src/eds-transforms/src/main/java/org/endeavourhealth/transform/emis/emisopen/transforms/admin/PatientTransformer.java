@@ -1,23 +1,26 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.admin;
 
-import org.apache.commons.lang3.StringUtils;
+import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.RegistrationType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.SexConverter;
-import org.endeavourhealth.transform.fhir.ContactPointCreater;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.NameConverter;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.fhir.schema.EthnicCategory;
+import org.endeavourhealth.transform.fhir.schema.MaritalStatus;
 import org.hl7.fhir.instance.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
-public class PatientTransformer
-{
-    public static Patient transform(MedicalRecordType medicalRecord, String organisationGuid) throws TransformException
+public class PatientTransformer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PatientTransformer.class);
+
+    public static void transform(List<Resource> resources, MedicalRecordType medicalRecord, String organisationGuid, String patientGuid) throws TransformException
     {
         RegistrationType source = medicalRecord.getRegistration();
 
@@ -27,13 +30,10 @@ public class PatientTransformer
         Patient target = new Patient();
         target.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PATIENT));
 
-        if (StringUtils.isBlank(source.getGUID()))
-            throw new TransformException("Patient GUID is empty");
+        target.setId(patientGuid);
 
-        target.setId(source.getGUID());
+        transformIdentifiers(target, source);
 
-        for (Identifier identifier : transformIdentifiers(source))
-            target.addIdentifier(identifier);
 
         List<HumanName> names = NameConverter.convert(
                 source.getTitle(),
@@ -43,8 +43,9 @@ public class PatientTransformer
                 "",
                 source.getPreviousNames());
 
-        for (HumanName name : names)
+        for (HumanName name : names) {
             target.addName(name);
+        }
 
         target.setGender(SexConverter.convertSex(source.getSex()));
 
@@ -53,18 +54,87 @@ public class PatientTransformer
         if (source.getDateOfDeath() != null)
             target.setDeceased(new DateTimeType(DateConverter.getDate(source.getDateOfDeath())));
 
-        if (source.getAddress() != null)
+        if (source.getAddress() != null) {
             target.addAddress(org.endeavourhealth.transform.emis.emisopen.transforms.common.AddressConverter.convert(source.getAddress(), Address.AddressUse.HOME));
+        }
 
-        for (ContactPoint contactPoint : createContacts(source))
-            target.addTelecom(contactPoint);
+        String residentialInstituteCode = source.getResidentialInstitute();
+        if (!Strings.isNullOrEmpty(residentialInstituteCode)) {
+            target.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_RESIDENTIAL_INSTITUTE_CODE, new StringType(residentialInstituteCode)));
+        }
+
+        createContacts(target, source);
 
         target.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, organisationGuid));
 
-        return target;
+        if (source.getUsualGpID() != null) {
+            String usualGpGuid = source.getUsualGpID().getGUID();
+            if (!Strings.isNullOrEmpty(usualGpGuid)) {
+                target.addCareProvider(ReferenceHelper.createReference(ResourceType.Practitioner, usualGpGuid));
+            }
+        }
+
+        String ethnicCode = source.getEthnicCode();
+        if (!Strings.isNullOrEmpty(ethnicCode)) {
+            CodeableConcept codeableConcept = null;
+            try {
+                EthnicCategory fhirEthnicity = EthnicCategory.fromCode(ethnicCode);
+                codeableConcept = CodeableConceptHelper.createCodeableConcept(fhirEthnicity);
+            } catch (IllegalArgumentException ex) {
+                LOG.info("Unmapped ethnic code " + ethnicCode);
+                codeableConcept = CodeableConceptHelper.createCodeableConcept(ethnicCode);
+            }
+            target.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PATIENT_ETHNICITY, codeableConcept));
+        }
+
+        String maritalStatus = source.getMaritalStatus();
+        if (!Strings.isNullOrEmpty(maritalStatus)) {
+            CodeableConcept codeableConcept = null;
+            try {
+                MaritalStatus fhirMaritalStatus = MaritalStatus.fromCode(ethnicCode);
+                codeableConcept = CodeableConceptHelper.createCodeableConcept(fhirMaritalStatus);
+            } catch (IllegalArgumentException ex) {
+                LOG.info("Unmapped marital status " + maritalStatus);
+                codeableConcept = CodeableConceptHelper.createCodeableConcept(maritalStatus);
+            }
+            target.setMaritalStatus(codeableConcept);
+        }
+
+        Date dateAdded = DateConverter.getDate(source.getDateAdded());
+        Date deducted = DateConverter.getDate(source.getDeductedDate());
+        Period fhirPeriod = PeriodHelper.createPeriod(dateAdded, deducted);
+
+        boolean active = PeriodHelper.isActive(fhirPeriod);
+        target.setActive(active);
+
+        resources.add(target);
     }
 
-    private static List<Identifier> transformIdentifiers(RegistrationType registrationType)
+    private static void transformIdentifiers(Patient fhirPatient, RegistrationType registrationType) {
+
+        fhirPatient.addIdentifier(IdentifierHelper.createNhsNumberIdentifier(registrationType.getNhsNumber()));
+
+        fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, FhirUri.IDENTIFIER_SYSTEM_EMIS_PATIENT_GUID, registrationType.getGUID()));
+        fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, FhirUri.IDENTIFIER_SYSTEM_CHINUMBER, registrationType.getCHINumber()));
+    }
+
+    private static void createContacts(Patient fhirPatient, RegistrationType registration) throws TransformException {
+
+        ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.HOME, registration.getHomeTelephone());
+        fhirPatient.addTelecom(contactPoint);
+
+        contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.WORK, registration.getWorkTelephone());
+        fhirPatient.addTelecom(contactPoint);
+
+        contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.MOBILE, registration.getMobile());
+        fhirPatient.addTelecom(contactPoint);
+
+        contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.EMAIL, ContactPoint.ContactPointUse.HOME, registration.getEmail());
+        fhirPatient.addTelecom(contactPoint);
+
+    }
+
+    /*private static List<Identifier> transformIdentifiers(RegistrationType registrationType)
     {
         List<Identifier> identifiers = new ArrayList<>();
 
@@ -106,5 +176,5 @@ public class PatientTransformer
             contactPoints.add(ContactPointCreater.create(registration.getEmail(),  ContactPoint.ContactPointSystem.EMAIL, ContactPoint.ContactPointUse.HOME));
 
         return contactPoints;
-    }
+    }*/
 }

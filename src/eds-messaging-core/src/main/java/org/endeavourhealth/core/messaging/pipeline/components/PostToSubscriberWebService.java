@@ -1,6 +1,5 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.PostToSubscriberWebServiceConfig;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
@@ -33,8 +32,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 			// Set list of destinations
 			exchange.setHeader(HeaderKeys.DestinationAddress, String.join(",", subscriberBatch.getEndpoints()));
 
-			//commit what we've just received to the DB
-			AuditWriter.writeExchange(exchange);
+			//TODO - send subscriber payload to endpoints
 
 		} catch (IOException e) {
 			LOG.error("Error deserializing subscriber batch JSON", e);

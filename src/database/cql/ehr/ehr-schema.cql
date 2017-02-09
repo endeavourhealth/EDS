@@ -89,6 +89,7 @@ CREATE TABLE exchange_batch (
   exchange_id uuid,
   batch_id uuid,
   inserted_at timestamp,
+  eds_patient_id uuid,
   PRIMARY KEY((exchange_id), batch_id)
 );
 

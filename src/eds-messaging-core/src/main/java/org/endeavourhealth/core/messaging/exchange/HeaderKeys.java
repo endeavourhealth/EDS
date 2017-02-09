@@ -24,6 +24,6 @@ public abstract class HeaderKeys {
 	public static final String BatchIdsJson = "BatchIds";
 	public static final String DestinationAddress = "DestinationAddress";
 	public static final String TransformBatch = "TransformBatch";
-	public static final String Protocols = "Protocols";
+	public static final String ProtocolIds = "Protocols";
 	public static final String SubscriberBatch = "SubscriberBatch";
 }

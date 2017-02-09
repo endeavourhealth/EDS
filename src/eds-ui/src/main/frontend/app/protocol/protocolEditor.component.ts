@@ -26,10 +26,13 @@ export class ProtocolEditComponent {
 	selectedContract : ServiceContract;
 	services : Service[];
 	systems : System[];
-	cohorts : Cohort[];
 	dataSets : DataSet[];
 	protocols : LibraryItem[];
 	technicalInterfaces : TechnicalInterface[];
+
+	//hard-code two cohort strings until the cohort editor is implemented
+	cohorts: string[];
+	//cohorts : Cohort[];
 
 	enabled = ["TRUE", "FALSE"];
 	consent = ["OPT-IN", "OPT-OUT"];
@@ -55,7 +58,13 @@ export class ProtocolEditComponent {
 
 		this.loadServices();
 		this.loadSystems();
-		this.loadCohorts();
+
+
+		this.cohorts = ['All Patients', 'Explicit Patients'];
+		//this.loadCohorts(); //hard-coding these for now
+		console.log('Cohorts = ' + this.cohorts);
+		console.log('Cohorts = ' + this.cohorts.length);
+
 		this.loadDatasets();
 	}
 
@@ -162,14 +171,14 @@ export class ProtocolEditComponent {
 			);
 	}
 
-	loadCohorts() {
+	/*loadCohorts() {
 		var vm = this;
 		vm.protocolService.getCohorts()
 			.subscribe(
 				(result) => vm.cohorts = result,
 				(error) => vm.logger.error('Failed to load cohorts', error, 'Load cohorts')
 			);
-	}
+	}*/
 
 	loadDatasets() {
 		var vm = this;

@@ -20,7 +20,7 @@ public class FhirToXTransformerBase {
     }
 
     private static List<ResourceByExchangeBatch> filterResources(List<ResourceByExchangeBatch> allResources,
-                                                                 Map<ResourceType, List<UUID>> resourceIds) throws Exception {
+                                                                 Map<ResourceType, List<UUID>> resourceIdsToKeep) throws Exception {
 
         List<ResourceByExchangeBatch> ret = new ArrayList<>();
 
@@ -37,12 +37,12 @@ public class FhirToXTransformerBase {
             } else {
 
                 //during testing, the resource ID is null, so handle this
-                if (resourceIds == null) {
+                if (resourceIdsToKeep == null) {
                     ret.add(resource);
                     continue;
                 }
 
-                List<UUID> uuidsToKeep = resourceIds.get(resourceType);
+                List<UUID> uuidsToKeep = resourceIdsToKeep.get(resourceType);
                 if (uuidsToKeep != null
                         || uuidsToKeep.contains(resourceId)) {
                     ret.add(resource);
