@@ -5,9 +5,8 @@ import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.utility.Resources;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.IdentifierHelper;
 import org.hl7.fhir.instance.model.Address;
-import org.hl7.fhir.instance.model.Identifier;
 import org.hl7.fhir.instance.model.Patient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +81,7 @@ public class PatientTransformer extends AbstractTransformer {
             pseudoId = pseudonomise(fhirPatient);
 
             //adding NHS number to allow data checking
-            nhsNumber = findNhsNumber(fhirPatient);
+            nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
 
             model.writeUpsert(id,
                 organizationId,
@@ -150,20 +149,9 @@ public class PatientTransformer extends AbstractTransformer {
         data.getPatient().add(model);
     }*/
 
-    private static String findNhsNumber(Patient fhirPatient) {
-        if (fhirPatient.hasIdentifier()) {
-            for (Identifier identifier: fhirPatient.getIdentifier()) {
-                if (identifier.getSystem().equals(FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER)) {
-                    return identifier.getValue();
-                }
-            }
-        }
-        return null;
-    }
-
     private static String pseudonomise(Patient fhirPatient) throws Exception {
 
-        String nhsNumber = findNhsNumber(fhirPatient);
+        String nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
 
         String dob = null;
         if (fhirPatient.hasBirthDate()) {

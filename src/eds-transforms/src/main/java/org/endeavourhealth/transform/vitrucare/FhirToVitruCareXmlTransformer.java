@@ -1,18 +1,22 @@
 package org.endeavourhealth.transform.vitrucare;
 
+import OpenPseudonymiser.Crypto;
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.HasResourceDataJson;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
+import org.endeavourhealth.core.data.transform.VitruCareRepository;
 import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
+import org.endeavourhealth.core.utility.Resources;
 import org.endeavourhealth.core.utility.XmlSerializer;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.FhirToXTransformerBase;
 import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.IdentifierHelper;
 import org.endeavourhealth.transform.vitrucare.model.ClinicalTerm;
 import org.endeavourhealth.transform.vitrucare.model.ObjectFactory;
 import org.endeavourhealth.transform.vitrucare.model.Payload;
@@ -24,6 +28,7 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
@@ -31,8 +36,13 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
     private static final Logger LOG = LoggerFactory.getLogger(FhirToVitruCareXmlTransformer.class);
 
     private static final String XSD = "VitruCare.xsd";
+    private static final String PSEUDO_KEY_NHS_NUMBER = "NHSNumber";
+    private static final String PSEUDO_KEY_DATE_OF_BIRTH = "DOB";
+    private static final String PSEUDO_SALT_RESOURCE = "VitruCare - Leeds.EncryptedSalt";
 
     private static ResourceRepository resourceRepository = new ResourceRepository();
+    private static VitruCareRepository vitruCareRepository = new VitruCareRepository();
+    private static byte[] saltBytes = null;
 
     public static String transformFromFhir(UUID batchId,
                                            Map<ResourceType, List<UUID>> resourceIds) throws Exception {
@@ -70,7 +80,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         String edsPatientId = findEdsPatientIdFromResources(patientResourceWrappers);
 
         //see if we've sent data to vitrucare before or not
-        String vitruCareId = findVitruCareId();
+        String vitruCareId = findVitruCareId(edsPatientId);
 
         if (Strings.isNullOrEmpty(vitruCareId)) {
             return createInitialPayload(edsPatientId);
@@ -135,9 +145,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
     private static String createReplacePayload(String vitruCareId, String edsPatientId) throws Exception {
 
         Payload payload = new Payload();
-        payload.setPatientGUID(vitruCareId);
-
-        populateFullPayload(payload, edsPatientId);
+        populateFullPayload(payload, edsPatientId, vitruCareId);
 
         JAXBElement element = new ObjectFactory().createPatientReplace(payload);
         return XmlSerializer.serializeToString(element, XSD);
@@ -146,18 +154,15 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
     private static String createInitialPayload(String edsPatientId) throws Exception {
 
         //if we don't have a VitruCare ID, we need to get the full record from the DB to send a full payload
-        String vitruCareId = createVitruCareId();
-
         Payload payload = new Payload();
-        payload.setPatientGUID(vitruCareId);
-
-        populateFullPayload(payload, edsPatientId);
+        populateFullPayload(payload, edsPatientId, null);
 
         JAXBElement element = new ObjectFactory().createPatientCreate(payload);
         return XmlSerializer.serializeToString(element, XSD);
     }
 
-    private static void populateFullPayload(Payload payload, String edsPatientId) throws Exception {
+
+    private static void populateFullPayload(Payload payload, String edsPatientId, String vitruCareId) throws Exception {
 
         UUID edsPatientUuid = UUID.fromString(edsPatientId);
         ResourceHistory patientResourceWrapper = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), edsPatientUuid);
@@ -168,6 +173,13 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         UUID serviceId = patientResourceWrapper.getServiceId();
         UUID systemId = patientResourceWrapper.getSystemId();
         Patient fhirPatient = (Patient)FhirResourceHelper.deserialiseResouce(patientResourceWrapper);
+
+        //if we don't have a VitruCare ID, generate one from our patient
+        if (vitruCareId == null) {
+            vitruCareId = createVitruCareId(fhirPatient);
+            vitruCareRepository.saveVitruCareIdMapping(edsPatientUuid, serviceId, systemId, vitruCareId);
+        }
+        payload.setPatientGUID(vitruCareId);
 
         if (fhirPatient.hasBirthDate()) {
             Date dob = fhirPatient.getBirthDate();
@@ -389,13 +401,53 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
     }
 
 
-    private static String createVitruCareId() {
-        //TODO
+    private static String findVitruCareId(String edsPatientId) {
+        UUID edsPatientUuid = UUID.fromString(edsPatientId);
+        return vitruCareRepository.getVitruCareId(edsPatientUuid);
+    }
+
+
+    private static String findNhsNumber(Patient fhirPatient) {
+        if (fhirPatient.hasIdentifier()) {
+            for (Identifier identifier: fhirPatient.getIdentifier()) {
+                if (identifier.getSystem().equals(FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER)) {
+                    return identifier.getValue();
+                }
+            }
+        }
         return null;
     }
 
-    private static String findVitruCareId() {
-        //TODO
-        return null;
+    private static String createVitruCareId(Patient fhirPatient) throws Exception {
+
+        String nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
+
+        String dob = null;
+        if (fhirPatient.hasBirthDate()) {
+            Date d = fhirPatient.getBirthDate();
+            dob = new SimpleDateFormat("dd-MM-yyyy").format(d);
+        }
+
+        //if we don't have either of these values, we can't generate a pseudo ID
+        if (Strings.isNullOrEmpty(nhsNumber)
+                || Strings.isNullOrEmpty(dob)) {
+            return "";
+        }
+
+        TreeMap keys = new TreeMap();
+        keys.put(PSEUDO_KEY_DATE_OF_BIRTH, dob);
+        keys.put(PSEUDO_KEY_NHS_NUMBER, nhsNumber);
+
+        Crypto crypto = new Crypto();
+        crypto.SetEncryptedSalt(getEncryptedSalt());
+        return crypto.GetDigest(keys);
     }
+
+    private static byte[] getEncryptedSalt() throws Exception {
+        if (saltBytes == null) {
+            saltBytes = Resources.getResourceAsBytes(PSEUDO_SALT_RESOURCE);
+        }
+        return saltBytes;
+    }
+
 }

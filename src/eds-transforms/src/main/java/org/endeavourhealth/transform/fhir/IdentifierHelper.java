@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.fhir;
 
 import com.google.common.base.Strings;
 import org.hl7.fhir.instance.model.Identifier;
+import org.hl7.fhir.instance.model.Patient;
 
 import java.util.List;
 
@@ -42,4 +43,12 @@ public class IdentifierHelper {
 
         return null;
     }
+
+    public static String findNhsNumber(Patient fhirPatient) {
+        if (fhirPatient.hasIdentifier()) {
+            return findIdentifierValue(fhirPatient.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER);
+        }
+        return null;
+    }
+
 }

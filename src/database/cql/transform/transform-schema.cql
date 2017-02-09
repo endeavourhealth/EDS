@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS resource_id_map;
 DROP TABLE IF EXISTS enterprise_id_map;
 DROP TABLE IF EXISTS enterprise_id_max;
 DROP TABLE IF EXISTS enterprise_organisation_id_map;
+DROP TABLE IF EXISTS vitrucare_patient_id_map;
 
 CREATE TABLE emis_csv_code_map (
 	data_sharing_agreement_guid TEXT,
@@ -78,3 +79,12 @@ CREATE TABLE enterprise_organisation_id_map (
 	organisation_ods_code text, 
 	enterprise_id int, 
 PRIMARY KEY (organisation_ods_code));	  
+
+
+CREATE TABLE vitrucare_patient_id_map (
+	eds_patient_id UUID,
+	service_id UUID,
+	system_id UUID,
+	created_at timestamp,
+	vitrucare_id text,
+PRIMARY KEY (eds_patient_id);
