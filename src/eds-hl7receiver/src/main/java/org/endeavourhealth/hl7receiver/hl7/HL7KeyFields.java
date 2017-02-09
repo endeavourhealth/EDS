@@ -2,11 +2,9 @@ package org.endeavourhealth.hl7receiver.hl7;
 
 import ca.uhn.hl7v2.DefaultHapiContext;
 import ca.uhn.hl7v2.HL7Exception;
-import ca.uhn.hl7v2.model.Composite;
-import ca.uhn.hl7v2.model.Message;
-import ca.uhn.hl7v2.model.Segment;
-import ca.uhn.hl7v2.model.Type;
+import ca.uhn.hl7v2.model.*;
 import ca.uhn.hl7v2.model.primitive.CommonTS;
+import ca.uhn.hl7v2.model.v25.datatype.ST;
 import ca.uhn.hl7v2.util.Terser;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
@@ -58,16 +56,23 @@ class HL7KeyFields {
         hl7KeyFields.sequenceNumber = getFieldAsString(terser, MSH_SEGMENT_NAME, MSH_SEQUENCE_NUMBER_FIELD);
 
         if (hasSegment(terser, PID_SEGMENT_NAME)) {
-            hl7KeyFields.pid1 = getPidWithAssigningAuthority(terser, channel.getPid1Field(), channel.getPid1AssigningAuthority());
-            hl7KeyFields.pid2 = getPidWithAssigningAuthority(terser, channel.getPid2Field(), channel.getPid2AssigningAuthority());
+            hl7KeyFields.pid1 = formatPid(getPid(terser, channel.getPid1Field(), channel.getPid1AssigningAuthority()));
+            hl7KeyFields.pid2 = formatPid(getPid(terser, channel.getPid2Field(), channel.getPid2AssigningAuthority()));
         }
 
         return hl7KeyFields;
     }
 
-    private static String getPidWithAssigningAuthority(Terser terser, Integer pidFieldNumber, String assigningAuthority) throws HL7Exception {
+    private static String formatPid(String pid) {
+        if (pid == null)
+            return null;
 
-        if ((pidFieldNumber == null) || (StringUtils.isBlank(assigningAuthority)))
+        return StringUtils.deleteWhitespace(pid);
+    }
+
+    private static String getPid(Terser terser, Integer pidFieldNumber, String assigningAuthority) throws HL7Exception {
+
+        if (pidFieldNumber == null)
             return null;
 
         if (!hasSegment(terser, PID_SEGMENT_NAME))
@@ -82,17 +87,24 @@ class HL7KeyFields {
             if (field == null)
                 continue;
 
-            if (!Composite.class.isAssignableFrom(field.getClass()))
-                continue;
+            if (StringUtils.isNotEmpty(assigningAuthority)) {
+                if (!Composite.class.isAssignableFrom(field.getClass()))
+                    continue;
 
-            Composite compositeField = ((Composite) field);
+                Composite compositeField = (Composite)field;
 
-            String assigningAuthorityComponent = compositeField.getComponent(PID_ASSIGNING_AUTHORITY_COMPONENT).encode();
+                String assigningAuthorityComponent = compositeField.getComponent(PID_ASSIGNING_AUTHORITY_COMPONENT).encode();
 
-            if (!assigningAuthority.equals(assigningAuthorityComponent))
-                continue;
+                if (!assigningAuthority.equals(assigningAuthorityComponent))
+                    continue;
 
-            return compositeField.getComponent(PID_VALUE_COMPONENT).encode();
+                return compositeField.getComponent(PID_VALUE_COMPONENT).encode();
+            } else {
+                if (!Primitive.class.isAssignableFrom(field.getClass()))
+                    continue;
+
+                return ((Primitive)field).getValue();
+            }
         }
 
         return null;
