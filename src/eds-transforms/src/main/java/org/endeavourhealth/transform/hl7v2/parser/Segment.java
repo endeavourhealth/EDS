@@ -108,6 +108,15 @@ public class Segment {
         return field.getAsString();
     }
 
+    public List<String> getFieldAsStringList(int fieldNumber) {
+        Field field = getField(fieldNumber);
+
+        if (field == null)
+            return null;
+
+        return field.getAsStringList();
+    }
+
     //////////////////  Parsers  //////////////////
 
     private static String getSegmentName(String segment, Seperators seperators) throws ParseException {

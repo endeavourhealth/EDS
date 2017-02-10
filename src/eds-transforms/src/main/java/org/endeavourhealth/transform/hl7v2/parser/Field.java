@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,12 @@ public class Field {
 
     public String getAsString() {
         return field;
+    }
+
+    public List<String> getAsStringList() {
+        String[] fieldArr = field.split("~");
+
+        return Arrays.asList(fieldArr);
     }
 
     public String getComponent(int componentNumber) {
