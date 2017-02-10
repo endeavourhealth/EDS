@@ -29,7 +29,15 @@ public class PractitionerTransformer
 
         practitioner.setId(personType.getGUID());
 
-        List<Identifier> identifiers = createIdentifiers(personType.getGmcCode().toString(), personType.getNationalCode(), personType.getPrescriptionCode());
+        String prescribingCode = personType.getPrescriptionCode();
+        String nationalCode = personType.getNationalCode();
+
+        String gmcCode = null;
+        if (personType.getGmcCode() != null) {
+            gmcCode = personType.getGmcCode().toString();
+        }
+        List<Identifier> identifiers = createIdentifiers(gmcCode, nationalCode, prescribingCode);
+        //List<Identifier> identifiers = createIdentifiers(personType.getGmcCode().toString(), personType.getNationalCode(), personType.getPrescriptionCode());
 
         for (Identifier identifier : identifiers)
             practitioner.addIdentifier(identifier);
@@ -50,8 +58,6 @@ public class PractitionerTransformer
         Practitioner.PractitionerPractitionerRoleComponent practitionerPractitionerRoleComponent = new Practitioner.PractitionerPractitionerRoleComponent();
         practitionerPractitionerRoleComponent.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, organisationGuid));
         practitionerPractitionerRoleComponent.setRole(new CodeableConcept().setText(personType.getCategory().getDescription()));
-
-
 
         return practitioner;
     }
