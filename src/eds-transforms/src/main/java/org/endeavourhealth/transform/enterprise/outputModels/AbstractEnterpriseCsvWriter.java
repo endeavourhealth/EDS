@@ -9,6 +9,7 @@ public abstract class AbstractEnterpriseCsvWriter extends AbstractCsvWriter {
         super(fileName, csvFormat, dateFormat, timeFormat);
     }
 
+    public abstract void writeDelete(int id) throws Exception;
     public abstract Class[] getColumnTypes();
     public abstract String[] getCsvHeaders();
 }

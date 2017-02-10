@@ -2,19 +2,25 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import OpenPseudonymiser.Crypto;
 import com.google.common.base.Strings;
+import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
+import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
+import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
 import org.endeavourhealth.core.utility.Resources;
+import org.endeavourhealth.transform.common.IdHelper;
+import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.endeavourhealth.transform.fhir.IdentifierHelper;
 import org.hl7.fhir.instance.model.Address;
 import org.hl7.fhir.instance.model.Patient;
+import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 public class PatientTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(PatientTransformer.class);
@@ -37,7 +43,10 @@ public class PatientTransformer extends AbstractTransformer {
             return;
 
         } else if (resource.getIsDeleted()) {
-            model.writeDelete(enterpriseId.intValue());
+            //we've got records with a deleted patient but the child resources aren't deleted, so we need to manually delete them
+            //from Enterprise
+            deleteAllDependentEntities(data, resource);
+            //model.writeDelete(enterpriseId.intValue());
 
         } else {
             Patient fhirPatient = (Patient)deserialiseResouce(resource);
@@ -91,6 +100,88 @@ public class PatientTransformer extends AbstractTransformer {
                 dateOfBirth,
                 dateOfDeath,
                 postcode);
+        }
+    }
+
+    /**
+     * We've had a bug that resulted in deleted patient resources where the dependend resources we're also deleted
+     * This is now fixed in the inbound Emis transform, but the existing data is in a state that the need to handle below
+     */
+    private void deleteAllDependentEntities(OutputContainer data, ResourceByExchangeBatch resourceBatchEntry) throws Exception {
+
+        //retrieve all past versions, to find the EDS patient ID
+        ResourceRepository resourceRepository = new ResourceRepository();
+        UUID patientResourceId = resourceBatchEntry.getResourceId();
+        String patientResourceType = resourceBatchEntry.getResourceType();
+        List<ResourceHistory> resourceWrappers = resourceRepository.getResourceHistory(patientResourceType, patientResourceId);
+
+        UUID serviceId = null;
+        UUID systemId = null;
+        UUID edsPatientId = null;
+        for (int i=resourceWrappers.size()-1; i>=0; i--) {
+            ResourceHistory resourceWrapper = resourceWrappers.get(i);
+            if (!resourceWrapper.getIsDeleted()) {
+                Resource resource = FhirResourceHelper.deserialiseResouce(resourceWrapper);
+                try {
+                    String s = IdHelper.getPatientId(resource);
+                    serviceId = resourceWrapper.getSystemId();
+                    systemId = resourceWrapper.getServiceId();
+                    edsPatientId = UUID.fromString(s);
+                    break;
+                } catch (Exception ex) {
+                    //if we call this on a non-patient resource, we'll get this exception, but ignore it
+                }
+            }
+        }
+
+        //if the patient has never existed in a non-deleted state, just return out
+        if (edsPatientId == null) {
+            return;
+        }
+
+        //retrieve all non-deleted resources
+        List<ResourceByPatient> resourceByPatients = resourceRepository.getResourcesByPatient(serviceId, systemId, edsPatientId);
+        for (ResourceByPatient resourceByPatient: resourceByPatients) {
+
+            String resourceTypeStr = resourceByPatient.getResourceType();
+            UUID resourceId = resourceByPatient.getResourceId();
+            ResourceType resourceType = ResourceType.valueOf(resourceTypeStr);
+
+            AbstractEnterpriseCsvWriter csvWriter = null;
+            if (resourceType == ResourceType.Organization) {
+                csvWriter = data.getOrganisations();
+            } else if (resourceType == ResourceType.Practitioner) {
+                csvWriter = data.getPractitioners();
+            } else if (resourceType == ResourceType.Schedule) {
+                csvWriter = data.getSchedules();
+            } else if (resourceType == ResourceType.Patient) {
+                csvWriter = data.getPatients();
+            } else if (resourceType == ResourceType.EpisodeOfCare) {
+                csvWriter = data.getEpisodesOfCare();
+            } else if (resourceType == ResourceType.Appointment) {
+                csvWriter = data.getAppointments();
+            } else if (resourceType == ResourceType.Encounter) {
+                csvWriter = data.getEncounters();
+            } else if (resourceType == ResourceType.ReferralRequest) {
+                csvWriter = data.getReferralRequests();
+            } else if (resourceType == ResourceType.ProcedureRequest) {
+                csvWriter = data.getProcedureRequests();
+            } else if (resourceType == ResourceType.Observation) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.MedicationStatement) {
+                csvWriter = data.getMedicationStatements();
+            } else if (resourceType == ResourceType.MedicationOrder) {
+                csvWriter = data.getMedicationOrders();
+            } else if (resourceType == ResourceType.AllergyIntolerance) {
+                csvWriter = data.getAllergyIntolerances();
+            } else {
+                throw new Exception("Unhandlded resource type " + resourceType);
+            }
+
+            Integer enterpriseId = findEnterpriseId(csvWriter, resourceTypeStr, resourceId);
+            if (enterpriseId != null) {
+                csvWriter.writeDelete(enterpriseId.intValue());
+            }
         }
     }
 

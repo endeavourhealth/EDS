@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.admin.Patient;
@@ -61,8 +62,9 @@ public class PatientTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            //save both resources together, so the patient is defintiely saved before the episode
-            fhirResourceFiler.deletePatientResource(parser.getCurrentState(), patientGuid, fhirPatient, fhirEpisode);
+            //Emis send us a delete for a patient WITHOUT a corresponding delete for all other data, so
+            //we need to manually delete all dependant resources
+            deleteEntirePatientRecord(fhirResourceFiler, csvHelper, parser.getCurrentState(), patientGuid, fhirPatient, fhirEpisode);
             return;
         }
 
@@ -232,6 +234,24 @@ public class PatientTransformer {
 
         //save both resources together, so the patient is defintiely saved before the episode
         fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirPatient, fhirEpisode);
+    }
+
+    /**
+     * Emis send us a delete for a patient WITHOUT a corresponding delete for all other data, so
+     * we need to manually delete all dependant resources
+     */
+    private static void deleteEntirePatientRecord(FhirResourceFiler fhirResourceFiler, EmisCsvHelper csvHelper,
+                                                  CsvCurrentState currentState, String patientGuid,
+                                                  org.hl7.fhir.instance.model.Patient fhirPatient, EpisodeOfCare fhirEpisode) throws Exception {
+
+        //don't bother doing these two, since the below delete will pick them up
+        //fhirResourceFiler.deletePatientResource(currentState, patientGuid, fhirPatient, fhirEpisode);
+
+        List<Resource> resources = csvHelper.retrieveAllResourcesForPatient(patientGuid, fhirResourceFiler);
+        for (Resource resource: resources) {
+            fhirResourceFiler.deletePatientResource(currentState, false, patientGuid, resource);
+        }
+
     }
 
     private static void transformEthnicityAndMaritalStatus(org.hl7.fhir.instance.model.Patient fhirPatient,

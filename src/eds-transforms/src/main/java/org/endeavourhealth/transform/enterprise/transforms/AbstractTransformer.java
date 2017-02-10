@@ -116,7 +116,7 @@ public abstract class AbstractTransformer {
         return findEnterpriseId(csvWriter, resource.getResourceType(), resource.getResourceId());
     }
 
-    private static Integer findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, UUID resourceId) throws Exception {
+    protected static Integer findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, UUID resourceId) throws Exception {
         String enterpriseTableName = csvWriter.getFileNameWithoutExtension();
         Integer ret = checkCacheForId(enterpriseTableName, resourceType, resourceId);
         if (ret == null) {

@@ -51,6 +51,8 @@ public class EnterpriseFiler {
         Connection connection = openConnection();
 
         try {
+            List<DeleteWrapper> deletes = new ArrayList<>();
+
             while (true) {
                 ZipEntry entry = zis.getNextEntry();
                 if (entry == null) {
@@ -65,9 +67,13 @@ public class EnterpriseFiler {
                     columnClassMappings = ObjectMapperPool.getInstance().readTree(jsonStr);
 
                 } else {
-                    fileCsvData(entryFileName, entryBytes, columnClassMappings, connection);
+                    fileCsvData(entryFileName, entryBytes, columnClassMappings, connection, deletes);
                 }
             }
+
+            //now files the deletes
+            fileDeletes(deletes, connection);
+
         } finally {
             if (zis != null) {
                 zis.close();
@@ -75,6 +81,43 @@ public class EnterpriseFiler {
             if (connection != null) {
                 connection.close();
             }
+        }
+    }
+
+    private static void fileDeletes(List<DeleteWrapper> deletes, Connection connection) throws Exception {
+
+        String currentTable = null;
+        List<CSVRecord> currentRecords = null;
+        List<String> currentColumns = null;
+        HashMap<String, Class> currentColumnClasses = null;
+
+        //go backwards, so we delete dependent records first
+        for (int i=deletes.size()-1; i>=0; i--) {
+            DeleteWrapper wrapper = deletes.get(i);
+            String tableName = wrapper.getTableName();
+
+            if (currentTable == null
+                    || !currentTable.equals(tableName)) {
+
+                //file any deletes we've already built up
+                if (currentRecords != null
+                        && !currentRecords.isEmpty()) {
+                    fileDeletes(currentRecords, currentColumns, currentColumnClasses, currentTable, connection);
+                }
+
+                currentTable = tableName;
+                currentRecords = new ArrayList<>();
+                currentColumns = wrapper.getColumns();
+                currentColumnClasses = wrapper.getColumnClasses();
+            }
+
+            currentRecords.add(wrapper.getRecord());
+        }
+
+        //file any deletes we've already built up
+        if (currentRecords != null
+                && !currentRecords.isEmpty()) {
+            fileDeletes(currentRecords, currentColumns, currentColumnClasses, currentTable, connection);
         }
     }
 
@@ -96,7 +139,7 @@ public class EnterpriseFiler {
         return baos.toByteArray();
     }
 
-    private static void fileCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection) throws Exception {
+    private static void fileCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection, List<DeleteWrapper> deletes) throws Exception {
 
         String tableName = Files.getNameWithoutExtension(entryFileName);
 
@@ -114,7 +157,7 @@ public class EnterpriseFiler {
 
             //since we're dealing with small volumes, we can just read keep all the records in memory
             List<CSVRecord> upserts = new ArrayList<>();
-            List<CSVRecord> deletes = new ArrayList<>();
+            //List<CSVRecord> deletes = new ArrayList<>();
 
             Iterator<CSVRecord> csvIterator = csvParser.iterator();
             while (csvIterator.hasNext()) {
@@ -122,14 +165,16 @@ public class EnterpriseFiler {
                 String saveMode = csvRecord.get(COL_SAVE_MODE);
 
                 if (saveMode.equalsIgnoreCase(DELETE)) {
-                    deletes.add(csvRecord);
+                    //we have to play deletes in reverse, so don't delete immediately. Cache for now.
+                    deletes.add(new DeleteWrapper(tableName, csvRecord, columns, columnClasses));
+                    //deletes.add(csvRecord);
                 } else {
                     upserts.add(csvRecord);
                 }
             }
 
             fileUpserts(upserts, columns, columnClasses, tableName, connection);
-            fileDeletes(deletes, columns, columnClasses, tableName, connection);
+            //fileDeletes(deletes, columns, columnClasses, tableName, connection);
         }
     }
 
@@ -781,6 +826,35 @@ public class EnterpriseFiler {
 
         return conn;
     }
+}
 
 
+class DeleteWrapper {
+    private String tableName = null;
+    private CSVRecord record = null;
+    private List<String> columns = null;
+    private HashMap<String, Class> columnClasses = null;
+
+    public DeleteWrapper(String tableName, CSVRecord record, List<String> columns, HashMap<String, Class> columnClasses) {
+        this.tableName = tableName;
+        this.record = record;
+        this.columns = columns;
+        this.columnClasses = columnClasses;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public CSVRecord getRecord() {
+        return record;
+    }
+
+    public List<String> getColumns() {
+        return columns;
+    }
+
+    public HashMap<String, Class> getColumnClasses() {
+        return columnClasses;
+    }
 }
