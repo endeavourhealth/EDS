@@ -81,7 +81,6 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         //doing one of the above entities, but we want to remove them from the resources list
         tranformResources(ResourceType.Slot, null, data, resources, resourcesMap, enterpriseOrganisationUuid);
         tranformResources(ResourceType.Location, null, data, resources, resourcesMap, enterpriseOrganisationUuid);
-        tranformResources(ResourceType.EpisodeOfCare, null, data, resources, resourcesMap, enterpriseOrganisationUuid);
 
         //if there's anything left in the list, then we've missed a resource type
         if (!resources.isEmpty()) {

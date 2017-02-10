@@ -40,10 +40,11 @@ public class PatientTransformer extends AbstractTransformer {
             return;
 
         } else if (resource.getIsDeleted()) {
-            //we've got records with a deleted patient but the child resources aren't deleted, so we need to manually delete them
-            //from Enterprise
+            //we've got records with a deleted patient but the child resources aren't deleted, so we need to manually delete them from Enterprise
             deleteAllDependentEntities(data, resource);
-            //model.writeDelete(enterpriseId.intValue());
+
+            //and delete the patient itself
+            model.writeDelete(enterpriseId.intValue());
 
         } else {
             Patient fhirPatient = (Patient)deserialiseResouce(resource);
@@ -152,6 +153,26 @@ public class PatientTransformer extends AbstractTransformer {
                 csvWriter = data.getMedicationOrders();
             } else if (resourceType == ResourceType.AllergyIntolerance) {
                 csvWriter = data.getAllergyIntolerances();
+            } else if (resourceType == ResourceType.Condition) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.Procedure) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.Immunization) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.FamilyMemberHistory) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.DiagnosticOrder) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.DiagnosticReport) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.Specimen) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.Slot) {
+                //these aren't sent to Enterprise
+                continue;
+            } else if (resourceType == ResourceType.Location) {
+                //these aren't sent to Enterprise
+                continue;
             } else {
                 throw new Exception("Unhandlded resource type " + resourceType);
             }
