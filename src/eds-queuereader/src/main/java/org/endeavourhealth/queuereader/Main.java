@@ -1,6 +1,7 @@
 package org.endeavourhealth.queuereader;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
 import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
@@ -462,7 +463,9 @@ public class Main {
 
 				try {
 					String outbound = FhirToEnterpriseCsvTransformer.transformFromFhir(senderOrgUuid, batchId, null);
-					EnterpriseFiler.file(outbound);
+					if (!Strings.isNullOrEmpty(outbound)) {
+						EnterpriseFiler.file(outbound);
+					}
 
 				} catch (Exception ex) {
 					throw new PipelineException("Failed to process exchange " + exchangeId + " and batch " + batchId, ex);

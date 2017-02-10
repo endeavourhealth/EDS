@@ -6,15 +6,12 @@ import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
-import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
 import org.endeavourhealth.core.utility.Resources;
-import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.endeavourhealth.transform.fhir.IdentifierHelper;
 import org.hl7.fhir.instance.model.Address;
 import org.hl7.fhir.instance.model.Patient;
-import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,34 +110,15 @@ public class PatientTransformer extends AbstractTransformer {
         ResourceRepository resourceRepository = new ResourceRepository();
         UUID patientResourceId = resourceBatchEntry.getResourceId();
         String patientResourceType = resourceBatchEntry.getResourceType();
-        List<ResourceHistory> resourceWrappers = resourceRepository.getResourceHistory(patientResourceType, patientResourceId);
+        LOG.trace("Deleting patient " + patientResourceId);
 
-        UUID serviceId = null;
-        UUID systemId = null;
-        UUID edsPatientId = null;
-        for (int i=resourceWrappers.size()-1; i>=0; i--) {
-            ResourceHistory resourceWrapper = resourceWrappers.get(i);
-            if (!resourceWrapper.getIsDeleted()) {
-                Resource resource = FhirResourceHelper.deserialiseResouce(resourceWrapper);
-                try {
-                    String s = IdHelper.getPatientId(resource);
-                    serviceId = resourceWrapper.getSystemId();
-                    systemId = resourceWrapper.getServiceId();
-                    edsPatientId = UUID.fromString(s);
-                    break;
-                } catch (Exception ex) {
-                    //if we call this on a non-patient resource, we'll get this exception, but ignore it
-                }
-            }
-        }
-
-        //if the patient has never existed in a non-deleted state, just return out
-        if (edsPatientId == null) {
-            return;
-        }
+        ResourceHistory resourceHistory = resourceRepository.getCurrentVersion(patientResourceType, patientResourceId);
+        UUID serviceId = resourceHistory.getServiceId();
+        UUID systemId = resourceHistory.getSystemId();
 
         //retrieve all non-deleted resources
-        List<ResourceByPatient> resourceByPatients = resourceRepository.getResourcesByPatient(serviceId, systemId, edsPatientId);
+        List<ResourceByPatient> resourceByPatients = resourceRepository.getResourcesByPatient(serviceId, systemId, patientResourceId);
+        LOG.trace("Found " + resourceByPatients.size() + " resources for service " + serviceId + " system " + systemId + " and patient " + patientResourceId);
         for (ResourceByPatient resourceByPatient: resourceByPatients) {
 
             String resourceTypeStr = resourceByPatient.getResourceType();
@@ -179,6 +157,7 @@ public class PatientTransformer extends AbstractTransformer {
             }
 
             Integer enterpriseId = findEnterpriseId(csvWriter, resourceTypeStr, resourceId);
+            LOG.trace("Writing delete for " + csvWriter.getClass().getSimpleName() + " " + enterpriseId);
             if (enterpriseId != null) {
                 csvWriter.writeDelete(enterpriseId.intValue());
             }

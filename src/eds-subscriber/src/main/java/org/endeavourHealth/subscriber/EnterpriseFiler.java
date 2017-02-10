@@ -91,6 +91,8 @@ public class EnterpriseFiler {
         List<String> currentColumns = null;
         HashMap<String, Class> currentColumnClasses = null;
 
+        LOG.trace("Got " + deletes.size() + " deletes");
+
         //go backwards, so we delete dependent records first
         for (int i=deletes.size()-1; i>=0; i--) {
             DeleteWrapper wrapper = deletes.get(i);
@@ -102,6 +104,7 @@ public class EnterpriseFiler {
                 //file any deletes we've already built up
                 if (currentRecords != null
                         && !currentRecords.isEmpty()) {
+                    LOG.trace("Deleting " + currentRecords.size() + " from " + currentTable);
                     fileDeletes(currentRecords, currentColumns, currentColumnClasses, currentTable, connection);
                 }
 
@@ -117,6 +120,7 @@ public class EnterpriseFiler {
         //file any deletes we've already built up
         if (currentRecords != null
                 && !currentRecords.isEmpty()) {
+            LOG.trace("Deleting " + currentRecords.size() + " from " + currentTable);
             fileDeletes(currentRecords, currentColumns, currentColumnClasses, currentTable, connection);
         }
     }
