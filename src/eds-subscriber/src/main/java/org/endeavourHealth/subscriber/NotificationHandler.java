@@ -1,5 +1,6 @@
 package org.endeavourhealth.subscriber;
 
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.apache.commons.io.IOUtils;
@@ -21,9 +22,27 @@ public class NotificationHandler implements HttpHandler{
 	@Override
 	public void handle(HttpExchange httpExchange) throws IOException {
 		InputStream is = httpExchange.getRequestBody();
+		String content = IOUtils.toString(is);
+
+		Headers headers = httpExchange.getRequestHeaders();
+		String contentLen = headers.getFirst("Content-length");
+
+		subscriber.addEntry(contentLen, content);
+
+		String response = "OK";
+		httpExchange.sendResponseHeaders(200,response.length());
+		OutputStream os = httpExchange.getResponseBody();
+		os.write(response.getBytes());
+		os.close();
+	}
+
+/*	@Override
+	public void handle(HttpExchange httpExchange) throws IOException {
+		InputStream is = httpExchange.getRequestBody();
 		String requestBody = IOUtils.toString(is);
 
-		String messageId = httpExchange.getRequestHeaders().getFirst("MessageId");
+		Headers headers = httpExchange.getRequestHeaders();
+		String messageId = headers.getFirst("MessageId");
 		subscriber.listModel.addElement("Message Received : Id ["+messageId+"]");
 		try {
 			EnterpriseFiler.file(requestBody);
@@ -37,5 +56,5 @@ public class NotificationHandler implements HttpHandler{
 		OutputStream os = httpExchange.getResponseBody();
 		os.write(response.getBytes());
 		os.close();
-	}
+	}*/
 }

@@ -3,13 +3,19 @@ package org.endeavourhealth.subscriber;
 import com.sun.net.httpserver.HttpServer;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 
 public class Subscriber {
+
+	//private static final int PORT = 8000;
+	private static final int PORT = 8002;
+
 	private static JFrame app;
 
 	private JPanel main;
@@ -17,7 +23,9 @@ public class Subscriber {
 	private JLabel lblStatus;
 	protected JTextField unzipPath;
 	private JButton button1;
-	protected DefaultListModel<String> listModel = new DefaultListModel<>();
+	private DefaultListModel<String> listModel = new DefaultListModel<>();
+
+	private java.util.List<String> receivedContent = new ArrayList<>();
 
 	public static void main(String[] args) throws IOException {
 		app = new JFrame("Subscriber");
@@ -30,7 +38,7 @@ public class Subscriber {
 	public Subscriber() throws IOException {
 		list1.setModel(listModel);
 		initializeHttpListener();
-		lblStatus.setText("Listening...");
+		lblStatus.setText("Listening on port " + PORT + "...");
 		list1.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
@@ -63,6 +71,19 @@ public class Subscriber {
 	}
 
 	private void displayMessage(int index) {
+		String content = receivedContent.get(index);
+
+		MessageBody messageBodyForm = new MessageBody();
+		messageBodyForm.setText(content);
+
+		final JDialog frame = new JDialog(app, "Message Body", true);
+		frame.setContentPane(messageBodyForm.main);
+		frame.pack();
+		frame.setSize(app.getSize());
+		frame.setLocationRelativeTo(app);
+		frame.setVisible(true);
+	}
+	/*private void displayMessage(int index) {
 		String message = listModel.get(index);
 		MessageBody messageBodyForm = new MessageBody();
 		messageBodyForm.setText(message);
@@ -72,12 +93,30 @@ public class Subscriber {
 		frame.setContentPane(messageBodyForm.main);
 		frame.pack();
 		frame.setVisible(true);
-	}
+	}*/
 
 	private void initializeHttpListener() throws IOException {
-		HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+		HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
 		server.createContext("/notify", new NotificationHandler(this));
 		server.setExecutor(null);
 		server.start();
+	}
+
+	public void addEntry(String contentLen, String content) {
+
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS");
+		String message = "" + format.format(new Date()) + " received " + contentLen + " bytes";
+
+		//work out if we're at the bottom
+		int rows = listModel.size();
+		int lastVisible = list1.getLastVisibleIndex();
+		boolean atBottom = lastVisible+1 == rows;
+
+		receivedContent.add(content);
+		listModel.addElement(message);
+
+		if (atBottom) {
+			list1.ensureIndexIsVisible(listModel.size()-1);
+		}
 	}
 }

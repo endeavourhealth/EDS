@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.emis;
 
+import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.core.utility.XmlHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
@@ -26,19 +27,33 @@ public final class EmisOpenToFhirTransformer
         MedicalRecordType emisOpenMedicalRecord = XmlHelper.deserialize(eomMedicalRecord38Xml, MedicalRecordType.class);
 
         String organisationGuid = null;
-
-        if (emisOpenMedicalRecord.getOriginator() != null)
-            if (emisOpenMedicalRecord.getOriginator().getOrganisation() != null)
+        if (emisOpenMedicalRecord.getOriginator() != null) {
+            if (emisOpenMedicalRecord.getOriginator().getOrganisation() != null) {
                 organisationGuid = emisOpenMedicalRecord.getOriginator().getOrganisation().getGUID();
+            }
+        }
 
-        if (StringUtils.isBlank(organisationGuid))
+        if (StringUtils.isBlank(organisationGuid)) {
             throw new TransformException("Could not determine current organisation guid");
+        }
+
+        String patientGuid = null;
+        if (emisOpenMedicalRecord.getRegistration() != null) {
+            patientGuid = emisOpenMedicalRecord.getRegistration().getGUID();
+        }
+        if (Strings.isNullOrEmpty(patientGuid)) {
+            throw new TransformException("No patient GUID in EmisOpen record");
+        }
 
         List<Resource> result = new ArrayList<>();
 
-        result.add(PatientTransformer.transform(emisOpenMedicalRecord, organisationGuid));
-        result.addAll(OrganizationAndLocationTransformer.transform(emisOpenMedicalRecord));
-        result.addAll(PractitionerTransformer.transform(emisOpenMedicalRecord, organisationGuid));
+        OrganizationTransformer.transform(emisOpenMedicalRecord, result);
+        LocationTransformer.transform(emisOpenMedicalRecord, result);
+        PractitionerTransformer.transform(emisOpenMedicalRecord, organisationGuid, result);
+
+        PatientTransformer.transform(result, emisOpenMedicalRecord, organisationGuid, patientGuid);
+        EpisodeOfCareTransformer.transform(result, emisOpenMedicalRecord, organisationGuid, patientGuid);
+
         result.addAll(EventTransformer.transform(emisOpenMedicalRecord));
         result.addAll(MedicationOrderTransformer.transform(emisOpenMedicalRecord));
         result.addAll(MedicationStatementTransformer.transform(emisOpenMedicalRecord));

@@ -1,6 +1,8 @@
 package org.endeavourhealth.core.messaging.exchange;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
+import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -66,6 +68,18 @@ public class Exchange {
 			return null;
 		} else {
 			return UUID.fromString(s);
+		}
+	}
+
+	/**
+	 * utility fns to cut down duplicated code all over
+	 */
+	public String[] getHeaderAsStringArray(String headerKey) throws PipelineException {
+		String json = getHeader(headerKey);
+		try {
+			return ObjectMapperPool.getInstance().readValue(json, String[].class);
+		} catch (Exception e) {
+			throw new PipelineException("Failed to read String[] from json " + json, e);
 		}
 	}
 }

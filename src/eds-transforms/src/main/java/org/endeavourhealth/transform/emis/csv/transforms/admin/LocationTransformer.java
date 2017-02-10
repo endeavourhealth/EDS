@@ -61,22 +61,16 @@ public class LocationTransformer {
         fhirLocation.setAddress(fhirAddress);
 
         String phoneNumber = parser.getPhoneNumber();
-        if (!Strings.isNullOrEmpty(phoneNumber)) {
-            ContactPoint fhirContact = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.WORK, phoneNumber);
-            fhirLocation.addTelecom(fhirContact);
-        }
+        ContactPoint fhirContact = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.WORK, phoneNumber);
+        fhirLocation.addTelecom(fhirContact);
 
         String faxNumber = parser.getFaxNumber();
-        if (!Strings.isNullOrEmpty(faxNumber)) {
-            ContactPoint fhirContact = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.FAX, ContactPoint.ContactPointUse.WORK, faxNumber);
-            fhirLocation.addTelecom(fhirContact);
-        }
+        fhirContact = ContactPointHelper.create(ContactPoint.ContactPointSystem.FAX, ContactPoint.ContactPointUse.WORK, faxNumber);
+        fhirLocation.addTelecom(fhirContact);
 
         String email = parser.getEmailAddress();
-        if (!Strings.isNullOrEmpty(email)) {
-            ContactPoint fhirContact = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.EMAIL, ContactPoint.ContactPointUse.WORK, email);
-            fhirLocation.addTelecom(fhirContact);
-        }
+        fhirContact = ContactPointHelper.create(ContactPoint.ContactPointSystem.EMAIL, ContactPoint.ContactPointUse.WORK, email);
+        fhirLocation.addTelecom(fhirContact);
 
         Date openDate = parser.getOpenDate();
         Date closeDate = parser.getCloseDate();

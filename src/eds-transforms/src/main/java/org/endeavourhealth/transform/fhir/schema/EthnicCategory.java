@@ -39,4 +39,13 @@ public enum EthnicCategory {
         this.code = code;
         this.description = description;
     }
+
+    public static EthnicCategory fromCode(String v) {
+        for (EthnicCategory c: EthnicCategory.values()) {
+            if (c.code.equalsIgnoreCase(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
+    }
 }

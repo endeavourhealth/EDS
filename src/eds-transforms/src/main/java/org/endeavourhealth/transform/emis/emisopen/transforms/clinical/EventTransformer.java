@@ -3,13 +3,17 @@ package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.EventType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class EventTransformer
-{
+public class EventTransformer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(EventTransformer.class);
+
     //Internal use 0 = text, 1= Observation; 2= Problems; 5=Values; 7=Attachments; 8=Referrals;
     //        10=Alerts; 11=Allergies; 12=Family History; 13=Immunisations; 14=Problem Ratings
     enum ObservationType
@@ -60,21 +64,28 @@ public class EventTransformer
 
     private static Resource transform(EventType eventType, String patientUuid) throws TransformException
     {
-        switch (ObservationType.fromValue(eventType.getEventType().intValue()))
-        {
+        switch (ObservationType.fromValue(eventType.getEventType().intValue())) {
+
             case TEXT:
-            case OBSERVATION: return ObservationTransformer.transform(eventType, patientUuid);
+            case OBSERVATION:
+                return ObservationTransformer.transform(eventType, patientUuid);
             case PROBLEM:
-            case VALUE: return ObservationTransformer.transform(eventType, patientUuid);
+            case VALUE:
+                return ObservationTransformer.transform(eventType, patientUuid);
             case ATTACHMENT:
             case REFERRAL:
-            case ALERT: return null;
-            case ALLERGY: return AllergyTransformer.transform(eventType, patientUuid);
-            case FAMILYHISTORY: return FamilyHistoryTransformer.transform(eventType, patientUuid);
-            case IMMUNISATION: return ImmunisationTransformer.transform(eventType, patientUuid);
-            case PROBLEMRATING: return null;
+            case ALERT:
+                return null;
+            case ALLERGY:
+                return AllergyTransformer.transform(eventType, patientUuid);
+            case FAMILYHISTORY:
+                return FamilyHistoryTransformer.transform(eventType, patientUuid);
+            case IMMUNISATION:
+                return ImmunisationTransformer.transform(eventType, patientUuid);
+            case PROBLEMRATING:
+                return null;
+            default:
+                throw new TransformException("Unhandled event type " + eventType);
         }
-
-        return null;
     }
 }

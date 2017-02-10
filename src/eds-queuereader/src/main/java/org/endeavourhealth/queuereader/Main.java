@@ -1,6 +1,7 @@
 package org.endeavourhealth.queuereader;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
 import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
@@ -30,13 +31,30 @@ public class Main {
 
 	public static void main(String[] args) throws Exception {
 
+		LOG.info("Initialising config manager");
+		ConfigManager.Initialize("queuereader");
+
+		//hack to get the Enterprise data streaming
+		try {
+			if (args.length == 1) {
+				UUID serviceUuid = UUID.fromString(args[0]);
+				startEnterpriseStream(serviceUuid, null);
+			} else if (args.length == 2) {
+				UUID serviceUuid = UUID.fromString(args[0]);
+				UUID exchangeUuid = UUID.fromString(args[1]);
+				startEnterpriseStream(serviceUuid, exchangeUuid);
+			}
+		} catch (IllegalArgumentException iae) {
+			//fine, just let it continue to below
+		} catch (Exception ex) {
+			LOG.error("", ex);
+			return;
+		}
+
 		if (args.length != 1) {
 			LOG.error("Usage: queuereader config_id");
 			return;
 		}
-
-		LOG.info("Initialising config manager");
-		ConfigManager.Initialize("queuereader");
 
 		/*if (args[0].equalsIgnoreCase("TestLogging")) {
 			testLogging();
@@ -58,16 +76,7 @@ public class Main {
 			return;
 		}*/
 
-			//hack to get the Enterprise data streaming
-		try {
-			UUID serviceUuid = UUID.fromString(args[0]);
-			startEnterpriseStream(serviceUuid);
-		} catch (IllegalArgumentException iae) {
-			//fine, just let it continue to below
-		} catch (Exception ex) {
-			LOG.error("", ex);
-			return;
-		}
+
 		//LOG.info("Fixing events");
 		//fixExchangeEvents();
 		/*LOG.info("Fixing exchanges");
@@ -407,7 +416,7 @@ public class Main {
 	}*/
 
 
-	private static void startEnterpriseStream(UUID serviceId) throws Exception {
+	private static void startEnterpriseStream(UUID serviceId, UUID exchangeIdStartFrom) throws Exception {
 
 		LOG.info("Starting Enterprise Streaming for " + serviceId);
 
@@ -424,6 +433,15 @@ public class Main {
 			ExchangeByService exchangeByService = exchangeByServiceList.get(i);
 		//for (ExchangeByService exchangeByService: exchangeByServiceList) {
 			UUID exchangeId = exchangeByService.getExchangeId();
+
+			if (exchangeIdStartFrom != null) {
+				if (!exchangeIdStartFrom.equals(exchangeId)) {
+					continue;
+				} else {
+					//once we have a match, set to null so we don't skip any subsequent ones
+					exchangeIdStartFrom = null;
+				}
+			}
 
 			Exchange exchange = AuditWriter.readExchange(exchangeId);
 			String senderOrgUuidStr = exchange.getHeader(HeaderKeys.SenderOrganisationUuid);
@@ -445,7 +463,9 @@ public class Main {
 
 				try {
 					String outbound = FhirToEnterpriseCsvTransformer.transformFromFhir(senderOrgUuid, batchId, null);
-					EnterpriseFiler.file(outbound);
+					if (!Strings.isNullOrEmpty(outbound)) {
+						EnterpriseFiler.file(outbound);
+					}
 
 				} catch (Exception ex) {
 					throw new PipelineException("Failed to process exchange " + exchangeId + " and batch " + batchId, ex);

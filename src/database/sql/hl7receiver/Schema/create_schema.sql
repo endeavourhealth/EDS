@@ -47,10 +47,10 @@ create table configuration.channel
 	constraint configuration_channel_portnumber_uq unique (port_number),
 	constraint configuration_channel_portnumber_ck check (port_number > 0),
 	constraint configuration_channel_channelname_ck check (char_length(trim(channel_name)) > 0),
-	constraint configuration_channel_pid1field_ck check ((pid1_field >= 2 and pid1_field <= 4) or (pid1_field is null)),
-	constraint configuration_channel_pid2field_ck check ((pid2_field >= 2 and pid2_field <= 4) or (pid2_field is null)),
-	constraint configuration_channel_pid1field_pid1assigningauth_ck check (((pid1_field is null) and (pid1_assigning_auth is null)) or ((pid1_field is not null) and (pid1_assigning_auth is not null))),
-	constraint configuration_channel_pid2field_pid2assigningauth_ck check (((pid2_field is null) and (pid2_assigning_auth is null)) or ((pid2_field is not null) and (pid2_assigning_auth is not null))),
+	constraint configuration_channel_pid1field_ck check ((pid1_field >= 1 and pid1_field <= 30) or (pid1_field is null)),
+	constraint configuration_channel_pid2field_ck check ((pid2_field >= 1 and pid2_field <= 30) or (pid2_field is null)),
+	constraint configuration_channel_pid1field_pid1assigningauth_ck check ((pid1_assigning_auth is null) or ((pid1_field is not null) and (pid1_assigning_auth is not null))),
+	constraint configuration_channel_pid2field_pid2assigningauth_ck check ((pid2_assigning_auth is null) or ((pid2_field is not null) and (pid2_assigning_auth is not null))),
 	constraint configuration_eds_edsserviceidentifier_uq unique (eds_service_identifier),
 	constraint configuration_eds_edsserviceidentifier_ck check (char_length(trim(eds_service_identifier)) > 0)
 );

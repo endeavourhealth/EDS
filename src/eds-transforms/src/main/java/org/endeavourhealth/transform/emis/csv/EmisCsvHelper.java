@@ -4,6 +4,7 @@ import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
+import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.data.transform.EmisRepository;
 import org.endeavourhealth.core.data.transform.models.EmisAdminResourceCache;
@@ -321,6 +322,31 @@ public class EmisCsvHelper {
 
         String json = resourceHistory.getResourceData();
         return new JsonParser().parse(json);
+    }
+
+    public List<Resource> retrieveAllResourcesForPatient(String patientGuid, FhirResourceFiler fhirResourceFiler) throws Exception {
+
+        UUID edsPatientId = IdHelper.getEdsResourceId(fhirResourceFiler.getServiceId(),
+                fhirResourceFiler.getSystemId(),
+                ResourceType.Patient,
+                patientGuid);
+        if (edsPatientId == null) {
+            throw new ResourceNotFoundException(ResourceType.Patient, edsPatientId);
+        }
+
+        UUID serviceId = fhirResourceFiler.getServiceId();
+        UUID systemId = fhirResourceFiler.getSystemId();
+        List<ResourceByPatient> resourceWrappers = resourceRepository.getResourcesByPatient(serviceId, systemId, edsPatientId);
+
+        List<Resource> ret = new ArrayList<>();
+
+        for (ResourceByPatient resourceWrapper: resourceWrappers) {
+            String json = resourceWrapper.getResourceData();
+            Resource resource = new JsonParser().parse(json);
+            ret.add(resource);
+        }
+
+        return ret;
     }
 
     /**

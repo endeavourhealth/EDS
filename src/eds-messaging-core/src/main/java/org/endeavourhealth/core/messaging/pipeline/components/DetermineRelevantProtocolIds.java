@@ -37,7 +37,7 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 
 		try {
 			String protocolsJson = ObjectMapperPool.getInstance().writeValueAsString(protocolIds.toArray());
-			exchange.setHeader(HeaderKeys.Protocols, protocolsJson);
+			exchange.setHeader(HeaderKeys.ProtocolIds, protocolsJson);
 		} catch (JsonProcessingException e) {
 			LOG.error("Unable to serialize protocols to JSON");
 			throw new PipelineException(e.getMessage(), e);

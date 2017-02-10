@@ -39,21 +39,21 @@ public class SiteTransformer {
 
         String tel = tppSite.getTelephone();
         if (!Strings.isNullOrEmpty(tel)) {
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.WORK, tel);
             fhirLocation.addTelecom(contactPoint);
         }
 
         String fax = tppSite.getFax();
         if (!Strings.isNullOrEmpty(fax)) {
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.FAX,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.FAX,
                     ContactPoint.ContactPointUse.WORK, fax);
             fhirLocation.addTelecom(contactPoint);
         }
 
         String email = tppSite.getEmail();
         if (!Strings.isNullOrEmpty(email)) {
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.EMAIL,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.EMAIL,
                     ContactPoint.ContactPointUse.WORK, email);
             fhirLocation.addTelecom(contactPoint);
         }
@@ -82,21 +82,21 @@ public class SiteTransformer {
 
         String tel = tppSite.getTelephone();
         if (!Strings.isNullOrEmpty(tel)) {
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.WORK, tel);
             fhirOrganisation.addTelecom(contactPoint);
         }
 
         String fax = tppSite.getFax();
         if (!Strings.isNullOrEmpty(fax)) {
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.FAX,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.FAX,
                     ContactPoint.ContactPointUse.WORK, fax);
             fhirOrganisation.addTelecom(contactPoint);
         }
 
         String email = tppSite.getEmail();
         if (!Strings.isNullOrEmpty(email)) {
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.EMAIL,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.EMAIL,
                     ContactPoint.ContactPointUse.WORK, email);
             fhirOrganisation.addTelecom(contactPoint);
         }

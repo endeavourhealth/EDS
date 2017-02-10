@@ -1,7 +1,10 @@
 
 package org.endeavourhealth.transform.vitrucare.model;
 
-import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSchemaType;
+import javax.xml.bind.annotation.XmlType;
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.math.BigDecimal;
 
@@ -16,13 +19,13 @@ import java.math.BigDecimal;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="code" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;element name="description" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="code" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
+ *         &lt;element name="description" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="value" type="{http://www.w3.org/2001/XMLSchema}decimal" minOccurs="0"/>
  *         &lt;element name="units" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="lowerRecommendedBound" type="{http://www.w3.org/2001/XMLSchema}decimal" minOccurs="0"/>
  *         &lt;element name="upperRecommendedBound" type="{http://www.w3.org/2001/XMLSchema}decimal" minOccurs="0"/>
- *         &lt;element name="startDate" type="{http://www.w3.org/2001/XMLSchema}date"/>
+ *         &lt;element name="startDate" type="{http://www.w3.org/2001/XMLSchema}date" minOccurs="0"/>
  *         &lt;element name="endDate" type="{http://www.w3.org/2001/XMLSchema}date" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -45,15 +48,12 @@ import java.math.BigDecimal;
 })
 public class ClinicalTerm {
 
-    @XmlElement(required = true)
     protected String code;
-    @XmlElement(required = true)
     protected String description;
     protected BigDecimal value;
     protected String units;
     protected BigDecimal lowerRecommendedBound;
     protected BigDecimal upperRecommendedBound;
-    @XmlElement(required = true)
     @XmlSchemaType(name = "date")
     protected XMLGregorianCalendar startDate;
     @XmlSchemaType(name = "date")

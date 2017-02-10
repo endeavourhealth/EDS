@@ -8,11 +8,15 @@ import org.endeavourhealth.transform.emis.csv.schema.admin.Organisation;
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.OrganisationType;
 import org.hl7.fhir.instance.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.Map;
 
 public class OrganisationTransformer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OrganisationTransformer.class);
 
     public static void transform(String version,
                                  Map<Class, AbstractCsvParser> parsers,
@@ -70,6 +74,7 @@ public class OrganisationTransformer {
             fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(fhirOrgType));
         } else {
             //if the org type from the CSV can't be mapped to one of the value set, store as a freetext type
+            LOG.info("Unmapped organisation type " + organisationType);
             fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(organisationType));
         }
 

@@ -18,25 +18,25 @@
 
     <xs:complexType name="clinicalTerm">
         <xs:sequence>
-            <xs:element name="code" type="xs:string"/>
-            <xs:element name="description" type="xs:string"/>
+            <xs:element name="code" type="xs:string" minOccurs="0"/>
+            <xs:element name="description" type="xs:string" minOccurs="0"/>
             <xs:element name="value" type="xs:decimal" minOccurs="0"/>
             <xs:element name="units" type="xs:string" minOccurs="0"/>
             <xs:element name="lowerRecommendedBound" type="xs:decimal" minOccurs="0"/>
             <xs:element name="upperRecommendedBound" type="xs:decimal" minOccurs="0"/>
-            <xs:element name="startDate" type="xs:date"/>
+            <xs:element name="startDate" type="xs:date" minOccurs="0"/>
             <xs:element name="endDate" type="xs:date" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="medication">
         <xs:sequence>
-            <xs:element name="productId" type="xs:string"/>
-            <xs:element name="productName" type="xs:string"/>
-            <xs:element name="startDate" type="xs:date"/>
-            <xs:element name="endDate" type="xs:date"/>
-            <xs:element name="dose" type="xs:string"/>
-            <xs:element name="quanity" type="xs:string"/>
+            <xs:element name="productId" type="xs:string" minOccurs="0"/>
+            <xs:element name="productName" type="xs:string" minOccurs="0"/>
+            <xs:element name="startDate" type="xs:date" minOccurs="0"/>
+            <xs:element name="endDate" type="xs:date" minOccurs="0"/>
+            <xs:element name="dose" type="xs:string" minOccurs="0"/>
+            <xs:element name="quanity" type="xs:string" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
 

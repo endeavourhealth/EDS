@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.admin.Patient;
@@ -61,8 +62,9 @@ public class PatientTransformer {
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
         if (parser.getDeleted() || parser.getIsConfidential()) {
-            //save both resources together, so the patient is defintiely saved before the episode
-            fhirResourceFiler.deletePatientResource(parser.getCurrentState(), patientGuid, fhirPatient, fhirEpisode);
+            //Emis send us a delete for a patient WITHOUT a corresponding delete for all other data, so
+            //we need to manually delete all dependant resources
+            deleteEntirePatientRecord(fhirResourceFiler, csvHelper, parser.getCurrentState(), patientGuid, fhirPatient, fhirEpisode);
             return;
         }
 
@@ -139,22 +141,16 @@ public class PatientTransformer {
         }
 
         String homePhone = parser.getHomePhone();
-        if (!Strings.isNullOrEmpty(homePhone)) {
-            ContactPoint fhirContact = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.HOME, homePhone);
-            fhirPatient.addTelecom(fhirContact);
-        }
+        ContactPoint fhirContact = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.HOME, homePhone);
+        fhirPatient.addTelecom(fhirContact);
 
         String mobilePhone = parser.getMobilePhone();
-        if (!Strings.isNullOrEmpty(mobilePhone)) {
-            ContactPoint fhirContact = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.MOBILE, mobilePhone);
-            fhirPatient.addTelecom(fhirContact);
-        }
+        fhirContact = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE, ContactPoint.ContactPointUse.MOBILE, mobilePhone);
+        fhirPatient.addTelecom(fhirContact);
 
         String email = parser.getEmailAddress();
-        if (!Strings.isNullOrEmpty(email)) {
-            ContactPoint fhirContact = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.EMAIL, ContactPoint.ContactPointUse.HOME, email);
-            fhirPatient.addTelecom(fhirContact);
-        }
+        fhirContact = ContactPointHelper.create(ContactPoint.ContactPointSystem.EMAIL, ContactPoint.ContactPointUse.HOME, email);
+        fhirPatient.addTelecom(fhirContact);
 
         fhirPatient.setManagingOrganization(csvHelper.createOrganisationReference(organisationGuid));
 
@@ -162,21 +158,21 @@ public class PatientTransformer {
         String carerRelationship = parser.getCarerRelation();
         if (!Strings.isNullOrEmpty(carerName)) {
 
-            org.hl7.fhir.instance.model.Patient.ContactComponent fhirContact = new org.hl7.fhir.instance.model.Patient.ContactComponent();
-            fhirContact.setName(NameConverter.convert(carerName));
+            org.hl7.fhir.instance.model.Patient.ContactComponent fhirContactComponent = new org.hl7.fhir.instance.model.Patient.ContactComponent();
+            fhirContactComponent.setName(NameConverter.convert(carerName));
 
             if (!Strings.isNullOrEmpty(carerRelationship)) {
                 //FHIR spec states that we should map to their relationship types if possible, but if
                 //not possible, then send as a textual codeable concept
                 try {
                     ContactRelationship fhirContactRelationship = ContactRelationship.fromCode(carerRelationship);
-                    fhirContact.addRelationship(CodeableConceptHelper.createCodeableConcept(fhirContactRelationship));
+                    fhirContactComponent.addRelationship(CodeableConceptHelper.createCodeableConcept(fhirContactRelationship));
                 } catch (IllegalArgumentException ex) {
-                    fhirContact.addRelationship(CodeableConceptHelper.createCodeableConcept(carerRelationship));
+                    fhirContactComponent.addRelationship(CodeableConceptHelper.createCodeableConcept(carerRelationship));
                 }
             }
 
-            fhirPatient.addContact(fhirContact);
+            fhirPatient.addContact(fhirContactComponent);
         }
 
         boolean spineSensitive = parser.getSpineSensitive();
@@ -238,6 +234,24 @@ public class PatientTransformer {
 
         //save both resources together, so the patient is defintiely saved before the episode
         fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirPatient, fhirEpisode);
+    }
+
+    /**
+     * Emis send us a delete for a patient WITHOUT a corresponding delete for all other data, so
+     * we need to manually delete all dependant resources
+     */
+    private static void deleteEntirePatientRecord(FhirResourceFiler fhirResourceFiler, EmisCsvHelper csvHelper,
+                                                  CsvCurrentState currentState, String patientGuid,
+                                                  org.hl7.fhir.instance.model.Patient fhirPatient, EpisodeOfCare fhirEpisode) throws Exception {
+
+        //don't bother doing these two, since the below delete will pick them up
+        //fhirResourceFiler.deletePatientResource(currentState, patientGuid, fhirPatient, fhirEpisode);
+
+        List<Resource> resources = csvHelper.retrieveAllResourcesForPatient(patientGuid, fhirResourceFiler);
+        for (Resource resource: resources) {
+            fhirResourceFiler.deletePatientResource(currentState, false, patientGuid, resource);
+        }
+
     }
 
     private static void transformEthnicityAndMaritalStatus(org.hl7.fhir.instance.model.Patient fhirPatient,

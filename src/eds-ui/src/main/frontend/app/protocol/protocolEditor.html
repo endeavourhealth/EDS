@@ -52,7 +52,9 @@
 						<div class="input-group">
 							<span class="input-group-addon"><i class="fa fa-check fa-lg fa-fw"></i></span>
 							<select class="form-control" [(ngModel)]="libraryItem.protocol.cohort" name="cohort">
-								<option *ngFor="let item of cohorts" value="{{item.uuid}}">{{item.name}}</option>
+								<!--cohorts is a string array for now-->
+								<option *ngFor="let item of cohorts" value="{{item}}">{{item}}</option>
+								<!--<option *ngFor="let item of cohorts" value="{{item.uuid}}">{{item.name}}</option>-->
 							</select>
 						</div>
 					</div>

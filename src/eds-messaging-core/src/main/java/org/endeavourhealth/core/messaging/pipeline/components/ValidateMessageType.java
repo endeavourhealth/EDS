@@ -1,6 +1,5 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.ValidateMessageTypeConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -32,15 +31,14 @@ public class ValidateMessageType extends PipelineComponent {
 		String formatVersion = exchange.getHeader(HeaderKeys.SystemVersion);
 
 		// Get the (publisher) protocols
-		String protocolIdJson = exchange.getHeader(HeaderKeys.Protocols);
-
+		String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
+		/*String protocolIdJson = exchange.getHeader(HeaderKeys.ProtocolIds);
 		String[] protocolIds = null;
 		try {
 			protocolIds = ObjectMapperPool.getInstance().readValue(protocolIdJson, String[].class);
 		} catch (Exception e) {
 			throw new PipelineException("Failed to read protocol IDs from json " + protocolIdJson, e);
-		}
-
+		}*/
 
 		// Ensure at least one of the publisher protocols is for this system/format
 		boolean senderIsValid = false;

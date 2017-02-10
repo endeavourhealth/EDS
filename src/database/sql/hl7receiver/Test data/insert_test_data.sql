@@ -21,7 +21,7 @@ insert into configuration.channel
 	notes
 )
 values
-(1, 'HOMERTON', 8900, true, false, 'P0241', 'HOMERTON', 'HOMERTON_TIE', 'HOMERTON', 2, 'NHS', 3, 'Homerton Case Note Number', 'RQX', ''),
+(1, 'HOMERTON', 8900, true, false, 'P0241', 'HOMERTON', 'HOMERTON_TIE', 'HOMERTON', 19, null, 3, 'Homerton Case Note Number', 'RQX', ''),
 (2, 'BARTS', 8901, true, false, 'BLT_TIE', 'BLT', 'EDS', 'ENDEAVOUR', null, null, null, null, 'R1H', '');
 
 insert into configuration.channel_message_type
@@ -30,11 +30,12 @@ insert into configuration.channel_message_type
 	message_type,
 	is_allowed
 )
-values
-(1, 'ADT^A01', true),
-(1, 'ACK^A01', true),
-(1, 'ADT^A04', true),
-(1, 'ACK^A04', true);
+select
+	1,
+	message_type,
+	true
+from dictionary.message_type
+order by message_type;
 
 insert into configuration.eds
 (

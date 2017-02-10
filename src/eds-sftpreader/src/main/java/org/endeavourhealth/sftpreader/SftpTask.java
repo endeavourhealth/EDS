@@ -3,6 +3,7 @@ package org.endeavourhealth.sftpreader;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.http.Header;
 import org.endeavourhealth.core.eds.EdsSender;
 import org.endeavourhealth.core.keycloak.KeycloakClient;
@@ -22,12 +23,15 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class SftpTask extends TimerTask
 {
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(SftpTask.class);
+    private static final DateTimeFormatter DATE_DISPLAY_FORMAT = DateTimeFormatter.ofPattern("yyyy-MMM-dd HH:mm");
 
     private Configuration configuration = null;
     private DbConfiguration dbConfiguration = null;
@@ -41,6 +45,8 @@ public class SftpTask extends TimerTask
     @Override
     public void run()
     {
+        LocalDateTime startTime = LocalDateTime.now();
+
         try
         {
             LOG.trace(">>>Starting scheduled SftpTask run, initialising");
@@ -64,6 +70,9 @@ public class SftpTask extends TimerTask
         {
             LOG.error(">>>Fatal exception in SftpTask run, terminating this run", e);
         }
+
+        LOG.trace(">>>Next run scheduled for " + calculateNextRunTime(startTime).format(DATE_DISPLAY_FORMAT));
+        LOG.trace("--------------------------------------------------");
     }
 
     private void initialise() throws Exception
@@ -493,5 +502,11 @@ public class SftpTask extends TimerTask
 
             throw new SftpReaderException("Error notifying EDS for batch split " + unnotifiedBatchSplit.getBatchSplitId(), e);
         }
+    }
+
+    private LocalDateTime calculateNextRunTime(LocalDateTime thisRunStartTime) {
+        Validate.notNull(thisRunStartTime);
+
+        return thisRunStartTime.plusSeconds(configuration.getDbConfiguration().getPollFrequencySeconds());
     }
 }
