@@ -40,10 +40,11 @@ public class PatientTransformer extends AbstractTransformer {
             return;
 
         } else if (resource.getIsDeleted()) {
-            //we've got records with a deleted patient but the child resources aren't deleted, so we need to manually delete them
-            //from Enterprise
+            //we've got records with a deleted patient but the child resources aren't deleted, so we need to manually delete them from Enterprise
             deleteAllDependentEntities(data, resource);
-            //model.writeDelete(enterpriseId.intValue());
+
+            //and delete the patient itself
+            model.writeDelete(enterpriseId.intValue());
 
         } else {
             Patient fhirPatient = (Patient)deserialiseResouce(resource);
