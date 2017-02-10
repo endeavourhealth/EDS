@@ -37,9 +37,10 @@ public class Field {
     }
 
     public List<String> getAsStringList() {
-        String[] fieldArr = field.split("~");
-
-        return Arrays.asList(fieldArr);
+        return genericDatatypes
+            .stream()
+            .map(t -> t.getAsString())
+            .collect(Collectors.toList());
     }
 
     public String getComponent(int componentNumber) {

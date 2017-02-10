@@ -15,6 +15,7 @@ public class AdtMessage extends Message {
     public boolean hasEvnSegment() { return super.hasSegment(SegmentName.EVN); }
     public boolean hasPidSegment() { return super.hasSegment(SegmentName.PID); }
     public boolean hasPd1Segment() { return super.hasSegment(SegmentName.PD1); }
+    public boolean hasNk1Segment() { return super.hasSegment(SegmentName.NK1); }
 
     public MshSegment getMshSegment() {
         return (MshSegment) super.getSegment(SegmentName.MSH);
@@ -22,4 +23,5 @@ public class AdtMessage extends Message {
     public EvnSegment getEvnSegment() { return (EvnSegment) super.getSegment(SegmentName.EVN); }
     public PidSegment getPidSegment() { return (PidSegment) super.getSegment(SegmentName.PID); }
     public Pd1Segment getPd1Segment() { return (Pd1Segment) super.getSegment(SegmentName.PD1); }
+    public Nk1Segment getNk1Segment() { return (Nk1Segment) super.getSegment(SegmentName.NK1); }
 }
