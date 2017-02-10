@@ -152,6 +152,26 @@ public class PatientTransformer extends AbstractTransformer {
                 csvWriter = data.getMedicationOrders();
             } else if (resourceType == ResourceType.AllergyIntolerance) {
                 csvWriter = data.getAllergyIntolerances();
+            } else if (resourceType == ResourceType.Condition) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.Procedure) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.Immunization) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.FamilyMemberHistory) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.DiagnosticOrder) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.DiagnosticReport) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.Specimen) {
+                csvWriter = data.getObservations();
+            } else if (resourceType == ResourceType.Slot) {
+                //these aren't sent to Enterprise
+                continue;
+            } else if (resourceType == ResourceType.Location) {
+                //these aren't sent to Enterprise
+                continue;
             } else {
                 throw new Exception("Unhandlded resource type " + resourceType);
             }
