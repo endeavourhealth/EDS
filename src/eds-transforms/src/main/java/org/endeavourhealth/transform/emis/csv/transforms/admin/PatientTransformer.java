@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
@@ -247,11 +248,14 @@ public class PatientTransformer {
         //don't bother doing these two, since the below delete will pick them up
         //fhirResourceFiler.deletePatientResource(currentState, patientGuid, fhirPatient, fhirEpisode);
 
-        List<Resource> resources = csvHelper.retrieveAllResourcesForPatient(patientGuid, fhirResourceFiler);
-        for (Resource resource: resources) {
-            fhirResourceFiler.deletePatientResource(currentState, false, patientGuid, resource);
+        try {
+            List<Resource> resources = csvHelper.retrieveAllResourcesForPatient(patientGuid, fhirResourceFiler);
+            for (Resource resource : resources) {
+                fhirResourceFiler.deletePatientResource(currentState, false, patientGuid, resource);
+            }
+        } catch (ResourceNotFoundException ex) {
+            //if this is the first time we've received anything for this patient, we won't be able to find it in the DB
         }
-
     }
 
     private static void transformEthnicityAndMaritalStatus(org.hl7.fhir.instance.model.Patient fhirPatient,

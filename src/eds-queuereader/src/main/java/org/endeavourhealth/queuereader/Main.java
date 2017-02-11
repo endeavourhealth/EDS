@@ -3,6 +3,7 @@ package org.endeavourhealth.queuereader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.audit.AuditWriter;
+import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
@@ -10,18 +11,26 @@ import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.models.ExchangeByService;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
+import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
+import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
+import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
+import org.hl7.fhir.instance.formats.JsonParser;
+import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -53,6 +62,11 @@ public class Main {
 
 		if (args.length != 1) {
 			LOG.error("Usage: queuereader config_id");
+			return;
+		}
+
+		if (args[0].equalsIgnoreCase("FixExchanges")) {
+			populateExchangeBatchPatients();
 			return;
 		}
 
@@ -701,4 +715,88 @@ public class Main {
 			//}
 		}
 	}*/
+
+	private static void populateExchangeBatchPatients() throws Exception {
+		LOG.info("populateExchangeBatchPatients");
+
+		AuditRepository auditRepository = new AuditRepository();
+		ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+		ResourceRepository resourceRepository = new ResourceRepository();
+		//ServiceRepository serviceRepository = new ServiceRepository();
+		//OrganisationRepository organisationRepository = new OrganisationRepository();
+
+		List<org.endeavourhealth.core.data.audit.models.Exchange> exchanges = auditRepository.getAllExchanges();
+		for (org.endeavourhealth.core.data.audit.models.Exchange exchange: exchanges) {
+
+			UUID exchangeId = exchange.getExchangeId();
+
+			String headerJson = exchange.getHeaders();
+			HashMap<String, String> headers = null;
+			try {
+				headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+			} catch (Exception e) {
+				LOG.error("Failed to read headers for exchange " + exchangeId + " and Json " + headerJson);
+				continue;
+			}
+
+			UUID serviceId = UUID.fromString(headers.get(HeaderKeys.SenderServiceUuid));
+			UUID systemId = UUID.fromString(headers.get(HeaderKeys.SenderSystemUuid));
+
+
+			List<ExchangeBatch> exchangeBatches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
+			for (ExchangeBatch exchangeBatch: exchangeBatches) {
+
+				if (exchangeBatch.getEdsPatientId() != null) {
+					continue;
+				}
+
+				UUID batchId = exchangeBatch.getBatchId();
+				List<ResourceByExchangeBatch> resourceWrappers = resourceRepository.getResourcesForBatch(batchId, ResourceType.Patient.toString());
+				if (resourceWrappers.isEmpty()) {
+					continue;
+				}
+
+				List<UUID> patientIds = new ArrayList<>();
+				for (ResourceByExchangeBatch resourceWrapper: resourceWrappers) {
+					UUID patientId = resourceWrapper.getResourceId();
+
+					if (resourceWrapper.getIsDeleted()) {
+						deleteEntirePatientRecord(patientId, serviceId, systemId, exchangeId, batchId);
+					}
+
+					if (!patientIds.contains(patientId)) {
+						patientIds.add(patientId);
+					}
+				}
+
+				if (patientIds.size() != 1) {
+					LOG.info("Skipping exchange " + exchangeId + " and batch " + batchId + " because found " + patientIds.size() + " patient IDs");
+					continue;
+				}
+
+				UUID patientId = patientIds.get(0);
+				exchangeBatch.setEdsPatientId(patientId);
+
+				exchangeBatchRepository.save(exchangeBatch);
+			}
+		}
+
+		LOG.info("Finished populateExchangeBatchPatients");
+	}
+
+	private static void deleteEntirePatientRecord(UUID patientId, UUID serviceId, UUID systemId, UUID exchangeId, UUID batchId) throws Exception {
+
+		FhirStorageService storageService = new FhirStorageService(serviceId, systemId);
+
+		ResourceRepository resourceRepository = new ResourceRepository();
+		List<ResourceByPatient> resourceWrappers = resourceRepository.getResourcesByPatient(serviceId, systemId, patientId);
+		for (ResourceByPatient resourceWrapper: resourceWrappers) {
+			String json = resourceWrapper.getResourceData();
+			Resource resource = new JsonParser().parse(json);
+
+			storageService.exchangeBatchDelete(exchangeId, batchId, resource);
+		}
+
+
+	}
 }

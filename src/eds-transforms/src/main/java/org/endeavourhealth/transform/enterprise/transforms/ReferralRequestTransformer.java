@@ -111,38 +111,31 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                     requesterOrganizationId = findEnterpriseId(data.getOrganisations(), requesterReference);
 
                 } else if (resourceType == ResourceType.Practitioner) {
-
-                    //we have a number of examples of Emis data where the prfctitioner doesn't exist, so handle this not being found
-                    try {
-                        Practitioner fhirPractitioner = (Practitioner)findResource(requesterReference, otherResources);
-                        Practitioner.PractitionerPractitionerRoleComponent role = fhirPractitioner.getPractitionerRole().get(0);
-                        Reference organisationReference = role.getManagingOrganization();
-                        requesterOrganizationId = findEnterpriseId(data.getOrganisations(), organisationReference);
-                    } catch (ResourceNotFoundException ex) {
-                        LOG.warn("" + fhir.getResourceType() + " " + fhir.getId() + " refers to a Practitioner that doesn't exist");
-                    }
+                    requesterOrganizationId = findOrganisationEnterpriseIdFromPractictioner(requesterReference, data, otherResources, fhir);
                 }
             }
 
             if (fhir.hasRecipient()) {
-                if (fhir.getRecipient().size() > 1) {
-                    throw new TransformException("Cannot handle referral requests with more than one recipient " + fhir.getId());
+
+                //there may be two recipients, one for the organisation and one for the practitioner
+                for (Reference recipientReference: fhir.getRecipient()) {
+                    ResourceType resourceType = ReferenceHelper.getResourceType(recipientReference);
+                    if (resourceType == ResourceType.Organization) {
+                        //the EMIS test pack contains referrals that point to recipient organisations that don't exist,
+                        //so we need to handle the failure to find the organisation
+                        recipientOrganizationId = findEnterpriseId(data.getOrganisations(), recipientReference);
+                    }
                 }
-                Reference recipientReference = fhir.getRecipient().get(0);
-                ResourceType resourceType = ReferenceHelper.getResourceType(recipientReference);
 
-                //the recipient can be an organisation or practitioner
-                if (resourceType == ResourceType.Organization) {
-                    //the EMIS test pack contains referrals that point to recipient organisations that don't exist,
-                    //so we need to handle the failure to find the organisation
-                    recipientOrganizationId = findEnterpriseId(data.getOrganisations(), recipientReference);
-                    
-                } else if (resourceType == ResourceType.Practitioner) {
+                //if we didn't find an organisation reference, look for a practitioner one
+                if (recipientOrganizationId == null) {
+                    for (Reference recipientReference : fhir.getRecipient()) {
+                        ResourceType resourceType = ReferenceHelper.getResourceType(recipientReference);
 
-                    Practitioner fhirPractitioner = (Practitioner)findResource(recipientReference, otherResources);
-                    Practitioner.PractitionerPractitionerRoleComponent role = fhirPractitioner.getPractitionerRole().get(0);
-                    Reference organisationReference = role.getManagingOrganization();
-                    recipientOrganizationId = findEnterpriseId(data.getOrganisations(), organisationReference);
+                        if (resourceType == ResourceType.Practitioner) {
+                            recipientOrganizationId = findOrganisationEnterpriseIdFromPractictioner(recipientReference, data, otherResources, fhir);
+                        }
+                    }
                 }
             }
 
@@ -199,6 +192,24 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                 outgoing,
                 originalCode,
                 originalTerm);
+        }
+    }
+
+    private Integer findOrganisationEnterpriseIdFromPractictioner(Reference practitionerReference,
+                                                                  OutputContainer data,
+                                                                  Map<String, ResourceByExchangeBatch> otherResources,
+                                                                  ReferralRequest fhir) throws Exception {
+
+        try {
+            Practitioner fhirPractitioner = (Practitioner)findResource(practitionerReference, otherResources);
+            Practitioner.PractitionerPractitionerRoleComponent role = fhirPractitioner.getPractitionerRole().get(0);
+            Reference organisationReference = role.getManagingOrganization();
+            return findEnterpriseId(data.getOrganisations(), organisationReference);
+
+        } catch (ResourceNotFoundException ex) {
+            //we have a number of examples of Emis data where the practitioner doesn't exist, so handle this not being found
+            LOG.warn("" + fhir.getResourceType() + " " + fhir.getId() + " refers to a Practitioner that doesn't exist");
+            return null;
         }
     }
 
