@@ -12,7 +12,6 @@ import org.hl7.fhir.instance.model.Resource;
 
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * takes some resources, computes the delta to what's on the DB already and files them
@@ -23,9 +22,6 @@ public class FhirDeltaResourceFilter {
     private final UUID serviceId;
     private final UUID systemId;
     private ResourceRepository resourceRepository = new ResourceRepository();
-
-    //private final FhirResourceFiler filer;
-    private ConcurrentHashMap<String, String> hmNewResourceIds = new ConcurrentHashMap<>(); //only used as a set, but supports concurrent access
 
     public FhirDeltaResourceFilter(UUID serviceId, UUID systemId, int maxFilingThreads) {
         this.serviceId = serviceId;
@@ -245,11 +241,7 @@ public class FhirDeltaResourceFilter {
         public Object call() throws Exception {
 
             try {
-
-                boolean isNewResource = IdHelper.mapIds(serviceId, systemId, resource);
-                if (isNewResource) {
-                    hmNewResourceIds.put(resource.getId(), null);
-                }
+                IdHelper.mapIds(serviceId, systemId, resource);
             } catch (Exception ex) {
                 throw new TransformException("Exception mapping  " + resource.getResourceType() + " " + resource.getId(), ex);
             }

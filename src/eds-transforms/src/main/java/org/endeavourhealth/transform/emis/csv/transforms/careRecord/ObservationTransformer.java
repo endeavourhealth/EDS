@@ -470,7 +470,23 @@ public class ObservationTransformer {
         //fhirReferral.setType(csvHelper.findClinicalCode(codeId));
 
         String clinicianGuid = parser.getClinicianUserInRoleGuid();
-        fhirReferral.setRequester(csvHelper.createPractitionerReference(clinicianGuid));
+
+        Reference practitionerReference = csvHelper.createPractitionerReference(clinicianGuid);
+        if (!fhirReferral.hasRequester()) {
+            fhirReferral.setRequester(practitionerReference);
+        } else {
+            //in the referral file transform we set the requester to a reference to an organisation
+            Reference requesterReference = fhirReferral.getRequester();
+            Reference ourOrgReference = csvHelper.createOrganisationReference(parser.getOrganisationGuid());
+
+            //if that requester is OUR organisation, then replace the requester with the specific clinician we have
+            if (requesterReference.equalsShallow(ourOrgReference)) {
+                fhirReferral.setRequester(practitionerReference);
+            } else {
+                //if the referral didn't come FROM our organisation, then our clinician should be the recipient
+                fhirReferral.addRecipient(practitionerReference);
+            }
+        }
 
         String associatedText = parser.getAssociatedText();
         fhirReferral.setDescription(associatedText);
