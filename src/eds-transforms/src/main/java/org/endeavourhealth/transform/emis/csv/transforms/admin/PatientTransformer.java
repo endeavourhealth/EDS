@@ -16,6 +16,8 @@ import org.endeavourhealth.transform.fhir.schema.ContactRelationship;
 import org.endeavourhealth.transform.fhir.schema.NhsNumberVerificationStatus;
 import org.endeavourhealth.transform.fhir.schema.RegistrationType;
 import org.hl7.fhir.instance.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.List;
@@ -23,6 +25,8 @@ import java.util.Map;
 import java.util.UUID;
 
 public class PatientTransformer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PatientTransformer.class);
 
     public static void transform(String version,
                                  Map<Class, AbstractCsvParser> parsers,
@@ -251,16 +255,20 @@ public class PatientTransformer {
         UUID edsEpisodeId = IdHelper.getEdsResourceId(fhirResourceFiler.getServiceId(), fhirResourceFiler.getSystemId(), fhirEpisode.getResourceType(), fhirEpisode.getId());
 
         if (edsPatientId != null) {
+
+            String edsPatientIdStr = edsPatientId.toString();
+            String edsEpisodeIdStr = edsEpisodeId.toString();
+
             try {
                 List<Resource> resources = csvHelper.retrieveAllResourcesForPatient(patientGuid, fhirResourceFiler);
                 for (Resource resource : resources) {
 
                     //if this resource is our patient or episode resource, then skip deleting it here, as we'll just delete them at the end
                     if ((resource.getResourceType() == fhirPatient.getResourceType()
-                            && resource.getId().equals(edsPatientId))
+                            && resource.getId().equals(edsPatientIdStr))
                     || (edsEpisodeId != null
                             && resource.getResourceType() == fhirEpisode.getResourceType()
-                            && resource.getId().equals(edsEpisodeId))) {
+                            && resource.getId().equals(edsEpisodeIdStr))) {
                         continue;
                     }
 

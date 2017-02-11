@@ -86,7 +86,11 @@ public class NameConverter
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(surname.toUpperCase());
+        //got some bad practitioners in EmisOpen testing, so need to handle null surnames
+        if (!Strings.isNullOrEmpty(surname)) {
+            sb.append(surname.toUpperCase());
+        }
+        //sb.append(surname.toUpperCase());
 
         List<String> forenameList = split(forenames);
 

@@ -6,13 +6,17 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.Aut
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.EventType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.QualifierType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.transform.fhir.schema.FamilyMember;
 import org.hl7.fhir.instance.model.*;
 
-final class FamilyHistoryTransformer
-{
+final class FamilyHistoryTransformer {
+
+    private static final String QUALIFIER_GROUP_TERM_FAMILY_MEMBER = "Family member";
+
     public static FamilyMemberHistory transform(EventType eventType, String patientUuid) throws TransformException
     {
         FamilyMemberHistory familyMemberHistory = new FamilyMemberHistory();
@@ -39,9 +43,12 @@ final class FamilyHistoryTransformer
                 .setValue(ReferenceHelper.createReference(ResourceType.Practitioner, authorType.getUser().getGUID()));
     }
 
-    private static CodeableConcept getRelationship(EventType eventType)
-    {
-        final String QUALIFIER_GROUP_TERM_FAMILY_MEMBER = "Family member";
+    private static CodeableConcept getRelationship(EventType eventType) {
+
+        //if the event doesn't have the qualifier to say who the family member is, fall back on the generic "family member"
+        if (eventType.getQualifierList() == null) {
+            return CodeableConceptHelper.createCodeableConcept(FamilyMember.FAMILY_MEMBER);
+        }
 
         QualifierType qualifierType = eventType
                 .getQualifierList()
