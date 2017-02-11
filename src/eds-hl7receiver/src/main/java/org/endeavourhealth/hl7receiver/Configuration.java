@@ -1,10 +1,9 @@
 package org.endeavourhealth.hl7receiver;
 
-import ch.qos.logback.classic.LoggerContext;
 import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.config.ConfigManagerException;
 import org.endeavourhealth.core.postgres.PgDataSource;
-import org.endeavourhealth.hl7receiver.logging.HL7LogDigestAppender;
+import org.endeavourhealth.core.postgres.logdigest.LogDigestAppender;
 import org.endeavourhealth.hl7receiver.model.db.DbConfiguration;
 import org.endeavourhealth.hl7receiver.model.exceptions.ConfigurationException;
 import org.slf4j.Logger;
@@ -71,17 +70,7 @@ public final class Configuration
 
     private void addHL7LogAppender() throws ConfigurationException {
         try {
-            LoggerContext lc = (LoggerContext)LoggerFactory.getILoggerFactory();
-
-            HL7LogDigestAppender appender = new HL7LogDigestAppender(new DataLayer(getDatabaseConnection()));
-            appender.setContext(lc);
-            appender.setName("HL7LogDigestAppender");
-            appender.start();
-
-            ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-            logger.addAppender(appender);
-
-
+            LogDigestAppender.addLogAppender(new DataLayer(getDatabaseConnection()));
         } catch (Exception e) {
             throw new ConfigurationException("Error adding HL7 log appender", e);
         }

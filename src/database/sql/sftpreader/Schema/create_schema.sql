@@ -297,3 +297,18 @@ create table log.notification_message
 	constraint log_notificationmessage_inbound_wassuccess_ck check (inbound is not null or (not was_success)),
 	constraint log_notificationmessage_wassuccess_errortext_ck check ((was_success and error_text is null) or ((not was_success) and error_text is not null))
 );
+
+create table log.error_digest
+(
+	error_digest_id integer not null,
+	error_count integer not null,
+	last_log_date timestamp not null,
+	log_class varchar(1000) not null,
+	log_method varchar(1000) not null,
+	log_message varchar(1000) not null,
+	exception varchar not null,
+	
+	constraint log_errordigest_errordigestid_pk primary key (error_digest_id),
+	constraint log_errordigest_errorcount_ck check (error_count > 0),
+	constraint log_errordigest_logclass_logmethod_logmessage_exception_uq unique (log_class, log_method, log_message, exception)
+);

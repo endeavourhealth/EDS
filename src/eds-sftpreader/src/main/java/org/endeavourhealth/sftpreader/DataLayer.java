@@ -3,6 +3,7 @@ package org.endeavourhealth.sftpreader;
 import org.endeavourhealth.core.postgres.PgResultSet;
 import org.endeavourhealth.core.postgres.PgStoredProc;
 import org.endeavourhealth.core.postgres.PgStoredProcException;
+import org.endeavourhealth.core.postgres.logdigest.IDBDigestLogger;
 import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.sftpreader.model.db.*;
 
@@ -10,7 +11,7 @@ import javax.sql.DataSource;
 import java.util.List;
 import java.util.UUID;
 
-public class DataLayer
+public class DataLayer implements IDBDigestLogger
 {
     private DataSource dataSource;
 
@@ -322,6 +323,18 @@ public class DataLayer
         PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
                 .setName("log.delete_batch_splits")
                 .addParameter("_batch_id", batch.getBatchId());
+
+        pgStoredProc.execute();
+    }
+
+    public void logErrorDigest(String logClass, String logMethod, String logMessage, String exception) throws PgStoredProcException {
+
+        PgStoredProc pgStoredProc = new PgStoredProc(dataSource)
+                .setName("log.log_error_digest")
+                .addParameter("_log_class", logClass)
+                .addParameter("_log_method", logMethod)
+                .addParameter("_log_message", logMessage)
+                .addParameter("_exception", exception);
 
         pgStoredProc.execute();
     }

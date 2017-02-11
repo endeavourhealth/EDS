@@ -5,6 +5,7 @@ import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.data.config.ConfigManagerException;
 import org.endeavourhealth.core.postgres.PgDataSource;
 import org.endeavourhealth.core.postgres.PgStoredProcException;
+import org.endeavourhealth.core.postgres.logdigest.LogDigestAppender;
 import org.endeavourhealth.sftpreader.model.db.DbConfiguration;
 import org.endeavourhealth.sftpreader.model.exceptions.SftpReaderException;
 import org.slf4j.Logger;
@@ -41,6 +42,7 @@ public final class Configuration
     {
         retrieveInstanceName();
         initialiseConfigManager();
+        addHL7LogAppender();
         loadDbConfiguration();
     }
 
@@ -62,6 +64,14 @@ public final class Configuration
         postgresUrl = ConfigManager.getConfiguration("postgres-url");
         postgresUsername = ConfigManager.getConfiguration("postgres-username");
         postgresPassword = ConfigManager.getConfiguration("postgres-password");
+    }
+
+    private void addHL7LogAppender() throws SftpReaderException {
+        try {
+            LogDigestAppender.addLogAppender(new DataLayer(getDatabaseConnection()));
+        } catch (Exception e) {
+            throw new SftpReaderException("Error adding SFTP Reader log appender", e);
+        }
     }
 
     private void loadDbConfiguration() throws PgStoredProcException, SQLException, SftpReaderException {
