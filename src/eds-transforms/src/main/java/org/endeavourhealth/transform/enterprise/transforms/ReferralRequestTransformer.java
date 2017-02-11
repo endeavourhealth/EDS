@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
@@ -111,10 +112,15 @@ public class ReferralRequestTransformer extends AbstractTransformer {
 
                 } else if (resourceType == ResourceType.Practitioner) {
 
-                    Practitioner fhirPractitioner = (Practitioner)findResource(requesterReference, otherResources);
-                    Practitioner.PractitionerPractitionerRoleComponent role = fhirPractitioner.getPractitionerRole().get(0);
-                    Reference organisationReference = role.getManagingOrganization();
-                    requesterOrganizationId = findEnterpriseId(data.getOrganisations(), organisationReference);
+                    //we have a number of examples of Emis data where the prfctitioner doesn't exist, so handle this not being found
+                    try {
+                        Practitioner fhirPractitioner = (Practitioner)findResource(requesterReference, otherResources);
+                        Practitioner.PractitionerPractitionerRoleComponent role = fhirPractitioner.getPractitionerRole().get(0);
+                        Reference organisationReference = role.getManagingOrganization();
+                        requesterOrganizationId = findEnterpriseId(data.getOrganisations(), organisationReference);
+                    } catch (ResourceNotFoundException ex) {
+                        LOG.warn("" + fhir.getResourceType() + " " + fhir.getId() + " refers to a Practitioner that doesn't exist");
+                    }
                 }
             }
 

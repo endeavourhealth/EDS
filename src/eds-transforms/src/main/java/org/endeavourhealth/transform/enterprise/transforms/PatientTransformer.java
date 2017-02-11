@@ -111,7 +111,7 @@ public class PatientTransformer extends AbstractTransformer {
         ResourceRepository resourceRepository = new ResourceRepository();
         UUID patientResourceId = resourceBatchEntry.getResourceId();
         String patientResourceType = resourceBatchEntry.getResourceType();
-        LOG.trace("Deleting patient " + patientResourceId);
+        //LOG.trace("Deleting patient " + patientResourceId);
 
         ResourceHistory resourceHistory = resourceRepository.getCurrentVersion(patientResourceType, patientResourceId);
         UUID serviceId = resourceHistory.getServiceId();
@@ -119,7 +119,7 @@ public class PatientTransformer extends AbstractTransformer {
 
         //retrieve all non-deleted resources
         List<ResourceByPatient> resourceByPatients = resourceRepository.getResourcesByPatient(serviceId, systemId, patientResourceId);
-        LOG.trace("Found " + resourceByPatients.size() + " resources for service " + serviceId + " system " + systemId + " and patient " + patientResourceId);
+        //LOG.trace("Found " + resourceByPatients.size() + " resources for service " + serviceId + " system " + systemId + " and patient " + patientResourceId);
         for (ResourceByPatient resourceByPatient: resourceByPatients) {
 
             String resourceTypeStr = resourceByPatient.getResourceType();
@@ -178,7 +178,7 @@ public class PatientTransformer extends AbstractTransformer {
             }
 
             Integer enterpriseId = findEnterpriseId(csvWriter, resourceTypeStr, resourceId);
-            LOG.trace("Writing delete for " + csvWriter.getClass().getSimpleName() + " " + enterpriseId);
+            //LOG.trace("Writing delete for " + csvWriter.getClass().getSimpleName() + " " + enterpriseId);
             if (enterpriseId != null) {
                 csvWriter.writeDelete(enterpriseId.intValue());
             }
