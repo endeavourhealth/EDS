@@ -832,8 +832,8 @@ public class EmisCsvHelper {
 
                 fhirResourceFiler.savePatientResource(null, false, patientGuid, fhirPatient);
 
-            } catch (ResourceDeletedException ex) {
-                //if we try to update the ethnicity on a deleted patient, we'll get this exception, which is fine to ignore
+            } catch (ResourceDeletedException|ResourceNotFoundException ex) {
+                //if we try to update the ethnicity on a deleted patient, or one we've never received, we'll get this exception, which is fine to ignore
             }
 
         }

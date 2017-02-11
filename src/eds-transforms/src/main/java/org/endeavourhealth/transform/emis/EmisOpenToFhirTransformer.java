@@ -54,7 +54,7 @@ public final class EmisOpenToFhirTransformer
         PatientTransformer.transform(result, emisOpenMedicalRecord, organisationGuid, patientGuid);
         EpisodeOfCareTransformer.transform(result, emisOpenMedicalRecord, organisationGuid, patientGuid);
 
-        result.addAll(EventTransformer.transform(emisOpenMedicalRecord));
+        EventTransformer.transform(emisOpenMedicalRecord, result);
         result.addAll(MedicationOrderTransformer.transform(emisOpenMedicalRecord));
         result.addAll(MedicationStatementTransformer.transform(emisOpenMedicalRecord));
 

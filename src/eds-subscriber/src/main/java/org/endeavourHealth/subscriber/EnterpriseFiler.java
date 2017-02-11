@@ -91,7 +91,7 @@ public class EnterpriseFiler {
         List<String> currentColumns = null;
         HashMap<String, Class> currentColumnClasses = null;
 
-        LOG.trace("Got " + deletes.size() + " deletes");
+        //LOG.trace("Got " + deletes.size() + " deletes");
 
         //go backwards, so we delete dependent records first
         for (int i=deletes.size()-1; i>=0; i--) {

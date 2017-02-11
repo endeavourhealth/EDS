@@ -7,7 +7,6 @@ import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class EventTransformer {
@@ -52,14 +51,15 @@ public class EventTransformer {
         }
     }
 
-    public static List<Resource> transform(MedicalRecordType medicalRecordType) throws TransformException
+    public static void transform(MedicalRecordType medicalRecordType, List<Resource> results) throws TransformException
     {
-        List<Resource> resource = new ArrayList<>();
-
-        for (EventType eventType : medicalRecordType.getEventList().getEvent())
-            resource.add(transform(eventType, medicalRecordType.getRegistration().getGUID()));
-
-        return resource;
+        for (EventType eventType : medicalRecordType.getEventList().getEvent()) {
+            Resource resource = transform(eventType, medicalRecordType.getRegistration().getGUID());
+            if (resource != null) {
+                results.add(resource);
+            }
+            //resource.add(transform(eventType, medicalRecordType.getRegistration().getGUID()));
+        }
     }
 
     private static Resource transform(EventType eventType, String patientUuid) throws TransformException

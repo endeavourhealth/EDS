@@ -2,6 +2,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.datastax.driver.core.utils.UUIDs;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.MessageTransformInboundConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
@@ -317,6 +318,9 @@ public class MessageTransformInbound extends PipelineComponent {
 	private void processEmisOpenTransform(Exchange exchange, UUID serviceId, UUID systemId, String version,
 												String software, TransformError currentErrors, List<UUID> batchIds,
 												TransformError previousErrors) throws Exception {
+
+		//TODO - remove this
+		AuditWriter.writeExchange(exchange);
 
 		//config
 		int maxFilingThreads = config.getFilingThreadLimit();

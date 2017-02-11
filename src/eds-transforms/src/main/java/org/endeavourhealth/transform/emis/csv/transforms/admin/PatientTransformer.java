@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
+import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -19,6 +20,7 @@ import org.hl7.fhir.instance.model.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class PatientTransformer {
 
@@ -245,17 +247,32 @@ public class PatientTransformer {
                                                   CsvCurrentState currentState, String patientGuid,
                                                   org.hl7.fhir.instance.model.Patient fhirPatient, EpisodeOfCare fhirEpisode) throws Exception {
 
-        //don't bother doing these two, since the below delete will pick them up
-        //fhirResourceFiler.deletePatientResource(currentState, patientGuid, fhirPatient, fhirEpisode);
+        UUID edsPatientId = IdHelper.getEdsResourceId(fhirResourceFiler.getServiceId(), fhirResourceFiler.getSystemId(), fhirPatient.getResourceType(), fhirPatient.getId());
+        UUID edsEpisodeId = IdHelper.getEdsResourceId(fhirResourceFiler.getServiceId(), fhirResourceFiler.getSystemId(), fhirEpisode.getResourceType(), fhirEpisode.getId());
 
-        try {
-            List<Resource> resources = csvHelper.retrieveAllResourcesForPatient(patientGuid, fhirResourceFiler);
-            for (Resource resource : resources) {
-                fhirResourceFiler.deletePatientResource(currentState, false, patientGuid, resource);
+        if (edsPatientId != null) {
+            try {
+                List<Resource> resources = csvHelper.retrieveAllResourcesForPatient(patientGuid, fhirResourceFiler);
+                for (Resource resource : resources) {
+
+                    //if this resource is our patient or episode resource, then skip deleting it here, as we'll just delete them at the end
+                    if ((resource.getResourceType() == fhirPatient.getResourceType()
+                            && resource.getId().equals(edsPatientId))
+                    || (edsEpisodeId != null
+                            && resource.getResourceType() == fhirEpisode.getResourceType()
+                            && resource.getId().equals(edsEpisodeId))) {
+                        continue;
+                    }
+
+                    fhirResourceFiler.deletePatientResource(currentState, false, patientGuid, resource);
+                }
+            } catch (ResourceNotFoundException ex) {
+                //if this is the first time we've received anything for this patient, we won't be able to find it in the DB
             }
-        } catch (ResourceNotFoundException ex) {
-            //if this is the first time we've received anything for this patient, we won't be able to find it in the DB
         }
+
+        //and delete the patient and episode
+        fhirResourceFiler.deletePatientResource(currentState, patientGuid, fhirPatient, fhirEpisode);
     }
 
     private static void transformEthnicityAndMaritalStatus(org.hl7.fhir.instance.model.Patient fhirPatient,
