@@ -121,6 +121,15 @@ public class Segment {
         return field.getDatatypesAsString();
     }
 
+    public List<Component> getAllComponents() {
+        return getFields()
+                    .stream()
+                    .flatMap(s -> s.getGenericDatatypes()
+                                    .stream()
+                                    .flatMap(r -> r.getComponents().stream()))
+                .collect(Collectors.toList());
+    }
+
     //////////////////  Parsers  //////////////////
 
     private static String getSegmentName(String segment, Seperators seperators) throws ParseException {

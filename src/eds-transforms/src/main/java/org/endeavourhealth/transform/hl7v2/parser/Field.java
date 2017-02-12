@@ -101,6 +101,13 @@ public class Field {
         return this.genericDatatypes;
     }
 
+    public List<Component> getAllComponents() {
+        return getGenericDatatypes()
+                .stream()
+                .flatMap(s -> s.getComponents().stream())
+                .collect(Collectors.toList());
+    }
+
     //////////////////  Parsers  //////////////////
 
     private void parse() {

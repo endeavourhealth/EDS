@@ -30,6 +30,12 @@ public class Component {
         return this.compose();
     }
 
+    //////////////////  Setters  //////////////////
+
+    public void setAsString(String componentText) {
+        this.componentText = componentText;
+    }
+
     //////////////////  Parsers  //////////////////
 
     private void parse() {

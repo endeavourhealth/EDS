@@ -67,6 +67,13 @@ public class Message {
                 .collect(Collectors.toList());
     }
 
+    public List<Component> getAllComponents() {
+        return getSegments()
+                .stream()
+                .flatMap(t -> t.getAllComponents().stream())
+                .collect(Collectors.toList());
+    }
+
     //////////////////  Parsers  //////////////////
 
     private void parse(String messageText) throws ParseException {
