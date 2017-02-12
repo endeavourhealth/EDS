@@ -28,16 +28,13 @@ public class Datatype {
         return component.getAsString();
     }
 
-    public LocalDateTime getComponentAsDateTime(int componentNumber){
+    public LocalDateTime getComponentAsDate(int componentNumber) throws ParseException {
         String component = this.datatype.getComponentAsString(componentNumber);
 
         if (StringUtils.isBlank(component))
             return null;
-        try {
-            return DateParser.parse(component);
-        } catch (ParseException e){
-            return null;
-        }
+
+        return DateParser.parse(component);
     }
 
     public String getAsString() {

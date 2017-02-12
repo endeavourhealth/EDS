@@ -1,4 +1,4 @@
-package org.endeavourhealth.transform.hl7v2.pretransform;
+package org.endeavourhealth.transform.hl7v2.specific.homerton;
 
 import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.transform.hl7v2.parser.Component;
@@ -36,7 +36,7 @@ public class HomertonPreTransform {
         PD1.4 incorrectly contains both primary care organisation and doctor
         It should only contain the doctor.
         The organisation should be carried in PD1.3.
-        This method will move the organisational fields from PD1.4 to PD1.3.
+        This method moves the organisational fields from PD1.4 to PD1.3.
 
         Homerton's PD1.3:
 
@@ -47,7 +47,6 @@ public class HomertonPreTransform {
 
         G3339325^SMITH^A^^1937573848^B86010^DR SR LIGHTFOOT & PARTNERS^Church View Surgery^School Lane&&LS22 5BQ^^^^^Q12&5HJ
         G3426500^LYLE^ROBERT^^020 89867111^F84003^LOWER CLAPTON GROUP PRACTICE^Lower Clapton Health Ctr.^36 Lower Clapton Road&London&E5 0PD^^^^^Q06&5C3
-
      */
 
     private static void fixPd1(Segment pd1Segment) {
