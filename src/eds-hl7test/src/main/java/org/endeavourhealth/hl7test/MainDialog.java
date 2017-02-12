@@ -22,6 +22,7 @@ public class MainDialog {
     private JSplitPane splitPane;
     private JButton parseAndGenerateButton;
     private JButton saveButton;
+    private JButton preTransformButton;
     private JFrame frame;
 
     public MainDialog(JFrame frame) {
@@ -40,6 +41,20 @@ public class MainDialog {
             }
         });
 
+        preTransformButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    testPaneTextArea2.setText("");
+                    testPaneTextArea2.repaint();
+                    testPaneTextArea2.revalidate();
+                    testPaneTextArea2.setText(Hl7v2Transform.preTransform(testPane1TextArea.getText()).replace("\r", "\r\n"));
+                } catch (Exception e1) {
+                    testPaneTextArea2.setText("[" + e1.getClass() + "] " + e1.getMessage() + "\r\n" + ExceptionUtils.getStackTrace(e1));
+                }
+            }
+        });
+
         parseAndGenerateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -47,7 +62,7 @@ public class MainDialog {
                     testPaneTextArea2.setText("");
                     testPaneTextArea2.repaint();
                     testPaneTextArea2.revalidate();
-                    testPaneTextArea2.setText(Hl7v2Transform.parseAndReconstruct(testPane1TextArea.getText()));
+                    testPaneTextArea2.setText(Hl7v2Transform.parseAndRecompose(testPane1TextArea.getText()).replace("\r", "\r\n"));
                 } catch (Exception e1) {
                     testPaneTextArea2.setText("[" + e1.getClass() + "] " + e1.getMessage() + "\r\n" + ExceptionUtils.getStackTrace(e1));
                 }

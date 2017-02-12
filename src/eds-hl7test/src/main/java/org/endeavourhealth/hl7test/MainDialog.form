@@ -72,11 +72,17 @@
                   <text value="Transform"/>
                 </properties>
               </component>
+              <component id="b0721" class="javax.swing.JButton" binding="preTransformButton" default-binding="true">
+                <constraints/>
+                <properties>
+                  <text value="PreTransform"/>
+                </properties>
+              </component>
               <component id="7dd50" class="javax.swing.JButton" binding="parseAndGenerateButton">
                 <constraints/>
                 <properties>
                   <borderPainted value="true"/>
-                  <text value="Parse and Generate"/>
+                  <text value="Parse and Compose"/>
                 </properties>
               </component>
               <component id="fb743" class="javax.swing.JButton" binding="saveButton">
