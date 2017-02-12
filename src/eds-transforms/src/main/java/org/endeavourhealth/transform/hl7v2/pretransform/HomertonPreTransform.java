@@ -1,22 +1,35 @@
 package org.endeavourhealth.transform.hl7v2.pretransform;
 
 import org.apache.commons.lang3.Validate;
+import org.endeavourhealth.transform.hl7v2.parser.Component;
 import org.endeavourhealth.transform.hl7v2.parser.Field;
 import org.endeavourhealth.transform.hl7v2.parser.ParseException;
 import org.endeavourhealth.transform.hl7v2.parser.Segment;
 import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
 import org.endeavourhealth.transform.hl7v2.parser.segments.SegmentName;
 
+import java.util.List;
+
 public class HomertonPreTransform {
     public static AdtMessage preTransform(AdtMessage sourceMessage) throws ParseException {
         Validate.notNull(sourceMessage);
 
         // remove all fields with only "" in them
-        
+        removeEmptyDoubleQuotes(sourceMessage);
+
+        // fix PD1
         if (sourceMessage.hasPd1Segment())
             fixPd1(sourceMessage.getSegment(SegmentName.PD1));
 
         return sourceMessage;
+    }
+
+    private static void removeEmptyDoubleQuotes(AdtMessage sourceMessage) {
+        List<Component> components = sourceMessage.getAllComponents();
+
+        for (Component component : components)
+            if (component.getAsString().equals("\"\""))
+                component.setAsString("");
     }
 
     /*

@@ -27,16 +27,24 @@ public class Hl7v2Transform {
         return getPrettyJson(targetBundle);
     }
 
+    public static String preTransform(String message) throws Exception {
+        AdtMessage sourceMessage = new AdtMessage(message);
+
+        sourceMessage = HomertonPreTransform.preTransform(sourceMessage);
+        return sourceMessage.compose();
+    }
+
+    public static String parseAndRecompose(String message) throws Exception {
+        AdtMessage sourceMessage = new AdtMessage(message);
+
+        return sourceMessage.compose();
+    }
+
     private static String getPrettyJson(Resource resource) throws Exception {
         String json = new JsonParser().composeString(resource);
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         com.google.gson.JsonParser jp = new com.google.gson.JsonParser();
         JsonElement je = jp.parse(json);
         return gson.toJson(je);
-    }
-
-    public static String parseAndReconstruct(String message) throws Exception {
-        Message sourceMessage = new Message(message);
-        return sourceMessage.compose().replace("\r", "\r\n");
     }
 }
