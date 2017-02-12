@@ -14,29 +14,29 @@ public class Segment {
     private static int FIRST = 0;
     private static int SEGMENT_NAME_LENGTH = 3;
 
-    private String segment;
+    private String originalSegmentText;    // originalSegmentText may not reflect the current state of the segment
     private Seperators seperators;
     private String segmentName;
     protected List<Field> fields = new ArrayList<>();
 
     //////////////////  Constructors  //////////////////
 
-    public static Segment parse(String segment, Seperators seperators) throws ParseException {
-        Validate.notBlank(segment);
+    public static Segment parse(String segmentText, Seperators seperators) throws ParseException {
+        Validate.notBlank(segmentText);
         Validate.notNull(seperators);
 
-        String segmentName = getSegmentName(segment, seperators);
-        return SegmentName.instantiateSegment(segmentName, segment, seperators);
+        String segmentName = getSegmentName(segmentText, seperators);
+        return SegmentName.instantiateSegment(segmentName, segmentText, seperators);
     }
 
     private Segment() {
     }
 
-    public Segment(String segment, Seperators seperators) throws ParseException {
-        Validate.notBlank(segment);
+    public Segment(String segmentText, Seperators seperators) throws ParseException {
+        Validate.notBlank(segmentText);
         Validate.notNull(seperators);
 
-        this.segment = segment;
+        this.originalSegmentText = segmentText;
         this.seperators = seperators;
 
         this.parse();
@@ -52,6 +52,10 @@ public class Segment {
         int fieldIndex = fieldNumber - 1;
 
         return Helpers.getSafely(this.fields, fieldIndex);
+    }
+
+    public List<Field> getFields() {
+        return this.fields;
     }
 
     public <T extends Datatype> T getFieldAsDatatype(int fieldNumber, Class<T> datatype) {
@@ -114,7 +118,7 @@ public class Segment {
         if (field == null)
             return null;
 
-        return field.getAsStringList();
+        return field.getDatatypesAsString();
     }
 
     //////////////////  Parsers  //////////////////
@@ -129,10 +133,10 @@ public class Segment {
     }
 
     private void parse() throws ParseException {
-        this.segmentName = getSegmentName(segment, seperators);
+        this.segmentName = getSegmentName(originalSegmentText, seperators);
 
         List<String> tokens =
-                Helpers.split(segment, seperators.getFieldSeperator())
+                Helpers.split(originalSegmentText, seperators.getFieldSeperator())
                 .stream()
                 .skip(1)
                 .collect(Collectors.toList());
@@ -142,5 +146,18 @@ public class Segment {
 
         for (String token : tokens)
             this.fields.add(new Field(token, this.seperators));
+    }
+
+    //////////////////  Composers  //////////////////
+
+    public String compose() {
+        return this.getSegmentName()
+                + this.seperators.getFieldSeperator()
+                + String.join(this.seperators.getFieldSeperator(),
+                this
+                        .getFields()
+                        .stream()
+                        .map(t -> t.compose())
+                        .collect(Collectors.toList()));
     }
 }

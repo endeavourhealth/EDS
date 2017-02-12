@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 public class Field {
     private static final int FIRST = 0;
 
-    private String field;
+    private String originalFieldText;    // originalFieldText may not reflect the current state of the field
     private Seperators seperators;
     protected List<GenericDatatype> genericDatatypes = new ArrayList<>();
 
@@ -20,11 +20,11 @@ public class Field {
     private Field() {
     }
 
-    public Field(String field, Seperators seperators) {
-        Validate.notNull(field);
+    public Field(String fieldText, Seperators seperators) {
+        Validate.notNull(fieldText);
         Validate.notNull(seperators);
 
-        this.field = field;
+        this.originalFieldText = fieldText;
         this.seperators = seperators;
 
         this.parse();
@@ -33,10 +33,10 @@ public class Field {
     //////////////////  Accessors  //////////////////
 
     public String getAsString() {
-        return field;
+        return compose();
     }
 
-    public List<String> getAsStringList() {
+    public List<String> getDatatypesAsString() {
         return genericDatatypes
             .stream()
             .map(t -> t.getAsString())
@@ -88,17 +88,32 @@ public class Field {
                 .collect(Collectors.toList());
     }
 
+    public List<GenericDatatype> getGenericDatatypes() {
+        return this.genericDatatypes;
+    }
+
     //////////////////  Parsers  //////////////////
 
     private void parse() {
-        if (this.field.equals(this.seperators.getMsh2Field())) {
-            this.genericDatatypes.add(new GenericDatatype(this.field, this.seperators));
+        if (this.originalFieldText.equals(this.seperators.getMsh2Field())) {
+            this.genericDatatypes.add(new GenericDatatype(this.originalFieldText, this.seperators));
             return;
         }
 
-        List<String> fieldRepetitions = Helpers.split(this.field, seperators.getRepetitionSeperator());
+        List<String> fieldRepetitions = Helpers.split(this.originalFieldText, seperators.getRepetitionSeperator());
 
         for (String fieldRepetition : fieldRepetitions)
             this.genericDatatypes.add(new GenericDatatype(fieldRepetition, this.seperators));
+    }
+
+    //////////////////  Composers  //////////////////
+
+    public String compose() {
+        return String.join(this.seperators.getRepetitionSeperator(),
+                this
+                        .getGenericDatatypes()
+                        .stream()
+                        .map(t -> t.compose())
+                        .collect(Collectors.toList()));
     }
 }
