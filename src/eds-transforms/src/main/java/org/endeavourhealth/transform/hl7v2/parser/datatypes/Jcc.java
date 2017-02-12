@@ -8,6 +8,6 @@ public class Jcc extends Datatype {
         super(datatype);
     }
 
-    public String getJobCode() { return this.getComponent(1); }
-    public String getJobClass() { return this.getComponent(2); }
+    public String getJobCode() { return this.getComponentAsString(1); }
+    public String getJobClass() { return this.getComponentAsString(2); }
 }

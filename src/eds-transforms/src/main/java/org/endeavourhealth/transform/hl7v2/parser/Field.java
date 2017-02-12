@@ -43,7 +43,16 @@ public class Field {
             .collect(Collectors.toList());
     }
 
-    public String getComponent(int componentNumber) {
+    public String getComponentAsString(int componentNumber) {
+        Component component = getComponent(componentNumber);
+
+        if (component == null)
+            return null;
+
+        return component.getAsString();
+    }
+
+    public Component getComponent(int componentNumber) {
         GenericDatatype genericDatatype = getFirstGenericDatatype();
 
         if (genericDatatype == null)

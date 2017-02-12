@@ -8,15 +8,15 @@ public class Xad extends Datatype {
         super(datatype);
     }
 
-    public String getStreetAddress() { return this.getComponent(1); }
-    public String getOtherDesignation() { return this.getComponent(2); }
-    public String getCity() { return this.getComponent(3); }
-    public String getProvince() { return this.getComponent(4); }
-    public String getPostCode() { return this.getComponent(5); }
-    public String getCountry() { return this.getComponent(6); }
-    public String getAddressType() { return this.getComponent(7); }
-    public String getOtherGeographicDesignation() { return this.getComponent(8); }
-    public String getCountyCode() { return this.getComponent(9); }
-    public String getCensusTract() { return this.getComponent(10); }
-    public String getAddressRepresentationCode() { return this.getComponent(11); }
+    public String getStreetAddress() { return this.getComponentAsString(1); }
+    public String getOtherDesignation() { return this.getComponentAsString(2); }
+    public String getCity() { return this.getComponentAsString(3); }
+    public String getProvince() { return this.getComponentAsString(4); }
+    public String getPostCode() { return this.getComponentAsString(5); }
+    public String getCountry() { return this.getComponentAsString(6); }
+    public String getAddressType() { return this.getComponentAsString(7); }
+    public String getOtherGeographicDesignation() { return this.getComponentAsString(8); }
+    public String getCountyCode() { return this.getComponentAsString(9); }
+    public String getCensusTract() { return this.getComponentAsString(10); }
+    public String getAddressRepresentationCode() { return this.getComponentAsString(11); }
 }

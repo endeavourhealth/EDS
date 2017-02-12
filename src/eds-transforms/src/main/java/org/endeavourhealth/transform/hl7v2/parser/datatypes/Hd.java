@@ -8,7 +8,7 @@ public class Hd extends Datatype {
         super(datatype);
     }
 
-    public String getNamespaceId() { return this.getComponent(1); }
-    public String getUniversalId() { return this.getComponent(2); }
-    public String getUniversalIdType() { return this.getComponent(3); }
+    public String getNamespaceId() { return this.getComponentAsString(1); }
+    public String getUniversalId() { return this.getComponentAsString(2); }
+    public String getUniversalIdType() { return this.getComponentAsString(3); }
 }

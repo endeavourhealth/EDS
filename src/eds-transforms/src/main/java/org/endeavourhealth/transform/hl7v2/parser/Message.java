@@ -98,7 +98,7 @@ public class Message {
         String firstLine = StringUtils.split(messageText, seperators.getLineSeperator())[FIRST];
 
         if (!firstLine.startsWith(MSH_SEGMENT_NAME))
-            throw new ParseException("message does not start with " + MSH_SEGMENT_NAME);
+            throw new ParseException("message does not start with " + MSH_SEGMENT_NAME + " segment");
 
         String firstLineWithoutSegmentName = StringUtils.removeStart(firstLine, MSH_SEGMENT_NAME);
 
@@ -135,10 +135,6 @@ public class Message {
     //////////////////  Composers  //////////////////
 
     public String compose() {
-        return composeMessage();
-    }
-
-    private String composeMessage() {
         return String.join(this.seperators.getLineSeperator(),
                 getSegments()
                         .stream()

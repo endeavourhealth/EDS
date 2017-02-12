@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.hl7v2.pretransform;
 
+import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.transform.hl7v2.parser.Field;
 import org.endeavourhealth.transform.hl7v2.parser.ParseException;
 import org.endeavourhealth.transform.hl7v2.parser.Segment;
@@ -8,6 +9,10 @@ import org.endeavourhealth.transform.hl7v2.parser.segments.SegmentName;
 
 public class HomertonPreTransform {
     public static AdtMessage preTransform(AdtMessage sourceMessage) throws ParseException {
+        Validate.notNull(sourceMessage);
+
+        // remove all fields with only "" in them
+        
         if (sourceMessage.hasPd1Segment())
             fixPd1(sourceMessage.getSegment(SegmentName.PD1));
 
@@ -36,11 +41,11 @@ public class HomertonPreTransform {
 
             Field field = pd1Segment.getField(4);
 
-            String odsCode = field.getComponent(6);
-            String practiceName = field.getComponent(7);
-            String address1 = field.getComponent(8);
-            String address2 = field.getComponent(9);
-            String parentOds = field.getComponent(14);
+            String odsCode = field.getComponentAsString(6);
+            String practiceName = field.getComponentAsString(7);
+            String address1 = field.getComponentAsString(8);
+            String address2 = field.getComponentAsString(9);
+            String parentOds = field.getComponentAsString(14);
 
     }
 }

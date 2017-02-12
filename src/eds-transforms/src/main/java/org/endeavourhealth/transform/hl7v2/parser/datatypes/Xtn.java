@@ -8,13 +8,13 @@ public class Xtn extends Datatype {
         super(datatype);
     }
 
-    public String getTelephoneNumber() { return this.getComponent(1); }
-    public String getUseCode() { return this.getComponent(2); }
-    public String getEquipmentType() { return this.getComponent(3); }
-    public String getEmailAddress() { return this.getComponent(4); }
-    public String getCountryCode() { return this.getComponent(5); }
-    public String getAreaCode() { return this.getComponent(6); }
-    public String getPhoneNumber() { return this.getComponent(7); }
-    public String getExtension() { return this.getComponent(8); }
-    public String getText() { return this.getComponent(9); }
+    public String getTelephoneNumber() { return this.getComponentAsString(1); }
+    public String getUseCode() { return this.getComponentAsString(2); }
+    public String getEquipmentType() { return this.getComponentAsString(3); }
+    public String getEmailAddress() { return this.getComponentAsString(4); }
+    public String getCountryCode() { return this.getComponentAsString(5); }
+    public String getAreaCode() { return this.getComponentAsString(6); }
+    public String getPhoneNumber() { return this.getComponentAsString(7); }
+    public String getExtension() { return this.getComponentAsString(8); }
+    public String getText() { return this.getComponentAsString(9); }
 }

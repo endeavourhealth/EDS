@@ -15,12 +15,21 @@ public class Datatype {
         this.datatype = datatype;
     }
 
-    public String getComponent(int componentNumber) {
+    public Component getComponent(int componentNumber) {
         return this.datatype.getComponent(componentNumber);
     }
 
+    public String getComponentAsString(int componentNumber) {
+        Component component = getComponent(componentNumber);
+
+        if (component == null)
+            return null;
+
+        return component.getAsString();
+    }
+
     public LocalDateTime getComponentAsDateTime(int componentNumber){
-        String component = this.datatype.getComponent(componentNumber);
+        String component = this.datatype.getComponentAsString(componentNumber);
 
         if (StringUtils.isBlank(component))
             return null;

@@ -19,14 +19,8 @@ public class Hl7v2Transform {
         if (!sourceMessage.hasMshSegment())
             throw new TransformException("MSH segment not found");
 
-        if (sourceMessage.getMshSegment().getSendingFacility().equals("HOMERTON")) {
-
-            ////// temporary fix while parser is read/write
-            message = message.replace("\"\"", "");
-            sourceMessage = new AdtMessage(message);
-
-            HomertonPreTransform.preTransform(sourceMessage);
-        }
+        if (sourceMessage.getMshSegment().getSendingFacility().equals("HOMERTON"))
+            sourceMessage = HomertonPreTransform.preTransform(sourceMessage);
 
         Bundle targetBundle = AdtMessageTransform.transform(sourceMessage);
 

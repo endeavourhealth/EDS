@@ -11,7 +11,7 @@ public class GenericDatatype {
 
     private String originalDatatypeText;    // originalDatatypeText may not reflect the current state of the datatype
     private Seperators seperators;
-    protected List<String> components = new ArrayList<>();
+    protected List<Component> components = new ArrayList<>();
 
     //////////////////  Constructors  //////////////////
 
@@ -34,12 +34,21 @@ public class GenericDatatype {
         return this.compose();
     }
 
-    public String getComponent(int componentNumber) {
+    public Component getComponent(int componentNumber) {
         int componentIndex = componentNumber - 1;
         return Helpers.getSafely(this.components, componentIndex);
     }
 
-    public List<String> getComponents() {
+    public String getComponentAsString(int componentNumber) {
+        Component component = getComponent(componentNumber);
+
+        if (component == null)
+            return null;
+
+        return component.getAsString();
+    }
+
+    public List<Component> getComponents() {
         return this.components;
     }
 
@@ -47,11 +56,14 @@ public class GenericDatatype {
 
     private void parse() {
         if (this.originalDatatypeText.equals(this.seperators.getMsh2Field())) {
-            this.components.add(this.originalDatatypeText);
+            this.components.add(new Component(this.originalDatatypeText, this.seperators));
             return;
         }
 
-        this.components = Helpers.split(this.originalDatatypeText, seperators.getComponentSeperator());
+        this.components = Helpers.split(this.originalDatatypeText, seperators.getComponentSeperator())
+                .stream()
+                .map(t -> new Component(t, this.seperators))
+                .collect(Collectors.toList());
     }
 
     //////////////////  Composers  //////////////////
@@ -61,7 +73,7 @@ public class GenericDatatype {
                 this
                         .getComponents()
                         .stream()
-                        .map(t -> t)
+                        .map(t -> t.compose())
                         .collect(Collectors.toList()));
     }
 }

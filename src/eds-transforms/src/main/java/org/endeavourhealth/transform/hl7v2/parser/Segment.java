@@ -82,7 +82,7 @@ public class Segment {
         if (field == null)
             return null;
 
-        return field.getComponent(componentNumber);
+        return field.getComponentAsString(componentNumber);
     }
 
     public LocalDateTime getFieldAsDate(int fieldNumber) throws ParseException {
@@ -141,7 +141,7 @@ public class Segment {
                 .skip(1)
                 .collect(Collectors.toList());
 
-        if (SegmentName.MSH.getValue().equals(segmentName))
+        if (SegmentName.MSH.getValue().equals(this.segmentName))
             tokens.add(FIRST, seperators.getFieldSeperator());
 
         for (String token : tokens)
@@ -151,11 +151,19 @@ public class Segment {
     //////////////////  Composers  //////////////////
 
     public String compose() {
+        List<Field> fields = this.getFields();
+
+        if (SegmentName.MSH.getValue().equals(this.segmentName)) {
+            fields = fields
+                    .stream()
+                    .skip(1)
+                    .collect(Collectors.toList());
+        }
+
         return this.getSegmentName()
                 + this.seperators.getFieldSeperator()
                 + String.join(this.seperators.getFieldSeperator(),
-                this
-                        .getFields()
+                fields
                         .stream()
                         .map(t -> t.compose())
                         .collect(Collectors.toList()));

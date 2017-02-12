@@ -9,13 +9,13 @@ public class Xon extends Datatype {
         super(datatype);
     }
 
-    public String getOrganizationName() { return this.getComponent(1); }
-    public String getOrganizationNameTypeCode() { return this.getComponent(2); }
-    public String getIdNumber() { return this.getComponent(3); }
-    public String getCheckDigit() { return this.getComponent(4); }
-    public String getCodeIdentifyingTheCheckDigitSchemeEmployed() { return this.getComponent(5); }
-    public String getAssigningAuthority() { return this.getComponent(6); }
-    public String getIdentifierTypeCode() { return this.getComponent(7); }
-    public String getAssigningFacilityId() { return this.getComponent(8); }
-    public String getNameRepresentationCode() { return this.getComponent(9); }
+    public String getOrganizationName() { return this.getComponentAsString(1); }
+    public String getOrganizationNameTypeCode() { return this.getComponentAsString(2); }
+    public String getIdNumber() { return this.getComponentAsString(3); }
+    public String getCheckDigit() { return this.getComponentAsString(4); }
+    public String getCodeIdentifyingTheCheckDigitSchemeEmployed() { return this.getComponentAsString(5); }
+    public String getAssigningAuthority() { return this.getComponentAsString(6); }
+    public String getIdentifierTypeCode() { return this.getComponentAsString(7); }
+    public String getAssigningFacilityId() { return this.getComponentAsString(8); }
+    public String getNameRepresentationCode() { return this.getComponentAsString(9); }
 }

@@ -9,12 +9,12 @@ public class Xpn extends Datatype implements IXpn {
         super(datatype);
     }
 
-    public String getFamilyName() { return this.getComponent(1); }
-    public String getGivenName() { return this.getComponent(2); }
-    public String getMiddleName() { return this.getComponent(3); }
-    public String getSuffix() { return this.getComponent(4); }
-    public String getPrefix() { return this.getComponent(5); }
-    public String getDegree() { return this.getComponent(6); }
-    public String getNameTypeCode() { return this.getComponent(7); }
-    public String getNameRepresentationCode() { return this.getComponent(8); }
+    public String getFamilyName() { return this.getComponentAsString(1); }
+    public String getGivenName() { return this.getComponentAsString(2); }
+    public String getMiddleName() { return this.getComponentAsString(3); }
+    public String getSuffix() { return this.getComponentAsString(4); }
+    public String getPrefix() { return this.getComponentAsString(5); }
+    public String getDegree() { return this.getComponentAsString(6); }
+    public String getNameTypeCode() { return this.getComponentAsString(7); }
+    public String getNameRepresentationCode() { return this.getComponentAsString(8); }
 }

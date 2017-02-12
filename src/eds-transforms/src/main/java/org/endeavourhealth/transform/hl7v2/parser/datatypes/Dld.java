@@ -12,7 +12,7 @@ public class Dld extends Datatype {
     }
 
     public String getDischargeLocation() {
-        return this.getComponent(1);
+        return this.getComponentAsString(1);
     }
     public LocalDateTime getEffectiveDate() { return this.getComponentAsDateTime(2); }
 
