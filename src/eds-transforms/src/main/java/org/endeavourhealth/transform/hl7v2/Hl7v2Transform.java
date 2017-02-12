@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.hl7v2;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import org.endeavourhealth.transform.hl7v2.parser.Message;
 import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
 import org.endeavourhealth.transform.hl7v2.pretransform.HomertonPreTransform;
 import org.endeavourhealth.transform.hl7v2.transform.AdtMessageTransform;
@@ -18,8 +19,14 @@ public class Hl7v2Transform {
         if (!sourceMessage.hasMshSegment())
             throw new TransformException("MSH segment not found");
 
-        if (sourceMessage.getMshSegment().getSendingFacility().equals("HOMERTON"))
+        if (sourceMessage.getMshSegment().getSendingFacility().equals("HOMERTON")) {
+
+            ////// temporary fix while parser is read/write
+            message = message.replace("\"\"", "");
+            sourceMessage = new AdtMessage(message);
+
             HomertonPreTransform.preTransform(sourceMessage);
+        }
 
         Bundle targetBundle = AdtMessageTransform.transform(sourceMessage);
 
@@ -32,5 +39,10 @@ public class Hl7v2Transform {
         com.google.gson.JsonParser jp = new com.google.gson.JsonParser();
         JsonElement je = jp.parse(json);
         return gson.toJson(je);
+    }
+
+    public static String parseAndReconstruct(String message) throws Exception {
+        Message sourceMessage = new Message(message);
+        return sourceMessage.compose().replace("\r", "\r\n");
     }
 }
