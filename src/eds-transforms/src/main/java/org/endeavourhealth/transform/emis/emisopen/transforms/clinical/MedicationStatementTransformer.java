@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicationListType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicationType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
@@ -13,19 +14,21 @@ import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 
 public final class MedicationStatementTransformer
 {
-    public static List<Resource> transform(MedicalRecordType medicalRecordType) throws TransformException
-    {
-        List<Resource> resource = new ArrayList<>();
+    public static void transform(MedicalRecordType medicalRecordType, List<Resource> resources) throws TransformException {
 
-        for (MedicationType medicationType : medicalRecordType.getMedicationList().getMedication())
-            resource.add(transform(medicationType, medicalRecordType.getRegistration().getGUID()));
+        MedicationListType medicationList = medicalRecordType.getMedicationList();
+        if (medicationList == null) {
+            return;
+        }
 
-        return resource;
+        for (MedicationType medicationType : medicationList.getMedication()) {
+            resources.add(transform(medicationType, medicalRecordType.getRegistration().getGUID()));
+        }
+
     }
 
     private static MedicationStatement transform(MedicationType medicationType, String patientUuid) throws TransformException

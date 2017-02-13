@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.IssueListType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.IssueType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicationLinkType;
@@ -14,19 +15,22 @@ import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 
 public final class MedicationOrderTransformer
 {
-    public static List<Resource> transform(MedicalRecordType medicalRecordType) throws TransformException
-    {
-        List<Resource> resource = new ArrayList<>();
+    public static void transform(MedicalRecordType medicalRecordType, List<Resource> resources) throws TransformException {
 
-        for (IssueType issueType : medicalRecordType.getIssueList().getIssue())
-            resource.add(transform(issueType, medicalRecordType.getRegistration().getGUID()));
+        //got patients with null issue lists
+        IssueListType issueList = medicalRecordType.getIssueList();
+        if (issueList == null) {
+            return;
+        }
 
-        return resource;
+        for (IssueType issueType : issueList.getIssue()) {
+            resources.add(transform(issueType, medicalRecordType.getRegistration().getGUID()));
+        }
+
     }
 
     private static MedicationOrder transform(IssueType issueType, String patientUuid) throws TransformException
