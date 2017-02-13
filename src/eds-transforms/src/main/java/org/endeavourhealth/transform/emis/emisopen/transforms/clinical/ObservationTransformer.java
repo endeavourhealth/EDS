@@ -14,8 +14,8 @@ import java.math.BigDecimal;
 
 final class ObservationTransformer
 {
-    public static Observation transform(EventType eventType, String patientGuid) throws TransformException
-    {
+    public static Observation transform(EventType eventType, String patientGuid) throws TransformException {
+
         Observation observation = new Observation();
         observation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_OBSERVATION));
 

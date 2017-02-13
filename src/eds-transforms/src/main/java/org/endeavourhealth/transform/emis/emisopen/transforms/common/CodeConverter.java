@@ -22,6 +22,11 @@ public class CodeConverter
 
     public static CodeableConcept convert(StringCodeType code, String descriptiveText) throws TransformException {
 
+        //we've had some events with a null code, so just return a textual codeable concept
+        if (code == null) {
+            return CodeableConceptHelper.createCodeableConcept(descriptiveText);
+        }
+
         String emisCode = code.getValue();
         String emisTerm = code.getTerm();
 

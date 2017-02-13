@@ -2,13 +2,10 @@ package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
-import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.ConsultationListType;
-import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.ConsultationType;
-import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.ElementListType;
-import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.QuantityHelper;
+import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.fhir.schema.EncounterParticipantType;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.List;
@@ -48,10 +45,27 @@ public class ConsultationTransformer {
 
         fhirEncounter.setPeriod(period);
 
+        IdentType userId = consultation.getUserID();
+        if (userId != null) {
+            Reference reference = EmisOpenHelper.createPractitionerReference(userId.getGUID());
+            fhirEncounter.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
+        }
+
+        AuthorType author = consultation.getOriginalAuthor();
+        if (author != null) {
+            IdentType authorId = author.getUser();
+            Reference reference = EmisOpenHelper.createPractitionerReference(authorId.getGUID());
+
+            Encounter.EncounterParticipantComponent fhirParticipant = fhirEncounter.addParticipant();
+            fhirParticipant.addType(CodeableConceptHelper.createCodeableConcept(EncounterParticipantType.PRIMARY_PERFORMER));
+            fhirParticipant.setIndividual(reference);
+
+        }
+
         //TODO - finish
+
 /**
- protected IdentType userID;
- protected String externalConsultant;
+  protected String externalConsultant;
  protected IdentType locationID;
  protected IdentType locationTypeID;
  protected IdentType accompanyingHCPID;
@@ -59,7 +73,6 @@ public class ConsultationTransformer {
   protected BigInteger travelTime;
  protected BigInteger appointmentSlotID;
  protected BigInteger dataSource;
- protected AuthorType originalAuthor;
  */
 
         resources.add(fhirEncounter);
@@ -78,7 +91,7 @@ public class ConsultationTransformer {
                 }
 
                 if (element.getMedication() != null) {
-                    Resource resource = MedicationStatementTransformer.transform(element.getMedication(), patientGuid);
+                    Resource resource = MedicationTransformer.transform(element.getMedication(), patientGuid);
                     if (resource != null) {
                         //link to encounter
 
@@ -114,18 +127,25 @@ public class ConsultationTransformer {
                     }
                 }
 
-//TODO - finish
-/**
- protected Short displayOrder;
- protected Byte problemSection;
- protected IntegerCodeType header;
- rotected AttachmentType attachment;
- protected TestRequestHeaderType testRequest;
- protected InvestigationType investigation;
- */
+                if (element.getInvestigation() != null) {
+                    Resource resource = InvestigationTransformer.transform(element.getInvestigation(), patientGuid);
+                    if (resource != null) {
+                        //link to encounter
+
+                        resources.add(resource);
+                    }
+                }
+
+                if (element.getTestRequest() != null) {
+                    Resource resource = TestRequestHeaderTransformer.transform(element.getTestRequest(), patientGuid);
+                    if (resource != null) {
+                        //link to encounter
+
+                        resources.add(resource);
+                    }
+                }
             }
         }
-
 
     }
 }
