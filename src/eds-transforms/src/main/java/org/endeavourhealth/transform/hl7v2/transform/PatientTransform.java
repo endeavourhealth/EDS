@@ -1,8 +1,6 @@
 package org.endeavourhealth.transform.hl7v2.transform;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Person;
-import org.endeavourhealth.transform.hl7v2.parser.Helpers;
 import org.endeavourhealth.transform.hl7v2.parser.ParseException;
 import org.endeavourhealth.transform.hl7v2.parser.Segment;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.*;
@@ -135,6 +133,7 @@ public class PatientTransform {
         for (ContactPoint cp : getContactPoint(sourceNk1.getBusinessPhoneNumber()))
             contactComponent.addTelecom(cp);
 
+        //FHIR only allows 1 address but HL7v2 allows multiple addresses, this will currently only populate the last address.
         for (Address address : getAddresses(sourceNk1.getAddress()))
             contactComponent.setAddress(address);
 
