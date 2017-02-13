@@ -2,12 +2,11 @@ package org.endeavourhealth.transform.ui.transforms.clinical;
 
 import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.ui.helpers.*;
 import org.endeavourhealth.transform.ui.helpers.ExtensionHelper;
-import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
-import org.endeavourhealth.transform.ui.models.resources.clinicial.*;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UIMedication;
+import org.endeavourhealth.transform.ui.models.resources.clinicial.UIMedicationStatement;
 import org.endeavourhealth.transform.ui.models.types.UICode;
 import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.endeavourhealth.transform.ui.models.types.UIQuantity;
@@ -116,8 +115,19 @@ public class UIMedicationStatementTransform extends UIClinicalTransform<Medicati
 	}
 
 	private static UIDate getMostRecentIssue(MedicationStatement medicationStatement) {
-    	DateTimeType issueDate = ExtensionHelper.getExtensionValue(medicationStatement, FhirExtensionUri.MEDICATION_AUTHORISATION_MOST_RECENT_ISSUE_DATE, DateTimeType.class);
-    	return DateHelper.convert(issueDate);
+		//adding support for both date and datetime types, which have been used
+		try {
+			//DateType is the correct value type
+			DateType issueDate = ExtensionHelper.getExtensionValue(medicationStatement, FhirExtensionUri.MEDICATION_AUTHORISATION_MOST_RECENT_ISSUE_DATE, DateType.class);
+			return DateHelper.convert(issueDate);
+
+		} catch (TransformRuntimeException ex) {
+			//but there are some records that incorrectly have a DateTimeType
+			DateTimeType issueDateTime = ExtensionHelper.getExtensionValue(medicationStatement, FhirExtensionUri.MEDICATION_AUTHORISATION_MOST_RECENT_ISSUE_DATE, DateTimeType.class);
+			return DateHelper.convert(issueDateTime);
+		}
+    	/*DateTimeType issueDate = ExtensionHelper.getExtensionValue(medicationStatement, FhirExtensionUri.MEDICATION_AUTHORISATION_MOST_RECENT_ISSUE_DATE, DateTimeType.class);
+    	return DateHelper.convert(issueDate);*/
 	}
 
 	private static UICode getAuthorisationType(MedicationStatement medicationStatement) {

@@ -60,6 +60,6 @@ public class ExtensionHelper {
         /*if (type.equals(extension.getValue().getClass()))
             return (T)extension.getValue();*/
 
-        throw new TransformRuntimeException("Extension value is not a " + expectedType.getSimpleName());
+        throw new TransformRuntimeException("Extension value is not a " + expectedType.getSimpleName() + " but is " + value.getClass());
     }
 }
