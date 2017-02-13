@@ -16,7 +16,10 @@ import org.endeavourhealth.core.utility.XmlSerializer;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.FhirToXTransformerBase;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.transform.fhir.ExtensionConverter;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.transform.fhir.IdentifierHelper;
 import org.endeavourhealth.transform.fhir.schema.MedicationAuthorisationType;
 import org.endeavourhealth.transform.vitrucare.model.ClinicalTerm;
 import org.endeavourhealth.transform.vitrucare.model.ObjectFactory;
@@ -273,6 +276,14 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
             }
         }
 
+        CodeableConcept fhirCodeableConcept = fhir.getMedicationCodeableConcept();
+        Long conceptId = CodeableConceptHelper.findSnomedConceptId(fhirCodeableConcept);
+
+        if (conceptId == null) {
+            LOG.warn("Failed to find snomed concept for " + fhir.getResourceType() + " " + fhir.getId());
+            return null;
+        }
+
         String productCode = null;
         String productName = null;
         String dose = null;
@@ -280,13 +291,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         Date startDate = null;
         Date endDate = null;
 
-        CodeableConcept fhirCodeableConcept = fhir.getMedicationCodeableConcept();
-        Long conceptId = findSnomedConceptId(fhirCodeableConcept);
-
-        if (conceptId != null) {
-            productCode = conceptId.toString();
-        }
-
+        productCode = conceptId.toString();
         productName = fhirCodeableConcept.getText();
 
         if (fhir.hasDosageInstruction()) {
@@ -330,20 +335,16 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         return ret;
     }
 
-    protected static Long findSnomedConceptId(CodeableConcept code) {
-        for (Coding coding: code.getCoding()) {
-            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_SNOMED_CT)
-                    || coding.getSystem().equals(FhirUri.CODE_SYSTEM_EMISSNOMED)) {
-                return Long.parseLong(coding.getCode());
-            }
-        }
-
-        return null;
-    }
-
     private static ClinicalTerm createClinicalTerm(Observation fhir) throws Exception {
 
         if (!shouldInclude(fhir.getCode())) {
+            return null;
+        }
+
+        CodeableConcept fhirCodeableConcept = fhir.getCode();
+        Long snomedConceptId = CodeableConceptHelper.findSnomedConceptId(fhirCodeableConcept);
+        if (snomedConceptId == null) {
+            LOG.warn("Failed to find snomed concept for " + fhir.getResourceType() + " " + fhir.getId());
             return null;
         }
 
@@ -356,8 +357,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         Date startDate = null;
         Date endDate = null; //not assigned
 
-        CodeableConcept fhirCodeableConcept = fhir.getCode();
-        code = findSnomedConceptId(fhirCodeableConcept).toString();
+        code = snomedConceptId.toString();
         term = fhirCodeableConcept.getText();
 
         if (fhir.hasEffectiveDateTimeType()) {
@@ -405,6 +405,13 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
             return null;
         }
 
+        CodeableConcept fhirCodeableConcept = fhir.getCode();
+        Long snomedConceptId = CodeableConceptHelper.findSnomedConceptId(fhirCodeableConcept);
+        if (snomedConceptId == null) {
+            LOG.warn("Failed to find snomed concept for " + fhir.getResourceType() + " " + fhir.getId());
+            return null;
+        }
+
         String code = null;
         String term = null;
         BigDecimal value = null; //not assigned
@@ -414,8 +421,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         Date startDate = null;
         Date endDate = null;
 
-        CodeableConcept fhirCodeableConcept = fhir.getCode();
-        code = findSnomedConceptId(fhirCodeableConcept).toString();
+        code = snomedConceptId.toString();
         term = fhirCodeableConcept.getText();
 
         if (fhir.hasOnsetDateTimeType()) {
