@@ -8,6 +8,7 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.Ele
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.QuantityHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.List;
@@ -41,11 +42,13 @@ public class ConsultationTransformer {
         period.setStartElement(dateTimeType);
 
         if (consultation.getDuration() != null) {
-
+            int duration = consultation.getDuration().intValue();
+            fhirEncounter.setLength(QuantityHelper.createDuration(new Integer(duration), "minutes"));
         }
 
         fhirEncounter.setPeriod(period);
 
+        //TODO - finish
 /**
  protected IdentType userID;
  protected String externalConsultant;
@@ -53,8 +56,7 @@ public class ConsultationTransformer {
  protected IdentType locationTypeID;
  protected IdentType accompanyingHCPID;
  protected Byte consultationType;
- protected BigInteger duration;
- protected BigInteger travelTime;
+  protected BigInteger travelTime;
  protected BigInteger appointmentSlotID;
  protected BigInteger dataSource;
  protected AuthorType originalAuthor;
@@ -85,24 +87,39 @@ public class ConsultationTransformer {
                 }
 
                 if (element.getDiary() != null) {
+                    Resource resource = DiaryTransformer.transform(element.getDiary(), patientGuid);
+                    if (resource != null) {
+                        //link to encounter
+
+                        resources.add(resource);
+                    }
                     //TODO - diary
                 }
 
                 if (element.getReferral() != null) {
-                    //TODO - referral
+                    Resource resource = ReferralTransformer.transform(element.getReferral(), patientGuid);
+                    if (resource != null) {
+                        //link to encounter
+
+                        resources.add(resource);
+                    }
                 }
 
                 if (element.getAllergy() != null) {
-                    //Resource resource = AllergyTransformer.transform()
+                    Resource resource = AllergyTransformer.transform(element.getAllergy(), patientGuid);
+                    if (resource != null) {
+                        //link to encounter
+
+                        resources.add(resource);
+                    }
                 }
 
-
+//TODO - finish
 /**
  protected Short displayOrder;
  protected Byte problemSection;
  protected IntegerCodeType header;
-  protected AllergyType allergy;
- protected AttachmentType attachment;
+ rotected AttachmentType attachment;
  protected TestRequestHeaderType testRequest;
  protected InvestigationType investigation;
  */

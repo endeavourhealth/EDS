@@ -6,19 +6,79 @@ import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.AppointmentStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.HolderStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.PatientAppointmentList;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.AppointmentListType;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.AppointmentType;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.hl7.fhir.instance.model.Appointment;
-import org.hl7.fhir.instance.model.CodeableConcept;
-import org.hl7.fhir.instance.model.Meta;
-import org.hl7.fhir.instance.model.Reference;
+import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class AppointmentTransformer
-{
+public class AppointmentTransformer {
+
+    public static void transform(MedicalRecordType medicalRecord, List<Resource> resources, String patientGuid) throws TransformException {
+
+        AppointmentListType appointmentList = medicalRecord.getAppointmentList();
+        if (appointmentList == null) {
+            return;
+        }
+
+        for (AppointmentType appointment : appointmentList.getAppointment()) {
+            Resource resource = transform(appointment, patientGuid);
+            if (resource != null) {
+                resources.add(resource);
+            }
+        }
+    }
+
+    public static Resource transform(AppointmentType appointment, String patientGuid) throws TransformException {
+
+        //TODO - to complete
+        return null;
+        /*Appointment fhirAppointment = new Appointment();
+
+        fhirAppointment.setId(appointment.getGUID());
+        fhirAppointment.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_APPOINTMENT));
+
+        fhirAppointment.setStatus(getAppointmentStatus(appointment.getStatus()));
+
+        if (!StringUtils.isBlank(appointment.getReason()))
+        {
+            CodeableConcept codeableConcept = new CodeableConcept();
+            codeableConcept.setText(appointment.getReason());
+
+            fhirAppointment.setReason(codeableConcept);
+        }
+
+        Date startTime = DateConverter.getDateAndTime(appointment.getAssignedDate(), appointment.getTime());
+        fhirAppointment.setStart(startTime);
+
+        Date endTime = DateConverter.addMinutesToTime(startTime, Integer.parseInt(appointment.getDuration()));
+        fhirAppointment.setEnd(endTime);
+
+        fhirAppointment.addSlot(EmisOpenHelper.createSlotReference(appointment.getSlotGUID()));
+
+        Appointment.ParticipantRequired requiredStatus = Appointment.ParticipantRequired.REQUIRED;
+        Appointment.ParticipationStatus participationstatus = Appointment.ParticipationStatus.ACCEPTED;
+
+
+        Reference patientReference = EmisOpenHelper.createPatientReference(patientGuid);
+        fhirAppointment.addParticipant(createParticipant(patientReference, requiredStatus, participationstatus));
+
+        for (HolderStruct holder : appointment.getHolderList().getHolder()) {
+            Reference practitionerReference = EmisOpenHelper.createPractitionerReference(holder.getGUID());
+            fhirAppointment.addParticipant(createParticipant(practitionerReference, requiredStatus, participationstatus));
+        }
+
+        Reference locationReference = EmisOpenHelper.createLocationReference(appointment.getSiteGUID());
+        fhirAppointment.addParticipant(createParticipant(locationReference, requiredStatus, participationstatus));
+
+        return fhirAppointment;*/
+    }
+
     public static List<Appointment> transform(String patientGuid, PatientAppointmentList patientAppointmentList) throws TransformException
     {
         List<Appointment> appointments = new ArrayList<Appointment>();

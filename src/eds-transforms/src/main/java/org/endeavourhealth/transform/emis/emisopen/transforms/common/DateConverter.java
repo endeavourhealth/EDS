@@ -67,8 +67,9 @@ public class DateConverter
         switch (datePart)
         {
             case 0:
+            case 4:
                 if (Strings.isNullOrEmpty(timeString)) {
-                    return new DateTimeType(getDateAndTime(dateString, timeString), TemporalPrecisionEnum.DAY);
+                    return new DateTimeType(getDate(dateString), TemporalPrecisionEnum.DAY);
                 } else {
                     return new DateTimeType(getDateAndTime(dateString, timeString), TemporalPrecisionEnum.SECOND);
                 }
@@ -78,8 +79,6 @@ public class DateConverter
                 return new DateTimeType(getDate("01/01/" + dateString), TemporalPrecisionEnum.YEAR);
             case 3:
                 return null;
-            case 4:
-                return new DateTimeType(getDateAndTime(dateString, timeString), TemporalPrecisionEnum.SECOND);
             default:
                 //actually log out what part isn't recognised
                 throw new NotImplementedException("Date part not recognised " + datePart + " with dateString " + dateString + " and timeString " + timeString);
