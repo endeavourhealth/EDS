@@ -55,7 +55,7 @@ public class EmisOpenHelper {
         }
         return ReferenceHelper.createReference(ResourceType.Appointment, createUniqueId(patientGuid, appointmentGuid));
     }
-    public static Reference createEncounterReference(String encounterGuid, String patientGuid) throws Exception {
+    public static Reference createEncounterReference(String encounterGuid, String patientGuid) {
         if (Strings.isNullOrEmpty(encounterGuid)) {
             throw new IllegalArgumentException("Missing encounterGuid");
         }

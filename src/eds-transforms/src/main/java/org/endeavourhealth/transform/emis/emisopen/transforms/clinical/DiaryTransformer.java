@@ -31,7 +31,7 @@ public class DiaryTransformer {
         }
     }
 
-    public static Resource transform(DiaryType diaryEntry, String patientGuid) throws TransformException {
+    public static ProcedureRequest transform(DiaryType diaryEntry, String patientGuid) throws TransformException {
 
         ProcedureRequest fhirRequest = new ProcedureRequest();
         fhirRequest.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROCEDURE_REQUEST));

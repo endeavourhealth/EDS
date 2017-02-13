@@ -29,7 +29,8 @@ public class ConsultationTransformer {
         Encounter fhirEncounter = new Encounter();
         fhirEncounter.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ENCOUNTER));
 
-        EmisOpenHelper.setUniqueId(fhirEncounter, patientGuid, consultation.getGUID());
+        String consultationGuid = consultation.getGUID();
+        EmisOpenHelper.setUniqueId(fhirEncounter, patientGuid, consultationGuid);
 
         fhirEncounter.setPatient(EmisOpenHelper.createPatientReference(patientGuid));
         fhirEncounter.setStatus(Encounter.EncounterState.FINISHED);
@@ -59,7 +60,15 @@ public class ConsultationTransformer {
             Encounter.EncounterParticipantComponent fhirParticipant = fhirEncounter.addParticipant();
             fhirParticipant.addType(CodeableConceptHelper.createCodeableConcept(EncounterParticipantType.PRIMARY_PERFORMER));
             fhirParticipant.setIndividual(reference);
+        }
 
+        IdentType accompanying = consultation.getAccompanyingHCPID();
+        if (accompanying != null) {
+            Reference reference = EmisOpenHelper.createPractitionerReference(accompanying.getGUID());
+
+            Encounter.EncounterParticipantComponent fhirParticipant = fhirEncounter.addParticipant();
+            fhirParticipant.addType(CodeableConceptHelper.createCodeableConcept(EncounterParticipantType.SECONDARY_PERFORMER));
+            fhirParticipant.setIndividual(reference);
         }
 
         //TODO - finish
@@ -68,14 +77,15 @@ public class ConsultationTransformer {
   protected String externalConsultant;
  protected IdentType locationID;
  protected IdentType locationTypeID;
- protected IdentType accompanyingHCPID;
- protected Byte consultationType;
+  protected Byte consultationType;
   protected BigInteger travelTime;
  protected BigInteger appointmentSlotID;
  protected BigInteger dataSource;
  */
 
         resources.add(fhirEncounter);
+
+        Reference encounterReference = EmisOpenHelper.createEncounterReference(consultationGuid, patientGuid);
 
         ElementListType elements = consultation.getElementList();
         if (elements != null) {
@@ -84,45 +94,41 @@ public class ConsultationTransformer {
                 if (element.getEvent() != null) {
                     Resource resource = EventTransformer.transform(element.getEvent(), patientGuid);
                     if (resource != null) {
-                        //link to encounter
+                        //TODO - link to encounter
 
                         resources.add(resource);
                     }
                 }
 
                 if (element.getMedication() != null) {
-                    Resource resource = MedicationTransformer.transform(element.getMedication(), patientGuid);
+                    MedicationStatement resource = MedicationTransformer.transform(element.getMedication(), patientGuid);
                     if (resource != null) {
-                        //link to encounter
-
+                        //TODO - extend MedicationStatement profile to include an Encounter reference
+                        resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, encounterReference));
                         resources.add(resource);
                     }
                 }
 
                 if (element.getDiary() != null) {
-                    Resource resource = DiaryTransformer.transform(element.getDiary(), patientGuid);
+                    ProcedureRequest resource = DiaryTransformer.transform(element.getDiary(), patientGuid);
                     if (resource != null) {
-                        //link to encounter
-
+                        resource.setEncounter(encounterReference);
                         resources.add(resource);
                     }
-                    //TODO - diary
                 }
 
                 if (element.getReferral() != null) {
-                    Resource resource = ReferralTransformer.transform(element.getReferral(), patientGuid);
+                    ReferralRequest resource = ReferralTransformer.transform(element.getReferral(), patientGuid);
                     if (resource != null) {
-                        //link to encounter
-
+                        resource.setEncounter(encounterReference);
                         resources.add(resource);
                     }
                 }
 
                 if (element.getAllergy() != null) {
-                    Resource resource = AllergyTransformer.transform(element.getAllergy(), patientGuid);
+                    AllergyIntolerance resource = AllergyTransformer.transform(element.getAllergy(), patientGuid);
                     if (resource != null) {
-                        //link to encounter
-
+                        resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, encounterReference));
                         resources.add(resource);
                     }
                 }
@@ -130,7 +136,7 @@ public class ConsultationTransformer {
                 if (element.getInvestigation() != null) {
                     Resource resource = InvestigationTransformer.transform(element.getInvestigation(), patientGuid);
                     if (resource != null) {
-                        //link to encounter
+                        //TODO - link to encounter
 
                         resources.add(resource);
                     }
@@ -139,7 +145,7 @@ public class ConsultationTransformer {
                 if (element.getTestRequest() != null) {
                     Resource resource = TestRequestHeaderTransformer.transform(element.getTestRequest(), patientGuid);
                     if (resource != null) {
-                        //link to encounter
+                        //TODO - link to encounter
 
                         resources.add(resource);
                     }
