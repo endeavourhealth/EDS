@@ -58,9 +58,9 @@
           <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.5.4" />
           <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-core:2.5.4" />
           <element id="library" level="project" name="Maven: org.glassfish.jersey.core:jersey-client:2.22.1" />
-          <element id="library" level="project" name="Maven: org.apache.httpcomponents:httpclient:4.0.2" />
-          <element id="library" level="project" name="Maven: org.apache.httpcomponents:httpcore:4.0.1" />
-          <element id="library" level="project" name="Maven: commons-logging:commons-logging:1.1.1" />
+          <element id="library" level="project" name="Maven: org.apache.httpcomponents:httpclient:4.5.2" />
+          <element id="library" level="project" name="Maven: org.apache.httpcomponents:httpcore:4.4.4" />
+          <element id="library" level="project" name="Maven: commons-logging:commons-logging:1.2" />
           <element id="library" level="project" name="Maven: me.fhir:fhir-dstu2:1.0.1.7108" />
           <element id="library" level="project" name="Maven: net.sf.saxon:Saxon-HE:9.5.1-5" />
           <element id="library" level="project" name="Maven: commons-discovery:commons-discovery:0.2" />

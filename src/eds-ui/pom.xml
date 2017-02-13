@@ -84,14 +84,6 @@
         </dependency>
         <!-- End Java SQL Server driver -->
 
-        <!-- C3P0 db connection pooling -->
-        <dependency>
-            <groupId>com.mchange</groupId>
-            <artifactId>c3p0</artifactId>
-            <version>${c3p0.version}</version>
-        </dependency>
-        <!-- End C3P0 db connection pooling -->
-
         <!-- Gson -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -209,6 +201,17 @@
             <version>${hibernate.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-hikaricp</artifactId>
+            <version>${hibernate.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>${hikari.version}</version>
+        </dependency>
 
         <!-- dependent on EDS-core -->
 

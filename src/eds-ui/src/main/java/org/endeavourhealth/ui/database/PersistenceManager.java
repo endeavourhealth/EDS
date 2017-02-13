@@ -36,11 +36,11 @@ public enum PersistenceManager {
                 Map<String, Object> override = new HashMap<>();
 
                 if (logbackDb.has("url"))
-                    override.put("hibernate.connection.url", logbackDb.get("url").asText());
+                    override.put("hibernate.hikari.dataSource.url", logbackDb.get("url").asText());
                 if (logbackDb.has("username"))
-                    override.put("hibernate.connection.username", logbackDb.get("username").asText());
+                    override.put("hibernate.hikari.dataSource.user", logbackDb.get("username").asText());
                 if (logbackDb.has("password"))
-                    override.put("hibernate.connection.password", logbackDb.get("password").asText());
+                    override.put("hibernate.hikari.dataSource.password", logbackDb.get("password").asText());
 
                 emFactory = Persistence.createEntityManagerFactory("LogbackDb", override);
             }

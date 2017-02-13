@@ -23,7 +23,6 @@
 
         <amqp-client.version>3.6.2</amqp-client.version>
         <bouncy-castle.version>1.56</bouncy-castle.version>
-        <c3p0.version>0.9.5.2</c3p0.version>
         <cassandra-driver.version>3.1.1</cassandra-driver.version>
         <commons-codec.version>1.10</commons-codec.version>
         <commons-collections4.version>4.0</commons-collections4.version>
@@ -35,7 +34,8 @@
         <guava.version>19.0</guava.version>
         <hapi.version>2.2</hapi.version>
         <hibernate.version>5.2.5.Final</hibernate.version>
-        <httpclient.version>4.0.2</httpclient.version>
+        <hikari.version>2.5.1</hikari.version>
+        <httpclient.version>4.5.2</httpclient.version>
         <jackson.version>2.5.4</jackson.version>
         <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version>
         <javax.mail.version>1.5.5</javax.mail.version>
