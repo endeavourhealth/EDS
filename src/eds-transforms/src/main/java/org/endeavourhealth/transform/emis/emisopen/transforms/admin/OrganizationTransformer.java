@@ -52,7 +52,7 @@ public class OrganizationTransformer {
                 if (fhirOrgType != null) {
                     fhirCodeableConcept = CodeableConceptHelper.createCodeableConcept(fhirOrgType);
                 } else {
-                    LOG.info("Unmapped organisation type " + typeDesc);
+                    //LOG.info("Unmapped organisation type " + typeDesc);
                     fhirCodeableConcept = CodeableConceptHelper.createCodeableConcept(typeDesc);
                 }
                 organization.setType(fhirCodeableConcept);

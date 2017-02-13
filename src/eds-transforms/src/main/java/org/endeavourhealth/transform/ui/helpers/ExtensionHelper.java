@@ -43,7 +43,7 @@ public class ExtensionHelper {
         return getExtensionValue(getExtension(element, name), type);
     }
 
-    private static <T extends Object> T getExtensionValue(Extension extension, Class<T> type) {
+    private static <T extends Object> T getExtensionValue(Extension extension, Class<T> expectedType) {
         if (extension == null)
             return null;
 
@@ -51,7 +51,7 @@ public class ExtensionHelper {
         Type value = extension.getValue();
         Class cls = value.getClass();
         while (cls != null) {
-            if (type.equals(cls)) {
+            if (expectedType.equals(cls)) {
                 return (T)extension.getValue();
             }
             cls = cls.getSuperclass();
@@ -60,6 +60,6 @@ public class ExtensionHelper {
         /*if (type.equals(extension.getValue().getClass()))
             return (T)extension.getValue();*/
 
-        throw new TransformRuntimeException("Extension value is not a " + type.getSimpleName());
+        throw new TransformRuntimeException("Extension value is not a " + expectedType.getSimpleName());
     }
 }

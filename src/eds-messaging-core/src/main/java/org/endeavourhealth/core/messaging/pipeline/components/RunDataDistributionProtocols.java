@@ -136,6 +136,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			} catch (Exception ex) {
 				throw new PipelineException("Failed to find patient ID for batch " + batchId, ex);
 			}
+			LOG.trace("exchange " + exchangeId + " batch " + batchId + " -> patient ID " + patientId);
 
 			if (patientId == null) {
 				//if there's no patient ID, then this is just admin resources, so return false;
@@ -143,12 +144,15 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			}
 
 			String nhsNumber = findPatientNhsNumber(patientId);
+			LOG.trace("patient ID " + patientId+ " -> nhs number " + nhsNumber);
 
 			if (Strings.isNullOrEmpty(nhsNumber)) {
 				return false;
 			}
 
-			return cohortRepository.isInCohort(protocolId, serviceId, nhsNumber);
+			boolean inCohort = cohortRepository.isInCohort(protocolId, serviceId, nhsNumber);
+			LOG.trace("protocol " + protocolId + " service " + serviceId + " nhs number " + nhsNumber + " -> in cohort " + inCohort);
+			return inCohort;
 
 		} else {
 
