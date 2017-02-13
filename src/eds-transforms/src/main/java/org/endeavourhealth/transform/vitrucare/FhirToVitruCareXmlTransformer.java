@@ -197,7 +197,8 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
     private static boolean populateFullPayload(Payload payload, UUID edsPatientId, String vitruCareId) throws Exception {
 
         ResourceHistory patientResourceWrapper = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), edsPatientId);
-        if (patientResourceWrapper.getIsDeleted()) {
+        if (patientResourceWrapper == null
+            || patientResourceWrapper.getIsDeleted()) {
             return false;
         }
 
