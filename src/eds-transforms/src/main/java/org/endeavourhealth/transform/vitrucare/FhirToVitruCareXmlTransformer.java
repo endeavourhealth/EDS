@@ -45,6 +45,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
     private static VitruCareRepository vitruCareRepository = new VitruCareRepository();
     private static ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
     private static byte[] saltBytes = null;
+    private static HashMap<String, String> codeMap = null;
 
     public static String transformFromFhir(UUID batchId,
                                            Map<ResourceType, List<UUID>> resourceIds) throws Exception {
@@ -245,7 +246,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
                 payload.getClinicalTerm().add(clinicalTerm);
 
             } else if (resourceType == ResourceType.Condition) {
-                ClinicalTerm clinicalTerm = createClinicalTerm((Condition) resource);
+                ClinicalTerm clinicalTerm = createClinicalTerm((Condition)resource);
                 payload.getClinicalTerm().add(clinicalTerm);
 
             } else {
@@ -474,6 +475,31 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
             saltBytes = Resources.getResourceAsBytes(PSEUDO_SALT_RESOURCE);
         }
         return saltBytes;
+    }
+
+    private static HashMap<String, String> getCodeMap() {
+        if (codeMap == null) {
+            HashMap<String, String> map = new HashMap<>();
+            map.put("339s", "457081010"); //Forced Expiratory Volume in 1 second
+            map.put("3396", "7647410000006116"); //Forced Vital Capacity
+            map.put("33962", "1141791000000119"); //% predicted Forced Vital Capacity
+
+            map.put("22A..", "253677014"); //weight
+            map.put("229..", "253669010"); //height
+            map.put("22K", "100716012"); //BMI
+
+            map.put("", ""); //
+            map.put("", ""); //
+            map.put("", ""); //
+            map.put("", ""); //
+            map.put("", ""); //
+
+
+
+
+            codeMap = map;
+        }
+        return codeMap;
     }
 
 }

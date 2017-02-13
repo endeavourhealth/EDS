@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.EventListType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.EventType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.hl7.fhir.instance.model.Resource;
@@ -51,10 +52,18 @@ public class EventTransformer {
         }
     }
 
-    public static void transform(MedicalRecordType medicalRecordType, List<Resource> results) throws TransformException
-    {
-        for (EventType eventType : medicalRecordType.getEventList().getEvent()) {
+    public static void transform(MedicalRecordType medicalRecordType, List<Resource> results) throws TransformException {
+
+        //got records that have null event lists
+        EventListType eventList = medicalRecordType.getEventList();
+        if (eventList == null) {
+            return;
+        }
+
+        for (EventType eventType : eventList.getEvent()) {
             Resource resource = transform(eventType, medicalRecordType.getRegistration().getGUID());
+
+            //need to handle null resources being returned
             if (resource != null) {
                 results.add(resource);
             }
@@ -62,8 +71,8 @@ public class EventTransformer {
         }
     }
 
-    private static Resource transform(EventType eventType, String patientUuid) throws TransformException
-    {
+    private static Resource transform(EventType eventType, String patientUuid) throws TransformException {
+
         switch (ObservationType.fromValue(eventType.getEventType().intValue())) {
 
             case TEXT:

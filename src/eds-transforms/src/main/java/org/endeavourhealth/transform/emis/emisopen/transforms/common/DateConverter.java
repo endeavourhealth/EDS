@@ -68,16 +68,20 @@ public class DateConverter
         switch (datePart)
         {
             case 0:
-            {
                 if (StringUtils.isNotBlank(timeString))
                     return new DateTimeType(getDateAndTime(dateString, timeString), TemporalPrecisionEnum.SECOND);
                 else
                     return new DateTimeType(getDateAndTime(dateString, timeString), TemporalPrecisionEnum.DAY);
-            }
-            case 1: return new DateTimeType(getDate("01/" + dateString), TemporalPrecisionEnum.MONTH);
-            case 2: return new DateTimeType(getDate("01/01/" + dateString), TemporalPrecisionEnum.YEAR);
-            case 3: return null;
-            default: throw new NotImplementedException("Date part not recognised");
+            case 1:
+                return new DateTimeType(getDate("01/" + dateString), TemporalPrecisionEnum.MONTH);
+            case 2:
+                return new DateTimeType(getDate("01/01/" + dateString), TemporalPrecisionEnum.YEAR);
+            case 3:
+                return null;
+            default:
+                //actually log out what part isn't recognised
+                throw new NotImplementedException("Date part not recognised " + datePart + " with dateString " + dateString + " and timeString " + timeString);
+                //throw new NotImplementedException("Date part not recognised");
         }
     }
 
