@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -83,7 +84,7 @@ public class ObservationTransformer extends AbstractTransformer {
                 datePrecisionId = convertDatePrecision(dt.getPrecision());
             }
 
-            snomedConceptId = findSnomedConceptId(fhir.getCode());
+            snomedConceptId = CodeableConceptHelper.findSnomedConceptId(fhir.getCode());
 
             if (fhir.hasValue()) {
                 Quantity quantity = fhir.getValueQuantity();
@@ -92,7 +93,7 @@ public class ObservationTransformer extends AbstractTransformer {
             }
 
             //add the raw original code, to assist in data checking
-            originalCode = findOriginalCode(fhir.getCode());
+            originalCode = CodeableConceptHelper.findOriginalCode(fhir.getCode());
 
             //add original term too, for easy display of results
             originalTerm = fhir.getCode().getText();

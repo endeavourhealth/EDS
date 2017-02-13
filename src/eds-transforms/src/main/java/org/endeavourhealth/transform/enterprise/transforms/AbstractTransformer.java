@@ -7,11 +7,12 @@ import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.transform.EnterpriseIdMapRepository;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
-import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.ReferenceComponents;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.formats.JsonParser;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Reference;
+import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.TemporalPrecisionEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,38 +67,6 @@ public abstract class AbstractTransformer {
     }
 
 
-    protected static Long findSnomedConceptId(CodeableConcept code) {
-        for (Coding coding: code.getCoding()) {
-            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_SNOMED_CT)
-                    || coding.getSystem().equals(FhirUri.CODE_SYSTEM_EMISSNOMED)) {
-                return Long.parseLong(coding.getCode());
-            }
-        }
-
-        return null;
-    }
-
-    protected static String findSnomedConceptText(CodeableConcept code) {
-        for (Coding coding: code.getCoding()) {
-            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_SNOMED_CT)
-                    || coding.getSystem().equals(FhirUri.CODE_SYSTEM_EMISSNOMED)) {
-                return coding.getDisplay();
-            }
-        }
-
-        return null;
-    }
-
-    protected static String findOriginalCode(CodeableConcept code) {
-        for (Coding coding: code.getCoding()) {
-            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_READ2)
-                    || coding.getSystem().equals(FhirUri.CODE_SYSTEM_EMIS_CODE)) {
-                return coding.getCode();
-            }
-        }
-
-        return null;
-    }
 
     protected static Integer findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, Resource resource) throws Exception {
         String resourceType = resource.getResourceType().toString();

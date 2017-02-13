@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.enterprise.transforms;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.Extension;
@@ -88,10 +89,10 @@ public class FamilyMemberHistoryTransformer extends AbstractTransformer {
                 throw new TransformException("FamilyMemberHistory with more than one item not supported");
             }
             FamilyMemberHistory.FamilyMemberHistoryConditionComponent condition = fhir.getCondition().get(0);
-            snomedConceptId = findSnomedConceptId(condition.getCode());
+            snomedConceptId = CodeableConceptHelper.findSnomedConceptId(condition.getCode());
 
             //add the raw original code, to assist in data checking
-            originalCode = findOriginalCode(condition.getCode());
+            originalCode = CodeableConceptHelper.findOriginalCode(condition.getCode());
 
             //add original term too, for easy display of results
             originalTerm = condition.getCode().getText();

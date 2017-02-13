@@ -1,9 +1,13 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.common;
 
 import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.core.data.admin.CodeRepository;
+import org.endeavourhealth.core.data.admin.models.SnomedLookup;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.IntegerCodeType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.StringCodeType;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.transform.fhir.CodingHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.Coding;
@@ -14,7 +18,70 @@ public class CodeConverter
     private static final String EMISOPEN_IDENTIFIER_SNOMED = "SNOMED";
     private static final String EMISOPEN_IDENTIFIER_READ2 = "READ2";
 
-    public static CodeableConcept convert(StringCodeType code, String descriptiveText) throws TransformException
+    private static CodeRepository repository = new CodeRepository();
+
+    public static CodeableConcept convert(StringCodeType code, String descriptiveText) throws TransformException {
+
+        String emisCode = code.getValue();
+        String emisTerm = code.getTerm();
+
+        //the CSV uses a hyphen to delimit the synonym ID from the code, but since we include
+        //the original term text anyway, there's no need to carry the synonym ID into the FHIR data
+        String emisCodeNoSynonym = emisCode;
+        int index = emisCodeNoSynonym.indexOf("-");
+        if (index > -1) {
+            emisCodeNoSynonym = emisCodeNoSynonym.substring(0, index);
+        }
+
+        CodeableConcept fhirConcept = null;
+
+        //without a Read 2 engine, there seems to be no cast-iron way to determine whether the supplied codes
+        //are Read 2 codes or Emis local codes. Looking at the codes from the test data sets, this seems
+        //to be a reliable way to perform the same check.
+        if (emisCode.startsWith("EMIS")
+                || emisCode.startsWith("ALLERGY")
+                || emisCode.startsWith("EGTON")
+                || emisCodeNoSynonym.length() > 5) {
+
+            fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_EMIS_CODE, emisTerm, emisCode);
+
+        } else {
+
+            //Emis store Read 2 codes without the padding stops, which seems to be against Read 2 standards,
+            //so make sure all codes are padded to five chars
+            while (emisCode.length() < 5) {
+                emisCode += ".";
+            }
+
+            //should ideally be able to distringuish between Read2 and EMIS codes
+            fhirConcept = CodeableConceptHelper.createCodeableConcept(FhirUri.CODE_SYSTEM_READ2, emisTerm, emisCode);
+        }
+
+        String mappedCode = code.getMapCode();
+        if (StringUtils.isNotBlank(mappedCode)) {
+
+            String mappedTerm = emisTerm;
+            String system = getCodingSystem(code.getMapScheme());
+
+            //if the system is proper SNOMED, then get the official term for the snomed concept ID
+            if (system == FhirUri.CODE_SYSTEM_SNOMED_CT) {
+
+                SnomedLookup snomedLookup = repository.getSnomedLookup(mappedCode);
+                if (snomedLookup != null) {
+                    mappedTerm = snomedLookup.getTerm();
+                }
+            }
+
+            fhirConcept.addCoding(CodingHelper.createCoding(system, mappedTerm, mappedCode));
+        }
+
+        if (StringUtils.isNotBlank(descriptiveText)) {
+            fhirConcept.setText(descriptiveText);
+        }
+
+        return fhirConcept;
+    }
+    /*public static CodeableConcept convert(StringCodeType code, String descriptiveText) throws TransformException
     {
         CodeableConcept codeableConcept = new CodeableConcept();
 
@@ -43,7 +110,7 @@ public class CodeConverter
             codeableConcept.setText(descriptiveText);
 
         return codeableConcept;
-    }
+    }*/
 
     public static CodeableConcept convert(IntegerCodeType drug) throws TransformException
     {
@@ -75,12 +142,17 @@ public class CodeConverter
 
     private static String getCodingSystem(String scheme) throws TransformException
     {
-        switch (scheme)
-        {
-            case EMISOPEN_IDENTIFIER_READ2: return FhirUri.CODE_SYSTEM_READ2;
-            case EMISOPEN_IDENTIFIER_EMIS_PREPARATION: return FhirUri.CODE_SYSTEM_EMISPREPARATION;
-            case EMISOPEN_IDENTIFIER_SNOMED: return FhirUri.CODE_SYSTEM_SNOMED_CT;
-            default: throw new TransformException("Coding scheme not recognised");
+        switch (scheme) {
+            case EMISOPEN_IDENTIFIER_READ2:
+                return FhirUri.CODE_SYSTEM_READ2;
+            case EMISOPEN_IDENTIFIER_EMIS_PREPARATION:
+                return FhirUri.CODE_SYSTEM_EMISPREPARATION;
+            case EMISOPEN_IDENTIFIER_SNOMED:
+                return FhirUri.CODE_SYSTEM_SNOMED_CT;
+            default:
+                //log the scheme out
+                throw new TransformException("Coding scheme not recognised " + scheme);
+                //throw new TransformException("Coding scheme not recognised");
         }
     }
 }

@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.Extension;
@@ -89,10 +90,10 @@ public class SpecimenTransformer extends AbstractTransformer {
                 }
             }
 
-            snomedConceptId = findSnomedConceptId(fhir.getType());
+            snomedConceptId = CodeableConceptHelper.findSnomedConceptId(fhir.getType());
 
             //add the raw original code, to assist in data checking
-            originalCode = findOriginalCode(fhir.getType());
+            originalCode = CodeableConceptHelper.findOriginalCode(fhir.getType());
 
             //add original term too, for easy display of results
             originalTerm = fhir.getType().getText();

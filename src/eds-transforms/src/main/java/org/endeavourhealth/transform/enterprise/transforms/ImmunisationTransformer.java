@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.Reference;
 import org.slf4j.Logger;
@@ -77,10 +78,10 @@ public class ImmunisationTransformer extends AbstractTransformer {
                 datePrecisionId = convertDatePrecision(dt.getPrecision());
             }
 
-            snomedConceptId = findSnomedConceptId(fhir.getVaccineCode());
+            snomedConceptId = CodeableConceptHelper.findSnomedConceptId(fhir.getVaccineCode());
 
             //add the raw original code, to assist in data checking
-            originalCode = findOriginalCode(fhir.getVaccineCode());
+            originalCode = CodeableConceptHelper.findOriginalCode(fhir.getVaccineCode());
 
             //add original term too, for easy display of results
             originalTerm = fhir.getVaccineCode().getText();

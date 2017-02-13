@@ -2,7 +2,6 @@ package org.endeavourhealth.transform.emis.emisopen.transforms.common;
 
 import com.google.common.base.Strings;
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.TemporalPrecisionEnum;
@@ -68,16 +67,19 @@ public class DateConverter
         switch (datePart)
         {
             case 0:
-                if (StringUtils.isNotBlank(timeString))
-                    return new DateTimeType(getDateAndTime(dateString, timeString), TemporalPrecisionEnum.SECOND);
-                else
+                if (Strings.isNullOrEmpty(timeString)) {
                     return new DateTimeType(getDateAndTime(dateString, timeString), TemporalPrecisionEnum.DAY);
+                } else {
+                    return new DateTimeType(getDateAndTime(dateString, timeString), TemporalPrecisionEnum.SECOND);
+                }
             case 1:
                 return new DateTimeType(getDate("01/" + dateString), TemporalPrecisionEnum.MONTH);
             case 2:
                 return new DateTimeType(getDate("01/01/" + dateString), TemporalPrecisionEnum.YEAR);
             case 3:
                 return null;
+            case 4:
+                return new DateTimeType(getDateAndTime(dateString, timeString), TemporalPrecisionEnum.SECOND);
             default:
                 //actually log out what part isn't recognised
                 throw new NotImplementedException("Date part not recognised " + datePart + " with dateString " + dateString + " and timeString " + timeString);

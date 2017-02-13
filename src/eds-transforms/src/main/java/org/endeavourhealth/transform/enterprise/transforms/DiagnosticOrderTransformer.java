@@ -3,6 +3,7 @@ package org.endeavourhealth.transform.enterprise.transforms;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.DiagnosticOrder;
 import org.hl7.fhir.instance.model.Reference;
@@ -86,10 +87,10 @@ public class DiagnosticOrderTransformer extends AbstractTransformer {
                 throw new TransformException("DiagnosticOrder with more than one item not supported");
             }
             DiagnosticOrder.DiagnosticOrderItemComponent item = fhir.getItem().get(0);
-            snomedConceptId = findSnomedConceptId(item.getCode());
+            snomedConceptId = CodeableConceptHelper.findSnomedConceptId(item.getCode());
 
             //add the raw original code, to assist in data checking
-            originalCode = findOriginalCode(item.getCode());
+            originalCode = CodeableConceptHelper.findOriginalCode(item.getCode());
 
             //add original term too, for easy display of results
             originalTerm = item.getCode().getText();

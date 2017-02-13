@@ -57,6 +57,12 @@ final class FamilyHistoryTransformer {
                 .filter(t -> t.getGroup().getTerm().equals(QUALIFIER_GROUP_TERM_FAMILY_MEMBER))
                 .collect(StreamExtension.singleOrNullCollector());
 
+        //we have event types that don't have a qualifier of the right type, so fall back to using the generic relationship type
+        if (qualifierType == null
+                || qualifierType.getQualifierItemID() == null) {
+            return CodeableConceptHelper.createCodeableConcept(FamilyMember.FAMILY_MEMBER);
+        }
+
         CodeableConcept codeableConcept = new CodeableConcept();
 
         Coding coding = new Coding();
