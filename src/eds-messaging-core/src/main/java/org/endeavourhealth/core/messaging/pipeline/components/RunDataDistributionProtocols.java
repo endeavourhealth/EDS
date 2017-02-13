@@ -7,8 +7,10 @@ import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.admin.PatientCohortRepository;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
+import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
+import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByPatientId;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
@@ -36,6 +38,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	private static final PatientCohortRepository cohortRepository = new PatientCohortRepository();
 	private static final ResourceRepository resourceRepository = new ResourceRepository();
 	private static final ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+	private static final PatientIdentifierRepository patientIdentifierRepository = new PatientIdentifierRepository();
 
 	public RunDataDistributionProtocols(RunDataDistributionProtocolsConfig config) {
 		this.config = config;
@@ -139,11 +142,28 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 				return false;
 			}
 
-			return cohortRepository.isInCohort(protocolId, serviceId, patientId);
+			String nhsNumber = findPatientNhsNumber(patientId);
+
+			if (Strings.isNullOrEmpty(nhsNumber)) {
+				return false;
+			}
+
+			return cohortRepository.isInCohort(protocolId, serviceId, nhsNumber);
 
 		} else {
 
 			throw new PipelineException("Unknown cohort " + cohort + " in protocol " + protocolId);
+		}
+	}
+
+	private String findPatientNhsNumber(UUID patientId) {
+
+		PatientIdentifierByPatientId identity = patientIdentifierRepository.getMostRecentByPatientId(patientId);
+		if (identity != null) {
+			return identity.getNhsNumber();
+
+		} else {
+			return null;
 		}
 	}
 
