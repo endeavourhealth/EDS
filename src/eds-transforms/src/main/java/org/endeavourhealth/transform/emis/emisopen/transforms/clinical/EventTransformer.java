@@ -52,7 +52,7 @@ public class EventTransformer {
         }
     }
 
-    public static void transform(MedicalRecordType medicalRecordType, List<Resource> results) throws TransformException {
+    public static void transform(MedicalRecordType medicalRecordType, List<Resource> results, String patientUuid) throws TransformException {
 
         //got records that have null event lists
         EventListType eventList = medicalRecordType.getEventList();
@@ -61,7 +61,7 @@ public class EventTransformer {
         }
 
         for (EventType eventType : eventList.getEvent()) {
-            Resource resource = transform(eventType, medicalRecordType.getRegistration().getGUID());
+            Resource resource = transform(eventType, patientUuid);
 
             //need to handle null resources being returned
             if (resource != null) {
@@ -71,7 +71,7 @@ public class EventTransformer {
         }
     }
 
-    private static Resource transform(EventType eventType, String patientUuid) throws TransformException {
+    public static Resource transform(EventType eventType, String patientUuid) throws TransformException {
 
         switch (ObservationType.fromValue(eventType.getEventType().intValue())) {
 

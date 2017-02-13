@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.emisopen.transforms.admin;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.RegistrationType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
@@ -20,7 +21,7 @@ public class PatientTransformer {
 
     private static final Logger LOG = LoggerFactory.getLogger(PatientTransformer.class);
 
-    public static void transform(List<Resource> resources, MedicalRecordType medicalRecord, String organisationGuid, String patientGuid) throws TransformException
+    public static void transform(MedicalRecordType medicalRecord, List<Resource> resources, String organisationGuid, String patientGuid) throws TransformException
     {
         RegistrationType source = medicalRecord.getRegistration();
 
@@ -30,7 +31,7 @@ public class PatientTransformer {
         Patient target = new Patient();
         target.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PATIENT));
 
-        target.setId(patientGuid);
+        EmisOpenHelper.setUniqueId(target, patientGuid, null);
 
         transformIdentifiers(target, source);
 
@@ -65,12 +66,12 @@ public class PatientTransformer {
 
         createContacts(target, source);
 
-        target.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, organisationGuid));
+        target.setManagingOrganization(EmisOpenHelper.createOrganisationReference(organisationGuid));
 
         if (source.getUsualGpID() != null) {
             String usualGpGuid = source.getUsualGpID().getGUID();
             if (!Strings.isNullOrEmpty(usualGpGuid)) {
-                target.addCareProvider(ReferenceHelper.createReference(ResourceType.Practitioner, usualGpGuid));
+                target.addCareProvider(EmisOpenHelper.createPractitionerReference(usualGpGuid));
             }
         }
 

@@ -1,14 +1,17 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.admin;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.AppointmentStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.HolderStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.PatientAppointmentList;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Appointment;
+import org.hl7.fhir.instance.model.CodeableConcept;
+import org.hl7.fhir.instance.model.Meta;
+import org.hl7.fhir.instance.model.Reference;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -49,25 +52,30 @@ public class AppointmentTransformer
         Date endTime = DateConverter.addMinutesToTime(startTime, Integer.parseInt(appointmentStruct.getDuration()));
         appointment.setEnd(endTime);
 
-        appointment.addSlot(ReferenceHelper.createReference(ResourceType.Slot, appointmentStruct.getSlotGUID()));
+        appointment.addSlot(EmisOpenHelper.createSlotReference(appointmentStruct.getSlotGUID()));
 
         Appointment.ParticipantRequired requiredStatus = Appointment.ParticipantRequired.REQUIRED;
         Appointment.ParticipationStatus participationstatus = Appointment.ParticipationStatus.ACCEPTED;
 
-        appointment.addParticipant(createParticipant(ResourceType.Patient, patientGuid, requiredStatus, participationstatus));
 
-        for (HolderStruct holder : appointmentStruct.getHolderList().getHolder())
-            appointment.addParticipant(createParticipant(ResourceType.Practitioner, holder.getGUID(), requiredStatus, participationstatus));
+        Reference patientReference = EmisOpenHelper.createPatientReference(patientGuid);
+        appointment.addParticipant(createParticipant(patientReference, requiredStatus, participationstatus));
 
-        appointment.addParticipant(createParticipant(ResourceType.Location, appointmentStruct.getSiteGUID(), requiredStatus, participationstatus));
+        for (HolderStruct holder : appointmentStruct.getHolderList().getHolder()) {
+            Reference practitionerReference = EmisOpenHelper.createPractitionerReference(holder.getGUID());
+            appointment.addParticipant(createParticipant(practitionerReference, requiredStatus, participationstatus));
+        }
+
+        Reference locationReference = EmisOpenHelper.createLocationReference(appointmentStruct.getSiteGUID());
+        appointment.addParticipant(createParticipant(locationReference, requiredStatus, participationstatus));
 
         return appointment;
     }
 
-    private static Appointment.AppointmentParticipantComponent createParticipant(ResourceType resourceType, String id, Appointment.ParticipantRequired required, Appointment.ParticipationStatus status) throws TransformException
+    private static Appointment.AppointmentParticipantComponent createParticipant(Reference reference, Appointment.ParticipantRequired required, Appointment.ParticipationStatus status) throws TransformException
     {
         return new Appointment.AppointmentParticipantComponent()
-                .setActor(ReferenceHelper.createReference(resourceType, id))
+                .setActor(reference)
                 .setRequired(required)
                 .setStatus(status);
     }

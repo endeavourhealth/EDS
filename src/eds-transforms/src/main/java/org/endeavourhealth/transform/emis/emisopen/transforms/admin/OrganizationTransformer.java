@@ -3,10 +3,14 @@ package org.endeavourhealth.transform.emis.emisopen.transforms.admin;
 import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.LocationType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.TypeOfLocationType;
-import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.IdentifierHelper;
 import org.endeavourhealth.transform.fhir.schema.OrganisationType;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -56,7 +60,7 @@ public class OrganizationTransformer {
 
         }
 
-        organization.addExtension(new Extension().setUrl(FhirExtensionUri.ORGANISATION_MAIN_LOCATION).setValue(ReferenceHelper.createReference(ResourceType.Location, locationType.getGUID())));
+        organization.addExtension(new Extension().setUrl(FhirExtensionUri.ORGANISATION_MAIN_LOCATION).setValue(EmisOpenHelper.createLocationReference(locationType.getGUID())));
 
         return organization;
     }

@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.IssueListType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.IssueType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
@@ -10,7 +11,6 @@ import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConvert
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;
@@ -19,7 +19,7 @@ import java.util.List;
 
 public final class MedicationOrderTransformer
 {
-    public static void transform(MedicalRecordType medicalRecordType, List<Resource> resources) throws TransformException {
+    public static void transform(MedicalRecordType medicalRecordType, List<Resource> resources, String patientUuid) throws TransformException {
 
         //got patients with null issue lists
         IssueListType issueList = medicalRecordType.getIssueList();
@@ -28,20 +28,20 @@ public final class MedicationOrderTransformer
         }
 
         for (IssueType issueType : issueList.getIssue()) {
-            resources.add(transform(issueType, medicalRecordType.getRegistration().getGUID()));
+            resources.add(transform(issueType, patientUuid));
         }
 
     }
 
-    private static MedicationOrder transform(IssueType issueType, String patientUuid) throws TransformException
+    private static MedicationOrder transform(IssueType issueType, String patientGuid) throws TransformException
     {
         MedicationOrder medicationOrder = new MedicationOrder();
         medicationOrder.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_ORDER));
 
-        medicationOrder.setId(issueType.getGUID());
+        EmisOpenHelper.setUniqueId(medicationOrder, patientGuid, issueType.getGUID());
 
-        medicationOrder.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientUuid));
-        medicationOrder.setPrescriber(ReferenceHelper.createReference(ResourceType.Practitioner, issueType.getAuthorisedUserID().getGUID()));
+        medicationOrder.setPatient(EmisOpenHelper.createPatientReference(patientGuid));
+        medicationOrder.setPrescriber(EmisOpenHelper.createPractitionerReference(issueType.getAuthorisedUserID().getGUID()));
 
         medicationOrder.setDateWritten(DateConverter.getDate(issueType.getAssignedDate()));
         medicationOrder.addDosageInstruction(getDosage(issueType));

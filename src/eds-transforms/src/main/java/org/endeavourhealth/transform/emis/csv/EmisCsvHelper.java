@@ -216,6 +216,9 @@ public class EmisCsvHelper {
     public Reference createScheduleReference(String scheduleGuid) throws Exception {
         return ReferenceHelper.createReference(ResourceType.Schedule, scheduleGuid);
     }
+    public Reference createSlotReference(String slotGuid) throws Exception {
+        return ReferenceHelper.createReference(ResourceType.Slot, slotGuid);
+    }
 
     /**
      * patient-type resources must include the patient GUID are part of the unique ID in the reference

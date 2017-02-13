@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.AuthorType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.EventType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.QualifierType;
@@ -9,7 +10,6 @@ import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConvert
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.fhir.schema.FamilyMember;
 import org.hl7.fhir.instance.model.*;
 
@@ -17,13 +17,14 @@ final class FamilyHistoryTransformer {
 
     private static final String QUALIFIER_GROUP_TERM_FAMILY_MEMBER = "Family member";
 
-    public static FamilyMemberHistory transform(EventType eventType, String patientUuid) throws TransformException
+    public static FamilyMemberHistory transform(EventType eventType, String patientGuid) throws TransformException
     {
         FamilyMemberHistory familyMemberHistory = new FamilyMemberHistory();
         familyMemberHistory.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_FAMILY_MEMBER_HISTORY));
 
-        familyMemberHistory.setId(eventType.getGUID());
-        familyMemberHistory.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientUuid));
+        EmisOpenHelper.setUniqueId(familyMemberHistory, patientGuid, eventType.getGUID());
+
+        familyMemberHistory.setPatient(EmisOpenHelper.createPatientReference(patientGuid));
 
         familyMemberHistory.setRelationship(getRelationship(eventType));
 
@@ -40,7 +41,7 @@ final class FamilyHistoryTransformer {
     {
         return new Extension()
                 .setUrl(FhirExtensionUri.RECORDED_BY)
-                .setValue(ReferenceHelper.createReference(ResourceType.Practitioner, authorType.getUser().getGUID()));
+                .setValue(EmisOpenHelper.createPractitionerReference(authorType.getUser().getGUID()));
     }
 
     private static CodeableConcept getRelationship(EventType eventType) {

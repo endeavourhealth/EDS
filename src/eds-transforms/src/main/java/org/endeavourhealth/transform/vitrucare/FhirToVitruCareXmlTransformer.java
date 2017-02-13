@@ -240,8 +240,8 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
             Resource resource = FhirResourceHelper.deserialiseResouce(resourceWrapper);
             ResourceType resourceType = resource.getResourceType();
 
-            if (resourceType == ResourceType.MedicationOrder) {
-                org.endeavourhealth.transform.vitrucare.model.Medication medication = createMedication((MedicationOrder)resource);
+            if (resourceType == ResourceType.MedicationStatement) {
+                org.endeavourhealth.transform.vitrucare.model.Medication medication = createMedication((MedicationStatement)resource);
                 if (medication != null) {
                     payload.getMedication().add(medication);
                 }
@@ -264,7 +264,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         }
     }
 
-    private static org.endeavourhealth.transform.vitrucare.model.Medication createMedication(MedicationOrder fhir) throws Exception {
+    private static org.endeavourhealth.transform.vitrucare.model.Medication createMedication(MedicationStatement fhir) throws Exception {
 
         //they're only interested in repeat meds
         Extension extension = ExtensionConverter.findExtension(fhir, FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE);
@@ -294,34 +294,35 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         productCode = conceptId.toString();
         productName = fhirCodeableConcept.getText();
 
-        if (fhir.hasDosageInstruction()) {
-            if (fhir.getDosageInstruction().size() > 1) {
+        if (fhir.hasDosage()) {
+            if (fhir.getDosage().size() > 1) {
                 throw new TransformException("Cannot support MedicationStatements with more than one dose " + fhir.getId());
             }
 
-            MedicationOrder.MedicationOrderDosageInstructionComponent doseage = fhir.getDosageInstruction().get(0);
+            MedicationStatement.MedicationStatementDosageComponent doseage = fhir.getDosage().get(0);
             dose = doseage.getText();
         }
 
-        if (fhir.hasDateWrittenElement()) {
-            DateTimeType dt = fhir.getDateWrittenElement();
-            startDate = dt.getValue();
+        if (fhir.hasDateAsserted()) {
+            startDate = fhir.getDateAsserted();
         }
 
-        if (fhir.hasDispenseRequest()) {
-            MedicationOrder.MedicationOrderDispenseRequestComponent dispenseRequestComponent = fhir.getDispenseRequest();
-            Quantity q = dispenseRequestComponent.getQuantity();
+        Extension quantityExtension = ExtensionConverter.findExtension(fhir, FhirExtensionUri.MEDICATION_AUTHORISATION_QUANTITY);
+        if (quantityExtension != null) {
+            Quantity q = (Quantity)quantityExtension.getValue();
             quantity = q.getValue() + " " + q.getUnit();
+        }
 
-            Duration duration = dispenseRequestComponent.getExpectedSupplyDuration();
-            if (!duration.getUnit().equalsIgnoreCase("days")) {
-                throw new TransformException("Unsupported medication order duration type [" + duration.getUnit() + "] for " + fhir.getId());
+        Extension cancellationExtension = ExtensionConverter.findExtension(fhir, FhirExtensionUri.MEDICATION_AUTHORISATION_CANCELLATION);
+        if (cancellationExtension != null) {
+            if (cancellationExtension.hasExtension()) {
+                for (Extension innerExtension: cancellationExtension.getExtension()) {
+                    if (innerExtension.getValue() instanceof DateType) {
+                        DateType d = (DateType)innerExtension.getValue();
+                        endDate = d.getValue();
+                    }
+                }
             }
-            int days = duration.getValue().intValue();
-            Calendar c = Calendar.getInstance();
-            c.setTime(startDate);
-            c.add(Calendar.DAY_OF_YEAR, days);
-            endDate = c.getTime();
         }
 
         org.endeavourhealth.transform.vitrucare.model.Medication ret = new org.endeavourhealth.transform.vitrucare.model.Medication();

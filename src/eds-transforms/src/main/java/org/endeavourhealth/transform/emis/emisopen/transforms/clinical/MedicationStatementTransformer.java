@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicationListType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicationType;
@@ -9,7 +10,6 @@ import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConvert
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;
@@ -18,7 +18,7 @@ import java.util.List;
 
 public final class MedicationStatementTransformer
 {
-    public static void transform(MedicalRecordType medicalRecordType, List<Resource> resources) throws TransformException {
+    public static void transform(MedicalRecordType medicalRecordType, List<Resource> resources, String patientUuid) throws TransformException {
 
         MedicationListType medicationList = medicalRecordType.getMedicationList();
         if (medicationList == null) {
@@ -26,20 +26,21 @@ public final class MedicationStatementTransformer
         }
 
         for (MedicationType medicationType : medicationList.getMedication()) {
-            resources.add(transform(medicationType, medicalRecordType.getRegistration().getGUID()));
+            resources.add(transform(medicationType, patientUuid));
         }
 
     }
 
-    private static MedicationStatement transform(MedicationType medicationType, String patientUuid) throws TransformException
+    public static MedicationStatement transform(MedicationType medicationType, String patientGuid) throws TransformException
     {
         MedicationStatement medicationStatement = new MedicationStatement();
         medicationStatement.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_AUTHORISATION));
 
-        medicationStatement.setId(medicationType.getGUID());
-        medicationStatement.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientUuid));
+        EmisOpenHelper.setUniqueId(medicationStatement, patientGuid, medicationType.getGUID());
 
-        medicationStatement.setInformationSource(ReferenceHelper.createReference(ResourceType.Practitioner, medicationType.getAuthorisedUserID().getGUID()));
+        medicationStatement.setPatient(EmisOpenHelper.createPatientReference(patientGuid));
+
+        medicationStatement.setInformationSource(EmisOpenHelper.createPractitionerReference(medicationType.getAuthorisedUserID().getGUID()));
         medicationStatement.setDateAsserted(DateConverter.getDate(medicationType.getAssignedDate()));
 
         medicationStatement.setMedication(CodeConverter.convert(medicationType.getDrug().getPreparationID()));

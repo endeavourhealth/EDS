@@ -9,6 +9,7 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointme
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomslotsforsession.SlotListStruct;
 import org.endeavourhealth.transform.emis.emisopen.transforms.admin.*;
+import org.endeavourhealth.transform.emis.emisopen.transforms.clinical.ConsultationTransformer;
 import org.endeavourhealth.transform.emis.emisopen.transforms.clinical.EventTransformer;
 import org.endeavourhealth.transform.emis.emisopen.transforms.clinical.MedicationOrderTransformer;
 import org.endeavourhealth.transform.emis.emisopen.transforms.clinical.MedicationStatementTransformer;
@@ -51,12 +52,14 @@ public final class EmisOpenToFhirTransformer
         LocationTransformer.transform(emisOpenMedicalRecord, result);
         PractitionerTransformer.transform(emisOpenMedicalRecord, organisationGuid, result);
 
-        PatientTransformer.transform(result, emisOpenMedicalRecord, organisationGuid, patientGuid);
-        EpisodeOfCareTransformer.transform(result, emisOpenMedicalRecord, organisationGuid, patientGuid);
+        PatientTransformer.transform(emisOpenMedicalRecord, result, organisationGuid, patientGuid);
+        EpisodeOfCareTransformer.transform(emisOpenMedicalRecord, result, organisationGuid, patientGuid);
 
-        EventTransformer.transform(emisOpenMedicalRecord, result);
-        MedicationOrderTransformer.transform(emisOpenMedicalRecord, result);
-        MedicationStatementTransformer.transform(emisOpenMedicalRecord, result);
+        EventTransformer.transform(emisOpenMedicalRecord, result, patientGuid);
+        MedicationOrderTransformer.transform(emisOpenMedicalRecord, result, patientGuid);
+        MedicationStatementTransformer.transform(emisOpenMedicalRecord, result, patientGuid);
+
+        ConsultationTransformer.transform(emisOpenMedicalRecord, result, patientGuid);
 
         return result;
     }

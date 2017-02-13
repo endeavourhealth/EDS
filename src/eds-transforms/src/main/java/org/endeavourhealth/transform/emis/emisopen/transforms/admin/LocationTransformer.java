@@ -1,12 +1,12 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.admin;
 
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.LocationType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.TypeOfLocationType;
 import org.endeavourhealth.transform.fhir.ContactPointHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +43,8 @@ public class LocationTransformer {
         for (ContactPoint contactPoint : contactPoints)
             location.addTelecom(contactPoint);
 
-        location.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, locationType.getGUID()));
+        //TODO - this looks wrong. It should be an org, but we're using a location GUID?
+        location.setManagingOrganization(EmisOpenHelper.createOrganisationReference(locationType.getGUID()));
 
         return location;
     }

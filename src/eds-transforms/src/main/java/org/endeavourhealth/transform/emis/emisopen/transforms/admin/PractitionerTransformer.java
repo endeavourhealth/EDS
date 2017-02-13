@@ -3,11 +3,15 @@ package org.endeavourhealth.transform.emis.emisopen.transforms.admin;
 import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.PersonCategoryType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.PersonType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.AddressConverter;
-import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.transform.fhir.ContactPointHelper;
+import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.NameConverter;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -55,7 +59,7 @@ public class PractitionerTransformer
             practitioner.addTelecom(contactPoint);
 
         Practitioner.PractitionerPractitionerRoleComponent practitionerPractitionerRoleComponent = new Practitioner.PractitionerPractitionerRoleComponent();
-        practitionerPractitionerRoleComponent.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, organisationGuid));
+        practitionerPractitionerRoleComponent.setManagingOrganization(EmisOpenHelper.createOrganisationReference(organisationGuid));
 
         PersonCategoryType category = personType.getCategory();
         if (category != null
