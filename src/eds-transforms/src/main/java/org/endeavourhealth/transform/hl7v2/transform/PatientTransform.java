@@ -2,7 +2,9 @@ package org.endeavourhealth.transform.hl7v2.transform;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Person;
+import org.endeavourhealth.transform.hl7v2.parser.Helpers;
 import org.endeavourhealth.transform.hl7v2.parser.ParseException;
+import org.endeavourhealth.transform.hl7v2.parser.Segment;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.*;
 import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
 import org.endeavourhealth.transform.hl7v2.parser.segments.MshSegment;
@@ -12,6 +14,7 @@ import org.endeavourhealth.transform.hl7v2.parser.segments.Pv1Segment;
 import org.endeavourhealth.transform.hl7v2.transform.converters.*;
 import org.hl7.fhir.instance.model.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PatientTransform {
@@ -19,7 +22,7 @@ public class PatientTransform {
     public static Patient fromHl7v2(AdtMessage source) throws ParseException, TransformException {
         MshSegment sourceMsh = source.getMshSegment();
         PidSegment sourcePid = source.getPidSegment();
-        Nk1Segment sourceNk1 = source.getNk1Segment();
+        List<Segment> sourceNk1Segments = source.getNk1Segments();
 
         Patient target = new Patient();
 
@@ -32,18 +35,19 @@ public class PatientTransform {
         if (!StringUtils.isEmpty(sourcePid.getSex()))
             target.setGender(getSex(sourcePid.getSex()));
 
-        if (sourcePid.getHomeTelephones() != null)
-            target.addTelecom(getContactPoint(sourcePid.getHomeTelephones()));
+        for (ContactPoint cp : getContactPoint(sourcePid.getHomeTelephones()))
+            target.addTelecom(cp);
 
-        if (sourcePid.getBusinessTelephones() != null)
-            target.addTelecom(getContactPoint(sourcePid.getBusinessTelephones()));
+        for (ContactPoint cp : getContactPoint(sourcePid.getBusinessTelephones()))
+            target.addTelecom(cp);
 
-        if (sourcePid.getAddresses() != null)
-            target.addAddress(getAddresses(sourcePid.getAddresses()));
+        for (Address address : getAddresses(sourcePid.getAddresses()))
+            target.addAddress(address);
 
-        if (source.hasNk1Segment())
-            addPatientContact(sourceNk1, target);
-
+        if (source.hasNk1Segment()) {
+            for (Segment nk1 : sourceNk1Segments)
+                addPatientContact((Nk1Segment)nk1, target);
+        }
         return target;
     }
 
@@ -75,25 +79,30 @@ public class PatientTransform {
         throw new TransformException(indicator + " not recognised as a death indicator");
     }
 
-    private static Address getAddresses(List<Xad> addresses) throws TransformException {
+    private static List<Address> getAddresses(List<Xad> addresses) throws TransformException {
+        List<Address> result = new ArrayList<>();
         for (Xad xad : addresses)
             if (xad != null)
-                return AddressConverter.convert(xad);
+                result.add(AddressConverter.convert(xad));
 
-        return null;
+        return result;
     }
 
     private static void addNames(PidSegment sourcePid, Patient target) throws TransformException {
-        target.addName(getNames(sourcePid.getPatientNames()));
-        target.addName(getNames(sourcePid.getPatientAlias()));
+        for (HumanName name : getNames(sourcePid.getPatientNames()))
+            target.addName(name);
+        for (HumanName name : getNames(sourcePid.getPatientAlias()))
+            target.addName(name);
     }
 
-    private static HumanName getNames(List<Xpn> name) throws TransformException {
+    private static List<HumanName> getNames(List<Xpn> name) throws TransformException {
+        List<HumanName> result = new ArrayList<>();
+
         for (Xpn xpn : name)
             if (xpn != null)
-                return NameConverter.convert(xpn);
+                result.add(NameConverter.convert(xpn));
 
-        return null;
+        return result;
     }
 
     private static void addIdentifiers(PidSegment sourcePid, MshSegment sourceMsh, Patient target) {
@@ -115,18 +124,19 @@ public class PatientTransform {
     private static void addPatientContact(Nk1Segment sourceNk1, Patient target) throws TransformException {
         Patient.ContactComponent contactComponent = new Patient.ContactComponent();
 
-        contactComponent.setName(getNames(sourceNk1.getNKName()));
+        for (HumanName name : getNames(sourceNk1.getNKName()))
+            contactComponent.setName(name);
 
         contactComponent.addRelationship(getRelationship(sourceNk1.getRelationship()));
 
-        if (sourceNk1.getPhoneNumber() != null)
-            contactComponent.addTelecom(getContactPoint(sourceNk1.getPhoneNumber()));
+        for (ContactPoint cp : getContactPoint(sourceNk1.getPhoneNumber()))
+            contactComponent.addTelecom(cp);
 
-        if (sourceNk1.getBusinessPhoneNumber() != null)
-            contactComponent.addTelecom(getContactPoint(sourceNk1.getBusinessPhoneNumber()));
+        for (ContactPoint cp : getContactPoint(sourceNk1.getBusinessPhoneNumber()))
+            contactComponent.addTelecom(cp);
 
-        if (sourceNk1.getAddress() != null)
-            contactComponent.setAddress(getAddresses(sourceNk1.getAddress()));
+        for (Address address : getAddresses(sourceNk1.getAddress()))
+            contactComponent.setAddress(address);
 
         if (!StringUtils.isEmpty(sourceNk1.getSex()))
             contactComponent.setGender(getSex(sourceNk1.getSex()));
@@ -135,12 +145,14 @@ public class PatientTransform {
 
     }
 
-    private static ContactPoint getContactPoint(List<Xtn> contact) throws TransformException {
+    private static List<ContactPoint> getContactPoint(List<Xtn> contact) throws TransformException {
+        List<ContactPoint> result = new ArrayList<>();
+
         for (Xtn xtn : contact)
             if (xtn != null)
-                return TelecomConverter.convert(xtn);
+                result.add(TelecomConverter.convert(xtn));
 
-        return null;
+        return result;
     }
 
     private static CodeableConcept getRelationship(Ce ce) throws TransformException {

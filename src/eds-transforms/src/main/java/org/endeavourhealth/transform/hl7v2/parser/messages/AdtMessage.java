@@ -2,7 +2,10 @@ package org.endeavourhealth.transform.hl7v2.parser.messages;
 
 import org.endeavourhealth.transform.hl7v2.parser.Message;
 import org.endeavourhealth.transform.hl7v2.parser.ParseException;
+import org.endeavourhealth.transform.hl7v2.parser.Segment;
 import org.endeavourhealth.transform.hl7v2.parser.segments.*;
+
+import java.util.List;
 
 public class AdtMessage extends Message {
     public AdtMessage(String message) throws ParseException {
@@ -23,5 +26,5 @@ public class AdtMessage extends Message {
     public EvnSegment getEvnSegment() { return (EvnSegment) super.getSegment(SegmentName.EVN); }
     public PidSegment getPidSegment() { return (PidSegment) super.getSegment(SegmentName.PID); }
     public Pd1Segment getPd1Segment() { return (Pd1Segment) super.getSegment(SegmentName.PD1); }
-    public Nk1Segment getNk1Segment() { return (Nk1Segment) super.getSegment(SegmentName.NK1); }
+    public List<Segment> getNk1Segments() { return super.getSegments(SegmentName.NK1); }
 }
