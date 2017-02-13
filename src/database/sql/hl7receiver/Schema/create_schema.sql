@@ -9,6 +9,7 @@ create extension "uuid-ossp";
 create schema dictionary;
 create schema configuration;
 create schema log;
+create schema helper;
 
 /*
 	create tables
