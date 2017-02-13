@@ -53,14 +53,16 @@ public final class EmisOpenToFhirTransformer
         EpisodeOfCareTransformer.transform(medicalRecord, result, organisationGuid, patientGuid);
 
         EventTransformer.transform(medicalRecord, result, patientGuid);
-        MedicationOrderTransformer.transform(medicalRecord, result, patientGuid);
-        MedicationStatementTransformer.transform(medicalRecord, result, patientGuid);
+        IssueTransformer.transform(medicalRecord, result, patientGuid);
+        MedicationTransformer.transform(medicalRecord, result, patientGuid);
 
         AllergyTransformer.transform(medicalRecord, result, patientGuid);
         ConsultationTransformer.transform(medicalRecord, result, patientGuid);
         DiaryTransformer.transform(medicalRecord, result, patientGuid);
         ReferralTransformer.transform(medicalRecord, result, patientGuid);
         AppointmentTransformer.transform(medicalRecord, result, patientGuid);
+        InvestigationTransformer.transform(medicalRecord, result, patientGuid);
+        TestRequestHeaderTransformer.transform(medicalRecord, result, patientGuid);
 
         return result;
     }
