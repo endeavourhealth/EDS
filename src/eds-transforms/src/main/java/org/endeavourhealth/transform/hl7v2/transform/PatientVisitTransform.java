@@ -26,7 +26,7 @@ public class PatientVisitTransform {
         List<Encounter.EncounterLocationComponent> encounterLocationComponentList;
 
         //Current Location
-        //encounterLocationComponentList = LocationConverter.convert(source.getAssignedPatientLocation(), "Current Location");
+        //encounterLocationComponentList = LocationTransform.convert(source.getAssignedPatientLocation(), "Current Location");
 
         //for (Encounter.EncounterLocationComponent elc : encounterLocationComponentList)
         //    target.addLocation(elc);
@@ -36,7 +36,7 @@ public class PatientVisitTransform {
         }
 
         //Prior Location
-        //encounterLocationComponentList = LocationConverter.convert(source.getPriorPatientLocation(), "Prior Location");
+        //encounterLocationComponentList = LocationTransform.convert(source.getPriorPatientLocation(), "Prior Location");
 
         //for (Encounter.EncounterLocationComponent elc : encounterLocationComponentList)
         //    target.addLocation(elc);

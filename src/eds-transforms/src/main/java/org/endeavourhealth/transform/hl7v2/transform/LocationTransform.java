@@ -1,4 +1,4 @@
-package org.endeavourhealth.transform.hl7v2.transform.converters;
+package org.endeavourhealth.transform.hl7v2.transform;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.Pl;
@@ -7,7 +7,7 @@ import org.hl7.fhir.instance.model.*;
 
 import java.util.*;
 
-public class LocationConverter {
+public class LocationTransform {
 
     private static LinkedHashMap<String, String> locationHierarchy = new LinkedHashMap<>();
 

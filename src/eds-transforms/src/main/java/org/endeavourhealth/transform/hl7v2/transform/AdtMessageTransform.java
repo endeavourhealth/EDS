@@ -1,15 +1,15 @@
 package org.endeavourhealth.transform.hl7v2.transform;
 
 import org.apache.commons.lang3.Validate;
+import org.endeavourhealth.transform.hl7v2.mapper.CodeMapper;
 import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
-import org.endeavourhealth.transform.hl7v2.transform.converters.LocationConverter;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class AdtMessageTransform {
-    public static Bundle transform(AdtMessage sourceMessage) throws Exception {
+    public static Bundle transform(AdtMessage sourceMessage, CodeMapper codeMapper) throws Exception {
         Validate.notNull(sourceMessage);
 
         List<Resource> targetResources = new ArrayList<>();
@@ -24,7 +24,7 @@ public class AdtMessageTransform {
             targetResources.add(practitioner);
 
         if (sourceMessage.hasPv1Segment()) {
-            List<Location> locations = LocationConverter.convert(sourceMessage.getPv1Segment().getAssignedPatientLocation());
+            List<Location> locations = LocationTransform.convert(sourceMessage.getPv1Segment().getAssignedPatientLocation());
             for (Location loc : locations)
                 targetResources.add(loc);
         }
