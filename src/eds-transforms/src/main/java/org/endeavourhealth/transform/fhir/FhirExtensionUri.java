@@ -10,6 +10,8 @@ public class FhirExtensionUri {
     public final static String PATIENT_ETHNICITY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-ethnic-category-extension";
     public final static String PATIENT_RELIGION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-religion-category-extension";
     public final static String PATIENT_CONTACT_ROLE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-contact-role-category-extension";
+    public final static String PATIENT_CONTACT_DOB = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-contact-dob-category-extension";
+    public final static String PATIENT_CONTACT_MAIN_LANGUAGE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-contact-main-language-category-extension";
 
     //extensions specific to Appointment resource
     public final static String APPOINTMENT_PATIENT_WAIT = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-appointment-wait-extension";
@@ -88,6 +90,8 @@ public class FhirExtensionUri {
     public final static String PATIENT_TEXT = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-patienttext-extension";
     public final static String PRESCRIBED_AS_CONTRACEPTION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-prescribedascontraception-extension";
     public final static String QUANTITY_FREE_TEXT = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-quantity-text-extension";
+    public final static String ENCOUNTER_PATIENT_CLASS = "http://hl7.org/fhir/StructureDefinition/encounter-patient-class-extension";
+    public final static String ENCOUNTER_LOCATION_TYPE = "http://hl7.org/fhir/StructureDefinition/encounter-location-type-extension";
 
 
 }

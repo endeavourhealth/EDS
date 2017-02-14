@@ -2,9 +2,8 @@ package org.endeavourhealth.transform.hl7v2.transform;
 
 import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
-import org.hl7.fhir.instance.model.Bundle;
-import org.hl7.fhir.instance.model.Practitioner;
-import org.hl7.fhir.instance.model.Resource;
+import org.endeavourhealth.transform.hl7v2.transform.converters.LocationConverter;
+import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,9 +17,17 @@ public class AdtMessageTransform {
         targetResources.add(MessageHeaderTransform.fromHl7v2(sourceMessage.getMshSegment()));
         targetResources.add(PatientTransform.fromHl7v2(sourceMessage));
 
+        if (sourceMessage.hasPv1Segment())
+            targetResources.add(PatientVisitTransform.fromHl7v2(sourceMessage.getPv1Segment()));
+
         for (Practitioner practitioner : PractitionerTransform.fromHl7v2(sourceMessage))
             targetResources.add(practitioner);
 
+        if (sourceMessage.hasPv1Segment()) {
+            List<Location> locations = LocationConverter.convert(sourceMessage.getPv1Segment().getAssignedPatientLocation(), "test");
+            for (Location loc : locations)
+                targetResources.add(loc);
+        }
         return createBundle(targetResources);
     }
 

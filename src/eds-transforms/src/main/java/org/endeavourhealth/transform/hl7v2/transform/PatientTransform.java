@@ -9,8 +9,8 @@ import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
 import org.endeavourhealth.transform.hl7v2.parser.segments.MshSegment;
 import org.endeavourhealth.transform.hl7v2.parser.segments.Nk1Segment;
 import org.endeavourhealth.transform.hl7v2.parser.segments.PidSegment;
-import org.endeavourhealth.transform.hl7v2.parser.segments.Pv1Segment;
 import org.endeavourhealth.transform.hl7v2.transform.converters.*;
+import org.endeavourhealth.transform.hl7v2.transform.converters.ExtensionHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -34,15 +34,15 @@ public class PatientTransform {
         setCommunication(sourcePid, target);
 
         if (sourcePid.getReligion() != null)
-            target.addExtension(getExtension(FhirExtensionUri.PATIENT_RELIGION, sourcePid.getReligion()));
+            target.addExtension(ExtensionHelper.createStringExtension(FhirExtensionUri.PATIENT_RELIGION, sourcePid.getReligion().getAsString()));
 
         if (sourcePid.getEthnicGroups() != null) {
             for (Ce ce : sourcePid.getEthnicGroups())
-                target.addExtension(getExtension(FhirExtensionUri.PATIENT_ETHNICITY, ce));
+                target.addExtension(ExtensionHelper.createStringExtension(FhirExtensionUri.PATIENT_ETHNICITY, ce.getAsString()));
         }
 
         if (sourcePid.getTraceStatus() != null) {
-            target.addExtension(getExtension(FhirExtensionUri.PATIENT_NHS_NUMBER_VERIFICATION_STATUS, sourcePid.getTraceStatus()));
+            target.addExtension(ExtensionHelper.createStringExtension(FhirExtensionUri.PATIENT_NHS_NUMBER_VERIFICATION_STATUS, sourcePid.getTraceStatus().getAsString()));
         }
 
         if (!StringUtils.isEmpty(sourcePid.getSex()))
@@ -90,14 +90,6 @@ public class PatientTransform {
             communicationComponent.setPreferred(true);
             target.addCommunication(communicationComponent);
         }
-    }
-
-    private static Extension getExtension(String url, Ce value) throws ParseException, TransformException {
-        Extension extension = new Extension();
-        extension.setUrl(url);
-        extension.setValue(getCodeableConcept(value));
-
-        return extension;
     }
 
     private static boolean isDeceased(String deathIndicator) throws TransformException {
@@ -179,7 +171,16 @@ public class PatientTransform {
             contactComponent.setGender(getSex(sourceNk1.getSex()));
 
         if (sourceNk1.getContactRole() != null) {
-            contactComponent.addExtension(getExtension(FhirExtensionUri.PATIENT_CONTACT_ROLE, sourceNk1.getContactRole()));
+            contactComponent.addExtension(ExtensionHelper.createStringExtension(FhirExtensionUri.PATIENT_CONTACT_ROLE, sourceNk1.getContactRole().getAsString()));
+        }
+
+        if (sourceNk1.getDateTimeOfBirth() != null){
+            contactComponent.addExtension(ExtensionHelper.createDateTimeExtension(FhirExtensionUri.PATIENT_CONTACT_DOB,
+                    DateHelper.fromLocalDateTime(sourceNk1.getDateTimeOfBirth())));
+        }
+
+        if (sourceNk1.getPrimaryLanguage() != null){
+            contactComponent.addExtension(ExtensionHelper.createStringExtension(FhirExtensionUri.PATIENT_CONTACT_MAIN_LANGUAGE, sourceNk1.getPrimaryLanguage().getAsString()));
         }
 
         target.addContact(contactComponent);
