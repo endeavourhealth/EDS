@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.hl7v2.transform.converters;
 
 import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.hl7v2.parser.Helpers;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.ICx;
 import org.hl7.fhir.instance.model.Identifier;
@@ -17,6 +18,18 @@ public class IdentifierConverter {
 
         return new Identifier()
                 .setValue(StringUtils.deleteWhitespace(source.getId()))
-                .setSystem(Helpers.formatString(IDENTIFIER_SYSTEM_HL7V2_ASSIGNING_AUTHORITY, sendingFacility, source.getIdentifierTypeCode()));
+                .setSystem(getIdentifierSystem(source, sendingFacility));
+    }
+
+    private static String getIdentifierSystem(ICx source, String sendingFacility) {
+        String identifierTypeCode = source.getIdentifierTypeCode();
+
+        if (StringUtils.isEmpty(identifierTypeCode))
+            identifierTypeCode = "UNKNOWN";
+
+        if (identifierTypeCode.equals("NHS"))
+           return FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER;
+
+        return Helpers.formatString(IDENTIFIER_SYSTEM_HL7V2_ASSIGNING_AUTHORITY, sendingFacility, identifierTypeCode);
     }
 }
