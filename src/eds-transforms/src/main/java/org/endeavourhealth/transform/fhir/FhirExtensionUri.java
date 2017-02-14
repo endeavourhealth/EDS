@@ -9,7 +9,6 @@ public class FhirExtensionUri {
     public final static String PATIENT_SPINE_SENSITIVE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-patient-spine-sensitive-extension";
     public final static String PATIENT_ETHNICITY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-ethnic-category-extension";
     public final static String PATIENT_RELIGION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-religion-category-extension";
-    public final static String PATIENT_CONTACT_ROLE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-contact-role-category-extension";
     public final static String PATIENT_CONTACT_DOB = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-contact-dob-category-extension";
     public final static String PATIENT_CONTACT_MAIN_LANGUAGE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-contact-main-language-category-extension";
 

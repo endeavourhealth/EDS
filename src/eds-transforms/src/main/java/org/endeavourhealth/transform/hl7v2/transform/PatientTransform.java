@@ -151,7 +151,7 @@ public class PatientTransform {
             contactComponent.setGender(getSex(sourceNk1.getSex()));
 
         if (sourceNk1.getContactRole() != null)
-            contactComponent.addExtension(ExtensionHelper.createStringExtension(FhirExtensionUri.PATIENT_CONTACT_ROLE, sourceNk1.getContactRole().getAsString()));
+            contactComponent.addRelationship(getCodeableConcept(sourceNk1.getContactRole()));
 
         if (sourceNk1.getDateTimeOfBirth() != null)
             contactComponent.addExtension(ExtensionHelper.createDateTimeExtension(FhirExtensionUri.PATIENT_CONTACT_DOB,
@@ -166,7 +166,6 @@ public class PatientTransform {
 
     private static CodeableConcept getCodeableConcept(Ce ce) throws TransformException {
         CodeableConcept codeableConcept = new CodeableConcept();
-        codeableConcept.addCoding();
         codeableConcept.setText(ce.getAsString());
 
         return codeableConcept;
