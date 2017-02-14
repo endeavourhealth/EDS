@@ -76,6 +76,11 @@ public class FhirExtensionUri {
     public final static String MEDICATION_ORDER_AUTHORISATION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-order-authorisation-extension";
     public final static String MEDICATION_ORDER_SUPPLY_TYPE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-supply-type-extension";
 
+    // extensions specific to the MessageHeader resource
+    public static final String EXTENSION_HL7V2_DESTINATION_SOFTWARE = "http://endeavourhealth.org/fhir/StructureDefinition/message-header-destination-software-extension";
+    public static final String EXTENSION_HL7V2_MESSAGE_CONTROL_ID = "http://endeavourhealth.org/fhir/StructureDefinition/message-header-message-control-id-extension";
+    public static final String EXTENSION_HL7V2_SEQUENCE_NUMBER = "http://endeavourhealth.org/fhir/StructureDefinition/message-header-sequence-number-extension";
+
     //extensions specific to ProcedureRequest resource
     public final static String PROCEDURE_REQUEST_LOCATION_DESCRIPTION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-procedure-request-location-extension";
     public final static String PROCEDURE_REQUEST_SCHEDULE_TEXT = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-procedure-request-schedule-text-extension";
@@ -92,6 +97,4 @@ public class FhirExtensionUri {
     public final static String QUANTITY_FREE_TEXT = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-medication-quantity-text-extension";
     public final static String ENCOUNTER_PATIENT_CLASS = "http://hl7.org/fhir/StructureDefinition/encounter-patient-class-extension";
     public final static String ENCOUNTER_LOCATION_TYPE = "http://hl7.org/fhir/StructureDefinition/encounter-location-type-extension";
-
-
 }
