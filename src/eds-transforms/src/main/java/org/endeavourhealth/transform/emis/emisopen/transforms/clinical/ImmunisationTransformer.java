@@ -1,10 +1,12 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
+import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.EventType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
+import org.endeavourhealth.transform.fhir.AnnotationHelper;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.Immunization;
 import org.hl7.fhir.instance.model.Meta;
@@ -23,7 +25,12 @@ final class ImmunisationTransformer
 
         immunization.setDateElement(DateConverter.convertPartialDateToDateTimeType(eventType.getAssignedDate(), eventType.getAssignedTime(), eventType.getDatePart()));
 
-        immunization.setVaccineCode(CodeConverter.convert(eventType.getCode(), eventType.getDescriptiveText()));
+        immunization.setVaccineCode(CodeConverter.convert(eventType.getCode(), eventType.getDisplayTerm()));
+
+        String text = eventType.getDescriptiveText();
+        if (!Strings.isNullOrEmpty(text)) {
+            immunization.addNote(AnnotationHelper.createAnnotation(text));
+        }
 
         //todo qualifiers
 

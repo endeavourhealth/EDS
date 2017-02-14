@@ -519,7 +519,52 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
     private static Set<String> getCodeMap() {
         if (codeSet == null) {
             Set<String> set = new HashSet<>();
-            set.add("457081010"); //Forced Expiratory Volume in 1 second
+
+            set.add("401012008"); //Forced Expiratory Volume in 1 second
+            set.add("50834005"); //Forced Vital Capacity
+            set.add("445210000"); //% predicted Forced Vital Capacity
+
+            set.add("162763007"); //weight
+            set.add("162755006"); //height
+            set.add("60621009"); //BMI
+
+            set.add("1009081000000104"); // Sweat chloride
+
+            set.add("1000661000000107"); //Serum sodium
+            set.add("1017381000000106"); //Plasma sodium level
+            set.add("1000651000000109"); //Serum potassium
+            set.add("1017401000000106"); //Plasma potassium level
+            set.add("1000951000000103"); //Serum urea level
+            set.add("1000961000000100"); //Plasma urea level
+            set.add("1000731000000107"); //Serum creatinine
+            set.add("1000911000000102"); //Plasma creatine level
+            set.add("1022431000000105"); //Haemoglobin estimation
+            set.add("1022541000000102"); //Total white cell count
+            set.add("1022551000000104"); //Neutrophil count
+            set.add("1022651000000100"); //Platelet count
+            set.add("1001371000000100"); //C Reactive Protein level
+            set.add("1018251000000107"); //Serum ALT level
+
+            set.add("1010671000000102"); //Plasma glucose level
+            set.add("997671000000106"); //Random blood glucose
+            set.add("1003671000000109"); //Haemaglobin A1c level-IFCC standardised
+
+            set.add("1000791000000108"); //Serum vitamin A
+            set.add("1000801000000107"); //Serum vitamin E
+            set.add("1029801000000105"); //Total 25-hydroxyvitamin D level
+
+            set.add("1006961000000102"); //Serum Tobramycin level
+            set.add("1006871000000101"); //Plasma Tobramycin level
+            set.add("1006901000000101"); //Serum amikacin level
+            set.add("1004741000000108"); //Plasma amikacin level
+            set.add("1028951000000109"); //Blood sirolimus level
+            set.add("1003761000000107"); //Whole blood sirolimus concentration
+            set.add("1026741000000105"); //Serum Tacrolimus
+            set.add("1026281000000107"); //Plasma Tacrolimus
+            set.add("1008501000000107"); //Whole blood tacrolimus
+            set.add("1006721000000107"); //Serum ciclosporin
+
+            /*set.add("457081010"); //Forced Expiratory Volume in 1 second
             set.add("7647410000006116"); //Forced Vital Capacity
             set.add("1141791000000119"); //% predicted Forced Vital Capacity
 
@@ -561,7 +606,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
             set.add("457522012"); //Serum Tacrolimus
             set.add("14853870118"); //Plasma tacrolimus
             set.add("2313241000000118"); //Whole blood tacrolimus
-            set.add("258449018"); //Serum ciclosporin
+            set.add("258449018"); //Serum ciclosporin*/
 
             codeSet = set;
         }

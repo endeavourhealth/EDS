@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
+import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.EventType;
@@ -26,7 +27,7 @@ final class ObservationTransformer
 
         observation.setEffective(DateConverter.convertPartialDateToDateTimeType(eventType.getAssignedDate(), eventType.getAssignedTime(), eventType.getDatePart()));
 
-        observation.setCode(CodeConverter.convert(eventType.getCode(), eventType.getDescriptiveText()));
+        observation.setCode(CodeConverter.convert(eventType.getCode(), eventType.getDisplayTerm()));
 
         if (eventType.getNumericValue() != null)
         {
@@ -34,6 +35,11 @@ final class ObservationTransformer
             simpleQuantity.setValue(BigDecimal.valueOf(eventType.getNumericValue().getValue()));
             simpleQuantity.setUnit(eventType.getNumericValue().getUnits());
             observation.setValue(simpleQuantity);
+        }
+
+        String text = eventType.getDescriptiveText();
+        if (!Strings.isNullOrEmpty(text)) {
+            observation.setComments(text);
         }
 
         return observation;

@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
+import com.google.common.base.Strings;
 import org.endeavourhealth.core.utility.StreamExtension;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
@@ -7,6 +8,7 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.Aut
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.EventType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.QualifierType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
+import org.endeavourhealth.transform.fhir.AnnotationHelper;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
@@ -19,22 +21,27 @@ final class FamilyHistoryTransformer {
 
     public static FamilyMemberHistory transform(EventType eventType, String patientGuid) throws TransformException
     {
-        FamilyMemberHistory familyMemberHistory = new FamilyMemberHistory();
-        familyMemberHistory.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_FAMILY_MEMBER_HISTORY));
+        FamilyMemberHistory fhirFamilyMemberHistory = new FamilyMemberHistory();
+        fhirFamilyMemberHistory.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_FAMILY_MEMBER_HISTORY));
 
-        EmisOpenHelper.setUniqueId(familyMemberHistory, patientGuid, eventType.getGUID());
+        EmisOpenHelper.setUniqueId(fhirFamilyMemberHistory, patientGuid, eventType.getGUID());
 
-        familyMemberHistory.setPatient(EmisOpenHelper.createPatientReference(patientGuid));
+        fhirFamilyMemberHistory.setPatient(EmisOpenHelper.createPatientReference(patientGuid));
 
-        familyMemberHistory.setRelationship(getRelationship(eventType));
+        fhirFamilyMemberHistory.setRelationship(getRelationship(eventType));
 
         FamilyMemberHistory.FamilyMemberHistoryConditionComponent familyMemberHistoryConditionComponent = new FamilyMemberHistory.FamilyMemberHistoryConditionComponent();
-        familyMemberHistoryConditionComponent.setCode(CodeConverter.convert(eventType.getCode(), eventType.getDescriptiveText()));
-        familyMemberHistory.addCondition(familyMemberHistoryConditionComponent);
+        familyMemberHistoryConditionComponent.setCode(CodeConverter.convert(eventType.getCode(), eventType.getDisplayTerm()));
+        fhirFamilyMemberHistory.addCondition(familyMemberHistoryConditionComponent);
 
-        familyMemberHistory.addExtension(getFamilyMemberHistoryRecorderExtension(eventType.getOriginalAuthor()));
+        fhirFamilyMemberHistory.addExtension(getFamilyMemberHistoryRecorderExtension(eventType.getOriginalAuthor()));
 
-        return familyMemberHistory;
+        String text = eventType.getDescriptiveText();
+        if (!Strings.isNullOrEmpty(text)) {
+            fhirFamilyMemberHistory.setNote(AnnotationHelper.createAnnotation(text));
+        }
+
+        return fhirFamilyMemberHistory;
     }
 
     private static Extension getFamilyMemberHistoryRecorderExtension(AuthorType authorType) throws TransformException

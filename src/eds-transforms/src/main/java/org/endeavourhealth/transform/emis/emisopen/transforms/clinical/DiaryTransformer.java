@@ -1,17 +1,23 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
+import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.DiaryListType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.DiaryType;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.IdentType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
+import org.endeavourhealth.transform.fhir.AnnotationHelper;
+import org.endeavourhealth.transform.fhir.ExtensionConverter;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.ProcedureRequest;
 import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.StringType;
 
 import java.util.List;
 
@@ -45,7 +51,22 @@ public class DiaryTransformer {
 
         fhirRequest.setScheduled(DateConverter.convertPartialDateToDateTimeType(diaryEntry.getAssignedDate(), diaryEntry.getAssignedTime(), diaryEntry.getDatePart()));
 
-        fhirRequest.setCode(CodeConverter.convert(diaryEntry.getCode(), diaryEntry.getDescriptiveText()));
+        fhirRequest.setCode(CodeConverter.convert(diaryEntry.getCode(), diaryEntry.getDisplayTerm()));
+
+        String text = diaryEntry.getDescriptiveText();
+        if (!Strings.isNullOrEmpty(text)) {
+            fhirRequest.addNotes(AnnotationHelper.createAnnotation(text));
+        }
+
+        String duration = diaryEntry.getDurationTerm();
+        if (!Strings.isNullOrEmpty(duration)) {
+            fhirRequest.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROCEDURE_REQUEST_SCHEDULE_TEXT, new StringType(duration)));
+        }
+
+        IdentType author = diaryEntry.getAuthorID();
+        if (author != null) {
+            fhirRequest.setOrderer(EmisOpenHelper.createPractitionerReference(author.getGUID()));
+        }
 
         //TODO - finish
 /*
@@ -54,12 +75,6 @@ public class DiaryTransformer {
         if (!Strings.isNullOrEmpty(originalTerm)) {
             CodeableConcept fhirConcept = fhirRequest.getCode();
             fhirConcept.setText(originalTerm);
-        }
-
-
-        String freeTextDuration = parser.getDurationTerm();
-        if (!Strings.isNullOrEmpty(freeTextDuration)) {
-            fhirRequest.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROCEDURE_REQUEST_SCHEDULE_TEXT, new StringType(freeTextDuration)));
         }
 
         //handle mis-spelt column in EMIS test pack
@@ -89,11 +104,6 @@ public class DiaryTransformer {
             fhirRequest.setOrderedOn(entererdDateTime);
         }
 
-        String enterdByGuid = parser.getEnteredByUserInRoleGuid();
-        if (!Strings.isNullOrEmpty(enterdByGuid)) {
-            fhirRequest.setOrderer(csvHelper.createPractitionerReference(enterdByGuid));
-        }
-
         String consultationGuid = parser.getConsultationGuid();
         if (!Strings.isNullOrEmpty(consultationGuid)) {
             fhirRequest.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
@@ -114,7 +124,6 @@ public class DiaryTransformer {
         protected BigInteger templateID;
          protected BigInteger templateInstanceID;
          protected String templateComponentName;
-         protected String durationTerm;
          protected String reminder;
          protected String reminderType;
          protected IdentType locationTypeID;
