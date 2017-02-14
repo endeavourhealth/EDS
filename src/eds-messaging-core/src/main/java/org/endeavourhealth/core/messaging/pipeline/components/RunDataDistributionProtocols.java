@@ -171,7 +171,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		}
 	}
 
-	private static UUID findPatientId(UUID batchId, UUID exchangeId) throws Exception {
+	private static UUID findPatientId(UUID exchangeId, UUID batchId) throws Exception {
 
 		ExchangeBatch exchangeBatch = exchangeBatchRepository.getForExchangeAndBatchId(exchangeId, batchId);
 		if (exchangeBatch == null) {

@@ -88,8 +88,8 @@
           <element id="library" level="project" name="Maven: org.apache.geronimo.specs:geronimo-jta_1.1_spec:1.1.1" />
           <element id="library" level="project" name="Maven: org.hibernate:hibernate-hikaricp:5.2.5.Final" />
           <element id="library" level="project" name="Maven: com.zaxxer:HikariCP:2.5.1" />
-          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:eds-ui-core:1.81" />
-          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:eds-core:1.81" />
+          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:eds-ui-core:1.82" />
+          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:eds-core:1.82" />
           <element id="archive" name="eds-transforms-1.0-SNAPSHOT.jar">
             <element id="module-output" name="eds-transforms" />
           </element>
