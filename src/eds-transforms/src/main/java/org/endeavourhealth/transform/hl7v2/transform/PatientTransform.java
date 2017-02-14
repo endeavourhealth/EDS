@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.hl7v2.transform;
 
 import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.hl7v2.parser.ParseException;
 import org.endeavourhealth.transform.hl7v2.parser.Segment;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.*;
@@ -30,6 +31,20 @@ public class PatientTransform {
 
         setBirthAndDeath(sourcePid, target);
 
+        setCommunication(sourcePid, target);
+
+        if (sourcePid.getReligion() != null)
+            target.addExtension(getExtension(FhirExtensionUri.PATIENT_RELIGION, sourcePid.getReligion()));
+
+        if (sourcePid.getEthnicGroups() != null) {
+            for (Ce ce : sourcePid.getEthnicGroups())
+                target.addExtension(getExtension(FhirExtensionUri.PATIENT_ETHNICITY, ce));
+        }
+
+        if (sourcePid.getTraceStatus() != null) {
+            target.addExtension(getExtension(FhirExtensionUri.PATIENT_NHS_NUMBER_VERIFICATION_STATUS, sourcePid.getTraceStatus()));
+        }
+
         if (!StringUtils.isEmpty(sourcePid.getSex()))
             target.setGender(getSex(sourcePid.getSex()));
 
@@ -41,6 +56,10 @@ public class PatientTransform {
 
         for (Address address : getAddresses(sourcePid.getAddresses()))
             target.addAddress(address);
+
+        if (sourcePid.getMaritalStatus() != null) {
+            target.setMaritalStatus(getCodeableConcept(sourcePid.getMaritalStatus()));
+        }
 
         if (source.hasNk1Segment()) {
             for (Segment nk1 : sourceNk1Segments)
@@ -61,6 +80,24 @@ public class PatientTransform {
             target.setDeceased(new DateTimeType(DateHelper.fromLocalDateTime(sourcePid.getDateOfDeath())));
         else if (isDeceased(sourcePid.getDeathIndicator()))
             target.setDeceased(new BooleanType(true));
+    }
+
+    private static void setCommunication(PidSegment sourcePid, Patient target) throws ParseException, TransformException {
+
+        if (sourcePid.getPrimaryLanguage() != null) {
+            Patient.PatientCommunicationComponent communicationComponent = new Patient.PatientCommunicationComponent();
+            communicationComponent.setLanguage(getCodeableConcept(sourcePid.getPrimaryLanguage()));
+            communicationComponent.setPreferred(true);
+            target.addCommunication(communicationComponent);
+        }
+    }
+
+    private static Extension getExtension(String url, Ce value) throws ParseException, TransformException {
+        Extension extension = new Extension();
+        extension.setUrl(url);
+        extension.setValue(getCodeableConcept(value));
+
+        return extension;
     }
 
     private static boolean isDeceased(String deathIndicator) throws TransformException {
@@ -109,7 +146,8 @@ public class PatientTransform {
         for (Cx cx : sourcePid.getInternalPatientId())
             addIdentifier(target, cx, sourceMsh.getSendingFacility());
 
-        addIdentifier(target, sourcePid.getAlternatePatientId(), sourceMsh.getSendingFacility());
+        for (Cx cx : sourcePid.getAlternatePatientId())
+            addIdentifier(target, cx, sourceMsh.getSendingFacility());
     }
 
     private static void addIdentifier(Patient target, Cx cx, String sendingFacility) {
@@ -119,13 +157,13 @@ public class PatientTransform {
             target.addIdentifier(identifier);
     }
 
-    private static void addPatientContact(Nk1Segment sourceNk1, Patient target) throws TransformException {
+    private static void addPatientContact(Nk1Segment sourceNk1, Patient target) throws TransformException, ParseException  {
         Patient.ContactComponent contactComponent = new Patient.ContactComponent();
 
         for (HumanName name : getNames(sourceNk1.getNKName()))
             contactComponent.setName(name);
 
-        contactComponent.addRelationship(getRelationship(sourceNk1.getRelationship()));
+        contactComponent.addRelationship(getCodeableConcept(sourceNk1.getRelationship()));
 
         for (ContactPoint cp : getContactPoint(sourceNk1.getPhoneNumber()))
             contactComponent.addTelecom(cp);
@@ -139,6 +177,10 @@ public class PatientTransform {
 
         if (!StringUtils.isEmpty(sourceNk1.getSex()))
             contactComponent.setGender(getSex(sourceNk1.getSex()));
+
+        if (sourceNk1.getContactRole() != null) {
+            contactComponent.addExtension(getExtension(FhirExtensionUri.PATIENT_CONTACT_ROLE, sourceNk1.getContactRole()));
+        }
 
         target.addContact(contactComponent);
 
@@ -154,7 +196,7 @@ public class PatientTransform {
         return result;
     }
 
-    private static CodeableConcept getRelationship(Ce ce) throws TransformException {
+    private static CodeableConcept getCodeableConcept(Ce ce) throws TransformException {
         CodeableConcept codeableConcept = new CodeableConcept();
         codeableConcept.addCoding();
         codeableConcept.setText(ce.getAsString());

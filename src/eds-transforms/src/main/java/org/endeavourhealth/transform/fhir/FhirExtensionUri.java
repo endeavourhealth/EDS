@@ -8,6 +8,8 @@ public class FhirExtensionUri {
     public final static String PATIENT_NHS_NUMBER_VERIFICATION_STATUS = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-nhs-number-verification-status-extension";
     public final static String PATIENT_SPINE_SENSITIVE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-patient-spine-sensitive-extension";
     public final static String PATIENT_ETHNICITY = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-ethnic-category-extension";
+    public final static String PATIENT_RELIGION = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-religion-category-extension";
+    public final static String PATIENT_CONTACT_ROLE = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-contact-role-category-extension";
 
     //extensions specific to Appointment resource
     public final static String APPOINTMENT_PATIENT_WAIT = "http://endeavourhealth.org/fhir/StructureDefinition/primarycare-appointment-wait-extension";

@@ -14,7 +14,7 @@ public class PidSegment extends Segment {
     public int getSetId() throws ParseException { return this.getFieldAsInteger(1); }
     public Cx getExternalPatientId() { return this.getFieldAsDatatype(2, Cx.class); }
     public List<Cx> getInternalPatientId() { return this.getFieldAsDatatypes(3, Cx.class); }
-    public Cx getAlternatePatientId() { return this.getFieldAsDatatype(4, Cx.class); }
+    public List<Cx> getAlternatePatientId() { return this.getFieldAsDatatypes(4, Cx.class); }
     public List<Xpn> getPatientNames() { return this.getFieldAsDatatypes(5, Xpn.class); }
     public List<Xpn> getMothersMaidenNames() { return this.getFieldAsDatatypes(6, Xpn.class); }
     public LocalDateTime getDateOfBirth() throws ParseException { return this.getFieldAsDate(7); }
@@ -41,4 +41,5 @@ public class PidSegment extends Segment {
     public Ce getNationality() { return this.getFieldAsDatatype(28, Ce.class); }
     public LocalDateTime getDateOfDeath() throws ParseException { return this.getFieldAsDate(29); }
     public String getDeathIndicator() { return this.getFieldAsString(30); }
+    public Ce getTraceStatus() { return this.getFieldAsDatatype(32, Ce.class); }
 }

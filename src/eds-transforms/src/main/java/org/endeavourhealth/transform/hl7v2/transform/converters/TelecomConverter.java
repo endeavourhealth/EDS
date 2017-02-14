@@ -26,19 +26,22 @@ public class TelecomConverter {
     }
 
     private static ContactPoint.ContactPointSystem convertSystemType(String systemType) throws TransformException {
-        systemType = systemType.trim().toLowerCase();
+        systemType = systemType.trim().toUpperCase();
 
         switch (systemType) {
             case "PH": return ContactPoint.ContactPointSystem.PHONE;
             case "FX": return ContactPoint.ContactPointSystem.FAX;
             case "Internet": return ContactPoint.ContactPointSystem.EMAIL;
             case "BP": return ContactPoint.ContactPointSystem.PAGER;
+            //Homerton Specific
+            case "TEL": return ContactPoint.ContactPointSystem.PHONE;
+
             default: throw new TransformException(systemType + " system type not recognised");
         }
     }
 
     private static ContactPoint.ContactPointUse convertUseCode(String useCode) throws TransformException {
-        useCode = useCode.trim().toLowerCase();
+        useCode = useCode.trim().toUpperCase();
 
         switch (useCode) {
             case "H": return ContactPoint.ContactPointUse.HOME;
@@ -51,6 +54,11 @@ public class TelecomConverter {
             case "OLD": return ContactPoint.ContactPointUse.OLD;
             case "MC": return ContactPoint.ContactPointUse.MOBILE;
             case "PRS": return ContactPoint.ContactPointUse.MOBILE;
+            //Homerton Specific
+            case "HOME": return ContactPoint.ContactPointUse.HOME;
+            case "MOBILE NUMBER": return ContactPoint.ContactPointUse.MOBILE;
+            case "PAGER PERSONAL": return ContactPoint.ContactPointUse.WORK;
+            case "BUSINESS": return ContactPoint.ContactPointUse.WORK;
             default: throw new TransformException(useCode + " use code not recognised");
         }
     }
