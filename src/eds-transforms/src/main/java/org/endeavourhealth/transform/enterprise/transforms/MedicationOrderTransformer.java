@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
@@ -82,13 +83,13 @@ public class MedicationOrderTransformer extends AbstractTransformer {
                 datePrecisionId = convertDatePrecision(dt.getPrecision());
             }
 
-            dmdId = findSnomedConceptId(fhir.getMedicationCodeableConcept());
+            dmdId = CodeableConceptHelper.findSnomedConceptId(fhir.getMedicationCodeableConcept());
 
             //add term too, for easy display of results
             originalTerm = fhir.getMedicationCodeableConcept().getText();
             //if we failed to find one, it's because of a change in how the CodeableConcept was generated, so find the term differently
             if (Strings.isNullOrEmpty(originalTerm)) {
-                originalTerm = findSnomedConceptText(fhir.getMedicationCodeableConcept());
+                originalTerm = CodeableConceptHelper.findSnomedConceptText(fhir.getMedicationCodeableConcept());
             }
 
             if (fhir.hasDosageInstruction()) {

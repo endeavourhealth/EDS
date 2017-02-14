@@ -5,6 +5,7 @@ import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.fhir.schema.ReferralPriority;
@@ -91,10 +92,10 @@ public class ReferralRequestTransformer extends AbstractTransformer {
                     throw new TransformException("Transform doesn't support referrals with multiple service codes " + fhir.getId());
                 }
                 CodeableConcept fhirServiceRequested = fhir.getServiceRequested().get(0);
-                snomedConceptId = findSnomedConceptId(fhirServiceRequested);
+                snomedConceptId = CodeableConceptHelper.findSnomedConceptId(fhirServiceRequested);
 
                 //add the raw original code, to assist in data checking
-                originalCode = findOriginalCode(fhirServiceRequested);
+                originalCode = CodeableConceptHelper.findOriginalCode(fhirServiceRequested);
 
                 //add original term too, for easy display of results
                 originalTerm = fhirServiceRequested.getText();

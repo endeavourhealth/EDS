@@ -16,8 +16,11 @@ import org.endeavourhealth.core.utility.XmlSerializer;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.FhirToXTransformerBase;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.transform.fhir.ExtensionConverter;
+import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.IdentifierHelper;
+import org.endeavourhealth.transform.fhir.schema.MedicationAuthorisationType;
 import org.endeavourhealth.transform.vitrucare.model.ClinicalTerm;
 import org.endeavourhealth.transform.vitrucare.model.ObjectFactory;
 import org.endeavourhealth.transform.vitrucare.model.Payload;
@@ -45,6 +48,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
     private static VitruCareRepository vitruCareRepository = new VitruCareRepository();
     private static ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
     private static byte[] saltBytes = null;
+    private static Set<String> codeSet = null;
 
     public static String transformFromFhir(UUID batchId,
                                            Map<ResourceType, List<UUID>> resourceIds) throws Exception {
@@ -197,7 +201,8 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
     private static boolean populateFullPayload(Payload payload, UUID edsPatientId, String vitruCareId) throws Exception {
 
         ResourceHistory patientResourceWrapper = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), edsPatientId);
-        if (patientResourceWrapper.getIsDeleted()) {
+        if (patientResourceWrapper == null
+            || patientResourceWrapper.getIsDeleted()) {
             return false;
         }
 
@@ -235,17 +240,23 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
             Resource resource = FhirResourceHelper.deserialiseResouce(resourceWrapper);
             ResourceType resourceType = resource.getResourceType();
 
-            if (resourceType == ResourceType.MedicationOrder) {
-                org.endeavourhealth.transform.vitrucare.model.Medication medication = createMedication((MedicationOrder)resource);
-                payload.getMedication().add(medication);
+            if (resourceType == ResourceType.MedicationStatement) {
+                org.endeavourhealth.transform.vitrucare.model.Medication medication = createMedication((MedicationStatement)resource);
+                if (medication != null) {
+                    payload.getMedication().add(medication);
+                }
 
             } else if (resourceType == ResourceType.Observation) {
                 ClinicalTerm clinicalTerm = createClinicalTerm((Observation)resource);
-                payload.getClinicalTerm().add(clinicalTerm);
+                if (clinicalTerm != null) {
+                    payload.getClinicalTerm().add(clinicalTerm);
+                }
 
             } else if (resourceType == ResourceType.Condition) {
-                ClinicalTerm clinicalTerm = createClinicalTerm((Condition) resource);
-                payload.getClinicalTerm().add(clinicalTerm);
+                ClinicalTerm clinicalTerm = createClinicalTerm((Condition)resource);
+                if (clinicalTerm != null) {
+                    payload.getClinicalTerm().add(clinicalTerm);
+                }
 
             } else {
                 //VitruCare aren't interested in any other resource types
@@ -253,7 +264,25 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         }
     }
 
-    private static org.endeavourhealth.transform.vitrucare.model.Medication createMedication(MedicationOrder fhir) throws Exception {
+    private static org.endeavourhealth.transform.vitrucare.model.Medication createMedication(MedicationStatement fhir) throws Exception {
+
+        //they're only interested in repeat meds
+        Extension extension = ExtensionConverter.findExtension(fhir, FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE);
+        if (extension != null) {
+            Coding coding = (Coding)extension.getValue();
+            String code = coding.getCode();
+            if (code.equals(MedicationAuthorisationType.ACUTE.getCode())) {
+                return null;
+            }
+        }
+
+        CodeableConcept fhirCodeableConcept = fhir.getMedicationCodeableConcept();
+        Long conceptId = CodeableConceptHelper.findSnomedConceptId(fhirCodeableConcept);
+
+        if (conceptId == null) {
+            LOG.warn("Failed to find snomed concept for " + fhir.getResourceType() + " " + fhir.getId());
+            return null;
+        }
 
         String productCode = null;
         String productName = null;
@@ -262,43 +291,38 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         Date startDate = null;
         Date endDate = null;
 
-        CodeableConcept fhirCodeableConcept = fhir.getMedicationCodeableConcept();
-        Long conceptId = findSnomedConceptId(fhirCodeableConcept);
-
-        if (conceptId != null) {
-            productCode = conceptId.toString();
-        }
-
+        productCode = conceptId.toString();
         productName = fhirCodeableConcept.getText();
 
-        if (fhir.hasDosageInstruction()) {
-            if (fhir.getDosageInstruction().size() > 1) {
+        if (fhir.hasDosage()) {
+            if (fhir.getDosage().size() > 1) {
                 throw new TransformException("Cannot support MedicationStatements with more than one dose " + fhir.getId());
             }
 
-            MedicationOrder.MedicationOrderDosageInstructionComponent doseage = fhir.getDosageInstruction().get(0);
+            MedicationStatement.MedicationStatementDosageComponent doseage = fhir.getDosage().get(0);
             dose = doseage.getText();
         }
 
-        if (fhir.hasDateWrittenElement()) {
-            DateTimeType dt = fhir.getDateWrittenElement();
-            startDate = dt.getValue();
+        if (fhir.hasDateAsserted()) {
+            startDate = fhir.getDateAsserted();
         }
 
-        if (fhir.hasDispenseRequest()) {
-            MedicationOrder.MedicationOrderDispenseRequestComponent dispenseRequestComponent = fhir.getDispenseRequest();
-            Quantity q = dispenseRequestComponent.getQuantity();
+        Extension quantityExtension = ExtensionConverter.findExtension(fhir, FhirExtensionUri.MEDICATION_AUTHORISATION_QUANTITY);
+        if (quantityExtension != null) {
+            Quantity q = (Quantity)quantityExtension.getValue();
             quantity = q.getValue() + " " + q.getUnit();
+        }
 
-            Duration duration = dispenseRequestComponent.getExpectedSupplyDuration();
-            if (!duration.getUnit().equalsIgnoreCase("days")) {
-                throw new TransformException("Unsupported medication order duration type [" + duration.getUnit() + "] for " + fhir.getId());
+        Extension cancellationExtension = ExtensionConverter.findExtension(fhir, FhirExtensionUri.MEDICATION_AUTHORISATION_CANCELLATION);
+        if (cancellationExtension != null) {
+            if (cancellationExtension.hasExtension()) {
+                for (Extension innerExtension: cancellationExtension.getExtension()) {
+                    if (innerExtension.getValue() instanceof DateType) {
+                        DateType d = (DateType)innerExtension.getValue();
+                        endDate = d.getValue();
+                    }
+                }
             }
-            int days = duration.getValue().intValue();
-            Calendar c = Calendar.getInstance();
-            c.setTime(startDate);
-            c.add(Calendar.DAY_OF_YEAR, days);
-            endDate = c.getTime();
         }
 
         org.endeavourhealth.transform.vitrucare.model.Medication ret = new org.endeavourhealth.transform.vitrucare.model.Medication();
@@ -312,18 +336,18 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         return ret;
     }
 
-    protected static Long findSnomedConceptId(CodeableConcept code) {
-        for (Coding coding: code.getCoding()) {
-            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_SNOMED_CT)
-                    || coding.getSystem().equals(FhirUri.CODE_SYSTEM_EMISSNOMED)) {
-                return Long.parseLong(coding.getCode());
-            }
+    private static ClinicalTerm createClinicalTerm(Observation fhir) throws Exception {
+
+        if (!shouldInclude(fhir.getCode())) {
+            return null;
         }
 
-        return null;
-    }
-
-    private static ClinicalTerm createClinicalTerm(Observation fhir) throws Exception {
+        CodeableConcept fhirCodeableConcept = fhir.getCode();
+        Long snomedConceptId = CodeableConceptHelper.findSnomedConceptId(fhirCodeableConcept);
+        if (snomedConceptId == null) {
+            LOG.warn("Failed to find snomed concept for " + fhir.getResourceType() + " " + fhir.getId());
+            return null;
+        }
 
         String code = null;
         String term = null;
@@ -334,8 +358,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         Date startDate = null;
         Date endDate = null; //not assigned
 
-        CodeableConcept fhirCodeableConcept = fhir.getCode();
-        code = findSnomedConceptId(fhirCodeableConcept).toString();
+        code = snomedConceptId.toString();
         term = fhirCodeableConcept.getText();
 
         if (fhir.hasEffectiveDateTimeType()) {
@@ -379,6 +402,17 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
 
     private static ClinicalTerm createClinicalTerm(Condition fhir) throws Exception {
 
+        if (!shouldInclude(fhir.getCode())) {
+            return null;
+        }
+
+        CodeableConcept fhirCodeableConcept = fhir.getCode();
+        Long snomedConceptId = CodeableConceptHelper.findSnomedConceptId(fhirCodeableConcept);
+        if (snomedConceptId == null) {
+            LOG.warn("Failed to find snomed concept for " + fhir.getResourceType() + " " + fhir.getId());
+            return null;
+        }
+
         String code = null;
         String term = null;
         BigDecimal value = null; //not assigned
@@ -388,8 +422,7 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         Date startDate = null;
         Date endDate = null;
 
-        CodeableConcept fhirCodeableConcept = fhir.getCode();
-        code = findSnomedConceptId(fhirCodeableConcept).toString();
+        code = snomedConceptId.toString();
         term = fhirCodeableConcept.getText();
 
         if (fhir.hasOnsetDateTimeType()) {
@@ -473,6 +506,67 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
             saltBytes = Resources.getResourceAsBytes(PSEUDO_SALT_RESOURCE);
         }
         return saltBytes;
+    }
+
+    private static boolean shouldInclude(CodeableConcept codeableConcept) {
+        Long snomedConcept = CodeableConceptHelper.findSnomedConceptId(codeableConcept);
+        if (snomedConcept == null) {
+            return false;
+        }
+        String snomedConceptStr = snomedConcept.toString();
+        return getCodeMap().contains(snomedConceptStr);
+    }
+
+    private static Set<String> getCodeMap() {
+        if (codeSet == null) {
+            Set<String> set = new HashSet<>();
+            set.add("457081010"); //Forced Expiratory Volume in 1 second
+            set.add("7647410000006116"); //Forced Vital Capacity
+            set.add("1141791000000119"); //% predicted Forced Vital Capacity
+
+            set.add("253677014"); //weight
+            set.add("253669010"); //height
+            set.add("100716012"); //BMI
+
+            set.add("507334018"); // Sweat chloride
+
+            set.add("284446019"); //Serum sodium
+            set.add("1484987016"); //Plasma sodium level
+            set.add("1448210000006115"); //Serum potassium
+            set.add("1484993-12"); //Plasma potassium level
+            set.add("409688019"); //Serum urea level
+            set.add("456207012"); //Plasma urea level
+            set.add("380389013"); //Serum creatinine
+            set.add("458156012"); //Plasma creatine level
+            set.add("8135510000006113"); //Haemoglobin estimation
+            set.add("984610000006116"); //Total white cell count
+            set.add("51268016"); //Neutrophil count
+            set.add("102928018"); //Platelet count
+            set.add("216602012"); //C Reactive Protein level
+            set.add("306221000000119"); //Serum ALT level
+
+            set.add("134471000000110"); //Plasma glucose level
+            set.add("1917610000006112"); //Random blood glucose
+            set.add("17007110000006113"); //Haemaglobin A1c level-IFCC standardised
+
+            set.add("1456910000006116"); //Serum vitamin A
+            set.add("157610000006115"); //Serum vitamin E
+            set.add("2108191000000115"); //Total 25-hydroxyvitamin D level
+
+            set.add("457877014"); //Serum Tobramycin level
+            set.add("458025019"); //Plasma Tobramycin level
+            set.add("457476010"); //Serum amikacin level
+            set.add("458000011"); //Plasma amikacin level
+            set.add("2478462016"); //Blood sirolimus level
+            set.add("2341000000118"); //Whole blood sirolimus concentration
+            set.add("457522012"); //Serum Tacrolimus
+            set.add("14853870118"); //Plasma tacrolimus
+            set.add("2313241000000118"); //Whole blood tacrolimus
+            set.add("258449018"); //Serum ciclosporin
+
+            codeSet = set;
+        }
+        return codeSet;
     }
 
 }

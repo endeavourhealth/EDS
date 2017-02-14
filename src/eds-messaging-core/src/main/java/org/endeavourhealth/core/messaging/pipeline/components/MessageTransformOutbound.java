@@ -84,6 +84,8 @@ public class MessageTransformOutbound extends PipelineComponent {
 		UUID batchId = transformBatch.getBatchId();
 		Map<ResourceType, List<UUID>> resourceIds = transformBatch.getResourceIds();
 
+		List<String> endpoints = getSubscriberEndpoints(transformBatch);
+
 		// Run the transform, creating a subscriber batch for each
 		// (Holds transformed message id and destination endpoints)
 		List<SubscriberBatch> subscriberBatches = new ArrayList<>();
@@ -104,7 +106,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 			String outboundData = null;
 			try {
-				outboundData = transform(exchange, batchId, software, softwareVersion, resourceIds);
+				outboundData = transform(exchange, batchId, software, softwareVersion, resourceIds, endpoints);
 			} catch (Exception ex) {
 				throw new PipelineException("Failed to transform exchange " + exchange + " and batch " + batchId, ex);
 			}
@@ -118,7 +120,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 				SubscriberBatch subscriberBatch = new SubscriberBatch();
 				subscriberBatch.setTechnicalInterface(technicalInterface);
-				subscriberBatch.setEndpoints(getSubscriberEndpoints(transformBatch));
+				subscriberBatch.setEndpoints(endpoints);
 				subscriberBatch.setOutputMessageId(messageUuid);
 
 				subscriberBatches.add(subscriberBatch);
@@ -136,7 +138,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 		LOG.trace("Message transformed (outbound)");
 	}
 
-	private String transform(Exchange exchange, UUID batchId, String software, String softwareVersion, Map<ResourceType, List<UUID>> resourceIds) throws Exception {
+	private String transform(Exchange exchange, UUID batchId, String software, String softwareVersion, Map<ResourceType, List<UUID>> resourceIds, List<String> endpoints) throws Exception {
 
 		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
 
@@ -155,7 +157,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 			String xml = FhirToVitruCareXmlTransformer.transformFromFhir(batchId, resourceIds);
 			if (!Strings.isNullOrEmpty(xml)) {
-				sendHttpPost(xml);
+				sendHttpPost(xml, endpoints);
 			}
 			return null;
 			//return xml;
@@ -165,49 +167,53 @@ public class MessageTransformOutbound extends PipelineComponent {
 		}
 	}
 
-	private static void sendHttpPost(String payload) throws Exception {
-		String url = "http://127.0.0.1:8002/notify";
-		//String url = "http://localhost:8002";
-		//String url = "http://posttestserver.com/post.php";
+	private static void sendHttpPost(String payload, List<String> endpoints) throws Exception {
+
+		for (String url: endpoints) {
+
+			//String url = "http://127.0.0.1:8002/notify";
+			//String url = "http://localhost:8002";
+			//String url = "http://posttestserver.com/post.php";
 
 
-		HttpClient client = new DefaultHttpClient();
-		HttpPost post = new HttpPost(url);
+			HttpClient client = new DefaultHttpClient();
+			HttpPost post = new HttpPost(url);
 
 
-		// add header
-		//post.setHeader("User-Agent", USER_AGENT);
+			// add header
+			//post.setHeader("User-Agent", USER_AGENT);
 
-		/*List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-		urlParameters.add(new BasicNameValuePair("sn", "C02G8416DRJM"));
-		urlParameters.add(new BasicNameValuePair("cn", ""));
-		urlParameters.add(new BasicNameValuePair("locale", ""));
-		urlParameters.add(new BasicNameValuePair("caller", ""));
-		urlParameters.add(new BasicNameValuePair("num", "12345"));
+			/*List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
+			urlParameters.add(new BasicNameValuePair("sn", "C02G8416DRJM"));
+			urlParameters.add(new BasicNameValuePair("cn", ""));
+			urlParameters.add(new BasicNameValuePair("locale", ""));
+			urlParameters.add(new BasicNameValuePair("caller", ""));
+			urlParameters.add(new BasicNameValuePair("num", "12345"));
 
-		post.setEntity(new UrlEncodedFormEntity(urlParameters));*/
+			post.setEntity(new UrlEncodedFormEntity(urlParameters));*/
 
-		HttpEntity entity = new ByteArrayEntity(payload.getBytes("UTF-8"));
-		post.setEntity(entity);
+			HttpEntity entity = new ByteArrayEntity(payload.getBytes("UTF-8"));
+			post.setEntity(entity);
 
-		HttpResponse response = client.execute(post);
-		LOG.trace("Sending 'POST' request to URL : " + url);
-		LOG.trace("Post parameters : " + post.getEntity());
-		LOG.trace("Response Code : " + response.getStatusLine().getStatusCode());
+			HttpResponse response = client.execute(post);
+			LOG.trace("Sending 'POST' request to URL : " + url);
+			LOG.trace("Post parameters : " + post.getEntity());
+			LOG.trace("Response Code : " + response.getStatusLine().getStatusCode());
 
-		BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+			BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
 
-		StringBuffer result = new StringBuffer();
-		String line = "";
-		while ((line = rd.readLine()) != null) {
-			result.append(line);
-		}
+			StringBuffer result = new StringBuffer();
+			String line = "";
+			while ((line = rd.readLine()) != null) {
+				result.append(line);
+			}
 
-		LOG.trace(result.toString());
+			LOG.trace(result.toString());
 
-		int statusCode = response.getStatusLine().getStatusCode();
-		if (statusCode != HttpStatus.SC_OK) {
-			throw new IOException("Failed to post to " + url);
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode != HttpStatus.SC_OK) {
+				throw new IOException("Failed to post to " + url);
+			}
 		}
 	}
 

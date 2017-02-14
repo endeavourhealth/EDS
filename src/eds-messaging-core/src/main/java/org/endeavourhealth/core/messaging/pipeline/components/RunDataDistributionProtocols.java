@@ -7,8 +7,10 @@ import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.admin.PatientCohortRepository;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
+import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
+import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByPatientId;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
@@ -36,6 +38,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	private static final PatientCohortRepository cohortRepository = new PatientCohortRepository();
 	private static final ResourceRepository resourceRepository = new ResourceRepository();
 	private static final ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+	private static final PatientIdentifierRepository patientIdentifierRepository = new PatientIdentifierRepository();
 
 	public RunDataDistributionProtocols(RunDataDistributionProtocolsConfig config) {
 		this.config = config;
@@ -133,17 +136,38 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			} catch (Exception ex) {
 				throw new PipelineException("Failed to find patient ID for batch " + batchId, ex);
 			}
+			LOG.trace("exchange " + exchangeId + " batch " + batchId + " -> patient ID " + patientId);
 
 			if (patientId == null) {
 				//if there's no patient ID, then this is just admin resources, so return false;
 				return false;
 			}
 
-			return cohortRepository.isInCohort(protocolId, serviceId, patientId);
+			String nhsNumber = findPatientNhsNumber(patientId);
+			LOG.trace("patient ID " + patientId+ " -> nhs number " + nhsNumber);
+
+			if (Strings.isNullOrEmpty(nhsNumber)) {
+				return false;
+			}
+
+			boolean inCohort = cohortRepository.isInCohort(protocolId, serviceId, nhsNumber);
+			LOG.trace("protocol " + protocolId + " service " + serviceId + " nhs number " + nhsNumber + " -> in cohort " + inCohort);
+			return inCohort;
 
 		} else {
 
 			throw new PipelineException("Unknown cohort " + cohort + " in protocol " + protocolId);
+		}
+	}
+
+	private String findPatientNhsNumber(UUID patientId) {
+
+		PatientIdentifierByPatientId identity = patientIdentifierRepository.getMostRecentByPatientId(patientId);
+		if (identity != null) {
+			return identity.getNhsNumber();
+
+		} else {
+			return null;
 		}
 	}
 

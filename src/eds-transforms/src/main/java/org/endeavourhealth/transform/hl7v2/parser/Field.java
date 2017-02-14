@@ -24,10 +24,8 @@ public class Field {
         Validate.notNull(fieldText);
         Validate.notNull(seperators);
 
-        this.originalFieldText = fieldText;
         this.seperators = seperators;
-
-        this.parse();
+        this.setAsString(fieldText);
     }
 
     //////////////////  Accessors  //////////////////
@@ -108,9 +106,24 @@ public class Field {
                 .collect(Collectors.toList());
     }
 
+    //////////////////  Setters  //////////////////
+
+    public void setAsString(String fieldText) {
+        this.originalFieldText = fieldText;
+        this.parse();
+    }
+
+    public GenericDatatype addDatatype() {
+        GenericDatatype datatype = new GenericDatatype("", this.seperators);
+        this.genericDatatypes.add(datatype);
+        return datatype;
+    }
+
     //////////////////  Parsers  //////////////////
 
     private void parse() {
+        this.genericDatatypes.clear();
+
         if (this.originalFieldText.equals(this.seperators.getMsh2Field())) {
             this.genericDatatypes.add(new GenericDatatype(this.originalFieldText, this.seperators));
             return;

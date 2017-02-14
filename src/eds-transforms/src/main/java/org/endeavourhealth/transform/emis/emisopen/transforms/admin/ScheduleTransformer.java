@@ -1,14 +1,17 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.admin;
 
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.AppointmentSessionList;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.AppointmentSessionStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.HolderStruct;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Extension;
+import org.hl7.fhir.instance.model.Meta;
+import org.hl7.fhir.instance.model.Period;
+import org.hl7.fhir.instance.model.Schedule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +46,7 @@ public class ScheduleTransformer
         HolderStruct firstPractitioner = appointmentSession.getHolderList().getHolder().stream().findFirst().orElse(null);
 
         if (firstPractitioner != null)
-            schedule.setActor(ReferenceHelper.createReference(ResourceType.Practitioner, firstPractitioner.getGUID()));
+            schedule.setActor(EmisOpenHelper.createPractitionerReference(firstPractitioner.getGUID()));
 
         schedule.setComment(appointmentSession.getName());
 
@@ -52,12 +55,12 @@ public class ScheduleTransformer
         for (HolderStruct subsequentPractitioner : subsequentPractitioners)
             schedule.addExtension(new Extension()
                     .setUrl(FhirExtensionUri.SCHEDULE_ADDITIONAL_ACTOR)
-                    .setValue(ReferenceHelper.createReference(ResourceType.Practitioner, subsequentPractitioner.getGUID())));
+                    .setValue(EmisOpenHelper.createPractitionerReference(subsequentPractitioner.getGUID())));
 
         if (appointmentSession.getSite() != null)
             schedule.addExtension(new Extension()
                     .setUrl(FhirExtensionUri.SCHEDULE_LOCATION)
-                    .setValue(ReferenceHelper.createReference(ResourceType.Location, appointmentSession.getSite().getGUID())));
+                    .setValue(EmisOpenHelper.createLocationReference(appointmentSession.getSite().getGUID())));
 
         return schedule;
     }

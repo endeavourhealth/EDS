@@ -282,12 +282,12 @@ CREATE TABLE queuedMessage
 CREATE TABLE patient_cohort (
     protocol_id UUID,
     service_id UUID,
-    patient_id UUID,
+    nhs_number text,
     version TIMEUUID,
     inserted TIMESTAMP,
     in_cohort BOOLEAN,
-    PRIMARY KEY ((protocol_id, service_id), patient_id, version)
-) WITH CLUSTERING ORDER BY (patient_id ASC, version DESC);
+    PRIMARY KEY ((protocol_id, service_id), nhs_number, version)
+) WITH CLUSTERING ORDER BY (nhs_number ASC, version DESC);
 
 
 

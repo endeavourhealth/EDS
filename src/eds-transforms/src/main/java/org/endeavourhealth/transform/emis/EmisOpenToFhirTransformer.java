@@ -9,9 +9,7 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointme
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomslotsforsession.SlotListStruct;
 import org.endeavourhealth.transform.emis.emisopen.transforms.admin.*;
-import org.endeavourhealth.transform.emis.emisopen.transforms.clinical.EventTransformer;
-import org.endeavourhealth.transform.emis.emisopen.transforms.clinical.MedicationOrderTransformer;
-import org.endeavourhealth.transform.emis.emisopen.transforms.clinical.MedicationStatementTransformer;
+import org.endeavourhealth.transform.emis.emisopen.transforms.clinical.*;
 import org.hl7.fhir.instance.model.Appointment;
 import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.Schedule;
@@ -24,12 +22,12 @@ public final class EmisOpenToFhirTransformer
 {
     public static List<Resource> toFhirFullRecord(String eomMedicalRecord38Xml) throws TransformException
     {
-        MedicalRecordType emisOpenMedicalRecord = XmlHelper.deserialize(eomMedicalRecord38Xml, MedicalRecordType.class);
+        MedicalRecordType medicalRecord = XmlHelper.deserialize(eomMedicalRecord38Xml, MedicalRecordType.class);
 
         String organisationGuid = null;
-        if (emisOpenMedicalRecord.getOriginator() != null) {
-            if (emisOpenMedicalRecord.getOriginator().getOrganisation() != null) {
-                organisationGuid = emisOpenMedicalRecord.getOriginator().getOrganisation().getGUID();
+        if (medicalRecord.getOriginator() != null) {
+            if (medicalRecord.getOriginator().getOrganisation() != null) {
+                organisationGuid = medicalRecord.getOriginator().getOrganisation().getGUID();
             }
         }
 
@@ -38,8 +36,8 @@ public final class EmisOpenToFhirTransformer
         }
 
         String patientGuid = null;
-        if (emisOpenMedicalRecord.getRegistration() != null) {
-            patientGuid = emisOpenMedicalRecord.getRegistration().getGUID();
+        if (medicalRecord.getRegistration() != null) {
+            patientGuid = medicalRecord.getRegistration().getGUID();
         }
         if (Strings.isNullOrEmpty(patientGuid)) {
             throw new TransformException("No patient GUID in EmisOpen record");
@@ -47,16 +45,24 @@ public final class EmisOpenToFhirTransformer
 
         List<Resource> result = new ArrayList<>();
 
-        OrganizationTransformer.transform(emisOpenMedicalRecord, result);
-        LocationTransformer.transform(emisOpenMedicalRecord, result);
-        PractitionerTransformer.transform(emisOpenMedicalRecord, organisationGuid, result);
+        OrganizationTransformer.transform(medicalRecord, result);
+        LocationTransformer.transform(medicalRecord, result);
+        PractitionerTransformer.transform(medicalRecord, organisationGuid, result);
 
-        PatientTransformer.transform(result, emisOpenMedicalRecord, organisationGuid, patientGuid);
-        EpisodeOfCareTransformer.transform(result, emisOpenMedicalRecord, organisationGuid, patientGuid);
+        PatientTransformer.transform(medicalRecord, result, organisationGuid, patientGuid);
+        EpisodeOfCareTransformer.transform(medicalRecord, result, organisationGuid, patientGuid);
 
-        EventTransformer.transform(emisOpenMedicalRecord, result);
-        result.addAll(MedicationOrderTransformer.transform(emisOpenMedicalRecord));
-        result.addAll(MedicationStatementTransformer.transform(emisOpenMedicalRecord));
+        EventTransformer.transform(medicalRecord, result, patientGuid);
+        IssueTransformer.transform(medicalRecord, result, patientGuid);
+        MedicationTransformer.transform(medicalRecord, result, patientGuid);
+
+        AllergyTransformer.transform(medicalRecord, result, patientGuid);
+        ConsultationTransformer.transform(medicalRecord, result, patientGuid);
+        DiaryTransformer.transform(medicalRecord, result, patientGuid);
+        ReferralTransformer.transform(medicalRecord, result, patientGuid);
+        AppointmentTransformer.transform(medicalRecord, result, patientGuid);
+        InvestigationTransformer.transform(medicalRecord, result, patientGuid);
+        TestRequestHeaderTransformer.transform(medicalRecord, result, patientGuid);
 
         return result;
     }

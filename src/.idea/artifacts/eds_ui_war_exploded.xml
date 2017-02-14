@@ -36,8 +36,6 @@
           <element id="library" level="project" name="Maven: ch.qos.logback:logback-core:1.1.3" />
           <element id="library" level="project" name="Maven: org.slf4j:slf4j-api:1.7.7" />
           <element id="library" level="project" name="Maven: net.sourceforge.jtds:jtds:1.3.1" />
-          <element id="library" level="project" name="Maven: com.mchange:c3p0:0.9.5.2" />
-          <element id="library" level="project" name="Maven: com.mchange:mchange-commons-java:0.2.11" />
           <element id="library" level="project" name="Maven: com.google.code.gson:gson:2.6.2" />
           <element id="library" level="project" name="Maven: com.google.guava:guava:19.0" />
           <element id="library" level="project" name="Maven: com.rabbitmq:amqp-client:3.6.2" />
@@ -88,10 +86,10 @@
           <element id="library" level="project" name="Maven: org.javassist:javassist:3.20.0-GA" />
           <element id="library" level="project" name="Maven: net.bytebuddy:byte-buddy:1.5.4" />
           <element id="library" level="project" name="Maven: org.apache.geronimo.specs:geronimo-jta_1.1_spec:1.1.1" />
-          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:eds-ui-core:1.79" />
-          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:eds-core:1.79" />
           <element id="library" level="project" name="Maven: org.hibernate:hibernate-hikaricp:5.2.5.Final" />
           <element id="library" level="project" name="Maven: com.zaxxer:HikariCP:2.5.1" />
+          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:eds-ui-core:1.80" />
+          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:eds-core:1.80" />
           <element id="archive" name="eds-transforms-1.0-SNAPSHOT.jar">
             <element id="module-output" name="eds-transforms" />
           </element>
@@ -132,6 +130,7 @@
             <element id="module-output" name="eds-queuereader" />
           </element>
           <element id="library" level="project" name="Maven: mysql:mysql-connector-java:6.0.5" />
+          <element id="library" level="project" name="Maven: commons-lang:commons-lang:2.6" />
         </element>
       </element>
       <element id="directory" name="META-INF">

@@ -1,66 +1,90 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
+import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicationListType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicationType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
+import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
-public final class MedicationStatementTransformer
+public final class MedicationTransformer
 {
-    public static List<Resource> transform(MedicalRecordType medicalRecordType) throws TransformException
-    {
-        List<Resource> resource = new ArrayList<>();
+    public static void transform(MedicalRecordType medicalRecordType, List<Resource> resources, String patientUuid) throws TransformException {
 
-        for (MedicationType medicationType : medicalRecordType.getMedicationList().getMedication())
-            resource.add(transform(medicationType, medicalRecordType.getRegistration().getGUID()));
+        MedicationListType medicationList = medicalRecordType.getMedicationList();
+        if (medicationList == null) {
+            return;
+        }
 
-        return resource;
+        for (MedicationType medicationType : medicationList.getMedication()) {
+            resources.add(transform(medicationType, patientUuid));
+        }
+
     }
 
-    private static MedicationStatement transform(MedicationType medicationType, String patientUuid) throws TransformException
+    public static MedicationStatement transform(MedicationType medicationType, String patientGuid) throws TransformException
     {
-        MedicationStatement medicationStatement = new MedicationStatement();
-        medicationStatement.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_AUTHORISATION));
+        MedicationStatement fhirMedicationStatement = new MedicationStatement();
+        fhirMedicationStatement.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_AUTHORISATION));
 
-        medicationStatement.setId(medicationType.getGUID());
-        medicationStatement.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientUuid));
+        EmisOpenHelper.setUniqueId(fhirMedicationStatement, patientGuid, medicationType.getGUID());
 
-        medicationStatement.setInformationSource(ReferenceHelper.createReference(ResourceType.Practitioner, medicationType.getAuthorisedUserID().getGUID()));
-        medicationStatement.setDateAsserted(DateConverter.getDate(medicationType.getAssignedDate()));
+        fhirMedicationStatement.setPatient(EmisOpenHelper.createPatientReference(patientGuid));
 
-        medicationStatement.setMedication(CodeConverter.convert(medicationType.getDrug().getPreparationID()));
+        fhirMedicationStatement.setInformationSource(EmisOpenHelper.createPractitionerReference(medicationType.getAuthorisedUserID().getGUID()));
+        fhirMedicationStatement.setDateAsserted(DateConverter.getDate(medicationType.getAssignedDate()));
 
-        medicationStatement.addDosage(getDosage(medicationType));
+        fhirMedicationStatement.setMedication(CodeConverter.convert(medicationType.getDrug().getPreparationID()));
 
-        medicationStatement.addExtension(getQuantityExtension(medicationType));
+        fhirMedicationStatement.addDosage(getDosage(medicationType));
+
+        fhirMedicationStatement.addExtension(getQuantityExtension(medicationType));
 
         if (medicationType.getAuthorisedIssue() != null)
-            medicationStatement.addExtension(getNumberOfRepeatsAllowedExtension(medicationType.getAuthorisedIssue()));
+            fhirMedicationStatement.addExtension(getNumberOfRepeatsAllowedExtension(medicationType.getAuthorisedIssue()));
 
         if (medicationType.getIssueCount() != null)
-            medicationStatement.addExtension(getNumberOfRepeatsIssuedExtension(medicationType.getIssueCount()));
+            fhirMedicationStatement.addExtension(getNumberOfRepeatsIssuedExtension(medicationType.getIssueCount()));
 
         if (StringUtils.isNotBlank(medicationType.getPharmacyText()))
-            medicationStatement.addExtension(getPharmacyTextExtension(medicationType.getPharmacyText()));
+            fhirMedicationStatement.addExtension(getPharmacyTextExtension(medicationType.getPharmacyText()));
 
         if (StringUtils.isNotBlank(medicationType.getDateLastIssue()))
-            medicationStatement.addExtension(getMostRecentIssueDateExtension(medicationType.getDateLastIssue()));
+            fhirMedicationStatement.addExtension(getMostRecentIssueDateExtension(medicationType.getDateLastIssue()));
 
         if (medicationType.getContraceptiveIssue() != null)
-            medicationStatement.addExtension(getPrescribedAsContraceptionExtension(medicationType.getContraceptiveIssue()));
+            fhirMedicationStatement.addExtension(getPrescribedAsContraceptionExtension(medicationType.getContraceptiveIssue()));
 
-        return medicationStatement;
+        String expiry = medicationType.getDateRxExpire();
+        boolean expired = false;
+        if (!Strings.isNullOrEmpty(expiry)) {
+            Date d = DateConverter.getDate(expiry);
+            expired = d.before(new Date());
+
+            //the cancellation extension is a compound extension, so we have one extension inside another
+            Extension extension = ExtensionConverter.createExtension("date", new DateType(d));
+            fhirMedicationStatement.addExtension(ExtensionConverter.createCompoundExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_CANCELLATION, extension));
+        }
+
+        if (expired) {
+            fhirMedicationStatement.setStatus(MedicationStatement.MedicationStatementStatus.ACTIVE);
+        } else {
+            fhirMedicationStatement.setStatus(MedicationStatement.MedicationStatementStatus.COMPLETED);
+        }
+
+        return fhirMedicationStatement;
     }
 
     private static MedicationStatement.MedicationStatementDosageComponent getDosage(MedicationType medicationType)

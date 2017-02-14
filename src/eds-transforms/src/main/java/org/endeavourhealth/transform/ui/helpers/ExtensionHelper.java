@@ -2,10 +2,10 @@ package org.endeavourhealth.transform.ui.helpers;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException;
-import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.DomainResource;
 import org.hl7.fhir.instance.model.Element;
 import org.hl7.fhir.instance.model.Extension;
+import org.hl7.fhir.instance.model.Type;
 
 public class ExtensionHelper {
 
@@ -43,13 +43,23 @@ public class ExtensionHelper {
         return getExtensionValue(getExtension(element, name), type);
     }
 
-    private static <T extends Object> T getExtensionValue(Extension extension, Class<T> type) {
+    private static <T extends Object> T getExtensionValue(Extension extension, Class<T> expectedType) {
         if (extension == null)
             return null;
 
-        if (type.equals(extension.getValue().getClass()))
-            return (T)extension.getValue();
+        //changed to handle sub-classes of the expected type being found
+        Type value = extension.getValue();
+        Class cls = value.getClass();
+        while (cls != null) {
+            if (expectedType.equals(cls)) {
+                return (T)extension.getValue();
+            }
+            cls = cls.getSuperclass();
+        }
 
-        throw new TransformRuntimeException("Extension value is not a " + type.getSimpleName());
+        /*if (type.equals(extension.getValue().getClass()))
+            return (T)extension.getValue();*/
+
+        throw new TransformRuntimeException("Extension value is not a " + expectedType.getSimpleName() + " but is " + value.getClass());
     }
 }

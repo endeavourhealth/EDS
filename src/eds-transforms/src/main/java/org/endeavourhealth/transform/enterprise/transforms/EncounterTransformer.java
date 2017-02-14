@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.schema.EncounterParticipantType;
 import org.hl7.fhir.instance.model.*;
@@ -96,10 +97,10 @@ public class EncounterTransformer extends AbstractTransformer {
                     if (extension.getUrl().equals(FhirExtensionUri.ENCOUNTER_SOURCE)) {
                         CodeableConcept codeableConcept = (CodeableConcept)extension.getValue();
 
-                        snomedConceptId = findSnomedConceptId(codeableConcept);
+                        snomedConceptId = CodeableConceptHelper.findSnomedConceptId(codeableConcept);
 
                         //add the raw original code, to assist in data checking
-                        originalCode = findOriginalCode(codeableConcept);
+                        originalCode = CodeableConceptHelper.findOriginalCode(codeableConcept);
 
                         //add original term too, for easy display of results
                         originalTerm = codeableConcept.getText();

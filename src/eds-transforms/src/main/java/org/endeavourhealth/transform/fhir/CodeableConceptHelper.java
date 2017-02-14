@@ -98,7 +98,39 @@ public class CodeableConceptHelper {
         } else {
             throw new TransformException("Unexpected coding system [" + system + "]");
         }
+    }
 
 
+    public static Long findSnomedConceptId(CodeableConcept code) {
+        for (Coding coding: code.getCoding()) {
+            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_SNOMED_CT)
+                    || coding.getSystem().equals(FhirUri.CODE_SYSTEM_EMISSNOMED)) {
+                return Long.parseLong(coding.getCode());
+            }
+        }
+
+        return null;
+    }
+
+    public static String findSnomedConceptText(CodeableConcept code) {
+        for (Coding coding: code.getCoding()) {
+            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_SNOMED_CT)
+                    || coding.getSystem().equals(FhirUri.CODE_SYSTEM_EMISSNOMED)) {
+                return coding.getDisplay();
+            }
+        }
+
+        return null;
+    }
+
+    public static String findOriginalCode(CodeableConcept code) {
+        for (Coding coding: code.getCoding()) {
+            if (coding.getSystem().equals(FhirUri.CODE_SYSTEM_READ2)
+                    || coding.getSystem().equals(FhirUri.CODE_SYSTEM_EMIS_CODE)) {
+                return coding.getCode();
+            }
+        }
+
+        return null;
     }
 }
