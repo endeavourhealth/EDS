@@ -32,6 +32,6 @@ public class AdtMessage extends Message {
     public EvnSegment getEvnSegment() { return (EvnSegment) super.getSegment(SegmentName.EVN); }
     public PidSegment getPidSegment() { return (PidSegment) super.getSegment(SegmentName.PID); }
     public Pd1Segment getPd1Segment() { return (Pd1Segment) super.getSegment(SegmentName.PD1); }
-    public List<Segment> getNk1Segments() { return super.getSegments(SegmentName.NK1); }
+    public List<Nk1Segment> getNk1Segments() { return (List<Nk1Segment>)super.getSegments(SegmentName.NK1); }
     public Pv1Segment getPv1Segment() { return (Pv1Segment) super.getSegment(SegmentName.PV1); }
 }

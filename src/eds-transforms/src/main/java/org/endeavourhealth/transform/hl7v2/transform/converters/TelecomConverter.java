@@ -1,16 +1,26 @@
 package org.endeavourhealth.transform.hl7v2.transform.converters;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.transform.hl7v2.parser.datatypes.Xad;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.Xtn;
 import org.endeavourhealth.transform.hl7v2.transform.TransformException;
-import org.hl7.fhir.instance.model.Address;
 import org.hl7.fhir.instance.model.ContactPoint;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TelecomConverter {
 
-    public static ContactPoint convert(Xtn source) throws TransformException {
+    public static List<ContactPoint> convert(List<Xtn> contact) throws TransformException {
+        List<ContactPoint> result = new ArrayList<>();
 
+        for (Xtn xtn : contact)
+            if (xtn != null)
+                result.add(TelecomConverter.convert(xtn));
+
+        return result;
+    }
+
+    public static ContactPoint convert(Xtn source) throws TransformException {
         ContactPoint target = new ContactPoint();
 
         if (StringUtils.isNotBlank(source.getEquipmentType()))

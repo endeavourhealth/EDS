@@ -16,7 +16,7 @@ public class Nk1Segment extends Segment {
     public int getSetId() throws ParseException { return this.getFieldAsInteger(1); }
     public List<Xpn> getNKName() { return this.getFieldAsDatatypes(2, Xpn.class); }
     public Ce getRelationship() { return this.getFieldAsDatatype(3, Ce.class); }
-    public List<Xad> getAddress() { return this.getFieldAsDatatypes(4, Xad.class); }
+    public List<Xad> getAddresses() { return this.getFieldAsDatatypes(4, Xad.class); }
     public List<Xtn> getPhoneNumber() { return this.getFieldAsDatatypes(5, Xtn.class); }
     public List<Xtn> getBusinessPhoneNumber() { return this.getFieldAsDatatypes(6, Xtn.class); }
     public Ce getContactRole() { return this.getFieldAsDatatype(7, Ce.class); }

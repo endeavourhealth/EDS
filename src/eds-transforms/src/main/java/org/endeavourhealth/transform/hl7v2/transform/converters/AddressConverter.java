@@ -5,7 +5,20 @@ import org.endeavourhealth.transform.hl7v2.parser.datatypes.Xad;
 import org.endeavourhealth.transform.hl7v2.transform.TransformException;
 import org.hl7.fhir.instance.model.Address;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class AddressConverter {
+
+    public static List<Address> convert(List<Xad> addresses) throws TransformException {
+        List<Address> result = new ArrayList<>();
+
+        for (Xad xad : addresses)
+            if (xad != null)
+                result.add(AddressConverter.convert(xad));
+
+        return result;
+    }
 
     public static Address convert(Xad source) throws TransformException {
 

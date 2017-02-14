@@ -1,11 +1,25 @@
 package org.endeavourhealth.transform.hl7v2.transform.converters;
 
 import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.transform.hl7v2.parser.datatypes.Xpn;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.XpnInterface;
 import org.endeavourhealth.transform.hl7v2.transform.TransformException;
 import org.hl7.fhir.instance.model.HumanName;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class NameConverter {
+    public static List<HumanName> convert(List<? extends XpnInterface> name) throws TransformException {
+        List<HumanName> result = new ArrayList<>();
+
+        for (XpnInterface xpn : name)
+            if (xpn != null)
+                result.add(NameConverter.convert(xpn));
+
+        return result;
+    }
+
     public static HumanName convert(XpnInterface source) throws TransformException {
         HumanName humanName = new HumanName();
 
