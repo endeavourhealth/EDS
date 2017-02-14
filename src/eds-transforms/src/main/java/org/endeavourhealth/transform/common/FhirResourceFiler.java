@@ -246,8 +246,8 @@ public class FhirResourceFiler {
         }
 
         LOG.info("Saved {} and deleted {} non-patient resources for service {}", saved, deleted, serviceId);
-        totalSaved += saved;
-        totalDeleted += deleted;
+        //totalSaved += saved;
+        //totalDeleted += deleted;
 
         for (String patientId : patientBatchIdMap.keySet()) {
             ExchangeBatch exchangeBatch = patientBatchIdMap.get(patientId);
