@@ -15,8 +15,6 @@
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
             <param-value>org.glassfish.jersey.jackson.JacksonFeature,
-                io.swagger.jaxrs.listing.ApiListingResource,
-                io.swagger.jaxrs.listing.SwaggerSerializers,
                 org.endeavourhealth.core.security.CustomRolesAllowedFeature,
                 org.endeavourhealth.ui.framework.exceptions.BaseExceptionMapper
             </param-value>

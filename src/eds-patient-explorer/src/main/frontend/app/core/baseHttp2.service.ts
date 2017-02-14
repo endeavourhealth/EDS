@@ -18,7 +18,10 @@ export class BaseHttp2Service {
 	httpPost(url : string, body? : any, options? : RequestOptionsArgs) : Observable<any> {
 		return this.http.post(url, body, options)
 			.map((res:Response) => {
-				return res.text() ? res.json() : null;
+				if (res.headers.get('content-type') == 'text/plain')
+					return res.text() ? res.text() : null;
+				else
+					return res.text() ? res.json() : null;
 			})
 			.catch(this.handleError);
 	}
@@ -26,7 +29,10 @@ export class BaseHttp2Service {
 	httpDelete(url : string, options? : RequestOptionsArgs) : Observable<any> {
 		return this.http.delete(url, options)
 			.map((res:Response) => {
-				return res.text() ? res.json() : null;
+				if (res.headers.get('content-type') == 'text/plain')
+					return res.text() ? res.text() : null;
+				else
+					return res.text() ? res.json() : null;
 			})
 			.catch(this.handleError);
 	}

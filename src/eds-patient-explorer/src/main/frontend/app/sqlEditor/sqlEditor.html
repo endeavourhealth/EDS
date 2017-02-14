@@ -1,0 +1,31 @@
+<div class="module">
+	<div class="container-fluid">
+		<div class="module-heading">
+			SQL Editor
+			<button class="btn btn-default btn-sm pull-right" (click)="exportResults()" [disabled]="!resultData"><i class="fa fa-download"></i> Export results</button>
+			<button class="btn btn-default btn-sm pull-right" (click)="importData()"><i class="fa fa-upload"></i> Import CSV data</button>
+			<button class="btn btn-success btn-sm pull-right" (click)="executeQuery()"><i class="fa fa-play"></i> Run SQL</button>
+		</div>
+		<div class="module-body">
+			<form>
+				<div class="row">
+					<div class="form-group col-md-12 bordered-box">
+						<textarea #sql id="sql" name="sql" style="width:100%">-- Loading meta data, please wait...</textarea>
+					</div>
+				</div>
+				<div class="row" [hidden]="!resultData">
+					<div class="form-group col-md-12 scroll-box-350 scroll-box-horizontal">
+						<table class="table table-condensed table-striped">
+							<tr>
+								<th *ngFor="let h of getHeaders()">{{h}}</th>
+							</tr>
+							<tr *ngFor="let row of getRows()">
+								<td *ngFor="let field of row">{{field}}</td>
+							</tr>
+						</table>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>

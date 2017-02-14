@@ -212,19 +212,6 @@
             <version>1.0-SNAPSHOT</version>
         </dependency>
 
-        <!-- Swagger -->
-        <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-jersey2-jaxrs</artifactId>
-            <version>${swagger.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.endeavourhealth</groupId>
-            <artifactId>eds-messaging-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-        <!-- Swagger End-->
-
     </dependencies>
 
     <build>

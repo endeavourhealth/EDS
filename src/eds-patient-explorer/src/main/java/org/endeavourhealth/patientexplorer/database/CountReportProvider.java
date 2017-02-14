@@ -1,14 +1,10 @@
 package org.endeavourhealth.patientexplorer.database;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
-import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.Item;
-import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.data.config.ConfigManager;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.QueryDocument;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
@@ -19,15 +15,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.datatype.DatatypeFactory;
-import java.io.IOException;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class CountReportProvider {
 	private static final Logger LOG = LoggerFactory.getLogger(CountReportProvider.class);
-
-	private Connection _conn = null;
 
 	public LibraryItem runReport(UUID userUuid, UUID reportUuid, UUID organisationUuid, Map<String,String> reportParams) throws Exception {
 		ServiceRepository svcRepo = new ServiceRepository();
@@ -49,7 +42,7 @@ public class CountReportProvider {
 		countReport.getCountReport().setStatus("Running...");
 		saveCountReport(repository, item, countReport);
 		try {
-			Connection conn = getConnection();
+			Connection conn = EnterpriseLiteDb.getConnection();
 			PreparedStatement statement = null;
 
 			// Clear old results
@@ -139,50 +132,26 @@ public class CountReportProvider {
 		}
 	}
 
-	public List<String> getNHSExport(UUID userUuid, UUID reportUuid) throws Exception {
+	public List<List<String>> getNHSExport(UUID userUuid, UUID reportUuid) throws Exception {
 		return getResults(userUuid, reportUuid, "run_date, internal_patient_id, nhs_number");
 	}
 
-	public List<String> getDataExport(UUID userUuid, UUID reportUuid) throws Exception {
+	public List<List<String>> getDataExport(UUID userUuid, UUID reportUuid) throws Exception {
 		return getResults(userUuid, reportUuid, "*");
 	}
 
-	private List<String> getResults(UUID userUuid, UUID reportUuid, String fields) throws Exception {
+	private List<List<String>> getResults(UUID userUuid, UUID reportUuid, String fields) throws Exception {
 		List<String> result = new ArrayList<>();
 		String tablename = "rep_" + userUuid.toString().replace("-","") + "_" + reportUuid.toString().replace("-","");
 
-		Connection conn = getConnection();
+		Connection conn = EnterpriseLiteDb.getConnection();
 		PreparedStatement statement = conn.prepareStatement("SELECT "+fields+" FROM " + tablename);
-		try {
-			ResultSet resultSet = statement.executeQuery();
 
-			StringBuffer row = new StringBuffer();
-			for (int i = 1; i <= resultSet.getMetaData().getColumnCount(); i++) {
-				if (i > 1)
-					row.append(",");
-				row.append(resultSet.getMetaData().getColumnLabel(i));
-			}
-			result.add(row.toString());
-
-			while (resultSet.next()) {
-				row.setLength(0);
-				row.append(resultSet.getString(1));
-
-				for (int i = 2; i <= resultSet.getMetaData().getColumnCount(); i++) {
-					row.append("," + resultSet.getString(i));
-				}
-
-				result.add(row.toString());
-			}
-		} finally {
-			statement.close();
-		}
-
-		return result;
+		return SqlUtils.getStatementResultsAsCSV(statement);
 	}
 
 	public List<ConceptEntity> getEncounterTypes() throws Exception {
-		Connection conn = getConnection();
+		Connection conn = EnterpriseLiteDb.getConnection();
 
 		PreparedStatement statement = conn.prepareStatement("SELECT DISTINCT snomed_concept_id, original_term FROM encounter");
 		try {
@@ -194,7 +163,7 @@ public class CountReportProvider {
 	}
 
 	public List<ConceptEntity> getReferralTypes() throws Exception {
-		Connection conn = getConnection();
+		Connection conn = EnterpriseLiteDb.getConnection();
 
 		PreparedStatement statement = conn.prepareStatement("SELECT id, value FROM referral_request_type");
 		try {
@@ -206,7 +175,7 @@ public class CountReportProvider {
 	}
 
 	public List<ConceptEntity> getReferralPriorities() throws Exception {
-		Connection conn = getConnection();
+		Connection conn = EnterpriseLiteDb.getConnection();
 
 		PreparedStatement statement = conn.prepareStatement("SELECT id, value FROM referral_request_priority");
 		try {
@@ -223,7 +192,7 @@ public class CountReportProvider {
 		String odsCode = svc.getLocalIdentifier();
 
 		List<JsonPractitioner> result = new ArrayList<>();
-		Connection conn = getConnection();
+		Connection conn = EnterpriseLiteDb.getConnection();
 
 		PreparedStatement statement = conn.prepareStatement("SELECT p.id, p.name FROM practitioner p JOIN organization o ON o.id = p.organization_id WHERE o.ods_code = ? AND p.name LIKE ?");
 
@@ -269,17 +238,5 @@ public class CountReportProvider {
 		List<Object> toSave = new ArrayList<>();
 		toSave.add(item);
 		repository.save(toSave);
-	}
-
-	private Connection getConnection() throws SQLException, IOException {
-		if (_conn == null) {
-			JsonNode config = ConfigManager.getConfigurationAsJson("enterprise-lite");
-			String url = config.get("url").asText();
-			String username = config.get("username").asText();
-			String password = config.get("password").asText();
-
-			_conn = DriverManager.getConnection(url, username, password);
-		}
-		return _conn;
 	}
 }

@@ -1,7 +1,6 @@
 package org.endeavourhealth.patientexplorer.endpoints;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.core.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
@@ -10,6 +9,7 @@ import org.endeavourhealth.core.security.SecurityUtils;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.patientexplorer.database.CountReportProvider;
+import org.endeavourhealth.patientexplorer.database.SqlUtils;
 import org.endeavourhealth.patientexplorer.database.models.ConceptEntity;
 import org.endeavourhealth.patientexplorer.models.JsonConcept;
 import org.slf4j.Logger;
@@ -83,8 +83,9 @@ public final class CountReportEndpoint extends AbstractEndpoint {
                 "uuid", uuid);
             LOG.debug("exportNHS");
 
-            List<String> data = countReportProvider.getNHSExport(userUuid, uuid);
-            String ret = StringUtils.join(data, "\n");
+            List<List<String>> data = countReportProvider.getNHSExport(userUuid, uuid);
+
+            String ret = SqlUtils.getCSVAsString(data);
 
             return Response
                 .ok(ret, MediaType.TEXT_PLAIN_TYPE)
@@ -113,8 +114,8 @@ public final class CountReportEndpoint extends AbstractEndpoint {
                 "uuid", uuid);
             LOG.debug("exportData");
 
-            List<String> data = countReportProvider.getDataExport(userUuid, uuid);
-            String ret = StringUtils.join(data, "\n");
+            List<List<String>> data = countReportProvider.getDataExport(userUuid, uuid);
+            String ret = SqlUtils.getCSVAsString(data);
 
             return Response
                 .ok(ret, MediaType.TEXT_PLAIN_TYPE)
