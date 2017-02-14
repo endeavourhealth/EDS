@@ -1,10 +1,9 @@
-package org.endeavourhealth.transform.hl7v2.specific.homerton;
+package org.endeavourhealth.transform.hl7v2.profiles.homerton;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.transform.hl7v2.parser.*;
 import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
-import org.endeavourhealth.transform.hl7v2.parser.segments.PidSegment;
 import org.endeavourhealth.transform.hl7v2.parser.segments.SegmentName;
 
 import java.util.List;

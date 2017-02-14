@@ -1,35 +1,55 @@
 package org.endeavourhealth.transform.hl7v2;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
+import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
+import org.endeavourhealth.transform.hl7v2.parser.Message;
+import org.endeavourhealth.transform.hl7v2.parser.ParseException;
 import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
-import org.endeavourhealth.transform.hl7v2.specific.PreTransform;
-import org.endeavourhealth.transform.hl7v2.specific.homerton.HomertonPreTransform;
+import org.endeavourhealth.transform.hl7v2.parser.segments.MshSegment;
+import org.endeavourhealth.transform.hl7v2.parser.segments.SegmentName;
+import org.endeavourhealth.transform.hl7v2.profiles.DefaultTransformProfile;
+import org.endeavourhealth.transform.hl7v2.profiles.TransformProfile;
+import org.endeavourhealth.transform.hl7v2.profiles.homerton.HomertonTransformProfile;
 import org.endeavourhealth.transform.hl7v2.transform.AdtMessageTransform;
 import org.endeavourhealth.transform.hl7v2.transform.TransformException;
-import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.Bundle;
-import org.hl7.fhir.instance.model.Resource;
 
 public class Hl7v2Transform {
     public static String transform(String message) throws Exception {
-        AdtMessage sourceMessage = new AdtMessage(message);
 
-        if (!sourceMessage.hasMshSegment())
-            throw new TransformException("MSH segment not found");
+        /////
+        ///// get the sending facility and calculate the transform profile
+        /////
+        String sendingFacility = getSendingFacility(message);
+        TransformProfile transformProfile = getTransformProfile(sendingFacility);
 
-        sourceMessage = PreTransform.preTransform(sourceMessage);
-        Bundle targetBundle = AdtMessageTransform.transform(sourceMessage);
+        /////
+        ///// construct our message with including the profile's Z segments
+        /////
+        AdtMessage adtMessage = new AdtMessage(message, transformProfile.getZSegments());
 
-        return getPrettyJson(targetBundle);
+        /////
+        ///// perform any pre transform activities defined by the profile
+        /////
+        adtMessage = transformProfile.preTransform(adtMessage);
+
+        /////
+        ///// perform the actual transform and output as JSON
+        /////
+        Bundle bundle = AdtMessageTransform.transform(adtMessage);
+        return FhirResourceHelper.getPrettyJson(bundle);
     }
 
-    public static String preTransform(String message) throws Exception {
-        AdtMessage sourceMessage = new AdtMessage(message);
+    public static String preTransformOnly(String message) throws Exception {
+        String sendingFacility = getSendingFacility(message);
 
-        sourceMessage = PreTransform.preTransform(sourceMessage);
-        return sourceMessage.compose();
+        TransformProfile transformProfile = getTransformProfile(sendingFacility);
+
+        AdtMessage adtMessage = new AdtMessage(message, transformProfile.getZSegments());
+
+        adtMessage = transformProfile.preTransform(adtMessage);
+
+        return adtMessage.compose();
     }
 
     public static String parseAndRecompose(String message) throws Exception {
@@ -38,11 +58,23 @@ public class Hl7v2Transform {
         return sourceMessage.compose();
     }
 
-    private static String getPrettyJson(Resource resource) throws Exception {
-        String json = new JsonParser().composeString(resource);
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        com.google.gson.JsonParser jp = new com.google.gson.JsonParser();
-        JsonElement je = jp.parse(json);
-        return gson.toJson(je);
+    private static TransformProfile getTransformProfile(String sendingFacility) {
+        switch (sendingFacility) {
+            case "HOMERTON": return new HomertonTransformProfile();
+            default: return new DefaultTransformProfile();
+        }
+    }
+
+    private static String getSendingFacility(String message) throws ParseException, TransformException {
+        Message parsedMessage = new Message(message);
+        MshSegment mshSegment = parsedMessage.getSegment(SegmentName.MSH, MshSegment.class);
+
+        if (mshSegment == null)
+            throw new TransformException("MSH segment not found");
+
+        if (StringUtils.isBlank(mshSegment.getSendingFacility()))
+            throw new TransformException("Sending facility is blank");
+
+        return mshSegment.getSendingFacility();
     }
 }

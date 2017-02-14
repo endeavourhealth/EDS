@@ -5,11 +5,16 @@ import org.endeavourhealth.transform.hl7v2.parser.ParseException;
 import org.endeavourhealth.transform.hl7v2.parser.Segment;
 import org.endeavourhealth.transform.hl7v2.parser.segments.*;
 
+import java.util.HashMap;
 import java.util.List;
 
 public class AdtMessage extends Message {
     public AdtMessage(String message) throws ParseException {
         super(message);
+    }
+
+    public AdtMessage(String message, HashMap<String, Class<? extends Segment>> zSegmentDefinitions) throws ParseException {
+        super(message, zSegmentDefinitions);
     }
 
     public boolean hasMshSegment() {

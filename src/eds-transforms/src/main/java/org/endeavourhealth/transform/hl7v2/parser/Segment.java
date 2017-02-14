@@ -4,9 +4,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.transform.hl7v2.parser.segments.SegmentName;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,12 +24,36 @@ public class Segment {
 
     //////////////////  Constructors  //////////////////
 
-    public static Segment parse(String segmentText, Seperators seperators) throws ParseException {
+    public static Segment parseAndinstantiate(String segmentText, Seperators seperators, HashMap<String, Class<? extends Segment>> zSegmentDefinitions) throws ParseException {
         Validate.notBlank(segmentText);
         Validate.notNull(seperators);
 
         String segmentName = getSegmentName(segmentText, seperators);
-        return SegmentName.instantiateSegment(segmentName, segmentText, seperators);
+        Class<? extends Segment> segmentClass = getSegmentClass(segmentName, zSegmentDefinitions);
+
+        try {
+            Constructor<? extends Segment> constructor = segmentClass.getConstructor(String.class, Seperators.class);
+
+            if (constructor == null)
+                throw new ParseException("Could not find constructor for segment " + segmentClass);
+
+            return constructor.newInstance(segmentText, seperators);
+        } catch (Exception e) {
+            throw new ParseException("Could not instantiate segment " + segmentClass);
+        }
+    }
+
+    private static Class<? extends Segment> getSegmentClass(String segmentName, HashMap<String, Class<? extends Segment>> zSegmentDefinitions) {
+        Class<? extends Segment> segmentClass = SegmentName.getSegmentClass(segmentName);
+
+        if (segmentClass == null)
+            if (zSegmentDefinitions != null)
+                segmentClass = zSegmentDefinitions.getOrDefault(segmentName, null);
+
+        if (segmentClass == null)
+            segmentClass = Segment.class;
+
+        return segmentClass;
     }
 
     private Segment() {

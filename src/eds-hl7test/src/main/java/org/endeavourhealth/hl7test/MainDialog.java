@@ -48,7 +48,7 @@ public class MainDialog {
                     testPaneTextArea2.setText("");
                     testPaneTextArea2.repaint();
                     testPaneTextArea2.revalidate();
-                    testPaneTextArea2.setText(Hl7v2Transform.preTransform(testPane1TextArea.getText()).replace("\r", "\r\n"));
+                    testPaneTextArea2.setText(Hl7v2Transform.preTransformOnly(testPane1TextArea.getText()).replace("\r", "\r\n"));
                 } catch (Exception e1) {
                     testPaneTextArea2.setText("[" + e1.getClass() + "] " + e1.getMessage() + "\r\n" + ExceptionUtils.getStackTrace(e1));
                 }

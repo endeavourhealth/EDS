@@ -5,6 +5,7 @@ import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.transform.hl7v2.parser.segments.SegmentName;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -15,15 +16,21 @@ public class Message {
     private static final String MSH_SEGMENT_NAME = "MSH";
 
     private final String originalMessageText;    // originalMessageText may not reflect the current state of the message
+    private HashMap<String, Class<? extends Segment>> zSegmentDefinitions;
     private Seperators seperators;
     private List<Segment> segments;
 
     //////////////////  Constructors  //////////////////
 
     public Message(final String messageText) throws ParseException {
+        this(messageText, null);
+    }
+
+    public Message(final String messageText, HashMap<String, Class<? extends Segment>> zSegmentDefinitions) throws ParseException {
         Validate.notBlank(messageText);
 
         this.originalMessageText = messageText;
+        this.zSegmentDefinitions = zSegmentDefinitions;
         parse(messageText);
     }
 
@@ -37,6 +44,10 @@ public class Message {
         return (getSegments(segmentName).size() > 0);
     }
 
+    public <T extends Segment> T getSegment(SegmentName segmentName, Class<T> segmentClass) {
+        return (T)getSegment(segmentName);
+    }
+
     public Segment getSegment(SegmentName segmentName) {
         List<Segment> segments = getSegments(segmentName);
         return Helpers.getSafely(segments, FIRST);
@@ -44,7 +55,6 @@ public class Message {
 
     public List<Segment> getSegments(SegmentName segmentName) {
         Validate.notNull(segmentName);
-        Validate.isTrue(!segmentName.equals(SegmentName.UNNAMED));
 
         return getSegments(segmentName.getValue());
     }
@@ -80,7 +90,7 @@ public class Message {
         String cleanedMessageText = normaliseLineEndings(messageText);
 
         this.seperators = detectSeperators(cleanedMessageText);
-        this.segments = parseSegments(cleanedMessageText, seperators);
+        this.segments = parseSegments(cleanedMessageText, seperators, this.zSegmentDefinitions);
     }
 
     private static String normaliseLineEndings(String message) {
@@ -128,13 +138,13 @@ public class Message {
         return seperators;
     }
 
-    private static List<Segment> parseSegments(String messageText, Seperators seperators) throws ParseException {
+    private static List<Segment> parseSegments(String messageText, Seperators seperators, HashMap<String, Class<? extends Segment>> zSegmentDefinitions) throws ParseException {
         List<Segment> segments = new ArrayList<>();
 
         List<String> lines = Helpers.split(messageText, seperators.getLineSeperator());
 
         for (String line : lines)
-            segments.add(Segment.parse(line, seperators));
+            segments.add(Segment.parseAndinstantiate(line, seperators, zSegmentDefinitions));
 
         return segments;
     }

@@ -1,8 +1,7 @@
 package org.endeavourhealth.transform.hl7v2.parser.segments;
 
-import org.endeavourhealth.transform.hl7v2.parser.ParseException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.endeavourhealth.transform.hl7v2.parser.Segment;
-import org.endeavourhealth.transform.hl7v2.parser.Seperators;
 
 public enum SegmentName {
     AL1("AL1"),
@@ -13,8 +12,7 @@ public enum SegmentName {
     PD1("PD1"),
     PID("PID"),
     PV1("PV1"),
-    PV2("PV2"),
-    UNNAMED("UNNAMED");
+    PV2("PV2");
 
     private String value;
 
@@ -34,29 +32,28 @@ public enum SegmentName {
             if (value.equals(segmentName.value))
                 return segmentName;
 
-        return UNNAMED;
+        return null;
     }
 
-    public static Segment instantiateSegment(String segmentName, String segment, Seperators seperators) throws ParseException {
-        return instantiateSegment(SegmentName.fromString(segmentName), segment, seperators);
+    public static Class<? extends Segment> getSegmentClass(String segmentName) {
+        return getSegmentClass(SegmentName.fromString(segmentName));
     }
 
-    static Segment instantiateSegment(SegmentName segmentName, String segment, Seperators seperators) throws ParseException {
+    public static Class<? extends Segment> getSegmentClass(SegmentName segmentName) {
         if (segmentName == null)
             return null;
 
         switch (segmentName) {
-            case AL1: return new Al1Segment(segment, seperators);
-            case EVN: return new EvnSegment(segment, seperators);
-            case MSH: return new MshSegment(segment, seperators);
-            case NK1: return new Nk1Segment(segment, seperators);
-            case OBX: return new ObxSegment(segment, seperators);
-            case PD1: return new Pd1Segment(segment, seperators);
-            case PID: return new PidSegment(segment, seperators);
-            case PV1: return new Pv1Segment(segment, seperators);
-            case PV2: return new Pv2Segment(segment, seperators);
-            case UNNAMED:
-            default: return new Segment(segment, seperators);
+            case AL1: return Al1Segment.class;
+            case EVN: return EvnSegment.class;
+            case MSH: return MshSegment.class;
+            case NK1: return Nk1Segment.class;
+            case OBX: return ObxSegment.class;
+            case PD1: return Pd1Segment.class;
+            case PID: return PidSegment.class;
+            case PV1: return Pv1Segment.class;
+            case PV2: return Pv2Segment.class;
+            default: throw new NotImplementedException("SegmentClass not defined");
         }
     }
 }

@@ -1,4 +1,4 @@
-package org.endeavourhealth.transform.hl7v2.parser.datatypes;
+package org.endeavourhealth.transform.hl7v2.profiles.homerton.datatypes;
 
 import org.endeavourhealth.transform.hl7v2.parser.Datatype;
 import org.endeavourhealth.transform.hl7v2.parser.GenericDatatype;
