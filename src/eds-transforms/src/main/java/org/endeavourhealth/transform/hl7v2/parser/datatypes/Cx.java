@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.hl7v2.parser.datatypes;
 import org.endeavourhealth.transform.hl7v2.parser.GenericDatatype;
 import org.endeavourhealth.transform.hl7v2.parser.Datatype;
 
-public class Cx extends Datatype implements ICx {
+public class Cx extends Datatype implements CxInterface {
 
     public Cx(GenericDatatype datatype) {
         super(datatype);

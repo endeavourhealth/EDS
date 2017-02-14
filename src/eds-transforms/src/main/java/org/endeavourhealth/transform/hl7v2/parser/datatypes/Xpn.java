@@ -4,7 +4,7 @@ import org.endeavourhealth.transform.hl7v2.parser.Datatype;
 import org.endeavourhealth.transform.hl7v2.parser.GenericDatatype;
 
 // extended person name
-public class Xpn extends Datatype implements IXpn {
+public class Xpn extends Datatype implements XpnInterface {
     public Xpn(GenericDatatype datatype) {
         super(datatype);
     }

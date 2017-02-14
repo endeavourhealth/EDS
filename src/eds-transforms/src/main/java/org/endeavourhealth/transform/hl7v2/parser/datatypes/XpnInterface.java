@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.hl7v2.parser.datatypes;
 
 // extended common name
-public interface IXpn {
+public interface XpnInterface {
     String getFamilyName();
     String getGivenName();
     String getMiddleName();

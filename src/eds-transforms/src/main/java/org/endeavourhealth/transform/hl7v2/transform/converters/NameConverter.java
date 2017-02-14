@@ -1,12 +1,12 @@
 package org.endeavourhealth.transform.hl7v2.transform.converters;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.transform.hl7v2.parser.datatypes.IXpn;
+import org.endeavourhealth.transform.hl7v2.parser.datatypes.XpnInterface;
 import org.endeavourhealth.transform.hl7v2.transform.TransformException;
 import org.hl7.fhir.instance.model.HumanName;
 
 public class NameConverter {
-    public static HumanName convert(IXpn source) throws TransformException {
+    public static HumanName convert(XpnInterface source) throws TransformException {
         HumanName humanName = new HumanName();
 
         if (StringUtils.isNotBlank(source.getFamilyName()))

@@ -4,7 +4,7 @@ import org.endeavourhealth.transform.hl7v2.parser.Datatype;
 import org.endeavourhealth.transform.hl7v2.parser.GenericDatatype;
 
 // extended composite id and name for persons
-public class Xcn extends Datatype implements IXpn, ICx {
+public class Xcn extends Datatype implements XpnInterface, CxInterface {
     public Xcn(GenericDatatype datatype) { super(datatype); }
 
     public String getId() { return this.getComponentAsString(1); }

@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.hl7v2.parser.datatypes;
 
-public interface ICx {
+public interface CxInterface {
     String getId();
     String getCheckDigit();
     String getCheckDigitCodeScheme();
