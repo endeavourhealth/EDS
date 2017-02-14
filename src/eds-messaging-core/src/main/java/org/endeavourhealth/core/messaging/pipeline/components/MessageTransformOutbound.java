@@ -195,9 +195,10 @@ public class MessageTransformOutbound extends PipelineComponent {
 			HttpEntity entity = new ByteArrayEntity(payload.getBytes("UTF-8"));
 			post.setEntity(entity);
 
-			HttpResponse response = client.execute(post);
 			LOG.trace("Sending 'POST' request to URL : " + url);
 			LOG.trace("Post parameters : " + post.getEntity());
+
+			HttpResponse response = client.execute(post);
 			LOG.trace("Response Code : " + response.getStatusLine().getStatusCode());
 
 			BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));

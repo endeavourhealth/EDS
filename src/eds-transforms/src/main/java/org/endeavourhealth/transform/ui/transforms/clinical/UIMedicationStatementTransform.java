@@ -12,6 +12,7 @@ import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.endeavourhealth.transform.ui.models.types.UIQuantity;
 import org.hl7.fhir.instance.model.*;
 
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,7 +28,8 @@ public class UIMedicationStatementTransform extends UIClinicalTransform<Medicati
     private UIMedicationStatement transform(MedicationStatement medicationStatement, ReferencedResources referencedResources) {
         return new UIMedicationStatement()
             .setId(medicationStatement.getId())
-            .setDateAuthorised(getRecordedDateExtensionValue(medicationStatement))
+			.setDateAuthorised(getDateAsserted(medicationStatement)) //the asserted date is more relevant
+            //.setDateAuthorised(getRecordedDateExtensionValue(medicationStatement))
             .setPrescriber(getRecordedByExtensionValue(medicationStatement, referencedResources))
             .setMedication(getMedication(medicationStatement, referencedResources))
 						.setDosage(getDosage(medicationStatement))
@@ -39,7 +41,12 @@ public class UIMedicationStatementTransform extends UIClinicalTransform<Medicati
 						.setAuthorisationType(getAuthorisationType(medicationStatement));
     }
 
-    @Override
+	private static UIDate getDateAsserted(MedicationStatement medicationStatement) {
+		Date asserted = medicationStatement.getDateAsserted();
+		return DateHelper.convert(asserted);
+	}
+
+	@Override
     public List<Reference> getReferences(List<MedicationStatement> resources) {
         try {
 					return StreamExtension.concat(

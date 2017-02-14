@@ -9,18 +9,23 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.Med
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicationType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
+import org.endeavourhealth.transform.fhir.CodingHelper;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.schema.MedicationAuthorisationType;
 import org.hl7.fhir.instance.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.List;
 
-public final class MedicationTransformer
-{
+public final class MedicationTransformer {
+    private static final Logger LOG = LoggerFactory.getLogger(MedicationTransformer.class);
+
     public static void transform(MedicalRecordType medicalRecordType, List<Resource> resources, String patientUuid) throws TransformException {
 
         MedicationListType medicationList = medicalRecordType.getMedicationList();
@@ -79,9 +84,21 @@ public final class MedicationTransformer
         }
 
         if (expired) {
-            fhirMedicationStatement.setStatus(MedicationStatement.MedicationStatementStatus.ACTIVE);
-        } else {
             fhirMedicationStatement.setStatus(MedicationStatement.MedicationStatementStatus.COMPLETED);
+        } else {
+            fhirMedicationStatement.setStatus(MedicationStatement.MedicationStatementStatus.ACTIVE);
+        }
+
+        //need to set the authorisation type
+        String prescriptionType = medicationType.getPrescriptionType();
+        if (!Strings.isNullOrEmpty(prescriptionType)) {
+            try {
+                MedicationAuthorisationType fhirAuthorisationType = MedicationAuthorisationType.fromDescription(prescriptionType);
+                Coding fhirCoding = CodingHelper.createCoding(fhirAuthorisationType);
+                fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE, fhirCoding));
+            } catch (IllegalArgumentException ex) {
+                LOG.warn("Unmapped authorisation type " + prescriptionType);
+            }
         }
 
         return fhirMedicationStatement;
