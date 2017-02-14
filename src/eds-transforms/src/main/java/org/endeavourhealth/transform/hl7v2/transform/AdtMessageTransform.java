@@ -24,7 +24,7 @@ public class AdtMessageTransform {
             targetResources.add(practitioner);
 
         if (sourceMessage.hasPv1Segment()) {
-            List<Location> locations = LocationConverter.convert(sourceMessage.getPv1Segment().getAssignedPatientLocation(), "test");
+            List<Location> locations = LocationConverter.convert(sourceMessage.getPv1Segment().getAssignedPatientLocation());
             for (Location loc : locations)
                 targetResources.add(loc);
         }

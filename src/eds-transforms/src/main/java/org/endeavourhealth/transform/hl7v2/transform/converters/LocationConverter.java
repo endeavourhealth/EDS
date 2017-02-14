@@ -10,22 +10,9 @@ import java.util.*;
 
 public class LocationConverter {
 
-    private static String bed;
-    private static String room;
-    private static String ward;
-    private static String facility;
-    private static String building;
     private static LinkedHashMap<String, String> locationHeirarchy = new LinkedHashMap<>();
 
-
-    public static List<Location> convert(Pl source, String locationType) throws TransformException {
-        List<Location> locationList = new ArrayList<Location>();
-        bed = source.getBed();
-        room = source.getRoom();
-        ward = source.getPointOfCare();
-        facility = source.getFacility();
-        building = source.getBuilding();
-
+    public static List<Location> convert(Pl source) throws TransformException {
         locationHeirarchy.put("bu", source.getBuilding());
         locationHeirarchy.put("wi", source.getPointOfCare());
         locationHeirarchy.put("ro", source.getRoom());
@@ -35,8 +22,7 @@ public class LocationConverter {
     }
 
     private static List<Location> createLocations() throws TransformException {
-        //UUID uuid = UUID.nameUUIDFromBytes((sourceString + locationType).getBytes());
-        List<Location> locations = new ArrayList<Location>();
+        List<Location> locations = new ArrayList<>();
 
         Map<String, String> locationMap = new HashMap<>();
         locationMap.put("bu", " Building");
@@ -63,29 +49,11 @@ public class LocationConverter {
         return locations;
     }
 
-
     private static CodeableConcept getCodeableConcept(String code) throws TransformException {
         CodeableConcept codeableConcept = new CodeableConcept();
         codeableConcept.addCoding();
         codeableConcept.setText(code);
 
         return codeableConcept;
-    }
-
-    private static Encounter.EncounterLocationComponent getLocation(String name, String type, String locationType) throws TransformException {
-
-        Encounter.EncounterLocationComponent locationComponent = new Encounter.EncounterLocationComponent();
-        Location location = new Location();
-        location.setMode(Location.LocationMode.INSTANCE);
-        location.setName(name);
-        locationComponent.setLocationTarget(location);
-        Reference reference = new Reference();
-        reference.setReference(type);
-        reference.setDisplay(name);
-        locationComponent.setLocation(reference);
-        locationComponent.addExtension(ExtensionHelper.createStringExtension(FhirExtensionUri.ENCOUNTER_LOCATION_TYPE, locationType));
-
-
-        return locationComponent;
     }
 }
