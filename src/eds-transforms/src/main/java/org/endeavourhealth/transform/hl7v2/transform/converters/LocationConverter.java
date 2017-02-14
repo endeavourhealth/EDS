@@ -1,7 +1,6 @@
 package org.endeavourhealth.transform.hl7v2.transform.converters;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.Pl;
 import org.endeavourhealth.transform.hl7v2.transform.TransformException;
 import org.hl7.fhir.instance.model.*;
@@ -10,13 +9,13 @@ import java.util.*;
 
 public class LocationConverter {
 
-    private static LinkedHashMap<String, String> locationHeirarchy = new LinkedHashMap<>();
+    private static LinkedHashMap<String, String> locationHierarchy = new LinkedHashMap<>();
 
     public static List<Location> convert(Pl source) throws TransformException {
-        locationHeirarchy.put("bu", source.getBuilding());
-        locationHeirarchy.put("wi", source.getPointOfCare());
-        locationHeirarchy.put("ro", source.getRoom());
-        locationHeirarchy.put("bd", source.getBed());
+        locationHierarchy.put("bu", source.getBuilding());
+        locationHierarchy.put("wi", source.getPointOfCare());
+        locationHierarchy.put("ro", source.getRoom());
+        locationHierarchy.put("bd", source.getBed());
 
         return createLocations();
     }
@@ -33,7 +32,7 @@ public class LocationConverter {
         Reference linkedLocation = new Reference();
         String locationDescription = "";
 
-        for (Map.Entry<String, String> entry : locationHeirarchy.entrySet()) {
+        for (Map.Entry<String, String> entry : locationHierarchy.entrySet()) {
             Location location = new Location();
             location.addIdentifier().setValue(entry.getValue());
             location.setPhysicalType(getCodeableConcept(entry.getKey()));
