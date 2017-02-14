@@ -20,7 +20,6 @@ import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.IdentifierHelper;
-import org.endeavourhealth.transform.fhir.schema.MedicationAuthorisationType;
 import org.endeavourhealth.transform.vitrucare.model.ClinicalTerm;
 import org.endeavourhealth.transform.vitrucare.model.ObjectFactory;
 import org.endeavourhealth.transform.vitrucare.model.Payload;
@@ -267,14 +266,14 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
     private static org.endeavourhealth.transform.vitrucare.model.Medication createMedication(MedicationStatement fhir) throws Exception {
 
         //they're only interested in repeat meds
-        Extension extension = ExtensionConverter.findExtension(fhir, FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE);
+        /*Extension extension = ExtensionConverter.findExtension(fhir, FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE);
         if (extension != null) {
             Coding coding = (Coding)extension.getValue();
             String code = coding.getCode();
             if (code.equals(MedicationAuthorisationType.ACUTE.getCode())) {
                 return null;
             }
-        }
+        }*/
 
         CodeableConcept fhirCodeableConcept = fhir.getMedicationCodeableConcept();
         Long conceptId = CodeableConceptHelper.findSnomedConceptId(fhirCodeableConcept);

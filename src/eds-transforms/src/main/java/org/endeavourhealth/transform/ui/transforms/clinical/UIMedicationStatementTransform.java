@@ -131,7 +131,16 @@ public class UIMedicationStatementTransform extends UIClinicalTransform<Medicati
 	}
 
 	private static UICode getAuthorisationType(MedicationStatement medicationStatement) {
-    Coding authType = ExtensionHelper.getExtensionValue(medicationStatement, FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE, Coding.class);
-    return CodeHelper.convert(authType);
+    	Coding authType = ExtensionHelper.getExtensionValue(medicationStatement, FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE, Coding.class);
+
+		//the EMIS Open transformer doesn't set this
+		if (authType == null) {
+			return new UICode()
+					.setCode("")
+					.setDisplay("")
+					.setSystem("");
+		}
+
+    	return CodeHelper.convert(authType);
 	}
 }
