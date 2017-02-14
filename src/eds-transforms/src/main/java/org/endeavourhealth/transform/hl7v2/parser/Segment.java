@@ -177,7 +177,7 @@ public class Segment {
                 .skip(1)
                 .collect(Collectors.toList());
 
-        if (SegmentName.MSH.getValue().equals(this.segmentName))
+        if (SegmentName.MSH.equals(this.segmentName))
             tokens.add(FIRST, seperators.getFieldSeperator());
 
         for (String token : tokens)
@@ -189,7 +189,7 @@ public class Segment {
     public String compose() {
         List<Field> fields = this.getFields();
 
-        if (SegmentName.MSH.getValue().equals(this.segmentName)) {
+        if (SegmentName.MSH.equals(this.segmentName)) {
             fields = fields
                     .stream()
                     .skip(1)

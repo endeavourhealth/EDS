@@ -2,7 +2,6 @@ package org.endeavourhealth.transform.hl7v2.parser;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.endeavourhealth.transform.hl7v2.parser.segments.SegmentName;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,23 +39,8 @@ public class Message {
         return (getSegments(segmentName).size() > 0);
     }
 
-    public boolean hasSegment(SegmentName segmentName) {
-        return (getSegments(segmentName).size() > 0);
-    }
-
-    public <T extends Segment> T getSegment(SegmentName segmentName, Class<T> segmentClass) {
+    public <T extends Segment> T getSegment(String segmentName, Class<T> segmentClass) {
         return (T)getSegment(segmentName);
-    }
-
-    public Segment getSegment(SegmentName segmentName) {
-        List<Segment> segments = getSegments(segmentName);
-        return Helpers.getSafely(segments, FIRST);
-    }
-
-    public List<Segment> getSegments(SegmentName segmentName) {
-        Validate.notNull(segmentName);
-
-        return getSegments(segmentName.getValue());
     }
 
     public List<Segment> getSegments() {
@@ -64,11 +48,11 @@ public class Message {
     }
 
     public Segment getSegment(String segmentName) {
-        List<Segment> segments = getSegments(segmentName);
+        List<? extends Segment> segments = getSegments(segmentName);
         return Helpers.getSafely(segments, FIRST);
     }
 
-    public List<Segment> getSegments(String segmentName) {
+    public List<? extends Segment> getSegments(String segmentName) {
         Validate.notBlank(segmentName);
 
         return this.segments
