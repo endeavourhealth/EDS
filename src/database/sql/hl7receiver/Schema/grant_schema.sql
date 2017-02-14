@@ -18,3 +18,8 @@ grant all on schema dictionary TO postgres;
 grant all privileges on all tables in schema dictionary to postgres;
 grant all privileges on all sequences in schema dictionary to postgres;
 grant all privileges on all functions in schema dictionary to postgres;
+
+grant all on schema helper TO postgres;
+grant all privileges on all tables in schema helper to postgres;
+grant all privileges on all sequences in schema helper to postgres;
+grant all privileges on all functions in schema helper to postgres;
