@@ -6,6 +6,8 @@ import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.DiaryListType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.DiaryType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
+import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
+import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.ProcedureRequest;
@@ -41,12 +43,12 @@ public class DiaryTransformer {
 
         fhirRequest.setSubject(EmisOpenHelper.createPatientReference(patientGuid));
 
+        fhirRequest.setScheduled(DateConverter.convertPartialDateToDateTimeType(diaryEntry.getAssignedDate(), diaryEntry.getAssignedTime(), diaryEntry.getDatePart()));
+
+        fhirRequest.setCode(CodeConverter.convert(diaryEntry.getCode(), diaryEntry.getDescriptiveText()));
+
         //TODO - finish
 /*
-
-
-        Long codeId = parser.getCodeId();
-        fhirRequest.setCode(csvHelper.findClinicalCode(codeId));
 
         String originalTerm = parser.getOriginalTerm();
         if (!Strings.isNullOrEmpty(originalTerm)) {
@@ -54,11 +56,6 @@ public class DiaryTransformer {
             fhirConcept.setText(originalTerm);
         }
 
-        Date effectiveDate = parser.getEffectiveDate();
-        if (effectiveDate != null) {
-            String effectiveDatePrecision = parser.getEffectiveDatePrecision();
-            fhirRequest.setScheduled(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
-        }
 
         String freeTextDuration = parser.getDurationTerm();
         if (!Strings.isNullOrEmpty(freeTextDuration)) {

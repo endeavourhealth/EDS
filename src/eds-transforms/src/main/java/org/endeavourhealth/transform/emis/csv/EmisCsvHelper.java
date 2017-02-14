@@ -1034,6 +1034,13 @@ public class EmisCsvHelper {
         return false;
     }
 
+    public Type createConditionReference(String problemGuid, String patientGuid) {
+        if (Strings.isNullOrEmpty(problemGuid)) {
+            throw new IllegalArgumentException("Missing problemGuid");
+        }
+        return ReferenceHelper.createReference(ResourceType.Condition, createUniqueId(patientGuid, problemGuid));
+    }
+
     /**
      * temporary storage class for changes to the practitioners involved in a session
      */

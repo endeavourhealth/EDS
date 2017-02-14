@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.IdentType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicationListType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicationType;
@@ -99,6 +100,12 @@ public final class MedicationTransformer {
             } catch (IllegalArgumentException ex) {
                 LOG.warn("Unmapped authorisation type " + prescriptionType);
             }
+        }
+
+        IdentType enteredBy = medicationType.getAuthorisedUserID();
+        if (enteredBy != null) {
+            Reference reference = EmisOpenHelper.createPractitionerReference(enteredBy.getGUID());
+            fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
         }
 
         return fhirMedicationStatement;
