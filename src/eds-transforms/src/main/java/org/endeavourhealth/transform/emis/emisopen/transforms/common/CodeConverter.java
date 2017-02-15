@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.common;
 
+import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.core.data.admin.CodeRepository;
 import org.endeavourhealth.core.data.admin.models.SnomedLookup;
@@ -80,7 +81,7 @@ public class CodeConverter
             fhirConcept.addCoding(CodingHelper.createCoding(system, mappedTerm, mappedCode));
         }
 
-        if (StringUtils.isNotBlank(descriptiveText)) {
+        if (!Strings.isNullOrEmpty(descriptiveText)) {
             fhirConcept.setText(descriptiveText);
         }
 

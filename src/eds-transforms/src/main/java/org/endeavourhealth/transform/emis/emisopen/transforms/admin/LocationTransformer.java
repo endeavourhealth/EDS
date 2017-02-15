@@ -43,7 +43,7 @@ public class LocationTransformer {
         for (ContactPoint contactPoint : contactPoints)
             location.addTelecom(contactPoint);
 
-        //TODO - this looks wrong. It should be an org, but we're using a location GUID?
+        //note, the orgs and locations use the same GUID in their ID, so that's why we're using a location GUID for the org reference
         location.setManagingOrganization(EmisOpenHelper.createOrganisationReference(locationType.getGUID()));
 
         return location;

@@ -32,14 +32,11 @@ public class DiaryTransformer {
         }
 
         for (DiaryType diaryEntry : diaryList.getDiary()) {
-            Resource resource = transform(diaryEntry, patientGuid);
-            if (resource != null) {
-                resources.add(resource);
-            }
+            transform(diaryEntry, resources, patientGuid);
         }
     }
 
-    public static ProcedureRequest transform(DiaryType diaryEntry, String patientGuid) throws TransformException {
+    public static void transform(DiaryType diaryEntry, List<Resource> resources, String patientGuid) throws TransformException {
 
         ProcedureRequest fhirRequest = new ProcedureRequest();
         fhirRequest.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROCEDURE_REQUEST));
@@ -69,6 +66,18 @@ public class DiaryTransformer {
         }
 
         //TODO - finish
+
+        /**
+         protected BigInteger templateID;
+         protected BigInteger templateInstanceID;
+         protected String templateComponentName;
+         protected String reminder;
+         protected String reminderType;
+         protected IdentType locationTypeID;
+         */
+
+        resources.add(fhirRequest);
+
 /*
 
         String originalTerm = parser.getOriginalTerm();
@@ -118,15 +127,5 @@ public class DiaryTransformer {
         }
 */
 
-        return fhirRequest;
-
-        /**
-        protected BigInteger templateID;
-         protected BigInteger templateInstanceID;
-         protected String templateComponentName;
-         protected String reminder;
-         protected String reminderType;
-         protected IdentType locationTypeID;
-         */
     }
 }

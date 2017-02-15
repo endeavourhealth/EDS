@@ -87,4 +87,4 @@ CREATE TABLE vitrucare_patient_id_map (
 	system_id UUID,
 	created_at timestamp,
 	vitrucare_id text,
-PRIMARY KEY (eds_patient_id);
+PRIMARY KEY (eds_patient_id));

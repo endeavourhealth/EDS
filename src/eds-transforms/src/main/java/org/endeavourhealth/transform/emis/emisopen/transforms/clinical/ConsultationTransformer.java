@@ -7,10 +7,15 @@ import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConvert
 import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.fhir.schema.EncounterParticipantType;
 import org.hl7.fhir.instance.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ConsultationTransformer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ConsultationTransformer.class);
 
     public static void transform(MedicalRecordType medicalRecord, List<Resource> resources, String patientGuid) throws TransformException {
 
@@ -86,71 +91,83 @@ public class ConsultationTransformer {
         resources.add(fhirEncounter);
 
         Reference encounterReference = EmisOpenHelper.createEncounterReference(consultationGuid, patientGuid);
+        List<Resource> childResources = new ArrayList<>();
 
         ElementListType elements = consultation.getElementList();
         if (elements != null) {
             for (ElementListType.ConsultationElement element: elements.getConsultationElement()) {
 
                 if (element.getEvent() != null) {
-                    Resource resource = EventTransformer.transform(element.getEvent(), patientGuid);
-                    if (resource != null) {
-                        //TODO - link to encounter
-
-                        resources.add(resource);
-                    }
+                    EventTransformer.transform(element.getEvent(), childResources, patientGuid);
                 }
 
                 if (element.getMedication() != null) {
-                    MedicationStatement resource = MedicationTransformer.transform(element.getMedication(), patientGuid);
-                    if (resource != null) {
-                        //TODO - extend MedicationStatement profile to include an Encounter reference
-                        resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, encounterReference));
-                        resources.add(resource);
-                    }
+                    MedicationTransformer.transform(element.getMedication(), childResources, patientGuid);
                 }
 
                 if (element.getDiary() != null) {
-                    ProcedureRequest resource = DiaryTransformer.transform(element.getDiary(), patientGuid);
-                    if (resource != null) {
-                        resource.setEncounter(encounterReference);
-                        resources.add(resource);
-                    }
+                    DiaryTransformer.transform(element.getDiary(), childResources, patientGuid);
                 }
 
                 if (element.getReferral() != null) {
-                    ReferralRequest resource = ReferralTransformer.transform(element.getReferral(), patientGuid);
-                    if (resource != null) {
-                        resource.setEncounter(encounterReference);
-                        resources.add(resource);
-                    }
+                    ReferralTransformer.transform(element.getReferral(), childResources, patientGuid);
                 }
 
                 if (element.getAllergy() != null) {
-                    AllergyIntolerance resource = AllergyTransformer.transform(element.getAllergy(), patientGuid);
-                    if (resource != null) {
-                        resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, encounterReference));
-                        resources.add(resource);
-                    }
+                    AllergyTransformer.transform(element.getAllergy(), childResources, patientGuid);
                 }
 
                 if (element.getInvestigation() != null) {
-                    Resource resource = InvestigationTransformer.transform(element.getInvestigation(), patientGuid);
-                    if (resource != null) {
-                        //TODO - link to encounter
-
-                        resources.add(resource);
-                    }
+                    InvestigationTransformer.transform(element.getInvestigation(), childResources, patientGuid);
                 }
 
                 if (element.getTestRequest() != null) {
-                    Resource resource = TestRequestHeaderTransformer.transform(element.getTestRequest(), patientGuid);
-                    if (resource != null) {
-                        //TODO - link to encounter
-
-                        resources.add(resource);
-                    }
+                    TestRequestHeaderTransformer.transform(element.getTestRequest(), childResources, patientGuid);
                 }
             }
+        }
+
+        for (Resource childResource: childResources) {
+
+            if (childResource instanceof Observation) {
+                ((Observation)childResource).setEncounter(encounterReference);
+
+            } else if (childResource instanceof Condition) {
+                ((Condition)childResource).setEncounter(encounterReference);
+
+            } else if (childResource instanceof Procedure) {
+                ((Procedure)childResource).setEncounter(encounterReference);
+
+            } else if (childResource instanceof FamilyMemberHistory) {
+                ((FamilyMemberHistory)childResource).addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, encounterReference));
+
+            } else if (childResource instanceof Immunization) {
+                ((Immunization)childResource).setEncounter(encounterReference);
+
+            } else if (childResource instanceof ProcedureRequest) {
+                ((ProcedureRequest)childResource).setEncounter(encounterReference);
+
+            } else if (childResource instanceof ReferralRequest) {
+                ((ReferralRequest)childResource).setEncounter(encounterReference);
+
+            } else if (childResource instanceof AllergyIntolerance) {
+                ((AllergyIntolerance)childResource).addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, encounterReference));
+
+            } else if (childResource instanceof DiagnosticReport) {
+                ((DiagnosticReport)childResource).setEncounter(encounterReference);
+
+            } else if (childResource instanceof DiagnosticOrder) {
+                ((DiagnosticOrder)childResource).setEncounter(encounterReference);
+
+            } else if (childResource instanceof MedicationStatement) {
+                //TODO - extend MedicationStatement profile to include an Encounter reference
+                ((MedicationStatement)childResource).addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, encounterReference));
+
+            } else {
+                LOG.warn("Not linking Encounter to " + childResource.getResourceType());
+            }
+
+            resources.add(childResource);
         }
 
     }

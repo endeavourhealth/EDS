@@ -15,11 +15,14 @@ import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.schema.FamilyMember;
 import org.hl7.fhir.instance.model.*;
 
-final class FamilyHistoryTransformer {
+import java.util.Date;
+import java.util.List;
+
+final class FamilyHistoryTransformer extends ClinicalTransformerBase {
 
     private static final String QUALIFIER_GROUP_TERM_FAMILY_MEMBER = "Family member";
 
-    public static FamilyMemberHistory transform(EventType eventType, String patientGuid) throws TransformException
+    public static void transform(EventType eventType, List<Resource> results, String patientGuid) throws TransformException
     {
         FamilyMemberHistory fhirFamilyMemberHistory = new FamilyMemberHistory();
         fhirFamilyMemberHistory.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_FAMILY_MEMBER_HISTORY));
@@ -41,7 +44,13 @@ final class FamilyHistoryTransformer {
             fhirFamilyMemberHistory.setNote(AnnotationHelper.createAnnotation(text));
         }
 
-        return fhirFamilyMemberHistory;
+        Date dateRecorded = findRecordedDate(eventType.getOriginalAuthor());
+        addRecordedDateExtension(fhirFamilyMemberHistory, dateRecorded);
+
+        String recordedByGuid = findRecordedUserGuid(eventType.getOriginalAuthor());
+        addRecordedByExtension(fhirFamilyMemberHistory, recordedByGuid);
+
+        results.add(fhirFamilyMemberHistory);
     }
 
     private static Extension getFamilyMemberHistoryRecorderExtension(AuthorType authorType) throws TransformException

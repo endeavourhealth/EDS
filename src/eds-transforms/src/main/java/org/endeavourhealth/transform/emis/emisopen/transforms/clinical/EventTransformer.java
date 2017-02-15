@@ -7,9 +7,9 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.endeavourhealth.transform.fhir.AnnotationHelper;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.transform.fhir.QuantityHelper;
+import org.endeavourhealth.transform.terminology.Read2;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Date;
 import java.util.List;
 
-public class EventTransformer {
+public class EventTransformer extends ClinicalTransformerBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(EventTransformer.class);
 
@@ -68,30 +68,64 @@ public class EventTransformer {
         }
 
         for (EventType eventType : eventList.getEvent()) {
-            Resource resource = transform(eventType, patientUuid);
-
-            //need to handle null resources being returned
-            if (resource != null) {
-                results.add(resource);
-            }
-            //resource.add(transform(eventType, medicalRecordType.getRegistration().getGUID()));
+            transform(eventType, results, patientUuid);
         }
     }
 
-    public static Resource transform(EventType eventType, String patientUuid) throws TransformException {
+    public static void transform(EventType eventType, List<Resource> results, String patientUuid) throws TransformException {
+
+        //if the event is a problem then we MUST create a Condition resource for it, even if we also
+        //create another resource type for it too
+        boolean requiresCondition = eventType.getProblem() != null;
 
         //check for routing to FHIR based on the code first
-        /*StringCodeType code = eventType.getCode();
+        StringCodeType code = eventType.getCode();
         if (code != null) {
             String read2Code = code.getValue();
             if (Read2.isProcedure(read2Code)) {
-                return transformProcedure(eventType, patientUuid);
+                transformProcedure(eventType, results, patientUuid);
 
             } else if (Read2.isDisorder(read2Code)) {
-                return transformCondition(eventType, patientUuid);
+                transformCondition(eventType, results, patientUuid);
+                //if we've created a condition, set this to false, so we don't create another one
+                requiresCondition = false;
             }
-        }*/
+        }
 
+        switch (ObservationType.fromValue(eventType.getEventType().intValue())) {
+
+            case TEXT:
+            case OBSERVATION:
+            case PROBLEM:
+            case VALUE:
+                transformObservation(eventType, results, patientUuid);
+                break;
+            case ALLERGY:
+                AllergyTransformer.transform(eventType, results, patientUuid);
+                break;
+            case FAMILYHISTORY:
+                FamilyHistoryTransformer.transform(eventType, results, patientUuid);
+                break;
+            case IMMUNISATION:
+                ImmunisationTransformer.transform(eventType, results, patientUuid);
+                break;
+            case REFERRAL:
+                ReferralTransformer.transform(eventType, results, patientUuid);
+                break;
+            case ALERT:
+            case ATTACHMENT:
+            case PROBLEMRATING:
+                break;
+            default:
+                throw new TransformException("Unhandled event type " + eventType);
+        }
+
+        //if our event is a problem, and we didn't create a condition, create one now
+        if (requiresCondition) {
+            transformCondition(eventType, results, patientUuid);
+        }
+    }
+    /*public static Resource transform(EventType eventType, String patientUuid) throws TransformException {
 
         switch (ObservationType.fromValue(eventType.getEventType().intValue())) {
 
@@ -116,9 +150,102 @@ public class EventTransformer {
             default:
                 throw new TransformException("Unhandled event type " + eventType);
         }
+    }*/
+
+    private static void transformObservation(EventType eventType, List<Resource> results, String patientGuid) throws TransformException {
+
+        Observation fhirObservation = new Observation();
+        fhirObservation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_OBSERVATION));
+
+        String eventGuid = eventType.getGUID();
+        EmisOpenHelper.setUniqueId(fhirObservation, patientGuid, eventGuid);
+
+        fhirObservation.setSubject(EmisOpenHelper.createPatientReference(patientGuid));
+
+        fhirObservation.setStatus(org.hl7.fhir.instance.model.Observation.ObservationStatus.UNKNOWN);
+
+        fhirObservation.setEffective(DateConverter.convertPartialDateToDateTimeType(eventType.getAssignedDate(), eventType.getAssignedTime(), eventType.getDatePart()));
+
+        fhirObservation.setCode(CodeConverter.convert(eventType.getCode(), eventType.getDisplayTerm()));
+
+        IdentType author = eventType.getAuthorID();
+        if (author != null) {
+            fhirObservation.addPerformer(EmisOpenHelper.createPractitionerReference(author.getGUID()));
+        }
+
+        NumericValueType valueType = eventType.getNumericValue();
+        if (valueType != null) {
+            Double value = valueType.getValue();
+            String units = valueType.getUnits();
+            fhirObservation.setValue(QuantityHelper.createQuantity(value, units));
+
+            Double low = valueType.getNumericMinimum();
+            Double high = valueType.getNumericMaximum();
+
+            if (low != null || high != null) {
+
+                //TODO - use range operators
+                //String highOperator = valueType.getMaximumRangeOperator();
+                //String lowOperator = valueType.getMinRangeOperator();
+
+                org.hl7.fhir.instance.model.Observation.ObservationReferenceRangeComponent fhirRange = fhirObservation.addReferenceRange();
+
+                if (low != null && high != null) {
+                    fhirRange.setLow(QuantityHelper.createSimpleQuantity(low, units, Quantity.QuantityComparator.GREATER_OR_EQUAL));
+                    fhirRange.setHigh(QuantityHelper.createSimpleQuantity(high, units, Quantity.QuantityComparator.LESS_OR_EQUAL));
+                } else if (low != null) {
+                    fhirRange.setLow(QuantityHelper.createSimpleQuantity(low, units, Quantity.QuantityComparator.GREATER_THAN));
+                } else {
+                    fhirRange.setHigh(QuantityHelper.createSimpleQuantity(high, units, Quantity.QuantityComparator.LESS_THAN));
+                }
+            }
+        }
+
+        String text = eventType.getDescriptiveText();
+        if (!Strings.isNullOrEmpty(text)) {
+            fhirObservation.setComments(text);
+        }
+
+        Date dateRecorded = findRecordedDate(eventType.getOriginalAuthor());
+        addRecordedDateExtension(fhirObservation, dateRecorded);
+
+        String recordedByGuid = findRecordedUserGuid(eventType.getOriginalAuthor());
+        addRecordedByExtension(fhirObservation, recordedByGuid);
+
+        results.add(fhirObservation);
     }
 
-    private static Resource transformCondition(EventType eventType, String patientUuid) throws TransformException {
+    /*public static Observation transform(EventType eventType, String patientGuid) throws TransformException {
+
+        Observation observation = new Observation();
+        observation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_OBSERVATION));
+
+        EmisOpenHelper.setUniqueId(observation, patientGuid, eventType.getGUID());
+
+        observation.setSubject(EmisOpenHelper.createPatientReference(patientGuid));
+        observation.addPerformer(EmisOpenHelper.createPractitionerReference(eventType.getOriginalAuthor().getUser().getGUID()));
+
+        observation.setEffective(DateConverter.convertPartialDateToDateTimeType(eventType.getAssignedDate(), eventType.getAssignedTime(), eventType.getDatePart()));
+
+        observation.setCode(CodeConverter.convert(eventType.getCode(), eventType.getDisplayTerm()));
+
+        if (eventType.getNumericValue() != null)
+        {
+            SimpleQuantity simpleQuantity = new SimpleQuantity();
+            simpleQuantity.setValue(BigDecimal.valueOf(eventType.getNumericValue().getValue()));
+            simpleQuantity.setUnit(eventType.getNumericValue().getUnits());
+            observation.setValue(simpleQuantity);
+        }
+
+        String text = eventType.getDescriptiveText();
+        if (!Strings.isNullOrEmpty(text)) {
+            observation.setComments(text);
+        }
+
+        return observation;
+    }*/
+
+    private static void transformCondition(EventType eventType, List<Resource> results, String patientUuid) throws TransformException {
 
         Condition fhirCondition = new Condition();
         fhirCondition.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_CONDITION));
@@ -153,10 +280,96 @@ public class EventTransformer {
             fhirCondition.setNotes(text);
         }
 
-        return fhirCondition;
+        //if the condition is also a problem, we need to change/add a few things
+        ProblemType problem = eventType.getProblem();
+        if (problem != null) {
+
+            fhirCondition.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROBLEM));
+
+            String endDateStr = problem.getEndDate();
+            if (!Strings.isNullOrEmpty(endDateStr)) {
+                fhirCondition.setAbatement(DateConverter.convertPartialDateToDateTimeType(endDateStr, null, problem.getEndDatePart()));
+
+            } else {
+
+                //if there's no end date, the problem may still be ended, which is in the status description
+                /*String problemStatus = parser.getProblemStatusDescription();
+                if (problemStatus.equalsIgnoreCase("Past Problem")) {
+                    fhirProblem.setAbatement(new BooleanType(true));
+                }*/
+            }
+
+            /*BigInteger duration = problem.getExpectedDuration();
+            if (duration != null) {
+                int durationInt = duration.intValue();
+                if (durationInt > 0) {
+                    fhirCondition.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_EXPECTED_DURATION, new IntegerType(durationInt)));
+                }
+            }
+
+            Date lastReviewDate = parser.getLastReviewDate();
+            String lastReviewPrecision = parser.getLastReviewDatePrecision();
+            DateType lastReviewDateType = EmisDateTimeHelper.createDateType(lastReviewDate, lastReviewPrecision);
+            String lastReviewedByGuid = parser.getLastReviewUserInRoleGuid();
+            if (lastReviewDateType != null
+                    || !Strings.isNullOrEmpty(lastReviewedByGuid)) {
+
+                //the review extension is a compound extension, containing who and when
+                Extension fhirExtension = ExtensionConverter.createCompoundExtension(FhirExtensionUri.PROBLEM_LAST_REVIEWED);
+
+                if (lastReviewDateType != null) {
+                    fhirExtension.addExtension(ExtensionConverter.createExtension(FhirExtensionUri._PROBLEM_LAST_REVIEWED__DATE, lastReviewDateType));
+                }
+                if (!Strings.isNullOrEmpty(lastReviewedByGuid)) {
+                    fhirExtension.addExtension(ExtensionConverter.createExtension(FhirExtensionUri._PROBLEM_LAST_REVIEWED__PERFORMER, csvHelper.createPractitionerReference(lastReviewedByGuid)));
+                }
+                fhirProblem.addExtension(fhirExtension);
+            }
+
+            ProblemSignificance fhirSignificance = convertSignificance(parser.getSignificanceDescription());
+            CodeableConcept fhirConcept = CodeableConceptHelper.createCodeableConcept(fhirSignificance);
+            fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_SIGNIFICANCE, fhirConcept));
+
+            String parentProblemGuid = parser.getParentProblemObservationGuid();
+            String parentRelationship = parser.getParentProblemRelationship();
+            if (!Strings.isNullOrEmpty(parentProblemGuid)) {
+                ProblemRelationshipType fhirRelationshipType = convertRelationshipType(parentRelationship);
+
+                //this extension is composed of two separate extensions
+                Extension typeExtension = ExtensionConverter.createExtension("type", new StringType(fhirRelationshipType.getCode()));
+                Extension referenceExtension = ExtensionConverter.createExtension("target", csvHelper.createProblemReference(parentProblemGuid, patientGuid));
+                fhirProblem.addExtension(ExtensionConverter.createCompoundExtension(FhirExtensionUri.PROBLEM_RELATED, typeExtension, referenceExtension));
+            }
+
+            //carry over linked items from any previous instance of this problem
+            List<Reference> previousReferences = findPreviousLinkedReferences(csvHelper, fhirResourceFiler, fhirProblem.getId());
+            if (previousReferences != null && !previousReferences.isEmpty()) {
+                csvHelper.addLinkedItemsToProblem(fhirProblem, previousReferences);
+            }
+
+            //apply any linked items from this extract
+            List<String> linkedResources = csvHelper.getAndRemoveProblemRelationships(observationGuid, patientGuid);
+            if (linkedResources != null) {
+                List<Reference> references = ReferenceHelper.createReferences(linkedResources);
+                csvHelper.addLinkedItemsToProblem(fhirProblem, references);
+            }*/
+
+            /**
+             protected Byte problemStatus;
+             protected Byte groupingStatus;
+             protected Byte problemType;
+             protected Byte significance;
+             protected IdentType parentProblem;
+             protected Byte owner;
+             protected CareAimListType careAimList;
+             protected CarePlanListType carePlanList;
+             */
+        }
+
+        results.add(fhirCondition);
     }
 
-    public static Resource transformProcedure(EventType eventType, String patientGuid) throws TransformException {
+    private static void transformProcedure(EventType eventType, List<Resource> results, String patientGuid) throws TransformException {
         Procedure fhirProcedure = new Procedure();
         fhirProcedure.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROCEDURE));
 
@@ -187,47 +400,7 @@ public class EventTransformer {
         String recordedByGuid = findRecordedUserGuid(eventType.getOriginalAuthor());
         addRecordedByExtension(fhirProcedure, recordedByGuid);
 
-        return fhirProcedure;
+        results.add(fhirProcedure);
     }
 
-    private static Date findRecordedDate(AuthorType authorType) throws TransformException {
-        if (authorType == null) {
-            return null;
-        }
-        String dateStr = authorType.getSystemDate();
-        if (Strings.isNullOrEmpty(dateStr)) {
-            return null;
-        }
-
-        return DateConverter.getDate(dateStr);
-    }
-
-    private static String findRecordedUserGuid(AuthorType authorType) {
-        if (authorType == null) {
-            return null;
-        }
-        IdentType identType = authorType.getUser();
-        if (identType == null) {
-            return null;
-        }
-
-        return identType.getGUID();
-    }
-
-    private static void addRecordedByExtension(DomainResource resource, String recordedByGuid) throws TransformException {
-        if (Strings.isNullOrEmpty(recordedByGuid)) {
-            return;
-        }
-
-        Reference reference = EmisOpenHelper.createPractitionerReference(recordedByGuid);
-        resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
-    }
-
-    private static void addRecordedDateExtension(DomainResource resource, Date recordedDate) throws TransformException {
-        if (recordedDate == null) {
-            return;
-        }
-
-        resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(recordedDate)));
-    }
 }

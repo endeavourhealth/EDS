@@ -35,12 +35,12 @@ public final class MedicationTransformer {
         }
 
         for (MedicationType medicationType : medicationList.getMedication()) {
-            resources.add(transform(medicationType, patientUuid));
+            transform(medicationType, resources, patientUuid);
         }
 
     }
 
-    public static MedicationStatement transform(MedicationType medicationType, String patientGuid) throws TransformException
+    public static void transform(MedicationType medicationType, List<Resource> resources, String patientGuid) throws TransformException
     {
         MedicationStatement fhirMedicationStatement = new MedicationStatement();
         fhirMedicationStatement.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_AUTHORISATION));
@@ -108,7 +108,7 @@ public final class MedicationTransformer {
             fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
         }
 
-        return fhirMedicationStatement;
+        resources.add(fhirMedicationStatement);
     }
 
     private static MedicationStatement.MedicationStatementDosageComponent getDosage(MedicationType medicationType)
