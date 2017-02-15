@@ -7,6 +7,7 @@ public abstract class SegmentName {
     public static final String EVN = "EVN";
     public static final String MSH = "MSH";
     public static final String NK1 = "NK1";
+    public static final String NTE = "NTE";
     public static final String OBX = "OBX";
     public static final String PD1 = "PD1";
     public static final String PID = "PID";
@@ -22,6 +23,7 @@ public abstract class SegmentName {
             case EVN: return EvnSegment.class;
             case MSH: return MshSegment.class;
             case NK1: return Nk1Segment.class;
+            case NTE: return NteSegment.class;
             case OBX: return ObxSegment.class;
             case PD1: return Pd1Segment.class;
             case PID: return PidSegment.class;
