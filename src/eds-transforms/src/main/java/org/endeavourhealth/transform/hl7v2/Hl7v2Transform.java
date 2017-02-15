@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.hl7v2;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
+import org.endeavourhealth.transform.hl7v2.mapper.CodeMapper;
 import org.endeavourhealth.transform.hl7v2.parser.Message;
 import org.endeavourhealth.transform.hl7v2.parser.ParseException;
 import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
@@ -36,7 +37,8 @@ public class Hl7v2Transform {
         /////
         ///// perform the actual transform and output as JSON
         /////
-        Bundle bundle = AdtMessageTransform.transform(adtMessage);
+        CodeMapper codeMapper = transformProfile.getCodeMapper(sendingFacility);
+        Bundle bundle = AdtMessageTransform.transform(adtMessage, codeMapper);
         return FhirResourceHelper.getPrettyJson(bundle);
     }
 

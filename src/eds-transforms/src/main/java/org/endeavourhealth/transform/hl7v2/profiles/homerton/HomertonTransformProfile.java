@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.hl7v2.profiles.homerton;
 
+import org.endeavourhealth.transform.hl7v2.mapper.CodeMapper;
 import org.endeavourhealth.transform.hl7v2.profiles.TransformProfile;
 import org.endeavourhealth.transform.hl7v2.parser.ParseException;
 import org.endeavourhealth.transform.hl7v2.parser.Segment;
@@ -28,5 +29,10 @@ public class HomertonTransformProfile implements TransformProfile {
 
     public AdtMessage preTransform(AdtMessage sourceMessage) throws ParseException {
         return HomertonPreTransform.preTransform(sourceMessage);
+    }
+
+    @Override
+    public CodeMapper getCodeMapper(String originatingSystemId) {
+        return new HomertonCodeMapper(originatingSystemId);
     }
 }
