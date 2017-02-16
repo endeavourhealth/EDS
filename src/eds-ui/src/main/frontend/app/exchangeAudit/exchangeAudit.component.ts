@@ -26,7 +26,15 @@ import {TransformErrorsDialog} from "./transformErrors.dialog";
 export class ExchangeAuditComponent {
 
 	service: Service;
+
+	//exchange filters
+	searchTab: string;
 	exchangesToShow: number;
+	exchangeIdSearch: string;
+	exchangeSearchFrom: Date;
+	exchangeSearchTo: Date;
+
+	//results
 	exchanges: Exchange[];
 	selectedExchange: Exchange;
 	busyPostingToExchange: Subscription;
@@ -64,15 +72,49 @@ export class ExchangeAuditComponent {
 		var vm = this;
 		var serviceId = vm.service.uuid;
 
-		vm.exchangeAuditService.getExchangeList(serviceId, vm.exchangesToShow).subscribe(
-			(result) => {
-				vm.exchanges = result;
-				if (result.length == 0) {
-					vm.log.success('No exchanges found');
-				}
-			},
-			(error) => vm.log.error('Failed to retrieve exchanges', error, 'View Exchanges')
-		)
+		console.log('tab = ' + this.searchTab);
+
+		if (!this.searchTab
+			|| this.searchTab == 'tabDates') {
+
+			if (this.exchangeSearchFrom
+				&& this.exchangeSearchTo
+				&& this.exchangeSearchTo.getTime() < this.exchangeSearchFrom.getTime()) {
+				this.log.error('Search date range is invalid');
+				return;
+			}
+
+			console.log("Search from " + this.exchangeSearchFrom);
+			console.log("Search to " + this.exchangeSearchTo);
+
+			vm.exchangeAuditService.getExchangeList(serviceId, vm.exchangesToShow, this.exchangeSearchFrom, this.exchangeSearchTo).subscribe(
+				(result) => {
+					vm.exchanges = result;
+					if (result.length == 0) {
+						vm.log.success('No exchanges found');
+					}
+				},
+				(error) => vm.log.error('Failed to retrieve exchanges', error, 'View Exchanges')
+			)
+
+		} else {
+
+			if (!this.exchangeIdSearch) {
+				this.log.error('Enter an exchange ID to search');
+				return;
+			}
+
+			vm.exchangeAuditService.getExchangeById(serviceId, this.exchangeIdSearch).subscribe(
+				(result) => {
+					vm.exchanges = result;
+					if (result.length == 0) {
+						vm.log.success('No exchanges found');
+					}
+				},
+				(error) => vm.log.error('Failed to retrieve exchanges', error, 'View Exchanges')
+			)
+		}
+
 	}
 
 
@@ -172,5 +214,13 @@ export class ExchangeAuditComponent {
 
 		var vm = this;
 		TransformErrorsDialog.open(vm.$modal, serviceId, systemId, transformAudit);
+	}
+
+
+
+	tabSelected(tab: string) {
+		this.searchTab = tab;
+		console.log("Tab: " + tab);
+
 	}
 }

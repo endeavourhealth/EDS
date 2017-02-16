@@ -1,15 +1,17 @@
 package org.endeavourhealth.queuereader;
 
+import com.datastax.driver.core.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
-import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.endeavourhealth.core.data.CassandraConnector;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.models.ExchangeByService;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
@@ -725,10 +727,22 @@ public class Main {
 		//ServiceRepository serviceRepository = new ServiceRepository();
 		//OrganisationRepository organisationRepository = new OrganisationRepository();
 
+		Session session = CassandraConnector.getInstance().getSession();
+		Statement stmt = new SimpleStatement("SELECT exchange_id FROM audit.exchange LIMIT 500;");
+		stmt.setFetchSize(100);
+
+/*
 		List<org.endeavourhealth.core.data.audit.models.Exchange> exchanges = auditRepository.getAllExchanges();
 		for (org.endeavourhealth.core.data.audit.models.Exchange exchange: exchanges) {
-
 			UUID exchangeId = exchange.getExchangeId();
+*/
+
+		ResultSet rs = session.execute(stmt);
+		while (!rs.isExhausted()) {
+			Row row = rs.one();
+			UUID exchangeId = row.get(0, UUID.class);
+
+			org.endeavourhealth.core.data.audit.models.Exchange exchange = auditRepository.getExchange(exchangeId);
 
 			String headerJson = exchange.getHeaders();
 			HashMap<String, String> headers = null;

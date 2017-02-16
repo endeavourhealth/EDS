@@ -18,14 +18,51 @@
 
                     <div class="panel panel-primary">
                         <div class="panel-body">
-                            <form name="numExchangesForm">
-                                <div class="form-group">
-                                    <label>Showing last</label>
-                                    <input name="numberOfExchanges" type="number" class="form-control" [(ngModel)]="exchangesToShow" required>
-                                </div>
-                                <button type="button" class="btn btn-default" (click)="refreshExchanges()">Go</button>
 
-                            </form>
+                            <ngb-accordion #acc="ngbAccordion">
+                                <ngb-panel title="Show Search">
+                                    <template ngbPanelContent>
+
+                                        <ngb-tabset type="pills" activeId="tabId" (tabChange)="tabSelected($event.nextId)">
+
+                                            <ngb-tab id="tabId" title="ID">
+                                                <template ngbTabContent>
+                                                    <div class="form-group">
+                                                        <label>Exchange ID</label>
+                                                        <input name="ExchangeIdSearch" class="form-control" [(ngModel)]="exchangeIdSearch">
+                                                    </div>
+                                                </template>
+                                            </ngb-tab>
+
+                                            <ngb-tab id="tabDates" title="Dates">
+                                                <template ngbTabContent>
+
+                                                    <div class="form-group">
+                                                        <label>Search From:</label>
+                                                        <datetime [timepicker]="{ showMeridian: false }" [(ngModel)]="exchangeSearchFrom" [datepicker]="{ format: 'dd-M-yyyy', autoclose: true, todayHighlight: true }" (blur)="filterDateToChange(filterDateFrom)" placeholder="Select date to"></datetime>
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label>Search To:</label>
+                                                        <datetime [timepicker]="{ showMeridian: false }" [(ngModel)]="exchangeSearchTo" [datepicker]="{ format: 'dd-M-yyyy', autoclose: true, todayHighlight: true }" (blur)="filterDateToChange(filterDateFrom)" placeholder="Select date to"></datetime>
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label>Showing:</label>
+                                                        <input name="ExchangesToShow" type="number" class="form-control" [(ngModel)]="exchangesToShow" required>
+                                                    </div>
+
+                                                </template>
+                                            </ngb-tab>
+
+                                        </ngb-tabset>
+
+                                        <button type="button" class="btn btn-default" (click)="refreshExchanges()">Go</button>
+
+                                    </template>
+                                </ngb-panel>
+                            </ngb-accordion>
+
                         </div>
                     </div>
 

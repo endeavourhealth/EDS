@@ -12,13 +12,33 @@ export class ExchangeAuditService extends BaseHttp2Service {
     constructor(http:Http) { super(http); }
 
 
-    getExchangeList(serviceId:string, maxRows:number) : Observable<Exchange[]> {
+    getExchangeList(serviceId:string, maxRows:number, dateFrom:Date, dateTo:Date) : Observable<Exchange[]> {
+        console.log('Getting for service id ' + serviceId + ' and ' + maxRows + ' from ' + dateFrom + ' to ' + dateTo);
+
         var params = new URLSearchParams();
-        console.log('Getting for service id ' + serviceId + ' and ' + maxRows);
         params.append('serviceId', serviceId);
         params.append('maxRows', '' + maxRows);
+        if (dateFrom) {
+            params.append('dateFrom', '' + dateFrom.getTime());
+        } else {
+            params.append('dateFrom', '');
+        }
+        if (dateTo) {
+            params.append('dateTo', '' + dateTo.getTime());
+        } else {
+            params.append('dateTo', '');
+        }
 
         return this.httpGet('api/exchangeAudit/getExchangeList', { search : params});
+    }
+
+    getExchangeById(serviceId:string, exchangeId:string) : Observable<Exchange[]> {
+        var params = new URLSearchParams();
+        console.log('Getting for service id ' + serviceId + ' and exchange id ' + exchangeId);
+        params.append('serviceId', serviceId);
+        params.append('exchangeId', exchangeId);
+
+        return this.httpGet('api/exchangeAudit/getExchangeById', { search : params});
     }
 
     getExchangeEvents(exchangeId:string) : Observable<ExchangeEvent[]> {

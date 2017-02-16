@@ -7,9 +7,11 @@ import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.CallableError;
+import org.endeavourhealth.transform.emis.csv.ThreadPool;
 import org.hl7.fhir.instance.model.Resource;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 
 /**
  * takes some resources, computes the delta to what's on the DB already and files them
@@ -195,16 +197,6 @@ public class FhirDeltaResourceFilter {
 
     private void mapIds(List<Resource> resources) throws Exception {
 
-        for (Resource resource: resources) {
-            try {
-                IdHelper.mapIds(serviceId, systemId, resource);
-            } catch (Exception ex) {
-                throw new TransformException("Exception mapping  " + resource.getResourceType() + " " + resource.getId(), ex);
-            }
-        }
-    }
-    /*private void mapIds(List<Resource> resources) throws Exception {
-
         //don't set a limit on the pool to start blocking, since the resources
         //are already in memory, so having them all in the queue won't use much more
         ThreadPool idMappingPool = new ThreadPool(maxThreadsToUse, Integer.MAX_VALUE);
@@ -218,6 +210,16 @@ public class FhirDeltaResourceFilter {
 
         List<CallableError> errors = idMappingPool.waitAndStop();
         handleErrors(errors);
+    }
+    /*private void mapIds(List<Resource> resources) throws Exception {
+
+        for (Resource resource: resources) {
+            try {
+                IdHelper.mapIds(serviceId, systemId, resource);
+            } catch (Exception ex) {
+                throw new TransformException("Exception mapping  " + resource.getResourceType() + " " + resource.getId(), ex);
+            }
+        }
     }*/
 
     private void handleErrors(List<CallableError> errors) throws Exception {
@@ -236,7 +238,7 @@ public class FhirDeltaResourceFilter {
     /**
      * thread pool runnable to map resource IDs and references in parallel
      */
-    /*class MapIdTask implements Callable {
+    class MapIdTask implements Callable {
 
         private Resource resource = null;
 
@@ -255,6 +257,6 @@ public class FhirDeltaResourceFilter {
 
             return null;
         }
-    }*/
+    }
 
 }

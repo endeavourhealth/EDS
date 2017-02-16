@@ -1,8 +1,8 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.DetermineRelevantProtocolIdsConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -31,17 +31,8 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
 
 		// Determine relevant publisher protocols
-		List<String> protocolIds = getProtocolsForPublisherService(serviceUuid);
-		if (protocolIds.size() == 0)
-			throw new PipelineException("No publisher protocols found for service " + serviceUuid);
-
-		try {
-			String protocolsJson = ObjectMapperPool.getInstance().writeValueAsString(protocolIds.toArray());
-			exchange.setHeader(HeaderKeys.ProtocolIds, protocolsJson);
-		} catch (JsonProcessingException e) {
-			LOG.error("Unable to serialize protocols to JSON");
-			throw new PipelineException(e.getMessage(), e);
-		}
+		String protocolIdsJson = getProtocolIdsForPublisherService(serviceUuid);
+		exchange.setHeader(HeaderKeys.ProtocolIds, protocolIdsJson);
 
 		//commit what we've just received to the DB
 		AuditWriter.writeExchange(exchange);
@@ -49,7 +40,22 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		LOG.debug("Data distribution protocols identified");
 	}
 
-	private List<String> getProtocolsForPublisherService(String serviceUuid) throws PipelineException {
+	public static String getProtocolIdsForPublisherService(String serviceUuid) throws PipelineException {
+
+		List<String> protocolIds = getProtocolsForPublisherService(serviceUuid);
+		if (protocolIds.size() == 0)
+			throw new PipelineException("No publisher protocols found for service " + serviceUuid);
+
+		try {
+			return ObjectMapperPool.getInstance().writeValueAsString(protocolIds.toArray());
+
+		} catch (JsonProcessingException e) {
+			LOG.error("Unable to serialize protocols to JSON");
+			throw new PipelineException(e.getMessage(), e);
+		}
+	}
+
+	private static List<String> getProtocolsForPublisherService(String serviceUuid) throws PipelineException {
 
 		try {
 			List<LibraryItem> libraryItemList = LibraryRepositoryHelper.getProtocolsByServiceId(serviceUuid);

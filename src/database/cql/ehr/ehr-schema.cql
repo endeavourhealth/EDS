@@ -36,7 +36,7 @@ CREATE TABLE resource_history (
   PRIMARY KEY ((resource_id, resource_type), version)
 ) WITH CLUSTERING ORDER BY (version DESC);
 
-CREATE TABLE resource_history_by_service (
+/*CREATE TABLE resource_history_by_service (
   service_id uuid,
   system_id uuid,
   resource_type text,
@@ -47,7 +47,7 @@ CREATE TABLE resource_history_by_service (
   schema_version text,
   resource_data text,
   PRIMARY KEY ((service_id, system_id, resource_type), resource_id, version)
-) WITH CLUSTERING ORDER BY (resource_id ASC, version DESC);
+) WITH CLUSTERING ORDER BY (resource_id ASC, version DESC);*/
 
 CREATE TABLE resource_by_service (
   service_id uuid,

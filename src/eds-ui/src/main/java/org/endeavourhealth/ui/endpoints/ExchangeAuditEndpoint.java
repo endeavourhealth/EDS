@@ -3,8 +3,12 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Strings;
-import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.common.security.annotations.RequiresAdmin;
+import org.endeavourhealth.common.utility.StreamExtension;
+import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.*;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
@@ -15,16 +19,13 @@ import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.*;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
+import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.messaging.pipeline.components.RunDataDistributionProtocols;
-import org.endeavourhealth.common.security.SecurityUtils;
-import org.endeavourhealth.common.security.annotations.RequiresAdmin;
-import org.endeavourhealth.common.utility.StreamExtension;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
@@ -62,7 +63,10 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/getExchangeList")
-    public Response getExchangeList(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr, @QueryParam("maxRows") int maxRows) throws Exception {
+    public Response getExchangeList(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr,
+                                                                 @QueryParam("maxRows") int maxRows,
+                                                                 @QueryParam("dateFrom") Long dateFrom,
+                                                                 @QueryParam("dateTo") Long dateTo) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Exchange List",
@@ -72,6 +76,13 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         List<JsonExchange> ret = new ArrayList<>();
 
         UUID serviceUuid = UUID.fromString(serviceIdStr);
+
+        /*SELECT * FROM audit.exchange_by_service
+        WHERE service_id = 9d23eb25-b710-4c8b-a0ef-793b3df68c29
+        AND timestamp > '2017-01-01'
+        AND timestamp < '2017-03-01'
+        LIMIT 100;
+*/
 
         List<ExchangeByService> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, maxRows);
         for (ExchangeByService exchangeByService: exchangeByServices) {
@@ -85,6 +96,55 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, timestamp, headers);
             ret.add(jsonExchange);
         }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/getExchangeById")
+    public Response getExchangeById(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr, @QueryParam("exchangeId") String exchangeIdStr) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Exchange For ID",
+                "Service Id", serviceIdStr,
+                "Exchange Id", exchangeIdStr);
+
+        List<JsonExchange> ret = new ArrayList<>();
+
+        UUID exchangeUuid = null;
+        try {
+            exchangeUuid = UUID.fromString(exchangeIdStr);
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Invalid Exchange ID");
+        }
+
+        UUID serviceUuid = UUID.fromString(serviceIdStr);
+
+        Exchange exchange = auditRepository.getExchange(exchangeUuid);
+        if (exchange == null) {
+            throw new BadRequestException("No exchange found for " + exchangeIdStr);
+        }
+
+        Date timestamp = exchange.getTimestamp();
+        String headerJson = exchange.getHeaders();
+        HashMap<String, String> headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+
+        //validate the exchange is for our service
+        String exchangeServiceIdStr = headers.get(HeaderKeys.SenderServiceUuid);
+        if (exchangeServiceIdStr == null
+                || !exchangeServiceIdStr.equals(serviceIdStr)) {
+            throw new BadRequestException("Exchange isn't for this service");
+        }
+
+        JsonExchange jsonExchange = new JsonExchange(exchangeUuid, serviceUuid, timestamp, headers);
+        ret.add(jsonExchange);
 
         clearLogbackMarkers();
 
@@ -158,6 +218,15 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         }
 
         org.endeavourhealth.core.messaging.exchange.Exchange exchange = retrieveExchange(exchangeId);
+
+        //to make sure the latest setup applies, re-calculate the protocols that apply to this exchange
+        String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
+        String newProtocolIdsJson = DetermineRelevantProtocolIds.getProtocolIdsForPublisherService(serviceUuid);
+        String oldProtocolIdsJson = exchange.getHeader(HeaderKeys.ProtocolIds);
+        if (!newProtocolIdsJson.equals(oldProtocolIdsJson)) {
+            exchange.setHeader(HeaderKeys.ProtocolIds, newProtocolIdsJson);
+            AuditWriter.writeExchange(exchange);
+        }
 
         //work out what multicast header we need
         String multicastHeader = exchangeConfig.getMulticastHeader();

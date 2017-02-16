@@ -15,9 +15,11 @@ import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class IdHelper {
     private static final Logger LOG = LoggerFactory.getLogger(IdHelper.class);
@@ -25,10 +27,12 @@ public class IdHelper {
     private static JCS cache = null;
     private static Map<Class, BaseIdMapper> idMappers = new ConcurrentHashMap<>();
     private static ResourceIdMapRepository repository = new ResourceIdMapRepository();
+    private static Map<String, AtomicInteger> synchLocks = new HashMap<>();
 
     static {
-        try {
 
+        //init the cache
+        try {
             //by default the Java Caching System has a load of logging enabled, which is really slow, so turn it off
             org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger("org.apache.jcs");
             logger.setLevel(org.apache.log4j.Level.OFF);
@@ -50,8 +54,50 @@ public class IdHelper {
     public static UUID getOrCreateEdsResourceId(UUID serviceId, UUID systemId, ResourceType resourceType, String sourceId) {
         String key = createCacheKey(serviceId, systemId, resourceType, sourceId);
 
+        //check out in-memory cache first
         UUID edsId = (UUID)cache.get(key);
         if (edsId == null) {
+
+            //if not in the memory cache, check the DB
+            ResourceIdMap mapping = repository.getResourceIdMap(serviceId, systemId, resourceType.toString(), sourceId);
+            if (mapping == null) {
+                //if definitely now mapping on the DB, create and save a new ID
+                edsId = createEdsResourceId(serviceId, systemId, resourceType, sourceId, key);
+
+            } else {
+                edsId = mapping.getEdsId();
+            }
+
+            //add to our memory cache, as we're likely to use this ID again soon
+            try {
+                cache.put(key, edsId);
+            } catch (Exception ex) {
+                LOG.error("Error adding key ["+key+"] value ["+edsId+"] to ID map cache", ex);
+            }
+        }
+        return edsId;
+    }
+
+    private static UUID createEdsResourceId(UUID serviceId, UUID systemId, ResourceType resourceType, String sourceId, String cacheKey) {
+
+        //we need to synch to prevent two threads generating an ID for the same source ID at the same time
+        //use an AtomicInt for each cache key as a synchronisation object and as a way to track
+        AtomicInteger atomicInteger = null;
+        synchronized (synchLocks) {
+            atomicInteger = synchLocks.get(cacheKey);
+            if (atomicInteger == null) {
+                atomicInteger = new AtomicInteger(0);
+                synchLocks.put(cacheKey, atomicInteger);
+            }
+
+            atomicInteger.incrementAndGet();
+        }
+
+        UUID ret = null;
+
+        synchronized (atomicInteger) {
+
+            //check the DB again, from within the sync block, just in case another was just created
             ResourceIdMap mapping = repository.getResourceIdMap(serviceId, systemId, resourceType.toString(), sourceId);
             if (mapping == null) {
                 mapping = new ResourceIdMap();
@@ -68,14 +114,17 @@ public class IdHelper {
                 }
             }
 
-            edsId = mapping.getEdsId();
-            try {
-                cache.put(key, edsId);
-            } catch (Exception ex) {
-                LOG.error("Error adding key ["+key+"] value ["+edsId+"] to ID map cache", ex);
+            ret = mapping.getEdsId();
+        }
+
+        synchronized (synchLocks) {
+            int val = atomicInteger.decrementAndGet();
+            if (val == 0) {
+                synchLocks.remove(cacheKey);
             }
         }
-        return edsId;
+
+        return ret;
     }
 
     public static UUID getEdsResourceId(UUID serviceId, UUID systemId, ResourceType resourceType, String sourceId) {
