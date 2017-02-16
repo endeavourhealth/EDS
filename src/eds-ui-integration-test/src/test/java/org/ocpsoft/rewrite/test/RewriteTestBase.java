@@ -13,7 +13,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.*;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.endeavourhealth.core.security.keycloak.client.resources.HttpDeleteWithBody;
@@ -63,7 +63,7 @@ public abstract class RewriteTestBase
      */
     protected HttpAction<HttpGet> get(final String path) throws Exception
     {
-        DefaultHttpClient client = new DefaultHttpClient();
+        HttpClient client = HttpClientBuilder.create().build();;
         return get(client, path);
     }
 
@@ -159,7 +159,7 @@ public abstract class RewriteTestBase
      */
     protected HttpAction<HttpHead> head(final String path)
     {
-        DefaultHttpClient client = new DefaultHttpClient();
+        HttpClient client = HttpClientBuilder.create().build();;
         try
         {
             HttpHead request = new HttpHead(getBaseURL() + getContextPath() + path);

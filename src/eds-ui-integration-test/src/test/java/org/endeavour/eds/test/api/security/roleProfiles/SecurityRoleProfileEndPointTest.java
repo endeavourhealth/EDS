@@ -9,7 +9,7 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.endeavour.eds.test.AuthHelper;
 import org.endeavour.eds.test.JsonHelper;
@@ -54,7 +54,7 @@ public class SecurityRoleProfileEndPointTest extends RewriteTestBase {
     public void testListAvailableRoles() throws Exception {
         AuthHelper.auth();
 
-        HttpClient client = new DefaultHttpClient();
+        HttpClient client = HttpClientBuilder.create().build();
 
         HttpAction<HttpGet> httpGet = get(client, "/api/security/roleProfiles/availableRoles", KeycloakClient.instance().getAuthorizationHeader());
 
@@ -70,7 +70,7 @@ public class SecurityRoleProfileEndPointTest extends RewriteTestBase {
     public void testList() throws Exception {
         AuthHelper.auth();
 
-        HttpClient client = new DefaultHttpClient();
+        HttpClient client = HttpClientBuilder.create().build();
 
         HttpAction<HttpGet> httpGet = get(client, "/api/security/roleProfiles", KeycloakClient.instance().getAuthorizationHeader());
 
@@ -121,7 +121,7 @@ public class SecurityRoleProfileEndPointTest extends RewriteTestBase {
     public void testCreateAndNestingAndDelete() throws Exception {
         AuthHelper.auth();
 
-        HttpClient client = new DefaultHttpClient();
+        HttpClient client = HttpClientBuilder.create().build();
 
         String rnd = UUID.randomUUID().toString().substring(0, 6);
         String roleId = getAvailableRole(this, client, "eds_admin").getRoleProfileId().toString();

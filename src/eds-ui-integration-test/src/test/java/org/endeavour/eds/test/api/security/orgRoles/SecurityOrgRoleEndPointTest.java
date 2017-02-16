@@ -8,7 +8,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.endeavour.eds.test.AuthHelper;
 import org.endeavour.eds.test.JsonHelper;
@@ -48,7 +48,7 @@ public class SecurityOrgRoleEndPointTest extends RewriteTestBase {
     public void testAccessDenied() throws Exception {
         AuthHelper.auth();
 
-        HttpClient client = new DefaultHttpClient();
+        HttpClient client = HttpClientBuilder.create().build();;
 
         HttpAction<HttpGet> httpGet = get(client, "/api/security/orgRoleGroups/00000000-0000-0000-0000-000000000000", KeycloakClient.instance().getAuthorizationHeader(), AuthHelper.getUnauthorisedOrgHeader());
 
@@ -64,7 +64,7 @@ public class SecurityOrgRoleEndPointTest extends RewriteTestBase {
     public void testList() throws Exception {
         AuthHelper.auth();
 
-        HttpClient client = new DefaultHttpClient();
+        HttpClient client = HttpClientBuilder.create().build();;
 
         HttpAction<HttpGet> httpGet = get(client, "/api/security/orgRoleGroups/00000000-0000-0000-0000-000000000000", KeycloakClient.instance().getAuthorizationHeader());
 
@@ -98,7 +98,7 @@ public class SecurityOrgRoleEndPointTest extends RewriteTestBase {
     public void testCreateAndDelete() throws Exception {
         AuthHelper.auth();
 
-        HttpClient client = new DefaultHttpClient();
+        HttpClient client = HttpClientBuilder.create().build();;
 
         UUID orgId = UUID.fromString(OrgRoles.ROOT_ORGANISATION_ID);
         String rnd = UUID.randomUUID().toString();

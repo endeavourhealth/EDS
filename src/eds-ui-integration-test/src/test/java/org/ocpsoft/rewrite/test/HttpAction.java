@@ -18,8 +18,8 @@ package org.ocpsoft.rewrite.test;
 import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpCoreContext;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -56,9 +56,9 @@ public class HttpAction<T extends HttpRequest>
     public String getCurrentURL()
     {
         HttpUriRequest currentReq = (HttpUriRequest) context.getAttribute(
-                ExecutionContext.HTTP_REQUEST);
+                HttpCoreContext.HTTP_REQUEST);
         HttpHost currentHost = (HttpHost) context.getAttribute(
-                ExecutionContext.HTTP_TARGET_HOST);
+            HttpCoreContext.HTTP_TARGET_HOST);
         String currentUrl = currentHost.toURI() + currentReq.getURI();
 
         if (currentUrl.startsWith(baseUrl))
@@ -88,7 +88,7 @@ public class HttpAction<T extends HttpRequest>
     public String getHost()
     {
         HttpHost currentHost = (HttpHost) context.getAttribute(
-                ExecutionContext.HTTP_TARGET_HOST);
+            HttpCoreContext.HTTP_TARGET_HOST);
 
         return currentHost.toURI();
     }

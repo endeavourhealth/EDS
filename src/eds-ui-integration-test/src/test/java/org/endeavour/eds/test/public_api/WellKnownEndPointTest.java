@@ -4,7 +4,7 @@ import junit.framework.Assert;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.junit.Arquillian;
@@ -37,7 +37,7 @@ public class WellKnownEndPointTest extends RewriteTestBase {
     @Test
     @RunAsClient
     public void testAuthConfig() throws Exception {
-        HttpClient client = new DefaultHttpClient();
+        HttpClient client = HttpClientBuilder.create().build();;
 
         HttpAction<HttpGet> authconfig = get(client, "/public/wellknown/authconfig");
         Assert.assertEquals(200, authconfig.getStatusCode());

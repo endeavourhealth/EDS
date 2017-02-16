@@ -16,24 +16,11 @@
 
     <dependencies>
 
-        <!-- dependent on EDS-core and EDS-messaging-core -->
-        <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
-            <artifactId>eds-core</artifactId>
-            <version>${eds-common.version}</version>
-        </dependency>
-
+        <!-- dependent on EDS-messaging-core -->
         <dependency>
             <groupId>org.endeavourhealth</groupId>
             <artifactId>eds-messaging-core</artifactId>
             <version>1.0-SNAPSHOT</version>
-        </dependency>
-
-        <!-- rabbit MQ -->
-        <dependency>
-            <groupId>com.rabbitmq</groupId>
-            <artifactId>amqp-client</artifactId>
-            <version>${amqp-client.version}</version>
         </dependency>
 
         <!--mySQL-->
@@ -42,8 +29,6 @@
             <artifactId>mysql-connector-java</artifactId>
             <version>6.0.5</version>
         </dependency>
-
-
     </dependencies>
 
     <build>
