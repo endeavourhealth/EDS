@@ -753,9 +753,14 @@ public class Main {
 				continue;
 			}
 
-			UUID serviceId = UUID.fromString(headers.get(HeaderKeys.SenderServiceUuid));
+			if (Strings.isNullOrEmpty(headers.get(HeaderKeys.SenderServiceUuid))
+					|| Strings.isNullOrEmpty(HeaderKeys.SenderSystemUuid)) {
+				LOG.info("Skipping exchange " + exchangeId + " because no service or system in header");
+				continue;
+			}
 
 			try {
+				UUID serviceId = UUID.fromString(headers.get(HeaderKeys.SenderServiceUuid));
 				UUID systemId = UUID.fromString(headers.get(HeaderKeys.SenderSystemUuid));
 
 				List<ExchangeBatch> exchangeBatches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
