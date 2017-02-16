@@ -24,6 +24,13 @@
         </dependency>
 
         <dependency>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>cache</artifactId>
+            <version>${eds-common.version}</version>
+        </dependency>
+
+
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>

@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.ui.helpers;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.core.utility.StreamExtension;
+import org.endeavourhealth.common.utility.StreamExtension;
 import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.models.resources.admin.UILocation;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIOrganisation;

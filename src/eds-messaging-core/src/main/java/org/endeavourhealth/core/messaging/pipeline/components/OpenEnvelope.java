@@ -2,8 +2,8 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.endeavourhealth.core.audit.AuditWriter;
-import org.endeavourhealth.core.cache.ObjectMapperPool;
-import org.endeavourhealth.core.cache.ParserPool;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.core.configuration.OpenEnvelopeConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;

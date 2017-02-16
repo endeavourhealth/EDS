@@ -16,6 +16,28 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>eds-core</artifactId>
+            <version>${eds-common.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>config</artifactId>
+            <version>${eds-common.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>cache</artifactId>
+            <version>${eds-common.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons-io.version}</version>
@@ -24,11 +46,6 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback-classic.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
-            <artifactId>eds-core</artifactId>
-            <version>${eds-common.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

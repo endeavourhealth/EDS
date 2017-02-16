@@ -1,7 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.endeavourhealth.core.cache.ObjectMapperPool;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
@@ -15,8 +15,8 @@ import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
 import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
-import org.endeavourhealth.core.security.SecurityUtils;
-import org.endeavourhealth.core.security.annotations.RequiresAdmin;
+import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;

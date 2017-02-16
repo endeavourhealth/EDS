@@ -3,7 +3,7 @@ package org.endeavourhealth.transform.enterprise.outputModels;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.core.cache.ObjectMapperPool;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 
 import java.io.ByteArrayOutputStream;

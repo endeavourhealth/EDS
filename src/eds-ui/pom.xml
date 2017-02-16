@@ -17,6 +17,12 @@
     <packaging>war</packaging>
 
     <dependencies>
+        <!-- dependent on EDS-core -->
+        <dependency>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>eds-ui-core</artifactId>
+            <version>${eds-common.version}</version>
+        </dependency>
 
         <!-- Jersey -->
         <dependency>
@@ -212,15 +218,6 @@
             <artifactId>HikariCP</artifactId>
             <version>${hikari.version}</version>
         </dependency>
-
-        <!-- dependent on EDS-core -->
-
-        <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
-            <artifactId>eds-ui-core</artifactId>
-            <version>${eds-common.version}</version>
-        </dependency>
-
 
         <!-- dependent on EDS-transforms -->
 

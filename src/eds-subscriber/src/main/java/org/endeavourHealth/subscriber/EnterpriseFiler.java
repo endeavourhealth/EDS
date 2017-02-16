@@ -6,8 +6,8 @@ import com.google.common.io.Files;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.endeavourhealth.core.cache.ObjectMapperPool;
-import org.endeavourhealth.core.data.config.ConfigManager;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

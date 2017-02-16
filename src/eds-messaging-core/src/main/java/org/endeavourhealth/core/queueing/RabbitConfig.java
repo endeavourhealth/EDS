@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.queueing;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.endeavourhealth.core.data.config.ConfigManager;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

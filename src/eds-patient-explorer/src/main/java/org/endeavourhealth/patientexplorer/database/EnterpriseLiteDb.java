@@ -1,7 +1,7 @@
 package org.endeavourhealth.patientexplorer.database;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.endeavourhealth.core.data.config.ConfigManager;
+import org.endeavourhealth.common.config.ConfigManager;
 
 import java.io.IOException;
 import java.sql.Connection;

@@ -1,7 +1,7 @@
 package org.endeavourhealth.queuereader;
 
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
-import org.endeavourhealth.core.utility.XmlSerializer;
+import org.endeavourhealth.common.utility.XmlSerializer;
 
 public abstract class ConfigDeserialiser {
 

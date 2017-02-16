@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.configuration;
 
-import org.endeavourhealth.core.data.config.ConfigManager;
-import org.endeavourhealth.core.utility.XmlSerializer;
+import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.utility.XmlSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

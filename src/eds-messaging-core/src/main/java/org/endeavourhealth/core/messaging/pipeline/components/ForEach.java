@@ -1,6 +1,6 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import org.endeavourhealth.core.cache.ObjectMapperPool;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.configuration.ForEachConfig;
 import org.endeavourhealth.core.configuration.Pipeline;
 import org.endeavourhealth.core.messaging.exchange.Exchange;

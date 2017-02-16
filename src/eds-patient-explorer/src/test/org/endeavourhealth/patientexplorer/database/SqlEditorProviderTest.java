@@ -1,9 +1,7 @@
 package org.endeavourhealth.patientexplorer.database;
 
-import org.endeavourhealth.core.data.config.ConfigManager;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 public class SqlEditorProviderTest {
 	@Test

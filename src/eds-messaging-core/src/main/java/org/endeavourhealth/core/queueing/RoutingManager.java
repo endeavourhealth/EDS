@@ -1,10 +1,10 @@
 package org.endeavourhealth.core.queueing;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.endeavourhealth.core.cache.CacheManager;
-import org.endeavourhealth.core.cache.ICacheable;
-import org.endeavourhealth.core.cache.ObjectMapperPool;
-import org.endeavourhealth.core.data.config.ConfigManager;
+import org.endeavourhealth.common.cache.CacheManager;
+import org.endeavourhealth.common.cache.ICacheable;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

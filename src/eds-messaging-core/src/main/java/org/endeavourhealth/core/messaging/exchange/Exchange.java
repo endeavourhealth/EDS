@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.messaging.exchange;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.core.cache.ObjectMapperPool;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 
 import java.util.HashMap;

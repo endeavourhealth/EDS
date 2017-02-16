@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.tpp;
 
-import org.endeavourhealth.core.utility.XmlSerializer;
+import org.endeavourhealth.common.utility.XmlSerializer;
 import org.endeavourhealth.transform.tpp.xml.schema.Metadata;
 import org.endeavourhealth.transform.tpp.xml.schema.Patient;
 import org.endeavourhealth.transform.tpp.xml.schema.PatientRecord;

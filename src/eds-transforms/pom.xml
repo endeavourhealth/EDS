@@ -23,6 +23,12 @@
             <version>${eds-common.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>cache</artifactId>
+            <version>${eds-common.version}</version>
+        </dependency>
+
         <!-- base FHIR resources (to be replaced with Endeavour extensions -->
         <dependency>
             <groupId>me.fhir</groupId>

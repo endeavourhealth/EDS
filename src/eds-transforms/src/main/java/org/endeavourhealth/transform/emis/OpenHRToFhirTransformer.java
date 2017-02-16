@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.emis;
 
-import org.endeavourhealth.core.utility.XmlHelper;
+import org.endeavourhealth.common.utility.XmlHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001OpenHealthRecord;
 import org.endeavourhealth.transform.emis.openhr.transforms.admin.LocationTransformer;

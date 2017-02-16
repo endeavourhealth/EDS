@@ -18,6 +18,27 @@
 
     <dependencies>
 
+        <!-- dependent on EDS-core -->
+
+        <dependency>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>eds-ui-core</artifactId>
+            <version>${eds-common.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>config</artifactId>
+            <version>${eds-common.version}</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-hikaricp</artifactId>
+            <version>${hibernate.version}</version>
+        </dependency>
+
         <!-- Jersey -->
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
@@ -193,15 +214,6 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${postgresql.version}</version>
-        </dependency>
-
-
-        <!-- dependent on EDS-core -->
-
-        <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
-            <artifactId>eds-ui-core</artifactId>
-            <version>${eds-common.version}</version>
         </dependency>
 
         <!-- dependent on EDS-transforms -->

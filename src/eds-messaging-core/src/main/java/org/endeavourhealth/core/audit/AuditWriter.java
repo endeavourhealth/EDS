@@ -2,7 +2,7 @@ package org.endeavourhealth.core.audit;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.endeavourhealth.core.cache.ObjectMapperPool;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.models.ExchangeEvent;
 import org.endeavourhealth.core.messaging.exchange.Exchange;

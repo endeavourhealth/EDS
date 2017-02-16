@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.ui.transforms.clinical;
 
-import org.endeavourhealth.core.utility.StreamExtension;
+import org.endeavourhealth.common.utility.StreamExtension;
 import org.endeavourhealth.transform.common.exceptions.TransformRuntimeException;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.ui.helpers.*;

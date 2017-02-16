@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.ui.transforms.clinical;
 
-import org.endeavourhealth.core.utility.StreamExtension;
+import org.endeavourhealth.common.utility.StreamExtension;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.DateHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
