@@ -2,11 +2,9 @@ package org.endeavourhealth.transform.hl7v2.transform;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ParticipantHelper;
+import org.endeavourhealth.transform.fhir.PeriodHelper;
 import org.endeavourhealth.transform.fhir.schema.EncounterParticipantType;
 import org.endeavourhealth.transform.hl7v2.parser.ParseException;
-import org.endeavourhealth.transform.hl7v2.parser.datatypes.Cx;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.Pl;
 import org.endeavourhealth.transform.hl7v2.parser.segments.Pv1Segment;
 import org.endeavourhealth.transform.hl7v2.transform.converters.*;
@@ -14,6 +12,7 @@ import org.endeavourhealth.transform.hl7v2.transform.converters.ExtensionHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.List;
+import java.util.UUID;
 
 public class PatientVisitTransform {
 
@@ -72,11 +71,36 @@ public class PatientVisitTransform {
                     .setLocation(getReference(source.getTemporaryLocation()));
         }
 
-        if (StringUtils.isNotBlank(source.getAdmitSource())){
+        if (StringUtils.isNotBlank(source.getAdmitSource())
+                || StringUtils.isNotBlank(source.getDischargeDisposition())
+                || StringUtils.isNotBlank(source.getDischargedToLocation())) {
+
             Encounter.EncounterHospitalizationComponent hospitalComponent = new Encounter.EncounterHospitalizationComponent();
-            hospitalComponent.setAdmitSource(CodeableConceptHelper.getCodeableConceptFromString(source.getAdmitSource()));
+
+            if (StringUtils.isNotBlank(source.getAdmitSource()))
+                hospitalComponent.setAdmitSource(CodeableConceptHelper.getCodeableConceptFromString(source.getAdmitSource()));
+
+            if (StringUtils.isNotBlank(source.getDischargeDisposition()))
+                hospitalComponent.setDischargeDisposition(CodeableConceptHelper.getCodeableConceptFromString(source.getDischargeDisposition()));
+
+            if (StringUtils.isNotBlank(source.getDischargedToLocation())) {
+                String ln = source.getDischargedToLocation();
+                Reference reference = new Reference();
+                reference.setDisplay(ln).setReference(generateId(ln,ln));
+
+                hospitalComponent.setDestination(reference);
+            }
 
             target.setHospitalization(hospitalComponent);
+        }
+
+        if (StringUtils.isNotBlank(source.getAccountStatus())){
+            target.setStatus(getState(source.getAccountStatus()));
+        }
+
+        if (source.getAdmitDateTime() != null || source.getDischargeDateTime() != null){
+            target.setPeriod(PeriodHelper.createPeriod(DateHelper.fromLocalDateTime(source.getAdmitDateTime()),
+                    DateHelper.fromLocalDateTime(source.getDischargeDateTime())));
         }
 
         if (StringUtils.isNotBlank(source.getPatientType()))
@@ -89,7 +113,28 @@ public class PatientVisitTransform {
             if (identifier != null)
                 target.addIdentifier(identifier);
         }
+
+        if (source.getOtherHealthcareProvider() != null) {
+            for (Encounter.EncounterParticipantComponent epl : PractitionerTransform.createParticipantComponents(source.getOtherHealthcareProvider()
+                    , EncounterParticipantType.SECONDARY_PERFORMER.getDescription()))
+                target.addParticipant(epl);
+        }
+
         return target;
+    }
+
+    private static Encounter.EncounterState getState(String state) throws TransformException  {
+        state = state.trim().toUpperCase();
+
+        switch (state) {
+            case "CANCELLED": return Encounter.EncounterState.CANCELLED;
+            case "DISCHARGED": return Encounter.EncounterState.FINISHED;
+            case "PENDING ARRIVAL": return Encounter.EncounterState.PLANNED;
+            case "ACTIVE": return Encounter.EncounterState.INPROGRESS;
+            case "PREADMIT": return Encounter.EncounterState.ARRIVED;
+
+            default: throw new TransformException(state + " state not recognised");
+        }
     }
 
     private static Reference getReference(Pl location) throws TransformException {
@@ -114,7 +159,9 @@ public class PatientVisitTransform {
         }
     }
 
-
+    private static String generateId(String uniqueString, String identifierString) {
+        return UUID.nameUUIDFromBytes((identifierString + uniqueString).getBytes()).toString();
+    }
 
 
 }

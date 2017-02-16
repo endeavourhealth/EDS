@@ -47,8 +47,7 @@ public class Pv1Segment extends Segment {
     public String getDeleteAccountIndicator() { return this.getFieldAsString(34); }
     public LocalDateTime getDeleteAccountDate() throws ParseException { return this.getFieldAsDate(35); }
     public String getDischargeDisposition() { return this.getFieldAsString(36); }
-    //Not sure about the Dld type yet!!!
-    //public Dld getDischargedToLocation() { return this.getFieldAsDatatype(37, Dld.class); }
+    public String getDischargedToLocation() { return this.getFieldAsString(37); }
     public Ce getDietType() { return this.getFieldAsDatatype(38, Ce.class); }
     public String getServicingFacility() { return this.getFieldAsString(39); }
     public String getBedStatus() { return this.getFieldAsString(40); }

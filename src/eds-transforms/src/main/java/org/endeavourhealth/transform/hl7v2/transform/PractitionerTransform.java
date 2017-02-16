@@ -40,6 +40,10 @@ public class PractitionerTransform {
         for (Xcn xcn : pv1Segment.getConsultingDoctor())
             practitioners.add(transform(xcn, mshSegment.getSendingFacility()));
 
+        if (pv1Segment.getOtherHealthcareProvider() != null)
+            for (Xcn xcn : pv1Segment.getOtherHealthcareProvider())
+                practitioners.add(transform(xcn, mshSegment.getSendingFacility()));
+
         return practitioners;
     }
 

@@ -5,6 +5,7 @@ import org.endeavourhealth.transform.hl7v2.parser.ParseException;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.Pl;
 import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
 import org.endeavourhealth.transform.hl7v2.parser.segments.Pv1Segment;
+import org.endeavourhealth.transform.hl7v2.transform.converters.CodeableConceptHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.*;
@@ -34,6 +35,9 @@ public class LocationTransform {
         if (pv1Segment.getTemporaryLocation() != null)
             for (Location location : convert(pv1Segment.getTemporaryLocation()))
                 locations.add(location);
+
+        if (pv1Segment.getDischargedToLocation() != null)
+                locations.add(createStandaloneLocationFromString(pv1Segment.getDischargedToLocation(), "bu"));
 
         return locations;
     }
@@ -69,7 +73,7 @@ public class LocationTransform {
 
         Location newLocation = new Location();
         newLocation.addIdentifier().setValue(generateId(locationType, identifierString));
-        newLocation.setPhysicalType(getCodeableConcept(locationType));
+        newLocation.setPhysicalType(CodeableConceptHelper.getCodeableConceptFromString(locationType));
         newLocation.setDescription(locationName + locationMap.get(locationType) + parentDescription);
         newLocation.setName(locationName);
 
@@ -77,6 +81,16 @@ public class LocationTransform {
             newLocation.setPartOf(parentRef.copy());
 
         locationHierarchy.add(newLocation);
+    }
+
+    private static Location createStandaloneLocationFromString(String locationName, String type) throws TransformException {
+        Location location = new Location();
+        location.addIdentifier().setValue(generateId(locationName, locationName));
+        location.setPhysicalType(CodeableConceptHelper.getCodeableConceptFromString(type));
+        location.setDescription(locationName);
+        location.setName(locationName);
+
+        return location;
     }
 
     public static Reference createReferenceFromLocation(Location location) {
@@ -88,13 +102,5 @@ public class LocationTransform {
 
     private static String generateId(String uniqueString, String identifierString) {
         return UUID.nameUUIDFromBytes((identifierString + uniqueString).getBytes()).toString();
-    }
-
-    private static CodeableConcept getCodeableConcept(String code) throws TransformException {
-        CodeableConcept codeableConcept = new CodeableConcept();
-        codeableConcept.addCoding();
-        codeableConcept.setText(code);
-
-        return codeableConcept;
     }
 }
