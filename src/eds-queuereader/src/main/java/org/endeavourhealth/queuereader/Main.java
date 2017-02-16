@@ -754,44 +754,48 @@ public class Main {
 			}
 
 			UUID serviceId = UUID.fromString(headers.get(HeaderKeys.SenderServiceUuid));
-			UUID systemId = UUID.fromString(headers.get(HeaderKeys.SenderSystemUuid));
 
+			try {
+				UUID systemId = UUID.fromString(headers.get(HeaderKeys.SenderSystemUuid));
 
-			List<ExchangeBatch> exchangeBatches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
-			for (ExchangeBatch exchangeBatch: exchangeBatches) {
+				List<ExchangeBatch> exchangeBatches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
+				for (ExchangeBatch exchangeBatch : exchangeBatches) {
 
-				if (exchangeBatch.getEdsPatientId() != null) {
-					continue;
-				}
-
-				UUID batchId = exchangeBatch.getBatchId();
-				List<ResourceByExchangeBatch> resourceWrappers = resourceRepository.getResourcesForBatch(batchId, ResourceType.Patient.toString());
-				if (resourceWrappers.isEmpty()) {
-					continue;
-				}
-
-				List<UUID> patientIds = new ArrayList<>();
-				for (ResourceByExchangeBatch resourceWrapper: resourceWrappers) {
-					UUID patientId = resourceWrapper.getResourceId();
-
-					if (resourceWrapper.getIsDeleted()) {
-						deleteEntirePatientRecord(patientId, serviceId, systemId, exchangeId, batchId);
+					if (exchangeBatch.getEdsPatientId() != null) {
+						continue;
 					}
 
-					if (!patientIds.contains(patientId)) {
-						patientIds.add(patientId);
+					UUID batchId = exchangeBatch.getBatchId();
+					List<ResourceByExchangeBatch> resourceWrappers = resourceRepository.getResourcesForBatch(batchId, ResourceType.Patient.toString());
+					if (resourceWrappers.isEmpty()) {
+						continue;
 					}
+
+					List<UUID> patientIds = new ArrayList<>();
+					for (ResourceByExchangeBatch resourceWrapper : resourceWrappers) {
+						UUID patientId = resourceWrapper.getResourceId();
+
+						if (resourceWrapper.getIsDeleted()) {
+							deleteEntirePatientRecord(patientId, serviceId, systemId, exchangeId, batchId);
+						}
+
+						if (!patientIds.contains(patientId)) {
+							patientIds.add(patientId);
+						}
+					}
+
+					if (patientIds.size() != 1) {
+						LOG.info("Skipping exchange " + exchangeId + " and batch " + batchId + " because found " + patientIds.size() + " patient IDs");
+						continue;
+					}
+
+					UUID patientId = patientIds.get(0);
+					exchangeBatch.setEdsPatientId(patientId);
+
+					exchangeBatchRepository.save(exchangeBatch);
 				}
-
-				if (patientIds.size() != 1) {
-					LOG.info("Skipping exchange " + exchangeId + " and batch " + batchId + " because found " + patientIds.size() + " patient IDs");
-					continue;
-				}
-
-				UUID patientId = patientIds.get(0);
-				exchangeBatch.setEdsPatientId(patientId);
-
-				exchangeBatchRepository.save(exchangeBatch);
+			} catch (Exception ex) {
+				LOG.error("Error with exchange " + exchangeId, ex);
 			}
 		}
 

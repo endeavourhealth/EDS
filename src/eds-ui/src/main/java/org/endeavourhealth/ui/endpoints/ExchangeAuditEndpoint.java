@@ -65,8 +65,8 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @Path("/getExchangeList")
     public Response getExchangeList(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr,
                                                                  @QueryParam("maxRows") int maxRows,
-                                                                 @QueryParam("dateFrom") Long dateFrom,
-                                                                 @QueryParam("dateTo") Long dateTo) throws Exception {
+                                                                 @QueryParam("dateFrom") Long dateFromMillis,
+                                                                 @QueryParam("dateTo") Long dateToMillis) throws Exception {
         super.setLogbackMarkers(sc);
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load, "Get Exchange List",
@@ -76,11 +76,32 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         List<JsonExchange> ret = new ArrayList<>();
 
         UUID serviceUuid = UUID.fromString(serviceIdStr);
+        Date dateFrom = new Date(0);
+        Date dateTo = new Date();
+
+        if (dateFromMillis != null) {
+            dateFrom = new Date(dateFromMillis.longValue());
+        }
+
+        if (dateToMillis != null) {
+            dateTo = new Date(dateToMillis.longValue());
+
+            //if the date to didn't have any TIME specified, then we want to include everything done on this
+            //date, so set the time to be the last minute of the date
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(dateTo);
+            if (cal.get(Calendar.HOUR_OF_DAY) == 0
+                    && cal.get(Calendar.MINUTE) == 0) {
+                cal.set(Calendar.HOUR_OF_DAY, 23);
+                cal.set(Calendar.MINUTE, 59);
+                dateTo = cal.getTime();
+            }
+        }
 
         /*SELECT * FROM audit.exchange_by_service
         WHERE service_id = 9d23eb25-b710-4c8b-a0ef-793b3df68c29
-        AND timestamp > '2017-01-01'
-        AND timestamp < '2017-03-01'
+        AND timestamp >= 'yyyy-mm-dd HH:mm'
+        AND timestamp <= 'yyyy-mm-dd HH:mm'
         LIMIT 100;
 */
 
