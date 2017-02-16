@@ -2,8 +2,8 @@ package org.endeavourhealth.hl7receiver;
 
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.config.ConfigManagerException;
-import org.endeavourhealth.core.postgres.PgDataSource;
-import org.endeavourhealth.core.postgres.logdigest.LogDigestAppender;
+import org.endeavourhealth.common.postgres.PgDataSource;
+import org.endeavourhealth.common.postgres.logdigest.LogDigestAppender;
 import org.endeavourhealth.hl7receiver.model.db.DbConfiguration;
 import org.endeavourhealth.hl7receiver.model.exceptions.ConfigurationException;
 import org.slf4j.Logger;

@@ -70,7 +70,7 @@
     </listener>
     
     <listener>
-        <listener-class>org.endeavourhealth.core.data.CassandraShutdownListener</listener-class>
+        <listener-class>org.endeavourhealth.common.cassandra.CassandraShutdownListener</listener-class>
     </listener>
 
     <filter>

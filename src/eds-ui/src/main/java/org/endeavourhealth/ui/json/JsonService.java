@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.json.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 
 import java.io.IOException;
 import java.util.ArrayList;

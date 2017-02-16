@@ -18,6 +18,13 @@
 
     <dependencies>
 
+        <!-- dependent on EDS-core -->
+        <dependency>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>api</artifactId>
+            <version>${eds-common.version}</version>
+        </dependency>
+
         <!-- JAX-RS -->
         <dependency>
             <groupId>javax.ws.rs</groupId>
@@ -130,13 +137,6 @@
             <version>${fhir-dstu2.version}</version>
         </dependency>
 
-
-        <!-- dependent on EDS-core -->
-        <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
-            <artifactId>eds-ui-core</artifactId>
-            <version>${eds-common.version}</version>
-        </dependency>
 
     </dependencies>
 

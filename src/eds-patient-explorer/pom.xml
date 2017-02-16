@@ -22,7 +22,7 @@
 
         <dependency>
             <groupId>com.github.endeavourhealth.Common</groupId>
-            <artifactId>eds-ui-core</artifactId>
+            <artifactId>api</artifactId>
             <version>${eds-common.version}</version>
         </dependency>
 

@@ -3,7 +3,7 @@ package org.endeavourhealth.hl7receiver.hl7;
 import ca.uhn.hl7v2.app.Connection;
 import ca.uhn.hl7v2.app.ConnectionListener;
 import ca.uhn.hl7v2.protocol.MetadataKeys;
-import org.endeavourhealth.core.postgres.PgStoredProcException;
+import org.endeavourhealth.common.postgres.PgStoredProcException;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
 import org.endeavourhealth.hl7receiver.model.db.DbChannel;
