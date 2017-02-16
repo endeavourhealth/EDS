@@ -17,12 +17,12 @@
     <dependencies>
         <dependency>
             <groupId>com.github.endeavourhealth.Common</groupId>
-            <artifactId>eds-core</artifactId>
+            <artifactId>config</artifactId>
             <version>${eds-common.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.endeavourhealth.Common</groupId>
-            <artifactId>config</artifactId>
+            <artifactId>eds</artifactId>
             <version>${eds-common.version}</version>
         </dependency>
         <dependency>

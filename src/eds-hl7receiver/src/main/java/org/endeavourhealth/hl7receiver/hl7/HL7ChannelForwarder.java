@@ -3,7 +3,7 @@ package org.endeavourhealth.hl7receiver.hl7;
 import ca.uhn.hl7v2.HL7Exception;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
-import org.endeavourhealth.core.eds.EdsSender;
+import org.endeavourhealth.common.eds.EdsSender;
 import org.endeavourhealth.common.security.keycloak.client.KeycloakClient;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
