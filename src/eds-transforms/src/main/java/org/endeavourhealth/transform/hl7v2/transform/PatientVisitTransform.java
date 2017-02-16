@@ -23,23 +23,35 @@ public class PatientVisitTransform {
             target.addExtension(ExtensionHelper.createStringExtension(FhirExtensionUri.ENCOUNTER_PATIENT_CLASS, source.getPatientClass()));
         }
 
-        List<Encounter.EncounterLocationComponent> encounterLocationComponentList;
-
         //Current Location
-        //encounterLocationComponentList = LocationTransform.convert(source.getAssignedPatientLocation(), "Current Location");
+        if (source.getAssignedPatientLocation() != null) {
+            List<Location> locations = LocationTransform.convert(source.getAssignedPatientLocation());
+            Location finalLocation = locations.get(locations.size() - 1);
 
-        //for (Encounter.EncounterLocationComponent elc : encounterLocationComponentList)
-        //    target.addLocation(elc);
+            Reference locationRef = LocationTransform.createReferenceFromLocation(finalLocation);
+
+            target.addLocation()
+                    .setStatus(Encounter.EncounterLocationStatus.ACTIVE)
+                    .setLocation(locationRef);
+
+        }
 
         if (source.getAdmissionType() != null){
             target.addType(getCodeableConceptFromString(source.getAdmissionType()));
         }
 
         //Prior Location
-        //encounterLocationComponentList = LocationTransform.convert(source.getPriorPatientLocation(), "Prior Location");
+        if (source.getPriorPatientLocation() != null) {
+            List<Location> locations = LocationTransform.convert(source.getPriorPatientLocation());
+            Location finalLocation = locations.get(locations.size() - 1);
 
-        //for (Encounter.EncounterLocationComponent elc : encounterLocationComponentList)
-        //    target.addLocation(elc);
+            Reference locationRef = LocationTransform.createReferenceFromLocation(finalLocation);
+
+            target.addLocation()
+                    .setStatus(Encounter.EncounterLocationStatus.COMPLETED)
+                    .setLocation(locationRef);
+
+        }
 
         Encounter.EncounterParticipantComponent epl = new Encounter.EncounterParticipantComponent();
 

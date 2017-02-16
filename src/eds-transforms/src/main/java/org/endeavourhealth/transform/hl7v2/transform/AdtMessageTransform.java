@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.hl7v2.transform;
 
 import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.transform.hl7v2.mapper.CodeMapper;
+import org.endeavourhealth.transform.hl7v2.parser.datatypes.Pl;
 import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
 import org.hl7.fhir.instance.model.*;
 
@@ -24,11 +25,21 @@ public class AdtMessageTransform {
             targetResources.add(practitioner);
 
         if (sourceMessage.hasPv1Segment()) {
-            List<Location> locations = LocationTransform.convert(sourceMessage.getPv1Segment().getAssignedPatientLocation());
-            for (Location loc : locations)
-                targetResources.add(loc);
+            if (sourceMessage.getPv1Segment().getAssignedPatientLocation() != null) {
+                addLocations(sourceMessage.getPv1Segment().getAssignedPatientLocation(), targetResources);
+            }
+
+            if (sourceMessage.getPv1Segment().getPriorPatientLocation() != null) {
+                addLocations(sourceMessage.getPv1Segment().getPriorPatientLocation(), targetResources);
+            }
         }
         return createBundle(targetResources);
+    }
+
+    private static void addLocations(Pl location, List<Resource> targetResources) throws TransformException {
+        List<Location> locations = LocationTransform.convert(location);
+        for (Location loc : locations)
+            targetResources.add(loc);
     }
 
     private static Bundle createBundle(List<Resource> resources) {
