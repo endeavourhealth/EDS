@@ -1,7 +1,10 @@
 package org.endeavourhealth.transform.hl7v2.transform;
 
 import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.transform.hl7v2.parser.ParseException;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.Pl;
+import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
+import org.endeavourhealth.transform.hl7v2.parser.segments.Pv1Segment;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.*;
@@ -14,6 +17,26 @@ public class LocationTransform {
         put("ro", " Room");
         put("bd", " Bed");
     }});
+
+    public static List<Location> fromHl7v2(AdtMessage source) throws ParseException, TransformException {
+        List<Location> locations = new ArrayList<>();
+
+        Pv1Segment pv1Segment = source.getPv1Segment();
+
+        if (pv1Segment.getAssignedPatientLocation() != null)
+            for (Location location : convert(pv1Segment.getAssignedPatientLocation()))
+                locations.add(location);
+
+        if (pv1Segment.getPriorPatientLocation() != null)
+            for (Location location : convert(pv1Segment.getPriorPatientLocation()))
+                locations.add(location);
+
+        if (pv1Segment.getTemporaryLocation() != null)
+            for (Location location : convert(pv1Segment.getTemporaryLocation()))
+                locations.add(location);
+
+        return locations;
+    }
 
     public static List<Location> convert(Pl source) throws TransformException {
         List<Location> locationHierarchy = new ArrayList<>();

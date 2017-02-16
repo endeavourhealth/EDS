@@ -12,34 +12,25 @@ import java.util.List;
 public class AdtMessageTransform {
     public static Bundle transform(AdtMessage sourceMessage, CodeMapper codeMapper) throws Exception {
         Validate.notNull(sourceMessage);
+        String sendingFacility;
 
         List<Resource> targetResources = new ArrayList<>();
 
         targetResources.add(MessageHeaderTransform.fromHl7v2(sourceMessage.getMshSegment()));
+
+        sendingFacility = sourceMessage.getMshSegment().getSendingFacility();
         targetResources.add(PatientTransform.fromHl7v2(sourceMessage));
 
         if (sourceMessage.hasPv1Segment())
-            targetResources.add(PatientVisitTransform.fromHl7v2(sourceMessage.getPv1Segment()));
+            targetResources.add(PatientVisitTransform.fromHl7v2(sourceMessage.getPv1Segment(), sendingFacility));
 
         for (Practitioner practitioner : PractitionerTransform.fromHl7v2(sourceMessage))
             targetResources.add(practitioner);
 
-        if (sourceMessage.hasPv1Segment()) {
-            if (sourceMessage.getPv1Segment().getAssignedPatientLocation() != null) {
-                addLocations(sourceMessage.getPv1Segment().getAssignedPatientLocation(), targetResources);
-            }
+        for (Location location : LocationTransform.fromHl7v2(sourceMessage))
+            targetResources.add(location);
 
-            if (sourceMessage.getPv1Segment().getPriorPatientLocation() != null) {
-                addLocations(sourceMessage.getPv1Segment().getPriorPatientLocation(), targetResources);
-            }
-        }
         return createBundle(targetResources);
-    }
-
-    private static void addLocations(Pl location, List<Resource> targetResources) throws TransformException {
-        List<Location> locations = LocationTransform.convert(location);
-        for (Location loc : locations)
-            targetResources.add(loc);
     }
 
     private static Bundle createBundle(List<Resource> resources) {

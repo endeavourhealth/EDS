@@ -76,6 +76,11 @@
             <artifactId>cryptolib</artifactId>
             <version>0.9.7</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>eds-core</artifactId>
+            <version>1.65</version>
+        </dependency>
 
         <!-- eCache caching framework -->
         <!--<dependency>-->
