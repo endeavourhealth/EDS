@@ -1,6 +1,7 @@
 package org.endeavourhealth.queuereader;
 
 import com.datastax.driver.core.*;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
@@ -8,24 +9,27 @@ import org.endeavourhealth.common.cassandra.CassandraConnector;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
+import org.endeavourhealth.core.data.admin.models.ActiveItem;
+import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.models.ExchangeByService;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
-import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
-import org.endeavourhealth.core.fhirStorage.FhirStorageService;
+import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.System;
+import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
+import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
-import org.hl7.fhir.instance.formats.JsonParser;
-import org.hl7.fhir.instance.model.Resource;
-import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,10 +71,16 @@ public class Main {
 			return;
 		}
 
-		if (args[0].equalsIgnoreCase("FixExchanges")) {
-			populateExchangeBatchPatients();
+		if (args[0].equalsIgnoreCase("ExchangeHeaders")) {
+			addSystemIdToExchangeHeaders();
 			return;
 		}
+
+
+		/*if (args[0].equalsIgnoreCase("FixExchanges")) {
+			populateExchangeBatchPatients();
+			return;
+		}*/
 
 		/*if (args[0].equalsIgnoreCase("TestLogging")) {
 			testLogging();
@@ -718,7 +728,114 @@ public class Main {
 		}
 	}*/
 
-	private static void populateExchangeBatchPatients() throws Exception {
+	private static UUID findSystemId(Service service, String software, String messageVersion) throws PipelineException {
+
+		List<JsonServiceInterfaceEndpoint> endpoints = null;
+		try {
+			endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+
+			for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
+
+				UUID endpointSystemId = endpoint.getSystemUuid();
+				String endpointInterfaceId = endpoint.getTechnicalInterfaceUuid().toString();
+
+				LibraryRepository libraryRepository = new LibraryRepository();
+				ActiveItem activeItem = libraryRepository.getActiveItemByItemId(endpointSystemId);
+				Item item = libraryRepository.getItemByKey(endpointSystemId, activeItem.getAuditId());
+				LibraryItem libraryItem = QueryDocumentSerializer.readLibraryItemFromXml(item.getXmlContent());
+				System system = libraryItem.getSystem();
+				for (TechnicalInterface technicalInterface: system.getTechnicalInterface()) {
+
+					if (endpointInterfaceId.equals(technicalInterface.getUuid())
+							&& technicalInterface.getMessageFormat().equalsIgnoreCase(software)
+							&& technicalInterface.getMessageFormatVersion().equalsIgnoreCase(messageVersion)) {
+
+						return endpointSystemId;
+					}
+				}
+			}
+		} catch (Exception e) {
+			throw new PipelineException("Failed to process endpoints from service " + service.getId());
+		}
+
+		return null;
+	}
+
+	private static void addSystemIdToExchangeHeaders() throws Exception {
+		LOG.info("populateExchangeBatchPatients");
+
+		AuditRepository auditRepository = new AuditRepository();
+		ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+		ResourceRepository resourceRepository = new ResourceRepository();
+		ServiceRepository serviceRepository = new ServiceRepository();
+		//OrganisationRepository organisationRepository = new OrganisationRepository();
+
+		Session session = CassandraConnector.getInstance().getSession();
+		Statement stmt = new SimpleStatement("SELECT exchange_id FROM audit.exchange LIMIT 500;");
+		stmt.setFetchSize(100);
+
+		ResultSet rs = session.execute(stmt);
+		while (!rs.isExhausted()) {
+			Row row = rs.one();
+			UUID exchangeId = row.get(0, UUID.class);
+
+			org.endeavourhealth.core.data.audit.models.Exchange exchange = auditRepository.getExchange(exchangeId);
+
+			String headerJson = exchange.getHeaders();
+			HashMap<String, String> headers = null;
+			try {
+				headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+			} catch (Exception e) {
+				LOG.error("Failed to read headers for exchange " + exchangeId + " and Json " + headerJson);
+				continue;
+			}
+
+			if (!Strings.isNullOrEmpty(headers.get(HeaderKeys.SenderServiceUuid))) {
+				LOG.info("Skipping exchange " + exchangeId + " as no service UUID");
+				continue;
+			}
+
+			if (!Strings.isNullOrEmpty(headers.get(HeaderKeys.SenderSystemUuid))) {
+				LOG.info("Skipping exchange " + exchangeId + " as already got system UUID");
+				continue;
+			}
+
+			try {
+
+				//work out service ID
+				String serviceIdStr = headers.get(HeaderKeys.SenderServiceUuid);
+				UUID serviceId = UUID.fromString(serviceIdStr);
+
+				String software = headers.get(HeaderKeys.SourceSystem);
+				String version = headers.get(HeaderKeys.SystemVersion);
+				Service service = serviceRepository.getById(serviceId);
+				UUID systemUuid = findSystemId(service, software, version);
+
+				headers.put(HeaderKeys.SenderSystemUuid, systemUuid.toString());
+
+				//work out protocol IDs
+				try {
+					String newProtocolIdsJson = DetermineRelevantProtocolIds.getProtocolIdsForPublisherService(serviceIdStr);
+					headers.put(HeaderKeys.ProtocolIds, newProtocolIdsJson);
+				} catch (Exception ex) {
+					LOG.error("Failed to recalculate protocols for " + exchangeId + ": " + ex.getMessage());
+				}
+
+				//save to DB
+				headerJson = ObjectMapperPool.getInstance().writeValueAsString(headers);
+				exchange.setHeaders(headerJson);
+				auditRepository.save(exchange);
+
+			} catch (Exception ex) {
+				LOG.error("Error with exchange " + exchangeId, ex);
+			}
+		}
+
+		LOG.info("Finished populateExchangeBatchPatients");
+	}
+
+
+	/*private static void populateExchangeBatchPatients() throws Exception {
 		LOG.info("populateExchangeBatchPatients");
 
 		AuditRepository auditRepository = new AuditRepository();
@@ -730,12 +847,6 @@ public class Main {
 		Session session = CassandraConnector.getInstance().getSession();
 		Statement stmt = new SimpleStatement("SELECT exchange_id FROM audit.exchange LIMIT 500;");
 		stmt.setFetchSize(100);
-
-/*
-		List<org.endeavourhealth.core.data.audit.models.Exchange> exchanges = auditRepository.getAllExchanges();
-		for (org.endeavourhealth.core.data.audit.models.Exchange exchange: exchanges) {
-			UUID exchangeId = exchange.getExchangeId();
-*/
 
 		ResultSet rs = session.execute(stmt);
 		while (!rs.isExhausted()) {
@@ -754,7 +865,7 @@ public class Main {
 			}
 
 			if (Strings.isNullOrEmpty(headers.get(HeaderKeys.SenderServiceUuid))
-					|| Strings.isNullOrEmpty(HeaderKeys.SenderSystemUuid)) {
+					|| Strings.isNullOrEmpty(headers.get(HeaderKeys.SenderSystemUuid))) {
 				LOG.info("Skipping exchange " + exchangeId + " because no service or system in header");
 				continue;
 			}
@@ -821,5 +932,5 @@ public class Main {
 		}
 
 
-	}
+	}*/
 }
