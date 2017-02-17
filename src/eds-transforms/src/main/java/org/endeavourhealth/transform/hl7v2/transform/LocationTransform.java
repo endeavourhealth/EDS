@@ -36,7 +36,7 @@ public class LocationTransform {
             for (Location location : convert(pv1Segment.getTemporaryLocation()))
                 locations.add(location);
 
-        if (pv1Segment.getDischargedToLocation() != null)
+        if (StringUtils.isNotBlank(pv1Segment.getDischargedToLocation()))
                 locations.add(createStandaloneLocationFromString(pv1Segment.getDischargedToLocation(), "bu"));
 
         return locations;

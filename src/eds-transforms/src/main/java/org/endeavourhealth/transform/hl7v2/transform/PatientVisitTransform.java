@@ -2,14 +2,15 @@ package org.endeavourhealth.transform.hl7v2.transform;
 
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.PeriodHelper;
 import org.endeavourhealth.transform.fhir.schema.EncounterParticipantType;
 import org.endeavourhealth.transform.hl7v2.parser.ParseException;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.Pl;
 import org.endeavourhealth.transform.hl7v2.parser.segments.Pv1Segment;
+import org.endeavourhealth.transform.hl7v2.parser.segments.Pv2Segment;
 import org.endeavourhealth.transform.hl7v2.transform.converters.*;
 import org.endeavourhealth.transform.hl7v2.transform.converters.ExtensionHelper;
 import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.Encounter;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,20 +28,28 @@ public class PatientVisitTransform {
 
         //Current Location
         if (source.getAssignedPatientLocation() != null) {
-            target.addLocation()
-                    .setStatus(Encounter.EncounterLocationStatus.ACTIVE)
-                    .setLocation(getReference(source.getAssignedPatientLocation()));
+            Reference reference = getReference(source.getAssignedPatientLocation());
+
+            if (reference != null) {
+                target.addLocation()
+                        .setStatus(Encounter.EncounterLocationStatus.ACTIVE)
+                        .setLocation(reference);
+            }
         }
 
-        if (source.getAdmissionType() != null){
+        if (StringUtils.isNotBlank(source.getAdmissionType())){
             target.addType(CodeableConceptHelper.getCodeableConceptFromString(source.getAdmissionType()));
         }
 
         //Prior Location
         if (source.getPriorPatientLocation() != null) {
-            target.addLocation()
-                    .setStatus(Encounter.EncounterLocationStatus.COMPLETED)
-                    .setLocation(getReference(source.getPriorPatientLocation()));
+            Reference reference = getReference(source.getPriorPatientLocation());
+
+            if (reference != null) {
+                target.addLocation()
+                        .setStatus(Encounter.EncounterLocationStatus.COMPLETED)
+                        .setLocation(reference);
+            }
         }
 
         if (source.getAttendingDoctor() != null) {
@@ -66,9 +75,13 @@ public class PatientVisitTransform {
 
         //Temporary Location
         if (source.getTemporaryLocation() != null) {
-            target.addLocation()
-                    .setStatus(Encounter.EncounterLocationStatus.ACTIVE)
-                    .setLocation(getReference(source.getTemporaryLocation()));
+            Reference reference = getReference(source.getTemporaryLocation());
+
+            if (reference != null) {
+                target.addLocation()
+                        .setStatus(Encounter.EncounterLocationStatus.ACTIVE)
+                        .setLocation(reference);
+            }
         }
 
         if (StringUtils.isNotBlank(source.getAdmitSource())
@@ -98,9 +111,13 @@ public class PatientVisitTransform {
             target.setStatus(getState(source.getAccountStatus()));
         }
 
-        if (source.getAdmitDateTime() != null || source.getDischargeDateTime() != null){
-            target.setPeriod(PeriodHelper.createPeriod(DateHelper.fromLocalDateTime(source.getAdmitDateTime()),
-                    DateHelper.fromLocalDateTime(source.getDischargeDateTime())));
+        if (source.getAdmitDateTime() != null || source.getDischargeDateTime() != null) {
+            Period period = new Period();
+            if (source.getAdmitDateTime() != null)
+                period.setStart(DateHelper.fromLocalDateTime(source.getAdmitDateTime()));
+            if (source.getDischargeDateTime() != null)
+                period.setEnd(DateHelper.fromLocalDateTime(source.getDischargeDateTime()));
+            target.setPeriod(period);
         }
 
         if (StringUtils.isNotBlank(source.getPatientType()))
@@ -123,6 +140,37 @@ public class PatientVisitTransform {
         return target;
     }
 
+    public static Encounter addAdditionalInformation(Encounter target, Pv2Segment source) throws TransformException, ParseException {
+
+        if (source.getAccommodationCode() != null){
+            target.addType(CodeableConceptHelper.getCodeableConceptFromString(source.getAccommodationCode().getAsString()));
+        }
+
+        if (source.getAdmitReason() != null) {
+            target.addReason(CodeableConceptHelper.getCodeableConceptFromString(source.getAdmitReason().getAsString()));
+        }
+
+        if (source.getTransferReason() != null) {
+            target.addReason(CodeableConceptHelper.getCodeableConceptFromString(source.getTransferReason().getAsString()));
+        }
+
+        if (source.getExpectedAdmitDateTime() != null || source.getExpectedDischargeDateTime() != null) {
+            Encounter.EncounterStatusHistoryComponent shc = new Encounter.EncounterStatusHistoryComponent();
+
+            shc.setStatus(Encounter.EncounterState.PLANNED);
+            Period period = new Period();
+            if (source.getExpectedAdmitDateTime() != null)
+                period.setStart(DateHelper.fromLocalDateTime(source.getExpectedAdmitDateTime()));
+            if (source.getExpectedDischargeDateTime() != null)
+                period.setEnd(DateHelper.fromLocalDateTime(source.getExpectedDischargeDateTime()));
+            shc.setPeriod(period);
+            target.addStatusHistory(shc);
+        }
+
+
+        return target;
+    }
+
     private static Encounter.EncounterState getState(String state) throws TransformException  {
         state = state.trim().toUpperCase();
 
@@ -139,6 +187,10 @@ public class PatientVisitTransform {
 
     private static Reference getReference(Pl location) throws TransformException {
         List<Location> locations = LocationTransform.convert(location);
+
+        if (locations.size() == 0)
+            return null;
+
         Location finalLocation = locations.get(locations.size() - 1);
 
         return LocationTransform.createReferenceFromLocation(finalLocation);

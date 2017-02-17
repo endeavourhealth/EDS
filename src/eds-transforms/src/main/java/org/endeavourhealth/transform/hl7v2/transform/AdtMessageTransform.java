@@ -21,8 +21,15 @@ public class AdtMessageTransform {
         sendingFacility = sourceMessage.getMshSegment().getSendingFacility();
         targetResources.add(PatientTransform.fromHl7v2(sourceMessage));
 
-        if (sourceMessage.hasPv1Segment())
-            targetResources.add(PatientVisitTransform.fromHl7v2(sourceMessage.getPv1Segment(), sendingFacility));
+        if (sourceMessage.hasPv1Segment()) {
+            Encounter encounter = PatientVisitTransform.fromHl7v2(sourceMessage.getPv1Segment(), sendingFacility);
+
+            if (sourceMessage.hasPv2Segment()){
+                encounter = PatientVisitTransform.addAdditionalInformation(encounter, sourceMessage.getPv2Segment());
+            }
+
+            targetResources.add(encounter);
+        }
 
         for (Practitioner practitioner : PractitionerTransform.fromHl7v2(sourceMessage))
             targetResources.add(practitioner);
