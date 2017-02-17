@@ -46,7 +46,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -99,11 +98,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
         }
 
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-        String dateFromStr = df.format(dateFrom);
-        String dateToStr = df.format(dateTo);
-
-        List<ExchangeByService> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, maxRows, dateFromStr, dateToStr);
+        List<ExchangeByService> exchangeByServices = auditRepository.getExchangesByService(serviceUuid, maxRows, dateFrom, dateTo);
         for (ExchangeByService exchangeByService: exchangeByServices) {
 
             UUID exchangeId = exchangeByService.getExchangeId();
