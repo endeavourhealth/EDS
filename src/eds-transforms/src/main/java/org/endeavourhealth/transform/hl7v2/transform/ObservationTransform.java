@@ -40,10 +40,6 @@ public class ObservationTransform {
                 break;
         }
 
-
-
-
-
         return observation;
     }
 

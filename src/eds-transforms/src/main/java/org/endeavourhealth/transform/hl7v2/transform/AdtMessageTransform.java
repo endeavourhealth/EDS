@@ -4,6 +4,7 @@ import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.transform.hl7v2.mapper.CodeMapper;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.Pl;
 import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
+import org.endeavourhealth.transform.hl7v2.parser.segments.Dg1Segment;
 import org.endeavourhealth.transform.hl7v2.parser.segments.ObxSegment;
 import org.hl7.fhir.instance.model.*;
 
@@ -36,6 +37,12 @@ public class AdtMessageTransform {
 
         for (ObxSegment obx : sourceObxSegments) {
             targetResources.add(ObservationTransform.fromHl7v2(obx));
+        }
+
+        List<Dg1Segment> sourceDg1Segments = sourceMessage.getDg1Segments();
+
+        for (Dg1Segment dg1 : sourceDg1Segments) {
+            targetResources.add(DiagnosisTransform.fromHl7v2(dg1));
         }
 
         for (Practitioner practitioner : PractitionerTransform.fromHl7v2(sourceMessage))

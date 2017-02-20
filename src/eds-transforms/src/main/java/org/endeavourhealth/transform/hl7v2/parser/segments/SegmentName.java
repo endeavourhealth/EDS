@@ -13,6 +13,7 @@ public abstract class SegmentName {
     public static final String PID = "PID";
     public static final String PV1 = "PV1";
     public static final String PV2 = "PV2";
+    public static final String DG1 = "DG1";
 
     public static Class<? extends Segment> getSegmentClass(String segmentName) {
         if (segmentName == null)
@@ -29,6 +30,7 @@ public abstract class SegmentName {
             case PID: return PidSegment.class;
             case PV1: return Pv1Segment.class;
             case PV2: return Pv2Segment.class;
+            case DG1: return Dg1Segment.class;
             default: return null;
         }
     }
