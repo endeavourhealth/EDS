@@ -4,9 +4,8 @@ package org.endeavourhealth.transform.hl7v2.transform;
 import org.endeavourhealth.transform.hl7v2.parser.ParseException;
 import org.endeavourhealth.transform.hl7v2.parser.segments.ObxSegment;
 import org.endeavourhealth.transform.hl7v2.transform.converters.CodeableConceptHelper;
-import org.hl7.fhir.instance.model.Observation;
-import org.hl7.fhir.instance.model.StringType;
-import org.hl7.fhir.instance.model.Type;
+import org.endeavourhealth.transform.hl7v2.transform.converters.DateHelper;
+import org.hl7.fhir.instance.model.*;
 
 public class ObservationTransform {
 
@@ -17,7 +16,33 @@ public class ObservationTransform {
 
         observation.setCode(CodeableConceptHelper.getCodeableConceptFromString(source.getObservationIdentifier().getAsString()));
 
-        observation.setValue(CodeableConceptHelper.getCodeableConceptFromString(source.getObservationValue()));
+        switch (source.getValueType()) {
+            case "CE":
+                observation.setValue(CodeableConceptHelper.getCodeableConceptFromString(source.getObservationValue()));
+                break;
+            case "DT":
+                observation.setValue(DateTimeType.parseV3(source.getObservationValue()));
+                break;
+            case "ST":
+                observation.setValue(new StringType().setValue(source.getObservationValue()));
+                break;
+            case "NM":
+                observation.setValue(new IntegerType().setValue(Integer.parseInt(source.getObservationValue())));
+                break;
+
+            //Homerton specific
+            case "CD":
+                observation.setValue(CodeableConceptHelper.getCodeableConceptFromString(source.getObservationValue()));
+                break;
+            //Default to string type
+            default:
+                observation.setValue(new StringType().setValue(source.getObservationValue()));
+                break;
+        }
+
+
+
+
 
         return observation;
     }
