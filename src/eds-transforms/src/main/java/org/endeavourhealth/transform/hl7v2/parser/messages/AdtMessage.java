@@ -26,6 +26,7 @@ public class AdtMessage extends Message {
     public boolean hasNk1Segment() { return super.hasSegment(SegmentName.NK1); }
     public boolean hasPv1Segment() { return super.hasSegment(SegmentName.PV1); }
     public boolean hasPv2Segment() { return super.hasSegment(SegmentName.PV2); }
+    public boolean hasObxSegment() { return super.hasSegment(SegmentName.OBX); }
 
     public MshSegment getMshSegment() {
         return (MshSegment) super.getSegment(SegmentName.MSH);
@@ -36,4 +37,5 @@ public class AdtMessage extends Message {
     public List<Nk1Segment> getNk1Segments() { return (List<Nk1Segment>)super.getSegments(SegmentName.NK1); }
     public Pv1Segment getPv1Segment() { return (Pv1Segment) super.getSegment(SegmentName.PV1); }
     public Pv2Segment getPv2Segment() { return (Pv2Segment) super.getSegment(SegmentName.PV2); }
+    public List<ObxSegment> getObxSegments() { return (List<ObxSegment>)super.getSegments(SegmentName.OBX); }
 }

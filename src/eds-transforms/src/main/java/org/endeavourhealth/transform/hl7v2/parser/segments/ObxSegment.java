@@ -18,7 +18,7 @@ public class ObxSegment extends Segment {
     public String getValueType() { return this.getFieldAsString(2); }
     public Ce getObservationIdentifier() { return this.getFieldAsDatatype(3, Ce.class); }
     public String getObservationSubID() { return this.getFieldAsString(4); }
-    public List<String> getObservationValue() { return this.getFieldAsStringList(5); }
+    public String getObservationValue() { return this.getFieldAsString(5); }
     public Ce getUnits() { return this.getFieldAsDatatype(6, Ce.class); }
     public String getReferencesRange() { return this.getFieldAsString(7); }
     public String getAbnormalFlags() { return this.getFieldAsString(8); }
