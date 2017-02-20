@@ -73,8 +73,8 @@ public class MainDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    FileUtils.writeStringToFile(new File(System.getProperty("user.home") + "/Desktop/left.txt"), testPane1TextArea.getText().trim());
-                    FileUtils.writeStringToFile(new File(System.getProperty("user.home") + "/Desktop/right.txt"), testPaneTextArea2.getText().trim());
+                    FileUtils.writeStringToFile(new File(System.getProperty("user.home") + "/Desktop/left.txt"), testPane1TextArea.getText().trim(), "UTF-8");
+                    FileUtils.writeStringToFile(new File(System.getProperty("user.home") + "/Desktop/right.txt"), testPaneTextArea2.getText().trim(), "UTF-8");
                 } catch (IOException e1) {
                     JOptionPane.showMessageDialog(null, "Exception:  " + e1.getMessage());
                 }

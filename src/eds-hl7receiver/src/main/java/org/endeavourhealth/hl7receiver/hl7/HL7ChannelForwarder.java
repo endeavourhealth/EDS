@@ -4,6 +4,8 @@ import ca.uhn.hl7v2.HL7Exception;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.endeavourhealth.common.eds.EdsSender;
+import org.endeavourhealth.common.eds.EdsSenderException;
+import org.endeavourhealth.common.eds.EdsSenderResponse;
 import org.endeavourhealth.common.security.keycloak.client.KeycloakClient;
 import org.endeavourhealth.hl7receiver.Configuration;
 import org.endeavourhealth.hl7receiver.DataLayer;
@@ -208,12 +210,13 @@ public class HL7ChannelForwarder implements Runnable {
         return null;
     }
 
-    private String sendMessage(String envelope) throws IOException {
+    private String sendMessage(String envelope) throws IOException, EdsSenderException {
 
         String edsUrl = configuration.getDbConfiguration().getDbEds().getEdsUrl();
         boolean useKeycloak = configuration.getDbConfiguration().getDbEds().isUseKeycloak();
 
-        return EdsSender.notifyEds(edsUrl, useKeycloak, envelope);
+        EdsSenderResponse edsSenderResponse = EdsSender.notifyEds(edsUrl, useKeycloak, envelope);
+        return edsSenderResponse.getStatusLine() + "\r\n" + edsSenderResponse.getResponseBody();
     }
 
     private String buildEnvelope(DbMessage dbMessage, UUID messageUuid) throws IOException {
