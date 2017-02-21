@@ -116,11 +116,6 @@
             <version>${slf4j-log4j12.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.sun.mail</groupId>
-            <artifactId>javax.mail</artifactId>
-            <version>${javax.mail.version}</version>
-        </dependency>
     </dependencies>
 
     <build>
