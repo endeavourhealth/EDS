@@ -17,12 +17,38 @@ public class QuestionnaireConverter {
                 Questionnaire.QuestionComponent qc = new Questionnaire.QuestionComponent();
                 qc.setId(zqa.getQuestionIdentifier());
                 qc.setText(zqa.getQuestionValue());
-                qc.setType(Questionnaire.AnswerFormat.CHOICE);
+                qc.setType(convertAnswerTypeCode(zqa.getValueType()));
                 qc.setLinkId(zqa.getQuestionLabel());
                 questions.add(qc);
             }
 
         return questions;
+    }
+
+    private static Questionnaire.AnswerFormat convertAnswerTypeCode(String answerTypeCode) throws TransformException {
+        if (answerTypeCode == null)
+            answerTypeCode = "";
+
+        answerTypeCode = answerTypeCode.trim().toLowerCase();
+
+        switch (answerTypeCode) {
+
+            case "i":                                     // integer
+                return Questionnaire.AnswerFormat.INTEGER;
+            case "d":                                     // datetime
+                return Questionnaire.AnswerFormat.DATETIME;
+            case "n":                                     // decimal
+                return Questionnaire.AnswerFormat.DECIMAL;
+            case "o":                                     // open choice
+                return Questionnaire.AnswerFormat.OPENCHOICE;
+            case "c":                                     // choice
+                return Questionnaire.AnswerFormat.CHOICE;
+            case "t":                                     // text
+                return Questionnaire.AnswerFormat.TEXT;
+
+            default:
+                throw new TransformException(answerTypeCode + " answer type code not recognised");
+        }
     }
 
 }
