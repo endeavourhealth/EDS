@@ -2,22 +2,19 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import OpenPseudonymiser.Crypto;
 import com.google.common.base.Strings;
-import org.endeavourhealth.core.data.ehr.ResourceRepository;
-import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
-import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.common.utility.Resources;
-import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
+import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.endeavourhealth.transform.fhir.IdentifierHelper;
 import org.hl7.fhir.instance.model.Address;
 import org.hl7.fhir.instance.model.Patient;
-import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class PatientTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(PatientTransformer.class);
@@ -41,7 +38,7 @@ public class PatientTransformer extends AbstractTransformer {
 
         } else if (resource.getIsDeleted()) {
             //we've got records with a deleted patient but the child resources aren't deleted, so we need to manually delete them from Enterprise
-            deleteAllDependentEntities(data, resource);
+            //deleteAllDependentEntities(data, resource);
 
             //and delete the patient itself
             model.writeDelete(enterpriseId.intValue());
@@ -102,10 +99,11 @@ public class PatientTransformer extends AbstractTransformer {
     }
 
     /**
-     * We've had a bug that resulted in deleted patient resources where the dependend resources we're also deleted
+     * We've had a bug that resulted in deleted patient resources where the dependent resources we're also deleted
      * This is now fixed in the inbound Emis transform, but the existing data is in a state that the need to handle below
+     * Update 21/02/2017 - data in AIMES has been fixed, so this isn't required any more
      */
-    private void deleteAllDependentEntities(OutputContainer data, ResourceByExchangeBatch resourceBatchEntry) throws Exception {
+    /*private void deleteAllDependentEntities(OutputContainer data, ResourceByExchangeBatch resourceBatchEntry) throws Exception {
 
         //retrieve all past versions, to find the EDS patient ID
         ResourceRepository resourceRepository = new ResourceRepository();
@@ -183,7 +181,7 @@ public class PatientTransformer extends AbstractTransformer {
                 csvWriter.writeDelete(enterpriseId.intValue());
             }
         }
-    }
+    }*/
 
     /*public void transform(ResourceByExchangeBatch resource,
                           EnterpriseData data,

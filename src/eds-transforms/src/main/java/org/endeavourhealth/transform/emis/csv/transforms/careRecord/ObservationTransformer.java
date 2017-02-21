@@ -881,7 +881,8 @@ public class ObservationTransformer {
         Long codeId = parser.getCodeId();
         fhirCondition.setCode(csvHelper.findClinicalCode(codeId));
 
-        fhirCondition.setClinicalStatus("active"); //if we have a Problem record for this condition, this status may be changed
+        //we don't have enough information to set this accurately, so taking out
+        //fhirCondition.setClinicalStatus("active"); //if we have a Problem record for this condition, this status may be changed
 
         fhirCondition.setVerificationStatus(Condition.ConditionVerificationStatus.CONFIRMED);
 

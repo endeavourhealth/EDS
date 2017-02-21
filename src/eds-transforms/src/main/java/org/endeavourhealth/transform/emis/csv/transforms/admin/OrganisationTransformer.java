@@ -75,7 +75,7 @@ public class OrganisationTransformer {
                 fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(fhirOrgType));
             } else {
                 //if the org type from the CSV can't be mapped to one of the value set, store as a freetext type
-                LOG.info("Unmapped organisation type " + organisationType);
+                //LOG.info("Unmapped organisation type " + organisationType);
                 fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(organisationType));
             }
         }
