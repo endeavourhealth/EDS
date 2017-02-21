@@ -58,20 +58,10 @@ export class Application {
 
 			var defer = jQuery.Deferred();
 
-// try to read the auth configuration from local storage, if not found, get it from the public API and store it
-			var path: string = 'eds.config.auth';
-			var text: string = localStorage.getItem(path);
-			if (text === null || typeof text === "undefined" || text === "undefined") {
-				// use jQuery to avoid angular http interceptors
-				jQuery.getJSON("/public/wellknown/authconfig", (data: any, textStatus: string, jqXHR: any) => {
-					var authConfig = data as AuthConfig;
-					localStorage.setItem(path, JSON.stringify(authConfig));
-					defer.resolve(authConfig);
-				});
-			}
-			else {
-				defer.resolve(<AuthConfig>JSON.parse(text));
-			}
+			jQuery.getJSON("/public/wellknown/authconfig", (data: any, textStatus: string, jqXHR: any) => {
+				var authConfig = data as AuthConfig;
+				defer.resolve(authConfig);
+			});
 
 			jQuery.when(defer.promise()).then(
 				function (authConfig: AuthConfig) {
