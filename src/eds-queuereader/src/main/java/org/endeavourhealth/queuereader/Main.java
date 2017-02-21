@@ -790,7 +790,7 @@ public class Main {
 				continue;
 			}
 
-			if (!Strings.isNullOrEmpty(headers.get(HeaderKeys.SenderServiceUuid))) {
+			if (Strings.isNullOrEmpty(headers.get(HeaderKeys.SenderServiceUuid))) {
 				LOG.info("Skipping exchange " + exchangeId + " as no service UUID");
 				continue;
 			}

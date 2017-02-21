@@ -2,7 +2,6 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
-import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
@@ -144,7 +143,7 @@ public class ProblemTransformer {
     private static List<Reference> findPreviousLinkedReferences(EmisCsvHelper csvHelper, FhirResourceFiler fhirResourceFiler, String problemId) throws Exception {
         try {
 
-            ResourceIdMapRepository repository = new ResourceIdMapRepository();
+            //ResourceIdMapRepository repository = new ResourceIdMapRepository();
             List<Reference> ret = new ArrayList<>();
 
             Condition previousVersion = (Condition)csvHelper.retrieveResource(problemId, ResourceType.Condition, fhirResourceFiler);

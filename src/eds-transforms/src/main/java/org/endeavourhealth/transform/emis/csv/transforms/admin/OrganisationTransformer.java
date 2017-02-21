@@ -69,13 +69,15 @@ public class OrganisationTransformer {
         }
 
         String organisationType = parser.getOrganisationType();
-        OrganisationType fhirOrgType = convertOrganisationType(organisationType);
-        if (fhirOrgType != null) {
-            fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(fhirOrgType));
-        } else {
-            //if the org type from the CSV can't be mapped to one of the value set, store as a freetext type
-            LOG.info("Unmapped organisation type " + organisationType);
-            fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(organisationType));
+        if (!Strings.isNullOrEmpty(organisationType)) {
+            OrganisationType fhirOrgType = convertOrganisationType(organisationType);
+            if (fhirOrgType != null) {
+                fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(fhirOrgType));
+            } else {
+                //if the org type from the CSV can't be mapped to one of the value set, store as a freetext type
+                LOG.info("Unmapped organisation type " + organisationType);
+                fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(organisationType));
+            }
         }
 
         String mainLocationGuid = parser.getMainLocationGuid();
