@@ -67,7 +67,7 @@ public class LocationTransform {
 
         if (!locationHierarchy.isEmpty()) {
             Location parentLocation = locationHierarchy.get(locationHierarchy.size() - 1);
-            createReferenceFromLocation(parentLocation);
+            parentRef = createReferenceFromLocation(parentLocation);
             parentDescription = " in " + parentLocation.getDescription();
         }
 

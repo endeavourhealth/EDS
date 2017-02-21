@@ -8,7 +8,7 @@ import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
 import org.endeavourhealth.transform.hl7v2.profiles.homerton.segments.ZalSegment;
 import org.endeavourhealth.transform.hl7v2.profiles.homerton.segments.ZpiSegment;
 import org.endeavourhealth.transform.hl7v2.profiles.homerton.segments.ZqaSegment;
-import org.endeavourhealth.transform.hl7v2.profiles.homerton.segments.Zv1Segment;
+import org.endeavourhealth.transform.hl7v2.profiles.homerton.segments.ZviSegment;
 
 import java.util.HashMap;
 
@@ -20,7 +20,7 @@ public class HomertonTransformProfile implements TransformProfile {
         zSegments.put("ZAL", ZalSegment.class);
         zSegments.put("ZPI", ZpiSegment.class);
         zSegments.put("ZQA", ZqaSegment.class);
-        zSegments.put("ZV1", Zv1Segment.class);
+        zSegments.put("ZVI", ZviSegment.class);
     }
 
     public HashMap<String, Class<? extends Segment>> getZSegments() {

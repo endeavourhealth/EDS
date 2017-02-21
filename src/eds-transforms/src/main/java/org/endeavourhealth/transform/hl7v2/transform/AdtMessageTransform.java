@@ -2,13 +2,17 @@ package org.endeavourhealth.transform.hl7v2.transform;
 
 import org.apache.commons.lang3.Validate;
 import org.endeavourhealth.transform.hl7v2.mapper.CodeMapper;
+import org.endeavourhealth.transform.hl7v2.parser.Segment;
 import org.endeavourhealth.transform.hl7v2.parser.datatypes.Pl;
 import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
 import org.endeavourhealth.transform.hl7v2.parser.segments.Dg1Segment;
 import org.endeavourhealth.transform.hl7v2.parser.segments.ObxSegment;
+import org.endeavourhealth.transform.hl7v2.profiles.homerton.QuestionnaireTransform;
 import org.hl7.fhir.instance.model.*;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class AdtMessageTransform {
@@ -50,6 +54,18 @@ public class AdtMessageTransform {
 
         for (Location location : LocationTransform.fromHl7v2(sourceMessage))
             targetResources.add(location);
+
+        if (sourceMessage.hasZqaSegment()) {
+            targetResources.add(QuestionnaireTransform.fromHl7v2(sourceMessage.getZqaSegment()));
+        }
+
+
+        if (sourceMessage.hasAccSegment()){
+
+        }
+
+
+
 
         return createBundle(targetResources);
     }

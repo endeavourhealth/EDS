@@ -6,8 +6,8 @@ import org.endeavourhealth.transform.hl7v2.parser.datatypes.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class Zv1Segment extends Segment {
-    public Zv1Segment(String segment, Seperators seperators) throws ParseException {
+public class ZviSegment extends Segment {
+    public ZviSegment(String segment, Seperators seperators) throws ParseException {
         super(segment, seperators);
     }
 

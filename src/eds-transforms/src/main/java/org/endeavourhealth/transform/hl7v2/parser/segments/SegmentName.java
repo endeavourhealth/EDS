@@ -1,6 +1,10 @@
 package org.endeavourhealth.transform.hl7v2.parser.segments;
 
 import org.endeavourhealth.transform.hl7v2.parser.Segment;
+import org.endeavourhealth.transform.hl7v2.profiles.homerton.segments.ZalSegment;
+import org.endeavourhealth.transform.hl7v2.profiles.homerton.segments.ZpiSegment;
+import org.endeavourhealth.transform.hl7v2.profiles.homerton.segments.ZqaSegment;
+import org.endeavourhealth.transform.hl7v2.profiles.homerton.segments.ZviSegment;
 
 public abstract class SegmentName {
     public static final String AL1 = "AL1";
@@ -14,6 +18,10 @@ public abstract class SegmentName {
     public static final String PV1 = "PV1";
     public static final String PV2 = "PV2";
     public static final String DG1 = "DG1";
+    public static final String ZPI = "ZPI";
+    public static final String ZQA = "ZQA";
+    public static final String ZVI = "ZVI";
+    public static final String ACC = "ACC";
 
     public static Class<? extends Segment> getSegmentClass(String segmentName) {
         if (segmentName == null)
@@ -31,6 +39,10 @@ public abstract class SegmentName {
             case PV1: return Pv1Segment.class;
             case PV2: return Pv2Segment.class;
             case DG1: return Dg1Segment.class;
+            case ZPI: return ZpiSegment.class;
+            case ZQA: return ZqaSegment.class;
+            case ZVI: return ZviSegment.class;
+            case ACC: return AccSegment.class;
             default: return null;
         }
     }
