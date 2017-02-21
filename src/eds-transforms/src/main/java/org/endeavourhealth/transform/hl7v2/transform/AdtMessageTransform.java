@@ -5,6 +5,7 @@ import org.endeavourhealth.transform.hl7v2.mapper.CodeMapper;
 import org.endeavourhealth.transform.hl7v2.parser.messages.AdtMessage;
 import org.endeavourhealth.transform.hl7v2.parser.segments.Dg1Segment;
 import org.endeavourhealth.transform.hl7v2.parser.segments.ObxSegment;
+import org.endeavourhealth.transform.hl7v2.profiles.homerton.AdditionalPatientInformation;
 import org.endeavourhealth.transform.hl7v2.profiles.homerton.AdditionalVisitTransform;
 import org.endeavourhealth.transform.hl7v2.profiles.homerton.QuestionnaireTransform;
 import org.hl7.fhir.instance.model.*;
@@ -22,7 +23,13 @@ public class AdtMessageTransform {
         targetResources.add(MessageHeaderTransform.fromHl7v2(sourceMessage.getMshSegment()));
 
         sendingFacility = sourceMessage.getMshSegment().getSendingFacility();
-        targetResources.add(PatientTransform.fromHl7v2(sourceMessage));
+
+        Patient patient = PatientTransform.fromHl7v2(sourceMessage);
+
+        if (sourceMessage.hasZpiSegment())
+            patient = AdditionalPatientInformation.addAdditionalInformation(patient, sourceMessage.getZpiSegment());
+
+        targetResources.add(patient);
 
         if (sourceMessage.hasPv1Segment()) {
             Encounter encounter = PatientVisitTransform.fromHl7v2(sourceMessage.getPv1Segment(), sendingFacility);

@@ -67,6 +67,7 @@ public class AddressConverter {
 
         switch (addressType) {
             case "home": return Address.AddressUse.HOME;
+            case "temporary": return Address.AddressUse.TEMP;
             default: throw new TransformException(addressType + " address type not recognised");
         }
     }

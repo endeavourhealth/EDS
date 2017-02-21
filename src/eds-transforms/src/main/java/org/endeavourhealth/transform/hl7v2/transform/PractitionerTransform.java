@@ -8,6 +8,7 @@ import org.endeavourhealth.transform.hl7v2.parser.segments.EvnSegment;
 import org.endeavourhealth.transform.hl7v2.parser.segments.MshSegment;
 import org.endeavourhealth.transform.hl7v2.parser.segments.Pd1Segment;
 import org.endeavourhealth.transform.hl7v2.parser.segments.Pv1Segment;
+import org.endeavourhealth.transform.hl7v2.profiles.homerton.segments.ZpiSegment;
 import org.endeavourhealth.transform.hl7v2.transform.converters.CodeableConceptHelper;
 import org.endeavourhealth.transform.hl7v2.transform.converters.IdentifierConverter;
 import org.endeavourhealth.transform.hl7v2.transform.converters.NameConverter;
@@ -24,25 +25,39 @@ public class PractitionerTransform {
         EvnSegment evnSegment = source.getEvnSegment();
         Pd1Segment pd1Segment = source.getPd1Segment();
         Pv1Segment pv1Segment = source.getPv1Segment();
+        ZpiSegment zpiSegment = source.getZpiSegment();
+
+        String sendingFacility = mshSegment.getSendingFacility();
 
         for (Xcn xcn : evnSegment.getOperators())
-            practitioners.add(transform(xcn, mshSegment.getSendingFacility()));
+            practitioners.add(transform(xcn, sendingFacility));
 
         for (Xcn xcn : pd1Segment.getPatientPrimaryCareProvider())
-            practitioners.add(transform(xcn, mshSegment.getSendingFacility()));
+            practitioners.add(transform(xcn, sendingFacility));
 
-        for (Xcn xcn : pv1Segment.getAttendingDoctor())
-            practitioners.add(transform(xcn, mshSegment.getSendingFacility()));
+        if (pv1Segment != null) {
+            if (pv1Segment.getAttendingDoctor() != null)
+                for (Xcn xcn : pv1Segment.getAttendingDoctor())
+                    practitioners.add(transform(xcn, sendingFacility));
 
-        for (Xcn xcn : pv1Segment.getReferringDoctor())
-            practitioners.add(transform(xcn, mshSegment.getSendingFacility()));
+            if (pv1Segment.getReferringDoctor() != null)
+                for (Xcn xcn : pv1Segment.getReferringDoctor())
+                practitioners.add(transform(xcn, sendingFacility));
 
-        for (Xcn xcn : pv1Segment.getConsultingDoctor())
-            practitioners.add(transform(xcn, mshSegment.getSendingFacility()));
+            if (pv1Segment.getConsultingDoctor() != null)
+                for (Xcn xcn : pv1Segment.getConsultingDoctor())
+                    practitioners.add(transform(xcn, sendingFacility));
 
-        if (pv1Segment.getOtherHealthcareProvider() != null)
-            for (Xcn xcn : pv1Segment.getOtherHealthcareProvider())
-                practitioners.add(transform(xcn, mshSegment.getSendingFacility()));
+            if (pv1Segment.getOtherHealthcareProvider() != null)
+                for (Xcn xcn : pv1Segment.getOtherHealthcareProvider())
+                    practitioners.add(transform(xcn, sendingFacility));
+        }
+
+        if (zpiSegment != null) {
+            if (zpiSegment.getOtherProvider() != null)
+                for (Xcn xcn : zpiSegment.getOtherProvider())
+                    practitioners.add(transform(xcn, sendingFacility));
+        }
 
         return practitioners;
     }

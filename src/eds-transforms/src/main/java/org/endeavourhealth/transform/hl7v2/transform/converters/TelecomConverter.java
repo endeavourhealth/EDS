@@ -69,6 +69,7 @@ public class TelecomConverter {
             case "MOBILE NUMBER": return ContactPoint.ContactPointUse.MOBILE;
             case "PAGER PERSONAL": return ContactPoint.ContactPointUse.WORK;
             case "BUSINESS": return ContactPoint.ContactPointUse.WORK;
+            case "TEMPORARY": return ContactPoint.ContactPointUse.TEMP;
             default: throw new TransformException(useCode + " use code not recognised");
         }
     }

@@ -24,21 +24,23 @@ public class LocationTransform {
 
         Pv1Segment pv1Segment = source.getPv1Segment();
 
-        if (pv1Segment.getAssignedPatientLocation() != null)
-            for (Location location : convert(pv1Segment.getAssignedPatientLocation()))
-                locations.add(location);
+        if (pv1Segment != null) {
 
-        if (pv1Segment.getPriorPatientLocation() != null)
-            for (Location location : convert(pv1Segment.getPriorPatientLocation()))
-                locations.add(location);
+            if (pv1Segment.getAssignedPatientLocation() != null)
+                for (Location location : convert(pv1Segment.getAssignedPatientLocation()))
+                    locations.add(location);
 
-        if (pv1Segment.getTemporaryLocation() != null)
-            for (Location location : convert(pv1Segment.getTemporaryLocation()))
-                locations.add(location);
+            if (pv1Segment.getPriorPatientLocation() != null)
+                for (Location location : convert(pv1Segment.getPriorPatientLocation()))
+                    locations.add(location);
 
-        if (StringUtils.isNotBlank(pv1Segment.getDischargedToLocation()))
+            if (pv1Segment.getTemporaryLocation() != null)
+                for (Location location : convert(pv1Segment.getTemporaryLocation()))
+                    locations.add(location);
+
+            if (StringUtils.isNotBlank(pv1Segment.getDischargedToLocation()))
                 locations.add(createStandaloneLocationFromString(pv1Segment.getDischargedToLocation(), "bu"));
-
+        }
         return locations;
     }
 
