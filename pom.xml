@@ -65,6 +65,5 @@
         <module>src/eds-keycloak-theme</module>
         <module>src/eds-bootstrap</module>
         <module>src/eds-ui-integration-test</module>
-        <module>src/eds-hl7receiver</module>
     </modules>
 </project>
