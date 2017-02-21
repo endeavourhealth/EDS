@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.hl7v2.profiles.homerton;
 
 
 import org.endeavourhealth.transform.hl7v2.parser.ParseException;
-import org.endeavourhealth.transform.hl7v2.profiles.homerton.converters.QuestionnaireConverter;
+import org.endeavourhealth.transform.hl7v2.profiles.homerton.converters.QuestionConverter;
 import org.endeavourhealth.transform.hl7v2.profiles.homerton.segments.ZqaSegment;
 import org.endeavourhealth.transform.hl7v2.transform.TransformException;
 import org.hl7.fhir.instance.model.*;
@@ -15,7 +15,7 @@ public class QuestionnaireTransform {
         questionnaire.addIdentifier(new Identifier().setValue(source.getQuestionnaireId()));
         Questionnaire.GroupComponent group = new Questionnaire.GroupComponent();
 
-        for (Questionnaire.QuestionComponent question : QuestionnaireConverter.convert(source.getQuestionAndAnswer())) {
+        for (Questionnaire.QuestionComponent question : QuestionConverter.convert(source.getQuestionAndAnswer())) {
             group.addQuestion(question);
         }
 

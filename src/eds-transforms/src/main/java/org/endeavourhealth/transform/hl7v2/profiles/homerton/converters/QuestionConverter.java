@@ -7,7 +7,7 @@ import org.hl7.fhir.instance.model.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class QuestionnaireConverter {
+public class QuestionConverter {
 
     public static List<Questionnaire.QuestionComponent> convert(List<Zqa> questionField) throws TransformException {
         List<Questionnaire.QuestionComponent> questions = new ArrayList<>();
@@ -16,9 +16,8 @@ public class QuestionnaireConverter {
             if (zqa != null) {
                 Questionnaire.QuestionComponent qc = new Questionnaire.QuestionComponent();
                 qc.setId(zqa.getQuestionIdentifier());
-                qc.setText(zqa.getQuestionValue());
+                qc.setText(zqa.getQuestionLabel());
                 qc.setType(convertAnswerTypeCode(zqa.getValueType()));
-                qc.setLinkId(zqa.getQuestionLabel());
                 questions.add(qc);
             }
 
@@ -47,7 +46,7 @@ public class QuestionnaireConverter {
                 return Questionnaire.AnswerFormat.TEXT;
 
             default:
-                throw new TransformException(answerTypeCode + " answer type code not recognised");
+                return Questionnaire.AnswerFormat.TEXT;
         }
     }
 
