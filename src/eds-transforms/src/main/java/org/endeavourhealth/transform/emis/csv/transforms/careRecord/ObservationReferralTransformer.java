@@ -1,15 +1,11 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.common.fhir.ExtensionConverter;
-import org.endeavourhealth.common.fhir.FhirExtensionUri;
-import org.endeavourhealth.common.fhir.FhirUri;
-import org.endeavourhealth.common.fhir.IdentifierHelper;
+import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.ObservationReferral;
-import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.common.fhir.schema.ReferralPriority;
 import org.endeavourhealth.common.fhir.schema.ReferralRequestSendMode;
 import org.endeavourhealth.common.fhir.schema.ReferralType;

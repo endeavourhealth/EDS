@@ -1,10 +1,9 @@
 package org.endeavourhealth.transform.tpp.xml.transforms;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.common.fhir.FhirUri;
-import org.endeavourhealth.common.fhir.ParticipantHelper;
+import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.transform.common.FhirHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.fhir.*;
 import org.endeavourhealth.transform.tpp.xml.schema.AppointmentStatus;
 import org.hl7.fhir.instance.model.*;
 
@@ -35,11 +34,16 @@ public class AppointmentTransformer {
         fhirAppointment.setMinutesDuration(durationInt);
 
         String userName = tppAppointment.getUserName();
-        fhirAppointment.addParticipant(createParticipant(ResourceType.Practitioner, userName));
+        fhirAppointment.addParticipant(ParticipantHelper.createParticipant(ResourceType.Practitioner, userName));
 
         String site = tppAppointment.getSite();
-        Location fhirLocation = LocationHelper.findLocationForName(fhirResources, site);
-        fhirAppointment.addParticipant(createParticipant(ResourceType.Location, fhirLocation.getId()));
+        Location fhirLocation = null;
+        try {
+            fhirLocation = LocationHelper.findLocationForName(fhirResources, site);
+        } catch (FhirResourceException e) {
+            throw new TransformException("Error finding location, see cause", e);
+        }
+        fhirAppointment.addParticipant(ParticipantHelper.createParticipant(ResourceType.Location, fhirLocation.getId()));
 
         String clincType = tppAppointment.getClinicType();
         fhirAppointment.setType(CodeableConceptHelper.createCodeableConcept(clincType));
@@ -55,8 +59,8 @@ public class AppointmentTransformer {
         //flags aren't important to third parties
         //List<String> flags = tppAppointment.getFlag();
 
-        String patientId = ResourceHelper.findResourceId(Patient.class, fhirResources);
-        fhirAppointment.addParticipant(createParticipant(ResourceType.Patient, patientId));
+        String patientId = FhirHelper.findResourceId(Patient.class, fhirResources);
+        fhirAppointment.addParticipant(ParticipantHelper.createParticipant(ResourceType.Patient, patientId));
 
     }
 
@@ -83,14 +87,6 @@ public class AppointmentTransformer {
 
         } else {
             throw new TransformException("Unsupported appointment status " + tppStatus);
-        }
-    }
-
-    private static Appointment.AppointmentParticipantComponent createParticipant(ResourceType resourceType, String identifier) throws TransformException {
-        try {
-            return ParticipantHelper.createParticipant(resourceType, identifier);
-        } catch (org.endeavourhealth.common.exceptions.TransformException e) {
-            throw new TransformException("Error creating appointment participant, see cause", e);
         }
     }
 }

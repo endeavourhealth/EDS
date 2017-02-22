@@ -10,7 +10,7 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.Med
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicationType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.transform.fhir.CodingHelper;
+import org.endeavourhealth.common.fhir.CodingHelper;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.FhirUri;

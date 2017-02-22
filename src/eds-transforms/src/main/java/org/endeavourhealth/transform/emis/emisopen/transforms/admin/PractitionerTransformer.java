@@ -8,7 +8,7 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.Med
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.PersonCategoryType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.PersonType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.AddressConverter;
-import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.endeavourhealth.common.fhir.ContactPointHelper;
 import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.common.fhir.NameConverter;

@@ -10,7 +10,7 @@ import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConvert
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.SexConverter;
 import org.endeavourhealth.common.fhir.schema.EthnicCategory;
 import org.endeavourhealth.common.fhir.schema.MaritalStatus;
-import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.hl7.fhir.instance.model.*;

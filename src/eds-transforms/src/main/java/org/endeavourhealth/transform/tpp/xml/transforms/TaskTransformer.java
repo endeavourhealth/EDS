@@ -1,9 +1,9 @@
 package org.endeavourhealth.transform.tpp.xml.transforms;
 
+import org.endeavourhealth.transform.common.FhirHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.FhirUri;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.tpp.xml.schema.Task;
 import org.hl7.fhir.instance.model.*;
 
@@ -40,16 +40,8 @@ public class TaskTransformer
         //String userGroupAssigned = tppTask.getGroupNameAssigned();
 
         //link back to the patient
-        fhirTask.setSubject(findAndCreateReference(Patient.class, fhirResources));
+        fhirTask.setSubject(FhirHelper.findAndCreateReference(Patient.class, fhirResources));
 
         //TODO - not sure if we can set the required Status and Priority fields on the FHIR resource
-    }
-
-    private static Reference findAndCreateReference(Class<? extends Resource> resourceClass, List<Resource> fhirResources) throws TransformException {
-        try {
-            return ReferenceHelper.findAndCreateReference(resourceClass, fhirResources);
-        } catch (org.endeavourhealth.common.exceptions.TransformException e) {
-            throw new TransformException("Error creating reference, see cause", e);
-        }
     }
 }

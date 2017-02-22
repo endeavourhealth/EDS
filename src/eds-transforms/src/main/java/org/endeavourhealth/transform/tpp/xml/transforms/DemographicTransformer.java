@@ -2,8 +2,9 @@ package org.endeavourhealth.transform.tpp.xml.transforms;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.transform.common.FhirHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
@@ -31,7 +32,7 @@ public class DemographicTransformer {
         fhirPatient.setId(patientUid);
         fhirResources.add(fhirPatient);
 
-        fhirPatient.setManagingOrganization(findAndCreateReference(Organization.class, fhirResources));
+        fhirPatient.setManagingOrganization(FhirHelper.findAndCreateReference(Organization.class, fhirResources));
 
         transformIdentity(fhirPatient, patientUid, tppId);
         transformName(fhirPatient, tppDemographics);
@@ -89,7 +90,7 @@ public class DemographicTransformer {
         String patientId = fhirPatient.getId();
         fhirEpisode.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientId));
 
-        fhirEpisode.setManagingOrganization(findAndCreateReference(Organization.class, fhirResources));
+        fhirEpisode.setManagingOrganization(FhirHelper.findAndCreateReference(Organization.class, fhirResources));
     }
 
     private static void transformUsualGp(Patient fhirPatient, Demographics tppDemographics, List<Resource> fhirResources) throws TransformException {
@@ -255,13 +256,5 @@ public class DemographicTransformer {
         //add the local identifier as well (which we don't have a system for)
         fhirPatient.addIdentifier(IdentifierHelper.createIdentifier(Identifier.IdentifierUse.SECONDARY, FhirUri.IDENTIFIER_SYSTEM_TPP_PATIENT_ID, patientUid));
 
-    }
-
-    private static Reference findAndCreateReference(Class<? extends Resource> resourceClass, List<Resource> fhirResources) throws TransformException {
-        try {
-            return ReferenceHelper.findAndCreateReference(resourceClass, fhirResources);
-        } catch (org.endeavourhealth.common.exceptions.TransformException e) {
-            throw new TransformException("Could not create patient reference, see cause", e);
-        }
     }
 }

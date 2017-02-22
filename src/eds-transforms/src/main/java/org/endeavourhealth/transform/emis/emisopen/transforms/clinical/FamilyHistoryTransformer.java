@@ -9,7 +9,7 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.Eve
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.QualifierType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.common.fhir.AnnotationHelper;
-import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.common.fhir.schema.FamilyMember;

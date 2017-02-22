@@ -126,7 +126,7 @@ public class TestRequestHeaderTransformer extends ClinicalTransformerBase {
         }
 
         for (Specimen specimen: specimens) {
-            Reference reference = createReferenceExternal(specimen);
+            Reference reference = ReferenceHelper.createReferenceExternal(specimen);
             fhirOrder.addSpecimen(reference);
         }
 
@@ -223,14 +223,6 @@ public class TestRequestHeaderTransformer extends ClinicalTransformerBase {
             DiagnosticOrder.DiagnosticOrderEventComponent orderItemEvent = orderItem.addEvent();
             orderItemEvent.setStatus(status);
             orderItemEvent.setDateTime(statusDate);
-        }
-    }
-
-    private static Reference createReferenceExternal(Resource resource) throws TransformException {
-        try {
-            return ReferenceHelper.createReferenceExternal(resource);
-        } catch (org.endeavourhealth.common.exceptions.TransformException e) {
-            throw new TransformException("Error creating reference, see cause", e);
         }
     }
 }

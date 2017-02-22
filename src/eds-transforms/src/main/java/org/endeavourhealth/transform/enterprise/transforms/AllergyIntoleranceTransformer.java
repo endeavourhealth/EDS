@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
-import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.AllergyIntolerance;
 import org.hl7.fhir.instance.model.DateTimeType;

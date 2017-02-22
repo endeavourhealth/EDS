@@ -1,8 +1,9 @@
 package org.endeavourhealth.transform.tpp.xml.transforms;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.transform.common.FhirHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.tpp.xml.schema.Event;
@@ -85,16 +86,8 @@ public class EventTransformer {
         EventMethod method = tppEvent.getMethod();
         String linkedReferralUID = tppEvent.getLinkedReferralUID();
 
-        fhirEncounter.setPatient(findAndCreateReference(Patient.class, fhirResources));
+        fhirEncounter.setPatient(FhirHelper.findAndCreateReference(Patient.class, fhirResources));
 
         return fhirEncounter;
-    }
-
-    private static Reference findAndCreateReference(Class<? extends Resource> resourceClass, List<Resource> fhirResources) throws TransformException {
-        try {
-            return ReferenceHelper.findAndCreateReference(resourceClass, fhirResources);
-        } catch (org.endeavourhealth.common.exceptions.TransformException e) {
-            throw new TransformException("Error creating reference, see cause", e);
-        }
     }
 }

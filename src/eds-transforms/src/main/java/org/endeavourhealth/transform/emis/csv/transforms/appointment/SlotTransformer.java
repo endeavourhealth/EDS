@@ -7,7 +7,6 @@ import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.appointment.Slot;
-import org.endeavourhealth.transform.fhir.*;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;

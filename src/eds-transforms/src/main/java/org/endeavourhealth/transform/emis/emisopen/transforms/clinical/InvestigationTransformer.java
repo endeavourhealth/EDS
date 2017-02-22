@@ -81,19 +81,11 @@ public class InvestigationTransformer extends ClinicalTransformerBase {
             for (Resource childResource: childResources) {
 
                 //link the child resource to its parent
-                Reference reference = createReferenceExternal(childResource);
+                Reference reference = ReferenceHelper.createReferenceExternal(childResource);
                 fhirReport.getResult().add(reference);
 
                 resources.add(childResource);
             }
-        }
-    }
-
-    private static Reference createReferenceExternal(Resource resource) throws TransformException {
-        try {
-            return ReferenceHelper.createReferenceExternal(resource);
-        } catch (org.endeavourhealth.common.exceptions.TransformException e) {
-            throw new TransformException("Could not create external reference, see cause", e);
         }
     }
 }

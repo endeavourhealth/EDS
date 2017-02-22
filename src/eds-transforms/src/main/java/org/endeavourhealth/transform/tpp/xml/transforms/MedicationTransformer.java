@@ -1,8 +1,9 @@
 package org.endeavourhealth.transform.tpp.xml.transforms;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.transform.common.FhirHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.tpp.xml.schema.*;
@@ -55,7 +56,7 @@ public class MedicationTransformer {
 
         fhirMedicationOrder.setStatus(convertStatus(endDate, endReason));
 
-        fhirMedicationOrder.setPatient(findAndCreatePatientReference(fhirResources));
+        fhirMedicationOrder.setPatient(FhirHelper.findAndCreateReference(Patient.class, fhirResources));
 
         String userName = tppEvent.getUserName();
         if (!Strings.isNullOrEmpty(userName)) {
@@ -99,14 +100,6 @@ public class MedicationTransformer {
             } else {
                 return MedicationOrder.MedicationOrderStatus.COMPLETED;
             }
-        }
-    }
-
-    private static Reference findAndCreatePatientReference(List<Resource> fhirResources) throws TransformException {
-        try {
-            return ReferenceHelper.findAndCreateReference(Patient.class, fhirResources);
-        } catch (org.endeavourhealth.common.exceptions.TransformException e) {
-            throw new TransformException("Could not create patient reference, see cause", e);
         }
     }
 }
