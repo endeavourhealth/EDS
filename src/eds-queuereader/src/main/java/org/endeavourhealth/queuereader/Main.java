@@ -689,10 +689,10 @@ public class Main {
 		LOG.info("Finished fixing exchange headers");
 	}*/
 
-	private static void testConnection() {
+	private static void testConnection(String configName) {
 		try {
 
-			JsonNode config = ConfigManager.getConfigurationAsJson("patient_database", "enterprise");
+			JsonNode config = ConfigManager.getConfigurationAsJson(configName, "enterprise");
 			String driverClass = config.get("driverClass").asText();
 			String url = config.get("url").asText();
 			String username = config.get("username").asText();
@@ -734,10 +734,10 @@ public class Main {
 
 	private static void startEnterpriseStream(UUID serviceId, String configName, UUID exchangeIdStartFrom) throws Exception {
 
-		LOG.info("Starting Enterprise Streaming for " + serviceId);
+		LOG.info("Starting Enterprise Streaming for " + serviceId + " using " + configName + " starting from " + exchangeIdStartFrom);
 
 		LOG.info("Testing database connection");
-		testConnection();
+		testConnection(configName);
 
 		Service service = new ServiceRepository().getById(serviceId);
 		List<UUID> orgIds = new ArrayList<>(service.getOrganisations().keySet());
