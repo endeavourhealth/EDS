@@ -106,8 +106,9 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             Date timestamp = exchange.getTimestamp();
             String headerJson = exchange.getHeaders();
             HashMap<String, String> headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+            List<String> bodyLines = getExchangeBodyLines(exchange);
 
-            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, timestamp, headers);
+            JsonExchange jsonExchange = new JsonExchange(exchangeId, serviceUuid, timestamp, headers, bodyLines);
             ret.add(jsonExchange);
         }
 
@@ -149,6 +150,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         Date timestamp = exchange.getTimestamp();
         String headerJson = exchange.getHeaders();
         HashMap<String, String> headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
+        List<String> bodyLines = getExchangeBodyLines(exchange);
 
         //validate the exchange is for our service
         String exchangeServiceIdStr = headers.get(HeaderKeys.SenderServiceUuid);
@@ -157,7 +159,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             throw new BadRequestException("Exchange isn't for this service");
         }
 
-        JsonExchange jsonExchange = new JsonExchange(exchangeUuid, serviceUuid, timestamp, headers);
+        JsonExchange jsonExchange = new JsonExchange(exchangeUuid, serviceUuid, timestamp, headers, bodyLines);
         ret.add(jsonExchange);
 
         clearLogbackMarkers();
@@ -166,6 +168,23 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(ret)
                 .build();
+    }
+
+    private static List<String> getExchangeBodyLines(Exchange exchange) {
+        List<String> ret = new ArrayList<>();
+
+        String body = exchange.getBody();
+        if (Strings.isNullOrEmpty(body)) {
+            ret.add("<no body>");
+        } else {
+
+            String[] lines = body.split("\n");
+            for (String line: lines) {
+                line = line.trim(); //make sure to get rid of any \r characters
+                ret.add(line);
+            }
+        }
+        return ret;
     }
 
     @GET

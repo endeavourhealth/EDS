@@ -104,6 +104,17 @@
                         </ngb-panel>
                     </ngb-accordion>
 
+                    <!--show the exchange body in an accordion, so we don't have to see it all the time-->
+                    <ngb-accordion #acc="ngbAccordion">
+                        <ngb-panel title="View Body">
+                            <template ngbPanelContent>
+                                <div *ngFor="let item of getSelectedExchangeHBodyLines()">
+                                    {{ item }}
+                                </div>
+                            </template>
+                        </ngb-panel>
+                    </ngb-accordion>
+
                     <div class="panel panel-primary">
                     <!--<div class="panel panel-primary">-->
                         <div class="panel-body">

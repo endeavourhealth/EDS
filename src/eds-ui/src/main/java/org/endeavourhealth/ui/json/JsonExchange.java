@@ -3,6 +3,7 @@ package org.endeavourhealth.ui.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -13,13 +14,14 @@ public class JsonExchange {
     private UUID serviceId;
     private Date timestamp;
     private Map<String, String> headers;
+    private List<String> bodyLines;
 
-
-    public JsonExchange(UUID exchangeId, UUID serviceId, Date timestamp, Map<String, String> headers) {
+    public JsonExchange(UUID exchangeId, UUID serviceId, Date timestamp, Map<String, String> headers, List<String> bodyLines) {
         this.exchangeId = exchangeId;
         this.serviceId = serviceId;
         this.timestamp = timestamp;
         this.headers = headers;
+        this.bodyLines = bodyLines;
     }
 
     public UUID getExchangeId() {
@@ -52,5 +54,13 @@ public class JsonExchange {
 
     public void setHeaders(Map<String, String> headers) {
         this.headers = headers;
+    }
+
+    public List<String> getBodyLines() {
+        return bodyLines;
+    }
+
+    public void setBodyLines(List<String> bodyLines) {
+        this.bodyLines = bodyLines;
     }
 }

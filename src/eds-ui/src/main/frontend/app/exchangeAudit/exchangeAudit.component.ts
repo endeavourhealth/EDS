@@ -72,6 +72,9 @@ export class ExchangeAuditComponent {
 		var vm = this;
 		var serviceId = vm.service.uuid;
 
+		//make sure to clear this down, so it's clear we've got new content
+		this.selectedExchange = null;
+
 		console.log('tab = ' + this.searchTab);
 
 		if (!this.searchTab
@@ -179,6 +182,18 @@ export class ExchangeAuditComponent {
 		}
 
 		return Object.keys(vm.selectedExchange.headers);
+	}
+
+	getSelectedExchangeHBodyLines(): string[] {
+
+		if (!this.selectedExchange) {
+			console.log('No selected exchange');
+			return null;
+		}
+		console.log('Got selected exchange');
+		console.log('Body = ' + this.selectedExchange.bodyLines);
+
+		return this.selectedExchange.bodyLines;
 	}
 
 	postToExchange(exchangeName: string) {
