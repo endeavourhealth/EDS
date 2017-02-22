@@ -2,8 +2,8 @@ package org.endeavourhealth.transform.tpp.xml.transforms;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.tpp.xml.schema.*;
 import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.Patient;
@@ -60,7 +60,7 @@ public class ClinicalCodeTransformer {
         fhirProblem.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROBLEM));
         fhirResources.add(fhirProblem);
 
-        fhirProblem.setPatient(ReferenceHelper.findAndCreateReference(Patient.class, fhirResources));
+        fhirProblem.setPatient(findAndCreateReference(Patient.class, fhirResources));
 
         if (fhirEncounter != null) {
             String encounterId = fhirEncounter.getId();
@@ -124,5 +124,13 @@ public class ClinicalCodeTransformer {
         String freeText = tppCode.getFreeText();
         List<String> linkedProblemUIDs = tppCode.getLinkedProblemUID();
 
+    }
+
+    private static Reference findAndCreateReference(Class<? extends Resource> resourceClass, List<Resource> fhirResources) throws TransformException {
+        try {
+            return ReferenceHelper.findAndCreateReference(resourceClass, fhirResources);
+        } catch (org.endeavourhealth.common.exceptions.TransformException e) {
+            throw new TransformException("Error creating reference, see cause", e);
+        }
     }
 }

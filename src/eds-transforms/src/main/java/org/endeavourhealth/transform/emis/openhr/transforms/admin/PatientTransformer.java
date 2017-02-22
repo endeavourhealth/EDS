@@ -5,7 +5,7 @@ import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001AdminDomain;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Patient;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001Person;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.*;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 import org.hl7.fhir.instance.model.Enumerations.AdministrativeGender;
 

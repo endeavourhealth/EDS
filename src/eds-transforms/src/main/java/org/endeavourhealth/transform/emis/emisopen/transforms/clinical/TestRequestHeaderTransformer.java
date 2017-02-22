@@ -7,8 +7,8 @@ import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,7 +126,7 @@ public class TestRequestHeaderTransformer extends ClinicalTransformerBase {
         }
 
         for (Specimen specimen: specimens) {
-            Reference reference = ReferenceHelper.createReferenceExternal(specimen);
+            Reference reference = createReferenceExternal(specimen);
             fhirOrder.addSpecimen(reference);
         }
 
@@ -223,6 +223,14 @@ public class TestRequestHeaderTransformer extends ClinicalTransformerBase {
             DiagnosticOrder.DiagnosticOrderEventComponent orderItemEvent = orderItem.addEvent();
             orderItemEvent.setStatus(status);
             orderItemEvent.setDateTime(statusDate);
+        }
+    }
+
+    private static Reference createReferenceExternal(Resource resource) throws TransformException {
+        try {
+            return ReferenceHelper.createReferenceExternal(resource);
+        } catch (org.endeavourhealth.common.exceptions.TransformException e) {
+            throw new TransformException("Error creating reference, see cause", e);
         }
     }
 }

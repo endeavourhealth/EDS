@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.terminology;
 
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.FhirUri;
 
 public class SnomedCode {
 

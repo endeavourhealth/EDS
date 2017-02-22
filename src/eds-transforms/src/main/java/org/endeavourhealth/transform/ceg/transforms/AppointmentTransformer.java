@@ -2,9 +2,9 @@ package org.endeavourhealth.transform.ceg.transforms;
 
 import org.endeavourhealth.transform.ceg.models.AbstractModel;
 import org.endeavourhealth.transform.ceg.models.Appointment;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.ReferenceComponents;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.ReferenceComponents;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;

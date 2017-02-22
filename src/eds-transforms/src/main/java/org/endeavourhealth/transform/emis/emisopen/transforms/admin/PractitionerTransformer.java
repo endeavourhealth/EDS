@@ -9,9 +9,9 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.Per
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.PersonType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.AddressConverter;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
-import org.endeavourhealth.transform.fhir.ContactPointHelper;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.NameConverter;
+import org.endeavourhealth.common.fhir.ContactPointHelper;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.NameConverter;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;

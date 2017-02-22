@@ -1,12 +1,12 @@
 package org.endeavourhealth.transform.emis.openhr.transforms.clinical;
 
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.openhr.schema.OpenHR001HealthDomain;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDrugStatus;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.EventEncounterMap;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
 
 public class MedicationStatementTransformer implements ClinicalResourceTransformer

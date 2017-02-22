@@ -6,9 +6,9 @@ import org.endeavourhealth.transform.emis.openhr.schema.*;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.ContactPointConverter;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.OpenHRHelper;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.SexConverter;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.NameConverter;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.NameConverter;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;

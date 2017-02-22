@@ -9,7 +9,7 @@ import org.endeavourhealth.transform.emis.csv.ThreadPool;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.coding.DrugCode;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.FhirUri;
 import org.hl7.fhir.instance.model.CodeableConcept;
 
 import java.util.List;

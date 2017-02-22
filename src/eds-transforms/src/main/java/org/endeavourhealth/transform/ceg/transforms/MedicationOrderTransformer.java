@@ -1,8 +1,8 @@
 package org.endeavourhealth.transform.ceg.transforms;
 
 import org.endeavourhealth.transform.ceg.models.AbstractModel;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.List;

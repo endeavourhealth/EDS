@@ -8,10 +8,10 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.Aut
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.EventType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.QualifierType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
-import org.endeavourhealth.transform.fhir.AnnotationHelper;
+import org.endeavourhealth.common.fhir.AnnotationHelper;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.common.fhir.schema.FamilyMember;
 import org.hl7.fhir.instance.model.*;
 

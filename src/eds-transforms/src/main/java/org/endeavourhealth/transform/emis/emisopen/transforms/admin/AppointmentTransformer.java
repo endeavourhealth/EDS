@@ -10,7 +10,7 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.App
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.AppointmentType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;

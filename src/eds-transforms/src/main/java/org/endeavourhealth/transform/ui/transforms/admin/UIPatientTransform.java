@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.ui.transforms.admin;
 
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.transform.ui.helpers.AddressHelper;
 import org.endeavourhealth.transform.ui.helpers.DateHelper;
 import org.endeavourhealth.transform.ui.helpers.IdentifierHelper;

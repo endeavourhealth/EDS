@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.emis.emisopen;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.ResourceType;

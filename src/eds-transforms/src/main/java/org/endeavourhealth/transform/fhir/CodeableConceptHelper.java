@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.fhir;
 
+import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.common.fhir.schema.*;
 import org.endeavourhealth.transform.terminology.SnomedCode;

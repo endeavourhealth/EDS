@@ -5,7 +5,7 @@ import com.google.common.base.Strings;
 import org.endeavourhealth.common.utility.Resources;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
-import org.endeavourhealth.transform.fhir.IdentifierHelper;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.hl7.fhir.instance.model.Address;
 import org.hl7.fhir.instance.model.Patient;
 import org.slf4j.Logger;

@@ -6,7 +6,7 @@ import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomslotsforsession.SlotListStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomslotsforsession.SlotStruct;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.FhirUri;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.Slot;
 

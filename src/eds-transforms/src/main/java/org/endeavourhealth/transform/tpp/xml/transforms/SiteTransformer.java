@@ -1,9 +1,9 @@
 package org.endeavourhealth.transform.tpp.xml.transforms;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.transform.fhir.ContactPointHelper;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.IdentifierHelper;
+import org.endeavourhealth.common.fhir.ContactPointHelper;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.transform.tpp.xml.schema.Address;
 import org.endeavourhealth.transform.tpp.xml.schema.Site;
 import org.hl7.fhir.instance.model.*;

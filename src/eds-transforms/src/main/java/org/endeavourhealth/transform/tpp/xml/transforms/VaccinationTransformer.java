@@ -1,10 +1,10 @@
 package org.endeavourhealth.transform.tpp.xml.transforms;
 
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.fhir.AnnotationHelper;
+import org.endeavourhealth.common.fhir.AnnotationHelper;
 import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.tpp.xml.schema.Event;
 import org.endeavourhealth.transform.tpp.xml.schema.Vaccination;
 import org.hl7.fhir.instance.model.*;
@@ -32,9 +32,9 @@ public class VaccinationTransformer {
         fhirImmunisation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_IMMUNIZATION));
         fhirResources.add(fhirImmunisation);
 
-        fhirImmunisation.setPatient(ReferenceHelper.findAndCreateReference(Patient.class, fhirResources));
+        fhirImmunisation.setPatient(findAndCreatePatientReference(fhirResources));
         fhirImmunisation.setPerformer(ReferenceHelper.createReference(ResourceType.Practitioner, tppEvent.getUserName()));
-        fhirImmunisation.setEncounter(ReferenceHelper.createReferenceExternal(fhirEncounter));
+        fhirImmunisation.setEncounter(createReferenceExternal(fhirEncounter));
         fhirImmunisation.setStatus(MedicationAdministration.MedicationAdministrationStatus.COMPLETED.toCode());
         fhirImmunisation.setWasNotGiven(false);
         fhirImmunisation.setReported(false);
@@ -42,10 +42,21 @@ public class VaccinationTransformer {
         fhirImmunisation.addNote(AnnotationHelper.createAnnotation(notes));
         fhirImmunisation.setVaccineCode(CodeableConceptHelper.createCodeableConcept(name));
         fhirImmunisation.setDate(tppEvent.getDateTime().toGregorianCalendar().getTime());
+    }
 
+    private static Reference findAndCreatePatientReference(List<Resource> fhirResources) throws TransformException {
+        try {
+            return ReferenceHelper.findAndCreateReference(Patient.class, fhirResources);
+        } catch (org.endeavourhealth.common.exceptions.TransformException e) {
+            throw new TransformException("Could not create patient reference, see cause", e);
+        }
+    }
 
-
-
-
+    private static Reference createReferenceExternal(Resource resource) throws TransformException {
+        try {
+            return ReferenceHelper.createReferenceExternal(resource);
+        } catch (org.endeavourhealth.common.exceptions.TransformException e) {
+            throw new TransformException("Could not create external reference, see cause", e);
+        }
     }
 }

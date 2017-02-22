@@ -6,8 +6,8 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.AppointmentSessionStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomappointmentsessions.HolderStruct;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.FhirUri;
 import org.hl7.fhir.instance.model.Extension;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.Period;

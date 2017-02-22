@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.ceg.transforms;
 
 import org.endeavourhealth.transform.ceg.models.AbstractModel;
 import org.endeavourhealth.transform.ceg.models.Encounter;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.AllergyIntolerance;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.Resource;

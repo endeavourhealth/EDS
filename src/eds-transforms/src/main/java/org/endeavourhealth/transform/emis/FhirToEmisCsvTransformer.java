@@ -15,7 +15,7 @@ import org.endeavourhealth.transform.emis.reverseCsv.transforms.AbstractTransfor
 import org.endeavourhealth.transform.emis.reverseCsv.transforms.FhirLocationTransformer;
 import org.endeavourhealth.transform.emis.reverseCsv.transforms.FhirPatientTransformer;
 import org.endeavourhealth.transform.emis.reverseCsv.transforms.FhirScheduleTransformer;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;

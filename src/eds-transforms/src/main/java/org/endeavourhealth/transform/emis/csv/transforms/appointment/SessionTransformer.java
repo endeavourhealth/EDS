@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
+import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMapByEdsId;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
@@ -7,6 +8,7 @@ import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.appointment.Session;
 import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;

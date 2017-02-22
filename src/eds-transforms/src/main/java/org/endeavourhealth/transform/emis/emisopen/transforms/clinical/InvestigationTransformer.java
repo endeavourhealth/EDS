@@ -6,10 +6,10 @@ import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.DiagnosticReport;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.Reference;
@@ -81,11 +81,19 @@ public class InvestigationTransformer extends ClinicalTransformerBase {
             for (Resource childResource: childResources) {
 
                 //link the child resource to its parent
-                Reference reference = ReferenceHelper.createReferenceExternal(childResource);
+                Reference reference = createReferenceExternal(childResource);
                 fhirReport.getResult().add(reference);
 
                 resources.add(childResource);
             }
+        }
+    }
+
+    private static Reference createReferenceExternal(Resource resource) throws TransformException {
+        try {
+            return ReferenceHelper.createReferenceExternal(resource);
+        } catch (org.endeavourhealth.common.exceptions.TransformException e) {
+            throw new TransformException("Could not create external reference, see cause", e);
         }
     }
 }

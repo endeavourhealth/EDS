@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.emis.csv.transforms.appointment;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;

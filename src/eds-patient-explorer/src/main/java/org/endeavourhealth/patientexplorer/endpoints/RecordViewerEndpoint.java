@@ -14,7 +14,7 @@ import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.patientexplorer.utility.ResourceFetcher;
 import org.endeavourhealth.patientexplorer.utility.SearchTermsParser;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPatient;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.*;

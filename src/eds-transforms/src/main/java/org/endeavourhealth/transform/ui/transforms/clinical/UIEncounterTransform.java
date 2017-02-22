@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.ui.transforms.clinical;
 
 import org.endeavourhealth.common.utility.StreamExtension;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.ExtensionHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
