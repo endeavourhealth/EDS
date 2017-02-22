@@ -11,7 +11,7 @@ import org.endeavourhealth.transform.fhir.CodingHelper;
 import org.endeavourhealth.transform.fhir.ExtensionConverter;
 import org.endeavourhealth.transform.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.schema.MedicationAuthorisationType;
+import org.endeavourhealth.common.fhir.schema.MedicationAuthorisationType;
 import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;

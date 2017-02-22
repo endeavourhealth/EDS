@@ -16,8 +16,8 @@ import org.endeavourhealth.transform.common.exceptions.ClinicalCodeNotFoundExcep
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.schema.EthnicCategory;
-import org.endeavourhealth.transform.fhir.schema.MaritalStatus;
+import org.endeavourhealth.common.fhir.schema.EthnicCategory;
+import org.endeavourhealth.common.fhir.schema.MaritalStatus;
 import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.*;
 

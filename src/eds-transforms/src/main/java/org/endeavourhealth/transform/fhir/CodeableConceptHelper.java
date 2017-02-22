@@ -1,7 +1,7 @@
 package org.endeavourhealth.transform.fhir;
 
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.fhir.schema.*;
+import org.endeavourhealth.common.fhir.schema.*;
 import org.endeavourhealth.transform.terminology.SnomedCode;
 import org.endeavourhealth.transform.terminology.TerminologyService;
 import org.hl7.fhir.instance.model.CodeableConcept;

@@ -1,6 +1,6 @@
 package org.endeavourhealth.transform.fhir;
 
-import org.endeavourhealth.transform.fhir.schema.*;
+import org.endeavourhealth.common.fhir.schema.*;
 import org.endeavourhealth.transform.terminology.SnomedCode;
 import org.hl7.fhir.instance.model.Coding;
 import org.hl7.fhir.instance.model.DiagnosticOrder;

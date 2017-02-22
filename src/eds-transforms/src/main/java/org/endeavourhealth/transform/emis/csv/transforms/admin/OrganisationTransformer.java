@@ -6,7 +6,7 @@ import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.admin.Organisation;
 import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.schema.OrganisationType;
+import org.endeavourhealth.common.fhir.schema.OrganisationType;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

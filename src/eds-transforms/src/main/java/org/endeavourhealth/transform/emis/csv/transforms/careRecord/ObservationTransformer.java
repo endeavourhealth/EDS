@@ -12,8 +12,8 @@ import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.schema.FamilyMember;
-import org.endeavourhealth.transform.fhir.schema.ImmunizationStatus;
+import org.endeavourhealth.common.fhir.schema.FamilyMember;
+import org.endeavourhealth.common.fhir.schema.ImmunizationStatus;
 import org.endeavourhealth.transform.terminology.Read2;
 import org.hl7.fhir.instance.model.*;
 

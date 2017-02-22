@@ -8,8 +8,8 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.Reg
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.SexConverter;
 import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.schema.EthnicCategory;
-import org.endeavourhealth.transform.fhir.schema.MaritalStatus;
+import org.endeavourhealth.common.fhir.schema.EthnicCategory;
+import org.endeavourhealth.common.fhir.schema.MaritalStatus;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

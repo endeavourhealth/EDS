@@ -11,8 +11,8 @@ import org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
 import org.endeavourhealth.transform.fhir.FhirUri;
 import org.endeavourhealth.transform.fhir.QuantityHelper;
-import org.endeavourhealth.transform.fhir.schema.EthnicCategory;
-import org.endeavourhealth.transform.fhir.schema.MaritalStatus;
+import org.endeavourhealth.common.fhir.schema.EthnicCategory;
+import org.endeavourhealth.common.fhir.schema.MaritalStatus;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;

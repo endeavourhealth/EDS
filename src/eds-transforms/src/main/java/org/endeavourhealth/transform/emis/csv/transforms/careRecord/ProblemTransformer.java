@@ -11,8 +11,8 @@ import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem;
 import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.schema.ProblemRelationshipType;
-import org.endeavourhealth.transform.fhir.schema.ProblemSignificance;
+import org.endeavourhealth.common.fhir.schema.ProblemRelationshipType;
+import org.endeavourhealth.common.fhir.schema.ProblemSignificance;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
