@@ -1,20 +1,18 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.fhir.schema.EncounterParticipantType;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation;
 import org.endeavourhealth.transform.emis.openhr.schema.VocDatePart;
-import org.endeavourhealth.common.fhir.CodeableConceptHelper;
-import org.endeavourhealth.common.fhir.ExtensionConverter;
-import org.endeavourhealth.common.fhir.FhirExtensionUri;
-import org.endeavourhealth.common.fhir.FhirUri;
-import org.endeavourhealth.common.fhir.schema.EncounterParticipantType;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 public class ConsultationTransformer {
@@ -123,8 +121,22 @@ public class ConsultationTransformer {
             fhirEncounter.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ENCOUNTER_INCOMPLETE, b));
         }
 
+        //carry over linked items from any previous instance of this problem
+        List<Reference> previousReferences = EmisCsvHelper.findPreviousLinkedReferences(csvHelper, fhirResourceFiler, fhirEncounter.getId(), ResourceType.Encounter);
+        if (previousReferences != null && !previousReferences.isEmpty()) {
+            csvHelper.addLinkedItemsToResource(fhirEncounter, previousReferences, FhirExtensionUri.ENCOUNTER_COMPONENTS);
+        }
+
+        //apply any linked items from this extract
+        List<String> linkedResources = csvHelper.getAndRemoveConsultationRelationships(consultationGuid, patientGuid);
+        if (linkedResources != null) {
+            List<Reference> references = ReferenceHelper.createReferences(linkedResources);
+            csvHelper.addLinkedItemsToResource(fhirEncounter, references, FhirExtensionUri.ENCOUNTER_COMPONENTS);
+        }
+
         fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirEncounter);
     }
+
 
     private static Period createPeriod(Date date, String precision) throws Exception {
         if (date == null) {

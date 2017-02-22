@@ -40,7 +40,7 @@ public class EnterpriseFiler {
 
     private static String keywordEscapeChar = null; //different DBs use different chars to escape keywords (" on pg, ` on mysql)
 
-    public static void file(String base64) throws Exception {
+    public static void file(String base64, String configName) throws Exception {
 
         byte[] bytes = Base64.getDecoder().decode(base64);
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
@@ -48,7 +48,7 @@ public class EnterpriseFiler {
 
         JsonNode columnClassMappings = null;
 
-        Connection connection = openConnection();
+        Connection connection = openConnection(configName);
 
         try {
             List<DeleteWrapper> deletes = new ArrayList<>();
@@ -811,9 +811,9 @@ public class EnterpriseFiler {
         connection.commit();
     }*/
 
-    private static Connection openConnection() throws Exception {
+    private static Connection openConnection(String configName) throws Exception {
 
-        JsonNode config = ConfigManager.getConfigurationAsJson("patient_database", "enterprise");
+        JsonNode config = ConfigManager.getConfigurationAsJson(configName, "enterprise");
 
         String driverClass = config.get("driverClass").asText();
         String url = config.get("url").asText();

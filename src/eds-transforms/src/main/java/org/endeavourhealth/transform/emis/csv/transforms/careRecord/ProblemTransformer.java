@@ -2,20 +2,16 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.fhir.*;
-import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
+import org.endeavourhealth.common.fhir.schema.ProblemRelationshipType;
+import org.endeavourhealth.common.fhir.schema.ProblemSignificance;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
-import org.endeavourhealth.transform.common.IdHelper;
-import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem;
-import org.endeavourhealth.common.fhir.schema.ProblemRelationshipType;
-import org.endeavourhealth.common.fhir.schema.ProblemSignificance;
 import org.hl7.fhir.instance.model.*;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -124,23 +120,23 @@ public class ProblemTransformer {
         }
 
         //carry over linked items from any previous instance of this problem
-        List<Reference> previousReferences = findPreviousLinkedReferences(csvHelper, fhirResourceFiler, fhirProblem.getId());
+        List<Reference> previousReferences = EmisCsvHelper.findPreviousLinkedReferences(csvHelper, fhirResourceFiler, fhirProblem.getId(), ResourceType.Condition);
         if (previousReferences != null && !previousReferences.isEmpty()) {
-            csvHelper.addLinkedItemsToProblem(fhirProblem, previousReferences);
+            csvHelper.addLinkedItemsToResource(fhirProblem, previousReferences, FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE);
         }
 
         //apply any linked items from this extract
         List<String> linkedResources = csvHelper.getAndRemoveProblemRelationships(observationGuid, patientGuid);
         if (linkedResources != null) {
             List<Reference> references = ReferenceHelper.createReferences(linkedResources);
-            csvHelper.addLinkedItemsToProblem(fhirProblem, references);
+            csvHelper.addLinkedItemsToResource(fhirProblem, references, FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE);
         }
 
         //the problem is actually saved in the ObservationTransformer, so just cache for later
         csvHelper.cacheProblem(observationGuid, patientGuid, fhirProblem);
     }
 
-    private static List<Reference> findPreviousLinkedReferences(EmisCsvHelper csvHelper, FhirResourceFiler fhirResourceFiler, String problemId) throws Exception {
+    /*private static List<Reference> findPreviousLinkedReferences(EmisCsvHelper csvHelper, FhirResourceFiler fhirResourceFiler, String problemId) throws Exception {
         try {
 
             //ResourceIdMapRepository repository = new ResourceIdMapRepository();
@@ -170,7 +166,8 @@ public class ProblemTransformer {
             //if this is the first time, then we'll get this exception raised
             return null;
         }
-    }
+    }*/
+
 
     private static ProblemRelationshipType convertRelationshipType(String relationshipType) throws Exception {
 

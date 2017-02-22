@@ -73,7 +73,7 @@ public class Observation extends AbstractCsvParser {
     public Long getCodeId() {
         return super.getLong("CodeId");
     }
-    public String getProblemUGuid() {
+    public String getProblemGuid() {
         return super.getString("ProblemGuid");
     }
     public String getAssociatedText() {

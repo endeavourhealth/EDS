@@ -121,7 +121,6 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="eds-hl7receiver" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

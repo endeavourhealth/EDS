@@ -1,6 +1,10 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.QuantityHelper;
+import org.endeavourhealth.common.fhir.schema.EthnicCategory;
+import org.endeavourhealth.common.fhir.schema.MaritalStatus;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
@@ -9,10 +13,6 @@ import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
-import org.endeavourhealth.common.fhir.FhirUri;
-import org.endeavourhealth.common.fhir.QuantityHelper;
-import org.endeavourhealth.common.fhir.schema.EthnicCategory;
-import org.endeavourhealth.common.fhir.schema.MaritalStatus;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
@@ -85,15 +85,27 @@ public class ObservationPreTransformer {
             }
         }
 
-        String problemGuid = parser.getProblemUGuid();
+        String problemGuid = parser.getProblemGuid();
         if (!Strings.isNullOrEmpty(problemGuid)) {
 
             //if this record is linked to a problem, store this relationship in the helper
             String observationGuid = parser.getObservationGuid();
             String patientGuid = parser.getPatientGuid();
-            ResourceType resourceType = ObservationTransformer.getTargetResourceType(parser, fhirResourceFiler, csvHelper);
+            ResourceType resourceType = ObservationTransformer.getTargetResourceType(parser, csvHelper);
 
             csvHelper.cacheProblemRelationship(problemGuid,
+                    patientGuid,
+                    observationGuid,
+                    resourceType);
+        }
+
+        String consultationGuid = parser.getConsultationGuid();
+        if (!Strings.isNullOrEmpty(consultationGuid)) {
+            String observationGuid = parser.getObservationGuid();
+            String patientGuid = parser.getPatientGuid();
+            ResourceType resourceType = ObservationTransformer.getTargetResourceType(parser, csvHelper);
+
+            csvHelper.cacheConsultationRelationship(consultationGuid,
                     patientGuid,
                     observationGuid,
                     resourceType);

@@ -2,6 +2,8 @@ package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.fhir.schema.FamilyMember;
+import org.endeavourhealth.common.fhir.schema.ImmunizationStatus;
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
@@ -12,11 +14,6 @@ import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
-import org.endeavourhealth.common.fhir.schema.FamilyMember;
-import org.endeavourhealth.common.fhir.schema.ImmunizationStatus;
-import org.endeavourhealth.common.fhir.CodeableConceptHelper;
-import org.endeavourhealth.common.fhir.ExtensionConverter;
-import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.transform.terminology.Read2;
 import org.hl7.fhir.instance.model.*;
 
@@ -42,6 +39,7 @@ public class ObservationTransformer {
                 //depending whether deleting or saving, we go through a different path to find what
                 //the target resource type should be
                 Observation observationParser = (Observation)parser;
+
                 if (observationParser.getDeleted() || observationParser.getIsConfidential()) {
                     deleteResource(version, observationParser, fhirResourceFiler, csvHelper);
                 } else {
@@ -154,7 +152,7 @@ public class ObservationTransformer {
             return;
         }
 
-        ResourceType resourceType = getTargetResourceType(parser, fhirResourceFiler, csvHelper);
+        ResourceType resourceType = getTargetResourceType(parser, csvHelper);
         switch (resourceType) {
             case Observation:
                 createOrDeleteObservation(parser, fhirResourceFiler, csvHelper);
@@ -198,11 +196,9 @@ public class ObservationTransformer {
 
         //if we didn't transform our record into a Condition, but the Problem CSV had a row for
         //it, then we'll also have part-created a Condition resource for it, which we need to finish populating
-        if (resourceType != ResourceType.Condition) {
-            Condition fhirProblem = csvHelper.findProblem(observationGuid, patientGuid);
-            if (fhirProblem != null) {
-                createOrDeleteCondition(parser, fhirResourceFiler, csvHelper, false);
-            }
+        if (resourceType != ResourceType.Condition
+                && csvHelper.existsProblem(observationGuid, patientGuid)) {
+            createOrDeleteCondition(parser, fhirResourceFiler, csvHelper, false);
         }
 
         //remove any cached links of child observations that link to the row we just processed. If the row used
@@ -215,7 +211,6 @@ public class ObservationTransformer {
      * are also used as it's not a perfect match.
      */
     public static ResourceType getTargetResourceType(Observation parser,
-                                                     FhirResourceFiler fhirResourceFiler,
                                                      EmisCsvHelper csvHelper) throws Exception {
 
         Long codeId = parser.getCodeId();
@@ -262,7 +257,7 @@ public class ObservationTransformer {
             || codeType == ClinicalCodeType.Trade_Branch
             || codeType == ClinicalCodeType.Unset) {
 
-            if (isDiagnosticReport(parser, fhirResourceFiler, csvHelper)) {
+            if (isDiagnosticReport(parser, csvHelper)) {
                 return ResourceType.DiagnosticReport;
             } else {
                 return ResourceType.Observation;
@@ -270,9 +265,9 @@ public class ObservationTransformer {
 
         } else if (codeType == ClinicalCodeType.Conditions_Operations_Procedures) {
 
-            if (isProcedure(codeId, fhirResourceFiler, csvHelper)) {
+            if (isProcedure(codeId, csvHelper)) {
                 return ResourceType.Procedure;
-            } else if (isDisorder(codeId, fhirResourceFiler, csvHelper)) {
+            } else if (isDisorder(codeId, csvHelper)) {
                 return ResourceType.Condition;
             } else {
                 return ResourceType.Observation;
@@ -316,7 +311,7 @@ public class ObservationTransformer {
         }
     }
 
-    private static boolean isDisorder(Long codeId, FhirResourceFiler fhirResourceFiler, EmisCsvHelper csvHelper) throws Exception {
+    private static boolean isDisorder(Long codeId, EmisCsvHelper csvHelper) throws Exception {
 
         CodeableConcept fhirConcept = csvHelper.findClinicalCode(codeId);
         for (Coding coding: fhirConcept.getCoding()) {
@@ -382,7 +377,6 @@ public class ObservationTransformer {
     }
 */
     private static boolean isDiagnosticReport(Observation parser,
-                                              FhirResourceFiler fhirResourceFiler,
                                               EmisCsvHelper csvHelper) throws Exception {
 
         //if it's got a value, it's not a diagnostic report, as it'll be an investigation within a report
@@ -408,7 +402,6 @@ public class ObservationTransformer {
     }
 
     private static boolean isProcedure(Long codeId,
-                                       FhirResourceFiler fhirResourceFiler,
                                        EmisCsvHelper csvHelper) throws Exception {
 
         CodeableConcept fhirConcept = csvHelper.findClinicalCode(codeId);
@@ -508,7 +501,7 @@ public class ObservationTransformer {
 
         //if this record is linked to a problem, store this relationship in the helper
 /*
-        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
+        csvHelper.cacheProblemRelationship(parser.getProblemGuid(),
                                             patientGuid,
                                             parser.getObservationGuid(),
                                             fhirReferral.getResourceType());
@@ -573,7 +566,7 @@ public class ObservationTransformer {
 
         //if this record is linked to a problem, store this relationship in the helper
 /*
-        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
+        csvHelper.cacheProblemRelationship(parser.getProblemGuid(),
                 patientGuid,
                 observationGuid,
                 fhirOrder.getResourceType());
@@ -631,7 +624,7 @@ public class ObservationTransformer {
 
         //if this record is linked to a problem, store this relationship in the helper
 /*
-        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
+        csvHelper.cacheProblemRelationship(parser.getProblemGuid(),
                 patientGuid,
                 observationGuid,
                 fhirOrder.getResourceType());
@@ -690,7 +683,7 @@ public class ObservationTransformer {
 
         //if this record is linked to a problem, store this relationship in the helper
 /*
-        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
+        csvHelper.cacheProblemRelationship(parser.getProblemGuid(),
                 patientGuid,
                 observationGuid,
                 fhirAllergy.getResourceType());
@@ -764,7 +757,7 @@ public class ObservationTransformer {
         assertNumericRangeHighEmpty(fhirReport, parser);
 
         //if this record is linked to a problem, store this relationship in the helper
-        /*csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
+        /*csvHelper.cacheProblemRelationship(parser.getProblemGuid(),
                 patientGuid,
                 observationGuid,
                 fhirReport.getResourceType());*/
@@ -827,7 +820,7 @@ public class ObservationTransformer {
 
         //if this record is linked to a problem, store this relationship in the helper
 /*
-        csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
+        csvHelper.cacheProblemRelationship(parser.getProblemGuid(),
                 patientGuid,
                 observationGuid,
                 fhirProcedure.getResourceType());
@@ -906,7 +899,7 @@ public class ObservationTransformer {
             fhirCondition.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
 
-        String problemGuid = parser.getProblemUGuid();
+        String problemGuid = parser.getProblemGuid();
         if (!Strings.isNullOrEmpty(problemGuid)) {
             Reference problemReference = csvHelper.createProblemReference(problemGuid, patientGuid);
             fhirCondition.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.CONDITION_PART_OF_PROBLEM, problemReference));
@@ -1066,7 +1059,7 @@ public class ObservationTransformer {
         assertNumericRangeHighEmpty(fhirFamilyHistory, parser);
 
         //if this record is linked to a problem, store this relationship in the helper
-        /*csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
+        /*csvHelper.cacheProblemRelationship(parser.getProblemGuid(),
                 patientGuid,
                 observationGuid,
                 fhirFamilyHistory.getResourceType());*/
@@ -1130,7 +1123,7 @@ public class ObservationTransformer {
         assertNumericRangeHighEmpty(fhirImmunisation, parser);
 
         //if this record is linked to a problem, store this relationship in the helper
-        /*csvHelper.cacheProblemRelationship(parser.getProblemUGuid(),
+        /*csvHelper.cacheProblemRelationship(parser.getProblemGuid(),
                 patientGuid,
                 observationGuid,
                 fhirImmunisation.getResourceType());*/

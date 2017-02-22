@@ -1,44 +1,54 @@
 package org.endeavourhealth.queuereader;
 
-import com.datastax.driver.core.*;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
-import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.cassandra.CassandraConnector;
+import com.google.common.io.Files;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.ReferenceComponents;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
-import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
-import org.endeavourhealth.core.data.admin.models.ActiveItem;
-import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
 import org.endeavourhealth.core.data.audit.models.ExchangeByService;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
-import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.data.ehr.models.ResourceByService;
+import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
+import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
+import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.messaging.pipeline.components.DetermineRelevantProtocolIds;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.System;
-import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
-import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
+import org.endeavourhealth.transform.common.IdHelper;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
+import org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation;
+import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
+import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
+import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationPreTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.prescribing.DrugRecordPreTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.prescribing.IssueRecordPreTransformer;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
+import org.hl7.fhir.instance.formats.JsonParser;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -51,13 +61,15 @@ public class Main {
 
 		//hack to get the Enterprise data streaming
 		try {
-			if (args.length == 1) {
+			if (args.length == 2) {
 				UUID serviceUuid = UUID.fromString(args[0]);
-				startEnterpriseStream(serviceUuid, null);
-			} else if (args.length == 2) {
+				String configName = args[1];
+				startEnterpriseStream(serviceUuid, configName, null);
+			} else if (args.length == 3) {
 				UUID serviceUuid = UUID.fromString(args[0]);
-				UUID exchangeUuid = UUID.fromString(args[1]);
-				startEnterpriseStream(serviceUuid, exchangeUuid);
+				String configName = args[1];
+				UUID exchangeUuid = UUID.fromString(args[2]);
+				startEnterpriseStream(serviceUuid, configName, exchangeUuid);
 			}
 		} catch (IllegalArgumentException iae) {
 			//fine, just let it continue to below
@@ -66,15 +78,29 @@ public class Main {
 			return;
 		}
 
+		if (args.length >= 3
+				&& args[0].equals("FixProblems")) {
+
+			UUID serviceId = UUID.fromString(args[1]);
+			String sharedStoragePath = args[2];
+			boolean testMode = true;
+			if (args.length > 3) {
+				testMode = Boolean.parseBoolean(args[3]);
+			}
+
+			fixProblems(serviceId, sharedStoragePath, testMode);
+			return;
+		}
+
 		if (args.length != 1) {
 			LOG.error("Usage: queuereader config_id");
 			return;
 		}
 
-		if (args[0].equalsIgnoreCase("ExchangeHeaders")) {
+		/*if (args[0].equalsIgnoreCase("ExchangeHeaders")) {
 			addSystemIdToExchangeHeaders();
 			return;
-		}
+		}*/
 
 
 		/*if (args[0].equalsIgnoreCase("FixExchanges")) {
@@ -124,6 +150,270 @@ public class Main {
 		LOG.info("Starting message consumption");
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
+	}
+
+	private static void fixProblems(UUID serviceId, String sharedStoragePath, boolean testMode) {
+		LOG.info("Fixing problems for service " + serviceId);
+
+		AuditRepository auditRepository = new AuditRepository();
+		ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+		ResourceRepository resourceRepository = new ResourceRepository();
+
+		List<ExchangeByService> exchangeByServiceList = auditRepository.getExchangesByService(serviceId, Integer.MAX_VALUE);
+
+		//go backwards as the most recent is first
+		for (int i=exchangeByServiceList.size()-1; i>=0; i--) {
+			ExchangeByService exchangeByService = exchangeByServiceList.get(i);
+			UUID exchangeId = exchangeByService.getExchangeId();
+			LOG.info("Doing exchange " + exchangeId);
+
+			EmisCsvHelper helper = null;
+
+			try {
+				Exchange exchange = AuditWriter.readExchange(exchangeId);
+				String exchangeBody = exchange.getBody();
+				String[] files = exchangeBody.split(java.lang.System.lineSeparator());
+
+				File orgDirectory = validateAndFindCommonDirectory(sharedStoragePath, files);
+				Map<Class, AbstractCsvParser> allParsers = new HashMap<>();
+				String properVersion = null;
+
+				String[] versions = new String[]{EmisCsvToFhirTransformer.VERSION_5_0, EmisCsvToFhirTransformer.VERSION_5_1, EmisCsvToFhirTransformer.VERSION_5_3, EmisCsvToFhirTransformer.VERSION_5_4};
+				for (String version: versions) {
+
+					try {
+
+						List<AbstractCsvParser> parsers = new ArrayList<>();
+
+						EmisCsvToFhirTransformer.findFileAndOpenParser(Observation.class, orgDirectory, version, true, parsers);
+						EmisCsvToFhirTransformer.findFileAndOpenParser(DrugRecord.class, orgDirectory, version, true, parsers);
+						EmisCsvToFhirTransformer.findFileAndOpenParser(IssueRecord.class, orgDirectory, version, true, parsers);
+
+						for (AbstractCsvParser parser: parsers) {
+							Class cls = parser.getClass();
+							allParsers.put(cls, parser);
+						}
+
+						properVersion = version;
+
+					} catch (Exception ex) {
+						//ignore
+					}
+				}
+
+				if (allParsers.isEmpty()) {
+					throw new Exception("Failed to open parsers for exchange " + exchangeId + " in folder " + orgDirectory);
+				}
+
+				UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
+				//FhirResourceFiler dummyFiler = new FhirResourceFiler(exchangeId, serviceId, systemId, null, null, 10);
+
+				if (helper == null) {
+					helper = new EmisCsvHelper(findDataSharingAgreementGuid(new ArrayList<>(allParsers.values())));
+				}
+
+				ObservationPreTransformer.transform(properVersion, allParsers, null, helper);
+				IssueRecordPreTransformer.transform(properVersion, allParsers, null, helper);
+				DrugRecordPreTransformer.transform(properVersion, allParsers, null, helper);
+
+				Map<String, List<String>> problemChildren = helper.getProblemChildMap();
+
+				List<ExchangeBatch> exchangeBatches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
+
+				for (String problemLocallyUniqueId: problemChildren.keySet()) {
+					List<String> problemContents = problemChildren.get(problemLocallyUniqueId);
+					String patientLocallyUniqueId = problemLocallyUniqueId.split(":")[0];
+
+					UUID edsPatientId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Patient, patientLocallyUniqueId);
+					if (edsPatientId == null) {
+						throw new Exception("Failed to find edsPatientId for local Patient ID " + patientLocallyUniqueId + " in exchange " + exchangeId);
+					}
+
+					//find the batch ID for our patient
+					UUID batchId = null;
+					for (ExchangeBatch exchangeBatch: exchangeBatches) {
+						if (exchangeBatch.getEdsPatientId() != null
+								&& exchangeBatch.getEdsPatientId().equals(edsPatientId)) {
+							batchId = exchangeBatch.getBatchId();
+							break;
+						}
+					}
+					if (batchId == null) {
+						throw new Exception("Failed to find batch ID for eds Patient ID " + edsPatientId + " in exchange " + exchangeId);
+					}
+
+					//find the EDS ID for our problem
+					UUID edsProblemId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Condition, problemLocallyUniqueId);
+					if (edsProblemId == null) {
+						LOG.warn("No edsProblemId found for local ID " + problemLocallyUniqueId + " - assume bad data referring to non-existing problem?");
+						//throw new Exception("Failed to find edsProblemId for local Patient ID " + problemLocallyUniqueId + " in exchange " + exchangeId);
+					}
+
+					//convert our child IDs to EDS references
+					List<Reference> references = new ArrayList<>();
+
+					HashSet<String> contentsSet = new HashSet<>();
+					contentsSet.addAll(problemContents);
+
+					for (String referenceValue : contentsSet) {
+						Reference reference = ReferenceHelper.createReference(referenceValue);
+						ReferenceComponents components = ReferenceHelper.getReferenceComponents(reference);
+						String locallyUniqueId = components.getId();
+						ResourceType resourceType = components.getResourceType();
+						UUID edsResourceId = IdHelper.getEdsResourceId(serviceId, systemId, resourceType, locallyUniqueId);
+
+						Reference globallyUniqueReference = ReferenceHelper.createReference(resourceType, edsResourceId.toString());
+						references.add(globallyUniqueReference);
+					}
+
+					//find the resource for the problem itself
+					ResourceByExchangeBatch problemResourceByExchangeBatch = null;
+					List<ResourceByExchangeBatch> resources = resourceRepository.getResourcesForBatch(batchId, ResourceType.Condition.toString());
+					for (ResourceByExchangeBatch resourceByExchangeBatch: resources) {
+						if (resourceByExchangeBatch.getResourceId().equals(edsProblemId)) {
+							problemResourceByExchangeBatch = resourceByExchangeBatch;
+							break;
+						}
+					}
+					if (problemResourceByExchangeBatch == null) {
+						throw new Exception("Problem not found for edsProblemId " + edsProblemId + " for exchange " + exchangeId);
+					}
+
+					if (problemResourceByExchangeBatch.getIsDeleted()) {
+						LOG.warn("Problem " + edsProblemId + " is deleted, so not adding to it for exchange " + exchangeId);
+						continue;
+					}
+
+					String json = problemResourceByExchangeBatch.getResourceData();
+					Condition fhirProblem = (Condition)new JsonParser().parse(json);
+
+					//update the problems
+					if (fhirProblem.hasContained()) {
+						if (fhirProblem.getContained().size() > 1) {
+							throw new Exception("Problem " + edsProblemId + " is has " + fhirProblem.getContained().size() + " contained resources for exchange " + exchangeId);
+						}
+						fhirProblem.getContained().clear();
+					}
+
+					List_ list = new List_();
+					list.setId("Items");
+					fhirProblem.getContained().add(list);
+
+					Extension extension = ExtensionConverter.findExtension(fhirProblem, FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE);
+					if (extension == null) {
+						Reference listReference = ReferenceHelper.createInternalReference("Items");
+						fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, listReference));
+					}
+
+					for (Reference reference : references) {
+						list.addEntry().setItem(reference);
+					}
+
+					String newJson = FhirSerializationHelper.serializeResource(fhirProblem);
+					if (newJson.equals(json)) {
+						LOG.warn("Skipping edsProblemId " + edsProblemId + " as JSON hasn't changed");
+						continue;
+					}
+
+					problemResourceByExchangeBatch.setResourceData(newJson);
+
+					String resourceType = problemResourceByExchangeBatch.getResourceType();
+					UUID versionUuid = problemResourceByExchangeBatch.getVersion();
+
+					ResourceHistory problemResourceHistory = resourceRepository.getResourceHistoryByKey(edsProblemId, resourceType, versionUuid);
+					problemResourceHistory.setResourceData(newJson);
+					problemResourceHistory.setResourceChecksum(FhirStorageService.generateChecksum(newJson));
+
+					ResourceByService problemResourceByService = resourceRepository.getResourceByServiceByKey(serviceId, systemId, resourceType, edsProblemId);
+					if (problemResourceByService.getResourceData() == null) {
+						problemResourceByService = null;
+						LOG.warn("Not updating edsProblemId " + edsProblemId + " for exchange " + exchangeId + " as it's been subsequently delrted");
+					} else {
+						problemResourceByService.setResourceData(newJson);
+					}
+
+					//save back to THREE tables
+					if (!testMode) {
+
+						resourceRepository.save(problemResourceByExchangeBatch);
+						resourceRepository.save(problemResourceHistory);
+						if (problemResourceByService != null) {
+							resourceRepository.save(problemResourceByService);
+						}
+						LOG.info("Fixed edsProblemId " + edsProblemId + " for exchange Id " + exchangeId);
+
+					} else {
+						LOG.info("Would change edsProblemId " + edsProblemId + " to new JSON");
+						LOG.info(newJson);
+					}
+				}
+
+			} catch (Exception ex) {
+				LOG.error("Failed on exchange " + exchangeId, ex);
+				break;
+			}
+		}
+
+		LOG.info("Finished fixing problems for service " + serviceId);
+	}
+
+	private static String findDataSharingAgreementGuid(List<AbstractCsvParser> parsers) throws Exception {
+
+		//we need a file name to work out the data sharing agreement ID, so just the first file we can find
+		File f = parsers
+				.iterator()
+				.next()
+				.getFile();
+
+		String name = Files.getNameWithoutExtension(f.getName());
+		String[] toks = name.split("_");
+		if (toks.length != 5) {
+			throw new TransformException("Failed to extract data sharing agreement GUID from filename " + f.getName());
+		}
+		return toks[4];
+	}
+
+
+
+	private static void closeParsers(Collection<AbstractCsvParser> parsers) {
+		for (AbstractCsvParser parser : parsers) {
+			try {
+				parser.close();
+			} catch (IOException ex) {
+				//don't worry if this fails, as we're done anyway
+			}
+		}
+	}
+
+
+	private static File validateAndFindCommonDirectory(String sharedStoragePath, String[] files) throws Exception {
+		String organisationDir = null;
+
+		for (String file: files) {
+			File f = new File(sharedStoragePath, file);
+			if (!f.exists()) {
+				LOG.error("Failed to find file {} in shared storage {}", file, sharedStoragePath);
+				throw new FileNotFoundException("" + f + " doesn't exist");
+			}
+			//LOG.info("Successfully found file {} in shared storage {}", file, sharedStoragePath);
+
+			try {
+				File orgDir = f.getParentFile();
+
+				if (organisationDir == null) {
+					organisationDir = orgDir.getAbsolutePath();
+				} else {
+					if (!organisationDir.equalsIgnoreCase(orgDir.getAbsolutePath())) {
+						throw new Exception();
+					}
+				}
+
+			} catch (Exception ex) {
+				throw new FileNotFoundException("" + f + " isn't in the expected directory structure within " + organisationDir);
+			}
+
+		}
+		return new File(organisationDir);
 	}
 
 	/*private static void testLogging() {
@@ -442,7 +732,7 @@ public class Main {
 	}*/
 
 
-	private static void startEnterpriseStream(UUID serviceId, UUID exchangeIdStartFrom) throws Exception {
+	private static void startEnterpriseStream(UUID serviceId, String configName, UUID exchangeIdStartFrom) throws Exception {
 
 		LOG.info("Starting Enterprise Streaming for " + serviceId);
 
@@ -490,7 +780,7 @@ public class Main {
 				try {
 					String outbound = FhirToEnterpriseCsvTransformer.transformFromFhir(senderOrgUuid, batchId, null);
 					if (!Strings.isNullOrEmpty(outbound)) {
-						EnterpriseFiler.file(outbound);
+						EnterpriseFiler.file(outbound, configName);
 					}
 
 				} catch (Exception ex) {
@@ -728,7 +1018,7 @@ public class Main {
 		}
 	}*/
 
-	private static UUID findSystemId(Service service, String software, String messageVersion) throws PipelineException {
+	/*private static UUID findSystemId(Service service, String software, String messageVersion) throws PipelineException {
 
 		List<JsonServiceInterfaceEndpoint> endpoints = null;
 		try {
@@ -760,8 +1050,8 @@ public class Main {
 
 		return null;
 	}
-
-	private static void addSystemIdToExchangeHeaders() throws Exception {
+*/
+	/*private static void addSystemIdToExchangeHeaders() throws Exception {
 		LOG.info("populateExchangeBatchPatients");
 
 		AuditRepository auditRepository = new AuditRepository();
@@ -832,7 +1122,7 @@ public class Main {
 		}
 
 		LOG.info("Finished populateExchangeBatchPatients");
-	}
+	}*/
 
 
 	/*private static void populateExchangeBatchPatients() throws Exception {

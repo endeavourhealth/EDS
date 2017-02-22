@@ -86,6 +86,10 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 		List<String> endpoints = getSubscriberEndpoints(transformBatch);
 
+		if (endpoints.isEmpty()) {
+			throw new PipelineException("No endpoints configured for batch ID " + batchId);
+		}
+
 		// Run the transform, creating a subscriber batch for each
 		// (Holds transformed message id and destination endpoints)
 		List<SubscriberBatch> subscriberBatches = new ArrayList<>();
@@ -148,7 +152,9 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 			//file the data directly, so return null to end the pipeline
 			if (!Strings.isNullOrEmpty(zippedCsvs)) {
-				EnterpriseFiler.file(zippedCsvs);
+				for (String configName: endpoints) {
+					EnterpriseFiler.file(zippedCsvs, configName);
+				}
 			}
 
 			return null;

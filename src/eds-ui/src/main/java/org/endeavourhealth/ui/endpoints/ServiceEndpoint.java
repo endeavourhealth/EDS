@@ -2,6 +2,8 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
@@ -14,8 +16,6 @@ import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
-import org.endeavourhealth.common.security.SecurityUtils;
-import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
 import org.endeavourhealth.core.xml.QueryDocument.System;
@@ -130,8 +130,7 @@ public final class ServiceEndpoint extends AbstractEndpoint {
 
 		final Service dbService = repository.getById(serviceUuid);
 
-		//the delete will take some time, so do the delete in a separate thread. This does mean
-		//that there's no way to check the progress of the delete, but that can be added later.
+		//the delete will take some time, so do the delete in a separate thread
 		Runnable task = () -> {
 			LOG.info("Deleting all data for service " + dbService.getName() + " " + dbService.getId());
 			FhirDeletionService deletor = new FhirDeletionService(dbService);

@@ -3,6 +3,8 @@ package org.endeavourhealth.transform.emis.csv;
 import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.fhir.schema.EthnicCategory;
+import org.endeavourhealth.common.fhir.schema.MaritalStatus;
 import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
@@ -16,8 +18,6 @@ import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.ClinicalCodeNotFoundException;
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
-import org.endeavourhealth.common.fhir.schema.EthnicCategory;
-import org.endeavourhealth.common.fhir.schema.MaritalStatus;
 import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.*;
 
@@ -44,6 +44,7 @@ public class EmisCsvHelper {
     private Map<String, ReferralRequest> referralMap = new HashMap<>();
     private Map<String, List<String>> observationChildMap = new HashMap<>();
     private Map<String, List<String>> problemChildMap = new HashMap<>();
+    private Map<String, List<String>> consultationChildMap = new HashMap<>();
     private Map<String, DateType> drugRecordLastIssueDateMap = new HashMap<>();
     private Map<String, DateType> drugRecordFirstIssueDateMap = new HashMap<>();
     private Map<String, List<Observation.ObservationComponentComponent>> bpComponentMap = new HashMap<>();
@@ -275,6 +276,10 @@ public class EmisCsvHelper {
         //problemMap.put(createUniqueId(patientGuid, observationGuid), fhirCondition);
     }
 
+    public boolean existsProblem(String observationGuid, String patientGuid) {
+        return problemMap.get(createUniqueId(patientGuid, observationGuid)) != null;
+    }
+
     public Condition findProblem(String observationGuid, String patientGuid) throws Exception {
         String conditionJson = problemMap.remove(createUniqueId(patientGuid, observationGuid));
         if (conditionJson != null) {
@@ -419,6 +424,11 @@ public class EmisCsvHelper {
         return problemChildMap.remove(createUniqueId(patientGuid, problemGuid));
     }
 
+
+    public Map<String, List<String>> getProblemChildMap() {
+        return problemChildMap;
+    }
+
     public void cacheProblemRelationship(String problemObservationGuid,
                                          String patientGuid,
                                          String resourceGuid,
@@ -433,7 +443,9 @@ public class EmisCsvHelper {
             list = new ArrayList<>();
             problemChildMap.put(createUniqueId(patientGuid, problemObservationGuid), list);
         }
-        list.add(ReferenceHelper.createResourceReference(resourceType, createUniqueId(patientGuid, resourceGuid)));
+
+        String resourceReference = ReferenceHelper.createResourceReference(resourceType, createUniqueId(patientGuid, resourceGuid));
+        list.add(resourceReference);
     }
 
     /**
@@ -445,38 +457,7 @@ public class EmisCsvHelper {
         for (String problemLocallyUniqueId : problemChildMap.keySet()) {
             List<String> childResourceRelationships = problemChildMap.get(problemLocallyUniqueId);
 
-            addRelationshipsToExistingProblem(problemLocallyUniqueId, childResourceRelationships, fhirResourceFiler);
-        }
-    }
-
-    private void addRelationshipsToExistingProblem(String problemLocallyUniqueId,
-                                                   List<String> childResourceRelationships,
-                                                   FhirResourceFiler fhirResourceFiler) throws Exception {
-
-        Condition fhirProblem;
-        try {
-            fhirProblem = (Condition) retrieveResource(problemLocallyUniqueId, ResourceType.Condition, fhirResourceFiler);
-        } catch (ResourceNotFoundException|ResourceDeletedException ex) {
-            //it's possible to create medication items that are linked to non-existent problems in Emis Web,
-            //so ignore any data
-            return;
-        }
-
-        String patientGuid = getPatientGuidFromUniqueId(problemLocallyUniqueId);
-
-        //since our resource
-        List<Reference> references = new ArrayList<>();
-
-        for (String referenceValue : childResourceRelationships) {
-            Reference reference = ReferenceHelper.createReference(referenceValue);
-            Reference globallyUniqueReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, fhirResourceFiler);
-            references.add(globallyUniqueReference);
-        }
-
-        if (addLinkedItemsToProblem(fhirProblem, references)) {
-
-            //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
-            fhirResourceFiler.savePatientResource(null, false, patientGuid, fhirProblem);
+            addRelationshipsToExistingResource(problemLocallyUniqueId, ResourceType.Condition, childResourceRelationships, fhirResourceFiler, FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE);
         }
     }
 
@@ -484,13 +465,13 @@ public class EmisCsvHelper {
      * adds linked references to a FHIR problem, that may or may not already have linked references
      * returns true if any change was actually made, false otherwise
      */
-    public boolean addLinkedItemsToProblem(Condition fhirProblem, List<Reference> references) {
+    public static boolean addLinkedItemsToResource(DomainResource resource, List<Reference> references, String extensionUrl) {
 
         //see if we already have a list in the problem
         List_ list = null;
 
-        if (fhirProblem.hasContained()) {
-            for (Resource contained: fhirProblem.getContained()) {
+        if (resource.hasContained()) {
+            for (Resource contained: resource.getContained()) {
                 if (contained.getId().equals(PROBLEM_LIST_ID)) {
                     list = (List_)contained;
                 }
@@ -501,23 +482,14 @@ public class EmisCsvHelper {
         if (list == null) {
             list = new List_();
             list.setId(PROBLEM_LIST_ID);
-            fhirProblem.getContained().add(list);
+            resource.getContained().add(list);
         }
 
         //add the extension, unless it's already there
-        boolean addExtension = true;
-        if (fhirProblem.hasExtension()) {
-            for (Extension extension: fhirProblem.getExtension()) {
-                if (extension.getUrl().equals(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE)) {
-                    addExtension = false;
-                    break;
-                }
-            }
-        }
-
+        boolean addExtension = !ExtensionConverter.hasExtension(resource, extensionUrl);
         if (addExtension) {
             Reference listReference = ReferenceHelper.createInternalReference(PROBLEM_LIST_ID);
-            fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, listReference));
+            resource.addExtension(ExtensionConverter.createExtension(extensionUrl, listReference));
         }
 
         boolean changed = false;
@@ -543,7 +515,71 @@ public class EmisCsvHelper {
         return changed;
     }
 
+    private void addRelationshipsToExistingResource(String locallyUniqueResourceId,
+                                                   ResourceType resourceType,
+                                                   List<String> childResourceRelationships,
+                                                   FhirResourceFiler fhirResourceFiler,
+                                                   String extensionUrl) throws Exception {
 
+        DomainResource fhirResource;
+        try {
+            fhirResource = (DomainResource)retrieveResource(locallyUniqueResourceId, resourceType, fhirResourceFiler);
+        } catch (ResourceNotFoundException|ResourceDeletedException ex) {
+            //it's possible to create medication items that are linked to non-existent problems in Emis Web,
+            //so ignore any data
+            return;
+        }
+
+        //our resource is already ID mapped, so we need to manually map all the references in our list
+        List<Reference> references = new ArrayList<>();
+
+        for (String referenceValue : childResourceRelationships) {
+            Reference reference = ReferenceHelper.createReference(referenceValue);
+            Reference globallyUniqueReference = IdHelper.convertLocallyUniqueReferenceToEdsReference(reference, fhirResourceFiler);
+            references.add(globallyUniqueReference);
+        }
+
+        if (addLinkedItemsToResource(fhirResource, references, extensionUrl)) {
+
+            String patientGuid = getPatientGuidFromUniqueId(locallyUniqueResourceId);
+
+            //make sure to pass in the parameter to bypass ID mapping, since this resource has already been done
+            fhirResourceFiler.savePatientResource(null, false, patientGuid, fhirResource);
+        }
+    }
+
+    public static List<Reference> findPreviousLinkedReferences(EmisCsvHelper csvHelper,
+                                                               FhirResourceFiler fhirResourceFiler,
+                                                               String locallyUniqueId,
+                                                               ResourceType resourceType) throws Exception {
+        try {
+            List<Reference> ret = new ArrayList<>();
+
+            DomainResource previousVersion = (DomainResource)csvHelper.retrieveResource(locallyUniqueId, resourceType, fhirResourceFiler);
+
+            if (previousVersion.hasContained()) {
+                for (Resource contained: previousVersion.getContained()) {
+                    if (contained instanceof List_) {
+                        List_ list = (List_)contained;
+                        for (List_.ListEntryComponent entry: list.getEntry()) {
+                            Reference previousReference = entry.getItem();
+
+                            //the reference we have has already been mapped to an EDS ID, so we need to un-map it
+                            //back to the source ID, so the ID mapper can safely map it when we save the resource
+                            Reference unmappedReference = IdHelper.convertEdsReferenceToLocallyUniqueReference(previousReference, fhirResourceFiler);
+                            ret.add(unmappedReference);
+                        }
+                    }
+                }
+            }
+
+            return ret;
+
+        } catch (ResourceNotFoundException|ResourceDeletedException ex) {
+            //if this is the first time, then we'll get this exception raised
+            return null;
+        }
+    }
 
     public void cacheDrugRecordDate(String drugRecordGuid, String patientGuid, DateTimeType dateTime) {
         String uniqueId = createUniqueId(patientGuid, drugRecordGuid);
@@ -958,7 +994,7 @@ public class EmisCsvHelper {
                         globalReferences.add(globallyUniqueReference);
                     }
 
-                    addLinkedItemsToProblem(existingProblem, globalReferences);
+                    addLinkedItemsToResource(existingProblem, globalReferences, FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE);
                 }
             }
         }
@@ -1040,6 +1076,34 @@ public class EmisCsvHelper {
         }
         return ReferenceHelper.createReference(ResourceType.Condition, createUniqueId(patientGuid, problemGuid));
     }
+
+    public void cacheConsultationRelationship(String consultationGuid, String patientGuid, String resourceGuid, ResourceType resourceType) {
+        if (Strings.isNullOrEmpty(consultationGuid)) {
+            return;
+        }
+
+        List<String> list = consultationChildMap.get(createUniqueId(patientGuid, consultationGuid));
+        if (list == null) {
+            list = new ArrayList<>();
+            consultationChildMap.put(createUniqueId(patientGuid, consultationGuid), list);
+        }
+
+        String resourceReference = ReferenceHelper.createResourceReference(resourceType, createUniqueId(patientGuid, resourceGuid));
+        list.add(resourceReference);
+    }
+
+    public List<String> getAndRemoveConsultationRelationships(String consultationGuid, String patientGuid) {
+        return consultationChildMap.remove(createUniqueId(patientGuid, consultationGuid));
+    }
+
+    public void processRemainingConsultationRelationships(FhirResourceFiler fhirResourceFiler) throws Exception {
+        for (String consultationLocallyUniqueId : consultationChildMap.keySet()) {
+            List<String> childResourceRelationships = consultationChildMap.get(consultationLocallyUniqueId);
+
+            addRelationshipsToExistingResource(consultationLocallyUniqueId, ResourceType.Encounter, childResourceRelationships, fhirResourceFiler, FhirExtensionUri.ENCOUNTER_COMPONENTS);
+        }
+    }
+
 
     /**
      * temporary storage class for changes to the practitioners involved in a session

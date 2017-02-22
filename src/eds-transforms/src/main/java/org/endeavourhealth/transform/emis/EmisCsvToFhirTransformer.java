@@ -71,7 +71,7 @@ public abstract class EmisCsvToFhirTransformer {
 
         //we ignore the version already set in the exchange header, as Emis change versions without any notification,
         //so we dynamically work out the version when we load the first set of files
-        String version = determineVersion(orgDirectory);;
+        String version = determineVersion(orgDirectory);
         //validateVersion(version);
 
         //the processor is responsible for saving FHIR resources
@@ -301,6 +301,7 @@ public abstract class EmisCsvToFhirTransformer {
         ObservationPreTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
         DrugRecordPreTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
         IssueRecordPreTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        DiaryPreTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
 
         //before getting onto the files that actually create FHIR resources, we need to
         //work out what record numbers to process, if we're re-running a transform
@@ -327,6 +328,9 @@ public abstract class EmisCsvToFhirTransformer {
         //then we need to retrieve the existing resources and update them
         csvHelper.processRemainingObservationParentChildLinks(fhirResourceFiler);
 
+        //process any new items linked to past consultations
+        csvHelper.processRemainingConsultationRelationships(fhirResourceFiler);
+
         //if we have any new Obs etc. that refer to pre-existing problems, we need to update the existing FHIR Problem
         csvHelper.processRemainingProblemRelationships(fhirResourceFiler);
 
@@ -341,6 +345,8 @@ public abstract class EmisCsvToFhirTransformer {
 
         //process any changes to Problems that didn't have an associated Observation change too
         csvHelper.processRemainingProblems(fhirResourceFiler);
+
+
     }
 
 
