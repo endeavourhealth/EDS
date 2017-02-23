@@ -20,6 +20,7 @@ import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceByService;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
+import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -58,6 +59,16 @@ public class Main {
 
 		LOG.info("Initialising config manager");
 		ConfigManager.Initialize("queuereader");
+
+		if (args.length == 2
+				&& args[0].equalsIgnoreCase("DeleteData")) {
+			try {
+				UUID serviceId = UUID.fromString(args[1]);
+				deleteDataForService(serviceId);
+			} catch (IllegalArgumentException iae) {
+				//fine, just let it continue to below
+			}
+		}
 
 		//hack to get the Enterprise data streaming
 		try {
@@ -150,6 +161,22 @@ public class Main {
 		LOG.info("Starting message consumption");
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
+	}
+
+	private static void deleteDataForService(UUID serviceId) {
+
+		Service dbService = new ServiceRepository().getById(serviceId);
+
+		//the delete will take some time, so do the delete in a separate thread
+		LOG.info("Deleting all data for service " + dbService.getName() + " " + dbService.getId());
+		FhirDeletionService deletor = new FhirDeletionService(dbService);
+
+		try {
+			deletor.deleteData();
+			LOG.info("Completed deleting all data for service " + dbService.getName() + " " + dbService.getId());
+		} catch (Exception ex) {
+			LOG.error("Error deleting service " + dbService.getName() + " " + dbService.getId(), ex);
+		}
 	}
 
 	private static void fixProblems(UUID serviceId, String sharedStoragePath, boolean testMode) {
