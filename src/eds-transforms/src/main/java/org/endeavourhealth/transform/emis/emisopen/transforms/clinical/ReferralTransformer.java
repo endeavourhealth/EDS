@@ -1,22 +1,25 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.common.fhir.FhirUri;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ReferralRequest;
 import org.hl7.fhir.instance.model.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.List;
 
 public class ReferralTransformer extends ClinicalTransformerBase {
+    private static final Logger LOG = LoggerFactory.getLogger(ReferralTransformer.class);
 
     public static void transform(MedicalRecordType medicalRecord, List<Resource> resources, String patientGuid) throws TransformException {
 
@@ -86,7 +89,13 @@ public class ReferralTransformer extends ClinicalTransformerBase {
 
         fhirReferral.setPatient(EmisOpenHelper.createPatientReference(patientGuid));
 
-        fhirReferral.setDateElement(DateConverter.convertPartialDateToDateTimeType(codedItem.getAssignedDate(), codedItem.getAssignedTime(), codedItem.getDatePart()));
+        String dateStr = codedItem.getAssignedDate();
+        String timeStr = codedItem.getAssignedTime();
+        Short part = codedItem.getDatePart();
+        LOG.info("Date [" + dateStr + "] Time [" + timeStr + "] Part [" + part + "]");
+        if (part != null) {
+            fhirReferral.setDateElement(DateConverter.convertPartialDateToDateTimeType(codedItem.getAssignedDate(), codedItem.getAssignedTime(), codedItem.getDatePart()));
+        }
 
         fhirReferral.addServiceRequested(CodeConverter.convert(codedItem.getCode(), codedItem.getDisplayTerm()));
 

@@ -87,7 +87,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 				continue;
 			}
 
-			//TODO - redesign how filtered resources are transmitted
+			//TODO - redesign how filtered resources are transmitted to avoid overloading Rabbit
 			//the map is too large to send in the rabbit headers, so I'm sending null and treating this as "all" for now
 			Map<ResourceType, List<UUID>> filteredResources = null;
 			/*Map<ResourceType, List<UUID>> filteredResources = filterResources(protocol, batchId);

@@ -2,6 +2,12 @@ package org.endeavourhealth.transform.vitrucare;
 
 import OpenPseudonymiser.Crypto;
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
+import org.endeavourhealth.common.utility.Resources;
+import org.endeavourhealth.common.utility.XmlSerializer;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.HasResourceDataJson;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
@@ -11,15 +17,9 @@ import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.data.transform.VitruCareRepository;
 import org.endeavourhealth.core.fhirStorage.FhirResourceHelper;
-import org.endeavourhealth.common.utility.Resources;
-import org.endeavourhealth.common.utility.XmlSerializer;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.FhirToXTransformerBase;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.common.fhir.CodeableConceptHelper;
-import org.endeavourhealth.common.fhir.ExtensionConverter;
-import org.endeavourhealth.common.fhir.FhirExtensionUri;
-import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.transform.vitrucare.model.ClinicalTerm;
 import org.endeavourhealth.transform.vitrucare.model.ObjectFactory;
 import org.endeavourhealth.transform.vitrucare.model.Payload;
@@ -47,7 +47,8 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
     private static VitruCareRepository vitruCareRepository = new VitruCareRepository();
     private static ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
     private static byte[] saltBytes = null;
-    private static Set<String> codeSet = null;
+    private static Set<String> snomedCodeSet = null;
+    private static Set<String> emisCodeSet = null;
 
     public static String transformFromFhir(UUID batchId,
                                            Map<ResourceType, List<UUID>> resourceIds) throws Exception {
@@ -119,42 +120,6 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
             return exchangeBatch.getEdsPatientId();
         }
     }
-    /*private static String findEdsPatientIdFromResources(List<ResourceByExchangeBatch> patientResourceWrappers) throws Exception {
-
-        //TODO - need better way to find patient ID from a batch ID
-
-        //go through what we've received and see if we can find a patient ID from there
-        for (ResourceByExchangeBatch batchEntry: patientResourceWrappers) {
-            if (!batchEntry.getIsDeleted()) {
-                Resource fhir = FhirResourceHelper.deserialiseResouce(batchEntry);
-                return IdHelper.getPatientId(fhir);
-            }
-        }
-
-        //if everything in our batch is deleted, we need to look at past instances of the same resources we received
-        for (ResourceByExchangeBatch batchEntry: patientResourceWrappers) {
-
-            String resourceType = batchEntry.getResourceType();
-            UUID resourceId = batchEntry.getResourceId();
-            List<ResourceHistory> history = resourceRepository.getResourceHistory(resourceType, resourceId);
-
-            //work back through the history to find a non-deleted instance, which will allow us to find the EDS patient ID
-            for (int i=history.size()-1; i>=0; i--) {
-                ResourceHistory historyEntry = history.get(i);
-                if (historyEntry.getIsDeleted()) {
-                    continue;
-                }
-
-                Resource fhir = FhirResourceHelper.deserialiseResouce(historyEntry);
-                return IdHelper.getPatientId(fhir);
-            }
-        }
-
-        //we've got some data that's only ever deleted, so we never had a non-deleted instance to look back on,
-        //in which case just return null to not send anything out
-        return null;
-        //throw new TransformException("Failed to find EDS patient ID for batch");
-    }*/
 
     private static String createUpdatePayload(String vitruCareId, List<ResourceByExchangeBatch> patientResources) throws Exception {
 
@@ -252,6 +217,8 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
                 }
 
             } else if (resourceType == ResourceType.Condition) {
+                //I THINK that all the codes in the data set would fall into being observation codes,
+                //but it can't hurt to handle the case if some end up as Conditions
                 ClinicalTerm clinicalTerm = createClinicalTerm((Condition)resource);
                 if (clinicalTerm != null) {
                     payload.getClinicalTerm().add(clinicalTerm);
@@ -337,14 +304,9 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
 
     private static ClinicalTerm createClinicalTerm(Observation fhir) throws Exception {
 
-        if (!shouldInclude(fhir.getCode())) {
-            return null;
-        }
-
-        CodeableConcept fhirCodeableConcept = fhir.getCode();
-        Long snomedConceptId = CodeableConceptHelper.findSnomedConceptId(fhirCodeableConcept);
-        if (snomedConceptId == null) {
-            LOG.warn("Failed to find snomed concept for " + fhir.getResourceType() + " " + fhir.getId());
+        //find what code we should use to send this clinical item under
+        String snomedOrEmisCode = findCodeToInclude(fhir.getCode());
+        if (Strings.isNullOrEmpty(snomedOrEmisCode)) {
             return null;
         }
 
@@ -357,8 +319,8 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         Date startDate = null;
         Date endDate = null; //not assigned
 
-        code = snomedConceptId.toString();
-        term = fhirCodeableConcept.getText();
+        code = snomedOrEmisCode.toString();
+        term = fhir.getCode().getText();
 
         if (fhir.hasEffectiveDateTimeType()) {
             DateTimeType dt = fhir.getEffectiveDateTimeType();
@@ -401,14 +363,9 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
 
     private static ClinicalTerm createClinicalTerm(Condition fhir) throws Exception {
 
-        if (!shouldInclude(fhir.getCode())) {
-            return null;
-        }
-
-        CodeableConcept fhirCodeableConcept = fhir.getCode();
-        Long snomedConceptId = CodeableConceptHelper.findSnomedConceptId(fhirCodeableConcept);
-        if (snomedConceptId == null) {
-            LOG.warn("Failed to find snomed concept for " + fhir.getResourceType() + " " + fhir.getId());
+        //find what code we should use to send this clinical item under
+        String snomedOrEmisCode = findCodeToInclude(fhir.getCode());
+        if (Strings.isNullOrEmpty(snomedOrEmisCode)) {
             return null;
         }
 
@@ -421,8 +378,8 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         Date startDate = null;
         Date endDate = null;
 
-        code = snomedConceptId.toString();
-        term = fhirCodeableConcept.getText();
+        code = snomedOrEmisCode;
+        term = fhir.getCode().getText();
 
         if (fhir.hasOnsetDateTimeType()) {
             DateTimeType dt = fhir.getOnsetDateTimeType();
@@ -507,17 +464,132 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
         return saltBytes;
     }
 
-    private static boolean shouldInclude(CodeableConcept codeableConcept) {
+    private static String findCodeToInclude(CodeableConcept codeableConcept) {
+
+        Long snomedConcept = CodeableConceptHelper.findSnomedConceptId(codeableConcept);
+        if (snomedConcept != null) {
+            String snomedConceptStr = snomedConcept.toString();
+            if (getSnomedCodeSet().contains(snomedConceptStr)) {
+                return snomedConceptStr;
+            }
+        }
+
+        String originalCode = CodeableConceptHelper.findOriginalCode(codeableConcept);
+        if (!Strings.isNullOrEmpty(originalCode)) {
+            if (getEmisCodeSet().contains(originalCode)) {
+                return originalCode;
+            }
+        }
+
+        return null;
+    }
+
+    /*private static boolean shouldInclude(CodeableConcept codeableConcept) {
         Long snomedConcept = CodeableConceptHelper.findSnomedConceptId(codeableConcept);
         if (snomedConcept == null) {
             return false;
         }
         String snomedConceptStr = snomedConcept.toString();
-        return getCodeMap().contains(snomedConceptStr);
+        return getSnomedCodeSet().contains(snomedConceptStr);
+    }*/
+
+    private static Set<String> getEmisCodeSet() {
+        if (emisCodeSet == null) {
+            Set<String> set = new HashSet<>();
+            
+            set.add("EMISNQCY69"); //2184delA – mutation 1
+            set.add("EMISNQCY71"); //278+5G>A – mutation 1
+            set.add("EMISNQCY73"); //3120+G>A – mutation 1
+            set.add("EMISNQCY75"); //2659delC – mutation 1
+            set.add("EMISNQCY77"); //A455E– mutation 1
+            set.add("EMISNQCY79"); //G551D – mutation 1
+            set.add("EMISNQCY81"); //G542X – mutation 1
+            set.add("EMISNQCY83"); //G85E– mutation 1
+            set.add("EMISNQCY85"); //N1303K – mutation 1
+            set.add("EMISNQCY87"); //R117H– mutation 1
+            set.add("EMISNQCY89"); //R1162X– mutation 1
+            set.add("EMISNQCY91"); //R347P– mutation 1
+            set.add("EMISNQCY93"); //R334W– mutation 1
+            set.add("EMISNQCY95"); //R3553X– mutation 1
+            set.add("EMISNQCY97"); //R560T– mutation 1
+            set.add("EMISNQCY99"); //S549N– mutation 1
+            set.add("EMISNQCY101"); //1078delT– mutation 1
+            set.add("EMISNQCY103"); //1717-1G>A– mutation 1
+            set.add("EMISNQCY105"); //1898+1G>A– mutation 1
+            set.add("EMISNQCY107"); //621+1G>T– mutation 1
+            set.add("EMISNQCY109"); //711+1G>T T– mutation 1
+            set.add("EMISNQCY111"); //V392G – mutation 1
+            set.add("EMISNQCY113"); //V520F– mutation 1
+            set.add("EMISNQCY115"); //W1282X– mutation 1
+            set.add("EMISNQCY117"); //deltaI507– mutation 1
+            set.add("EMISNQCY119"); //2183AA->G– mutation 1
+            set.add("EMISNQCY121"); //3849+10kbC>T– mutation 1
+            set.add("EMISNQCY123"); //3876delA– mutation 1
+            set.add("EMISNQCY125"); //3905insT– mutation 1
+            set.add("EMISNQCY127"); //394delTT– mutation 1
+            set.add("EMISNQCY129"); //Q493X– mutation 1
+            set.add("EMISNQCY131"); //S549R (A>C) – mutation 1
+            set.add("EMISNQCY133"); //I148T– mutation 1
+            set.add("EMISNQCY135"); //R347H– mutation 1
+            set.add("EMISNQCY137"); //DeltaF508– mutation 1
+
+
+            set.add("EMISNQCY70"); //2184delA – mutation 2
+            set.add("EMISNQCY72"); //278+5G>A – mutation 2
+            set.add("EMISNQCY74"); //3120+G>A – mutation 2
+            set.add("EMISNQCY76"); //2659delC – mutation 2
+            set.add("EMISNQCY78"); //A455E– mutation 2
+            set.add("EMISNQCY80"); //G551D– mutation 2
+            set.add("EMISNQCY82"); //G542X – mutation 2
+            set.add("EMISNQCY84"); //G85E– mutation 2
+            set.add("EMISNQCY86"); //N1303K – mutation 2
+            set.add("EMISNQCY88"); //R117H– mutation 2
+            set.add("EMISNQCY90"); //R1162X– mutation 2
+            set.add("EMISNQCY92"); //R347P– mutation 2
+            set.add("EMISNQCY94"); //R334W– mutation 2
+            set.add("EMISNQCY96"); //R3553X– mutation 2
+            set.add("EMISNQCY98"); //R560T– mutation 2
+            set.add("EMISNQCY100"); //S549N– mutation 2
+            set.add("EMISNQCY102"); //1078delT– mutation 2
+            set.add("EMISNQCY104"); //1717-1G>A– mutation 2
+            set.add("EMISNQCY106"); //1898+1G>A– mutation 2
+            set.add("EMISNQCY108"); //621+1G>T– mutation 2
+            set.add("EMISNQCY110"); //711+1G>T T– mutation 2
+            set.add("EMISNQCY112"); //V392G– mutation 2
+            set.add("EMISNQCY114"); //V520F– mutation 2
+            set.add("EMISNQCY116"); //W1282X– mutation 2
+            set.add("EMISNQCY118"); //deltaI507– mutation 2
+            set.add("EMISNQCY120"); //2183AA->G– mutation 2
+            set.add("EMISNQCY122"); //3849+10kbC>T– mutation 2
+            set.add("EMISNQCY124"); //3876delA– mutation 2
+            set.add("EMISNQCY126"); //3905insT– mutation 2
+            set.add("EMISNQCY128"); //394delTT– mutation 2
+            set.add("EMISNQCY130"); //Q493X– mutation 2
+            set.add("EMISNQCY132"); //S549R (A>C)– mutation 2
+            set.add("EMISNQCY134"); //I148T– mutation 2
+            set.add("EMISNQCY136"); //R347H– mutation 2
+            set.add("EMISNQCY138"); //DeltaF508– mutation 2
+
+            set.add("EMISNQOT6"); //Linked with text
+
+            set.add("EMISNQIN88"); //Intron 8 polythymidine sequence
+            set.add("EMISNQ5T1"); //Intron 8 polythymidine sequence – 5T
+            set.add("EMISNQ5T2"); //Intron 8 polythymidine sequence – 5T:5T
+            set.add("EMISNQ5T3"); //Intron 8 polythymidine sequence – 5T:7T
+            set.add("EMISNQ5T4"); //Intron 8 polythymidine sequence – 5T:9T
+            set.add("EMISNQ7T1"); //Intron 8 polythymidine sequence – 7T
+            set.add("EMISNQ7T2"); //Intron 8 polythymidine sequence – 7T:7T
+            set.add("EMISNQ7T3"); //Intron 8 polythymidine sequence – 9T
+            set.add("EMISNQ9T1"); //Intron 8 polythymidine sequence – 9T:9T
+            set.add("EMISNQ9T2"); //Intron 8 polythymidine sequence – 7T:9T
+
+            emisCodeSet = set;
+        }
+        return emisCodeSet;
     }
 
-    private static Set<String> getCodeMap() {
-        if (codeSet == null) {
+    private static Set<String> getSnomedCodeSet() {
+        if (snomedCodeSet == null) {
             Set<String> set = new HashSet<>();
 
             set.add("401012008"); //Forced Expiratory Volume in 1 second
@@ -608,9 +680,9 @@ public class FhirToVitruCareXmlTransformer extends FhirToXTransformerBase {
             set.add("2313241000000118"); //Whole blood tacrolimus
             set.add("258449018"); //Serum ciclosporin*/
 
-            codeSet = set;
+            snomedCodeSet = set;
         }
-        return codeSet;
+        return snomedCodeSet;
     }
 
 }
