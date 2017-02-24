@@ -137,6 +137,11 @@ export class ProtocolEditComponent {
 			active: 'TRUE'
 		} as ServiceContract;
 
+		//ensure the service contract array isn't null, which it will be if we're amending a protocol with no contracts in it
+		if (!this.libraryItem.protocol.serviceContract) {
+			this.libraryItem.protocol.serviceContract = [];
+		}
+
 		this.libraryItem.protocol.serviceContract.push(this.selectedContract);
 	}
 

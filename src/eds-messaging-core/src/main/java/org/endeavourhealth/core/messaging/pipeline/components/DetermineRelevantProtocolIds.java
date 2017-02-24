@@ -10,6 +10,7 @@ import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.ServiceContractActive;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +67,9 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 							libraryItem -> libraryItem.getProtocol().getServiceContract().stream()
 									.anyMatch(sc ->
 											sc.getType().equals(ServiceContractType.PUBLISHER)
-													&& sc.getService().getUuid().equals(serviceUuid)))
+											&& sc.getService().getUuid().equals(serviceUuid)
+											&& sc.getActive() == ServiceContractActive.TRUE //added missing check
+									))
 					.map(t -> t.getUuid())
 					.collect(Collectors.toList());
 		} catch (Exception e) {

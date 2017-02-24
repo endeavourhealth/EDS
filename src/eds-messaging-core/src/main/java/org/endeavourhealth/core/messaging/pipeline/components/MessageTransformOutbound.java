@@ -86,48 +86,49 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 		List<String> endpoints = getSubscriberEndpoints(transformBatch);
 
-		if (endpoints.isEmpty()) {
-			throw new PipelineException("No endpoints configured for batch ID " + batchId);
-		}
-
 		// Run the transform, creating a subscriber batch for each
 		// (Holds transformed message id and destination endpoints)
 		List<SubscriberBatch> subscriberBatches = new ArrayList<>();
 
-		for (ServiceContract serviceContract: transformBatch.getSubscribers()) {
+		if (endpoints.isEmpty()) {
+			LOG.trace("No endpoint to send to");
 
-			String technicalInterfaceUuidStr = serviceContract.getTechnicalInterface().getUuid();
-			String systemUuidStr = serviceContract.getSystem().getUuid();
-			TechnicalInterface technicalInterface = null;
-			try {
-				technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetails(systemUuidStr, technicalInterfaceUuidStr);
-			} catch (Exception ex) {
-				throw new PipelineException("Failed to retrieve technical interface", ex);
-			}
+		} else {
+			for (ServiceContract serviceContract : transformBatch.getSubscribers()) {
 
-			String software = technicalInterface.getMessageFormat();
-			String softwareVersion = technicalInterface.getMessageFormatVersion();
+				String technicalInterfaceUuidStr = serviceContract.getTechnicalInterface().getUuid();
+				String systemUuidStr = serviceContract.getSystem().getUuid();
+				TechnicalInterface technicalInterface = null;
+				try {
+					technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetails(systemUuidStr, technicalInterfaceUuidStr);
+				} catch (Exception ex) {
+					throw new PipelineException("Failed to retrieve technical interface", ex);
+				}
 
-			String outboundData = null;
-			try {
-				outboundData = transform(exchange, batchId, software, softwareVersion, resourceIds, endpoints);
-			} catch (Exception ex) {
-				throw new PipelineException("Failed to transform exchange " + exchange + " and batch " + batchId, ex);
-			}
+				String software = technicalInterface.getMessageFormat();
+				String softwareVersion = technicalInterface.getMessageFormatVersion();
 
-			//not all transforms may actually decide to generate any outbound content, so check for null and empty
-			if (!Strings.isNullOrEmpty(outboundData)) {
+				String outboundData = null;
+				try {
+					outboundData = transform(exchange, batchId, software, softwareVersion, resourceIds, endpoints);
+				} catch (Exception ex) {
+					throw new PipelineException("Failed to transform exchange " + exchange + " and batch " + batchId, ex);
+				}
 
-				// Store transformed message
-				UUID messageUuid = UUID.randomUUID();
-				new QueuedMessageRepository().save(messageUuid, outboundData);
+				//not all transforms may actually decide to generate any outbound content, so check for null and empty
+				if (!Strings.isNullOrEmpty(outboundData)) {
 
-				SubscriberBatch subscriberBatch = new SubscriberBatch();
-				subscriberBatch.setTechnicalInterface(technicalInterface);
-				subscriberBatch.setEndpoints(endpoints);
-				subscriberBatch.setOutputMessageId(messageUuid);
+					// Store transformed message
+					UUID messageUuid = UUID.randomUUID();
+					new QueuedMessageRepository().save(messageUuid, outboundData);
 
-				subscriberBatches.add(subscriberBatch);
+					SubscriberBatch subscriberBatch = new SubscriberBatch();
+					subscriberBatch.setTechnicalInterface(technicalInterface);
+					subscriberBatch.setEndpoints(endpoints);
+					subscriberBatch.setOutputMessageId(messageUuid);
+
+					subscriberBatches.add(subscriberBatch);
+				}
 			}
 		}
 
