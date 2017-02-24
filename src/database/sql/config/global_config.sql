@@ -136,3 +136,12 @@ VALUES
    "username" : "postgres",
    "password" : ""
 }');
+
+INSERT INTO config
+(app_id, config_id, config_data)
+VALUES
+('global', 'reference','{
+   "url" : "jdbc:postgresql://localhost:5432/reference",
+   "username" : "postgres",
+   "password" : ""
+}');

@@ -1,20 +1,20 @@
 package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.CodingHelper;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.utility.ThreadPool;
+import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.data.admin.CodeRepository;
 import org.endeavourhealth.core.data.admin.models.SnomedLookup;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
-import org.endeavourhealth.transform.emis.csv.CallableError;
 import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.ThreadPool;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCode;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
-import org.endeavourhealth.common.fhir.CodeableConceptHelper;
-import org.endeavourhealth.common.fhir.CodingHelper;
-import org.endeavourhealth.common.fhir.FhirUri;
 import org.hl7.fhir.instance.model.CodeableConcept;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,19 +52,19 @@ public abstract class ClinicalCodeTransformer {
             }
 
         } finally {
-            List<CallableError> errors = threadPool.waitAndStop();
+            List<ThreadPoolError> errors = threadPool.waitAndStop();
             handleErrors(errors);
         }
     }
 
 
-    private static void handleErrors(List<CallableError> errors) throws Exception {
+    private static void handleErrors(List<ThreadPoolError> errors) throws Exception {
         if (errors == null || errors.isEmpty()) {
             return;
         }
 
         //if we've had multiple errors, just throw the first one, since they'll most-likely be the same
-        CallableError first = errors.get(0);
+        ThreadPoolError first = errors.get(0);
         WebServiceLookup callable = (WebServiceLookup)first.getCallable();
         Exception exception = first.getException();
         CsvCurrentState parserState = callable.getParserState();
@@ -131,7 +131,7 @@ public abstract class ClinicalCodeTransformer {
         fhirConcept.setText(emisTerm);
 
         //spin the remainder of our work off to a small thread pool, so we can perform multiple snomed term lookups in parallel
-        List<CallableError> errors = threadPool.submit(new WebServiceLookup(parser.getCurrentState(), codeId,
+        List<ThreadPoolError> errors = threadPool.submit(new WebServiceLookup(parser.getCurrentState(), codeId,
                                                             fhirConcept, codeType, emisTerm,
                                                             emisCode, snomedConceptId, snomedDescriptionId,
                                                             nationalCode, nationalCodeCategory, nationalCodeDescription,

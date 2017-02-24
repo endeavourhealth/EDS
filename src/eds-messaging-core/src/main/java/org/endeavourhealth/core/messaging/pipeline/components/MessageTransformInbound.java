@@ -38,34 +38,6 @@ public class MessageTransformInbound extends PipelineComponent {
 		this.config = config;
 	}
 
-	/*private UUID findSystemId(Service service, String software, String messageVersion, UUID exchangeId) throws Exception {
-
-		List<JsonServiceInterfaceEndpoint> endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
-		for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
-
-			UUID endpointSystemId = endpoint.getSystemUuid();
-			String endpointInterfaceId = endpoint.getTechnicalInterfaceUuid().toString();
-
-			ActiveItem activeItem = libraryRepository.getActiveItemByItemId(endpointSystemId);
-			Item item = libraryRepository.getItemByKey(endpointSystemId, activeItem.getAuditId());
-			LibraryItem libraryItem = QueryDocumentSerializer.readLibraryItemFromXml(item.getXmlContent());
-			System system = libraryItem.getSystem();
-			for (TechnicalInterface technicalInterface: system.getTechnicalInterface()) {
-
-				if (endpointInterfaceId.equals(technicalInterface.getUuid())
-						&& technicalInterface.getMessageFormat().equalsIgnoreCase(software)
-						&& technicalInterface.getMessageFormatVersion().equalsIgnoreCase(messageVersion)) {
-
-					return endpointSystemId;
-				}
-			}
-
-		}
-
-		throw new PipelineException("Failed to find SystemId for service " + service.getId() + ", software "
-				+ software + " and version " + messageVersion
-				+ " when processing exchange " + exchangeId);
-	}*/
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
@@ -79,8 +51,6 @@ public class MessageTransformInbound extends PipelineComponent {
 			//find the system ID by using values from the message header
 			//the system ID is now set in the exchange header when we open the envelope
 			UUID systemId = UUID.fromString(exchange.getHeader(HeaderKeys.SenderSystemUuid));
-			/*Service service = serviceRepository.getById(serviceId);
-			UUID systemId = findSystemId(service, software, messageVersion, exchange.getExchangeId());*/
 
 			List<UUID> batchIds = transform(serviceId, systemId, exchange, software, messageVersion);
 
@@ -218,20 +188,19 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		ExchangeTransformAudit previous = new AuditRepository().getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
 		if (previous == null
-				|| previous.getErrorXml() == null) {
+				|| previous.getErrorXml() == null
+				|| previous.getDeleted() != null) {
 			return null;
 		}
 
 		//if our service and system are in error, but our exchange hasn't been re-submitted,
 		//then we can't process any further exchanges from that source, until the first error is fixed
-		//TODO - revert this, EMIS integrity errors are fixed
-		return null;
-		/*try {
+		try {
 			return TransformErrorSerializer.readFromXml(previous.getErrorXml());
 		} catch (Exception ex) {
 			LOG.error("Error parsing XML " + previous.getErrorXml(), ex);
 			return null;
-		}*/
+		}
 	}
 
 	/**
@@ -254,9 +223,7 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//if our service and system are in error, but our exchange hasn't been re-submitted,
 		//then we can't process any further exchanges from that source, until the first error is fixed
-		//TODO - revert this, EMIS integrity errors are fixed
-		return true;
-		//return false;
+		return false;
 	}
 
 	private static void createTransformAudit(UUID serviceId, UUID systemId, UUID exchangeId, Date transformStarted, TransformError transformError, List<UUID> batchIds) {

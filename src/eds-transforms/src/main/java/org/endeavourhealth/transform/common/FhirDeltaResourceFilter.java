@@ -1,13 +1,13 @@
 package org.endeavourhealth.transform.common;
 
+import org.endeavourhealth.common.utility.ThreadPool;
+import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
 import org.endeavourhealth.core.data.ehr.models.ResourceByService;
 import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.CallableError;
-import org.endeavourhealth.transform.emis.csv.ThreadPool;
 import org.hl7.fhir.instance.model.Resource;
 
 import java.util.*;
@@ -204,11 +204,11 @@ public class FhirDeltaResourceFilter {
         for (Resource resource: resources) {
 
             MapIdTask callable = new MapIdTask(resource);
-            List<CallableError> errors = idMappingPool.submit(callable);
+            List<ThreadPoolError> errors = idMappingPool.submit(callable);
             handleErrors(errors);
         }
 
-        List<CallableError> errors = idMappingPool.waitAndStop();
+        List<ThreadPoolError> errors = idMappingPool.waitAndStop();
         handleErrors(errors);
     }
     /*private void mapIds(List<Resource> resources) throws Exception {
@@ -222,13 +222,13 @@ public class FhirDeltaResourceFilter {
         }
     }*/
 
-    private void handleErrors(List<CallableError> errors) throws Exception {
+    private void handleErrors(List<ThreadPoolError> errors) throws Exception {
         if (errors == null || errors.isEmpty()) {
             return;
         }
 
         //if we've had multiple exceptions, this will only log the first, but the first exception is the one that's interesting
-        for (CallableError error: errors) {
+        for (ThreadPoolError error: errors) {
             Exception exception = error.getException();
             throw exception;
         }

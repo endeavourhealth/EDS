@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.enterprise.outputModels;
 
 import org.apache.commons.csv.CSVFormat;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 public class Patient extends AbstractEnterpriseCsvWriter {
@@ -23,7 +24,10 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                           String nhsNumber,
                           Date dateOfBirth,
                           Date dateOfDeath,
-                          String postcode) throws Exception {
+                          String postcode,
+                          String lsoaCode,
+                          String lsoaName,
+                          BigDecimal townsendScore) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
                         "" + id,
@@ -33,7 +37,10 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                         nhsNumber,
                         convertDate(dateOfBirth),
                         convertDate(dateOfDeath),
-                        postcode);
+                        postcode,
+                        lsoaCode,
+                        lsoaName,
+                        convertBigDecimal(townsendScore));
     }
 
     @Override
@@ -47,7 +54,10 @@ public class Patient extends AbstractEnterpriseCsvWriter {
             "nhs_number",
             "date_of_birth",
             "date_of_death",
-            "postcode"
+            "postcode",
+            "lsoa_code",
+            "lsoa_name",
+            "townsend_score"
         };
     }
 

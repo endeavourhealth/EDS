@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.endeavourhealth.transform.common.CsvHelper;
 import org.endeavourhealth.transform.common.exceptions.FileFormatException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
@@ -18,7 +19,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
 public abstract class AbstractCsvParser implements AutoCloseable {
@@ -57,7 +57,11 @@ public abstract class AbstractCsvParser implements AutoCloseable {
         try {
             this.csvIterator = csvReader.iterator();
 
-            Map<String, Integer> headerMap = csvReader.getHeaderMap();
+            //refactored out
+            String[] expectedHeaders = getCsvHeaders(version);
+            CsvHelper.validateCsvHeaders(csvReader, file, expectedHeaders);
+
+            /*Map<String, Integer> headerMap = csvReader.getHeaderMap();
             String[] expectedHeaders = getCsvHeaders(version);
             if (headerMap.size() != expectedHeaders.length) {
                 throw new FileFormatException(file.getName(), "Mismatch in number of CSV columns in " + file.getName() + " expected " + expectedHeaders.length + " but found " + headerMap.size());
@@ -71,7 +75,7 @@ public abstract class AbstractCsvParser implements AutoCloseable {
                 } else if (mapIndex.intValue() != i) {
                     throw new FileFormatException(file.getName(), "Out of order column " + expectedHeader + " in " + file.getName() + " expected at " + i + " but found at " + mapIndex);
                 }
-            }
+            }*/
         } catch (Exception e) {
             //if we get any exception thrown during the constructor, make sure to close the reader
             close();

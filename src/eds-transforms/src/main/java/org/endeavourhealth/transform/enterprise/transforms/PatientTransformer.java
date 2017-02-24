@@ -2,15 +2,18 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import OpenPseudonymiser.Crypto;
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.utility.Resources;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.transform.common.reference.PostcodeReference;
+import org.endeavourhealth.transform.common.reference.ReferenceHelper;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
-import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.hl7.fhir.instance.model.Address;
 import org.hl7.fhir.instance.model.Patient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -54,6 +57,9 @@ public class PatientTransformer extends AbstractTransformer {
             Date dateOfBirth = null;
             Date dateOfDeath = null;
             String postcode = null;
+            String lsoaCode = null;
+            String lsoaName = null;
+            BigDecimal townsendScore = null;
 
             id = enterpriseId.intValue();
             organizationId = enterpriseOrganisationUuid.intValue();
@@ -82,6 +88,16 @@ public class PatientTransformer extends AbstractTransformer {
                 }
             }
 
+            //if we've found a postcode, then get the LSOA etc. for it
+            if (!Strings.isNullOrEmpty(postcode)) {
+                PostcodeReference postcodeReference = ReferenceHelper.getPostcodeReference(postcode);
+                if (postcodeReference != null) {
+                    lsoaCode = postcodeReference.getLsoaCode();
+                    lsoaName = postcodeReference.getLsoaName();
+                    townsendScore = postcodeReference.getTownsendScore();
+                }
+            }
+
             pseudoId = pseudonomise(fhirPatient);
 
             //adding NHS number to allow data checking
@@ -94,7 +110,10 @@ public class PatientTransformer extends AbstractTransformer {
                 nhsNumber,
                 dateOfBirth,
                 dateOfDeath,
-                postcode);
+                postcode,
+                lsoaCode,
+                lsoaName,
+                townsendScore);
         }
     }
 

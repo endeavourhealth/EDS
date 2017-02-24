@@ -1,6 +1,8 @@
 package org.endeavourhealth.transform.common;
 
 import com.datastax.driver.core.utils.UUIDs;
+import org.endeavourhealth.common.utility.ThreadPool;
+import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
@@ -8,9 +10,7 @@ import org.endeavourhealth.core.xml.TransformErrorUtility;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.CallableError;
 import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
-import org.endeavourhealth.transform.emis.csv.ThreadPool;
 import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
@@ -116,7 +116,7 @@ public class FhirResourceFiler {
             }
         }
 
-        List<CallableError> errors = threadPool.submit(new MapAndSaveResourceTask(parserState, toDelete, mapIds, exchangeBatch, expectingPatientResource, resources));
+        List<ThreadPoolError> errors = threadPool.submit(new MapAndSaveResourceTask(parserState, toDelete, mapIds, exchangeBatch, expectingPatientResource, resources));
         handleErrors(errors);
     }
 
@@ -181,7 +181,7 @@ public class FhirResourceFiler {
     public void waitToFinish() throws Exception {
 
         //wait for all tasks to be completed
-        List<CallableError> errors = threadPool.waitAndStop();
+        List<ThreadPoolError> errors = threadPool.waitAndStop();
         handleErrors(errors);
 
         //update the resource types used
@@ -193,12 +193,12 @@ public class FhirResourceFiler {
         //return getAllBatchIds();
     }
 
-    private void handleErrors(List<CallableError> errors) throws Exception {
+    private void handleErrors(List<ThreadPoolError> errors) throws Exception {
         if (errors == null || errors.isEmpty()) {
             return;
         }
 
-        for (CallableError error: errors) {
+        for (ThreadPoolError error: errors) {
 
             MapAndSaveResourceTask callable = (MapAndSaveResourceTask)error.getCallable();
             Exception exception = error.getException();

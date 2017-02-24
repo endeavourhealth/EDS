@@ -6,15 +6,13 @@ import com.google.common.io.Files;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.text.SimpleDateFormat;
@@ -74,6 +72,10 @@ public class EnterpriseFiler {
             //now files the deletes
             fileDeletes(deletes, connection);
 
+        } catch (Exception ex) {
+            //if we get an exception, write out the zip file, so we can investigate what was being filed
+            writeZipFile(bytes);
+
         } finally {
             if (zis != null) {
                 zis.close();
@@ -81,6 +83,17 @@ public class EnterpriseFiler {
             if (connection != null) {
                 connection.close();
             }
+        }
+    }
+
+    private static void writeZipFile(byte[] bytes) {
+        File f = new File("EnterpriseFileError.zip");
+        try {
+            FileUtils.writeByteArrayToFile(f, bytes);
+            LOG.error("Written ZIP file to " + f);
+
+        } catch (IOException ex) {
+            LOG.error("Failed to write ZIP file to " + f, ex);
         }
     }
 

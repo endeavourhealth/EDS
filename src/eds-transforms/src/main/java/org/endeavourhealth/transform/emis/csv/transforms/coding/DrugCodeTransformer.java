@@ -1,15 +1,15 @@
 package org.endeavourhealth.transform.emis.csv.transforms.coding;
 
-import org.endeavourhealth.transform.common.FhirResourceFiler;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.CallableError;
-import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
-import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.ThreadPool;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
-import org.endeavourhealth.transform.emis.csv.schema.coding.DrugCode;
 import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.utility.ThreadPool;
+import org.endeavourhealth.common.utility.ThreadPoolError;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
+import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
+import org.endeavourhealth.transform.emis.csv.schema.coding.DrugCode;
 import org.hl7.fhir.instance.model.CodeableConcept;
 
 import java.util.List;
@@ -42,7 +42,7 @@ public class DrugCodeTransformer {
             }
 
         } finally {
-            List<CallableError> errors = threadPool.waitAndStop();
+            List<ThreadPoolError> errors = threadPool.waitAndStop();
             handleErrors(errors);
         }
     }
@@ -67,17 +67,17 @@ public class DrugCodeTransformer {
         //always set the selected term as the text
         fhirConcept.setText(term);
 
-        List<CallableError> errors = threadPool.submit(new DrugSaveCallable(parser.getCurrentState(), csvHelper, codeId, fhirConcept, dmdId, term));
+        List<ThreadPoolError> errors = threadPool.submit(new DrugSaveCallable(parser.getCurrentState(), csvHelper, codeId, fhirConcept, dmdId, term));
         handleErrors(errors);
     }
 
-    private static void handleErrors(List<CallableError> errors) throws Exception {
+    private static void handleErrors(List<ThreadPoolError> errors) throws Exception {
         if (errors == null || errors.isEmpty()) {
             return;
         }
 
         //if we've had multiple errors, just throw the first one, since they'll most-likely be the same
-        CallableError first = errors.get(0);
+        ThreadPoolError first = errors.get(0);
         DrugSaveCallable callable = (DrugSaveCallable)first.getCallable();
         Exception exception = first.getException();
         CsvCurrentState parserState = callable.getParserState();
