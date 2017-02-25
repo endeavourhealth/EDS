@@ -72,7 +72,10 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                 String.class,
                 Date.class,
                 Date.class,
-                String.class
+                String.class,
+                String.class,
+                String.class,
+                BigDecimal.class
         };
     }
 
