@@ -76,6 +76,8 @@ public class EnterpriseFiler {
             //if we get an exception, write out the zip file, so we can investigate what was being filed
             writeZipFile(bytes);
 
+            throw ex;
+
         } finally {
             if (zis != null) {
                 zis.close();
