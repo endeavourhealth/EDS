@@ -17,10 +17,7 @@ import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.Protocol;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
+import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,10 +67,17 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		for (LibraryItem libraryItem : protocolsToRun) {
 
 			Protocol protocol = libraryItem.getProtocol();
+
+			//skip disabled protocols
+			if (protocol.getEnabled() != ProtocolEnabled.TRUE) {
+				continue;
+			}
+
 			List<ServiceContract> subscribers = protocol
 					.getServiceContract()
 					.stream()
 					.filter(sc -> sc.getType().equals(ServiceContractType.SUBSCRIBER))
+					.filter(sc -> sc.getActive() == ServiceContractActive.TRUE) //skip disabled service contracts
 					.collect(Collectors.toList());
 
 			//if there's no subscribers on this protocol, just skip it

@@ -233,33 +233,26 @@ public class FhirResourceFiler {
 
     private void logResults() {
 
-        int totalSaved = 0;
-        int totalDeleted = 0;
 
-        LOG.info("CSV processing completed");
-
-        int saved = 0;
-        int deleted = 0;
+        int adminSaved = 0;
+        int adminDeleted = 0;
         if (adminBatchId != null) {
-            saved += countResourcesSaved.get(adminBatchId).get();
-            deleted += countResourcesDeleted.get(adminBatchId).get();
+            adminSaved += countResourcesSaved.get(adminBatchId).get();
+            adminDeleted += countResourcesDeleted.get(adminBatchId).get();
         }
 
-        LOG.info("Saved {} and deleted {} non-patient resources for service {}", saved, deleted, serviceId);
-        //totalSaved += saved;
-        //totalDeleted += deleted;
+        int patientSaved = 0;
+        int patientDeleted = 0;
+        int patientCount = patientBatchIdMap.size();
 
         for (String patientId : patientBatchIdMap.keySet()) {
             ExchangeBatch exchangeBatch = patientBatchIdMap.get(patientId);
-
-            saved = countResourcesSaved.get(exchangeBatch).get();
-            deleted = countResourcesDeleted.get(exchangeBatch).get();
-            //LOG.info("Saved {} and deleted {} resources for patient {}", saved, deleted, edsPatientId);
-            totalSaved += saved;
-            totalDeleted += deleted;
+            patientSaved += countResourcesSaved.get(exchangeBatch).get();
+            patientDeleted += countResourcesDeleted.get(exchangeBatch).get();
         }
 
-        LOG.info("CSV processing completed, saving {} resources and deleting {} over {} distinct patients for service {}", totalSaved, totalDeleted, patientBatchIdMap.size(), serviceId);
+        LOG.info("Resource filing completed: admin resources [saved " + adminSaved + ", deleted " + adminDeleted + "]"
+                + ", patient resources [saved " + patientSaved + ", deleted " + patientDeleted + " over " + patientCount + " patients]");
     }
 
     /*private List<UUID> getAllBatchIds() {

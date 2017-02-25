@@ -6,10 +6,8 @@ import org.endeavourhealth.common.config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
-import javax.persistence.Query;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,9 +19,11 @@ public class ReferenceHelper {
 
     public static PostcodeReference getPostcodeReference(String postcode) throws Exception {
 
+        return null;
+
         //because we've got no guarantee how/where the raw postcodes are spaced, we use the string
         //without spaces as our primary key
-        postcode = postcode.replaceAll(" ", "");
+        /*postcode = postcode.replaceAll(" ", "");
 
         //if called with an empty postcode, just return null
         if (Strings.isNullOrEmpty(postcode)) {
@@ -49,7 +49,7 @@ public class ReferenceHelper {
             return null;
         } finally {
             entityManager.close();
-        }
+        }*/
 
     }
 

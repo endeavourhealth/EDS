@@ -24,7 +24,6 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContractActive;
 import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
 import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.common.MessageFormat;
@@ -96,12 +95,6 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 		} else {
 			for (ServiceContract serviceContract : transformBatch.getSubscribers()) {
-
-				//if this service contract isn't active, skip it
-				if (serviceContract.getActive() == ServiceContractActive.FALSE) {
-					LOG.warn("Skipping service contract to " + serviceContract.getService().getUuid() + " as it's not active");
-					continue;
-				}
 
 				String technicalInterfaceUuidStr = serviceContract.getTechnicalInterface().getUuid();
 				String systemUuidStr = serviceContract.getSystem().getUuid();
