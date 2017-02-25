@@ -72,15 +72,21 @@ public class Main {
 
 		//hack to get the Enterprise data streaming
 		try {
-			if (args.length == 2) {
+			if (args.length >= 2) {
 				UUID serviceUuid = UUID.fromString(args[0]);
 				String configName = args[1];
-				startEnterpriseStream(serviceUuid, configName, null);
-			} else if (args.length == 3) {
-				UUID serviceUuid = UUID.fromString(args[0]);
-				String configName = args[1];
-				UUID exchangeUuid = UUID.fromString(args[2]);
-				startEnterpriseStream(serviceUuid, configName, exchangeUuid);
+				UUID exchangeUuid = null;
+				UUID batchUuid = null;
+
+				if (args.length >= 3) {
+					exchangeUuid = UUID.fromString(args[2]);
+
+					if (args.length >= 4) {
+						batchUuid = UUID.fromString(args[3]);
+					}
+				}
+
+				startEnterpriseStream(serviceUuid, configName, exchangeUuid, batchUuid);
 			}
 		} catch (IllegalArgumentException iae) {
 			//fine, just let it continue to below
@@ -759,9 +765,9 @@ public class Main {
 	}*/
 
 
-	private static void startEnterpriseStream(UUID serviceId, String configName, UUID exchangeIdStartFrom) throws Exception {
+	private static void startEnterpriseStream(UUID serviceId, String configName, UUID exchangeIdStartFrom, UUID batchIdStartFrom) throws Exception {
 
-		LOG.info("Starting Enterprise Streaming for " + serviceId + " using " + configName + " starting from " + exchangeIdStartFrom);
+		LOG.info("Starting Enterprise Streaming for " + serviceId + " using " + configName + " starting from exchange " + exchangeIdStartFrom + " and batch " + batchIdStartFrom);
 
 		LOG.info("Testing database connection");
 		testConnection(configName);
@@ -802,6 +808,15 @@ public class Main {
 			for (int j=0; j<exchangeBatches.size(); j++) {
 				ExchangeBatch exchangeBatch = exchangeBatches.get(j);
 				UUID batchId = exchangeBatch.getBatchId();
+
+				if (batchIdStartFrom != null) {
+					if (!batchIdStartFrom.equals(batchId)) {
+						continue;
+					} else {
+						batchIdStartFrom = null;
+					}
+				}
+
 				LOG.info("Processing exchange " + exchangeId + " and batch " + batchId + " " + (j+1) + "/" + exchangeBatches.size());
 
 				try {

@@ -1,15 +1,15 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.common.fhir.ExtensionConverter;
-import org.endeavourhealth.common.fhir.FhirExtensionUri;
-import org.endeavourhealth.common.fhir.FhirUri;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.DiagnosticReport;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.Reference;
@@ -43,7 +43,6 @@ public class InvestigationTransformer extends ClinicalTransformerBase {
 
         fhirReport.setSubject(EmisOpenHelper.createPatientReference(patientGuid));
 
-        //TODO - use FileStatus value for FHIR status
         fhirReport.setStatus(DiagnosticReport.DiagnosticReportStatus.FINAL);
 
         IdentType author = investigation.getAuthorID();

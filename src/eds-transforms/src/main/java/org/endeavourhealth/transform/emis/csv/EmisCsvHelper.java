@@ -28,7 +28,7 @@ public class EmisCsvHelper {
 
     private static final String CODEABLE_CONCEPT = "CodeableConcept";
     private static final String ID_DELIMITER = ":";
-    private static final String PROBLEM_LIST_ID = "Items";
+    private static final String CONTAINED_LIST_ID = "Items";
 
     private String dataSharingAgreementGuid = null;
 
@@ -472,7 +472,7 @@ public class EmisCsvHelper {
 
         if (resource.hasContained()) {
             for (Resource contained: resource.getContained()) {
-                if (contained.getId().equals(PROBLEM_LIST_ID)) {
+                if (contained.getId().equals(CONTAINED_LIST_ID)) {
                     list = (List_)contained;
                 }
             }
@@ -481,14 +481,14 @@ public class EmisCsvHelper {
         //if the list wasn't there before, create and add it
         if (list == null) {
             list = new List_();
-            list.setId(PROBLEM_LIST_ID);
+            list.setId(CONTAINED_LIST_ID);
             resource.getContained().add(list);
         }
 
         //add the extension, unless it's already there
         boolean addExtension = !ExtensionConverter.hasExtension(resource, extensionUrl);
         if (addExtension) {
-            Reference listReference = ReferenceHelper.createInternalReference(PROBLEM_LIST_ID);
+            Reference listReference = ReferenceHelper.createInternalReference(CONTAINED_LIST_ID);
             resource.addExtension(ExtensionConverter.createExtension(extensionUrl, listReference));
         }
 
@@ -1050,7 +1050,7 @@ public class EmisCsvHelper {
 
         if (fhirProblem.hasContained()) {
             for (Resource contained: fhirProblem.getContained()) {
-                if (contained.getId().equals(PROBLEM_LIST_ID)) {
+                if (contained.getId().equals(CONTAINED_LIST_ID)) {
                     fhirProblem.getContained().remove(contained);
                     break;
                 }

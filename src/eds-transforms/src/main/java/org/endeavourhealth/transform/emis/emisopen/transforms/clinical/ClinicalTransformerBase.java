@@ -1,18 +1,21 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.AuthorType;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.CodedItemBaseType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.IdentType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.common.fhir.ExtensionConverter;
-import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.DomainResource;
 import org.hl7.fhir.instance.model.Reference;
+import org.hl7.fhir.instance.model.Resource;
 
 import java.util.Date;
+import java.util.List;
 
 public abstract class ClinicalTransformerBase {
 
@@ -56,5 +59,15 @@ public abstract class ClinicalTransformerBase {
         }
 
         resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(recordedDate)));
+    }
+
+    protected static void createProblemIfRequired(CodedItemBaseType codedItem, List<Resource> resources) {
+
+        //if the coded item isn't a problem, just reutn out
+        if (codedItem.getProblem() == null) {
+            return;
+        }
+
+
     }
 }

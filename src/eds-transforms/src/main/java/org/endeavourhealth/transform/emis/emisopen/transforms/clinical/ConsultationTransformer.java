@@ -1,11 +1,11 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.fhir.schema.EncounterParticipantType;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.common.fhir.schema.EncounterParticipantType;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +16,8 @@ import java.util.List;
 public class ConsultationTransformer {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConsultationTransformer.class);
+
+    private static final String CONTAINED_LIST_ID = "Items";
 
     public static void transform(MedicalRecordType medicalRecord, List<Resource> resources, String patientGuid) throws TransformException {
 
@@ -127,47 +129,62 @@ public class ConsultationTransformer {
             }
         }
 
-        for (Resource childResource: childResources) {
+        if (!childResources.isEmpty()) {
 
-            if (childResource instanceof Observation) {
-                ((Observation)childResource).setEncounter(encounterReference);
+            //add the extension to say we have a contained list of resourecs
+            Reference listReference = ReferenceHelper.createInternalReference(CONTAINED_LIST_ID);
+            fhirEncounter.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ENCOUNTER_COMPONENTS, listReference));
 
-            } else if (childResource instanceof Condition) {
-                ((Condition)childResource).setEncounter(encounterReference);
+            List_ list = new List_();
+            list.setId(CONTAINED_LIST_ID);
+            fhirEncounter.getContained().add(list);
 
-            } else if (childResource instanceof Procedure) {
-                ((Procedure)childResource).setEncounter(encounterReference);
+            for (Resource childResource : childResources) {
 
-            } else if (childResource instanceof FamilyMemberHistory) {
-                ((FamilyMemberHistory)childResource).addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, encounterReference));
+                //add the child reference to our contained list
+                Reference childReference = ReferenceHelper.createReferenceExternal(childResource);
+                list.addEntry().setItem(childReference);
 
-            } else if (childResource instanceof Immunization) {
-                ((Immunization)childResource).setEncounter(encounterReference);
+                //and set the backwards reference to our encounter in each of the child resources
+                if (childResource instanceof Observation) {
+                    ((Observation) childResource).setEncounter(encounterReference);
 
-            } else if (childResource instanceof ProcedureRequest) {
-                ((ProcedureRequest)childResource).setEncounter(encounterReference);
+                } else if (childResource instanceof Condition) {
+                    ((Condition) childResource).setEncounter(encounterReference);
 
-            } else if (childResource instanceof ReferralRequest) {
-                ((ReferralRequest)childResource).setEncounter(encounterReference);
+                } else if (childResource instanceof Procedure) {
+                    ((Procedure) childResource).setEncounter(encounterReference);
 
-            } else if (childResource instanceof AllergyIntolerance) {
-                ((AllergyIntolerance)childResource).addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, encounterReference));
+                } else if (childResource instanceof FamilyMemberHistory) {
+                    ((FamilyMemberHistory) childResource).addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, encounterReference));
 
-            } else if (childResource instanceof DiagnosticReport) {
-                ((DiagnosticReport)childResource).setEncounter(encounterReference);
+                } else if (childResource instanceof Immunization) {
+                    ((Immunization) childResource).setEncounter(encounterReference);
 
-            } else if (childResource instanceof DiagnosticOrder) {
-                ((DiagnosticOrder)childResource).setEncounter(encounterReference);
+                } else if (childResource instanceof ProcedureRequest) {
+                    ((ProcedureRequest) childResource).setEncounter(encounterReference);
 
-            } else if (childResource instanceof MedicationStatement) {
-                //TODO - extend MedicationStatement profile to include an Encounter reference
-                ((MedicationStatement)childResource).addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, encounterReference));
+                } else if (childResource instanceof ReferralRequest) {
+                    ((ReferralRequest) childResource).setEncounter(encounterReference);
 
-            } else {
-                LOG.warn("Not linking Encounter to " + childResource.getResourceType());
+                } else if (childResource instanceof AllergyIntolerance) {
+                    ((AllergyIntolerance) childResource).addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, encounterReference));
+
+                } else if (childResource instanceof DiagnosticReport) {
+                    ((DiagnosticReport) childResource).setEncounter(encounterReference);
+
+                } else if (childResource instanceof DiagnosticOrder) {
+                    ((DiagnosticOrder) childResource).setEncounter(encounterReference);
+
+                } else if (childResource instanceof MedicationStatement) {
+                    ((MedicationStatement) childResource).addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ASSOCIATED_ENCOUNTER, encounterReference));
+
+                } else {
+                    LOG.warn("Not linking Encounter to " + childResource.getResourceType());
+                }
+
+                resources.add(childResource);
             }
-
-            resources.add(childResource);
         }
 
     }
