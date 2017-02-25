@@ -1,18 +1,16 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.common.utility.StreamExtension;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
-import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.AuthorType;
-import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.EventType;
-import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.QualifierType;
-import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.common.fhir.AnnotationHelper;
 import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.common.fhir.schema.FamilyMember;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.AuthorType;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.EventType;
+import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
@@ -62,33 +60,15 @@ final class FamilyHistoryTransformer extends ClinicalTransformerBase {
 
     private static CodeableConcept getRelationship(EventType eventType) {
 
+        List<String> familyMembers = findQualifierTerms(eventType, QUALIFIER_GROUP_TERM_FAMILY_MEMBER);
+
         //if the event doesn't have the qualifier to say who the family member is, fall back on the generic "family member"
-        if (eventType.getQualifierList() == null) {
+        if (familyMembers.isEmpty()) {
             return CodeableConceptHelper.createCodeableConcept(FamilyMember.FAMILY_MEMBER);
         }
 
-        QualifierType qualifierType = eventType
-                .getQualifierList()
-                .getQualifier()
-                .stream()
-                .filter(t -> t.getGroup().getTerm().equals(QUALIFIER_GROUP_TERM_FAMILY_MEMBER))
-                .collect(StreamExtension.singleOrNullCollector());
-
-        //we have event types that don't have a qualifier of the right type, so fall back to using the generic relationship type
-        if (qualifierType == null
-                || qualifierType.getQualifierItemID() == null) {
-            return CodeableConceptHelper.createCodeableConcept(FamilyMember.FAMILY_MEMBER);
-        }
-
-        CodeableConcept codeableConcept = new CodeableConcept();
-
-        Coding coding = new Coding();
-        coding.setDisplay(qualifierType.getQualifierItemID().getTerm());
-
-        codeableConcept.addCoding(coding);
-
-        // needs mapping back to SNOMED
-
-        return codeableConcept;
+        String members = String.join(", ", familyMembers);
+        return CodeableConceptHelper.createCodeableConcept(members);
     }
+
 }

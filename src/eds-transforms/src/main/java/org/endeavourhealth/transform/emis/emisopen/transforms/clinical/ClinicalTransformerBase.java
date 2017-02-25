@@ -5,15 +5,14 @@ import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
-import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.AuthorType;
-import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.CodedItemBaseType;
-import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.IdentType;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.DomainResource;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.Resource;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -59,6 +58,72 @@ public abstract class ClinicalTransformerBase {
         }
 
         resource.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(recordedDate)));
+    }
+
+
+    protected static List<QualifierType> findQualifiers(CodedItemBaseType codedItem, String qualifierGroupName) {
+        List<QualifierType> ret = new ArrayList<>();
+
+        if (codedItem.getQualifierList() != null) {
+
+            for (QualifierType qualifier : codedItem.getQualifierList().getQualifier()) {
+                IntegerCodeType qualifierGroup = qualifier.getGroup();
+                if (qualifierGroup != null) {
+                    String term = qualifierGroup.getTerm();
+                    if (term != null
+                            && term.equalsIgnoreCase(qualifierGroupName)) {
+                        ret.add(qualifier);
+                    }
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    protected static List<String> findQualifierTerms(CodedItemBaseType codedItem, String qualifierGroupName) {
+        List<String> ret = new ArrayList<>();
+
+        List<QualifierType> qualifiers = findQualifiers(codedItem, qualifierGroupName);
+        for (QualifierType qualifier: qualifiers) {
+            IntegerCodeType item = qualifier.getQualifierItemID();
+            if (item != null) {
+                String term = item.getTerm();
+                if (!Strings.isNullOrEmpty(term)) {
+                    ret.add(term);
+                }
+            }
+        }
+        return ret;
+    }
+
+    protected static QualifierType findQualifier(CodedItemBaseType codedItem, String qualifierGroupName) {
+        if (codedItem.getQualifierList() == null) {
+            return null;
+        }
+        for (QualifierType qualifier: codedItem.getQualifierList().getQualifier()) {
+            IntegerCodeType qualifierGroup = qualifier.getGroup();
+            if (qualifierGroup != null) {
+                String term = qualifierGroup.getTerm();
+                if (term != null
+                        && term.equalsIgnoreCase(qualifierGroupName)) {
+                    return qualifier;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    protected static String findQualifierTerm(CodedItemBaseType codedItem, String qualifierGroupName) {
+        QualifierType qualifier = findQualifier(codedItem, qualifierGroupName);
+        if (qualifier != null) {
+            IntegerCodeType item = qualifier.getQualifierItemID();
+            if (item != null) {
+                return item.getTerm();
+            }
+        }
+        return null;
     }
 
     protected static void createProblemIfRequired(CodedItemBaseType codedItem, List<Resource> resources) {
