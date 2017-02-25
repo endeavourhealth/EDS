@@ -62,8 +62,59 @@ public class DateConverter
         }
     }
 
-    public static DateTimeType convertPartialDateToDateTimeType(String dateString, String timeString, short datePart) throws TransformException
-    {
+    public static DateTimeType convertPartialDateToDateTimeType(String dateString, String timeString, Byte datePart) throws TransformException {
+        //in some events (notably referrals, we have a null date part, so look at the strings to see what it should be
+        if (datePart == null) {
+            if (Strings.isNullOrEmpty(dateString)) {
+                return null;
+            } else {
+                return convertPartialDateToDateTimeType(dateString, timeString, (short)0);
+            }
+
+        } else {
+            return convertPartialDateToDateTimeType(dateString, timeString, datePart.shortValue());
+        }
+    }
+
+    public static DateTimeType convertPartialDateToDateTimeType(String dateString, String timeString, Short datePart) throws TransformException {
+        //in some events (notably referrals, we have a null date part, so look at the strings to see what it should be
+        if (datePart == null) {
+            if (Strings.isNullOrEmpty(dateString)) {
+                return null;
+            } else {
+                return convertPartialDateToDateTimeType(dateString, timeString, (short)0);
+            }
+
+        } else {
+            return convertPartialDateToDateTimeType(dateString, timeString, datePart.shortValue());
+        }
+    }
+
+    private static DateTimeType convertPartialDateToDateTimeType(String dateString, String timeString, short datePart) throws TransformException {
+
+        switch (datePart) {
+            case 0:
+            case 4:
+                if (Strings.isNullOrEmpty(timeString)) {
+                    return new DateTimeType(getDate(dateString), TemporalPrecisionEnum.DAY);
+                } else {
+                    return new DateTimeType(getDateAndTime(dateString, timeString), TemporalPrecisionEnum.SECOND);
+                }
+            case 1:
+                return new DateTimeType(getDate("01/" + dateString), TemporalPrecisionEnum.MONTH);
+            case 2:
+                return new DateTimeType(getDate("01/01/" + dateString), TemporalPrecisionEnum.YEAR);
+            case 3:
+                return null;
+            default:
+                //actually log out what part isn't recognised
+                throw new NotImplementedException("Date part not recognised " + datePart + " with dateString " + dateString + " and timeString " + timeString);
+                //throw new NotImplementedException("Date part not recognised");
+        }
+    }
+
+    /*public static DateTimeType convertPartialDateToDateTimeType(String dateString, String timeString, short datePart) throws TransformException {
+
         switch (datePart)
         {
             case 0:
@@ -84,7 +135,7 @@ public class DateConverter
                 throw new NotImplementedException("Date part not recognised " + datePart + " with dateString " + dateString + " and timeString " + timeString);
                 //throw new NotImplementedException("Date part not recognised");
         }
-    }
+    }*/
 
     public static Time addMinutesToTime(Date date, int minutes)
     {

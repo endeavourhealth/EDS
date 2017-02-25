@@ -89,13 +89,7 @@ public class ReferralTransformer extends ClinicalTransformerBase {
 
         fhirReferral.setPatient(EmisOpenHelper.createPatientReference(patientGuid));
 
-        String dateStr = codedItem.getAssignedDate();
-        String timeStr = codedItem.getAssignedTime();
-        Short part = codedItem.getDatePart();
-        LOG.info("Date [" + dateStr + "] Time [" + timeStr + "] Part [" + part + "]");
-        if (part != null) {
-            fhirReferral.setDateElement(DateConverter.convertPartialDateToDateTimeType(codedItem.getAssignedDate(), codedItem.getAssignedTime(), codedItem.getDatePart()));
-        }
+        fhirReferral.setDateElement(DateConverter.convertPartialDateToDateTimeType(codedItem.getAssignedDate(), codedItem.getAssignedTime(), codedItem.getDatePart()));
 
         fhirReferral.addServiceRequested(CodeConverter.convert(codedItem.getCode(), codedItem.getDisplayTerm()));
 

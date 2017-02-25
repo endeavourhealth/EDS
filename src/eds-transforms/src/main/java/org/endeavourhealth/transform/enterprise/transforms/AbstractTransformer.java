@@ -2,13 +2,13 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.apache.jcs.JCS;
 import org.apache.jcs.access.exception.CacheException;
+import org.endeavourhealth.common.fhir.ReferenceComponents;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.transform.EnterpriseIdMapRepository;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
-import org.endeavourhealth.common.fhir.ReferenceComponents;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.Resource;
@@ -115,51 +115,6 @@ public abstract class AbstractTransformer {
         return enterpriseId;
     }
 
-    /*protected static <T extends BaseRecord> Integer findEnterpriseId(T enterpriseTable, Resource resource) throws Exception {
-        String resourceType = resource.getResourceType().toString();
-        UUID resourceId = UUID.fromString(resource.getId());
-        return findEnterpriseId(enterpriseTable, resourceType, resourceId);
-    }
-
-    protected static <T extends BaseRecord> Integer findEnterpriseId(T enterpriseTable, Reference reference) throws Exception {
-        ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
-        String resourceType = comps.getResourceType().toString();
-        UUID resourceId = UUID.fromString(comps.getId());
-        return findEnterpriseId(enterpriseTable, resourceType, resourceId);
-    }
-
-    protected static <T extends BaseRecord> Integer findEnterpriseId(T enterpriseTable, ResourceByExchangeBatch resource) throws Exception {
-        return findEnterpriseId(enterpriseTable, resource.getResourceType(), resource.getResourceId());
-    }
-
-    private static <T extends BaseRecord> Integer findEnterpriseId(T enterpriseTable, String resourceType, UUID resourceId) throws Exception {
-        String enterpriseTableName = enterpriseTable.getClass().getSimpleName();
-        Integer ret = checkCacheForId(enterpriseTableName, resourceType, resourceId);
-        if (ret == null) {
-            ret = idMappingRepository.getEnterpriseIdMappingId(enterpriseTableName, resourceType, resourceId);
-        }
-        return ret;
-    }
-
-
-
-    protected static <T extends BaseRecord> Integer createEnterpriseId(T enterpriseTable, ResourceByExchangeBatch resource) throws Exception {
-        String resourceType = resource.getResourceType();
-        UUID resourceId = resource.getResourceId();
-        return createEnterpriseId(enterpriseTable, resourceType, resourceId);
-    }
-
-    protected static <T extends BaseRecord> Integer createEnterpriseId(T enterpriseTable, String resourceType, UUID resourceId) throws Exception {
-        String enterpriseTableName = enterpriseTable.getClass().getSimpleName();
-        int enterpriseId = getNextId(resourceType);
-        idMappingRepository.saveEnterpriseIdMax(enterpriseTableName, new Integer(enterpriseId));
-        idMappingRepository.saveEnterpriseIdMapping(enterpriseTableName, resourceType, resourceId, new Integer(enterpriseId));
-        addIdToCache(enterpriseTableName, resourceType, resourceId, enterpriseId);
-        return enterpriseId;
-    }*/
-
-
-
     private static Integer checkCacheForId(String enterpriseTableName, String resourceType, UUID resourceId) throws Exception {
         return (Integer)cache.get(enterpriseTableName + ":" + resourceType + "/" + resourceId);
     }
@@ -224,36 +179,6 @@ public abstract class AbstractTransformer {
         }
     }
 
-
-
-    /*protected static boolean mapIdAndMode(ResourceByExchangeBatch resource, BaseRecord baseRecord) throws Exception {
-        Integer enterpriseId = findEnterpriseId(baseRecord, resource);
-
-        if (resource.getIsDeleted()) {
-
-            //if we've no Enterprise ID, the resource was never passed to Enterprise, so don't bother telling it to delete
-            if (enterpriseId != null) {
-                baseRecord.setId(enterpriseId);
-                baseRecord.setSaveMode(SaveMode.DELETE);
-
-            } else {
-                //if it's a delete, but we've never sent it to enterprise, return false so we know not to send it now
-                return false;
-            }
-
-        } else {
-
-            if (enterpriseId == null) {
-                //if we don't have an schema ID, the resource is new, so should be an INSERT transaction
-                enterpriseId = createEnterpriseId(baseRecord, resource);
-            }
-            baseRecord.setId(enterpriseId);
-
-            baseRecord.setSaveMode(SaveMode.UPSERT);
-        }
-
-        return true;
-    }*/
 
     private static int getNextId(String enterpriseTableName) {
 
