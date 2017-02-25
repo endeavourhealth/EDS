@@ -4,6 +4,7 @@ import {LoggerService} from "../common/logger.service";
 import {StateService} from "ui-router-ng2";
 import {Component} from "@angular/core";
 import {ExchangeAuditService} from "../exchangeAudit/exchangeAudit.service";
+import {Subscription} from "rxjs/Subscription";
 
 @Component({
 	template : require('./transformErrors.html')
@@ -14,7 +15,7 @@ export class TransformErrorsComponent {
 	selectedExchangeIndex:number;
 
 	selectExchangeErrorDetail:TransformErrorDetail;
-
+	busyPostingToExchange: Subscription;
 
 	constructor(protected exchangeAuditService:ExchangeAuditService,
 				protected logger:LoggerService,
@@ -58,10 +59,18 @@ export class TransformErrorsComponent {
 		var serviceId = summary.serviceId;
 		var systemId = summary.systemId;
 
-		vm.exchangeAuditService.rerunFirstExchangeInError(serviceId, systemId)
-			.subscribe(
-				(replacement) => vm.refreshSummariesKeepingSelection(summary, replacement)
-			);
+		this.busyPostingToExchange = vm.exchangeAuditService.rerunFirstExchangeInError(serviceId, systemId).subscribe(
+			(result) => {
+				vm.logger.success('Successfully posted to exchange', 'Post to Exchange');
+				vm.refreshSummariesKeepingSelection(summary, result);
+				this.busyPostingToExchange = null;
+			},
+			(error) => {
+				vm.logger.error('Failed to post to exchange', error, 'Post to Exchange')
+				//clear down to say we're not busy
+				this.busyPostingToExchange = null;
+			}
+		)
 	}
 
 	rerunAll(summary:TransformErrorSummary) {
@@ -69,10 +78,18 @@ export class TransformErrorsComponent {
 		var serviceId = summary.serviceId;
 		var systemId = summary.systemId;
 
-		vm.exchangeAuditService.rerunAllExchangesInError(serviceId, systemId)
-			.subscribe(
-				() => vm.refreshSummariesKeepingSelection(summary, null)
-			);
+		this.busyPostingToExchange = vm.exchangeAuditService.rerunAllExchangesInError(serviceId, systemId).subscribe(
+			(result) => {
+				vm.logger.success('Successfully posted to exchange', 'Post to Exchange');
+				vm.refreshSummariesKeepingSelection(summary, null)
+				this.busyPostingToExchange = null;
+			},
+			(error) => {
+				vm.logger.error('Failed to post to exchange', error, 'Post to Exchange')
+				//clear down to say we're not busy
+				this.busyPostingToExchange = null;
+			}
+		)
 	}
 
 	private refreshSummariesKeepingSelection(original:TransformErrorSummary, replacement:TransformErrorSummary) {

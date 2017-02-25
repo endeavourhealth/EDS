@@ -22,7 +22,7 @@
                                     <th class="col-md-2">Service</th>
                                     <th class="col-md-2">System</th>
                                     <th class="col-md-1">Exchanges in Error</th>
-                                    <th class="col-md-1">Rerun Exchange</th>
+                                    <!--<th class="col-md-1">Rerun Exchange</th>-->
                                 </tr>
                             </thead>
                             <tbody>
@@ -34,10 +34,10 @@
                                     <td>{{summary.serviceName}}</td>
                                     <td>{{summary.systemName}}</td>
                                     <td>{{summary.countExchanges}}</td>
-                                    <td>
+                                    <!--<td>
                                         <button type="button" class="btn btn-primary btn-xs child-to-show" (click)="rerunFirst(summary)">First</button>
                                         <button type="button" class="btn btn-primary btn-xs child-to-show" (click)="rerunAll(summary)">All</button>
-                                    </td>
+                                    </td>-->
                                 </tr>
 
                             </tbody>
@@ -51,16 +51,9 @@
                     <div class="panel panel-primary">
                         <div class="panel-heading">Errors for {{selectedSummary.serviceName}}
                             <div class="pull-right">
-                                <button class="btn btn-xs btn-default"
-                                        (click)="rerunFirst(selectedSummary)"
-                                        title="Rerun First Exchange">
-                                    Re-run First Exchange
-                                </button>
-                                <button class="btn btn-xs btn-default"
-                                        (click)="rerunAll(selectedSummary)"
-                                        title="Rerun All Exchanges">
-                                    Re-run All Exchanges
-                                </button>
+                                <button class="btn btn-xs btn-default" [disabled]="busyPostingToExchange" (click)="rerunFirst(selectedSummary)" title="Rerun First Exchange">Re-run First Exchange</button>
+                                <button class="btn btn-xs btn-default" [disabled]="busyPostingToExchange" (click)="rerunAll(selectedSummary)" title="Rerun All Exchanges">Re-run All Exchanges</button>
+                                <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
                             </div>
                         </div>
                         <div class="panel-body" style="overflow:hidden; height:100%;">
