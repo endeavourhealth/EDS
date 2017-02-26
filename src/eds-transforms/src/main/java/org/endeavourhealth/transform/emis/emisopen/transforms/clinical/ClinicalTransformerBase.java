@@ -97,7 +97,10 @@ public abstract class ClinicalTransformerBase {
         return ret;
     }
 
-    protected static QualifierType findQualifier(CodedItemBaseType codedItem, String qualifierGroupName) {
+    /**
+     * always seem to have the potentual for multiple qualifiers, so removed these
+     */
+    /*protected static QualifierType findQualifier(CodedItemBaseType codedItem, String qualifierGroupName) {
         if (codedItem.getQualifierList() == null) {
             return null;
         }
@@ -124,7 +127,7 @@ public abstract class ClinicalTransformerBase {
             }
         }
         return null;
-    }
+    }*/
 
     protected static void createProblemIfRequired(CodedItemBaseType codedItem, List<Resource> resources) {
 

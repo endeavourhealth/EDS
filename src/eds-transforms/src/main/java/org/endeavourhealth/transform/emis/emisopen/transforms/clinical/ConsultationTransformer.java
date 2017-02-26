@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
+import com.google.common.base.Strings;
 import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.common.fhir.schema.EncounterParticipantType;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
@@ -27,11 +28,11 @@ public class ConsultationTransformer {
         }
 
         for (ConsultationType consultation : consultationList.getConsultation()) {
-            transform(consultation, resources, patientGuid);
+            transform(consultation, resources, patientGuid, medicalRecord);
         }
     }
 
-    private static void transform(ConsultationType consultation, List<Resource> resources, String patientGuid) throws TransformException {
+    private static void transform(ConsultationType consultation, List<Resource> resources, String patientGuid, MedicalRecordType medicalRecord) throws TransformException {
 
         Encounter fhirEncounter = new Encounter();
         fhirEncounter.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ENCOUNTER));
@@ -78,17 +79,46 @@ public class ConsultationTransformer {
             fhirParticipant.setIndividual(reference);
         }
 
-        //TODO - finish
+        String externalConsultant = consultation.getExternalConsultant();
+        if (!Strings.isNullOrEmpty(externalConsultant)) {
+            //participants must always be Practitioners, so create a contained Practitioner resource to hold the name
+            String externalConsultantId = "Consultant";
 
-/**
-  protected String externalConsultant;
- protected IdentType locationID;
- protected IdentType locationTypeID;
-  protected Byte consultationType;
-  protected BigInteger travelTime;
- protected BigInteger appointmentSlotID;
- protected BigInteger dataSource;
- */
+            HumanName fhirName = new HumanName();
+            fhirName.setText(externalConsultant);
+
+            Practitioner fhirPractitioner = new Practitioner();
+            fhirPractitioner.setId(externalConsultantId);
+            fhirPractitioner.setName(fhirName);
+            fhirEncounter.getContained().add(fhirPractitioner);
+
+            Encounter.EncounterParticipantComponent fhirParticipant = fhirEncounter.addParticipant();
+            fhirParticipant.addType(CodeableConceptHelper.createCodeableConcept(EncounterParticipantType.PRIMARY_PERFORMER));
+            fhirParticipant.setIndividual(ReferenceHelper.createInternalReference(externalConsultantId));
+        }
+
+        IdentType locationId = consultation.getLocationID();
+        if (locationId != null) {
+            Encounter.EncounterLocationComponent location = fhirEncounter.addLocation();
+            location.setLocation(EmisOpenHelper.createLocationReference(locationId.getGUID()));
+        }
+
+        IdentType locationType = consultation.getLocationTypeID();
+        if (locationType != null) {
+            String locationTypeDesc = findLocationType(locationType.getGUID(), medicalRecord);
+            if (!Strings.isNullOrEmpty(locationTypeDesc)) {
+                //location must always be Location, so create a contained Location resource to hold the type
+                String locationResourceId = "LocationType";
+
+                Location fhirLocation = new Location();
+                fhirLocation.setId(locationResourceId);
+                fhirLocation.setType(CodeableConceptHelper.createCodeableConcept(locationTypeDesc));
+                fhirEncounter.getContained().add(fhirLocation);
+
+                Encounter.EncounterLocationComponent location = fhirEncounter.addLocation();
+                location.setLocation(ReferenceHelper.createInternalReference(locationResourceId));
+            }
+        }
 
         resources.add(fhirEncounter);
 
@@ -187,5 +217,19 @@ public class ConsultationTransformer {
             }
         }
 
+    }
+
+    private static String findLocationType(String guid, MedicalRecordType medicalRecord) {
+        if (medicalRecord.getLocationTypeList() == null) {
+            return null;
+        }
+
+        for (TypeOfLocationType locationType: medicalRecord.getLocationTypeList().getLocationType()) {
+            if (locationType.getGUID().equals(guid)) {
+                return locationType.getDescription();
+            }
+        }
+
+        return null;
     }
 }

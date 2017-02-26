@@ -1,9 +1,8 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import com.google.common.base.Strings;
-import org.endeavourhealth.common.fhir.AnnotationHelper;
-import org.endeavourhealth.common.fhir.FhirUri;
-import org.endeavourhealth.common.fhir.QuantityHelper;
+import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.fhir.schema.ImmunizationStatus;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.*;
@@ -18,6 +17,8 @@ import java.util.Date;
 import java.util.List;
 
 public class EventTransformer extends ClinicalTransformerBase {
+
+
 
     private static final Logger LOG = LoggerFactory.getLogger(EventTransformer.class);
 
@@ -74,21 +75,17 @@ public class EventTransformer extends ClinicalTransformerBase {
 
     public static void transform(EventType eventType, List<Resource> results, String patientUuid) throws TransformException {
 
-        //if the event is a problem then we MUST create a Condition resource for it, even if we also
-        //create another resource type for it too
-        boolean requiresCondition = eventType.getProblem() != null;
-
         //check for routing to FHIR based on the code first
         StringCodeType code = eventType.getCode();
         if (code != null) {
             String read2Code = code.getValue();
             if (Read2.isProcedure(read2Code)) {
                 transformProcedure(eventType, results, patientUuid);
+                return;
 
             } else if (Read2.isDisorder(read2Code)) {
                 transformCondition(eventType, results, patientUuid);
-                //if we've created a condition, set this to false, so we don't create another one
-                requiresCondition = false;
+                return;
             }
         }
 
@@ -107,7 +104,7 @@ public class EventTransformer extends ClinicalTransformerBase {
                 FamilyHistoryTransformer.transform(eventType, results, patientUuid);
                 break;
             case IMMUNISATION:
-                ImmunisationTransformer.transform(eventType, results, patientUuid);
+                transformImmunisation(eventType, results, patientUuid);
                 break;
             case REFERRAL:
                 ReferralTransformer.transform(eventType, results, patientUuid);
@@ -118,11 +115,6 @@ public class EventTransformer extends ClinicalTransformerBase {
                 break;
             default:
                 throw new TransformException("Unhandled event type " + eventType);
-        }
-
-        //if our event is a problem, and we didn't create a condition, create one now
-        if (requiresCondition) {
-            transformCondition(eventType, results, patientUuid);
         }
     }
     /*public static Resource transform(EventType eventType, String patientUuid) throws TransformException {
@@ -151,6 +143,85 @@ public class EventTransformer extends ClinicalTransformerBase {
                 throw new TransformException("Unhandled event type " + eventType);
         }
     }*/
+
+    public static void transformImmunisation(EventType eventType, List<Resource> results, String patientGuid) throws TransformException
+    {
+        Immunization fhirImmunization = new Immunization();
+        fhirImmunization.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_IMMUNIZATION));
+
+        EmisOpenHelper.setUniqueId(fhirImmunization, patientGuid, eventType.getGUID());
+
+        fhirImmunization.setPatient(EmisOpenHelper.createPatientReference(patientGuid));
+        fhirImmunization.setStatus(ImmunizationStatus.COMPLETED.getCode());
+        fhirImmunization.setWasNotGiven(false);
+        fhirImmunization.setReported(false);
+
+        IdentType author = eventType.getAuthorID();
+        if (author != null) {
+            fhirImmunization.setPerformer(EmisOpenHelper.createPractitionerReference(author.getGUID()));
+        }
+
+        fhirImmunization.setDateElement(DateConverter.convertPartialDateToDateTimeType(eventType.getAssignedDate(), eventType.getAssignedTime(), eventType.getDatePart()));
+
+        fhirImmunization.setVaccineCode(CodeConverter.convert(eventType.getCode(), eventType.getDisplayTerm()));
+
+        String text = eventType.getDescriptiveText();
+        if (!Strings.isNullOrEmpty(text)) {
+            fhirImmunization.addNote(AnnotationHelper.createAnnotation(text));
+        }
+
+        Date dateRecorded = findRecordedDate(eventType.getOriginalAuthor());
+        addRecordedDateExtension(fhirImmunization, dateRecorded);
+
+        String recordedByGuid = findRecordedUserGuid(eventType.getOriginalAuthor());
+        addRecordedByExtension(fhirImmunization, recordedByGuid);
+
+        List<String> batchNumbers = findQualifierTerms(eventType, EmisOpenHelper.QUALIFIER_GROUP_TERM_BATCH_NUMBER);
+        if (!batchNumbers.isEmpty()) {
+            String batchNumberStr = String.join(", ", batchNumbers);
+            fhirImmunization.setLotNumber(batchNumberStr);
+        }
+
+        List<String> sites = findQualifierTerms(eventType, EmisOpenHelper.QUALIFIER_GROUP_TERM_INJECTION_SITE);
+        if (!sites.isEmpty()) {
+            String siteStr = String.join(", ", sites);
+            fhirImmunization.setSite(CodeableConceptHelper.createCodeableConcept(siteStr));
+        }
+
+        List<String> expiryDates = findQualifierTerms(eventType, EmisOpenHelper.QUALIFIER_GROUP_TERM_EXPIRY_DATE);
+        if (!expiryDates.isEmpty()) {
+            if (expiryDates.size() > 1) {
+                throw new TransformException("Vaccination " + fhirImmunization.getId() + " has multiple expiry dates");
+            }
+            Date expiryDate = DateConverter.getDate(expiryDates.get(0));
+            fhirImmunization.setExpirationDate(expiryDate);
+        }
+
+        List<String> manufacturers = findQualifierTerms(eventType, EmisOpenHelper.QUALIFIER_GROUP_TERM_MANUFACTURER);
+        if (!manufacturers.isEmpty()) {
+            String manufacturerStr = String.join(", ", manufacturers);
+
+            //the manufacturer is supposed to be a reference to an organisation, so I'm just going to use a contained resource
+            String containedOrgId = "Manufacturer";
+            fhirImmunization.setManufacturer(ReferenceHelper.createInternalReference(containedOrgId));
+
+            Organization fhirOrg = new Organization();
+            fhirOrg.setName(manufacturerStr);
+            fhirOrg.setId(containedOrgId);
+            fhirImmunization.getContained().add(fhirOrg);
+        }
+
+
+        List<String> gmsStatuses = findQualifierTerms(eventType, EmisOpenHelper.QUALIFIER_GROUP_TERM_GMS);
+        if (!gmsStatuses.isEmpty()) {
+            String gmsStatus = String.join(", ", gmsStatuses);
+
+            //this should ideally be a new extension to the Immunization resource, but if we're moving away from FHIR, I'm storing here
+            fhirImmunization.addNote(AnnotationHelper.createAnnotation("GMS Status: " + gmsStatus));
+        }
+
+        results.add(fhirImmunization);
+    }
 
     private static void transformObservation(EventType eventType, List<Resource> results, String patientGuid) throws TransformException {
 
@@ -184,19 +255,40 @@ public class EventTransformer extends ClinicalTransformerBase {
 
             if (low != null || high != null) {
 
-                //TODO - use range operators
-                //String highOperator = valueType.getMaximumRangeOperator();
-                //String lowOperator = valueType.getMinRangeOperator();
+                String lowOperator = valueType.getMinRangeOperator();
+                String highOperator = valueType.getMaximumRangeOperator();
+
+                Quantity.QuantityComparator lowComparator = null;
+                Quantity.QuantityComparator highComparator = null;
+
+                if (Strings.isNullOrEmpty(lowOperator)) {
+                    //when we have both min and max value (i.e. between), we don't get any operators, so treat between as inclusive of bounds
+                    lowComparator = Quantity.QuantityComparator.GREATER_OR_EQUAL;
+                } else if (lowComparator.equals(">")) {
+                    lowComparator = Quantity.QuantityComparator.GREATER_THAN;
+                } else if (lowComparator.equals(">=")) {
+                    lowComparator = Quantity.QuantityComparator.GREATER_OR_EQUAL;
+                } else {
+                    throw new TransformException("Unsupported min range operator " + lowOperator);
+                }
+
+                if (Strings.isNullOrEmpty(highOperator)) {
+                    //when we have both min and max value (i.e. between), we don't get any operators, so treat between as inclusive of bounds
+                    highComparator = Quantity.QuantityComparator.LESS_OR_EQUAL;
+                } else if (highComparator.equals("<")) {
+                    highComparator = Quantity.QuantityComparator.LESS_THAN;
+                } else if (highComparator.equals("<=")) {
+                    highComparator = Quantity.QuantityComparator.LESS_OR_EQUAL;
+                } else {
+                    throw new TransformException("Unsupported max range operator " + highOperator);
+                }
 
                 org.hl7.fhir.instance.model.Observation.ObservationReferenceRangeComponent fhirRange = fhirObservation.addReferenceRange();
-
-                if (low != null && high != null) {
-                    fhirRange.setLow(QuantityHelper.createSimpleQuantity(low, units, Quantity.QuantityComparator.GREATER_OR_EQUAL));
-                    fhirRange.setHigh(QuantityHelper.createSimpleQuantity(high, units, Quantity.QuantityComparator.LESS_OR_EQUAL));
-                } else if (low != null) {
-                    fhirRange.setLow(QuantityHelper.createSimpleQuantity(low, units, Quantity.QuantityComparator.GREATER_THAN));
-                } else {
-                    fhirRange.setHigh(QuantityHelper.createSimpleQuantity(high, units, Quantity.QuantityComparator.LESS_THAN));
+                if (low != null) {
+                    fhirRange.setLow(QuantityHelper.createSimpleQuantity(low, units, lowComparator));
+                }
+                if (high != null) {
+                    fhirRange.setHigh(QuantityHelper.createSimpleQuantity(high, units, highComparator));
                 }
             }
         }
@@ -252,6 +344,14 @@ public class EventTransformer extends ClinicalTransformerBase {
 
         String eventGuid = eventType.getGUID();
         EmisOpenHelper.setUniqueId(fhirCondition, patientUuid, eventGuid);
+
+        //don't create a duplicate condition if we've already created a problem for this event
+        for (Resource resource: results) {
+            if (resource instanceof Condition
+                    && resource.getId().equals(fhirCondition.getId())) {
+                return;
+            }
+        }
 
         fhirCondition.setPatient(EmisOpenHelper.createPatientReference(patientUuid));
 

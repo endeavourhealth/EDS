@@ -1,6 +1,7 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.admin;
 
 import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomgetpatientappointments.AppointmentStruct;
@@ -10,7 +11,6 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.App
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.AppointmentType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.common.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -36,7 +36,8 @@ public class AppointmentTransformer {
 
     public static Resource transform(AppointmentType appointment, String patientGuid) throws TransformException {
 
-        //TODO - to complete
+        //although the schema defines an appointment type structure, I've not seen any come through, even
+        //after manually adding appointments into Emis Web and testing the XML output
         return null;
         /*Appointment fhirAppointment = new Appointment();
 

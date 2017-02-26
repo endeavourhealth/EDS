@@ -1,13 +1,13 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.AnnotationHelper;
+import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.common.fhir.AnnotationHelper;
-import org.endeavourhealth.common.fhir.FhirUri;
 import org.hl7.fhir.instance.model.AllergyIntolerance;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.Resource;
@@ -33,17 +33,21 @@ public final class AllergyTransformer extends ClinicalTransformerBase {
     public static void transform(EventType eventType, List<Resource> resources, String patientGuid) throws TransformException {
 
         AllergyIntolerance fhirAllergy = createBasicAllergy(eventType, patientGuid);
-
-        //TODO - populate remaining fields from source
-
         resources.add(fhirAllergy);
     }
 
+    /**
+     * AllergyType codes are ones recorded when ending medication
+     */
     public static void transform(AllergyType allergy, List<Resource> resources, String patientGuid) throws TransformException {
 
         AllergyIntolerance fhirAllergy = createBasicAllergy(allergy, patientGuid);
 
-        //TODO - populate remaining fields from source?
+        //the medication the allergy is to is stored in this codes variable, rather than in the code variable in the superclass
+        StringCodeType codes = allergy.getCodes();
+        if (codes != null) {
+            fhirAllergy.setSubstance(CodeConverter.convert(codes, allergy.getDisplayTerm()));
+        }
 
         resources.add(fhirAllergy);
     }

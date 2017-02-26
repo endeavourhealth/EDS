@@ -18,7 +18,7 @@ import java.util.List;
 
 final class FamilyHistoryTransformer extends ClinicalTransformerBase {
 
-    private static final String QUALIFIER_GROUP_TERM_FAMILY_MEMBER = "Family member";
+
 
     public static void transform(EventType eventType, List<Resource> results, String patientGuid) throws TransformException
     {
@@ -60,7 +60,7 @@ final class FamilyHistoryTransformer extends ClinicalTransformerBase {
 
     private static CodeableConcept getRelationship(EventType eventType) {
 
-        List<String> familyMembers = findQualifierTerms(eventType, QUALIFIER_GROUP_TERM_FAMILY_MEMBER);
+        List<String> familyMembers = findQualifierTerms(eventType, EmisOpenHelper.QUALIFIER_GROUP_TERM_FAMILY_MEMBER);
 
         //if the event doesn't have the qualifier to say who the family member is, fall back on the generic "family member"
         if (familyMembers.isEmpty()) {

@@ -52,10 +52,10 @@ public final class EmisOpenToFhirTransformer
         PatientTransformer.transform(medicalRecord, result, organisationGuid, patientGuid);
         EpisodeOfCareTransformer.transform(medicalRecord, result, organisationGuid, patientGuid);
 
+        ProblemTransformer.transform(medicalRecord, result, organisationGuid, patientGuid);
         EventTransformer.transform(medicalRecord, result, patientGuid);
         IssueTransformer.transform(medicalRecord, result, patientGuid);
         MedicationTransformer.transform(medicalRecord, result, patientGuid);
-
         AllergyTransformer.transform(medicalRecord, result, patientGuid);
         ConsultationTransformer.transform(medicalRecord, result, patientGuid);
         DiaryTransformer.transform(medicalRecord, result, patientGuid);
@@ -64,7 +64,7 @@ public final class EmisOpenToFhirTransformer
         InvestigationTransformer.transform(medicalRecord, result, patientGuid);
         TestRequestHeaderTransformer.transform(medicalRecord, result, patientGuid);
 
-        //TODO - problems!!!!!
+        //TODO - link itmems to problems!!!
 
         return result;
     }

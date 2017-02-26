@@ -7,10 +7,10 @@
           <element id="module-output" name="eds-patient-ui" />
         </element>
         <element id="directory" name="lib">
-          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:api:2.16" />
-          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:eds-core:2.16" />
-          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:security:2.16" />
-          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:config:2.16" />
+          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:api:2.17" />
+          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:eds-core:2.17" />
+          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:security:2.17" />
+          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:config:2.17" />
           <element id="library" level="project" name="Maven: org.hibernate:hibernate-hikaricp:5.2.5.Final" />
           <element id="library" level="project" name="Maven: org.jboss.logging:jboss-logging:3.3.0.Final" />
           <element id="library" level="project" name="Maven: org.hibernate:hibernate-core:5.2.5.Final" />
@@ -28,9 +28,9 @@
           <element id="library" level="project" name="Maven: javax.inject:javax.inject:1" />
           <element id="library" level="project" name="Maven: org.postgresql:postgresql:9.4.1212.jre7" />
           <element id="library" level="project" name="Maven: com.zaxxer:HikariCP:2.5.1" />
-          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:utility:2.16" />
-          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:cache:2.16" />
-          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:cassandra:2.16" />
+          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:utility:2.17" />
+          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:cache:2.17" />
+          <element id="library" level="project" name="Maven: com.github.endeavourhealth.Common:cassandra:2.17" />
           <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.5.4" />
           <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.5.4" />
           <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-core:2.5.4" />

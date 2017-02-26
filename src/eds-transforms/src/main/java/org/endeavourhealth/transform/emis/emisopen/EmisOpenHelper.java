@@ -8,6 +8,14 @@ import org.hl7.fhir.instance.model.ResourceType;
 
 public class EmisOpenHelper {
 
+    public static final String QUALIFIER_GROUP_TERM_FAMILY_MEMBER = "Family member";
+    public static final String QUALIFIER_GROUP_TERM_INJECTION_SITE = "Injection site";
+    public static final String QUALIFIER_GROUP_TERM_GMS = "GMS";
+    public static final String QUALIFIER_GROUP_TERM_BATCH_NUMBER = "Batch Number";
+    public static final String QUALIFIER_GROUP_TERM_EXPIRY_DATE = "Expiry Date";
+    public static final String QUALIFIER_GROUP_TERM_MANUFACTURER = "Manufacturer";
+
+
     private static final String ID_DELIMITER = ":";
 
     /**
