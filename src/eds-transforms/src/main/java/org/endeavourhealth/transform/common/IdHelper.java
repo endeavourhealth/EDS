@@ -202,7 +202,10 @@ public class IdHelper {
         ResourceType resourceType = components.getResourceType();
         ResourceIdMapByEdsId mapping = repository.getResourceIdMapByEdsId(resourceType.toString(), components.getId());
         if (mapping == null) {
-            throw new TransformException("Failed to find Resource ID Mapping for resource type " + resourceType.toString() + " ID " + components.getId());
+            //TODO - put this exception back in, once investigated
+            LOG.warn("Failed to find Resource ID Mapping for resource type " + resourceType.toString() + " ID " + components.getId());
+            return null;
+            //throw new TransformException("Failed to find Resource ID Mapping for resource type " + resourceType.toString() + " ID " + components.getId());
         }
 
         String emisId = mapping.getSourceId();
