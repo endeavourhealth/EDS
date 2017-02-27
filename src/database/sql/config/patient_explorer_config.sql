@@ -36,5 +36,7 @@ VALUES
 ('eds-patient-explorer', 'enterprise-lite','{
     "username" : "postgres",
     "password" : "",
+    "ui-username" : "restricted",
+    "ui-password" : "",
     "url"    : "jdbc:postgresql://localhost:5432/enterprise_data"
 }');

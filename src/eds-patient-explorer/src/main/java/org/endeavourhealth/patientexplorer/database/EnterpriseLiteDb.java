@@ -14,8 +14,8 @@ public class EnterpriseLiteDb {
 		if (_conn == null) {
 			JsonNode config = ConfigManager.getConfigurationAsJson("enterprise-lite");
 			String url = config.get("url").asText();
-			String username = config.get("username").asText();
-			String password = config.get("password").asText();
+			String username = config.get("ui-username").asText();
+			String password = config.get("ui-password").asText();
 
 			_conn = DriverManager.getConnection(url, username, password);
 		}
