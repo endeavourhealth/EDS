@@ -20,6 +20,8 @@ public class CodeConverter
     private static final String EMISOPEN_IDENTIFIER_READ2 = "READ2";
     private static final String EMISOPEN_IDENTIFIER_EMIS_BOTH = "EMISBOTH";
     private static final String EMISOPEN_IDENTIFIER_EMIS_DRUG_NAME = "EMISDRUGNAME";
+    private static final String EMISOPEN_IDENTIFIER_EMIS_DRUG_GROUP = "EMISDRUGGROUP";
+
 
     private static CodeRepository repository = new CodeRepository();
 
@@ -160,6 +162,9 @@ public class CodeConverter
             return FhirUri.CODE_SYSTEM_EMIS_CODE;
 
         } else if (scheme.equals(EMISOPEN_IDENTIFIER_EMIS_DRUG_NAME)) {
+            return FhirUri.CODE_SYSTEM_EMIS_CODE;
+
+        } else if (scheme.equals(EMISOPEN_IDENTIFIER_EMIS_DRUG_GROUP)) {
             return FhirUri.CODE_SYSTEM_EMIS_CODE;
 
         } else {

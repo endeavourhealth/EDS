@@ -3,6 +3,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -84,55 +85,56 @@ public class MessageTransformOutbound extends PipelineComponent {
 		UUID batchId = transformBatch.getBatchId();
 		Map<ResourceType, List<UUID>> resourceIds = transformBatch.getResourceIds();
 
-		List<String> endpoints = getSubscriberEndpoints(transformBatch);
-
 		// Run the transform, creating a subscriber batch for each
 		// (Holds transformed message id and destination endpoints)
 		List<SubscriberBatch> subscriberBatches = new ArrayList<>();
 
-		if (endpoints.isEmpty()) {
-			LOG.trace("No endpoint to send to");
+		for (ServiceContract serviceContract : transformBatch.getSubscribers()) {
 
-		} else {
-			for (ServiceContract serviceContract : transformBatch.getSubscribers()) {
+			String endpoint = getSubscriberEndpoint(serviceContract);
 
-				String technicalInterfaceUuidStr = serviceContract.getTechnicalInterface().getUuid();
-				String systemUuidStr = serviceContract.getSystem().getUuid();
-				TechnicalInterface technicalInterface = null;
-				try {
-					technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetails(systemUuidStr, technicalInterfaceUuidStr);
-				} catch (Exception ex) {
-					throw new PipelineException("Failed to retrieve technical interface", ex);
-				}
-				LOG.debug("Technical interface found for system " + systemUuidStr + " and interface id " + technicalInterfaceUuidStr + " = " + (technicalInterface != null));
-				LOG.debug("Name {} UUID {} Frequency {} MessageType {} MessageFormat {} MessageFormatVersion {}",
-						technicalInterface.getName(), technicalInterface.getUuid(), technicalInterface.getFrequency(),
-						technicalInterface.getMessageType(), technicalInterface.getMessageFormat(), technicalInterface.getMessageFormatVersion());
+			//subscribers that we don't actively push to (e.g. patient explorer) won't have an endpoint set, so skip it
+			if (Strings.isNullOrEmpty(endpoint)) {
+				continue;
+			}
 
-				String software = technicalInterface.getMessageFormat();
-				String softwareVersion = technicalInterface.getMessageFormatVersion();
+			String technicalInterfaceUuidStr = serviceContract.getTechnicalInterface().getUuid();
+			String systemUuidStr = serviceContract.getSystem().getUuid();
+			TechnicalInterface technicalInterface = null;
+			try {
+				technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetails(systemUuidStr, technicalInterfaceUuidStr);
+			} catch (Exception ex) {
+				throw new PipelineException("Failed to retrieve technical interface", ex);
+			}
+			LOG.debug("Technical interface found for system " + systemUuidStr + " and interface id " + technicalInterfaceUuidStr + " = " + (technicalInterface != null));
+			LOG.debug("Name {} UUID {} Frequency {} MessageType {} MessageFormat {} MessageFormatVersion {}",
+					technicalInterface.getName(), technicalInterface.getUuid(), technicalInterface.getFrequency(),
+					technicalInterface.getMessageType(), technicalInterface.getMessageFormat(), technicalInterface.getMessageFormatVersion());
 
-				String outboundData = null;
-				try {
-					outboundData = transform(exchange, batchId, software, softwareVersion, resourceIds, endpoints);
-				} catch (Exception ex) {
-					throw new PipelineException("Failed to transform exchange " + exchange + " and batch " + batchId, ex);
-				}
+			String software = technicalInterface.getMessageFormat();
+			String softwareVersion = technicalInterface.getMessageFormatVersion();
 
-				//not all transforms may actually decide to generate any outbound content, so check for null and empty
-				if (!Strings.isNullOrEmpty(outboundData)) {
 
-					// Store transformed message
-					UUID messageUuid = UUID.randomUUID();
-					new QueuedMessageRepository().save(messageUuid, outboundData);
+			String outboundData = null;
+			try {
+				outboundData = transform(exchange, batchId, software, softwareVersion, resourceIds, endpoint);
+			} catch (Exception ex) {
+				throw new PipelineException("Failed to transform exchange " + exchange + " and batch " + batchId, ex);
+			}
 
-					SubscriberBatch subscriberBatch = new SubscriberBatch();
-					subscriberBatch.setTechnicalInterface(technicalInterface);
-					subscriberBatch.setEndpoints(endpoints);
-					subscriberBatch.setOutputMessageId(messageUuid);
+			//not all transforms may actually decide to generate any outbound content, so check for null and empty
+			if (!Strings.isNullOrEmpty(outboundData)) {
 
-					subscriberBatches.add(subscriberBatch);
-				}
+				// Store transformed message
+				UUID messageUuid = UUID.randomUUID();
+				new QueuedMessageRepository().save(messageUuid, outboundData);
+
+				SubscriberBatch subscriberBatch = new SubscriberBatch();
+				subscriberBatch.setTechnicalInterface(technicalInterface);
+				subscriberBatch.setEndpoints(Lists.newArrayList(endpoint));
+				subscriberBatch.setOutputMessageId(messageUuid);
+
+				subscriberBatches.add(subscriberBatch);
 			}
 		}
 
@@ -147,7 +149,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 		LOG.trace("Message transformed (outbound)");
 	}
 
-	private String transform(Exchange exchange, UUID batchId, String software, String softwareVersion, Map<ResourceType, List<UUID>> resourceIds, List<String> endpoints) throws Exception {
+	private String transform(Exchange exchange, UUID batchId, String software, String softwareVersion, Map<ResourceType, List<UUID>> resourceIds, String endpoint) throws Exception {
 
 		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
 
@@ -157,9 +159,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 			//file the data directly, so return null to end the pipeline
 			if (!Strings.isNullOrEmpty(zippedCsvs)) {
-				for (String configName: endpoints) {
-					EnterpriseFiler.file(zippedCsvs, configName);
-				}
+				EnterpriseFiler.file(zippedCsvs, endpoint);
 			}
 
 			return null;
@@ -168,7 +168,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 			String xml = FhirToVitruCareXmlTransformer.transformFromFhir(batchId, resourceIds);
 			if (!Strings.isNullOrEmpty(xml)) {
-				sendHttpPost(xml, endpoints);
+				sendHttpPost(xml, endpoint);
 			}
 			return null;
 			//return xml;
@@ -178,54 +178,51 @@ public class MessageTransformOutbound extends PipelineComponent {
 		}
 	}
 
-	private static void sendHttpPost(String payload, List<String> endpoints) throws Exception {
+	private static void sendHttpPost(String payload, String url) throws Exception {
 
-		for (String url: endpoints) {
-
-			//String url = "http://127.0.0.1:8002/notify";
-			//String url = "http://localhost:8002";
-			//String url = "http://posttestserver.com/post.php";
+		//String url = "http://127.0.0.1:8002/notify";
+		//String url = "http://localhost:8002";
+		//String url = "http://posttestserver.com/post.php";
 
 
-			HttpClient client = HttpClientBuilder.create().build();
-			HttpPost post = new HttpPost(url);
+		HttpClient client = HttpClientBuilder.create().build();
+		HttpPost post = new HttpPost(url);
 
 
-			// add header
-			//post.setHeader("User-Agent", USER_AGENT);
+		// add header
+		//post.setHeader("User-Agent", USER_AGENT);
 
-			/*List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-			urlParameters.add(new BasicNameValuePair("sn", "C02G8416DRJM"));
-			urlParameters.add(new BasicNameValuePair("cn", ""));
-			urlParameters.add(new BasicNameValuePair("locale", ""));
-			urlParameters.add(new BasicNameValuePair("caller", ""));
-			urlParameters.add(new BasicNameValuePair("num", "12345"));
+		/*List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
+		urlParameters.add(new BasicNameValuePair("sn", "C02G8416DRJM"));
+		urlParameters.add(new BasicNameValuePair("cn", ""));
+		urlParameters.add(new BasicNameValuePair("locale", ""));
+		urlParameters.add(new BasicNameValuePair("caller", ""));
+		urlParameters.add(new BasicNameValuePair("num", "12345"));
 
-			post.setEntity(new UrlEncodedFormEntity(urlParameters));*/
+		post.setEntity(new UrlEncodedFormEntity(urlParameters));*/
 
-			HttpEntity entity = new ByteArrayEntity(payload.getBytes("UTF-8"));
-			post.setEntity(entity);
+		HttpEntity entity = new ByteArrayEntity(payload.getBytes("UTF-8"));
+		post.setEntity(entity);
 
-			LOG.trace("Sending 'POST' request to URL : " + url);
-			LOG.trace("Post parameters : " + post.getEntity());
+		LOG.trace("Sending 'POST' request to URL : " + url);
+		LOG.trace("Post parameters : " + post.getEntity());
 
-			HttpResponse response = client.execute(post);
-			LOG.trace("Response Code : " + response.getStatusLine().getStatusCode());
+		HttpResponse response = client.execute(post);
+		LOG.trace("Response Code : " + response.getStatusLine().getStatusCode());
 
-			BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+		BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
 
-			StringBuffer result = new StringBuffer();
-			String line = "";
-			while ((line = rd.readLine()) != null) {
-				result.append(line);
-			}
+		StringBuffer result = new StringBuffer();
+		String line = "";
+		while ((line = rd.readLine()) != null) {
+			result.append(line);
+		}
 
-			LOG.trace(result.toString());
+		LOG.trace(result.toString());
 
-			int statusCode = response.getStatusLine().getStatusCode();
-			if (statusCode != HttpStatus.SC_OK) {
-				throw new IOException("Failed to post to " + url);
-			}
+		int statusCode = response.getStatusLine().getStatusCode();
+		if (statusCode != HttpStatus.SC_OK) {
+			throw new IOException("Failed to post to " + url);
 		}
 	}
 
@@ -284,7 +281,30 @@ public class MessageTransformOutbound extends PipelineComponent {
 		LOG.trace("Message transformed (outbound)");
 	}*/
 
-	private List<String> getSubscriberEndpoints(TransformBatch transformBatch) throws PipelineException {
+	private String getSubscriberEndpoint(ServiceContract contract) throws PipelineException {
+
+		try {
+			UUID serviceId = UUID.fromString(contract.getService().getUuid());
+			UUID technicalInterfaceId = UUID.fromString(contract.getTechnicalInterface().getUuid());
+
+			ServiceRepository serviceRepository = new ServiceRepository();
+
+			Service service = serviceRepository.getById(serviceId);
+			List<JsonServiceInterfaceEndpoint> serviceEndpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+			for (JsonServiceInterfaceEndpoint serviceEndpoint: serviceEndpoints) {
+				if (serviceEndpoint.getTechnicalInterfaceUuid().equals(technicalInterfaceId)) {
+					return serviceEndpoint.getEndpoint();
+				}
+			}
+
+			return null;
+
+		} catch (IOException e) {
+			throw new PipelineException(e.getMessage(), e);
+		}
+	}
+
+	/*private List<String> getSubscriberEndpoints(TransformBatch transformBatch) throws PipelineException {
 		// Find the relevant endpoints for those subscribers/technical interface
 		List<String> endpoints = new ArrayList<>();
 		try {
@@ -303,7 +323,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 			throw new PipelineException(e.getMessage(), e);
 		}
 		return endpoints;
-	}
+	}*/
 
 	private TransformBatch getTransformBatch(Exchange exchange) throws PipelineException {
 		String transformBatchJson = exchange.getHeader(HeaderKeys.TransformBatch);
