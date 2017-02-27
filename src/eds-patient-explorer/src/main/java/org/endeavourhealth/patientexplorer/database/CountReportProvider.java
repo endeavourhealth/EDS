@@ -46,7 +46,7 @@ public class CountReportProvider {
 			PreparedStatement statement = null;
 
 			// Clear old results
-			String tablename = "rep_" + userUuid.toString().replace("-","") + "_" + reportUuid.toString().replace("-","");
+			String tablename = getTableName(userUuid, reportUuid);
 			dropReportTable(conn, tablename);
 
 			// Build query
@@ -142,7 +142,7 @@ public class CountReportProvider {
 
 	private List<List<String>> getResults(UUID userUuid, UUID reportUuid, String fields) throws Exception {
 		List<String> result = new ArrayList<>();
-		String tablename = "rep_" + userUuid.toString().replace("-","") + "_" + reportUuid.toString().replace("-","");
+		String tablename = getTableName(userUuid, reportUuid);
 
 		Connection conn = EnterpriseLiteDb.getConnection();
 		PreparedStatement statement = conn.prepareStatement("SELECT "+fields+" FROM " + tablename);
@@ -238,5 +238,9 @@ public class CountReportProvider {
 		List<Object> toSave = new ArrayList<>();
 		toSave.add(item);
 		repository.save(toSave);
+	}
+
+	private String getTableName(UUID userUuid, UUID reportUuid) {
+		return "workspace.rep_" + userUuid.toString().replace("-","") + "_" + reportUuid.toString().replace("-","");
 	}
 }
