@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.xml.datatype.DatatypeFactory;
 import java.sql.*;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -84,38 +85,119 @@ public class CountReportProvider {
 		}
 	}
 
-	private void  createReportTable(Map<String, String> reportParams, String odsCode, LibraryItem countReport, Connection conn, String tablename) throws SQLException {
-		String query = "SELECT :RunDate as run_date, p.id as internal_patient_id, p.nhs_number";
+	private void  createReportTable(Map<String, String> reportParams, String odsCode, LibraryItem countReport, Connection conn, String tablename) throws Exception {
+		String query = "SELECT "+ reportParams.get("RunDate") +" as run_date, p.id as internal_patient_id, p.nhs_number\n";
+
 		if (!countReport.getCountReport().getFields().equals(""))
 			query += "," + countReport.getCountReport().getFields();
 
-		query += " FROM patient p JOIN episode_of_care eoc ON eoc.patient_id = p.id ";
-		query += " JOIN organization org ON org.id = p.organization_id ";
+		query += " FROM patient p JOIN episode_of_care eoc ON eoc.patient_id = p.id \n";
+		query += " JOIN organization org ON org.id = p.organization_id \n";
 		if (countReport.getCountReport().getTables() != null)
 			query += countReport.getCountReport().getTables();
 
-		query += " WHERE eoc.date_registered < :RunDate AND (eoc.date_registered_end IS NULL OR eoc.date_registered_end >= :RunDate) ";
-		query += " AND org.ods_code = '" + odsCode + "' ";
+		query += " WHERE eoc.date_registered < :RunDate::date \nAND (eoc.date_registered_end IS NULL OR eoc.date_registered_end >= :RunDate::date) \n";
+		query += " AND org.ods_code = '" + odsCode + "' \n";
 		if (countReport.getCountReport().getQuery() != null)
 			query += countReport.getCountReport().getQuery();
 
-		query = "CREATE TABLE " + tablename + " AS " + query;
-
-		// Replace parameters
-		for (Map.Entry<String, String> entry : reportParams.entrySet()) {
-			query = query.replace(":" + entry.getKey(), entry.getValue());
-		}
-
-		LOG.debug("Executing query " + query);
-
+		query = "CREATE TABLE " + tablename + " AS \n" + query;
 		PreparedStatement statement = null;
 		try {
-			statement = conn.prepareStatement(query);
+			statement = setParameters(conn, reportParams, query);
+
 			statement.execute();
 		} finally {
 			if (statement != null)
 				statement.close();
 		}
+	}
+
+	private PreparedStatement setParameters(Connection conn, Map<String, String> reportParams, String query) throws SQLException, ParseException {
+		// Build ordered list of param positions
+		TreeMap<Integer, String> params = new TreeMap<>();
+
+		for (String paramName : reportParams.keySet()) {
+			int pos = query.indexOf(":" + paramName);
+			while (pos > -1) {
+				params.put(pos, paramName);
+				pos = query.indexOf(":" + paramName, pos+1);
+			}
+		}
+
+		// Replace parameter names
+		for (String paramName : reportParams.keySet()) {
+			query = query.replace(":" + paramName, "?");
+		}
+
+		LOG.debug("Preparing SQL " + query);
+
+		// Prepare statement
+		PreparedStatement statement = conn.prepareStatement(query);
+
+		// Set parameters
+		int index = 1;
+		for (Map.Entry<Integer, String> param : params.entrySet()) {
+			String value = reportParams.get(param.getValue());
+			if ("null".equals(value))
+				value = null;
+
+			switch (param.getValue()) {
+				case "RunDate":
+				case "EffectiveDate":
+				case "DobMin":
+				case "DobMax":
+					if (value == null)
+						statement.setNull(index++, Types.DATE);
+					else
+						statement.setDate(index++, SqlUtils.sqlDateFromString(value));
+					break;
+				case "SnomedCode":
+				case "EncounterType":
+				case "ReferralSnomedCode":
+					if (value == null)
+						statement.setNull(index++, Types.INTEGER);
+					else
+						statement.setLong(index++, Long.parseLong(value));
+					break;
+				case "ValueMin":
+				case "ValueMax":
+					if (value == null)
+						statement.setNull(index++, Types.DOUBLE);
+					else
+						statement.setDouble(index++, Double.parseDouble(value));
+					break;
+				case "RegistrationType":
+				case "Gender":
+				case "AuthType":
+				case "ReferralType":
+				case "ReferralPriority":
+					if (value == null)
+						statement.setNull(index++, Types.SMALLINT);
+					else
+						statement.setByte(index++, Byte.parseByte(value));
+					break;
+				case "Practitioner":
+					if (value == null)
+						statement.setNull(index++, Types.INTEGER);
+					else
+						statement.setInt(index++, Integer.parseInt(value));
+					break;
+				case "OriginalCode":
+					if (value == null)
+						statement.setNull(index++, Types.VARCHAR);
+					else
+						statement.setString(index++, value);
+					break;
+				default:
+					if (value == null)
+						statement.setNull(index++, Types.VARCHAR);
+					else
+						statement.setString(index++, value);
+			}
+		}
+
+		return statement;
 	}
 
 	private void dropReportTable(Connection conn, String tablename) throws SQLException {
@@ -142,7 +224,6 @@ public class CountReportProvider {
 	}
 
 	private List<List<String>> getResults(UUID userUuid, UUID reportUuid, String fields) throws Exception {
-		List<String> result = new ArrayList<>();
 		String tablename = getTableName(userUuid, reportUuid);
 
 		Connection conn = EnterpriseLiteDb.getConnection();
