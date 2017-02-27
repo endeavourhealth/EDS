@@ -36,11 +36,11 @@ public class SqlUtils {
 	}
 
 	public static String getCSVAsString(List<List<String>> csv) {
-		StringBuilder sb = new StringBuilder();
+		List<String> rows = new ArrayList<>();
 		for(List<String> row : csv) {
-			sb.append(StringUtils.join(row.toArray(), ','));
+			rows.add(StringUtils.join(row.toArray(), ','));
 		}
-		String ret = StringUtils.join(sb, '\n');
+		String ret = StringUtils.join(rows, '\n');
 
 		return ret;
 	}
