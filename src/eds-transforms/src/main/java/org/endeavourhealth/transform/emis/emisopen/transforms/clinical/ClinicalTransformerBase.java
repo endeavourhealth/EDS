@@ -143,7 +143,7 @@ public abstract class ClinicalTransformerBase {
                 if (existingResource instanceof Condition
                         && existingResource.getId().equals(problemId)) {
 
-                    linkToProblem(resource, (Condition)resource);
+                    linkToProblem(resource, (Condition)existingResource);
                     break;
                 }
             }
