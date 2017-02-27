@@ -266,9 +266,9 @@ public class EventTransformer extends ClinicalTransformerBase {
                 if (Strings.isNullOrEmpty(lowOperator)) {
                     //when we have both min and max value (i.e. between), we don't get any operators, so treat between as inclusive of bounds
                     lowComparator = Quantity.QuantityComparator.GREATER_OR_EQUAL;
-                } else if (lowComparator.equals(">")) {
+                } else if (lowOperator.equals(">")) {
                     lowComparator = Quantity.QuantityComparator.GREATER_THAN;
-                } else if (lowComparator.equals(">=")) {
+                } else if (lowOperator.equals(">=")) {
                     lowComparator = Quantity.QuantityComparator.GREATER_OR_EQUAL;
                 } else {
                     throw new TransformException("Unsupported min range operator " + lowOperator);
@@ -277,9 +277,9 @@ public class EventTransformer extends ClinicalTransformerBase {
                 if (Strings.isNullOrEmpty(highOperator)) {
                     //when we have both min and max value (i.e. between), we don't get any operators, so treat between as inclusive of bounds
                     highComparator = Quantity.QuantityComparator.LESS_OR_EQUAL;
-                } else if (highComparator.equals("<")) {
+                } else if (highOperator.equals("<")) {
                     highComparator = Quantity.QuantityComparator.LESS_THAN;
-                } else if (highComparator.equals("<=")) {
+                } else if (highOperator.equals("<=")) {
                     highComparator = Quantity.QuantityComparator.LESS_OR_EQUAL;
                 } else {
                     throw new TransformException("Unsupported max range operator " + highOperator);
