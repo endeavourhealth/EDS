@@ -3,14 +3,12 @@ package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.hl7.fhir.instance.model.DateTimeType;
-import org.hl7.fhir.instance.model.DomainResource;
-import org.hl7.fhir.instance.model.Reference;
-import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -18,6 +16,7 @@ import java.util.List;
 
 public abstract class ClinicalTransformerBase {
 
+    private static final String CONTAINED_LIST_ID = "Items";
 
     protected static Date findRecordedDate(AuthorType authorType) throws TransformException {
         if (authorType == null) {
@@ -129,13 +128,57 @@ public abstract class ClinicalTransformerBase {
         return null;
     }*/
 
-    protected static void createProblemIfRequired(CodedItemBaseType codedItem, List<Resource> resources) {
-
-        //if the coded item isn't a problem, just reutn out
-        if (codedItem.getProblem() == null) {
+    protected static void linkToProblem(CodedItemBaseType codedItem, String patientGuid, Resource resource, List<Resource> existingResources) {
+        if (codedItem.getProblemLinkList() == null) {
             return;
         }
 
+        //TODO - how to indicate that a duplicate Observation is a REVIEW of a Problem (it has the same code)
+
+        for (LinkType link: codedItem.getProblemLinkList().getLink()) {
+            String problemGuid = link.getTarget().getGUID();
+            String problemId = EmisOpenHelper.createUniqueId(patientGuid, problemGuid);
+
+            for (Resource existingResource: existingResources) {
+                if (existingResource instanceof Condition
+                        && existingResource.getId().equals(problemId)) {
+
+                    linkToProblem(resource, (Condition)resource);
+                    break;
+                }
+            }
+
+        }
+    }
+
+    private static void linkToProblem(Resource resource, Condition problem) {
+
+        //make sure we have the extension
+        boolean addExtension = !ExtensionConverter.hasExtension(problem, FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE);
+        if (addExtension) {
+            Reference listReference = ReferenceHelper.createInternalReference(CONTAINED_LIST_ID);
+            problem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE, listReference));
+        }
+
+        List_ list = null;
+
+        if (problem.hasContained()) {
+            for (Resource contained: problem.getContained()) {
+                if (contained.getId().equals(CONTAINED_LIST_ID)) {
+                    list = (List_)contained;
+                }
+            }
+        }
+
+        //if the list wasn't there before, create and add it
+        if (list == null) {
+            list = new List_();
+            list.setId(CONTAINED_LIST_ID);
+            problem.getContained().add(list);
+        }
+
+        Reference reference = ReferenceHelper.createReferenceExternal(resource);
+        list.addEntry().setItem(reference);
 
     }
 }

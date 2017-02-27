@@ -81,7 +81,7 @@ public class EmisOpenHelper {
         }
         return ReferenceHelper.createReference(ResourceType.MedicationStatement, createUniqueId(patientGuid, medicationStatementGuid));
     }
-    public static Reference createProblemReference(String problemGuid, String patientGuid) throws Exception {
+    public static Reference createProblemReference(String problemGuid, String patientGuid) {
         if (Strings.isNullOrEmpty(problemGuid)) {
             throw new IllegalArgumentException("Missing problemGuid");
         }

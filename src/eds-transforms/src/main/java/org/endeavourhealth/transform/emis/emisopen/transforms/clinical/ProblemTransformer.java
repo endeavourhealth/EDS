@@ -1,18 +1,17 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.schema.ProblemSignificance;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.*;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.hl7.fhir.instance.model.Condition;
-import org.hl7.fhir.instance.model.IntegerType;
-import org.hl7.fhir.instance.model.Meta;
-import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.*;
 
 import java.math.BigInteger;
 import java.util.Date;
@@ -97,7 +96,6 @@ public class ProblemTransformer extends ClinicalTransformerBase {
 
         fhirProblem.setCode(CodeConverter.convert(codedItem.getCode(), codedItem.getDisplayTerm()));
 
-        fhirProblem.setClinicalStatus("active"); //if we have a Problem record for this condition, this status may be changed
         fhirProblem.setVerificationStatus(Condition.ConditionVerificationStatus.CONFIRMED);
 
         fhirProblem.setOnset(DateConverter.convertPartialDateToDateTimeType(codedItem.getAssignedDate(), codedItem.getAssignedTime(), codedItem.getDatePart()));
@@ -129,66 +127,45 @@ public class ProblemTransformer extends ClinicalTransformerBase {
             }
         }
 
-        //TODO - finish this!
-
-        /*
-        Date lastReviewDate = parser.getLastReviewDate();
-        String lastReviewPrecision = parser.getLastReviewDatePrecision();
-        DateType lastReviewDateType = EmisDateTimeHelper.createDateType(lastReviewDate, lastReviewPrecision);
-        String lastReviewedByGuid = parser.getLastReviewUserInRoleGuid();
-        if (lastReviewDateType != null
-                || !Strings.isNullOrEmpty(lastReviewedByGuid)) {
-
-            //the review extension is a compound extension, containing who and when
-            Extension fhirExtension = ExtensionConverter.createCompoundExtension(FhirExtensionUri.PROBLEM_LAST_REVIEWED);
-
-            if (lastReviewDateType != null) {
-                fhirExtension.addExtension(ExtensionConverter.createExtension(FhirExtensionUri._PROBLEM_LAST_REVIEWED__DATE, lastReviewDateType));
-            }
-            if (!Strings.isNullOrEmpty(lastReviewedByGuid)) {
-                fhirExtension.addExtension(ExtensionConverter.createExtension(FhirExtensionUri._PROBLEM_LAST_REVIEWED__PERFORMER, csvHelper.createPractitionerReference(lastReviewedByGuid)));
-            }
-            fhirProblem.addExtension(fhirExtension);
+        //1 = Significant Problem/High Priority 2 = Minor Problem/Low Priorit
+        ProblemSignificance fhirSignificance = null;
+        if (problem.getSignificance() == null) {
+            fhirSignificance = ProblemSignificance.UNSPECIIED;
+        } else if (problem.getSignificance().intValue() == 1) {
+            fhirSignificance = ProblemSignificance.SIGNIFICANT;
+        } else if (problem.getSignificance().intValue() == 2) {
+            fhirSignificance = ProblemSignificance.NOT_SIGNIFICANT;
+        } else {
+            throw new TransformException("Unsupported significance value " + problem.getSignificance());
         }
 
-        ProblemSignificance fhirSignificance = convertSignificance(parser.getSignificanceDescription());
         CodeableConcept fhirConcept = CodeableConceptHelper.createCodeableConcept(fhirSignificance);
         fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_SIGNIFICANCE, fhirConcept));
 
-        String parentProblemGuid = parser.getParentProblemObservationGuid();
-        String parentRelationship = parser.getParentProblemRelationship();
-        if (!Strings.isNullOrEmpty(parentProblemGuid)) {
-            ProblemRelationshipType fhirRelationshipType = convertRelationshipType(parentRelationship);
+        if (problem.getParentProblem() != null) {
+            String parentProblemGuid = problem.getParentProblem().getGUID();
 
             //this extension is composed of two separate extensions
-            Extension typeExtension = ExtensionConverter.createExtension("type", new StringType(fhirRelationshipType.getCode()));
-            Extension referenceExtension = ExtensionConverter.createExtension("target", csvHelper.createProblemReference(parentProblemGuid, patientGuid));
-            fhirProblem.addExtension(ExtensionConverter.createCompoundExtension(FhirExtensionUri.PROBLEM_RELATED, typeExtension, referenceExtension));
+            //Extension typeExtension = ExtensionConverter.createExtension("type", new StringType(fhirRelationshipType.getCode()));
+            Extension referenceExtension = ExtensionConverter.createExtension("target", EmisOpenHelper.createProblemReference(parentProblemGuid, patientUuid));
+            fhirProblem.addExtension(ExtensionConverter.createCompoundExtension(FhirExtensionUri.PROBLEM_RELATED, referenceExtension));
         }
 
-        //carry over linked items from any previous instance of this problem
-        List<Reference> previousReferences = findPreviousLinkedReferences(csvHelper, fhirResourceFiler, fhirProblem.getId());
-        if (previousReferences != null && !previousReferences.isEmpty()) {
-            csvHelper.addLinkedItemsToProblem(fhirProblem, previousReferences);
+        //0 = Past Problem/Resolved Problem 1 = Active Problem/Actual Problem 2 = Health Admin/Health Promotion 3 = Potential Problem
+        Byte status = problem.getProblemStatus();
+        if (status != null) {
+            if (status.intValue() == 0) {
+                fhirProblem.setClinicalStatus("Past Problem/Resolved Problem");
+            } else if (status.intValue() == 1) {
+                fhirProblem.setClinicalStatus("Active Problem/Actual Problem");
+            } else if (status.intValue() == 2) {
+                fhirProblem.setClinicalStatus("Health Admin/Health Promotion");
+            } else if (status.intValue() == 3) {
+                fhirProblem.setClinicalStatus("Potential Problem");
+            } else {
+                throw new TransformException("Unsupported problem status " + status);
+            }
         }
-
-        //apply any linked items from this extract
-        List<String> linkedResources = csvHelper.getAndRemoveProblemRelationships(observationGuid, patientGuid);
-        if (linkedResources != null) {
-            List<Reference> references = ReferenceHelper.createReferences(linkedResources);
-            csvHelper.addLinkedItemsToProblem(fhirProblem, references);
-        }*/
-
-        /**
-         protected Byte problemStatus;
-         protected Byte groupingStatus;
-         protected Byte problemType;
-         protected Byte significance;
-         protected IdentType parentProblem;
-         protected Byte owner;
-         protected CareAimListType careAimList;
-         protected CarePlanListType carePlanList;
-         */
 
         resources.add(fhirProblem);
     }

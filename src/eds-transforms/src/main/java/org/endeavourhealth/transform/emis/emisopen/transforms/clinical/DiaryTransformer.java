@@ -85,6 +85,8 @@ public class DiaryTransformer extends ClinicalTransformerBase {
             fhirRequest.setStatus(ProcedureRequest.ProcedureRequestStatus.SUSPENDED);
         }*/
 
+        linkToProblem(diaryEntry, patientGuid, fhirRequest, resources);
+
         resources.add(fhirRequest);
     }
 }

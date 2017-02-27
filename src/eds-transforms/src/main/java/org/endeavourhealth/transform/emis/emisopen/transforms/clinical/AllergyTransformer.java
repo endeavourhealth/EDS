@@ -33,6 +33,9 @@ public final class AllergyTransformer extends ClinicalTransformerBase {
     public static void transform(EventType eventType, List<Resource> resources, String patientGuid) throws TransformException {
 
         AllergyIntolerance fhirAllergy = createBasicAllergy(eventType, patientGuid);
+
+        linkToProblem(eventType, patientGuid, fhirAllergy, resources);
+
         resources.add(fhirAllergy);
     }
 
@@ -48,6 +51,8 @@ public final class AllergyTransformer extends ClinicalTransformerBase {
         if (codes != null) {
             fhirAllergy.setSubstance(CodeConverter.convert(codes, allergy.getDisplayTerm()));
         }
+
+        linkToProblem(allergy, patientGuid, fhirAllergy, resources);
 
         resources.add(fhirAllergy);
     }

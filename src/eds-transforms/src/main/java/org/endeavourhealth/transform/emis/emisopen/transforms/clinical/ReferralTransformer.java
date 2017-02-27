@@ -71,12 +71,17 @@ public class ReferralTransformer extends ClinicalTransformerBase {
          protected String referralMode;
          */
 
+        linkToProblem(referral, patientGuid, fhirReferral, resources);
+
         resources.add(fhirReferral);
     }
 
     public static void transform(EventType eventType, List<Resource> resources, String patientGuid) throws TransformException {
 
         ReferralRequest fhirReferral = createBasicReferral(eventType, patientGuid);
+
+        linkToProblem(eventType, patientGuid, fhirReferral, resources);
+
         resources.add(fhirReferral);
     }
 

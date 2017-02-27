@@ -1,6 +1,8 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.clinical;
 
 import org.apache.commons.lang3.StringUtils;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.IssueListType;
@@ -9,8 +11,6 @@ import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.Med
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicationLinkType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.CodeConverter;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
-import org.endeavourhealth.common.fhir.FhirExtensionUri;
-import org.endeavourhealth.common.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;
@@ -59,6 +59,8 @@ public final class IssueTransformer
 
         if (issueType.getContraceptiveIssue() != null)
             medicationOrder.addExtension(getPrescribedAsContraceptionExtension(issueType.getContraceptiveIssue()));
+
+        //TODO - shouldn't this be linked to a MedicationStatement? Can't see the link in the XML though...
 
         return medicationOrder;
     }
