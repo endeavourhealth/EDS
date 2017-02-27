@@ -221,6 +221,7 @@ public class MessageTransformInbound extends PipelineComponent {
 
 		//if our service and system are in error, but our exchange hasn't been re-submitted,
 		//then we can't process any further exchanges from that source, until the first error is fixed
+		LOG.warn("Expecting exchange " + firstExchangeInError + " as that's the first exchange in error");
 		return false;
 	}
 
