@@ -112,12 +112,14 @@ export class ReportParamsDialog implements OnInit {
         CodePickerDialog.open(vm.modalService, [], true)
           .result.then(
           (result) => {
-              vm.snomedCode = result[0];
-              vm.snomedCode.term = 'Loading...';
-              vm.codingService.getPreferredTerm(vm.snomedCode.code)
-                .subscribe(
-                  (term) => vm.snomedCode.term = term.preferredTerm
-                );
+              if (result) {
+                  vm.snomedCode = result[0];
+                  vm.snomedCode.term = 'Loading...';
+                  vm.codingService.getPreferredTerm(vm.snomedCode.code)
+										.subscribe(
+                      (term) => vm.snomedCode.term = term.preferredTerm
+                    );
+              }
           }
         )
     }
