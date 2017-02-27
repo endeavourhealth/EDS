@@ -122,10 +122,11 @@ public class CountReportProvider {
 		LOG.debug("Clearing table " + tablename);
 		PreparedStatement statement = null;
 		try {
-			statement = conn.prepareStatement("drop table " + tablename);
+			statement = conn.prepareStatement("drop table if exists " + tablename);
 			statement.execute();
 		} catch (PSQLException p) {
-			// Ignore - table does not exist
+			LOG.debug(p.getMessage());
+			throw p;
 		} finally {
 			if (statement != null)
 				statement.close();
