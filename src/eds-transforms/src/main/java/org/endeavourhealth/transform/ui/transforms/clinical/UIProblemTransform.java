@@ -1,6 +1,5 @@
 package org.endeavourhealth.transform.ui.transforms.clinical;
 
-import org.endeavourhealth.transform.emis.openhr.transforms.common.DateConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
@@ -13,7 +12,6 @@ import org.endeavourhealth.transform.ui.models.types.UICode;
 import org.endeavourhealth.transform.ui.models.types.UIDate;
 import org.hl7.fhir.instance.model.*;
 
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -56,10 +54,11 @@ public class UIProblemTransform extends UIClinicalTransform<Condition, UIProblem
     private static Integer getExpectedDuration(Condition condition) {
         IntegerType expectedDuration = ExtensionHelper.getExtensionValue(condition, FhirExtensionUri.PROBLEM_EXPECTED_DURATION, IntegerType.class);
 
-        if (expectedDuration != null)
+        if (expectedDuration == null) {
             return null;
-
-        return expectedDuration.getValue();
+        } else {
+            return expectedDuration.getValue();
+        }
     }
 
     private static UIDate getLastReviewDate(Condition condition) {
