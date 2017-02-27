@@ -10,11 +10,11 @@ export class LayoutService extends BaseHttp2Service {
 
 	getMenuOptions():MenuOption[] {
 		return [
-			{caption: 'Record Viewer', state: 'app.recordViewer', icon: 'fa fa-heart'},
+			{caption: 'Patient explorer', state: 'app.recordViewer', icon: 'fa fa-heart'},
 			// {caption: 'Patients', state: 'app.patientIdentity', icon: 'fa fa-user'},
 			// {caption: 'Resources', state: 'app.resourceList', icon: 'fa fa-fire'},
-			{caption: 'Validation Reports', state: 'app.countReports', icon: 'fa fa-balance-scale'},
-			{caption: 'SQL Editor', state: 'app.sqlEditor', icon: 'fa fa-database'}
+			{caption: 'Standard reports', state: 'app.countReports', icon: 'fa fa-balance-scale'},
+			{caption: 'SQL editor', state: 'app.sqlEditor', icon: 'fa fa-database'}
 		];
 	}
 
