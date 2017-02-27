@@ -83,7 +83,7 @@ export class SqlEditorComponent implements OnInit {
 				vm.resultData = result;
 				vm.refreshMetaData();
 			},
-			(error) => vm.logger.error(error)
+			(error) => vm.logger.error(error._body, error, error.statusText)
 		);
 	}
 

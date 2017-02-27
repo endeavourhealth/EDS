@@ -1,6 +1,5 @@
 package org.endeavourhealth.patientexplorer.endpoints;
 
-import org.apache.commons.io.IOUtils;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
@@ -8,8 +7,6 @@ import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.patientexplorer.database.SqlEditorProvider;
 import org.endeavourhealth.patientexplorer.database.models.TableMetaEntity;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +15,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -81,7 +77,11 @@ public final class SqlEditorEndpoint extends AbstractEndpoint {
                 .build();
         } catch (Exception e) {
             LOG.error(e.getMessage());
-            throw e;
+            return Response
+                .status(Response.Status.INTERNAL_SERVER_ERROR)
+                .type("text/plain")
+                .entity(e.getMessage())
+                .build();
         }
     }
 }
