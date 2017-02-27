@@ -306,7 +306,7 @@ public abstract class EmisCsvToFhirTransformer {
 
         //before getting onto the files that actually create FHIR resources, we need to
         //work out what record numbers to process, if we're re-running a transform
-        findRecordsToProcess(parsers, previousErrors);
+        boolean processingSpecificRecords = findRecordsToProcess(parsers, previousErrors);
 
         //run the transforms for non-patient resources
         LocationTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
@@ -325,33 +325,36 @@ public abstract class EmisCsvToFhirTransformer {
         ProblemTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
         ObservationTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
 
-        //if we have any new Obs, Conditions, Medication etc. that reference pre-existing parent obs or problems,
-        //then we need to retrieve the existing resources and update them
-        csvHelper.processRemainingObservationParentChildLinks(fhirResourceFiler);
+        if (!processingSpecificRecords) {
 
-        //process any new items linked to past consultations
-        csvHelper.processRemainingConsultationRelationships(fhirResourceFiler);
+            //if we have any new Obs, Conditions, Medication etc. that reference pre-existing parent obs or problems,
+            //then we need to retrieve the existing resources and update them
+            csvHelper.processRemainingObservationParentChildLinks(fhirResourceFiler);
 
-        //if we have any new Obs etc. that refer to pre-existing problems, we need to update the existing FHIR Problem
-        csvHelper.processRemainingProblemRelationships(fhirResourceFiler);
+            //process any new items linked to past consultations
+            csvHelper.processRemainingConsultationRelationships(fhirResourceFiler);
 
-        //if we have any changes to the staff in pre-existing sessions, we need to update the existing FHIR Schedules
-        csvHelper.processRemainingSessionPractitioners(fhirResourceFiler);
+            //if we have any new Obs etc. that refer to pre-existing problems, we need to update the existing FHIR Problem
+            csvHelper.processRemainingProblemRelationships(fhirResourceFiler);
 
-        //process any changes to ethnicity or marital status, without a change to the Patient
-        csvHelper.processRemainingEthnicitiesAndMartialStatuses(fhirResourceFiler);
+            //if we have any changes to the staff in pre-existing sessions, we need to update the existing FHIR Schedules
+            csvHelper.processRemainingSessionPractitioners(fhirResourceFiler);
 
-        //process any changes to Org-Location links without a change to the Location itself
-        csvHelper.processRemainingOrganisationLocationMappings(fhirResourceFiler);
+            //process any changes to ethnicity or marital status, without a change to the Patient
+            csvHelper.processRemainingEthnicitiesAndMartialStatuses(fhirResourceFiler);
 
-        //process any changes to Problems that didn't have an associated Observation change too
-        csvHelper.processRemainingProblems(fhirResourceFiler);
+            //process any changes to Org-Location links without a change to the Location itself
+            csvHelper.processRemainingOrganisationLocationMappings(fhirResourceFiler);
 
-
+            //process any changes to Problems that didn't have an associated Observation change too
+            csvHelper.processRemainingProblems(fhirResourceFiler);
+        }
     }
 
 
-    public static void findRecordsToProcess(Map<Class, AbstractCsvParser> allParsers, TransformError previousErrors) throws Exception {
+    public static boolean findRecordsToProcess(Map<Class, AbstractCsvParser> allParsers, TransformError previousErrors) throws Exception {
+
+        boolean processingSpecificRecords = false;
 
         for (Class cls: allParsers.keySet()) {
             AbstractCsvParser parser = allParsers.get(cls);
@@ -360,7 +363,14 @@ public abstract class EmisCsvToFhirTransformer {
 
             Set<Long> recordNumbers = findRecordNumbersToProcess(fileName, previousErrors);
             parser.setRecordNumbersToProcess(recordNumbers);
+
+            //if we have a non-null set, then we're processing specific records in some file
+            if (recordNumbers != null) {
+                processingSpecificRecords = true;
+            }
         }
+
+        return processingSpecificRecords;
     }
 
     private static Set<Long> findRecordNumbersToProcess(String fileName, TransformError previousErrors) {
