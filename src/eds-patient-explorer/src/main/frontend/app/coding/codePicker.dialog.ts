@@ -253,7 +253,7 @@ export class CodePickerDialog implements OnInit {
 	}
 
 	cancel() {
-		this.activeModal.dismiss('cancel');
+		this.activeModal.close(null);
 		console.log('Cancel Pressed');
 	}
 }
