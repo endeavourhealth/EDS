@@ -30,17 +30,17 @@ public enum PersistenceManager {
     private synchronized EntityManagerFactory getEmFactory() {
         if (emFactory == null) {
             try {
-                String logbackDbJson = ConfigManager.getConfiguration("coding");
-                JsonNode logbackDb = ObjectMapperPool.getInstance().readTree(logbackDbJson);
+                String codingDbJson = ConfigManager.getConfiguration("coding");
+                JsonNode codingDb = ObjectMapperPool.getInstance().readTree(codingDbJson);
 
                 Map<String, Object> override = new HashMap<>();
 
-                if (logbackDb.has("url"))
-                    override.put("hibernate.hikari.dataSource.url", logbackDb.get("url").asText());
-                if (logbackDb.has("username"))
-                    override.put("hibernate.hikari.dataSource.user", logbackDb.get("username").asText());
-                if (logbackDb.has("password"))
-                    override.put("hibernate.hikari.dataSource.password", logbackDb.get("password").asText());
+                if (codingDb.has("url"))
+                    override.put("hibernate.hikari.dataSource.url", codingDb.get("url").asText());
+                if (codingDb.has("username"))
+                    override.put("hibernate.hikari.dataSource.user", codingDb.get("username").asText());
+                if (codingDb.has("password"))
+                    override.put("hibernate.hikari.dataSource.password", codingDb.get("password").asText());
 
                 emFactory = Persistence.createEntityManagerFactory("coding", override);
             }

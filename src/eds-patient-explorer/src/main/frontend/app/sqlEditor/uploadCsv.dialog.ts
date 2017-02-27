@@ -44,7 +44,7 @@ export class UploadCsvDialog {
         let fieldList = rows[0].replace(/"/g,'');
         let fields = fieldList.split(',');
 
-        let sql = 'DROP TABLE IF EXISTS workspace.' + this.tableName + ';\n\n';
+        let sql = '-- DROP TABLE IF EXISTS workspace.' + this.tableName + ';\n\n';
         sql += 'CREATE TABLE workspace.' + this.tableName + '(\n';
 
         for (let i = 0; i < fields.length; i++) {
