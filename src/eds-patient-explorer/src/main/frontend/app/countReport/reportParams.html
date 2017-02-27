@@ -51,12 +51,13 @@
             </div>
         </div>
 
-        <div class="row">
+        <div class="row" [hidden]="hide(dobMin) && hide(dobMax)">
             <div class="form-group col-md-6" [hidden]="hide(dobMin)">
                 <label class="control-label">D.O.B. after</label>
                 <datetime
                   [timepicker]="false"
-                  [(ngModel)]="dobMin"
+                  [ngModel]="dobMin"
+                  (ngModelChange)="setDobMin($event)"
                   [datepicker]="{ icon: 'fa fa-calendar', autoclose: true, todayBtn: 'linked', format: 'dd-M-yyyy', todayHighlight: true }"
                   name="DobMin"></datetime>
             </div>
@@ -64,7 +65,8 @@
                 <label class="control-label">D.O.B. before</label>
                 <datetime
                   [timepicker]="false"
-                  [(ngModel)]="dobMax"
+                  [ngModel]="dobMax"
+                  (ngModelChange)="setDobMax($event)"
                   [datepicker]="{ icon: 'fa fa-calendar', autoclose: true, todayBtn: 'linked', format: 'dd-M-yyyy', todayHighlight: true }"
                   name="DobMax"></datetime>
             </div>

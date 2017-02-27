@@ -2,9 +2,13 @@ package org.endeavourhealth.patientexplorer.database;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,5 +47,12 @@ public class SqlUtils {
 		String ret = StringUtils.join(rows, '\n');
 
 		return ret;
+	}
+
+	public static Date sqlDateFromString(String dateString) throws ParseException {
+		dateString = dateString.replace("'","");
+		DateFormat df = new SimpleDateFormat("dd/MM/yyyy");
+		Date sqlDate = new Date(df.parse(dateString).getTime());
+		return sqlDate;
 	}
 }

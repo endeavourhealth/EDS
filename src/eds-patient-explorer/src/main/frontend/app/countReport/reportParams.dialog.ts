@@ -165,6 +165,16 @@ export class ReportParamsDialog implements OnInit {
             this.effectiveDate = $event;
     }
 
+    setDobMin($event) {
+        if ($event)
+            this.dobMin = $event;
+    }
+
+    setDobMax($event) {
+        if ($event)
+            this.dobMax = $event;
+    }
+
     hide(item : any) {
         return item === undefined;
     }
