@@ -2,13 +2,13 @@ package org.endeavourhealth.transform.common;
 
 import org.apache.jcs.JCS;
 import org.apache.jcs.access.exception.CacheException;
+import org.endeavourhealth.common.fhir.ReferenceComponents;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMap;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMapByEdsId;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.common.idmappers.BaseIdMapper;
-import org.endeavourhealth.common.fhir.ReferenceComponents;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.ResourceType;
@@ -197,12 +197,15 @@ public class IdHelper {
         return ReferenceHelper.createReference(resourceType, globallyUniqueId);
     }
 
-    public static Reference convertEdsReferenceToLocallyUniqueReference(Reference edsReference, FhirResourceFiler fhirResourceFiler) {
+    public static Reference convertEdsReferenceToLocallyUniqueReference(Reference edsReference) throws TransformException {
         ReferenceComponents components = ReferenceHelper.getReferenceComponents(edsReference);
         ResourceType resourceType = components.getResourceType();
         ResourceIdMapByEdsId mapping = repository.getResourceIdMapByEdsId(resourceType.toString(), components.getId());
-        String emisId = mapping.getSourceId();
+        if (mapping == null) {
+            throw new TransformException("Failed to find Resource ID Mapping for resource type " + resourceType.toString() + " ID " + components.getId());
+        }
 
+        String emisId = mapping.getSourceId();
         return ReferenceHelper.createReference(resourceType, emisId);
     }
 

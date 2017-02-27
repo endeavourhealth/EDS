@@ -566,7 +566,7 @@ public class EmisCsvHelper {
 
                             //the reference we have has already been mapped to an EDS ID, so we need to un-map it
                             //back to the source ID, so the ID mapper can safely map it when we save the resource
-                            Reference unmappedReference = IdHelper.convertEdsReferenceToLocallyUniqueReference(previousReference, fhirResourceFiler);
+                            Reference unmappedReference = IdHelper.convertEdsReferenceToLocallyUniqueReference(previousReference);
                             ret.add(unmappedReference);
                         }
                     }
