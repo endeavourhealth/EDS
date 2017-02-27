@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.emis;
 
+import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.core.data.audit.AuditRepository;
@@ -374,6 +375,11 @@ public abstract class EmisCsvToFhirTransformer {
             return null;
         }
 
+        //if we previously aborted due to errors in a previous exchange, then we want to process it all
+        if (TransformErrorUtility.containsArgument(previousErrors, TransformErrorUtility.ARG_WAITING)) {
+            return null;
+        }
+
         //if we make it to here, we only want to process specific record numbers in our file, or even none, if there were
         //no previous errors processing this specific file
         HashSet<Long> recordNumbers = new HashSet<>();
@@ -381,7 +387,8 @@ public abstract class EmisCsvToFhirTransformer {
         for (Error error: previousErrors.getError()) {
 
             String errorFileName = TransformErrorUtility.findArgumentValue(error, TransformErrorUtility.ARG_EMIS_CSV_FILE);
-            if (errorFileName.equals(fileName)) {
+            if (!Strings.isNullOrEmpty(errorFileName)
+                && errorFileName.equals(fileName)) {
 
                 String errorRecordNumber = TransformErrorUtility.findArgumentValue(error, TransformErrorUtility.ARG_EMIS_CSV_RECORD_NUMBER);
                 recordNumbers.add(new Long(errorRecordNumber));

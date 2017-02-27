@@ -220,6 +220,8 @@ public class EventTransformer extends ClinicalTransformerBase {
             fhirImmunization.addNote(AnnotationHelper.createAnnotation("GMS Status: " + gmsStatus));
         }
 
+        linkToProblem(eventType, patientGuid, fhirImmunization, results);
+
         results.add(fhirImmunization);
     }
 
@@ -304,6 +306,8 @@ public class EventTransformer extends ClinicalTransformerBase {
         String recordedByGuid = findRecordedUserGuid(eventType.getOriginalAuthor());
         addRecordedByExtension(fhirObservation, recordedByGuid);
 
+        linkToProblem(eventType, patientGuid, fhirObservation, results);
+
         results.add(fhirObservation);
     }
 
@@ -337,13 +341,13 @@ public class EventTransformer extends ClinicalTransformerBase {
         return observation;
     }*/
 
-    private static void transformCondition(EventType eventType, List<Resource> results, String patientUuid) throws TransformException {
+    private static void transformCondition(EventType eventType, List<Resource> results, String patientGuid) throws TransformException {
 
         Condition fhirCondition = new Condition();
         fhirCondition.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_CONDITION));
 
         String eventGuid = eventType.getGUID();
-        EmisOpenHelper.setUniqueId(fhirCondition, patientUuid, eventGuid);
+        EmisOpenHelper.setUniqueId(fhirCondition, patientGuid, eventGuid);
 
         //don't create a duplicate condition if we've already created a problem for this event
         for (Resource resource: results) {
@@ -353,7 +357,7 @@ public class EventTransformer extends ClinicalTransformerBase {
             }
         }
 
-        fhirCondition.setPatient(EmisOpenHelper.createPatientReference(patientUuid));
+        fhirCondition.setPatient(EmisOpenHelper.createPatientReference(patientGuid));
 
         IdentType author = eventType.getAuthorID();
         if (author != null) {
@@ -380,91 +384,7 @@ public class EventTransformer extends ClinicalTransformerBase {
             fhirCondition.setNotes(text);
         }
 
-        //if the condition is also a problem, we need to change/add a few things
-        ProblemType problem = eventType.getProblem();
-        if (problem != null) {
-
-            fhirCondition.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROBLEM));
-
-            String endDateStr = problem.getEndDate();
-            if (!Strings.isNullOrEmpty(endDateStr)) {
-                fhirCondition.setAbatement(DateConverter.convertPartialDateToDateTimeType(endDateStr, null, problem.getEndDatePart()));
-
-            } else {
-
-                //if there's no end date, the problem may still be ended, which is in the status description
-                /*String problemStatus = parser.getProblemStatusDescription();
-                if (problemStatus.equalsIgnoreCase("Past Problem")) {
-                    fhirProblem.setAbatement(new BooleanType(true));
-                }*/
-            }
-
-            /*BigInteger duration = problem.getExpectedDuration();
-            if (duration != null) {
-                int durationInt = duration.intValue();
-                if (durationInt > 0) {
-                    fhirCondition.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_EXPECTED_DURATION, new IntegerType(durationInt)));
-                }
-            }
-
-            Date lastReviewDate = parser.getLastReviewDate();
-            String lastReviewPrecision = parser.getLastReviewDatePrecision();
-            DateType lastReviewDateType = EmisDateTimeHelper.createDateType(lastReviewDate, lastReviewPrecision);
-            String lastReviewedByGuid = parser.getLastReviewUserInRoleGuid();
-            if (lastReviewDateType != null
-                    || !Strings.isNullOrEmpty(lastReviewedByGuid)) {
-
-                //the review extension is a compound extension, containing who and when
-                Extension fhirExtension = ExtensionConverter.createCompoundExtension(FhirExtensionUri.PROBLEM_LAST_REVIEWED);
-
-                if (lastReviewDateType != null) {
-                    fhirExtension.addExtension(ExtensionConverter.createExtension(FhirExtensionUri._PROBLEM_LAST_REVIEWED__DATE, lastReviewDateType));
-                }
-                if (!Strings.isNullOrEmpty(lastReviewedByGuid)) {
-                    fhirExtension.addExtension(ExtensionConverter.createExtension(FhirExtensionUri._PROBLEM_LAST_REVIEWED__PERFORMER, csvHelper.createPractitionerReference(lastReviewedByGuid)));
-                }
-                fhirProblem.addExtension(fhirExtension);
-            }
-
-            ProblemSignificance fhirSignificance = convertSignificance(parser.getSignificanceDescription());
-            CodeableConcept fhirConcept = CodeableConceptHelper.createCodeableConcept(fhirSignificance);
-            fhirProblem.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROBLEM_SIGNIFICANCE, fhirConcept));
-
-            String parentProblemGuid = parser.getParentProblemObservationGuid();
-            String parentRelationship = parser.getParentProblemRelationship();
-            if (!Strings.isNullOrEmpty(parentProblemGuid)) {
-                ProblemRelationshipType fhirRelationshipType = convertRelationshipType(parentRelationship);
-
-                //this extension is composed of two separate extensions
-                Extension typeExtension = ExtensionConverter.createExtension("type", new StringType(fhirRelationshipType.getCode()));
-                Extension referenceExtension = ExtensionConverter.createExtension("target", csvHelper.createProblemReference(parentProblemGuid, patientGuid));
-                fhirProblem.addExtension(ExtensionConverter.createCompoundExtension(FhirExtensionUri.PROBLEM_RELATED, typeExtension, referenceExtension));
-            }
-
-            //carry over linked items from any previous instance of this problem
-            List<Reference> previousReferences = findPreviousLinkedReferences(csvHelper, fhirResourceFiler, fhirProblem.getId());
-            if (previousReferences != null && !previousReferences.isEmpty()) {
-                csvHelper.addLinkedItemsToProblem(fhirProblem, previousReferences);
-            }
-
-            //apply any linked items from this extract
-            List<String> linkedResources = csvHelper.getAndRemoveProblemRelationships(observationGuid, patientGuid);
-            if (linkedResources != null) {
-                List<Reference> references = ReferenceHelper.createReferences(linkedResources);
-                csvHelper.addLinkedItemsToProblem(fhirProblem, references);
-            }*/
-
-            /**
-             protected Byte problemStatus;
-             protected Byte groupingStatus;
-             protected Byte problemType;
-             protected Byte significance;
-             protected IdentType parentProblem;
-             protected Byte owner;
-             protected CareAimListType careAimList;
-             protected CarePlanListType carePlanList;
-             */
-        }
+        linkToProblem(eventType, patientGuid, fhirCondition, results);
 
         results.add(fhirCondition);
     }
@@ -499,6 +419,8 @@ public class EventTransformer extends ClinicalTransformerBase {
 
         String recordedByGuid = findRecordedUserGuid(eventType.getOriginalAuthor());
         addRecordedByExtension(fhirProcedure, recordedByGuid);
+
+        linkToProblem(eventType, patientGuid, fhirProcedure, results);
 
         results.add(fhirProcedure);
     }

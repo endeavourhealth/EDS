@@ -100,14 +100,12 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="eds-admin" />
       </profile>
       <profile default="false" name="Annotation profile for eds-clinical" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="eds-clinical" />
       </profile>
       <profile default="false" name="Annotation profile for eds-patient-explorer" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />

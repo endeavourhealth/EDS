@@ -48,6 +48,8 @@ final class FamilyHistoryTransformer extends ClinicalTransformerBase {
         String recordedByGuid = findRecordedUserGuid(eventType.getOriginalAuthor());
         addRecordedByExtension(fhirFamilyMemberHistory, recordedByGuid);
 
+        linkToProblem(eventType, patientGuid, fhirFamilyMemberHistory, results);
+
         results.add(fhirFamilyMemberHistory);
     }
 

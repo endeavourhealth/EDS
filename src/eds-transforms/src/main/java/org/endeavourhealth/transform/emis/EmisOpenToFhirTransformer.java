@@ -64,8 +64,6 @@ public final class EmisOpenToFhirTransformer
         InvestigationTransformer.transform(medicalRecord, result, patientGuid);
         TestRequestHeaderTransformer.transform(medicalRecord, result, patientGuid);
 
-        //TODO - link itmems to problems!!!
-
         return result;
     }
 
