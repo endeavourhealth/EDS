@@ -26,22 +26,22 @@ public class Audit {
 
 		switch (level.toUpperCase()) {
 			case "DEBUG":
-				logger.debug(body);
+				logger.debug(body, userUuid);
 				break;
 			case "ERROR":
-				logger.error(body);
+				logger.error(body, userUuid);
 				break;
 			case "INFO":
-				logger.info(body);
+				logger.info(body, userUuid);
 				break;
 			case "TRACE":
-				logger.trace(body);
+				logger.trace(body, userUuid);
 				break;
 			case "WARN":
-				logger.warn(body);
+				logger.warn(body, userUuid);
 				break;
 			default:
-				logger.debug(body);
+				logger.debug(body, userUuid);
 		}
 
 		return Response.ok().build();
