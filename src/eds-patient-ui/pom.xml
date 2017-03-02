@@ -20,9 +20,9 @@
 
         <!-- dependent on EDS-core -->
         <dependency>
-            <groupId>com.github.endeavourhealth.Common</groupId>
+            <groupId>org.endeavourhealth</groupId>
             <artifactId>eds-core</artifactId>
-            <version>${eds-common.version}</version>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
 
         <!-- JAX-RS -->
