@@ -363,12 +363,8 @@ public class EmisCsvHelper {
      * so we need to retrieve them off the main repository, amend them and save them
      */
     public void processRemainingObservationParentChildLinks(FhirResourceFiler fhirResourceFiler) throws Exception {
-
-        for (String locallyUniqueId : observationChildMap.keySet()) {
-            List<String> childObservationIds = observationChildMap.get(locallyUniqueId);
-
-            updateExistingObservationWithNewChildLinks(locallyUniqueId, childObservationIds, fhirResourceFiler);
-        }
+        for (Map.Entry<String, List<String>> entry : observationChildMap.entrySet())
+            updateExistingObservationWithNewChildLinks(entry.getKey(), entry.getValue(), fhirResourceFiler);
     }
 
 
@@ -454,11 +450,8 @@ public class EmisCsvHelper {
      */
     public void processRemainingProblemRelationships(FhirResourceFiler fhirResourceFiler) throws Exception {
 
-        for (String problemLocallyUniqueId : problemChildMap.keySet()) {
-            List<String> childResourceRelationships = problemChildMap.get(problemLocallyUniqueId);
-
-            addRelationshipsToExistingResource(problemLocallyUniqueId, ResourceType.Condition, childResourceRelationships, fhirResourceFiler, FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE);
-        }
+        for (Map.Entry<String, List<String>> entry : problemChildMap.entrySet())
+            addRelationshipsToExistingResource(entry.getKey(), ResourceType.Condition, entry.getValue(), fhirResourceFiler, FhirExtensionUri.PROBLEM_ASSOCIATED_RESOURCE);
     }
 
     /**
@@ -664,10 +657,9 @@ public class EmisCsvHelper {
      */
     public void processRemainingSessionPractitioners(FhirResourceFiler fhirResourceFiler) throws Exception {
 
-        for (String sessionGuid : sessionPractitionerMap.keySet()) {
-            SessionPractitioners practitioners = sessionPractitionerMap.get(sessionGuid);
-            if (!practitioners.isProcessedSession()) {
-                updateExistingScheduleWithNewPractitioners(sessionGuid, practitioners, fhirResourceFiler);
+        for (Map.Entry<String, SessionPractitioners> entry : sessionPractitionerMap.entrySet()) {
+            if (!entry.getValue().isProcessedSession()) {
+                updateExistingScheduleWithNewPractitioners(entry.getKey(), entry.getValue(), fhirResourceFiler);
             }
         }
     }
@@ -774,20 +766,18 @@ public class EmisCsvHelper {
      */
     public void processRemainingOrganisationLocationMappings(FhirResourceFiler fhirResourceFiler) throws Exception {
 
-        for (String locationGuid: organisationLocationMap.keySet()) {
+        for (Map.Entry<String, List<String>> entry : organisationLocationMap.entrySet()) {
 
             Location fhirLocation = null;
             try {
-                fhirLocation = (Location) retrieveResource(locationGuid, ResourceType.Location, fhirResourceFiler);
+                fhirLocation = (Location) retrieveResource(entry.getKey(), ResourceType.Location, fhirResourceFiler);
             } catch (ResourceDeletedException|ResourceNotFoundException ex) {
                 //if the location has been deleted, it doesn't matter, and the emis data integrity issues
                 //mean we may have references to unknown locations
                 continue;
             }
 
-            List<String> organisationGuids = organisationLocationMap.get(locationGuid);
-
-            String organisationGuid = organisationGuids.get(0);
+            String organisationGuid = entry.getValue().get(0);
 
             //the resource has already been through the ID mapping process, so we need to manually map the organisation ID
             String globallyUniqueId = IdHelper.getOrCreateEdsResourceIdString(fhirResourceFiler.getServiceId(),
@@ -929,18 +919,16 @@ public class EmisCsvHelper {
      */
     public void processRemainingProblems(FhirResourceFiler fhirResourceFiler) throws Exception {
 
-        for (String locallyUniqueId: problemMap.keySet()) {
-
+        for (Map.Entry<String, String> entry : problemMap.entrySet()) {
             //the conditions are cached as strings now
             //Condition fhirProblem = problemMap.get(locallyUniqueId);
-            String conditionJson = problemMap.get(locallyUniqueId);
-            Condition fhirProblem = (Condition)FhirSerializationHelper.deserializeResource(conditionJson);
+            Condition fhirProblem = (Condition)FhirSerializationHelper.deserializeResource(entry.getValue());
 
             //if the resource has the Condition profile URI, then it means we have a pre-existing problem
             //that's now been deleted from being a problem, but the root Observation itself has not (i.e.
             //the problem has been down-graded from being a problem to just an observation)
             if (isCondition(fhirProblem)) {
-                downgradeExistingProblemToCondition(locallyUniqueId, fhirResourceFiler);
+                downgradeExistingProblemToCondition(entry.getKey(), fhirResourceFiler);
 
             } else {
                 updateExistingProblem(fhirProblem, fhirResourceFiler);
@@ -1099,11 +1087,8 @@ public class EmisCsvHelper {
     }
 
     public void processRemainingConsultationRelationships(FhirResourceFiler fhirResourceFiler) throws Exception {
-        for (String consultationLocallyUniqueId : consultationChildMap.keySet()) {
-            List<String> childResourceRelationships = consultationChildMap.get(consultationLocallyUniqueId);
-
-            addRelationshipsToExistingResource(consultationLocallyUniqueId, ResourceType.Encounter, childResourceRelationships, fhirResourceFiler, FhirExtensionUri.ENCOUNTER_COMPONENTS);
-        }
+        for (Map.Entry<String, List<String>> entry : consultationChildMap.entrySet())
+            addRelationshipsToExistingResource(entry.getKey(), ResourceType.Encounter, entry.getValue(), fhirResourceFiler, FhirExtensionUri.ENCOUNTER_COMPONENTS);
     }
 
 

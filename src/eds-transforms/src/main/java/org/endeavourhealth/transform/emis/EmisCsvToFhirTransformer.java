@@ -356,8 +356,7 @@ public abstract class EmisCsvToFhirTransformer {
 
         boolean processingSpecificRecords = false;
 
-        for (Class cls: allParsers.keySet()) {
-            AbstractCsvParser parser = allParsers.get(cls);
+        for (AbstractCsvParser parser: allParsers.values()) {
 
             String fileName = parser.getFile().getName();
 
@@ -401,7 +400,7 @@ public abstract class EmisCsvToFhirTransformer {
                 && errorFileName.equals(fileName)) {
 
                 String errorRecordNumber = TransformErrorUtility.findArgumentValue(error, TransformErrorUtility.ARG_EMIS_CSV_RECORD_NUMBER);
-                recordNumbers.add(new Long(errorRecordNumber));
+                recordNumbers.add(Long.valueOf(errorRecordNumber));
             }
         }
 

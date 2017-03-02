@@ -123,7 +123,7 @@ public class MedicationOrderTransformer extends AbstractTransformer {
                     throw new TransformException("Unsupported medication order duration type [" + duration.getUnit() + "] for " + fhir.getId());
                 }
                 int days = duration.getValue().intValue();
-                durationDays = new Integer(days);
+                durationDays = Integer.valueOf(days);
             }
 
             if (fhir.hasExtension()) {

@@ -17,7 +17,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
 
         Encounter model = new Encounter();
 
-        model.setReferralEvent(new Boolean(true));
+        model.setReferralEvent(Boolean.valueOf(true));
         model.setPatientId(transformPatientId(fhir.getPatient()));
         model.setEventDate(fhir.getDate());
 

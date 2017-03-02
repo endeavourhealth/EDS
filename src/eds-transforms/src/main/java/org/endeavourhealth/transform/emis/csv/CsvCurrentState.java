@@ -11,7 +11,7 @@ public class CsvCurrentState {
     public CsvCurrentState(File file, long recordNumber) {
         this.fileName = file.getName();
         //this.fileDir = file.getParent();
-        this.recordNumber = new Long(recordNumber);
+        this.recordNumber = Long.valueOf(recordNumber);
     }
 
     public String getFileName() {

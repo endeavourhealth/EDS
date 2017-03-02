@@ -61,7 +61,7 @@ public class FhirPatientTransformer extends AbstractTransformer {
 
             String patientNumberStr = IdentifierHelper.findIdentifierValue(fhirPatient.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_EMIS_PATIENT_NUMBER);
             if (!Strings.isNullOrEmpty(patientNumberStr)) {
-                patientNumber = new Integer(patientNumberStr);
+                patientNumber = Integer.valueOf(patientNumberStr);
             }
         }
 

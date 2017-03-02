@@ -42,7 +42,7 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
             Calendar cal = Calendar.getInstance();
             cal.setTime(dod);
             int year = cal.get(Calendar.YEAR);
-            model.setYearOfDeath(new Integer(year));
+            model.setYearOfDeath(Integer.valueOf(year));
         }
 
         String gender = fhirPatient.getGender().getDisplay();
@@ -80,7 +80,7 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
             Calendar cal = Calendar.getInstance();
             cal.setTime(dod);
             int year = cal.get(Calendar.YEAR);
-            model.setYearOfDeath(new Integer(year));
+            model.setYearOfDeath(Integer.valueOf(year));
         }
 
         String gender = fhirPatient.getGender().getDisplay();

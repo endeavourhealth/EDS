@@ -31,7 +31,7 @@ public final class JsonFolder implements Comparable {
         this.hasChildren = hasChildren;
 
         if (contentCount > 0) {
-            this.contentCount = new Integer(contentCount);
+            this.contentCount = Integer.valueOf(contentCount);
         }
     }
     /*public JsonFolder(DbFolder folder, int count)

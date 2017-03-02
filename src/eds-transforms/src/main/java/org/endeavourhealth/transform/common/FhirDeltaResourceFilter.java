@@ -100,11 +100,8 @@ public class FhirDeltaResourceFilter {
         filterAdminResourcesForDelta(adminResources, adminUpserts);
 
         //process each patient's resources
-        for (String patientId: hmPatientResources.keySet()) {
-            List<Resource> patientResources = hmPatientResources.get(patientId);
-
-            filterPatientResourcesForDelta(patientId, patientResources, patientUpserts, patientDeletes);
-        }
+        for (Map.Entry<String, List<Resource>> entry : hmPatientResources.entrySet())
+            filterPatientResourcesForDelta(entry.getKey(), entry.getValue(), patientUpserts, patientDeletes);
     }
 
     private void filterAdminResourcesForDelta(List<Resource> adminResources, List<Resource> adminUpserts) throws Exception {
@@ -122,12 +119,11 @@ public class FhirDeltaResourceFilter {
             resourcesOfType.add(resource);
         }
 
-        for (String resourceType: hmResourceTypes.keySet()) {
-            List<Resource> resourcesOfType = hmResourceTypes.get(resourceType);
-
+        for (Map.Entry<String, List<Resource>> entry : hmResourceTypes.entrySet()) {
+            List<Resource> resourcesOfType = entry.getValue();
             //retrieve all the resources of this type for the service and hash the JSON by ID
             HashMap<String, String> hmExistingResources = new HashMap<>();
-            List<ResourceByService> existingResources = resourceRepository.getResourcesByService(serviceId, systemId, resourceType);
+            List<ResourceByService> existingResources = resourceRepository.getResourcesByService(serviceId, systemId, entry.getKey());
             for (ResourceByService existingResource: existingResources) {
                 String id = existingResource.getResourceId().toString();
                 String json = existingResource.getResourceData();
@@ -187,8 +183,7 @@ public class FhirDeltaResourceFilter {
         }
 
         //anything left in the hashmap is a resource that should be deleted
-        for (String resourceId: hmExistingResources.keySet()) {
-            String existingJson = hmExistingResources.get(resourceId);
+        for (String existingJson: hmExistingResources.values()) {
             Resource existingResource = FhirSerializationHelper.deserializeResource(existingJson);
             patientDeletes.add(existingResource);
         }

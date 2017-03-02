@@ -4,7 +4,6 @@ import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.LocationType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
-import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.TypeOfLocationType;
 import org.endeavourhealth.common.fhir.ContactPointHelper;
 import org.endeavourhealth.common.fhir.FhirUri;
 import org.hl7.fhir.instance.model.*;
@@ -19,8 +18,6 @@ public class LocationTransformer {
 
     public static void transform(MedicalRecordType medicalRecordType, List<Resource> resources) throws TransformException
     {
-        List<TypeOfLocationType> locationTypes = medicalRecordType.getLocationTypeList().getLocationType();
-
         for (LocationType locationType : medicalRecordType.getLocationList().getLocation()) {
             resources.add(createLocation(locationType));
         }

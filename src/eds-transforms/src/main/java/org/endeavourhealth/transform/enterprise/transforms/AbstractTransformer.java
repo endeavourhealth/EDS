@@ -67,7 +67,7 @@ public abstract class AbstractTransformer {
     }*/
 
     protected static Integer convertDatePrecision(TemporalPrecisionEnum precision) throws Exception {
-        return new Integer(precision.getCalendarConstant());
+        return Integer.valueOf(precision.getCalendarConstant());
     }
 
 
@@ -109,8 +109,8 @@ public abstract class AbstractTransformer {
     protected static Integer createEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, UUID resourceId) throws Exception {
         String enterpriseTableName = csvWriter.getFileNameWithoutExtension();
         int enterpriseId = getNextId(enterpriseTableName);
-        idMappingRepository.saveEnterpriseIdMax(enterpriseTableName, new Integer(enterpriseId));
-        idMappingRepository.saveEnterpriseIdMapping(enterpriseTableName, resourceType, resourceId, new Integer(enterpriseId));
+        idMappingRepository.saveEnterpriseIdMax(enterpriseTableName, Integer.valueOf(enterpriseId));
+        idMappingRepository.saveEnterpriseIdMapping(enterpriseTableName, resourceType, resourceId, Integer.valueOf(enterpriseId));
         addIdToCache(enterpriseTableName, resourceType, resourceId, enterpriseId);
         return enterpriseId;
     }
@@ -186,14 +186,16 @@ public abstract class AbstractTransformer {
         if (ai == null) {
             futuresLock.lock();
 
-            ai = maxIdMap.get(enterpriseTableName);
-            if (ai == null) {
-                int lastVal = idMappingRepository.getMaxEnterpriseId(enterpriseTableName);
-                ai = new AtomicInteger(lastVal);
-                maxIdMap.put(enterpriseTableName, ai);
+            try {
+                ai = maxIdMap.get(enterpriseTableName);
+                if (ai == null) {
+                    int lastVal = idMappingRepository.getMaxEnterpriseId(enterpriseTableName);
+                    ai = new AtomicInteger(lastVal);
+                    maxIdMap.put(enterpriseTableName, ai);
+                }
+            } finally {
+                futuresLock.unlock();
             }
-
-            futuresLock.unlock();
         }
         return ai.incrementAndGet();
     }

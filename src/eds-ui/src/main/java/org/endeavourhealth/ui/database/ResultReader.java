@@ -26,7 +26,7 @@ public final class ResultReader {
         if (rs.wasNull()) {
             return null;
         } else {
-            return new Integer(ret);
+            return Integer.valueOf(ret);
         }
     }
 

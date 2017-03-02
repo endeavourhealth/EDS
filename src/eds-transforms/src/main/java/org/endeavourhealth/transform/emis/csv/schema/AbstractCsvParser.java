@@ -125,7 +125,7 @@ public abstract class AbstractCsvParser implements AutoCloseable {
 
             //if we're restricting the record numbers to process, then check if the new line we're on is one we want to process
             if (recordNumbersToProcess == null
-                || recordNumbersToProcess.contains(new Long(getCurrentLineNumber()))) {
+                || recordNumbersToProcess.contains(Long.valueOf(getCurrentLineNumber()))) {
                 return true;
 
             } else {
@@ -177,7 +177,7 @@ public abstract class AbstractCsvParser implements AutoCloseable {
             return null;
         }
 
-        return new Integer(s);
+        return Integer.valueOf(s);
     }
     public Long getLong(String column) {
         String s = csvRecord.get(column);
@@ -185,7 +185,7 @@ public abstract class AbstractCsvParser implements AutoCloseable {
             return null;
         }
 
-        return new Long(s);
+        return Long.valueOf(s);
     }
     public Double getDouble(String column) {
         String s = csvRecord.get(column);

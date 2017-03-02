@@ -91,12 +91,12 @@ public class AppointmentTransformer extends AbstractTransformer {
             Date end = fhir.getEnd();
             if (startDate != null && end != null) {
                 long millisDiff = end.getTime() - startDate.getTime();
-                plannedDuration = new Integer((int)(millisDiff / (1000 * 60)));
+                plannedDuration = Integer.valueOf((int)(millisDiff / (1000 * 60)));
             }
 
             if (fhir.hasMinutesDuration()) {
                 int duration = fhir.getMinutesDuration();
-                actualDuration = new Integer(duration);
+                actualDuration = Integer.valueOf(duration);
             }
 
             Appointment.AppointmentStatus status = fhir.getStatus();
@@ -111,7 +111,7 @@ public class AppointmentTransformer extends AbstractTransformer {
                             throw new TransformException("Unsupported patient wait unit [" + d.getUnit() + "] in " + fhir.getId());
                         }
                         int i = d.getValue().intValue();
-                        patientWait = new Integer(i);
+                        patientWait = Integer.valueOf(i);
 
                     } else if (extension.getUrl().equals(FhirExtensionUri.APPOINTMENT_PATIENT_DELAY)) {
                         Duration d = (Duration)extension.getValue();
@@ -119,7 +119,7 @@ public class AppointmentTransformer extends AbstractTransformer {
                             throw new TransformException("Unsupported patient delay unit [" + d.getUnit() + "] in " + fhir.getId());
                         }
                         int i = d.getValue().intValue();
-                        patientDelay = new Integer(i);
+                        patientDelay = Integer.valueOf(i);
 
                     } else if (extension.getUrl().equals(FhirExtensionUri.APPOINTMENT_SENT_IN)) {
                         DateTimeType dt = (DateTimeType)extension.getValue();

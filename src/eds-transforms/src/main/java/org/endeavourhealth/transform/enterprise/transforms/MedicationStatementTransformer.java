@@ -89,7 +89,7 @@ public class MedicationStatementTransformer extends AbstractTransformer {
 
             if (fhir.hasStatus()) {
                 MedicationStatement.MedicationStatementStatus fhirStatus = fhir.getStatus();
-                isActive = new Boolean(fhirStatus == MedicationStatement.MedicationStatementStatus.ACTIVE);
+                isActive = Boolean.valueOf(fhirStatus == MedicationStatement.MedicationStatementStatus.ACTIVE);
             }
 
             if (fhir.hasDosage()) {

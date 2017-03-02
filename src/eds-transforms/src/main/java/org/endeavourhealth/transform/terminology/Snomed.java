@@ -119,11 +119,11 @@ public class Snomed {
      * returns all descendant codes
      */
     public static List<Long> getDescendants(long conceptCode) throws Exception {
-        List<Long> descendants = (List<Long>)cachedDescendantForConcept.get(new Long(conceptCode));
+        List<Long> descendants = (List<Long>)cachedDescendantForConcept.get(Long.valueOf(conceptCode));
         if (descendants == null) {
             JsonElement json = executeTermlexGet("hierarchy/" + conceptCode + "/descendants");
             descendants = getCodesFromJsonArray(json);
-            cachedDescendantForConcept.put(new Long(conceptCode), descendants);
+            cachedDescendantForConcept.put(Long.valueOf(conceptCode), descendants);
         }
 
         return descendants;

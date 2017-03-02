@@ -245,8 +245,7 @@ public class FhirResourceFiler {
         int patientDeleted = 0;
         int patientCount = patientBatchIdMap.size();
 
-        for (String patientId : patientBatchIdMap.keySet()) {
-            ExchangeBatch exchangeBatch = patientBatchIdMap.get(patientId);
+        for (ExchangeBatch exchangeBatch : patientBatchIdMap.values()) {
             patientSaved += countResourcesSaved.get(exchangeBatch).get();
             patientDeleted += countResourcesDeleted.get(exchangeBatch).get();
         }

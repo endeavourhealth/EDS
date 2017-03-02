@@ -432,9 +432,9 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         HashMap<String, String> headers = ObjectMapperPool.getInstance().readValue(headerJson, HashMap.class);
 
         org.endeavourhealth.core.messaging.exchange.Exchange exchange = new org.endeavourhealth.core.messaging.exchange.Exchange(exchangeId, body);
-        for (String header: headers.keySet()) {
-            exchange.setHeader(header, headers.get(header));
-        }
+
+        for (Map.Entry<String, String> entry : headers.entrySet())
+            exchange.setHeader(entry.getKey(), entry.getValue());
 
         return exchange;
     }

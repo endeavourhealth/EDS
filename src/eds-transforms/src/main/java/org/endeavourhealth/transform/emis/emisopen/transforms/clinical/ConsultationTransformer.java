@@ -49,7 +49,7 @@ public class ConsultationTransformer {
 
         if (consultation.getDuration() != null) {
             int duration = consultation.getDuration().intValue();
-            fhirEncounter.setLength(QuantityHelper.createDuration(new Integer(duration), "minutes"));
+            fhirEncounter.setLength(QuantityHelper.createDuration(Integer.valueOf(duration), "minutes"));
         }
 
         fhirEncounter.setPeriod(period);

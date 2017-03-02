@@ -56,7 +56,6 @@ public class ReferenceHelper {
     private static EntityManagerFactory createDatabaseConnection() throws Exception {
 
         JsonNode json = ConfigManager.getConfigurationAsJson("reference");
-        String driverClass = json.get("driverClass").asText();
         String url = json.get("url").asText();
         String username = json.get("username").asText();
         String password = json.get("password").asText();

@@ -40,7 +40,7 @@ public class AbstractTransformer {
 
         if (fhirAppointment.hasMinutesDuration()) {
             int duration = fhirAppointment.getMinutesDuration();
-            model.setConsultationDuration(new Integer(duration));
+            model.setConsultationDuration(Integer.valueOf(duration));
         }
 
         if (!fhirAppointment.hasSlot()) {

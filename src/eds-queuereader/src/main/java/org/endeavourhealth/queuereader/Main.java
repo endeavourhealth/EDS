@@ -253,9 +253,8 @@ public class Main {
 
 				List<ExchangeBatch> exchangeBatches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
 
-				for (String problemLocallyUniqueId: problemChildren.keySet()) {
-					List<String> problemContents = problemChildren.get(problemLocallyUniqueId);
-					String patientLocallyUniqueId = problemLocallyUniqueId.split(":")[0];
+				for (Map.Entry<String, List<String>> entry : problemChildren.entrySet()) {
+					String patientLocallyUniqueId = entry.getKey().split(":")[0];
 
 					UUID edsPatientId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Patient, patientLocallyUniqueId);
 					if (edsPatientId == null) {
@@ -276,9 +275,9 @@ public class Main {
 					}
 
 					//find the EDS ID for our problem
-					UUID edsProblemId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Condition, problemLocallyUniqueId);
+					UUID edsProblemId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Condition, entry.getKey());
 					if (edsProblemId == null) {
-						LOG.warn("No edsProblemId found for local ID " + problemLocallyUniqueId + " - assume bad data referring to non-existing problem?");
+						LOG.warn("No edsProblemId found for local ID " + entry.getKey() + " - assume bad data referring to non-existing problem?");
 						//throw new Exception("Failed to find edsProblemId for local Patient ID " + problemLocallyUniqueId + " in exchange " + exchangeId);
 					}
 
@@ -286,7 +285,7 @@ public class Main {
 					List<Reference> references = new ArrayList<>();
 
 					HashSet<String> contentsSet = new HashSet<>();
-					contentsSet.addAll(problemContents);
+					contentsSet.addAll(entry.getValue());
 
 					for (String referenceValue : contentsSet) {
 						Reference reference = ReferenceHelper.createReference(referenceValue);
