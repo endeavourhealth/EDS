@@ -1,6 +1,6 @@
 // Drop and recreate the keyspace
 DROP KEYSPACE IF EXISTS ehr;
-CREATE KEYSPACE ehr WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
+CREATE KEYSPACE ehr WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 3 };
 
 USE ehr;
 
@@ -34,7 +34,11 @@ CREATE TABLE resource_history (
   resource_data text,
   resource_checksum bigint,
   PRIMARY KEY ((resource_id, resource_type), version)
-) WITH CLUSTERING ORDER BY (version DESC);
+) WITH CLUSTERING
+ORDER BY (version DESC);
+
+alter table resource_history
+WITH compression = { 'sstable_compression' : 'LZ4Compressor' };
 
 /*CREATE TABLE resource_history_by_service (
   service_id uuid,
@@ -47,7 +51,8 @@ CREATE TABLE resource_history (
   schema_version text,
   resource_data text,
   PRIMARY KEY ((service_id, system_id, resource_type), resource_id, version)
-) WITH CLUSTERING ORDER BY (resource_id ASC, version DESC);*/
+) WITH CLUSTERING ORDER BY (resource_id ASC, version DESC)
+WITH compression = { 'sstable_compression' : 'LZ4Compressor' };*/
 
 CREATE TABLE resource_by_service (
   service_id uuid,
@@ -61,7 +66,8 @@ CREATE TABLE resource_by_service (
   resource_metadata text,
   resource_data text,
   PRIMARY KEY((service_id, system_id, resource_type), resource_id)
-);
+)
+WITH compression = { 'sstable_compression' : 'LZ4Compressor' };
 
 CREATE MATERIALIZED VIEW resource_by_patient AS
 SELECT service_id, system_id, patient_id, resource_type, resource_id, schema_version, resource_metadata, resource_data
@@ -71,7 +77,8 @@ WHERE service_id IS NOT NULL
   AND patient_id IS NOT NULL
   AND resource_type IS NOT NULL
   AND resource_id IS NOT NULL
-PRIMARY KEY((service_id, system_id, patient_id), resource_type, resource_id);
+PRIMARY KEY((service_id, system_id, patient_id), resource_type, resource_id)
+WITH compression = { 'sstable_compression' : 'LZ4Compressor' };
 
 CREATE TABLE resource_by_exchange_batch (
   batch_id uuid,
@@ -83,7 +90,8 @@ CREATE TABLE resource_by_exchange_batch (
   schema_version text,
   resource_data text,
   PRIMARY KEY((batch_id), resource_type, resource_id, version)
-);
+)
+WITH compression = { 'sstable_compression' : 'LZ4Compressor' };
 
 CREATE TABLE exchange_batch (
   exchange_id uuid,

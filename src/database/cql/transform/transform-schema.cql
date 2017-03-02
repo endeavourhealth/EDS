@@ -1,6 +1,6 @@
 // Drop and recreate the keyspace
 DROP KEYSPACE IF EXISTS transform; 
-CREATE KEYSPACE transform WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 }; 
+CREATE KEYSPACE transform WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 3 };
 
 USE transform; 
  
@@ -39,7 +39,8 @@ CREATE TABLE emis_admin_resource_cache (
 	emis_guid TEXT,
 	resource_type TEXT,
 	resource_data TEXT,
-PRIMARY KEY ((data_sharing_agreement_guid), emis_guid, resource_type));
+PRIMARY KEY ((data_sharing_agreement_guid), emis_guid, resource_type))
+WITH compression = { 'sstable_compression' : 'LZ4Compressor' };
 
 CREATE TABLE resource_id_map (
 	service_id UUID, 
