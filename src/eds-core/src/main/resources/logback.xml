@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{dd MMM HH:mm:ss.SSS} [%thread] %-5level %logger{10}:%-3line - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <timestamp key="bySecond" datePattern="yyyyMMdd'T'HHmmss"/>
+
+    <!-- only log to stdout with INFO level -->
+    <root level="ERROR">
+        <appender-ref ref="stdout" />
+    </root>
+
+    <!-- specify a shutdown hook for logging, so all loggers are flushed before app exit -->
+    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+
+    <!--<include file="${LOGBACK_CONFIG_FILE}"/>-->
+
+</configuration>

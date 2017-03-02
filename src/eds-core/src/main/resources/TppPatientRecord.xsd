@@ -1,0 +1,873 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+    <xs:element name="PatientRecord" type="PatientRecord"/>
+
+    <xs:complexType name="Identity">
+        <xs:sequence>
+            <xs:element name="NHSNumber" minOccurs="0" type="xs:string"/>
+            <xs:element name="PseudoNumber" minOccurs="0" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="CodeScheme">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="CTV3"/>
+            <xs:enumeration value="Snomed"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Code">
+        <xs:sequence>
+        </xs:sequence>
+        <xs:attribute name="Scheme" use="required" type="CodeScheme"/>
+        <xs:attribute name="Code" use="required" type="xs:string"/>
+        <xs:attribute name="Term" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:simpleType name="Sex">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="M"/>
+            <xs:enumeration value="F"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="EnglishSpeaker">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Unknown"/>
+            <xs:enumeration value="Yes"/>
+            <xs:enumeration value="No"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="SMSConsent">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Yes"/>
+            <xs:enumeration value="No"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Demographics">
+            <xs:sequence>
+            <xs:element name="Title" type="xs:string"/>
+            <xs:element name="FirstName" type="xs:string"/>
+            <xs:element name="MiddleNames" minOccurs="0" type="xs:string"/>
+            <xs:element name="Surname" type="xs:string"/>
+            <xs:element name="KnownAs" minOccurs="0" type="xs:string"/>
+            <xs:element name="DateOfBirth" type="xs:date"/>
+            <xs:element name="DateOfDeath" minOccurs="0" type="xs:date"/>
+            <xs:element name="Sex" type="Sex"/>
+            <xs:element name="MaritalStatus" minOccurs="0" type="Code"/>
+            <xs:element name="Ethnicity" minOccurs="0" type="Code"/>
+            <xs:element name="MainLanguage" minOccurs="0" type="Code"/>
+            <xs:element name="EnglishSpeaker" type="EnglishSpeaker"/>
+            <xs:element name="Address" minOccurs="0" type="Address"/>
+            <xs:element name="HomeTelephone" minOccurs="0" type="xs:string"/>
+            <xs:element name="WorkTelephone" minOccurs="0" type="xs:string"/>
+            <xs:element name="MobileTelephone" minOccurs="0" type="xs:string"/>
+            <xs:element name="AlternateTelephone" minOccurs="0" type="xs:string"/>
+            <xs:element name="EmailAddress" minOccurs="0" type="xs:string"/>
+            <xs:element name="SMSConsent" minOccurs="0" type="SMSConsent"/>
+            <xs:element name="UsualGPUserName" minOccurs="0" type="xs:string"/>
+            <xs:element name="CareStartDate" type="xs:date"/>
+            <xs:element name="CareEndDate" minOccurs="0" type="xs:date"/>
+            <xs:element name="RegistrationType" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="DrugScheme">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Multilex"/>
+            <xs:enumeration value="Dmd"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Drug">
+        <xs:attribute name="FullName" use="required" type="xs:string"/>
+        <xs:attribute name="Scheme" use="required" type="DrugScheme"/>
+        <xs:attribute name="ProductID" use="required" type="xs:string"/>
+        <xs:attribute name="PackID" type="xs:integer"/>
+        <!--PackID is only used when the Scheme is Multilex-->
+    </xs:complexType>
+
+    <xs:simpleType name="MedicationType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Other medication"/>
+            <xs:enumeration value="NHS medication"/>
+            <xs:enumeration value="Private issue"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="MedicationEndReason">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="End of Course"/>
+            <xs:enumeration value="Side Effect"/>
+            <!--need to find the full list of end reasons-->
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Medication">
+        <xs:sequence>
+            <xs:element name="MedicationType" type="MedicationType"/>
+            <xs:element name="Drug" type="Drug"/>
+            <xs:element name="Dose" type="xs:string"/>
+            <xs:element name="Quantity" type="xs:string"/>
+            <xs:element name="StartDate" type="xs:date"/>
+            <xs:element name="EndDate" type="xs:date"/>
+            <xs:element name="EndReason" minOccurs="0" type="MedicationEndReason"/>
+            <xs:element name="RepeatIssue" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="Episodicity">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="New"/>
+            <xs:enumeration value="Ongoing"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="ProblemSeverity">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Major Episode"/>
+            <xs:enumeration value="Minor Episode"/>
+            <xs:enumeration value="Major Event"/>
+            <xs:enumeration value="Minor Event"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="ClinicalCode">
+        <xs:sequence>
+            <xs:element name="Code" type="Code"/>
+            <xs:element name="Episodicity" minOccurs="0" type="Episodicity"/>
+            <xs:element name="Value" minOccurs="0" type="xs:decimal"/>
+            <xs:element name="Units" minOccurs="0" type="xs:string"/>
+            <!--If units aren't specified, the default SystmOne units for that code will be used-->
+            <xs:element name="ProblemSeverity" minOccurs="0" type="ProblemSeverity"/>
+            <!--Specify the problem severity to turn this new code into a Problem Header-->
+            <xs:element name="ProblemEndDate" minOccurs="0" type="xs:date"/>
+            <!--The problem end date is only used if a problem severity is also specified-->
+            <xs:element name="FreeText" minOccurs="0" type="xs:string"/>
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+            <xs:element name="IsAllergy" minOccurs="0">
+                <xs:complexType>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="IsFamilyHistory" minOccurs="0">
+                <xs:complexType>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="ReminderSeverity">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Low"/>
+            <xs:enumeration value="Normal"/>
+            <xs:enumeration value="High"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Reminder">
+        <xs:sequence>
+            <xs:element name="FreeText" type="xs:string"/>
+            <xs:element name="Severity" type="ReminderSeverity"/>
+            <xs:element name="ExpiryDate" minOccurs="0" type="xs:date"/>
+            <!--If an expiry date is not provided, the reminder will remain until manually removed-->
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="RecallStatus">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Awaiting Result"/>
+            <xs:enumeration value="Pending"/>
+            <xs:enumeration value="1st Recall"/>
+            <xs:enumeration value="2nd Recall"/>
+            <xs:enumeration value="3rd Recall"/>
+            <xs:enumeration value="Seen"/>
+            <xs:enumeration value="Cancelled by patient"/>
+            <xs:enumeration value="Cancelled by clinician"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Recall">
+        <xs:sequence>
+            <xs:element name="RecallDate" type="xs:date"/>
+            <xs:element name="Type" type="xs:string"/>
+            <xs:element name="FreeText" minOccurs="0" type="xs:string"/>
+            <xs:element name="Status" type="RecallStatus"/>
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="VaccinationPartType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="1"/>
+            <xs:enumeration value="2"/>
+            <xs:enumeration value="3"/>
+            <xs:enumeration value="4"/>
+            <xs:enumeration value="5"/>
+            <xs:enumeration value="6"/>
+            <xs:enumeration value="Single"/>
+            <xs:enumeration value="1st Scheduled Booster"/>
+            <xs:enumeration value="2nd Scheduled Booster"/>
+            <xs:enumeration value="Booster"/>
+            <xs:enumeration value="Unspecified Booster"/>
+            <xs:enumeration value="Adolescent 1"/>
+            <xs:enumeration value="Adolescent 2"/>
+            <xs:enumeration value="Under 1 yr"/>
+            <xs:enumeration value="At Birth"/>
+            <xs:enumeration value="2 Months"/>
+            <xs:enumeration value="4 Months"/>
+            <xs:enumeration value="6 Months"/>
+            <xs:enumeration value="9 Months"/>
+            <xs:enumeration value="12 Months"/>
+            <xs:enumeration value="18 Months"/>
+            <xs:enumeration value="24 Months"/>
+            <xs:enumeration value="Primary"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Vaccination">
+        <xs:sequence>
+            <xs:element name="BatchNumber" type="xs:string"/>
+            <xs:element name="Notes" minOccurs="0" type="xs:string"/>
+            <xs:element name="Name" type="xs:string"/>
+            <xs:element name="PartType" type="VaccinationPartType"/>
+            <xs:element name="Dosage" minOccurs="0" type="xs:string"/>
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="RepeatMedication">
+        <xs:sequence>
+            <xs:element name="Drug" type="Drug"/>
+            <xs:element name="Dose" type="xs:string"/>
+            <xs:element name="Quantity" type="xs:string"/>
+            <xs:element name="StartDate" type="xs:date"/>
+            <xs:element name="EndDate" minOccurs="0" type="xs:date"/>
+            <xs:element name="EndReason" minOccurs="0" type="MedicationEndReason"/>
+            <xs:element name="MaxIssues" minOccurs="0" type="xs:integer"/>
+            <xs:element name="ReviewDate" minOccurs="0" type="xs:date"/>
+            <xs:element name="IssueDurationDays" type="xs:integer"/>
+            <xs:element name="MedicationType" type="MedicationType"/>
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="LetterPerson">
+        <xs:sequence>
+            <xs:element name="Title" minOccurs="0" type="xs:string"/>
+            <xs:element name="FirstName" minOccurs="0" type="xs:string"/>
+            <xs:element name="MiddleNames" minOccurs="0" type="xs:string"/>
+            <xs:element name="Surname" minOccurs="0" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Address">
+        <xs:sequence>
+            <xs:element name="HouseName" minOccurs="0" type="xs:string"/>
+            <xs:element name="HouseNumber" minOccurs="0" type="xs:string"/>
+            <!--Either House name or number is required-->
+            <xs:element name="Road" type="xs:string"/>
+            <xs:element name="Locality" minOccurs="0" type="xs:string"/>
+            <xs:element name="Town" type="xs:string"/>
+            <xs:element name="County" minOccurs="0" type="xs:string"/>
+            <xs:element name="Postcode" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="LetterDirection">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Incoming"/>
+            <xs:enumeration value="Outgoing"/>
+            <xs:enumeration value="Other"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+
+    <xs:complexType name="Letter">
+        <xs:sequence>
+            <xs:element name="RecipientName" minOccurs="0" type="LetterPerson"/>
+            <xs:element name="RecipientOrganisation" minOccurs="0" type="xs:string"/>
+            <!--RecipientName or RecipientOrganisation must be provided-->
+            <xs:element name="RecipientAddress" type="Address"/>
+            <xs:element name="SenderName" minOccurs="0"  type="LetterPerson"/>
+            <xs:element name="SenderOrganisation" minOccurs="0"  type="xs:string"/>
+            <!--SenderName or SenderOrganisation must be provided-->
+            <xs:element name="SenderAddress" type="Address"/>
+            <xs:element name="DocumentUid" type="xs:string"/>
+            <xs:element name="Type" type="xs:string"/>
+            <xs:element name="Direction" type="LetterDirection"/>
+            <xs:element name="DateSentReceived" minOccurs="0" type="xs:date"/>
+            <!--DateSentReceived indicates when the letter was sent. Do not send if the letter is not sent yet.-->
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PatientPlanInstruction">
+        <xs:sequence>
+            <xs:element name="InstructionText" type="xs:string"/>
+            <xs:element name="Order" type="xs:integer"/>
+            <!--Order defines the order the instructions of a plan should be performed in-->
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PatientPlan">
+        <xs:sequence>
+            <xs:element name="PatientPlan" type="xs:string"/>
+            <!--PatientPlan gives the name of the patient plan-->
+            <xs:element name="Items" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="CarePlanInstruction" type="PatientPlanInstruction"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="CarePlanInstructionResponsibility">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Nurse"/>
+            <xs:enumeration value="Patient"/>
+            <xs:enumeration value="Carer"/>
+            <xs:enumeration value="Therapist"/>
+            <xs:enumeration value="Assistant"/>
+            <xs:enumeration value="Practitioner"/>
+            <xs:enumeration value="Social Care Co-ordinator"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="CarePlanInstruction">
+        <xs:sequence>
+            <xs:element name="InstructionText" type="xs:string"/>
+            <xs:element name="Order" type="xs:integer"/>
+            <!--Order defines the order the instructions of a plan should be performed in-->
+            <xs:element name="Responsibility" type="CarePlanInstructionResponsibility"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="CarePlanAim">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value=""/>
+            <xs:enumeration value="Assessment"/>
+            <xs:enumeration value="Enabling"/>
+            <xs:enumeration value="Supportive"/>
+            <xs:enumeration value="Curative"/>
+            <xs:enumeration value="Rehabilitation"/>
+            <xs:enumeration value="Maintenance"/>
+            <xs:enumeration value="Anticipatory"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="CarePlan">
+        <xs:sequence>
+            <xs:element name="CarePlanName" type="xs:string"/>
+            <xs:element name="Description" type="xs:string"/>
+            <!--Description defines the goal of the CarePlan-->
+            <xs:element name="Category" type="xs:string"/>
+            <!--Category just defines a free-text category for the CarePlan-->
+            <xs:element name="SubCategory" minOccurs="0" type="xs:string"/>
+            <xs:element name="Aim" type="CarePlanAim"/>
+            <xs:element name="ReviewDate" type="xs:date"/>
+            <xs:element name="CarePlanInstruction" minOccurs="0" maxOccurs="unbounded" type="CarePlanInstruction"/>
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="RelationshipType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Adopted Father"/>
+            <xs:enumeration value="Adopted Mother"/>
+            <xs:enumeration value="Advisor (Day)"/>
+            <xs:enumeration value="Advisor (Night)"/>
+            <xs:enumeration value="Audiologist"/>
+            <xs:enumeration value="Aunt"/>
+            <xs:enumeration value="Boyfriend"/>
+            <xs:enumeration value="Brother"/>
+            <xs:enumeration value="Brother-in-law"/>
+            <xs:enumeration value="CAB Adviser"/>
+            <xs:enumeration value="CAF Lead Professional"/>
+            <xs:enumeration value="Care Co-ordinator"/>
+            <xs:enumeration value="Care Lead"/>
+            <xs:enumeration value="Care Provider"/>
+            <xs:enumeration value="Carer"/>
+            <xs:enumeration value="Case Manager"/>
+            <xs:enumeration value="Chaplain"/>
+            <xs:enumeration value="Child"/>
+            <xs:enumeration value="Child Protection/CIN Supervisor"/>
+            <xs:enumeration value="Chiropodist"/>
+            <xs:enumeration value="Civil Partner"/>
+            <xs:enumeration value="Clinical Coordinator"/>
+            <xs:enumeration value="Clinical Nurse Specialist"/>
+            <xs:enumeration value="Clinical Psychologist"/>
+            <xs:enumeration value="Community Matron"/>
+            <xs:enumeration value="Community Midwife"/>
+            <xs:enumeration value="Community Nurse"/>
+            <xs:enumeration value="Community Paediatrician"/>
+            <xs:enumeration value="Community Psychiatric Nurse"/>
+            <xs:enumeration value="Community Volunteer"/>
+            <xs:enumeration value="Consultant"/>
+            <xs:enumeration value="Continence Advisor"/>
+            <xs:enumeration value="Corporate Appointee"/>
+            <xs:enumeration value="Counsellor"/>
+            <xs:enumeration value="Cousin"/>
+            <xs:enumeration value="Daughter"/>
+            <xs:enumeration value="Daughter-in-law"/>
+            <xs:enumeration value="Dentist"/>
+            <xs:enumeration value="Dependant"/>
+            <xs:enumeration value="Detox Worker"/>
+            <xs:enumeration value="Dietician"/>
+            <xs:enumeration value="District Nurse"/>
+            <xs:enumeration value="Educational Psychologist"/>
+            <xs:enumeration value="Ex-husband"/>
+            <xs:enumeration value="Ex-partner"/>
+            <xs:enumeration value="Ex-wife"/>
+            <xs:enumeration value="Family Member"/>
+            <xs:enumeration value="Family Nurse"/>
+            <xs:enumeration value="Family Support"/>
+            <xs:enumeration value="Father"/>
+            <xs:enumeration value="Father-in-law"/>
+            <xs:enumeration value="Fiance"/>
+            <xs:enumeration value="Flatmate"/>
+            <xs:enumeration value="Foster Child"/>
+            <xs:enumeration value="Foster Father"/>
+            <xs:enumeration value="Foster Mother"/>
+            <xs:enumeration value="Foster Parent"/>
+            <xs:enumeration value="Fostering Social Worker"/>
+            <xs:enumeration value="Friend"/>
+            <xs:enumeration value="Funeral Director"/>
+            <xs:enumeration value="Generic Worker"/>
+            <xs:enumeration value="Girlfriend"/>
+            <xs:enumeration value="GP"/>
+            <xs:enumeration value="GP For Ante-natal Care"/>
+            <xs:enumeration value="GP Practice"/>
+            <xs:enumeration value="Grandchild"/>
+            <xs:enumeration value="Grandfather"/>
+            <xs:enumeration value="Grandmother"/>
+            <xs:enumeration value="Group Worker"/>
+            <xs:enumeration value="Guardian"/>
+            <xs:enumeration value="Half Brother"/>
+            <xs:enumeration value="Half Sister"/>
+            <xs:enumeration value="Health Visitor"/>
+            <xs:enumeration value="Heart Failure Specialist Nurse"/>
+            <xs:enumeration value="Home Team Leader"/>
+            <xs:enumeration value="Hospital Paediatrician"/>
+            <xs:enumeration value="Husband"/>
+            <xs:enumeration value="Independent Mental Capacity Act Advocate"/>
+            <xs:enumeration value="Independent Reviewing Officer"/>
+            <xs:enumeration value="Intermediate Care Team"/>
+            <xs:enumeration value="Key Palliative Care Member"/>
+            <xs:enumeration value="Key Worker"/>
+            <xs:enumeration value="Landlord"/>
+            <xs:enumeration value="Macmillan Nurse"/>
+            <xs:enumeration value="Main Assessor"/>
+            <xs:enumeration value="Main Carer"/>
+            <xs:enumeration value="Maternity Support Worker"/>
+            <xs:enumeration value="Mother"/>
+            <xs:enumeration value="Mother-in-law"/>
+            <xs:enumeration value="Named Nurse"/>
+            <xs:enumeration value="Named Prescriber"/>
+            <xs:enumeration value="Neighbour"/>
+            <xs:enumeration value="Nephew"/>
+            <xs:enumeration value="Niece"/>
+            <xs:enumeration value="Non-dependant"/>
+            <xs:enumeration value="None"/>
+            <xs:enumeration value="Nursery Nurse"/>
+            <xs:enumeration value="Obstetrician"/>
+            <xs:enumeration value="Occupational Therapist"/>
+            <xs:enumeration value="Oncologist"/>
+            <xs:enumeration value="Optometrist"/>
+            <xs:enumeration value="Other"/>
+            <xs:enumeration value="Outreach Worker"/>
+            <xs:enumeration value="Paediatrician"/>
+            <xs:enumeration value="Parent"/>
+            <xs:enumeration value="Partner"/>
+            <xs:enumeration value="Person of Religion"/>
+            <xs:enumeration value="Pharmacist"/>
+            <xs:enumeration value="Physiotherapist"/>
+            <xs:enumeration value="Play Specialist"/>
+            <xs:enumeration value="Polygamous Partner"/>
+            <xs:enumeration value="Post Discharge Worker"/>
+            <xs:enumeration value="Power of Attorney"/>
+            <xs:enumeration value="Practice Nurse"/>
+            <xs:enumeration value="Proxy - Communication"/>
+            <xs:enumeration value="Proxy - Contact"/>
+            <xs:enumeration value="Proxy - Contact and Communication"/>
+            <xs:enumeration value="PSI Worker"/>
+            <xs:enumeration value="Psychiatrist"/>
+            <xs:enumeration value="Residential Carer"/>
+            <xs:enumeration value="Safeguarding Lead Professional"/>
+            <xs:enumeration value="School Health Assistant"/>
+            <xs:enumeration value="School Nurse"/>
+            <xs:enumeration value="School Teacher"/>
+            <xs:enumeration value="SENCO"/>
+            <xs:enumeration value="Sibling"/>
+            <xs:enumeration value="Sister"/>
+            <xs:enumeration value="Sister-in-law"/>
+            <xs:enumeration value="Social Care Provider"/>
+            <xs:enumeration value="Social Worker"/>
+            <xs:enumeration value="Solicitor"/>
+            <xs:enumeration value="Son"/>
+            <xs:enumeration value="Son-in-law"/>
+            <xs:enumeration value="Specialist Health Visitor"/>
+            <xs:enumeration value="Specialist Midwife"/>
+            <xs:enumeration value="Specialist Nurse"/>
+            <xs:enumeration value="Speech Therapist"/>
+            <xs:enumeration value="Spouse/Partner"/>
+            <xs:enumeration value="Step-brother"/>
+            <xs:enumeration value="Step-daughter"/>
+            <xs:enumeration value="Step-father"/>
+            <xs:enumeration value="Step-mother"/>
+            <xs:enumeration value="Step-parent"/>
+            <xs:enumeration value="Step-sister"/>
+            <xs:enumeration value="Step-son"/>
+            <xs:enumeration value="Uncle"/>
+            <xs:enumeration value="Unknown"/>
+            <xs:enumeration value="Ward Nurse"/>
+            <xs:enumeration value="Warden"/>
+            <xs:enumeration value="Wife"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Relationship">
+        <xs:sequence>
+            <xs:element name="Title" minOccurs="0" type="xs:string"/>
+            <xs:element name="FirstName" minOccurs="0" type="xs:string"/>
+            <xs:element name="MiddleNames" minOccurs="0" type="xs:string"/>
+            <xs:element name="Surname" minOccurs="0" type="xs:string"/>
+            <xs:element name="Address" minOccurs="0" type="Address"/>
+            <xs:element name="Type" type="RelationshipType"/>
+            <xs:element name="OrganisationName" minOccurs="0" type="xs:string"/>
+            <xs:element name="Telephone" minOccurs="0" type="xs:string"/>
+            <xs:element name="WorkContact" minOccurs="0" type="xs:string"/>
+            <xs:element name="Description" minOccurs="0" type="xs:string"/>
+            <!--Description is used to add free-text comments on the Relationship-->
+            <xs:element name="EndDate" minOccurs="0" type="xs:date"/>
+            <!--Use EndDate to set a future end date for the relationship-->
+            <xs:element name="DateOfBirth" minOccurs="0" type="xs:date"/>
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="FollowUpActionType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="No Further Action"/>
+            <xs:enumeration value="Make an appointment to see doctor"/>
+            <xs:enumeration value="Make an appointment to see nurse"/>
+            <xs:enumeration value="Need to speak to doctor"/>
+            <xs:enumeration value="Need to repeat test"/>
+            <xs:enumeration value="Request Notes"/>
+            <xs:enumeration value="Patient To Pick Up Script"/>
+            <xs:enumeration value="Communicate Patient"/>
+            <xs:enumeration value="Need to speak to nurse"/>
+            <xs:enumeration value="Other"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="FollowUpAction">
+        <xs:sequence>
+            <xs:element name="Action" type="FollowUpActionType"/>
+            <xs:element name="Comments" minOccurs="0" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="ReportResult">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Normal"/>
+            <xs:enumeration value="Normal, but unexpected"/>
+            <xs:enumeration value="Satisfactory"/>
+            <xs:enumeration value="Borderline"/>
+            <xs:enumeration value="Abnormal, but expected"/>
+            <xs:enumeration value="Abnormal"/>
+            <xs:enumeration value="Specimen lost / unusable"/>
+            <xs:enumeration value="Positive"/>
+            <xs:enumeration value="Negative"/>
+            <xs:enumeration value="Unknown"/>
+            <xs:enumeration value="Not responded to invitation"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="ReportType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Pathology"/>
+            <xs:enumeration value="Radiology"/>
+            <xs:enumeration value="Blood Spot"/>
+            <xs:enumeration value="Screening"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Report">
+        <xs:sequence>
+            <xs:element name="BatteryHeaders" type="xs:string"/>
+            <!--BatteryHeaders should contain the type of tests performed, e.g. FBC-->
+            <xs:element name="IssueDate" type="xs:date"/>
+            <xs:element name="Result" type="ReportResult"/>
+            <xs:element name="Comments" minOccurs="0" type="xs:string"/>
+            <xs:element name="PatientToBeInformed" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                </xs:complexType>
+            </xs:element>
+
+            <xs:element name="CollectionDate" minOccurs="0" type="xs:date"/>
+            <!--CollectionDate is to provide the specimen collection date, if known-->
+            <xs:element name="Type" type="ReportType"/>
+            <xs:element name="FollowUpActions">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="FollowUpAction" type="FollowUpAction"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Attachment">
+        <xs:sequence>
+            <xs:element name="DocumentUid" minOccurs="0" type="xs:string"/>
+            <xs:element name="URL" minOccurs="0" type="xs:string"/>
+            <!--Specify DocumentPath to add a file or URL to add a URL (but not both)-->
+            <xs:element name="Comments" minOccurs="0" type="xs:string"/>
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Activity">
+        <xs:sequence>
+            <xs:element name="Performed" type="xs:string"/>
+            <xs:element name="With" type="xs:string"/>
+            <xs:element name="Method" maxOccurs="1" type="xs:string"/>
+            <xs:element name="Duration" type="xs:integer"/>
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Narrative">
+        <xs:sequence>
+            <xs:element name="Line" type="xs:string"/>
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="DrugSensitivityType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Drug"/>
+            <xs:enumeration value="Ingredient"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="DrugSensitivity">
+        <xs:sequence>
+            <xs:element name="Type" type="DrugSensitivityType"/>
+            <xs:element name="FreeText" minOccurs="0" type="xs:string"/>
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="EventMethod">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Text"/>
+            <xs:enumeration value="Email"/>
+            <xs:enumeration value="Face to face"/>
+            <xs:enumeration value="Telephone"/>
+            <xs:enumeration value="Letter"/>
+            <xs:enumeration value="Fax"/>
+            <xs:enumeration value="E-mail"/>
+            <xs:enumeration value="DNA"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Event">
+        <xs:sequence>
+            <xs:element name="Medication" minOccurs="0" maxOccurs="unbounded" type="Medication"/>
+            <xs:element name="ClinicalCode" minOccurs="0" maxOccurs="unbounded" type="ClinicalCode"/>
+            <xs:element name="Reminder" minOccurs="0" maxOccurs="unbounded" type="Reminder"/>
+            <xs:element name="Recall" minOccurs="0" maxOccurs="unbounded" type="Recall"/>
+            <xs:element name="Vaccination" minOccurs="0" maxOccurs="unbounded" type="Vaccination"/>
+            <xs:element name="RepeatMedication" minOccurs="0" maxOccurs="unbounded" type="RepeatMedication"/>
+            <xs:element name="Letter" minOccurs="0" maxOccurs="unbounded" type="Letter"/>
+            <xs:element name="PatientPlan" minOccurs="0" maxOccurs="unbounded" type="PatientPlan"/>
+            <xs:element name="CarePlan" minOccurs="0" maxOccurs="unbounded" type="CarePlan"/>
+            <xs:element name="Relationship" minOccurs="0" maxOccurs="unbounded" type="Relationship"/>
+            <xs:element name="Report" minOccurs="0" maxOccurs="unbounded" type="Report"/>
+            <xs:element name="Attachment" minOccurs="0" maxOccurs="unbounded" type="Attachment"/>
+            <xs:element name="Activity" minOccurs="0" maxOccurs="unbounded" type="Activity"/>
+            <xs:element name="Narrative" minOccurs="0" maxOccurs="unbounded" type="Narrative"/>
+            <xs:element name="DrugSensitivity" minOccurs="0" maxOccurs="unbounded" type="DrugSensitivity"/>
+            <xs:element name="LinkedProblemUID" minOccurs="0" maxOccurs="unbounded"  type="xs:string"/>
+        </xs:sequence>
+        <xs:attribute name="DateTime" type="xs:dateTime"/>
+        <!--DateTime specifies the date and time this event happened. If omitted, the current date and time will be used-->
+        <xs:attribute name="UserName" type="xs:string"/>
+        <!--UserName is a user name of the person who performed the event. If omitted, the current SystmOne user will be used-->
+        <xs:attribute name="DoneBy" type="xs:string"/>
+        <!--DoneBy allows a free-text person or organisation to be stated as the source of the data-->
+        <xs:attribute name="DoneAt" type="xs:string"/>
+        <!--DoneAt allows a free-text location to be stated as the source of the data-->
+        <xs:attribute name="Software" type="xs:string"/>
+        <xs:attribute name="Method" type="EventMethod"/>
+        <xs:attribute name="LinkedReferralUID" type="xs:string"/>
+        <xs:attribute name="EventUID" type="xs:string"/>
+    </xs:complexType>
+
+
+    <xs:complexType name="Clinical">
+        <xs:sequence>
+            <xs:element name="Event" minOccurs="0" maxOccurs="unbounded" type="Event"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="AppointmentStatus">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Booked"/>
+            <xs:enumeration value="Arrived"/>
+            <xs:enumeration value="Waiting"/>
+            <xs:enumeration value="In Progress"/>
+            <xs:enumeration value="Finished"/>
+            <xs:enumeration value="Did Not Attend"/>
+            <xs:enumeration value="Patient Walked Out"/>
+            <xs:enumeration value="Cancelled by Patient"/>
+            <xs:enumeration value="Cancelled by Organisation"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Appointment">
+        <xs:sequence>
+            <xs:element name="DateTime" type="xs:dateTime"/>
+            <xs:element name="Duration" type="xs:decimal"/>
+            <xs:element name="Clinician" type="xs:string"/>
+            <xs:element name="UserName" type="xs:string"/>
+            <xs:element name="Site" type="xs:string"/>
+            <xs:element name="ClinicType" type="xs:string"/>
+            <xs:element name="AppointmentUID" type="xs:string"/>
+            <xs:element name="Status" type="AppointmentStatus"/>
+            <xs:element name="Comments" minOccurs="0" type="xs:string"/>
+            <xs:element name="LinkedReferralUID" minOccurs="0" type="xs:string"/>
+            <xs:element name="Flag" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="VisitStatus">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Booked"/>
+            <xs:enumeration value="Finished"/>
+            <xs:enumeration value="Cancelled by Patient"/>
+            <xs:enumeration value="Cancelled by Organisation"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Visit">
+        <xs:sequence>
+            <xs:element name="DateTime" type="xs:dateTime"/>
+            <xs:element name="Duration" type="xs:integer"/>
+            <xs:element name="Comments" minOccurs="0" type="xs:string"/>
+            <xs:element name="UserName" type="xs:string"/>
+            <xs:element name="LinkedReferralUID" minOccurs="0" type="xs:string"/>
+            <xs:element name="Status" type="VisitStatus"/>
+            <xs:element name="VisitUID" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Task">
+        <xs:sequence>
+            <xs:element name="TaskType" type="xs:string"/>
+            <xs:element name="Due" minOccurs="0" type="xs:dateTime"/>
+            <xs:element name="Content" type="xs:string"/>
+            <xs:element name="UserNameAssigned" minOccurs="0" type="xs:string"/>
+            <xs:element name="GroupNameAssigned" minOccurs="0" type="xs:string"/>
+            <xs:element name="TaskUID" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="NonClinical">
+        <xs:sequence>
+            <xs:element name="Appointment" minOccurs="0" maxOccurs="unbounded" type="Appointment"/>
+            <xs:element name="Visit" minOccurs="0" maxOccurs="unbounded" type="Visit"/>
+            <xs:element name="Task" minOccurs="0" maxOccurs="unbounded" type="Task"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Patient">
+        <xs:sequence>
+            <xs:element name="Identity" type="Identity"/>
+            <xs:element name="Demographics" type="Demographics"/>
+            <xs:element name="Clinical" type="Clinical"/>
+            <xs:element name="NonClinical" type="NonClinical"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Site">
+        <xs:sequence>
+            <xs:element name="Name" type="xs:string"/>
+            <xs:element name="ID" type="xs:string"/>
+            <xs:element name="Telephone" minOccurs="0" type="xs:string"/>
+            <xs:element name="Fax" minOccurs="0" type="xs:string"/>
+            <xs:element name="Email" minOccurs="0" type="xs:string"/>
+            <xs:element name="Address" type="Address"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="AccessRights">
+        <xs:sequence>
+            <xs:element name="Access" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="UserGroups">
+        <xs:sequence>
+            <xs:element name="Group" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="NationalIDType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="GMC"/>
+            <xs:enumeration value="NMCC"/>
+            <xs:enumeration value="UKCC"/>
+            <xs:enumeration value="Other"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="User">
+        <xs:sequence>
+            <xs:element name="Title" type="xs:string"/>
+            <xs:element name="FirstName" type="xs:string"/>
+            <xs:element name="MiddleNames" minOccurs="0" type="xs:string"/>
+            <xs:element name="Surname" type="xs:string"/>
+            <xs:element name="UserName" type="xs:string"/>
+            <xs:element name="Gender" type="Sex"/>
+            <xs:element name="Role" type="xs:string"/>
+            <xs:element name="RoleCode" minOccurs="0" type="xs:string"/>
+            <xs:element name="NationalID" minOccurs="0" type="xs:string"/>
+            <xs:element name="NationalIDType" minOccurs="0" type="NationalIDType"/>
+            <xs:element name="AccessRights" type="AccessRights"/>
+            <xs:element name="UserGroups" type="UserGroups"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Metadata">
+        <xs:sequence>
+            <xs:element name="Site" minOccurs="0" maxOccurs="unbounded" type="Site"/>
+            <xs:element name="User" minOccurs="0" maxOccurs="unbounded" type="User"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PatientRecord">
+        <xs:sequence>
+            <xs:element name="MessageUID" type="xs:string"/>
+            <xs:element name="PatientUID" type="xs:string"/>
+            <xs:element name="OrganisationID" type="xs:string"/>
+            <xs:element name="Patient" type="Patient"/>
+            <xs:element name="Metadata" type="Metadata"/>
+        </xs:sequence>
+    </xs:complexType>
+
+
+</xs:schema>

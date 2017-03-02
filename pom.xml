@@ -12,7 +12,7 @@
         <node.version>v5.5.0</node.version>
         <npm.version>3.3.12</npm.version>
 
-        <eds-common.version>2.23</eds-common.version>
+        <eds-common.version>2.24</eds-common.version>
 
         <amqp-client.version>3.6.2</amqp-client.version>
         <cassandra-driver.version>3.1.1</cassandra-driver.version>
@@ -53,6 +53,8 @@
     </repositories>
 
     <modules>
+        <module>src/eds-core</module>
+        <module>src/cassandra</module>
         <module>src/eds-messaging-api</module>
         <module>src/eds-messaging-core</module>
         <module>src/eds-patient-ui</module>
