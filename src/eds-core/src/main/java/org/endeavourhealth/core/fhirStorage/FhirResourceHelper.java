@@ -1,10 +1,7 @@
 package org.endeavourhealth.core.fhirStorage;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
+import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.core.data.ehr.HasResourceDataJson;
-import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.PrimitiveType;
 import org.hl7.fhir.instance.model.Resource;
@@ -19,6 +16,7 @@ import java.util.stream.Collectors;
 public class FhirResourceHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(FhirResourceHelper.class);
+    private static final ParserPool PARSER_POOL = new ParserPool();
 
     public static UUID getResourceId(Resource resource) {
         return UUID.fromString(resource.getId());
@@ -60,7 +58,7 @@ public class FhirResourceHelper {
     public static Resource deserialiseResouce(String json) throws Exception {
 
         try {
-            return new JsonParser().parse(json);
+            return PARSER_POOL.parse(json);
 
         } catch (Exception ex) {
             LOG.error("Error deserialising resource", ex);

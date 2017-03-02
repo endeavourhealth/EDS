@@ -3,6 +3,7 @@ package org.endeavourhealth.queuereader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
+import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
@@ -39,7 +40,6 @@ import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationP
 import org.endeavourhealth.transform.emis.csv.transforms.prescribing.DrugRecordPreTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.prescribing.IssueRecordPreTransformer;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
-import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +53,7 @@ import java.util.*;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
-
+	private static final ParserPool PARSER_POOL = new ParserPool();
 
 	public static void main(String[] args) throws Exception {
 
@@ -317,7 +317,7 @@ public class Main {
 					}
 
 					String json = problemResourceByExchangeBatch.getResourceData();
-					Condition fhirProblem = (Condition)new JsonParser().parse(json);
+					Condition fhirProblem = (Condition)PARSER_POOL.parse(json);
 
 					//update the problems
 					if (fhirProblem.hasContained()) {

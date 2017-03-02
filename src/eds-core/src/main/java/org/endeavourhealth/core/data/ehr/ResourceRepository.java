@@ -5,12 +5,12 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.Result;
 import com.google.common.collect.Lists;
+import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.cassandra.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.ResourceAccessor;
 import org.endeavourhealth.core.data.ehr.accessors.ResourceHistoryAccessor;
 import org.endeavourhealth.core.data.ehr.models.*;
 import org.endeavourhealth.core.fhirStorage.metadata.ResourceMetadata;
-import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
@@ -22,6 +22,7 @@ import java.util.UUID;
 public class ResourceRepository extends Repository {
 
     private static final Logger LOG = LoggerFactory.getLogger(ResourceRepository.class);
+    private static final ParserPool PARSER_POOL = new ParserPool();
 
     public void save(ResourceEntry resourceEntry){
         if (resourceEntry == null) throw new IllegalArgumentException("resourceEntry is null");
@@ -306,7 +307,7 @@ public class ResourceRepository extends Repository {
         if (resourceHistory.getIsDeleted()) {
             return null;
         } else {
-            return new JsonParser().parse(resourceHistory.getResourceData());
+            return PARSER_POOL.parse(resourceHistory.getResourceData());
         }
     }
 

@@ -15,9 +15,6 @@ public abstract class PipelineComponent {
 	private static final String LOGGING_KEY_SERVICE = "ServiceId";
 	private static final String LOGGING_KEY_LOCAL_IDENTIFIER = "SenderLocalIdentifier";
 
-	private static final IParser jsonParser = new JsonParser();
-	private static final IParser xmlParser = new XmlParser();
-
 	public final void baseProcess(Exchange exchange) throws PipelineException {
 		try {
 			setLoggingContext(exchange);
