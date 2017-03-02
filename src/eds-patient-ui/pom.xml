@@ -21,7 +21,7 @@
         <!-- dependent on EDS-core -->
         <dependency>
             <groupId>com.github.endeavourhealth.Common</groupId>
-            <artifactId>api</artifactId>
+            <artifactId>eds-core</artifactId>
             <version>${eds-common.version}</version>
         </dependency>
 
