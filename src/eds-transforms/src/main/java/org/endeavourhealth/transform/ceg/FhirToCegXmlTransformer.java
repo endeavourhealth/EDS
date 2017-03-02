@@ -3,13 +3,13 @@ package org.endeavourhealth.transform.ceg;
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.ceg.models.AbstractModel;
 import org.endeavourhealth.transform.ceg.transforms.*;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
-import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +25,7 @@ import java.util.zip.ZipOutputStream;
 public class FhirToCegXmlTransformer {
 
     private static final Logger LOG = LoggerFactory.getLogger(FhirToCegXmlTransformer.class);
+    private static final ParserPool PARSER_POOL = new ParserPool();
 
     public static String transformFromFhir(UUID serviceId,
                                            UUID orgNationalId,
@@ -204,7 +205,7 @@ public class FhirToCegXmlTransformer {
             String json = resourceByExchangeBatch.getResourceData();
             if (!Strings.isNullOrEmpty(json)) {
                 try {
-                    Resource r = new JsonParser().parse(json);
+                    Resource r = PARSER_POOL.parse(json);
                     ret.add(r);
                     //LOG.info("Read " + r.getResourceType() + " ok");
                 } catch (Exception ex) {

@@ -204,13 +204,11 @@ public class EnterpriseFiler {
                                                 HashMap<String, Class> columnClasses) throws Exception {
         //get the column names, ordered
         String[] arr = new String[csvHeaderMap.size()];
-        for (String column: csvHeaderMap.keySet()) {
-            Integer index = csvHeaderMap.get(column);
-            arr[index.intValue()] = column;
-        }
-        for (String column: arr) {
+        for (Map.Entry<String, Integer> entry : csvHeaderMap.entrySet())
+            arr[entry.getValue()] = entry.getKey();
+
+        for (String column: arr)
             columns.add(column);
-        }
 
         //sort out column classes
         JsonNode columnClassMappings = allColumnClassMappings.get(entryFileName);
@@ -341,9 +339,10 @@ public class EnterpriseFiler {
                     fileUpdates(singleRecords, columns, columnClasses, tableName, connection);
 
                 } catch (SQLException ex3) {
-                    String s = "Failed to insert or update " + tableName + " record: ";
+                    StringBuffer s = new StringBuffer();
+                    s.append("Failed to insert or update " + tableName + " record: ");
                     for (String column: columns) {
-                        s += singleRecord.get(column) + ", ";
+                        s.append(singleRecord.get(column) + ", ");
                     }
 
                     //we've got two exceptions in scope - the original insert exception and the update exception
@@ -351,7 +350,7 @@ public class EnterpriseFiler {
                     //log the other one out here
                     LOG.error("", ex);
 
-                    throw new Exception(s, ex3);
+                    throw new Exception(s.toString(), ex3);
                 }
 
             } else {

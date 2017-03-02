@@ -1,10 +1,10 @@
 package org.endeavourhealth.transform.emis.reverseCsv.transforms;
 
+import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.transform.ResourceIdMapRepository;
 import org.endeavourhealth.core.data.transform.models.ResourceIdMapByEdsId;
 import org.endeavourhealth.transform.common.AbstractCsvWriter;
-import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.Resource;
 
 import java.util.Map;
@@ -12,6 +12,7 @@ import java.util.Map;
 public abstract class AbstractTransformer {
 
     private ResourceIdMapRepository idMapRepository = new ResourceIdMapRepository();
+    protected static final ParserPool PARSER_POOL = new ParserPool();
 
     public void transform(ResourceByExchangeBatch resourceWrapper, Map<Class, AbstractCsvWriter> writers) throws Exception {
 
@@ -26,7 +27,7 @@ public abstract class AbstractTransformer {
         } else {
 
             String json = resourceWrapper.getResourceData();
-            Resource resource = new JsonParser().parse(json);
+            Resource resource = PARSER_POOL.parse(json);
             transform(resource, sourceId, writers);
         }
     }

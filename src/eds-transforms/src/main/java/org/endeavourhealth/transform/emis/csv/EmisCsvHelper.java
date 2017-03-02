@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.emis.csv;
 
 import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.fhir.*;
 import org.endeavourhealth.common.fhir.schema.EthnicCategory;
 import org.endeavourhealth.common.fhir.schema.MaritalStatus;
@@ -18,7 +19,6 @@ import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.exceptions.ClinicalCodeNotFoundException;
 import org.endeavourhealth.transform.common.exceptions.ResourceDeletedException;
 import org.endeavourhealth.transform.emis.csv.schema.coding.ClinicalCodeType;
-import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.*;
@@ -29,6 +29,8 @@ public class EmisCsvHelper {
     private static final String CODEABLE_CONCEPT = "CodeableConcept";
     private static final String ID_DELIMITER = ":";
     private static final String CONTAINED_LIST_ID = "Items";
+
+    private static final ParserPool PARSER_POOL = new ParserPool();
 
     private String dataSharingAgreementGuid = null;
 
@@ -94,7 +96,8 @@ public class EmisCsvHelper {
         //medication.put(codeId, codeableConcept);
 
         //store the medication in the DB
-        String json = new JsonParser().composeString(codeableConcept, CODEABLE_CONCEPT);
+
+        String json = PARSER_POOL.composeString(codeableConcept, CODEABLE_CONCEPT);
 
         EmisCsvCodeMap mapping = new EmisCsvCodeMap();
         mapping.setDataSharingAgreementGuid(dataSharingAgreementGuid);
@@ -127,7 +130,7 @@ public class EmisCsvHelper {
         clinicalCodeTypes.put(codeId, type);*/
 
         //store the code in the DB
-        String json = new JsonParser().composeString(codeableConcept, CODEABLE_CONCEPT);
+        String json = PARSER_POOL.composeString(codeableConcept, CODEABLE_CONCEPT);
 
         EmisCsvCodeMap mapping = new EmisCsvCodeMap();
         mapping.setDataSharingAgreementGuid(dataSharingAgreementGuid);
@@ -166,7 +169,7 @@ public class EmisCsvHelper {
 
         String json = mapping.getCodeableConcept();
 
-        CodeableConcept codeableConcept = (CodeableConcept)new JsonParser().parseType(json, CODEABLE_CONCEPT);
+        CodeableConcept codeableConcept = (CodeableConcept)PARSER_POOL.parseType(json, CODEABLE_CONCEPT);
         clinicalCodes.put(codeId, codeableConcept);
 
         ClinicalCodeType type = ClinicalCodeType.fromValue(mapping.getCodeType());
@@ -198,7 +201,7 @@ public class EmisCsvHelper {
         }
 
         String json = mapping.getCodeableConcept();
-        CodeableConcept codeableConcept = (CodeableConcept)new JsonParser().parseType(json, CODEABLE_CONCEPT);
+        CodeableConcept codeableConcept = (CodeableConcept)PARSER_POOL.parseType(json, CODEABLE_CONCEPT);
         medication.put(codeId, codeableConcept);
     }
 
@@ -329,7 +332,7 @@ public class EmisCsvHelper {
         }
 
         String json = resourceHistory.getResourceData();
-        return new JsonParser().parse(json);
+        return PARSER_POOL.parse(json);
     }
 
     public List<Resource> retrieveAllResourcesForPatient(String patientGuid, FhirResourceFiler fhirResourceFiler) throws Exception {
@@ -350,7 +353,7 @@ public class EmisCsvHelper {
 
         for (ResourceByPatient resourceWrapper: resourceWrappers) {
             String json = resourceWrapper.getResourceData();
-            Resource resource = new JsonParser().parse(json);
+            Resource resource = PARSER_POOL.parse(json);
             ret.add(resource);
         }
 
@@ -882,7 +885,7 @@ public class EmisCsvHelper {
         cache.setDataSharingAgreementGuid(dataSharingAgreementGuid);
         cache.setResourceType(fhirResource.getResourceType().toString());
         cache.setEmisGuid(fhirResource.getId());
-        cache.setResourceData(new JsonParser().composeString(fhirResource));
+        cache.setResourceData(PARSER_POOL.composeString(fhirResource));
 
         mappingRepository.save(cache);
     }
@@ -907,7 +910,7 @@ public class EmisCsvHelper {
         List<EmisAdminResourceCache> cachedResources = mappingRepository.getCachedResources(dataSharingAgreementGuid);
         for (EmisAdminResourceCache cachedResource: cachedResources) {
 
-            Resource fhirResource = new JsonParser().parse(cachedResource.getResourceData());
+            Resource fhirResource = PARSER_POOL.parse(cachedResource.getResourceData());
             fhirResourceFiler.saveAdminResource(null, fhirResource);
         }
     }

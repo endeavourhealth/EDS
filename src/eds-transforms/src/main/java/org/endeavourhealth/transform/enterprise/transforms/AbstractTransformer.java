@@ -2,6 +2,7 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.apache.jcs.JCS;
 import org.apache.jcs.access.exception.CacheException;
+import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.fhir.ReferenceComponents;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
@@ -9,7 +10,6 @@ import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.transform.EnterpriseIdMapRepository;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
-import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.Resource;
 import org.hl7.fhir.instance.model.TemporalPrecisionEnum;
@@ -25,6 +25,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public abstract class AbstractTransformer {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractTransformer.class);
+    private static final ParserPool PARSER_POOL = new ParserPool();
 
     private static final EnterpriseIdMapRepository idMappingRepository = new EnterpriseIdMapRepository();
     private static JCS cache = null;
@@ -126,7 +127,7 @@ public abstract class AbstractTransformer {
 
         String json = resourceByExchangeBatch.getResourceData();
         try {
-            return new JsonParser().parse(json);
+            return PARSER_POOL.parse(json);
 
         } catch (Exception ex) {
             LOG.error("Error deserialising resource", ex);
