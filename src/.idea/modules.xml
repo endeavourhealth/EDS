@@ -2,8 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/cassandra/cassandra.iml" filepath="$PROJECT_DIR$/cassandra/cassandra.iml" />
       <module fileurl="file://$PROJECT_DIR$/../eds.iml" filepath="$PROJECT_DIR$/../eds.iml" />
       <module fileurl="file://$PROJECT_DIR$/eds-bootstrap/eds-bootstrap.iml" filepath="$PROJECT_DIR$/eds-bootstrap/eds-bootstrap.iml" />
+      <module fileurl="file://$PROJECT_DIR$/eds-core/eds-core.iml" filepath="$PROJECT_DIR$/eds-core/eds-core.iml" />
       <module fileurl="file://$PROJECT_DIR$/eds-keycloak-providers/eds-keycloak-providers.iml" filepath="$PROJECT_DIR$/eds-keycloak-providers/eds-keycloak-providers.iml" />
       <module fileurl="file://$PROJECT_DIR$/eds-keycloak-theme/eds-keycloak-theme.iml" filepath="$PROJECT_DIR$/eds-keycloak-theme/eds-keycloak-theme.iml" />
       <module fileurl="file://$PROJECT_DIR$/eds-messaging-api/eds-messaging-api.iml" filepath="$PROJECT_DIR$/eds-messaging-api/eds-messaging-api.iml" group="messaging" />
