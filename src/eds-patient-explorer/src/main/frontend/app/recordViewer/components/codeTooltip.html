@@ -1,7 +1,8 @@
 <template #tooltipTemplate>
-	<table>
-		<tr *ngIf="code | codeReadCode"><td class="text-left">READ </td><td class="text-left"> : {{code | codeReadCode}}</td></tr>
-		<tr *ngIf="code | codeSnomedCode"><td class="text-left">SNOMED </td><td class="text-left"> : {{code | codeSnomedCode}}</td></tr>
+	<table width="100px">
+		<tr *ngFor="let coding of code.codes">
+			<td class="text-left text-nowrap">{{getSystem(coding.system)}} </td><td class="text-left text-nowrap"> : {{coding.code}}</td>
+		</tr>
 	</table>
 </template>
 <span class="fa fa-copyright" [ngbTooltip]="tooltipTemplate"></span>

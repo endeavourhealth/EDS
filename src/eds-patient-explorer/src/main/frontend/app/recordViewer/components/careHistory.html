@@ -15,7 +15,7 @@
 					<td>{{observation.effectiveDate | cuiDate}}</td>
 					<td>
 						<codeTooltip [code]="observation.code"></codeTooltip>
-						<span class="problem-term-text">{{observation.code | codeReadTerm}}</span>
+						<span class="problem-term-text">{{observation.code.text}}</span>
 					</td>
 					<td>
 						{{observation?.value | cuiQuantity }}

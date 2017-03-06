@@ -11,7 +11,7 @@
 			<td>{{immunisation.effectiveDate | cuiDate}}</td>
 			<td>
 				<codeTooltip [code]="immunisation.code"></codeTooltip>
-				<span class="problem-term-text">{{immunisation.code | codeReadTerm}}</span>
+				<span class="problem-term-text">{{immunisation.code.text}}</span>
 			</td>
 		</tr>
 	</tbody>

@@ -15,7 +15,7 @@
 					<td>{{med.dateAuthorised | cuiDate}}</td>
 					<td *ngIf="showDateEnded">{{med.dateEnded | cuiDate}}</td>
 					<td>
-						<span>{{med.medication.code | codeAnyTerm}}</span>
+						<span>{{med.medication.code.text}}</span>
 						<div class="problem-detail" [hidden]="!med.showDetail">
 							<table>
 								<tr><td>Dosage </td><td> : <b>{{med.dosage}}</b></td></tr>

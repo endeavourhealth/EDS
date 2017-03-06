@@ -62,3 +62,8 @@
 a.nav-link.active {
     background-color: #93c9e9;
 }
+
+.tooltip-inner {
+    min-width: 100px;
+    max-width: 100%;
+}

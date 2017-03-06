@@ -4,10 +4,7 @@ import {FormsModule} from "@angular/forms";
 import {RecordViewerComponent} from "./recordViewer.component";
 import {PatientFindDialog} from "./patientFind.dialog";
 import {RecordViewerService} from "./recordViewer.service";
-import {
-	CodeReadTerm, CodeReadCode, CodeSnomedCode, CodeSnomedLink, CodeSignificance,
-	CodeAnyTerm
-} from "./pipes/coding";
+import {CodeSignificance} from "./pipes/coding";
 import {
 	CuiDate, CuiDateOfBirth, CuiName, CuiNhsNumber,
 	CuiSingleLineAddress, CuiGender, CuiQuantity
@@ -55,11 +52,6 @@ import {CodeTooltipComponent} from "./components/codeTooltip.component";
 			FamilyHistoryConditionComponent,
 		DiaryComponent,
 
-		CodeAnyTerm,
-		CodeReadTerm,
-		CodeReadCode,
-		CodeSnomedCode,
-		CodeSnomedLink,
 		CodeSignificance,
 
 		CuiDate,
@@ -80,10 +72,6 @@ import {CodeTooltipComponent} from "./components/codeTooltip.component";
 		RecordViewerService
 	],
 	exports : [
-		CodeReadTerm,
-		CodeReadCode,
-		CodeSnomedCode,
-		CodeSnomedLink,
 		CodeSignificance,
 
 		CuiDate,

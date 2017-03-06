@@ -11,7 +11,7 @@
 			<td>{{allergy.effectiveDate | cuiDate}}</td>
 			<td>
 				<codeTooltip [code]="allergy.code"></codeTooltip>
-				<span class="problem-term-text">{{allergy.code | codeReadTerm}}</span>
+				<span class="problem-term-text">{{allergy.code.text}}</span>
 			</td>
 		</tr>
 	</tbody>

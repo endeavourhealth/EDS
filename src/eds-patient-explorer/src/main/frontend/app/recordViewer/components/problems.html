@@ -11,7 +11,8 @@
 		<tr *ngFor="let problem of problems" (click)="problem.showDetail = !problem.showDetail" [ngClass]="{'collapsed' : !problem.showDetail}">
 			<td>{{problem.effectiveDate | cuiDate}}</td>
 			<td>
-				<span class="problem-term-text">{{problem.code | codeReadTerm}}</span>
+				<codeTooltip [code]="problem.code"></codeTooltip>
+				<span class="problem-term-text">{{problem.code.text}}</span>
 				<span class="problem-term-significance-text">{{problem.significance | codeSignificance | lowercase | parentheses}}</span>
 				<span class="problem-associated-text">{{problem.notes}}</span>
 				<div class="problem-detail" [hidden]="!problem.showDetail">
@@ -21,8 +22,6 @@
 							<tr><td>Onset date</td><td><b>{{problem.effectiveDate | cuiDate}}</b></td></tr>
 							<tr *ngIf="problem.hasAbated"><td>Has abated?</td><td><b>Yes</b></td></tr>
 							<tr *ngIf="problem.hasAbated"><td>Abatement date</td><td><b>{{problem.abatementDate | cuiDate}}</b></td></tr>
-							<tr><td>READ code</td><td><b>{{problem.code | codeReadCode}}</b></td></tr>
-							<tr><td>SNOMED code</td><td><b><a href="{{problem.code | codeSnomedLink}}" target="_blank">{{problem.code | codeSnomedCode}}</a></b></td></tr>
 							<tr *ngIf="problem.lastReviewDate"><td>Last review date</td><td><b>{{problem.lastReviewDate | cuiDate}}</b></td></tr>
 							<tr *ngIf="problem.lastReviewer"><td>Last reviewer</td><td><b>{{problem.lastReviewer.name | cuiName}}</b></td></tr>
 						</tbody>

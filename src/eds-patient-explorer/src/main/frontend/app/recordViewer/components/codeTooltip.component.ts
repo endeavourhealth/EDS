@@ -8,4 +8,7 @@ import {UICode} from "../models/types/UICode";
 export class CodeTooltipComponent {
 	@Input() code : UICode;
 
+	private getSystem(system : string) : string {
+		return system.substr(system.lastIndexOf('/') + 1);
+	}
 }
