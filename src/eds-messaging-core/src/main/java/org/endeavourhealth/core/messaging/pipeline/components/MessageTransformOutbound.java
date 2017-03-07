@@ -184,6 +184,10 @@ public class MessageTransformOutbound extends PipelineComponent {
 		//String url = "http://localhost:8002";
 		//String url = "http://posttestserver.com/post.php";
 
+		if (url == null || url.length() <= "http://".length()) {
+			LOG.trace("No/invalid url : [" + url + "]");
+			return;
+		}
 
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpPost post = new HttpPost(url);
