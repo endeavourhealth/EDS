@@ -104,6 +104,9 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
             if (parser.hasEmisNumber())
                 patientsFound.addAll(identifierRepository.getForLocalId(serviceId, systemId, parser.getEmisNumber()));
 
+            if (parser.hasDateOfBirth())
+                patientsFound.addAll(identifierRepository.getForDateOfBirthTemporary(serviceId, systemId, parser.getDateOfBirth()));
+
             for (String name : parser.getNames()) {
                 if (StringUtils.isNotBlank(name)) {
                     patientsFound.addAll(identifierRepository.getForForenamesTemporary(serviceId, systemId, name));

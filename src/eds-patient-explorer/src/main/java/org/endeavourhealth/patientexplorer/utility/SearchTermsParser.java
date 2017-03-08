@@ -1,13 +1,18 @@
 package org.endeavourhealth.patientexplorer.utility;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class SearchTermsParser {
     private String nhsNumber;
     private String emisNumber;
+    private Date dateOfBirth;
     private List<String> names = new ArrayList<>();
 
     public SearchTermsParser(String searchTerms) {
@@ -27,6 +32,14 @@ public class SearchTermsParser {
                     this.nhsNumber = token;
                 else
                     this.emisNumber = token;
+            } else if ((token.length() == 10 || token.length() == 11) && StringUtils.countMatches(token,'-')==2) {
+                // Assume its a date dd-MMM-yyyy & attempt to parse
+                SimpleDateFormat sf = new SimpleDateFormat("dd-MMM-yyyy");
+                try {
+                    dateOfBirth = sf.parse(token);
+                } catch (ParseException e) {
+                    // Not a valid date, continue and treat as regular token
+                }
             }
 
             this.names.add(token);
@@ -57,6 +70,14 @@ public class SearchTermsParser {
     public SearchTermsParser setEmisNumber(String emisNumber) {
         this.emisNumber = emisNumber;
         return this;
+    }
+
+    public boolean hasDateOfBirth() {
+        return this.dateOfBirth != null;
+    }
+
+    public Date getDateOfBirth() {
+        return this.dateOfBirth;
     }
 
     public List<String> getNames() {

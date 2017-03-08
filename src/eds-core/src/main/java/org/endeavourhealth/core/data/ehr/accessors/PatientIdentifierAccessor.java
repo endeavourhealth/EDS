@@ -9,6 +9,7 @@ import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByLocalId;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByNhsNumber;
 import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByPatientId;
 
+import java.util.Date;
 import java.util.UUID;
 
 @Accessor
@@ -28,7 +29,6 @@ public interface PatientIdentifierAccessor {
     @Query("SELECT * FROM ehr.patient_identifier_by_nhs_number WHERE nhs_number = :nhs_number")
     Result<PatientIdentifierByNhsNumber> getForNhsNumber(@Param("nhs_number") String nhsNumber);
 
-
     @Query("SELECT * FROM ehr.patient_identifier_by_patient_id WHERE patient_id = :patient_id LIMIT 1")
     Result<PatientIdentifierByPatientId> getMostRecentForPatientId(@Param("patient_id") UUID patientId);
 
@@ -38,6 +38,12 @@ public interface PatientIdentifierAccessor {
     Result<PatientIdentifierByLocalId> getForNhsNumberTemporary(@Param("service_id") UUID serviceId,
                                                      @Param("system_id") UUID systemId,
                                                      @Param("nhsNumber") String nhsNumber);
+
+    // temporary call while we build a proper patient find index
+    @Query("SELECT * FROM ehr.patient_identifier_by_local_id WHERE service_id = :service_id AND system_id = :system_id AND date_of_birth = :dateOfBirth ALLOW FILTERING;")
+    Result<PatientIdentifierByLocalId> getForDateOfBirthTemporary(@Param("service_id") UUID serviceId,
+                                                                @Param("system_id") UUID systemId,
+                                                                @Param("dateOfBirth") Date dateOfBirth);
 
     // temporary call while we build a proper patient find index
     @Query("SELECT * FROM ehr.patient_identifier_by_local_id WHERE service_id = :service_id AND system_id = :system_id AND surname = :surname ALLOW FILTERING;")

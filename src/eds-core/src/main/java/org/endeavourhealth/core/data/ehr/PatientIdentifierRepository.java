@@ -102,6 +102,8 @@ public class PatientIdentifierRepository extends Repository {
         }
 
         save(newPatientIdentifier);
+
+        saveMPIEntry(newPatientIdentifier);
     }
 
     private static boolean nullEquals(Object one, Object two) {
@@ -235,7 +237,6 @@ public class PatientIdentifierRepository extends Repository {
         return Lists.newArrayList(accessor.getForLocalId(serviceId, systemId, localId));
     }
 
-
     public List<PatientIdentifierByNhsNumber> getForNhsNumber(String nhsNumber) {
 
         PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
@@ -260,6 +261,12 @@ public class PatientIdentifierRepository extends Repository {
     }
 
     // temporary call while we build a proper patient find index
+    public List<PatientIdentifierByLocalId> getForDateOfBirthTemporary(UUID serviceId, UUID systemId, Date dateOfBirth) {
+        PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
+        return Lists.newArrayList(accessor.getForDateOfBirthTemporary(serviceId, systemId, dateOfBirth));
+    }
+
+    // temporary call while we build a proper patient find index
     public List<PatientIdentifierByLocalId> getForSurnameTemporary(UUID serviceId, UUID systemId, String surname) {
         PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
         return Lists.newArrayList(accessor.getForSurnameTemporary(serviceId, systemId, surname));
@@ -277,5 +284,10 @@ public class PatientIdentifierRepository extends Repository {
     public void hardDeleteForService(UUID serviceId, UUID systemId) {
         PatientIdentifierAccessor accessor = getMappingManager().createAccessor(PatientIdentifierAccessor.class);
         accessor.hardDeleteForService(serviceId, systemId);
+    }
+
+    // MPI
+    public void saveMPIEntry(PatientIdentifierByLocalId patientIdentifier) {
+
     }
 }
