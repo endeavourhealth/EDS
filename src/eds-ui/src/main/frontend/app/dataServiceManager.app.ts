@@ -21,6 +21,8 @@ import {DataSetModule} from "./dataSet/dataSet.module";
 import {CodeSetModule} from "./codeSet/codeSet.module";
 import {CountReportModule} from "./countReport/countReport.module";
 import {ExchangeAuditModule} from "./exchangeAudit/exchangeAudit.module";
+import {OrganisationManagerModule} from "./organisationManager/organisationManager.module";
+import {RegionModule} from "./region/region.module";
 // State components
 import {DashboardComponent} from "./dashboard/dashboard.component";
 import {OrganisationListComponent} from "./organisations/organisationList.component";
@@ -41,6 +43,9 @@ import {CodeSetEditComponent} from "./codeSet/codeSetEditor.component";
 import {TransformErrorsComponent} from "./transformErrors/transformErrors.component";
 import {CountReportEditComponent} from "./countReport/countReport.component";
 import {ExchangeAuditComponent} from "./exchangeAudit/exchangeAudit.component";
+import {OrganisationManagerComponent} from "./organisationManager/organisationManager.component";
+import {RegionComponent} from "./region/region.component";
+import {RegionEditorComponent} from "./region/regionEditor.component";
 
 @NgModule(
 	Application.Define({
@@ -64,7 +69,9 @@ import {ExchangeAuditComponent} from "./exchangeAudit/exchangeAudit.component";
 			DataSetModule,
 			CodeSetModule,
 			CountReportModule,
-			ExchangeAuditModule
+			ExchangeAuditModule,
+			OrganisationManagerModule,
+			RegionModule
 		],
 		states: [
 			{name: 'app.dashboard', url: '/dashboard', component: DashboardComponent},
@@ -85,7 +92,10 @@ import {ExchangeAuditComponent} from "./exchangeAudit/exchangeAudit.component";
 			{name: 'app.codeSetEdit', url: '/codeSetEdit/:itemAction/:itemUuid', component: CodeSetEditComponent},
 			{name: 'app.transformErrors', url: '/transformErrors', component: TransformErrorsComponent},
 			{name: 'app.exchangeAudit', url: '/exchangeAudit/:serviceUuid', component: ExchangeAuditComponent},
-			{name: 'app.countReportEdit', url: '/countReportEdit/:itemAction/:itemUuid', component: CountReportEditComponent}
+			{name: 'app.countReportEdit', url: '/countReportEdit/:itemAction/:itemUuid', component: CountReportEditComponent},
+			{name: 'app.organisationManager', url: '/organisationManager', component: OrganisationManagerComponent},
+			{name: 'app.region', url: '/region', component: RegionComponent},
+			{name: 'app.regionEditor', url: '/region/:itemAction/:itemUuid', component: RegionEditorComponent}
 		],
 		defaultState : { state: 'app.dashboard', params: {} }
 	})

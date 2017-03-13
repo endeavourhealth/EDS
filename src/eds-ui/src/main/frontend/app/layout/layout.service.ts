@@ -14,7 +14,9 @@ export class LayoutService {
 			{caption: 'Monitoring', state: 'app.monitoring', icon: 'fa fa-list-alt'},
 			{caption: 'Transform Errors', state: 'app.transformErrors', icon: 'fa fa-exchange'},
 			{caption: 'Statistics', state: 'app.stats', icon: 'fa fa-line-chart'},
-			{caption: 'Audit', state: 'app.audit', icon: 'fa fa-list-ul'}
+			{caption: 'Audit', state: 'app.audit', icon: 'fa fa-list-ul'},
+			{caption: 'Organisation Manager', state: 'app.organisationManager', icon: 'fa fa-hospital-o'},
+			{caption: 'Regions', state: 'app.region', icon: 'fa fa-globe'},
 			// {caption: 'Admin', state: 'app.admin', icon: 'fa fa-user'}
 		];
 	}

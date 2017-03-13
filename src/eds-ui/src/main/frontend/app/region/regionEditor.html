@@ -1,0 +1,45 @@
+<div class="module">
+    <div class="container-fluid">
+        <div class="module-heading">
+            Region Details
+            <div class="pull-right">
+                <button type="button" class="btn btn-sm btn-success" (click)="save(false)">Save</button>
+                <button type="button" class="btn btn-sm btn-warning" (click)="save(true)">Save & Close</button>
+                <button type="button" class="btn btn-sm btn-danger" (click)="close()">Cancel</button>
+            </div>
+        </div>
+        <div class="module-body">
+            <form>
+                <div class="row">
+                    <div class="form-group col-md-12">
+                        <label class="control-label">Region Name</label>
+                        <input type="text" class="form-control" placeholder="Region name" [(ngModel)]="region.name" name="name">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-12">
+                        <label class="control-label">Description</label>
+                        <input type="text" class="form-control" placeholder="Region description" [(ngModel)]="region.description" name="description">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-12">
+                        <label class="control-label">Organisations</label> <button type="button" class="btn btn-xs btn-success" (click)="editOrganisations()">Edit</button>
+                        <div class="scroll-box-100">
+                            <div class="table">
+                                <table class="table table-striped table-condensed">
+                                    <tbody>
+                                    <tr *ngFor="let item of organisations">
+                                        <td>{{ item.name }}</td>
+                                        <td>{{item.odsCode}}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

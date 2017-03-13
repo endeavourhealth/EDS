@@ -41,6 +41,7 @@
         <slf4j-log4j12.version>1.7.21</slf4j-log4j12.version>
         <javax.annotation-api.version>1.2</javax.annotation-api.version>
         <postgresql.version>9.4.1212.jre7</postgresql.version>
+        <mysql.version>6.0.5</mysql.version>
         <junit.version>4.12</junit.version>
         <swagger.version>1.5.10</swagger.version>
     </properties>
