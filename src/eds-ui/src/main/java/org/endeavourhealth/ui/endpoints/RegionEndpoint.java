@@ -122,29 +122,6 @@ public final class RegionEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private Response getRegion(String uuid) throws Exception {
-
-        List<Object[]> regions = RegionEntity.getRegion(uuid);
-
-        JsonRegion region = new JsonRegion();
-
-        for (Object[] regionEntity : regions) {
-            String name = regionEntity[0].toString();
-            String description = regionEntity[1].toString();
-            String regionUuid = regionEntity[2].toString();
-
-            region.setName(name);
-            region.setDescription(description);
-            region.setUuid(regionUuid);
-        }
-
-        clearLogbackMarkers();
-        return Response
-                .ok()
-                .entity(region)
-                .build();
-    }
-
     private Response getSingleRegion(String uuid) throws Exception {
         RegionEntity regionEntity = RegionEntity.getSingleRegion(uuid);
 
