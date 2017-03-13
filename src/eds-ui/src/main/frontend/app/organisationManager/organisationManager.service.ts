@@ -10,13 +10,13 @@ export class OrganisationManagerService extends BaseHttp2Service  {
     constructor(http : Http) { super (http); }
 
     getOrganisations(): Observable<Organisation[]> {
-        return this.httpGet('api/organisationManager/regions');
+        return this.httpGet('api/organisationManager');
     }
 
     getOrganisation(uuid : string) : Observable<Organisation> {
         let params = new URLSearchParams();
         params.set('uuid',uuid);
-        return this.httpGet('api/organisation', { search : params });
+        return this.httpGet('api/organisationManager', { search : params });
     }
 
     getOrganisationServices(uuid : string) :  Observable<Service[]> {
@@ -26,18 +26,19 @@ export class OrganisationManagerService extends BaseHttp2Service  {
     }
 
     saveOrganisation(organisation : Organisation) : Observable<any> {
-        return this.httpPost('api/organisation', organisation);
+        return this.httpPost('api/organisationManager', organisation);
     }
 
     deleteOrganisation(uuid : string) : Observable<any> {
         let params = new URLSearchParams();
         params.set('uuid',uuid);
-        return this.httpDelete('api/organisation', { search : params });
+        return this.httpDelete('api/organisationManager', { search : params });
     }
 
     search(searchData : string) : Observable<Organisation[]> {
         let params = new URLSearchParams();
         params.set('searchData',searchData);
-        return this.httpGet('api/organisation', { search : params });
+        console.log("searching " + searchData)
+        return this.httpGet('api/organisationManager', { search : params });
     }
 }

@@ -10,6 +10,7 @@ import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.mySQLDatabase.models.OrganisationEntity;
 import org.endeavourhealth.core.mySQLDatabase.models.RegionEntity;
+import org.endeavourhealth.core.mySQLDatabase.models.RegionorganisationmapEntity;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.JsonOrganisation;
 import org.endeavourhealth.coreui.json.JsonOrganisationManager;
@@ -79,18 +80,39 @@ public final class RegionEndpoint extends AbstractEndpoint {
                 "Region",
                 "Region", region);
 
-        boolean saved = false;
         if (region.getUuid() != null) {
-            saved = RegionEntity.updateRegion(region);
+            RegionorganisationmapEntity.deleteRegionMap(region.getUuid());
+            RegionEntity.updateRegion(region);
+            RegionorganisationmapEntity.saveRegionMappings(region);
         } else {
-            saved = RegionEntity.saveRegion(region);
+            RegionorganisationmapEntity.deleteRegionMap(region.getUuid());
+            RegionEntity.saveRegion(region);
+            RegionorganisationmapEntity.saveRegionMappings(region);
         }
 
         clearLogbackMarkers();
 
         return Response
                 .ok()
-                .entity(region)
+                .build();
+    }
+
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/")
+    @RequiresAdmin
+    public Response deleteRegion(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+                "Region",
+                "Region Id", uuid);
+
+        RegionEntity.deleteRegion(uuid);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
                 .build();
     }
 
@@ -157,10 +179,10 @@ public final class RegionEndpoint extends AbstractEndpoint {
             org.setIgToolkitStatus(igToolKitStatus);
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy");
             Date date = simpleDateFormat.parse(dateOfReg);
-            org.setDateofRegistration(date);
+            org.setDateOfRegistration(dateOfReg);
             org.setRegistrationPerson(registrationPerson);
             org.setEvidenceOfRegistration(evidence);
-            org.setOrganisationUUID(organisationUuid);
+            org.setUUID(organisationUuid);
 
             ret.add(org);
         }

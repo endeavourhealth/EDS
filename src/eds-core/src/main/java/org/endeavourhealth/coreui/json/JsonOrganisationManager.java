@@ -13,10 +13,10 @@ public final class JsonOrganisationManager {
     private String odsCode = null;
     private String icoCode = null;
     private String igToolkitStatus = null;
-    private Date dateofRegistration = null;
+    private String dateOfRegistration = null;
     private String registrationPerson = null;
     private String evidenceOfRegistration = null;
-    private String organisationUUID = null;
+    private String uuid = null;
 
     public String getName() {
         return name;
@@ -58,12 +58,12 @@ public final class JsonOrganisationManager {
         this.igToolkitStatus = igToolkitStatus;
     }
 
-    public Date getDateofRegistration() {
-        return dateofRegistration;
+    public String getDateOfRegistration() {
+        return dateOfRegistration;
     }
 
-    public void setDateofRegistration(Date dateofRegistration) {
-        this.dateofRegistration = dateofRegistration;
+    public void setDateOfRegistration(String dateOfRegistration) {
+        this.dateOfRegistration = dateOfRegistration;
     }
 
     public String getRegistrationPerson() {
@@ -82,11 +82,11 @@ public final class JsonOrganisationManager {
         this.evidenceOfRegistration = evidenceOfRegistration;
     }
 
-    public String getOrganisationUUID() {
-        return organisationUUID;
+    public String getUUID() {
+        return uuid;
     }
 
-    public void setOrganisationUUID(String organisationUUID) {
-        this.organisationUUID = organisationUUID;
+    public void setUUID(String organisationUUID) {
+        this.uuid = organisationUUID;
     }
 }

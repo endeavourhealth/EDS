@@ -2,26 +2,28 @@ import {Component} from "@angular/core";
 import {Organisation} from "../organisationManager/models/Organisation";
 import {Service} from "../services/models/Service";
 import {AdminService} from "../administration/admin.service";
-import {RegionService} from "./region.service";
 import {LoggerService} from "../common/logger.service";
 import {Transition, StateService} from "ui-router-ng2";
+import {ServicePickerDialog} from "../services/servicePicker.dialog";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-import {Region} from "./models/Region";
-import {OrganisationManagerPickerDialog} from "../organisationManager/organisationManagerPicker.dialog";
+import {OrganisationManagerService} from "./organisationManager.service";
+import {Region} from "../region/models/Region";
 
 @Component({
-    template: require('./regionEditor.html')
+    template: require('./organisationManagerEditor.html')
 })
-export class RegionEditorComponent {
+export class OrganisationManagerEditorComponent {
 
     region : Region = <Region>{};
+    organisation : Organisation = <Organisation>{};
+    services : Service[];
     organisations : Organisation[];
 
     constructor(private $modal: NgbModal,
                 private state : StateService,
                 private log:LoggerService,
                 private adminService : AdminService,
-                private regionService : RegionService,
+                private organisationManagerService : OrganisationManagerService,
                 private transition : Transition
     ) {
         this.performAction(transition.params()['itemAction'], transition.params()['itemUuid']);
@@ -39,17 +41,16 @@ export class RegionEditorComponent {
     }
 
     create(uuid : string) {
-        this.region = {
+        this.organisation = {
             name : ''
-        } as Region;
+        } as Organisation;
     }
 
     load(uuid : string) {
         var vm = this;
-        vm.regionService.getRegion(uuid)
+        vm.organisationManagerService.getOrganisation(uuid)
             .subscribe(result =>  {
-                    vm.region = result;
-                    vm.getRegionOrganisations();
+                    vm.organisation = result;
                 },
                 error => vm.log.error('Error loading', error, 'Error')
             );
@@ -58,19 +59,19 @@ export class RegionEditorComponent {
     save(close : boolean) {
         var vm = this;
 
-        // Populate organisations before save
+        // Populate service organisations before save
+        /*
+         vm.organisation.services = {};
+         for (var idx in this.services) {
+         var service : Service = this.services[idx];
+         this.organisation.services[service.uuid] = service.name;
+         }
+         */
 
-        vm.region.organisations = {};
-        for (var idx in this.organisations) {
-            var organisation : Organisation = this.organisations[idx];
-            this.region.organisations[organisation.uuid] = organisation.name;
-        }
-
-
-        vm.regionService.saveRegion(vm.region)
+        vm.organisationManagerService.saveOrganisation(vm.organisation)
             .subscribe(saved => {
                     vm.adminService.clearPendingChanges();
-                    vm.log.success('Item saved', vm.region, 'Saved');
+                    vm.log.success('Item saved', vm.organisation, 'Saved');
                     if (close) { vm.state.go(vm.transition.from()); }
                 },
                 error => vm.log.error('Error saving', error, 'Error')
@@ -82,21 +83,11 @@ export class RegionEditorComponent {
         this.state.go(this.transition.from());
     }
 
-    private getRegionOrganisations() {
-        var vm = this;
-        vm.regionService.getRegionOrganisations(vm.region.uuid)
-            .subscribe(
-                result => vm.organisations = result,
-                error => vm.log.error('Failed to load region organisations', error, 'Load region organisation')
-            );
-    }
-
     private editOrganisations() {
         var vm = this;
-        console.log("Calling the picker");
-        OrganisationManagerPickerDialog.open(vm.$modal, vm.organisations)
-            .result.then(function (result : Organisation[]) {
-            vm.organisations = result;
+        ServicePickerDialog.open(vm.$modal, vm.services)
+            .result.then(function (result : Service[]) {
+            vm.services = result;
         });
     }
 }

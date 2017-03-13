@@ -3,12 +3,25 @@ package org.endeavourhealth.coreui.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.core.mySQLDatabase.models.RegionEntity;
 
+import java.util.Map;
+import java.util.UUID;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class JsonRegion {
     private String name = null;
     private String description = null;
     private String uuid = null;
     private Integer organisationCount = null;
+
+    public Map<UUID, String> getOrganisations() {
+        return organisations;
+    }
+
+    public void setOrganisations(Map<UUID, String> organisations) {
+        this.organisations = organisations;
+    }
+
+    private Map<UUID, String> organisations = null;
 
 
     public JsonRegion() {

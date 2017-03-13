@@ -42,7 +42,7 @@ public class RegionEntity {
 
     }
 
-    public static boolean updateRegion(JsonRegion region) throws Exception {
+    public static void updateRegion(JsonRegion region) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
         RegionEntity re = entityManager.find(RegionEntity.class, region.getUuid());
@@ -50,12 +50,9 @@ public class RegionEntity {
         re.setDescription(region.getDescription());
         re.setName(region.getName());
         entityManager.getTransaction().commit();
-
-        return true;
-
     }
 
-    public static boolean saveRegion(JsonRegion region) throws Exception {
+    public static void saveRegion(JsonRegion region) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
         RegionEntity re = new RegionEntity();
@@ -66,8 +63,16 @@ public class RegionEntity {
         entityManager.persist(re);
         entityManager.getTransaction().commit();
 
-        return true;
 
+    }
+
+    public static void deleteRegion(String uuid) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        RegionEntity re = entityManager.find(RegionEntity.class, uuid);
+        entityManager.getTransaction().begin();
+        entityManager.remove(re);
+        entityManager.getTransaction().commit();
     }
 
     @Basic

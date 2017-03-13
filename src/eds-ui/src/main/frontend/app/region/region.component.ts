@@ -42,41 +42,25 @@ export class RegionComponent {
         this.$state.go('app.regionEditor', {itemUuid: item.uuid, itemAction: 'edit'});
     }
 
-    save(original : Organisation, edited : Organisation) {
+    delete(item : Region) {
         var vm = this;
-        vm.regionService.saveOrganisation(edited)
-            .subscribe(
-                saved =>  {
-                    if (original.uuid)
-                        jQuery.extend(true, original, saved);
-                    else
-                        vm.organisations.push(saved);
-
-                    vm.log.success('Organisation saved', original, 'Save organisation');
-                },
-                error => vm.log.error('Failed to save organisation', error, 'Save organisation')
-            );
-    }
-
-    delete(item : Organisation) {
-        var vm = this;
-        MessageBoxDialog.open(vm.$modal, 'Delete Organisation', 'Are you sure you want to delete the Organisation?', 'Yes', 'No')
+        MessageBoxDialog.open(vm.$modal, 'Delete Region', 'Are you sure you want to delete the Region?', 'Yes', 'No')
             .result.then(
             () => vm.doDelete(item),
             () => vm.log.info('Delete cancelled')
         );
     }
 
-    doDelete(item : Organisation) {
+    doDelete(item : Region) {
         var vm = this;
-        vm.regionService.deleteOrganisation(item.uuid)
+        vm.regionService.deleteRegion(item.uuid)
             .subscribe(
                 () => {
-                    var index = vm.organisations.indexOf(item);
-                    vm.organisations.splice(index, 1);
-                    vm.log.success('Organisation deleted', item, 'Delete Organisation');
+                    var index = vm.regions.indexOf(item);
+                    vm.regions.splice(index, 1);
+                    vm.log.success('Region deleted', item, 'Delete Region');
                 },
-                (error) => vm.log.error('Failed to delete Organisation', error, 'Delete Organisation')
+                (error) => vm.log.error('Failed to delete Region', error, 'Delete Region')
             );
     }
 }

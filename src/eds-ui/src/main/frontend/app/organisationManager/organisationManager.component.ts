@@ -22,23 +22,21 @@ export class OrganisationManagerComponent {
     }
 
     getOrganisations() {
-
-        /*
         var vm = this;
         vm.organisationManagerService.getOrganisations()
             .subscribe(
                 result => vm.organisations = result,
                 error => vm.log.error('Failed to load organisations', error, 'Load organisations')
             );
-         */
+
     }
 
     add() {
-        this.$state.go('app.organisationEdit', {itemUuid: null, itemAction: 'add'});
+        this.$state.go('app.organisationManagerEditor', {itemUuid: null, itemAction: 'add'});
     }
 
     edit(item : Organisation) {
-        this.$state.go('app.organisationEdit', {itemUuid: item.uuid, itemAction: 'edit'});
+        this.$state.go('app.organisationManagerEditor', {itemUuid: item.uuid, itemAction: 'edit'});
     }
 
     save(original : Organisation, edited : Organisation) {

@@ -1,10 +1,21 @@
 package org.endeavourhealth.core.mySQLDatabase.models;
 
 import org.endeavourhealth.core.mySQLDatabase.PersistenceManager;
+import org.endeavourhealth.coreui.json.JsonOrganisation;
+import org.endeavourhealth.coreui.json.JsonOrganisationManager;
+import org.joda.time.DateTime;
 
 import javax.persistence.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @NamedStoredProcedureQueries({
@@ -18,25 +29,16 @@ import java.util.List;
 })
 @Table(name = "organisation", schema = "organisationmanager")
 public class OrganisationEntity {
-    private int id;
+
     private String name;
     private String alternativeName;
     private String odsCode;
     private String icoCode;
     private String igToolkitStatus;
-    private Timestamp dateOfRegistration;
+    private Date dateOfRegistration;
     private Integer registrationPerson;
     private String evidenceOfRegistration;
-
-    @Id
-    @Column(name = "id", nullable = false)
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
+    private String uuid;
 
     @Basic
     @Column(name = "name", nullable = false, length = 100)
@@ -90,11 +92,11 @@ public class OrganisationEntity {
 
     @Basic
     @Column(name = "date_of_registration", nullable = false)
-    public Timestamp getDateOfRegistration() {
+    public Date getDateOfRegistration() {
         return dateOfRegistration;
     }
 
-    public void setDateOfRegistration(Timestamp dateOfRegistration) {
+    public void setDateOfRegistration(Date dateOfRegistration) {
         this.dateOfRegistration = dateOfRegistration;
     }
 
@@ -118,6 +120,16 @@ public class OrganisationEntity {
         this.evidenceOfRegistration = evidenceOfRegistration;
     }
 
+    @Id
+    @Column(name = "Uuid", nullable = false, length = 36)
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -125,7 +137,6 @@ public class OrganisationEntity {
 
         OrganisationEntity that = (OrganisationEntity) o;
 
-        if (id != that.id) return false;
         if (name != null ? !name.equals(that.name) : that.name != null) return false;
         if (alternativeName != null ? !alternativeName.equals(that.alternativeName) : that.alternativeName != null)
             return false;
@@ -139,14 +150,14 @@ public class OrganisationEntity {
             return false;
         if (evidenceOfRegistration != null ? !evidenceOfRegistration.equals(that.evidenceOfRegistration) : that.evidenceOfRegistration != null)
             return false;
+        if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = id;
-        result = 31 * result + (name != null ? name.hashCode() : 0);
+        int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (alternativeName != null ? alternativeName.hashCode() : 0);
         result = 31 * result + (odsCode != null ? odsCode.hashCode() : 0);
         result = 31 * result + (icoCode != null ? icoCode.hashCode() : 0);
@@ -154,17 +165,8 @@ public class OrganisationEntity {
         result = 31 * result + (dateOfRegistration != null ? dateOfRegistration.hashCode() : 0);
         result = 31 * result + (registrationPerson != null ? registrationPerson.hashCode() : 0);
         result = 31 * result + (evidenceOfRegistration != null ? evidenceOfRegistration.hashCode() : 0);
+        result = 31 * result + (uuid != null ? uuid.hashCode() : 0);
         return result;
-    }    private String organisationUUid;
-
-    @Basic
-    @Column(name = "organisationUUid", nullable = false, length = 36)
-    public String getOrganisationUUid() {
-        return organisationUUid;
-    }
-
-    public void setOrganisationUUid(String organisationUUid) {
-        this.organisationUUid = organisationUUid;
     }
 
     public static List<Object[]> getOrganisationsForRegion(String regionUUID) throws Exception {
@@ -178,5 +180,87 @@ public class OrganisationEntity {
         entityManager.close();
 
         return ent;
+    }
+
+    public static List<OrganisationEntity> getAllOrganisations() throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
+        Root<OrganisationEntity> rootEntry = cq.from(OrganisationEntity.class);
+        CriteriaQuery<OrganisationEntity> all = cq.select(rootEntry);
+        TypedQuery<OrganisationEntity> allQuery = entityManager.createQuery(all);
+        return allQuery.getResultList();
+    }
+
+    public static OrganisationEntity getOrganisation(String uuid) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        return entityManager.find(OrganisationEntity.class, uuid);
+    }
+
+    public static void updateOrganisation(JsonOrganisationManager organisation) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        OrganisationEntity organisationEntity = entityManager.find(OrganisationEntity.class, organisation.getUUID());
+        entityManager.getTransaction().begin();
+        organisationEntity.setName(organisation.getName());
+        organisationEntity.setAlternativeName(organisation.getAlternativeName());
+        organisationEntity.setOdsCode(organisation.getOdsCode());
+        organisationEntity.setIcoCode(organisation.getIcoCode());
+        organisationEntity.setIgToolkitStatus(organisation.getIgToolkitStatus());
+        if (organisation.getDateOfRegistration() != null){
+            organisationEntity.setDateOfRegistration(Date.valueOf(organisation.getDateOfRegistration()));
+        }
+        //organisationEntity.setRegistrationPerson(organisation.getRegistrationPerson());
+        organisationEntity.setEvidenceOfRegistration(organisation.getEvidenceOfRegistration());
+        entityManager.getTransaction().commit();
+    }
+
+    public static void saveOrganisation(JsonOrganisationManager organisation) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        OrganisationEntity organisationEntity = new OrganisationEntity();
+        entityManager.getTransaction().begin();
+        organisationEntity.setName(organisation.getName());
+        organisationEntity.setAlternativeName(organisation.getAlternativeName());
+        organisationEntity.setOdsCode(organisation.getOdsCode());
+        organisationEntity.setIcoCode(organisation.getIcoCode());
+        organisationEntity.setIgToolkitStatus(organisation.getIgToolkitStatus());
+        if (organisation.getDateOfRegistration() != null){
+            organisationEntity.setDateOfRegistration(Date.valueOf(organisation.getDateOfRegistration()));
+        }
+        //organisationEntity.setRegistrationPerson(organisation.getRegistrationPerson());
+        organisationEntity.setEvidenceOfRegistration(organisation.getEvidenceOfRegistration());
+        organisationEntity.setUuid(UUID.randomUUID().toString());
+        entityManager.persist(organisationEntity);
+        entityManager.getTransaction().commit();
+    }
+
+    public static void deleteOrganisation(String uuid) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        OrganisationEntity organisationEntity = entityManager.find(OrganisationEntity.class, uuid);
+        entityManager.getTransaction().begin();
+        entityManager.remove(organisationEntity);
+        entityManager.getTransaction().commit();
+    }
+
+    public static List<OrganisationEntity> search(String expression) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
+        Root<OrganisationEntity> rootEntry = cq.from(OrganisationEntity.class);
+        //List<Predicate> predicates = new ArrayList<Predicate>();
+        //predicates.add(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"));
+        //predicates.add(cb.like(cb.upper(rootEntry.get("odsCode")), "%" + expression.toUpperCase() + "%"));
+
+        Predicate predicate = cb.or(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"),
+                cb.like(cb.upper(rootEntry.get("odsCode")), "%" + expression.toUpperCase() + "%"));
+
+        cq.where(predicate);
+        TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
+        return query.getResultList();
     }
 }

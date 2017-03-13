@@ -1,6 +1,11 @@
 export class Organisation {
     uuid : string;
-    id : number;
     name:string;
-    nationalId:string;
+    alternativeName: string;
+    odsCode: string;
+    icoCode: string;
+    igToolkitStatus: string;
+    dateOfRegistration: string;
+    registrationPerson: string;
+    evidenceOfRegistration: string;
 }

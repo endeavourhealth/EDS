@@ -30,14 +30,10 @@ export class RegionService extends BaseHttp2Service  {
         return this.httpPost('api/region', region);
     }
 
-    saveOrganisation(organisation : Organisation) : Observable<any> {
-        return this.httpPost('api/organisation', organisation);
-    }
-
-    deleteOrganisation(uuid : string) : Observable<any> {
+    deleteRegion(uuid : string) : Observable<any> {
         let params = new URLSearchParams();
         params.set('uuid',uuid);
-        return this.httpDelete('api/organisation', { search : params });
+        return this.httpDelete('api/region', { search : params });
     }
 
     search(searchData : string) : Observable<Organisation[]> {

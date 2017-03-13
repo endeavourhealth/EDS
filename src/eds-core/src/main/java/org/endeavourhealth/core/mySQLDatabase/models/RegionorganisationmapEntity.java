@@ -1,18 +1,31 @@
 package org.endeavourhealth.core.mySQLDatabase.models;
 
-import javax.persistence.*;
+import org.endeavourhealth.core.mySQLDatabase.PersistenceManager;
+import org.endeavourhealth.coreui.json.JsonRegion;
 
-/**
- * Created by studu on 10/03/2017.
- */
+import javax.persistence.*;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@NamedStoredProcedureQueries({
+        @NamedStoredProcedureQuery(
+                name = "deleteRegionMapping",
+                procedureName = "deleteRegionMapping",
+                parameters = {
+                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "UUID")
+                }
+        )
+})
 @Entity
-@Table(name = "regionorganisationmap", schema = "organisationmanager", catalog = "")
+@Table(name = "regionorganisationmap", schema = "organisationmanager")
+@IdClass(RegionorganisationmapEntityPK.class)
 public class RegionorganisationmapEntity {
     private String regionUuid;
     private String organisationUUid;
     private int id;
 
-    @Basic
+    @Id
     @Column(name = "regionUuid", nullable = false, length = 36)
     public String getRegionUuid() {
         return regionUuid;
@@ -22,7 +35,7 @@ public class RegionorganisationmapEntity {
         this.regionUuid = regionUuid;
     }
 
-    @Basic
+    @Id
     @Column(name = "organisationUUid", nullable = false, length = 36)
     public String getOrganisationUUid() {
         return organisationUUid;
@@ -53,13 +66,26 @@ public class RegionorganisationmapEntity {
         return result;
     }
 
-    @Id
-    @Column(name = "id", nullable = false)
-    public int getId() {
-        return id;
+    public static void saveRegionMappings(JsonRegion region) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        Map<UUID, String> orgs = region.getOrganisations();
+         orgs.forEach( (k,v) -> {
+             RegionorganisationmapEntity rem = new RegionorganisationmapEntity();
+             entityManager.getTransaction().begin();
+             rem.setRegionUuid(region.getUuid());
+             rem.setOrganisationUUid(k.toString());
+             entityManager.persist(rem);
+             entityManager.getTransaction().commit();
+         });
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public static void deleteRegionMap(String uuid) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("deleteRegionMapping");
+        spq.setParameter("UUID", uuid);
+        spq.execute();
+        entityManager.close();
     }
 }

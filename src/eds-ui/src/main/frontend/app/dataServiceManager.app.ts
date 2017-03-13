@@ -46,6 +46,7 @@ import {ExchangeAuditComponent} from "./exchangeAudit/exchangeAudit.component";
 import {OrganisationManagerComponent} from "./organisationManager/organisationManager.component";
 import {RegionComponent} from "./region/region.component";
 import {RegionEditorComponent} from "./region/regionEditor.component";
+import {OrganisationManagerEditorComponent} from "./organisationManager/organisationManagerEditor.component";
 
 @NgModule(
 	Application.Define({
@@ -95,7 +96,8 @@ import {RegionEditorComponent} from "./region/regionEditor.component";
 			{name: 'app.countReportEdit', url: '/countReportEdit/:itemAction/:itemUuid', component: CountReportEditComponent},
 			{name: 'app.organisationManager', url: '/organisationManager', component: OrganisationManagerComponent},
 			{name: 'app.region', url: '/region', component: RegionComponent},
-			{name: 'app.regionEditor', url: '/region/:itemAction/:itemUuid', component: RegionEditorComponent}
+			{name: 'app.regionEditor', url: '/region/:itemAction/:itemUuid', component: RegionEditorComponent},
+			{name: 'app.organisationManagerEditor', url: '/organisationManager/:itemAction/:itemUuid', component: OrganisationManagerEditorComponent}
 		],
 		defaultState : { state: 'app.dashboard', params: {} }
 	})

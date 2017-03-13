@@ -1,6 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
 import net.sourceforge.jtds.jdbc.DateTime;
+import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
@@ -21,14 +22,14 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.text.SimpleDateFormat;
 import java.util.*;
-/*
+
 @Path("/organisationManager")
 public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
 
     private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Organisation);
 
-    /*
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -43,17 +44,90 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
         if (uuid == null && searchData == null) {
             LOG.trace("getOrganisation - list");
-            return getRegionList();
-        } else { //if (uuid != null){
+
+            return getOrganisationList();
+        } else if (uuid != null){
             LOG.trace("getOrganisation - single - " + uuid);
-            return getRegion(uuid);
+            return getSingleOrganisation(uuid);
         } else {
             LOG.trace("Search Organisations - " + searchData);
             return search(searchData);
         }
+    }
 
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/")
+    @RequiresAdmin
+    public Response post(@Context SecurityContext sc, JsonOrganisationManager organisationManager) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "Organisation",
+                "Organisation", organisationManager);
+
+        if (organisationManager.getUUID() != null) {
+            OrganisationEntity.updateOrganisation(organisationManager);
+        } else {
+            OrganisationEntity.saveOrganisation(organisationManager);
+        }
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .build();
+    }
+
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/")
+    @RequiresAdmin
+    public Response deleteOrganisation(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+                "Organisation",
+                "Organisation Id", uuid);
+
+        OrganisationEntity.deleteOrganisation(uuid);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .build();
+    }
+
+    private Response getOrganisationList() throws Exception {
+
+        List<OrganisationEntity> organisations = OrganisationEntity.getAllOrganisations();
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(organisations)
+                .build();
+    }
+
+    private Response getSingleOrganisation(String uuid) throws Exception {
+        OrganisationEntity organisationEntity = OrganisationEntity.getOrganisation(uuid);
+
+        return Response
+                .ok()
+                .entity(organisationEntity)
+                .build();
+
+    }
+
+    private Response search(String searchData) throws Exception {
+        Iterable<OrganisationEntity> organisations = OrganisationEntity.search(searchData);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(organisations)
+                .build();
     }
 
 
 }
-*/
