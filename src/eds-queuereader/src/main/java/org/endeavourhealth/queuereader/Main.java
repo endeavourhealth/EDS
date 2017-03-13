@@ -1,55 +1,15 @@
 package org.endeavourhealth.queuereader;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
-import com.google.common.io.Files;
 import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.fhir.ExtensionConverter;
-import org.endeavourhealth.common.fhir.FhirExtensionUri;
-import org.endeavourhealth.common.fhir.ReferenceComponents;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
-import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.data.audit.AuditRepository;
-import org.endeavourhealth.core.data.audit.models.ExchangeByService;
-import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
-import org.endeavourhealth.core.data.ehr.ResourceRepository;
-import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
-import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.data.ehr.models.ResourceByService;
-import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
-import org.endeavourhealth.core.fhirStorage.FhirSerializationHelper;
-import org.endeavourhealth.core.fhirStorage.FhirStorageService;
-import org.endeavourhealth.core.messaging.exchange.Exchange;
-import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
-import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.subscriber.EnterpriseFiler;
-import org.endeavourhealth.transform.common.IdHelper;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
-import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
-import org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation;
-import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
-import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationPreTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.prescribing.DrugRecordPreTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.prescribing.IssueRecordPreTransformer;
-import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
-import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.util.*;
+import java.util.UUID;
 
 public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -71,7 +31,7 @@ public class Main {
 		}
 
 		//hack to get the Enterprise data streaming
-		try {
+		/*try {
 			if (args.length >= 2) {
 				UUID serviceUuid = UUID.fromString(args[0]);
 				String configName = args[1];
@@ -93,9 +53,9 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 			return;
-		}
+		}*/
 
-		if (args.length >= 3
+		/*if (args.length >= 3
 				&& args[0].equals("FixProblems")) {
 
 			UUID serviceId = UUID.fromString(args[1]);
@@ -107,49 +67,12 @@ public class Main {
 
 			fixProblems(serviceId, sharedStoragePath, testMode);
 			return;
-		}
+		}*/
 
 		if (args.length != 1) {
 			LOG.error("Usage: queuereader config_id");
 			return;
 		}
-
-		/*if (args[0].equalsIgnoreCase("ExchangeHeaders")) {
-			addSystemIdToExchangeHeaders();
-			return;
-		}*/
-
-
-		/*if (args[0].equalsIgnoreCase("FixExchanges")) {
-			populateExchangeBatchPatients();
-			return;
-		}*/
-
-		/*if (args[0].equalsIgnoreCase("TestLogging")) {
-			testLogging();
-			return;
-		}*/
-
-		/*if (args[0].equalsIgnoreCase("FixExchanges")) {
-			fixMissingExchanges();
-			return;
-		}*/
-
-		/*if (args[0].equalsIgnoreCase("FixExchangeHeaders")) {
-			fixExchangeHeaders();
-			return;
-		}*/
-
-		/*if (args[0].equalsIgnoreCase("FixExchangeProtocols")) {
-			fixExchangeProtocols();
-			return;
-		}*/
-
-
-		//LOG.info("Fixing events");
-		//fixExchangeEvents();
-		/*LOG.info("Fixing exchanges");
-		fixExchanges();*/
 
 		LOG.info("--------------------------------------------------");
 		LOG.info("EDS Queue Reader " + args[0]);
@@ -185,7 +108,7 @@ public class Main {
 		}
 	}
 
-	private static void fixProblems(UUID serviceId, String sharedStoragePath, boolean testMode) {
+	/*private static void fixProblems(UUID serviceId, String sharedStoragePath, boolean testMode) {
 		LOG.info("Fixing problems for service " + serviceId);
 
 		AuditRepository auditRepository = new AuditRepository();
@@ -446,7 +369,7 @@ public class Main {
 
 		}
 		return new File(organisationDir);
-	}
+	}*/
 
 	/*private static void testLogging() {
 
@@ -721,7 +644,7 @@ public class Main {
 		LOG.info("Finished fixing exchange headers");
 	}*/
 
-	private static void testConnection(String configName) {
+	/*private static void testConnection(String configName) {
 		try {
 
 			JsonNode config = ConfigManager.getConfigurationAsJson(configName, "enterprise");
@@ -741,7 +664,7 @@ public class Main {
 		} catch (Exception e) {
 			LOG.error("", e);
 		}
-	}
+	}*/
 	/*private static void testConnection() {
 		try {
 
@@ -764,7 +687,7 @@ public class Main {
 	}*/
 
 
-	private static void startEnterpriseStream(UUID serviceId, String configName, UUID exchangeIdStartFrom, UUID batchIdStartFrom) throws Exception {
+	/*private static void startEnterpriseStream(UUID serviceId, String configName, UUID exchangeIdStartFrom, UUID batchIdStartFrom) throws Exception {
 
 		LOG.info("Starting Enterprise Streaming for " + serviceId + " using " + configName + " starting from exchange " + exchangeIdStartFrom + " and batch " + batchIdStartFrom);
 
@@ -796,10 +719,10 @@ public class Main {
 			UUID senderOrgUuid = UUID.fromString(senderOrgUuidStr);
 
 			//this one had 90,000 batches and doesn't need doing again
-			/*if (exchangeId.equals(UUID.fromString("b9b93be0-afd8-11e6-8c16-c1d5a00342f3"))) {
+			*//*if (exchangeId.equals(UUID.fromString("b9b93be0-afd8-11e6-8c16-c1d5a00342f3"))) {
 				LOG.info("Skipping exchange " + exchangeId);
 				continue;
-			}*/
+			}*//*
 
 			List<ExchangeBatch> exchangeBatches = new ExchangeBatchRepository().retrieveForExchangeId(exchangeId);
 			LOG.info("Processing exchange " + exchangeId + " with " + exchangeBatches.size() + " batches");
@@ -830,7 +753,7 @@ public class Main {
 			}
 		}
 
-	}
+	}*/
 
 	/*private static void fixMissingExchanges() {
 

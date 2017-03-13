@@ -12,6 +12,7 @@
     <xs:complexType name="error">
         <xs:sequence>
             <xs:element name="arg" type="arg" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="datetime" type="xs:dateTime" minOccurs="0"/>
             <xs:element name="exception" type="exception" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
