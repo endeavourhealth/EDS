@@ -9,6 +9,7 @@ import org.endeavourhealth.transform.common.reference.PostcodeReference;
 import org.endeavourhealth.transform.common.reference.ReferenceHelper;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.Address;
+import org.hl7.fhir.instance.model.DateType;
 import org.hl7.fhir.instance.model.Patient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,6 +77,12 @@ public class PatientTransformer extends AbstractTransformer {
                 /*cal.setTime(dod);
                 int yearOfDeath = cal.get(Calendar.YEAR);
                 model.setYearOfDeath(new Integer(yearOfDeath));*/
+            } else if (fhirPatient.hasDeceased()
+                    && fhirPatient.getDeceased() instanceof DateType) {
+                //should always be a DATE TIME type, but a bug in the CSV->FHIR transform
+                //means we've got data with a DATE type too
+                DateType d = (DateType)fhirPatient.getDeceased();
+                dateOfDeath = d.getValue();
             }
 
             patientGenderId = fhirPatient.getGender().ordinal();
