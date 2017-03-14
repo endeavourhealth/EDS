@@ -12,6 +12,7 @@ public final class JsonRegion {
     private String description = null;
     private String uuid = null;
     private Integer organisationCount = null;
+    private Map<UUID, String> organisations = null;
 
     public Map<UUID, String> getOrganisations() {
         return organisations;
@@ -21,7 +22,6 @@ public final class JsonRegion {
         this.organisations = organisations;
     }
 
-    private Map<UUID, String> organisations = null;
 
 
     public JsonRegion() {

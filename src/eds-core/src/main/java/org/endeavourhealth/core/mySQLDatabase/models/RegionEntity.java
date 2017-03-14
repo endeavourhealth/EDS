@@ -4,6 +4,7 @@ import org.endeavourhealth.core.mySQLDatabase.PersistenceManager;
 import org.endeavourhealth.coreui.json.JsonRegion;
 
 import javax.persistence.*;
+import javax.persistence.criteria.*;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,6 +13,13 @@ import java.util.UUID;
         @NamedStoredProcedureQuery(
                 name = "getAllRegions",
                 procedureName = "getAllRegions"
+        ),
+        @NamedStoredProcedureQuery(
+                name = "getRegionsForOrganisation",
+                procedureName = "getRegionsForOrganisation",
+                parameters = {
+                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "UUID")
+                }
         )
 })
 
@@ -22,6 +30,7 @@ public class RegionEntity {
     private String description;
     private String uuid;
 
+    /*
     public static List<Object[]> getAllRegions() throws Exception {
 
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
@@ -32,6 +41,18 @@ public class RegionEntity {
         entityManager.close();
 
         return ent;
+    }
+    */
+
+    public static List<RegionEntity> getAllRegions() throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<RegionEntity> cq = cb.createQuery(RegionEntity.class);
+        Root<RegionEntity> rootEntry = cq.from(RegionEntity.class);
+        CriteriaQuery<RegionEntity> all = cq.select(rootEntry);
+        TypedQuery<RegionEntity> allQuery = entityManager.createQuery(all);
+        return allQuery.getResultList();
     }
 
     public static RegionEntity getSingleRegion(String uuid) throws Exception {
@@ -73,6 +94,34 @@ public class RegionEntity {
         entityManager.getTransaction().begin();
         entityManager.remove(re);
         entityManager.getTransaction().commit();
+    }
+
+    public static List<RegionEntity> search(String expression) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<RegionEntity> cq = cb.createQuery(RegionEntity.class);
+        Root<RegionEntity> rootEntry = cq.from(RegionEntity.class);
+
+        Predicate predicate = cb.or(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"),
+                cb.like(cb.upper(rootEntry.get("description")), "%" + expression.toUpperCase() + "%"));
+
+        cq.where(predicate);
+        TypedQuery<RegionEntity> query = entityManager.createQuery(cq);
+        return query.getResultList();
+    }
+
+    public static List<Object[]> getRegionsForOrganisation(String organisationUuid) throws Exception {
+
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getRegionsForOrganisation");
+        spq.setParameter("UUID", organisationUuid);
+        spq.execute();
+        List<Object[]> ent = spq.getResultList();
+        entityManager.close();
+
+        return ent;
     }
 
     @Basic

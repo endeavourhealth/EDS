@@ -18,6 +18,7 @@ import org.endeavourhealth.coreui.json.JsonRegion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.plaf.synth.Region;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -45,15 +46,15 @@ public final class RegionEndpoint extends AbstractEndpoint {
                 "SearchData", searchData);
 
         if (uuid == null && searchData == null) {
-            LOG.trace("getOrganisation - list");
+            LOG.trace("getRegion - list");
             return getRegionList();
-        } else { //if (uuid != null){
-            LOG.trace("getOrganisation - single - " + uuid);
+        } else if (uuid != null){
+            LOG.trace("getRegion - single - " + uuid);
             return getSingleRegion(uuid);
-        } /*else {
-            LOG.trace("Search Organisations - " + searchData);
+        } else {
+            LOG.trace("Search Region - " + searchData);
             return search(searchData);
-        }*/
+        }
     }
 
     @GET
@@ -64,7 +65,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Organisation(s)",
-                "Organisation Id", uuid);
+                "Region Id", uuid);
 
         return getRegionOrganisations(uuid);
     }
@@ -118,29 +119,12 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
     private Response getRegionList() throws Exception {
 
-        List<Object[]> regions = RegionEntity.getAllRegions();
-
-        List<JsonRegion> ret = new ArrayList<>();
-
-        for (Object[] regionEntity : regions) {
-            String name = regionEntity[0].toString();
-            String description = regionEntity[1].toString();
-            String uuid = regionEntity[2].toString();
-            String organisationCount = regionEntity[3].toString();
-
-            JsonRegion region = new JsonRegion();
-            region.setName(name);
-            region.setDescription(description);
-            region.setUuid(uuid);
-            region.setOrganisationCount(Integer.parseInt(organisationCount));
-
-            ret.add(region);
-        }
+        List<RegionEntity> regions = RegionEntity.getAllRegions();
 
         clearLogbackMarkers();
         return Response
                 .ok()
-                .entity(ret)
+                .entity(regions)
                 .build();
     }
 
@@ -182,7 +166,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
             org.setDateOfRegistration(dateOfReg);
             org.setRegistrationPerson(registrationPerson);
             org.setEvidenceOfRegistration(evidence);
-            org.setUUID(organisationUuid);
+            org.setUuid(organisationUuid);
 
             ret.add(org);
         }
@@ -191,6 +175,16 @@ public final class RegionEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .entity(ret)
+                .build();
+    }
+
+    private Response search(String searchData) throws Exception {
+        Iterable<RegionEntity> regions = RegionEntity.search(searchData);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(regions)
                 .build();
     }
 

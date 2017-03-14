@@ -5,6 +5,8 @@ import org.endeavourhealth.core.mySQLDatabase.models.RegionEntity;
 import org.joda.time.DateTime;
 
 import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class JsonOrganisationManager {
@@ -17,6 +19,23 @@ public final class JsonOrganisationManager {
     private String registrationPerson = null;
     private String evidenceOfRegistration = null;
     private String uuid = null;
+    private Map<UUID, String> regions = null;
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public Map<UUID, String> getRegions() {
+        return regions;
+    }
+
+    public void setRegions(Map<UUID, String> regions) {
+        this.regions = regions;
+    }
 
     public String getName() {
         return name;
@@ -80,13 +99,5 @@ public final class JsonOrganisationManager {
 
     public void setEvidenceOfRegistration(String evidenceOfRegistration) {
         this.evidenceOfRegistration = evidenceOfRegistration;
-    }
-
-    public String getUUID() {
-        return uuid;
-    }
-
-    public void setUUID(String organisationUUID) {
-        this.uuid = organisationUUID;
     }
 }

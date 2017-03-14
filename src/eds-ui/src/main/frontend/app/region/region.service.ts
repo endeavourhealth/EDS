@@ -36,9 +36,9 @@ export class RegionService extends BaseHttp2Service  {
         return this.httpDelete('api/region', { search : params });
     }
 
-    search(searchData : string) : Observable<Organisation[]> {
+    search(searchData : string) : Observable<Region[]> {
         let params = new URLSearchParams();
         params.set('searchData',searchData);
-        return this.httpGet('api/organisation', { search : params });
+        return this.httpGet('api/region', { search : params });
     }
 }

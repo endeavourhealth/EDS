@@ -1,6 +1,8 @@
 package org.endeavourhealth.core.mySQLDatabase.models;
 
 import org.endeavourhealth.core.mySQLDatabase.PersistenceManager;
+import org.endeavourhealth.coreui.json.JsonOrganisation;
+import org.endeavourhealth.coreui.json.JsonOrganisationManager;
 import org.endeavourhealth.coreui.json.JsonRegion;
 
 import javax.persistence.*;
@@ -12,6 +14,13 @@ import java.util.UUID;
         @NamedStoredProcedureQuery(
                 name = "deleteRegionMapping",
                 procedureName = "deleteRegionMapping",
+                parameters = {
+                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "UUID")
+                }
+        ),
+        @NamedStoredProcedureQuery(
+                name = "deleteOrganisationMapping",
+                procedureName = "deleteOrganisationMapping",
                 parameters = {
                         @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "UUID")
                 }
@@ -80,10 +89,33 @@ public class RegionorganisationmapEntity {
          });
     }
 
+    public static void saveOrganisationMappings(JsonOrganisationManager organisation) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        Map<UUID, String> regions = organisation.getRegions();
+        regions.forEach( (k,v) -> {
+            RegionorganisationmapEntity rem = new RegionorganisationmapEntity();
+            entityManager.getTransaction().begin();
+            rem.setOrganisationUUid(organisation.getUuid());
+            rem.setRegionUuid(k.toString());
+            entityManager.persist(rem);
+            entityManager.getTransaction().commit();
+        });
+    }
+
     public static void deleteRegionMap(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
         StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("deleteRegionMapping");
+        spq.setParameter("UUID", uuid);
+        spq.execute();
+        entityManager.close();
+    }
+
+    public static void deleteOrganisationMap(String uuid) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("deleteOrganisationMapping");
         spq.setParameter("UUID", uuid);
         spq.execute();
         entityManager.close();

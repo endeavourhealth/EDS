@@ -4,7 +4,7 @@ import {Service} from "../services/models/Service";
 import {AdminService} from "../administration/admin.service";
 import {LoggerService} from "../common/logger.service";
 import {Transition, StateService} from "ui-router-ng2";
-import {ServicePickerDialog} from "../services/servicePicker.dialog";
+import {RegionPickerDialog} from "../region/regionPicker.dialog";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {OrganisationManagerService} from "./organisationManager.service";
 import {Region} from "../region/models/Region";
@@ -16,7 +16,7 @@ export class OrganisationManagerEditorComponent {
 
     region : Region = <Region>{};
     organisation : Organisation = <Organisation>{};
-    services : Service[];
+    regions : Region[];
     organisations : Organisation[];
 
     constructor(private $modal: NgbModal,
@@ -51,6 +51,7 @@ export class OrganisationManagerEditorComponent {
         vm.organisationManagerService.getOrganisation(uuid)
             .subscribe(result =>  {
                     vm.organisation = result;
+                    vm.getOrganisationRegions();
                 },
                 error => vm.log.error('Error loading', error, 'Error')
             );
@@ -59,14 +60,14 @@ export class OrganisationManagerEditorComponent {
     save(close : boolean) {
         var vm = this;
 
-        // Populate service organisations before save
-        /*
-         vm.organisation.services = {};
-         for (var idx in this.services) {
-         var service : Service = this.services[idx];
-         this.organisation.services[service.uuid] = service.name;
+        // Populate organisations regions before save
+
+         vm.organisation.regions = {};
+         for (var idx in this.regions) {
+         var region : Region = this.regions[idx];
+         this.organisation.regions[region.uuid] = region.name;
          }
-         */
+
 
         vm.organisationManagerService.saveOrganisation(vm.organisation)
             .subscribe(saved => {
@@ -83,11 +84,20 @@ export class OrganisationManagerEditorComponent {
         this.state.go(this.transition.from());
     }
 
-    private editOrganisations() {
+    private editRegions() {
         var vm = this;
-        ServicePickerDialog.open(vm.$modal, vm.services)
-            .result.then(function (result : Service[]) {
-            vm.services = result;
+        RegionPickerDialog.open(vm.$modal, vm.regions)
+            .result.then(function (result : Region[]) {
+            vm.regions = result;
         });
+    }
+
+    private getOrganisationRegions() {
+        var vm = this;
+        vm.organisationManagerService.getOrganisationRegions(vm.organisation.uuid)
+            .subscribe(
+                result => vm.regions = result,
+                error => vm.log.error('Failed to load organisation regions', error, 'Load organisation regions')
+            );
     }
 }

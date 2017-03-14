@@ -202,7 +202,7 @@ public class OrganisationEntity {
     public static void updateOrganisation(JsonOrganisationManager organisation) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
-        OrganisationEntity organisationEntity = entityManager.find(OrganisationEntity.class, organisation.getUUID());
+        OrganisationEntity organisationEntity = entityManager.find(OrganisationEntity.class, organisation.getUuid());
         entityManager.getTransaction().begin();
         organisationEntity.setName(organisation.getName());
         organisationEntity.setAlternativeName(organisation.getAlternativeName());
@@ -252,12 +252,11 @@ public class OrganisationEntity {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
         Root<OrganisationEntity> rootEntry = cq.from(OrganisationEntity.class);
-        //List<Predicate> predicates = new ArrayList<Predicate>();
-        //predicates.add(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"));
-        //predicates.add(cb.like(cb.upper(rootEntry.get("odsCode")), "%" + expression.toUpperCase() + "%"));
 
         Predicate predicate = cb.or(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"),
-                cb.like(cb.upper(rootEntry.get("odsCode")), "%" + expression.toUpperCase() + "%"));
+                cb.like(cb.upper(rootEntry.get("odsCode")), "%" + expression.toUpperCase() + "%"),
+                cb.like(cb.upper(rootEntry.get("alternativeName")), "%" + expression.toUpperCase() + "%"),
+                cb.like(cb.upper(rootEntry.get("icoCode")), "%" + expression.toUpperCase() + "%"));
 
         cq.where(predicate);
         TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);

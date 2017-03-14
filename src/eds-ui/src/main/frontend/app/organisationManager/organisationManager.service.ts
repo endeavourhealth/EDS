@@ -3,7 +3,7 @@ import {URLSearchParams, Http} from "@angular/http";
 import {Observable} from "rxjs";
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 import {Organisation} from "./models/Organisation";
-import {Service} from "../services/models/Service";
+import {Region} from "../region/models/Region";
 
 @Injectable()
 export class OrganisationManagerService extends BaseHttp2Service  {
@@ -19,10 +19,10 @@ export class OrganisationManagerService extends BaseHttp2Service  {
         return this.httpGet('api/organisationManager', { search : params });
     }
 
-    getOrganisationServices(uuid : string) :  Observable<Service[]> {
+    getOrganisationRegions(uuid : string) :  Observable<Region[]> {
         let params = new URLSearchParams();
         params.set('uuid',uuid);
-        return this.httpGet('api/organisation/services', { search : params });
+        return this.httpGet('api/organisationManager/regions', { search : params });
     }
 
     saveOrganisation(organisation : Organisation) : Observable<any> {

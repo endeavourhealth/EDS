@@ -8,4 +8,5 @@ export class Organisation {
     dateOfRegistration: string;
     registrationPerson: string;
     evidenceOfRegistration: string;
+    regions : { [key:string]:string; };
 }

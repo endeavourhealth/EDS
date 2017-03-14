@@ -5,6 +5,7 @@ import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {RegionComponent} from "./region.component";
 import {RegionEditorComponent} from "./regionEditor.component";
 import {RegionService} from "./region.service";
+import {RegionPickerDialog} from "./regionPicker.dialog";
 
 @NgModule({
     imports : [
@@ -14,10 +15,11 @@ import {RegionService} from "./region.service";
     ],
     declarations : [
         RegionComponent,
-        RegionEditorComponent
+        RegionEditorComponent,
+        RegionPickerDialog
     ],
     entryComponents : [
-
+        RegionPickerDialog
     ],
     providers : [
         RegionService

@@ -8,6 +8,7 @@ import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.mySQLDatabase.models.OrganisationEntity;
 import org.endeavourhealth.core.mySQLDatabase.models.RegionEntity;
+import org.endeavourhealth.core.mySQLDatabase.models.RegionorganisationmapEntity;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.JsonOrganisation;
 import org.endeavourhealth.coreui.json.JsonOrganisationManager;
@@ -66,10 +67,14 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 "Organisation",
                 "Organisation", organisationManager);
 
-        if (organisationManager.getUUID() != null) {
+        if (organisationManager.getUuid() != null) {
+            RegionorganisationmapEntity.deleteOrganisationMap(organisationManager.getUuid());
             OrganisationEntity.updateOrganisation(organisationManager);
+            RegionorganisationmapEntity.saveOrganisationMappings(organisationManager);
         } else {
+            RegionorganisationmapEntity.deleteOrganisationMap(organisationManager.getUuid());
             OrganisationEntity.saveOrganisation(organisationManager);
+            RegionorganisationmapEntity.saveOrganisationMappings(organisationManager);
         }
 
         clearLogbackMarkers();
@@ -96,6 +101,19 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/regions")
+    public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Region(s)",
+                "Organisation Id", uuid);
+
+        return getRegionsForOrganisation(uuid);
     }
 
     private Response getOrganisationList() throws Exception {
@@ -129,5 +147,30 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+    private Response getRegionsForOrganisation(String organisationUuid) throws Exception {
+
+        List<Object[]> regions = RegionEntity.getRegionsForOrganisation(organisationUuid);
+
+        List<JsonRegion> ret = new ArrayList<>();
+
+        for (Object[] regionEntity : regions) {
+            String name = regionEntity[0].toString();
+            String description = regionEntity[1]==null?"":regionEntity[1].toString();
+            String Uuid = regionEntity[2]==null?"":regionEntity[2].toString();
+
+            JsonRegion reg = new JsonRegion();
+            reg.setName(name);
+            reg.setDescription(description);
+            reg.setUuid(Uuid);
+
+            ret.add(reg);
+        }
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
 
 }
