@@ -6,7 +6,7 @@ import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 
 @Component({
     selector: 'ngbd-modal-content',
-    template: require('./RegionPicker.html')
+    template: require('./regionPicker.html')
 })
 export class RegionPickerDialog {
     public static open(modalService: NgbModal, regions : Region[]) {
