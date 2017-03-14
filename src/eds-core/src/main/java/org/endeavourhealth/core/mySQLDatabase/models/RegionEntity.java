@@ -20,6 +20,20 @@ import java.util.UUID;
                 parameters = {
                         @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "UUID")
                 }
+        ),
+        @NamedStoredProcedureQuery(
+                name = "getSupraChildRegions",
+                procedureName = "getSupraChildRegions",
+                parameters = {
+                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "UUID")
+                }
+        ),
+        @NamedStoredProcedureQuery(
+                name = "getSupraParentRegions",
+                procedureName = "getSupraParentRegions",
+                parameters = {
+                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "UUID")
+                }
         )
 })
 
@@ -29,20 +43,6 @@ public class RegionEntity {
     private String name;
     private String description;
     private String uuid;
-
-    /*
-    public static List<Object[]> getAllRegions() throws Exception {
-
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getAllRegions");
-        spq.execute();
-        List<Object[]> ent = spq.getResultList();
-        entityManager.close();
-
-        return ent;
-    }
-    */
 
     public static List<RegionEntity> getAllRegions() throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
@@ -116,6 +116,32 @@ public class RegionEntity {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
         StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getRegionsForOrganisation");
+        spq.setParameter("UUID", organisationUuid);
+        spq.execute();
+        List<Object[]> ent = spq.getResultList();
+        entityManager.close();
+
+        return ent;
+    }
+
+    public static List<Object[]> getSupraParentRegions(String organisationUuid) throws Exception {
+
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getSupraParentRegions");
+        spq.setParameter("UUID", organisationUuid);
+        spq.execute();
+        List<Object[]> ent = spq.getResultList();
+        entityManager.close();
+
+        return ent;
+    }
+
+    public static List<Object[]> getSupraChildRegions(String organisationUuid) throws Exception {
+
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getSupraChildRegions");
         spq.setParameter("UUID", organisationUuid);
         spq.execute();
         List<Object[]> ent = spq.getResultList();

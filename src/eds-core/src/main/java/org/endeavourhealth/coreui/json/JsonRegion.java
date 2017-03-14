@@ -13,6 +13,8 @@ public final class JsonRegion {
     private String uuid = null;
     private Integer organisationCount = null;
     private Map<UUID, String> organisations = null;
+    private Map<UUID, String> parentRegions = null;
+    private Map<UUID, String> childRegions = null;
 
     public Map<UUID, String> getOrganisations() {
         return organisations;
@@ -22,7 +24,21 @@ public final class JsonRegion {
         this.organisations = organisations;
     }
 
+    public Map<UUID, String> getParentRegions() {
+        return parentRegions;
+    }
 
+    public void setParentRegions(Map<UUID, String> parentRegions) {
+        this.parentRegions = parentRegions;
+    }
+
+    public Map<UUID, String> getChildRegions() {
+        return childRegions;
+    }
+
+    public void setChildRegions(Map<UUID, String> childRegions) {
+        this.childRegions = childRegions;
+    }
 
     public JsonRegion() {
     }

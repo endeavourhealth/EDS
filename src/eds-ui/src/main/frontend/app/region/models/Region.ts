@@ -4,4 +4,6 @@ export class Region {
     description:string;
     organisationCount:number;
     organisations : { [key:string]:string; };
+    parentRegions : { [key:string]:string; };
+    childRegions : { [key:string]:string; };
 }

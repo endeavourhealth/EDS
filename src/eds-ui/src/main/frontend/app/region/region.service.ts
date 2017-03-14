@@ -26,6 +26,18 @@ export class RegionService extends BaseHttp2Service  {
         return this.httpGet('api/region/organisations', { search : params });
     }
 
+    getParentRegions(uuid : string) :  Observable<Region[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/region/parentRegions', { search : params });
+    }
+
+    getChildRegions(uuid : string) :  Observable<Region[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/region/childRegions', { search : params });
+    }
+
     saveRegion(region : Region) : Observable<any> {
         return this.httpPost('api/region', region);
     }

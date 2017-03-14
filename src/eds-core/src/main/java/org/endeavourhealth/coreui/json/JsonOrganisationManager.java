@@ -18,6 +18,8 @@ public final class JsonOrganisationManager {
     private String dateOfRegistration = null;
     private String registrationPerson = null;
     private String evidenceOfRegistration = null;
+    private String postcode = null;
+    private String geolocation = null;
     private String uuid = null;
     private Map<UUID, String> regions = null;
 
@@ -99,5 +101,21 @@ public final class JsonOrganisationManager {
 
     public void setEvidenceOfRegistration(String evidenceOfRegistration) {
         this.evidenceOfRegistration = evidenceOfRegistration;
+    }
+
+    public String getPostcode() {
+        return postcode;
+    }
+
+    public void setPostcode(String postcode) {
+        this.postcode = postcode;
+    }
+
+    public String getGeolocation() {
+        return geolocation;
+    }
+
+    public void setGeolocation(String geolocation) {
+        this.geolocation = geolocation;
     }
 }

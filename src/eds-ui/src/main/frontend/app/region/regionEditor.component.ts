@@ -8,6 +8,7 @@ import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Region} from "./models/Region";
 import {OrganisationManagerPickerDialog} from "../organisationManager/organisationManagerPicker.dialog";
+import {RegionPickerDialog} from "./regionPicker.dialog";
 
 @Component({
     template: require('./regionEditor.html')
@@ -16,6 +17,9 @@ export class RegionEditorComponent {
 
     region : Region = <Region>{};
     organisations : Organisation[];
+    parentRegions : Region[];
+    childRegions : Region[];
+
 
     constructor(private $modal: NgbModal,
                 private state : StateService,
@@ -50,6 +54,8 @@ export class RegionEditorComponent {
             .subscribe(result =>  {
                     vm.region = result;
                     vm.getRegionOrganisations();
+                    vm.getParentRegions();
+                    vm.getChildRegions();
                 },
                 error => vm.log.error('Error loading', error, 'Error')
             );
@@ -59,13 +65,25 @@ export class RegionEditorComponent {
         var vm = this;
 
         // Populate organisations before save
-
         vm.region.organisations = {};
         for (var idx in this.organisations) {
             var organisation : Organisation = this.organisations[idx];
             this.region.organisations[organisation.uuid] = organisation.name;
         }
 
+        //populate Parent Regions
+        vm.region.parentRegions = {};
+        for (var idx in this.parentRegions) {
+            var region : Region = this.parentRegions[idx];
+            this.region.parentRegions[region.uuid] = region.name;
+        }
+
+        //populate Parent Regions
+        vm.region.childRegions = {};
+        for (var idx in this.childRegions) {
+            var region : Region = this.childRegions[idx];
+            this.region.childRegions[region.uuid] = region.name;
+        }
 
         vm.regionService.saveRegion(vm.region)
             .subscribe(saved => {
@@ -91,12 +109,45 @@ export class RegionEditorComponent {
             );
     }
 
+    private getParentRegions() {
+        var vm = this;
+        vm.regionService.getParentRegions(vm.region.uuid)
+            .subscribe(
+                result => vm.parentRegions = result,
+                error => vm.log.error('Failed to load parent regions', error, 'Load parent regions')
+            );
+    }
+
+    private getChildRegions() {
+        var vm = this;
+        vm.regionService.getChildRegions(vm.region.uuid)
+            .subscribe(
+                result => vm.childRegions = result,
+                error => vm.log.error('Failed to load child regions', error, 'Load child regions')
+            );
+    }
+
     private editOrganisations() {
         var vm = this;
-        console.log("Calling the picker");
         OrganisationManagerPickerDialog.open(vm.$modal, vm.organisations)
             .result.then(function (result : Organisation[]) {
             vm.organisations = result;
+        });
+    }
+
+    private editParentRegions() {
+        var vm = this;
+        RegionPickerDialog.open(vm.$modal, vm.parentRegions)
+            .result.then(function (result : Region[]) {
+            vm.parentRegions = result;
+        });
+    }
+
+    private editChildRegions() {
+        var vm = this;
+        RegionPickerDialog.open(vm.$modal, vm.childRegions)
+            .result.then(function (result : Region[]) {
+            vm.childRegions = result;
         });
     }
 }

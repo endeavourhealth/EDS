@@ -8,5 +8,7 @@ export class Organisation {
     dateOfRegistration: string;
     registrationPerson: string;
     evidenceOfRegistration: string;
+    postcode: string;
+    geolocation: string;
     regions : { [key:string]:string; };
 }

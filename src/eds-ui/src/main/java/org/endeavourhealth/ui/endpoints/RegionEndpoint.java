@@ -11,6 +11,7 @@ import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.mySQLDatabase.models.OrganisationEntity;
 import org.endeavourhealth.core.mySQLDatabase.models.RegionEntity;
 import org.endeavourhealth.core.mySQLDatabase.models.RegionorganisationmapEntity;
+import org.endeavourhealth.core.mySQLDatabase.models.SupraregionmapEntity;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.JsonOrganisation;
 import org.endeavourhealth.coreui.json.JsonOrganisationManager;
@@ -57,19 +58,6 @@ public final class RegionEndpoint extends AbstractEndpoint {
         }
     }
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/organisations")
-    public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
-        super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-                "Organisation(s)",
-                "Region Id", uuid);
-
-        return getRegionOrganisations(uuid);
-    }
-
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -82,14 +70,25 @@ public final class RegionEndpoint extends AbstractEndpoint {
                 "Region", region);
 
         if (region.getUuid() != null) {
-            RegionorganisationmapEntity.deleteRegionMap(region.getUuid());
             RegionEntity.updateRegion(region);
-            RegionorganisationmapEntity.saveRegionMappings(region);
         } else {
-            RegionorganisationmapEntity.deleteRegionMap(region.getUuid());
             RegionEntity.saveRegion(region);
-            RegionorganisationmapEntity.saveRegionMappings(region);
         }
+
+        //Process Mappings
+        //Region - Organisation Maps
+        RegionorganisationmapEntity.deleteRegionMap(region.getUuid());
+        RegionorganisationmapEntity.saveRegionMappings(region);
+
+        //Region - Parent Region Map
+        SupraregionmapEntity.deleteSupraRegionParentMapping(region.getUuid());
+        SupraregionmapEntity.saveSupraRegionParentMappings(region);
+
+        //Region - Child Region Map
+        SupraregionmapEntity.deleteSupraRegionChildMapping(region.getUuid());
+        SupraregionmapEntity.saveSupraRegionChildMappings(region);
+
+
 
         clearLogbackMarkers();
 
@@ -115,6 +114,45 @@ public final class RegionEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/organisations")
+    public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Organisation(s)",
+                "Region Id", uuid);
+
+        return getRegionOrganisations(uuid);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/parentRegions")
+    public Response getParentRegions(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Parent Region(s)",
+                "Region Id", uuid);
+
+        return getParentRegions(uuid);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/childRegions")
+    public Response getChildRegions(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Child Region(s)",
+                "Region Id", uuid);
+
+        return getChildRegions(uuid);
     }
 
     private Response getRegionList() throws Exception {
@@ -186,6 +224,51 @@ public final class RegionEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(regions)
                 .build();
+    }
+
+    private Response getParentRegions(String regionUuid) throws Exception {
+
+        List<Object[]> regions = RegionEntity.getSupraParentRegions(regionUuid);
+
+        List<JsonRegion> ret = jsonRegion(regions);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private Response getChildRegions(String regionUuid) throws Exception {
+
+        List<Object[]> regions = RegionEntity.getSupraChildRegions(regionUuid);
+
+        List<JsonRegion> ret = jsonRegion(regions);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private List<JsonRegion> jsonRegion(List<Object[]> regions) throws Exception {
+        List<JsonRegion> ret = new ArrayList<>();
+
+        for (Object[] regionEntity : regions) {
+            String name = regionEntity[0].toString();
+            String description = regionEntity[1]==null?"":regionEntity[1].toString();
+            String Uuid = regionEntity[2]==null?"":regionEntity[2].toString();
+
+            JsonRegion reg = new JsonRegion();
+            reg.setName(name);
+            reg.setDescription(description);
+            reg.setUuid(Uuid);
+
+            ret.add(reg);
+        }
+
+        return ret;
     }
 
 }
