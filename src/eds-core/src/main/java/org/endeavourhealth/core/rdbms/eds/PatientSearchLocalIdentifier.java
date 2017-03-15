@@ -6,39 +6,36 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import java.io.Serializable;
 import java.util.Date;
-import java.util.UUID;
 
 @Entity
 //@IdClass(ConfigPK.class)
-@Table(name = "patient_search_local_identifier", schema = "\"public\"", catalog = "eds")
+@Table(name = "patient_search_local_identifier", schema = "public", catalog = "eds")
 public class PatientSearchLocalIdentifier implements Serializable {
 
-    @Id
-    private UUID serviceId = null;
-    @Id
-    private UUID systemId = null;
+    private String serviceId = null;
+    private String systemId = null;
     private String localId = null;
-    @Id
     private String localIdSystem = null;
-    @Id
-    private UUID patientId = null;
+    private String patientId = null;
     private Date lastUpdated = null;
 
+    @Id
     @Column(name = "service_id")
-    public UUID getServiceId() {
+    public String getServiceId() {
         return serviceId;
     }
 
-    public void setServiceId(UUID serviceId) {
+    public void setServiceId(String serviceId) {
         this.serviceId = serviceId;
     }
 
+    @Id
     @Column(name = "system_id")
-    public UUID getSystemId() {
+    public String getSystemId() {
         return systemId;
     }
 
-    public void setSystemId(UUID systemId) {
+    public void setSystemId(String systemId) {
         this.systemId = systemId;
     }
 
@@ -51,6 +48,7 @@ public class PatientSearchLocalIdentifier implements Serializable {
         this.localId = localId;
     }
 
+    @Id
     @Column(name = "local_id_system")
     public String getLocalIdSystem() {
         return localIdSystem;
@@ -60,12 +58,13 @@ public class PatientSearchLocalIdentifier implements Serializable {
         this.localIdSystem = localIdSystem;
     }
 
+    @Id
     @Column(name = "patient_id")
-    public UUID getPatientId() {
+    public String getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(UUID patientId) {
+    public void setPatientId(String patientId) {
         this.patientId = patientId;
     }
 

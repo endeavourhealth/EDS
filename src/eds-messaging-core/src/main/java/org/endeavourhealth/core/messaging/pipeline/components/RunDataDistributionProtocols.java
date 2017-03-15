@@ -7,16 +7,16 @@ import org.endeavourhealth.core.configuration.RunDataDistributionProtocolsConfig
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.admin.PatientCohortRepository;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
-import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
-import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByPatientId;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
+import org.endeavourhealth.core.rdbms.eds.PatientSearch;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchManager;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
@@ -35,7 +35,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	private static final PatientCohortRepository cohortRepository = new PatientCohortRepository();
 	private static final ResourceRepository resourceRepository = new ResourceRepository();
 	private static final ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
-	private static final PatientIdentifierRepository patientIdentifierRepository = new PatientIdentifierRepository();
+	//private static final PatientIdentifierRepository patientIdentifierRepository = new PatientIdentifierRepository();
 
 	public RunDataDistributionProtocols(RunDataDistributionProtocolsConfig config) {
 		this.config = config;
@@ -147,16 +147,20 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 				return false;
 			}
 
-			String nhsNumber = findPatientNhsNumber(patientId);
-			LOG.trace("patient ID " + patientId+ " -> nhs number " + nhsNumber);
+			try {
+				String nhsNumber = findPatientNhsNumber(patientId);
+				LOG.trace("patient ID " + patientId + " -> nhs number " + nhsNumber);
 
-			if (Strings.isNullOrEmpty(nhsNumber)) {
-				return false;
+				if (Strings.isNullOrEmpty(nhsNumber)) {
+					return false;
+				}
+
+				boolean inCohort = cohortRepository.isInCohort(protocolId, serviceId, nhsNumber);
+				LOG.trace("protocol " + protocolId + " service " + serviceId + " nhs number " + nhsNumber + " -> in cohort " + inCohort);
+				return inCohort;
+			} catch (Exception ex) {
+				throw new PipelineException("Exception in protocol " + protocolId, ex);
 			}
-
-			boolean inCohort = cohortRepository.isInCohort(protocolId, serviceId, nhsNumber);
-			LOG.trace("protocol " + protocolId + " service " + serviceId + " nhs number " + nhsNumber + " -> in cohort " + inCohort);
-			return inCohort;
 
 		} else {
 
@@ -164,7 +168,17 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		}
 	}
 
-	private String findPatientNhsNumber(UUID patientId) {
+
+	private String findPatientNhsNumber(UUID patientId) throws Exception {
+
+		PatientSearch patientSearchResult = PatientSearchManager.searchByPatientId(patientId);
+		if (patientSearchResult != null) {
+			return patientSearchResult.getNhsNumber();
+		} else {
+			return null;
+		}
+	}
+	/*private String findPatientNhsNumber(UUID patientId) {
 
 		PatientIdentifierByPatientId identity = patientIdentifierRepository.getMostRecentByPatientId(patientId);
 		if (identity != null) {
@@ -173,7 +187,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		} else {
 			return null;
 		}
-	}
+	}*/
 
 	private static UUID findPatientId(UUID exchangeId, UUID batchId) throws Exception {
 

@@ -1,14 +1,29 @@
 package org.endeavourhealth.queuereader;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.base.Strings;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
+import org.endeavourhealth.core.data.ehr.ResourceRepository;
+import org.endeavourhealth.core.data.ehr.models.ResourceByService;
+import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
+import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.fhirStorage.metadata.ReferenceHelper;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchManager;
+import org.hl7.fhir.instance.formats.JsonParser;
+import org.hl7.fhir.instance.model.EpisodeOfCare;
+import org.hl7.fhir.instance.model.Patient;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class Main {
@@ -28,6 +43,11 @@ public class Main {
 			} catch (IllegalArgumentException iae) {
 				//fine, just let it continue to below
 			}
+		}
+
+		if (args.length == 1
+				&& args[0].equalsIgnoreCase("ConvertPatientSearch")) {
+			convertPatientSearch();
 		}
 
 		//hack to get the Enterprise data streaming
@@ -1187,4 +1207,70 @@ public class Main {
 
 
 	}*/
+
+	private static void convertPatientSearch() {
+		LOG.info("Converting Patient Search");
+
+		ResourceRepository resourceRepository = new ResourceRepository();
+
+		try {
+			Iterable<Service> iterable = new ServiceRepository().getAll();
+			for (Service service : iterable) {
+				UUID serviceId = service.getId();
+				LOG.info("Doing service " + service.getName());
+
+				for (UUID systemId : findSystemIds(service)) {
+
+					List<ResourceByService> resourceWrappers = resourceRepository.getResourcesByService(serviceId, systemId, ResourceType.EpisodeOfCare.toString());
+					for (ResourceByService resourceWrapper: resourceWrappers) {
+						if (Strings.isNullOrEmpty(resourceWrapper.getResourceData())) {
+							continue;
+						}
+
+						try {
+							EpisodeOfCare episodeOfCare = (EpisodeOfCare) new JsonParser().parse(resourceWrapper.getResourceData());
+							String patientId = ReferenceHelper.getReferenceId(episodeOfCare.getPatient());
+
+							ResourceHistory patientWrapper = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), UUID.fromString(patientId));
+							if (Strings.isNullOrEmpty(patientWrapper.getResourceData())) {
+								continue;
+							}
+
+							Patient patient = (Patient) new JsonParser().parse(patientWrapper.getResourceData());
+
+							PatientSearchManager.update(serviceId, systemId, patient);
+							PatientSearchManager.update(serviceId, systemId, episodeOfCare);
+
+						} catch (Exception ex) {
+							LOG.error("Failed on " + resourceWrapper.getResourceType() + " " + resourceWrapper.getResourceId());
+						}
+					}
+				}
+			}
+
+			LOG.info("Converted Patient Search");
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+
+	}
+
+	private static List<UUID> findSystemIds(Service service) throws Exception {
+
+		List<UUID> ret = new ArrayList<>();
+
+		List<JsonServiceInterfaceEndpoint> endpoints = null;
+		try {
+			endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+			for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
+				UUID endpointSystemId = endpoint.getSystemUuid();
+				ret.add(endpointSystemId);
+			}
+		} catch (Exception e) {
+			throw new Exception("Failed to process endpoints from service " + service.getId());
+		}
+
+		return ret;
+	}
 }

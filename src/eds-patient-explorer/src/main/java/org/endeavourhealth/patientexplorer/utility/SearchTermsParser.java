@@ -1,7 +1,6 @@
 package org.endeavourhealth.patientexplorer.utility;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -26,6 +25,11 @@ public class SearchTermsParser {
                 continue;
 
             token = token.trim();
+
+            //removes need to check for empty tokens when using the results of the parsed search term
+            if (StringUtils.isEmpty(token)) {
+                continue;
+            }
 
             if (StringUtils.isNumeric(token)) {
                 if (token.length() == 10)

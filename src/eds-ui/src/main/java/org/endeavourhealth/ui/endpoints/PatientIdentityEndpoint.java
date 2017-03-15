@@ -1,6 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
@@ -9,11 +10,8 @@ import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
-import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
-import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByLocalId;
-import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByNhsNumber;
-import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByPatientId;
-import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.core.rdbms.eds.PatientSearch;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchManager;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.framework.exceptions.BadRequestException;
 import org.endeavourhealth.ui.json.JsonPatientIdentifier;
@@ -37,7 +35,7 @@ import java.util.UUID;
 public final class PatientIdentityEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(PatientIdentityEndpoint.class);
 
-    private static final PatientIdentifierRepository identifierRepository = new PatientIdentifierRepository();
+    //private static final PatientIdentifierRepository identifierRepository = new PatientIdentifierRepository();
     private static final ServiceRepository serviceRepository = new ServiceRepository();
     private static final LibraryRepository libraryRepository = new LibraryRepository();
 
@@ -76,7 +74,27 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         List<JsonPatientIdentifier> ret = new ArrayList<>();
 
-        List<PatientIdentifierByLocalId> identifiers = identifierRepository.getForLocalId(serviceId, systemId, localId);
+        List<PatientSearch> identifiers = PatientSearchManager.searchByLocalId(serviceId, systemId, localId);
+        for (PatientSearch identifier: identifiers) {
+
+            JsonPatientIdentifier json = new JsonPatientIdentifier();
+            json.setServiceId(serviceId);
+            json.setServiceName(serviceName);
+            json.setSystemId(systemId);
+            json.setSystemName(systemName);
+            json.setNhsNumber(identifier.getNhsNumber());
+            json.setForenames(identifier.getForenames());
+            json.setSurname(identifier.getSurname());
+            json.setDateOfBirth(identifier.getDateOfBirth());
+            json.setPostcode(identifier.getPostcode());
+            json.setGender(identifier.getGender());
+            json.setPatientId(UUID.fromString(identifier.getPatientId()));
+            //json.setLocalId(identifier.getLocalId());
+            //json.setLocalIdSystem(identifier.getLocalIdSystem());
+
+            ret.add(json);
+        }
+        /*List<PatientIdentifierByLocalId> identifiers = identifierRepository.getForLocalId(serviceId, systemId, localId);
         for (PatientIdentifierByLocalId identifier: identifiers) {
 
             JsonPatientIdentifier json = new JsonPatientIdentifier();
@@ -95,7 +113,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
             json.setLocalIdSystem(identifier.getLocalIdSystem());
 
             ret.add(json);
-        }
+        }*/
 
         removeDuplicates(ret);
 
@@ -122,7 +140,33 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         List<JsonPatientIdentifier> ret = new ArrayList<>();
 
-        List<PatientIdentifierByNhsNumber> identifiers = identifierRepository.getForNhsNumber(nhsNumber);
+        List<PatientSearch> identifiers = PatientSearchManager.searchByNhsNumber(nhsNumber);
+        for (PatientSearch identifier: identifiers) {
+
+            UUID serviceId = UUID.fromString(identifier.getServiceId());
+            UUID systemId = UUID.fromString(identifier.getSystemId());
+
+            String serviceName = getServiceNameForId(serviceId);
+            String systemName = getSystemNameForId(systemId);
+
+            JsonPatientIdentifier json = new JsonPatientIdentifier();
+            json.setServiceId(serviceId);
+            json.setServiceName(serviceName);
+            json.setSystemId(systemId);
+            json.setSystemName(systemName);
+            json.setNhsNumber(identifier.getNhsNumber());
+            json.setForenames(identifier.getForenames());
+            json.setSurname(identifier.getSurname());
+            json.setDateOfBirth(identifier.getDateOfBirth());
+            json.setPostcode(identifier.getPostcode());
+            json.setGender(identifier.getGender());
+            json.setPatientId(UUID.fromString(identifier.getPatientId()));
+            //json.setLocalId(identifier.getLocalId());
+            //json.setLocalIdSystem(identifier.getLocalIdSystem());
+
+            ret.add(json);
+        }
+        /*List<PatientIdentifierByNhsNumber> identifiers = identifierRepository.getForNhsNumber(nhsNumber);
         for (PatientIdentifierByNhsNumber identifier: identifiers) {
 
             UUID serviceId = identifier.getServiceId();
@@ -147,7 +191,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
             json.setLocalIdSystem(identifier.getLocalIdSystem());
 
             ret.add(json);
-        }
+        }*/
 
         removeDuplicates(ret);
 
@@ -184,7 +228,33 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         if (patientId != null) {
 
-            PatientIdentifierByPatientId identifier = identifierRepository.getMostRecentByPatientId(patientId);
+            PatientSearch identifier = PatientSearchManager.searchByPatientId(patientId);
+            if (identifier != null) {
+
+                UUID serviceId = UUID.fromString(identifier.getServiceId());
+                UUID systemId = UUID.fromString(identifier.getSystemId());
+
+                String serviceName = getServiceNameForId(serviceId);
+                String systemName = getSystemNameForId(systemId);
+
+                JsonPatientIdentifier json = new JsonPatientIdentifier();
+                json.setServiceId(serviceId);
+                json.setServiceName(serviceName);
+                json.setSystemId(systemId);
+                json.setSystemName(systemName);
+                json.setNhsNumber(identifier.getNhsNumber());
+                json.setForenames(identifier.getForenames());
+                json.setSurname(identifier.getSurname());
+                json.setDateOfBirth(identifier.getDateOfBirth());
+                json.setPostcode(identifier.getPostcode());
+                json.setGender(identifier.getGender());
+                json.setPatientId(UUID.fromString(identifier.getPatientId()));
+                //json.setLocalId(identifier.getLocalId());
+                //json.setLocalIdSystem(identifier.getLocalIdSystem());
+
+                ret.add(json);
+            }
+            /*PatientIdentifierByPatientId identifier = identifierRepository.getMostRecentByPatientId(patientId);
             if (identifier != null) {
 
                 UUID serviceId = identifier.getServiceId();
@@ -209,7 +279,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
                 json.setLocalIdSystem(identifier.getLocalIdSystem());
 
                 ret.add(json);
-            }
+            }*/
         }
 
         removeDuplicates(ret);

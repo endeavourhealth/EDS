@@ -10,12 +10,11 @@ import org.endeavourhealth.core.data.audit.models.ExchangeEvent;
 import org.endeavourhealth.core.data.audit.models.ExchangeTransformAudit;
 import org.endeavourhealth.core.data.audit.models.ExchangeTransformErrorState;
 import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
-import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceEntry;
-import org.hl7.fhir.instance.model.Resource;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +28,7 @@ public class FhirDeletionService {
 
     private ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
     private AuditRepository auditRepository = new AuditRepository();
-    private PatientIdentifierRepository patientIdentifierRepository = new PatientIdentifierRepository();
+    //private PatientIdentifierRepository patientIdentifierRepository = new PatientIdentifierRepository();
     private ResourceRepository resourceRepository = new ResourceRepository();
     private Service service = null;
     private String progress = null;
@@ -122,7 +121,8 @@ public class FhirDeletionService {
             }
 
             //get rid of the patient identity record too (patient_identifier_by_local_id)
-            patientIdentifierRepository.hardDeleteForService(service.getId(), systemId);
+            PatientSearchManager.delete(service.getId(), systemId);
+            //patientIdentifierRepository.hardDeleteForService(service.getId(), systemId);
         }
 
         this.isComplete = true;
@@ -140,75 +140,6 @@ public class FhirDeletionService {
         }
     }
 
-    /*public void deleteData() throws Exception {
-        LOG.info("Deleting data for service " + service.getId());
-
-        //get all the transform audits and sum up the number of batches ever created, so we know what we're aiming to delete
-        List<ExchangeTransformAudit> transformAudits = getTransformAudits();
-        int countBatches = 0;
-        for (ExchangeTransformAudit exchangeAudit: transformAudits) {
-            countBatches += exchangeAudit.getNumberBatchesCreated();
-        }
-        LOG.trace("Found " + transformAudits.size() + " transform audits with " + countBatches + " batches to delete");
-
-        //first, get rid of all the FHIR resource data
-        int countBatchesDone = 0;
-        List<UUID> exchangeIds = new ArrayList<>();
-
-        for (ExchangeTransformAudit exchangeAudit: transformAudits) {
-            //get all batches received for each exchange
-            List<UUID> batchIds = getBatchIds(exchangeAudit.getExchangeId());
-            for (UUID batchId : batchIds) {
-
-                countBatchesDone ++;
-                progress = new DecimalFormat("###.##").format(((double)(countBatchesDone) / (double)countBatches) * 100d) + "%";
-                LOG.trace("Deleting data for BatchId " + batchId + " " + progress);
-
-                List<ResourceByExchangeBatch> resourceByExchangeBatchList = resourceRepository.getResourcesForBatch(batchId);
-                for (ResourceByExchangeBatch resource : resourceByExchangeBatchList) {
-
-                    //populate the resource entry util class with the keys we'll need to delete the resource
-                    ResourceEntry resourceEntry = new ResourceEntry();
-                    resourceEntry.setServiceId(service.getId());
-                    resourceEntry.setSystemId(exchangeAudit.getSystemId());
-                    resourceEntry.setResourceType(resource.getResourceType());
-                    resourceEntry.setResourceId(resource.getResourceId());
-                    resourceEntry.setVersion(resource.getVersion());
-                    resourceEntry.setBatchId(batchId);
-
-                    resourceRepository.hardDelete(resourceEntry);
-                }
-            }
-
-            //add an event to the exchange to say what we did
-            ExchangeEvent exchangeEvent = new ExchangeEvent();
-            exchangeEvent.setExchangeId(exchangeAudit.getExchangeId());
-            exchangeEvent.setTimestamp(new Date());
-            exchangeEvent.setEventDesc("All data deleted from repository");
-            auditRepository.save(exchangeEvent);
-
-            //mark the transform audit as deleted
-            exchangeAudit.setDeleted(new Date());
-            auditRepository.save(exchangeAudit);
-        }
-
-        //then tidy remove any remaining data and mark the audits as deleted
-        this.progress = "Resources deleted - finishing up";
-        for (UUID systemId: getSystemsIds()) {
-            LOG.trace("Deleting remaining data for service ID {} and system ID {}", service.getId(), systemId);
-
-            //delete any transform summary, since all errors are now gone
-            ExchangeTransformErrorState summary = auditRepository.getErrorState(service.getId(), systemId);
-            if (summary != null) {
-                auditRepository.delete(summary);
-            }
-
-            //get rid of the patient identity record too (patient_identifier_by_local_id)
-            patientIdentifierRepository.hardDeleteForService(service.getId(), systemId);
-        }
-
-        this.isComplete = true;
-    }*/
 
     private List<ExchangeTransformAudit> getTransformAudits() throws Exception {
 
@@ -220,41 +151,6 @@ public class FhirDeletionService {
         }
         return ret;
     }
-
-    /*private List<ResourceEntry> createResourceEntries() throws Exception {
-
-        List<ResourceEntry> ret = new ArrayList<>();
-
-        for (UUID systemId: getSystemsIds()) {
-
-            //get all exchanges received for service
-            List<ExchangeTransformAudit> exchangeAudits = getExchangeTransformAudits(systemId);
-            for (ExchangeTransformAudit exchangeAudit : exchangeAudits) {
-
-                //get all batches received for each exchange
-                List<UUID> batchIds = getBatchIds(exchangeAudit.getExchangeId());
-                for (UUID batchId : batchIds) {
-
-                    List<ResourceByExchangeBatch> resourceByExchangeBatchList = resourceRepository.getResourcesForBatch(batchId);
-                    for (ResourceByExchangeBatch resource : resourceByExchangeBatchList) {
-
-                        //populate the resource entry util class with the keys we'll need to delete the resource
-                        ResourceEntry resourceEntry = new ResourceEntry();
-                        resourceEntry.setServiceId(service.getId());
-                        resourceEntry.setSystemId(systemId);
-                        resourceEntry.setResourceType(resource.getResourceType());
-                        resourceEntry.setResourceId(resource.getResourceId());
-                        resourceEntry.setVersion(resource.getVersion());
-                        resourceEntry.setBatchId(batchId);
-
-                        ret.add(resourceEntry);
-                    }
-                }
-            }
-        }
-
-        return ret;
-    }*/
 
     private List<UUID> getBatchIds(UUID exchangeId) {
 
