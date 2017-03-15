@@ -40,6 +40,100 @@ public class OrganisationEntity {
     private String evidenceOfRegistration;
     private String uuid;
 
+    public static List<Object[]> getOrganisationsForRegion(String regionUUID) throws Exception {
+
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getOrganisationsForRegion");
+        spq.setParameter("UUID", regionUUID);
+        spq.execute();
+        List<Object[]> ent = spq.getResultList();
+        entityManager.close();
+
+        return ent;
+    }
+
+    public static List<OrganisationEntity> getAllOrganisations() throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
+        Root<OrganisationEntity> rootEntry = cq.from(OrganisationEntity.class);
+        CriteriaQuery<OrganisationEntity> all = cq.select(rootEntry);
+        TypedQuery<OrganisationEntity> allQuery = entityManager.createQuery(all);
+        return allQuery.getResultList();
+    }
+
+    public static OrganisationEntity getOrganisation(String uuid) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        return entityManager.find(OrganisationEntity.class, uuid);
+    }
+
+    public static void updateOrganisation(JsonOrganisationManager organisation) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        OrganisationEntity organisationEntity = entityManager.find(OrganisationEntity.class, organisation.getUuid());
+        entityManager.getTransaction().begin();
+        organisationEntity.setName(organisation.getName());
+        organisationEntity.setAlternativeName(organisation.getAlternativeName());
+        organisationEntity.setOdsCode(organisation.getOdsCode());
+        organisationEntity.setIcoCode(organisation.getIcoCode());
+        organisationEntity.setIgToolkitStatus(organisation.getIgToolkitStatus());
+        if (organisation.getDateOfRegistration() != null){
+            organisationEntity.setDateOfRegistration(Date.valueOf(organisation.getDateOfRegistration()));
+        }
+        //organisationEntity.setRegistrationPerson(organisation.getRegistrationPerson());
+        organisationEntity.setEvidenceOfRegistration(organisation.getEvidenceOfRegistration());
+        entityManager.getTransaction().commit();
+    }
+
+    public static void saveOrganisation(JsonOrganisationManager organisation) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        OrganisationEntity organisationEntity = new OrganisationEntity();
+        entityManager.getTransaction().begin();
+        organisationEntity.setName(organisation.getName());
+        organisationEntity.setAlternativeName(organisation.getAlternativeName());
+        organisationEntity.setOdsCode(organisation.getOdsCode());
+        organisationEntity.setIcoCode(organisation.getIcoCode());
+        organisationEntity.setIgToolkitStatus(organisation.getIgToolkitStatus());
+        if (organisation.getDateOfRegistration() != null){
+            organisationEntity.setDateOfRegistration(Date.valueOf(organisation.getDateOfRegistration()));
+        }
+        //organisationEntity.setRegistrationPerson(organisation.getRegistrationPerson());
+        organisationEntity.setEvidenceOfRegistration(organisation.getEvidenceOfRegistration());
+        organisationEntity.setUuid(UUID.randomUUID().toString());
+        entityManager.persist(organisationEntity);
+        entityManager.getTransaction().commit();
+    }
+
+    public static void deleteOrganisation(String uuid) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        OrganisationEntity organisationEntity = entityManager.find(OrganisationEntity.class, uuid);
+        entityManager.getTransaction().begin();
+        entityManager.remove(organisationEntity);
+        entityManager.getTransaction().commit();
+    }
+
+    public static List<OrganisationEntity> search(String expression) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
+        Root<OrganisationEntity> rootEntry = cq.from(OrganisationEntity.class);
+
+        Predicate predicate = cb.or(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"),
+                cb.like(cb.upper(rootEntry.get("odsCode")), "%" + expression.toUpperCase() + "%"),
+                cb.like(cb.upper(rootEntry.get("alternativeName")), "%" + expression.toUpperCase() + "%"),
+                cb.like(cb.upper(rootEntry.get("icoCode")), "%" + expression.toUpperCase() + "%"));
+
+        cq.where(predicate);
+        TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
+        return query.getResultList();
+    }
+
     @Basic
     @Column(name = "name", nullable = false, length = 100)
     public String getName() {
@@ -167,99 +261,5 @@ public class OrganisationEntity {
         result = 31 * result + (evidenceOfRegistration != null ? evidenceOfRegistration.hashCode() : 0);
         result = 31 * result + (uuid != null ? uuid.hashCode() : 0);
         return result;
-    }
-
-    public static List<Object[]> getOrganisationsForRegion(String regionUUID) throws Exception {
-
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getOrganisationsForRegion");
-        spq.setParameter("UUID", regionUUID);
-        spq.execute();
-        List<Object[]> ent = spq.getResultList();
-        entityManager.close();
-
-        return ent;
-    }
-
-    public static List<OrganisationEntity> getAllOrganisations() throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
-        Root<OrganisationEntity> rootEntry = cq.from(OrganisationEntity.class);
-        CriteriaQuery<OrganisationEntity> all = cq.select(rootEntry);
-        TypedQuery<OrganisationEntity> allQuery = entityManager.createQuery(all);
-        return allQuery.getResultList();
-    }
-
-    public static OrganisationEntity getOrganisation(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        return entityManager.find(OrganisationEntity.class, uuid);
-    }
-
-    public static void updateOrganisation(JsonOrganisationManager organisation) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        OrganisationEntity organisationEntity = entityManager.find(OrganisationEntity.class, organisation.getUuid());
-        entityManager.getTransaction().begin();
-        organisationEntity.setName(organisation.getName());
-        organisationEntity.setAlternativeName(organisation.getAlternativeName());
-        organisationEntity.setOdsCode(organisation.getOdsCode());
-        organisationEntity.setIcoCode(organisation.getIcoCode());
-        organisationEntity.setIgToolkitStatus(organisation.getIgToolkitStatus());
-        if (organisation.getDateOfRegistration() != null){
-            organisationEntity.setDateOfRegistration(Date.valueOf(organisation.getDateOfRegistration()));
-        }
-        //organisationEntity.setRegistrationPerson(organisation.getRegistrationPerson());
-        organisationEntity.setEvidenceOfRegistration(organisation.getEvidenceOfRegistration());
-        entityManager.getTransaction().commit();
-    }
-
-    public static void saveOrganisation(JsonOrganisationManager organisation) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        OrganisationEntity organisationEntity = new OrganisationEntity();
-        entityManager.getTransaction().begin();
-        organisationEntity.setName(organisation.getName());
-        organisationEntity.setAlternativeName(organisation.getAlternativeName());
-        organisationEntity.setOdsCode(organisation.getOdsCode());
-        organisationEntity.setIcoCode(organisation.getIcoCode());
-        organisationEntity.setIgToolkitStatus(organisation.getIgToolkitStatus());
-        if (organisation.getDateOfRegistration() != null){
-            organisationEntity.setDateOfRegistration(Date.valueOf(organisation.getDateOfRegistration()));
-        }
-        //organisationEntity.setRegistrationPerson(organisation.getRegistrationPerson());
-        organisationEntity.setEvidenceOfRegistration(organisation.getEvidenceOfRegistration());
-        organisationEntity.setUuid(UUID.randomUUID().toString());
-        entityManager.persist(organisationEntity);
-        entityManager.getTransaction().commit();
-    }
-
-    public static void deleteOrganisation(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        OrganisationEntity organisationEntity = entityManager.find(OrganisationEntity.class, uuid);
-        entityManager.getTransaction().begin();
-        entityManager.remove(organisationEntity);
-        entityManager.getTransaction().commit();
-    }
-
-    public static List<OrganisationEntity> search(String expression) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
-        Root<OrganisationEntity> rootEntry = cq.from(OrganisationEntity.class);
-
-        Predicate predicate = cb.or(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"),
-                cb.like(cb.upper(rootEntry.get("odsCode")), "%" + expression.toUpperCase() + "%"),
-                cb.like(cb.upper(rootEntry.get("alternativeName")), "%" + expression.toUpperCase() + "%"),
-                cb.like(cb.upper(rootEntry.get("icoCode")), "%" + expression.toUpperCase() + "%"));
-
-        cq.where(predicate);
-        TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
-        return query.getResultList();
     }
 }

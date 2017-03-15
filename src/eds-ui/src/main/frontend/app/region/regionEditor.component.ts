@@ -1,6 +1,5 @@
 import {Component} from "@angular/core";
 import {Organisation} from "../organisationManager/models/Organisation";
-import {Service} from "../services/models/Service";
 import {AdminService} from "../administration/admin.service";
 import {RegionService} from "./region.service";
 import {LoggerService} from "../common/logger.service";
@@ -9,6 +8,8 @@ import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Region} from "./models/Region";
 import {OrganisationManagerPickerDialog} from "../organisationManager/organisationManagerPicker.dialog";
 import {RegionPickerDialog} from "./regionPicker.dialog";
+import {Marker} from "./models/Marker";
+import {OrganisationManagerService} from "../organisationManager/organisationManager.service";
 
 @Component({
     template: require('./regionEditor.html')
@@ -19,11 +20,16 @@ export class RegionEditorComponent {
     organisations : Organisation[];
     parentRegions : Region[];
     childRegions : Region[];
+    lat: number = 54.4347266;
+    lng: number = -4.7194005;
+    zoom: number = 6.01;
+    markers: Marker[];
 
 
     constructor(private $modal: NgbModal,
                 private state : StateService,
                 private log:LoggerService,
+                private organisationManagerService : OrganisationManagerService,
                 private adminService : AdminService,
                 private regionService : RegionService,
                 private transition : Transition
@@ -56,6 +62,7 @@ export class RegionEditorComponent {
                     vm.getRegionOrganisations();
                     vm.getParentRegions();
                     vm.getChildRegions();
+                    vm.getOrganisationMarkers();
                 },
                 error => vm.log.error('Error loading', error, 'Error')
             );
@@ -124,6 +131,15 @@ export class RegionEditorComponent {
             .subscribe(
                 result => vm.childRegions = result,
                 error => vm.log.error('Failed to load child regions', error, 'Load child regions')
+            );
+    }
+
+    private getOrganisationMarkers() {
+        var vm = this;
+        vm.organisationManagerService.getOrganisationMarkers(vm.region.uuid)
+            .subscribe(
+                result => vm.markers = result,
+                error => vm.log.error('Failed to load oranisation markers', error, 'Load organisation Markers')
             );
     }
 

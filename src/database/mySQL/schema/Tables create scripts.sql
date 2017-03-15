@@ -23,17 +23,10 @@ create table OrganisationManager.Organisation (
     date_of_registration date null,
     registration_person char(36) null,  /*change to not null*/
     evidence_of_registration varchar(500) null, /*change to not null*/
-    postcode varchar(10) null,
-    geolocation varchar(100) null,
     
     index (name asc, ods_code asc)
 );
 
-alter table OrganisationManager.Organisation
-add column postcode varchar(10) null;
-
-alter table OrganisationManager.Organisation
-add column geolocation varchar(100) null;
 
 alter table OrganisationManager.Organisation
 modify date_of_registration date null;
@@ -64,4 +57,22 @@ create table OrganisationManager.SupraRegionMap (
     foreign key (ParentRegionUuid) references OrganisationManager.Region(uuid) on delete cascade,
     foreign key (ChildRegionUUid) references OrganisationManager.Region(uuid)  on delete cascade
 );
+
+drop table if exists OrganisationManager.Address;
+
+create table OrganisationManager.Address (
+	Uuid char(36) not null primary key,
+    OrganisationUuid char(36) not null,
+    BuildingName varchar(100) null,
+    NumberAndStreet varchar(100) null,
+    Locality varchar(100) null,
+    City varchar(100) null,
+    County varchar(100) null,
+    Postcode varchar(100) null,
+    Geolocation varchar(100) null,
+    GeolocationReprocess tinyint(1),        
+    
+    foreign key (OrganisationUuid) references OrganisationManager.organisation(uuid) on delete cascade
+);
+
 

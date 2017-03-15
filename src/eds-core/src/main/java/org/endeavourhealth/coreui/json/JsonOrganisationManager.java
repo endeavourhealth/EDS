@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.core.mySQLDatabase.models.RegionEntity;
 import org.joda.time.DateTime;
 
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class JsonOrganisationManager {
@@ -18,10 +16,9 @@ public final class JsonOrganisationManager {
     private String dateOfRegistration = null;
     private String registrationPerson = null;
     private String evidenceOfRegistration = null;
-    private String postcode = null;
-    private String geolocation = null;
     private String uuid = null;
     private Map<UUID, String> regions = null;
+    private List<JsonAddress> addresses = new ArrayList<>();
 
     public String getUuid() {
         return uuid;
@@ -103,19 +100,11 @@ public final class JsonOrganisationManager {
         this.evidenceOfRegistration = evidenceOfRegistration;
     }
 
-    public String getPostcode() {
-        return postcode;
+    public List<JsonAddress> getAddresses() {
+        return addresses;
     }
 
-    public void setPostcode(String postcode) {
-        this.postcode = postcode;
-    }
-
-    public String getGeolocation() {
-        return geolocation;
-    }
-
-    public void setGeolocation(String geolocation) {
-        this.geolocation = geolocation;
+    public void setAddresses(List<JsonAddress> addresses) {
+        this.addresses = addresses;
     }
 }

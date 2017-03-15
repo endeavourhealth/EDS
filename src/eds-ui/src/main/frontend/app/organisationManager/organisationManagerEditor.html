@@ -50,6 +50,37 @@
                         <input type="text" class="form-control" placeholder="Evidence of Registration" [(ngModel)]="organisation.evidenceOfRegistration" name="evidenceOfRegistration">
                     </div>
                 </div>
+                <button type="button" class="btn btn-sm btn-info" (click)="addAddress()">Add Address</button>
+                <div class="well" *ngFor="let address of addresses">
+                    <div class="row">
+                        <div class="form-group col-md-4">
+                            <label class="control-label">Building Name</label>
+                            <input type="text" class="form-control" placeholder="Building Name" [(ngModel)]="address.buildingName" name="buildingName">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label class="control-label">Number and Street</label>
+                            <input type="text" class="form-control" placeholder="Number and Street" [(ngModel)]="address.numberAndStreet" name="numberAndStreet">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label class="control-label">Locality</label>
+                            <input type="text" class="form-control" placeholder="Locality" [(ngModel)]="address.locality" name="locality">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-md-4">
+                            <label class="control-label">City</label>
+                            <input type="text" class="form-control" placeholder="City" [(ngModel)]="address.city" name="city">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label class="control-label">County</label>
+                            <input type="text" class="form-control" placeholder="County" [(ngModel)]="address.county" name="county">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label class="control-label">Postcode</label>
+                            <input type="text" class="form-control" placeholder="Postcode" [(ngModel)]="address.postcode" name="postcode">
+                        </div>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="form-group col-md-12">
                         <label class="control-label">Regions</label> <button type="button" class="btn btn-xs btn-success" (click)="editRegions()">Edit</button>

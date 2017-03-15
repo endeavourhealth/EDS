@@ -3,7 +3,6 @@ import {URLSearchParams, Http} from "@angular/http";
 import {Observable} from "rxjs";
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 import {Organisation} from "../organisationManager/models/Organisation";
-import {Service} from "../services/models/Service";
 import {Region} from "./models/Region";
 
 @Injectable()

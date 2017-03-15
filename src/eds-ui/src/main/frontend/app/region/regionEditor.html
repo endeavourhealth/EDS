@@ -74,6 +74,20 @@
                     </div>
                 </div>
             </form>
+            <sebm-google-map
+                    [latitude]="lat"
+                    [longitude]="lng"
+                    [zoom]="6.00"
+                    [disableDefaultUI]="false"
+                    [zoomControl]="false">
+                <sebm-google-map-marker *ngFor="let m of markers;let i = index"
+                                        [latitude]=m.lat
+                                        [longitude]=m.lng>
+                    <sebm-google-map-info-window>
+                        <strong>{{m.name}}</strong>
+                    </sebm-google-map-info-window>
+                </sebm-google-map-marker>
+            </sebm-google-map>
         </div>
     </div>
 </div>

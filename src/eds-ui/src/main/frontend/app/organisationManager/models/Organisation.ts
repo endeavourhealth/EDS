@@ -1,3 +1,5 @@
+import {Address} from './Address';
+
 export class Organisation {
     uuid : string;
     name:string;
@@ -11,4 +13,5 @@ export class Organisation {
     postcode: string;
     geolocation: string;
     regions : { [key:string]:string; };
+    addresses : Address[];
 }

@@ -4,9 +4,12 @@ import {Observable} from "rxjs";
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 import {Organisation} from "./models/Organisation";
 import {Region} from "../region/models/Region";
+import {Address} from "./models/Address";
+import {Marker} from "../region/models/Marker";
 
 @Injectable()
 export class OrganisationManagerService extends BaseHttp2Service  {
+
     constructor(http : Http) { super (http); }
 
     getOrganisations(): Observable<Organisation[]> {
@@ -25,6 +28,12 @@ export class OrganisationManagerService extends BaseHttp2Service  {
         return this.httpGet('api/organisationManager/regions', { search : params });
     }
 
+    getOrganisationAddresses(uuid : string) :  Observable<Address[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/organisationManager/addresses', { search : params });
+    }
+
     saveOrganisation(organisation : Organisation) : Observable<any> {
         return this.httpPost('api/organisationManager', organisation);
     }
@@ -38,7 +47,14 @@ export class OrganisationManagerService extends BaseHttp2Service  {
     search(searchData : string) : Observable<Organisation[]> {
         let params = new URLSearchParams();
         params.set('searchData',searchData);
-        console.log("searching " + searchData)
         return this.httpGet('api/organisationManager', { search : params });
     }
+
+    getOrganisationMarkers(uuid : string) : Observable<Marker[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/organisationManager/markers', { search : params });
+    }
+
+
 }

@@ -1,6 +1,6 @@
 import {Component} from "@angular/core";
 import {Organisation} from "../organisationManager/models/Organisation";
-import {Service} from "../services/models/Service";
+import {Address} from "../organisationManager/models/Address";
 import {AdminService} from "../administration/admin.service";
 import {LoggerService} from "../common/logger.service";
 import {Transition, StateService} from "ui-router-ng2";
@@ -17,7 +17,8 @@ export class OrganisationManagerEditorComponent {
     region : Region = <Region>{};
     organisation : Organisation = <Organisation>{};
     regions : Region[];
-    organisations : Organisation[];
+    addresses : Address[];
+    location : any;
 
     constructor(private $modal: NgbModal,
                 private state : StateService,
@@ -52,6 +53,7 @@ export class OrganisationManagerEditorComponent {
             .subscribe(result =>  {
                     vm.organisation = result;
                     vm.getOrganisationRegions();
+                    vm.getOrganisationAddresses();
                 },
                 error => vm.log.error('Error loading', error, 'Error')
             );
@@ -59,14 +61,15 @@ export class OrganisationManagerEditorComponent {
 
     save(close : boolean) {
         var vm = this;
-
         // Populate organisations regions before save
-
          vm.organisation.regions = {};
          for (var idx in this.regions) {
          var region : Region = this.regions[idx];
          this.organisation.regions[region.uuid] = region.name;
          }
+
+         //Populate Addresses before save
+        vm.organisation.addresses = this.addresses;
 
 
         vm.organisationManagerService.saveOrganisation(vm.organisation)
@@ -84,6 +87,13 @@ export class OrganisationManagerEditorComponent {
         this.state.go(this.transition.from());
     }
 
+    addAddress() {
+        var vm = this;
+        var address : Address = <Address>{};
+        address.organisationUuid = vm.organisation.uuid;
+        vm.addresses.push(address);
+    }
+
     private editRegions() {
         var vm = this;
         RegionPickerDialog.open(vm.$modal, vm.regions)
@@ -98,6 +108,15 @@ export class OrganisationManagerEditorComponent {
             .subscribe(
                 result => vm.regions = result,
                 error => vm.log.error('Failed to load organisation regions', error, 'Load organisation regions')
+            );
+    }
+
+    private getOrganisationAddresses() {
+        var vm = this;
+        vm.organisationManagerService.getOrganisationAddresses(vm.organisation.uuid)
+            .subscribe(
+                result => vm.addresses = result,
+                error => vm.log.error('Failed to load organisation Addresses', error, 'Load organisation Addresses')
             );
     }
 }
