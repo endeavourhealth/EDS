@@ -1242,7 +1242,7 @@ public class Main {
 							PatientSearchManager.update(serviceId, systemId, episodeOfCare);
 
 						} catch (Exception ex) {
-							LOG.error("Failed on " + resourceWrapper.getResourceType() + " " + resourceWrapper.getResourceId());
+							LOG.error("Failed on " + resourceWrapper.getResourceType() + " " + resourceWrapper.getResourceId(), ex);
 						}
 					}
 				}
