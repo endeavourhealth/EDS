@@ -54,10 +54,12 @@ export class AuthHttpService extends Http {
 		if (mergedOptions.withCredentials == null)
 			mergedOptions.withCredentials = true;
 
-		var authz = Auth.factory().getAuthz();
-		if (authz != null && authz.token) {
+		if (mergedOptions.withCredentials) {
+			var authz = Auth.factory().getAuthz();
+			if (authz != null && authz.token) {
 				const token = authz.token;
 				if (token) mergedOptions.headers.append('Authorization', `Bearer ${token}`);
+			}
 		}
 		return mergedOptions;
 	}
