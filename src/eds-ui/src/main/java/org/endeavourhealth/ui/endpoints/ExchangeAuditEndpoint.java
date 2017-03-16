@@ -251,7 +251,8 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             throw new BadRequestException("Failed to find PostMessageToExchange config details for exchange " + exchangeName);
         }
 
-        org.endeavourhealth.core.messaging.exchange.Exchange exchange = retrieveExchange(exchangeId);
+        org.endeavourhealth.core.messaging.exchange.Exchange exchange = AuditWriter.readExchange(exchangeId);
+        //org.endeavourhealth.core.messaging.exchange.Exchange exchange = retrieveExchange(exchangeId);
 
         //to make sure the latest setup applies, re-calculate the protocols that apply to this exchange
         String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
@@ -425,7 +426,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .collect(StreamExtension.singleOrNullCollector());
     }
 
-    private org.endeavourhealth.core.messaging.exchange.Exchange retrieveExchange(UUID exchangeId) throws Exception {
+    /*private org.endeavourhealth.core.messaging.exchange.Exchange retrieveExchange(UUID exchangeId) throws Exception {
 
         Exchange exchangeAudit = new AuditRepository().getExchange(exchangeId);
         String body = exchangeAudit.getBody();
@@ -438,7 +439,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             exchange.setHeader(entry.getKey(), entry.getValue());
 
         return exchange;
-    }
+    }*/
 
     private void postToExchange(PostMessageToExchangeConfig exchangeConfig, org.endeavourhealth.core.messaging.exchange.Exchange exchange) throws Exception {
 

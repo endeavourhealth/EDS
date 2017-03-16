@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import java.util.Date;
 
 public abstract class AbstractEndpoint {
 
@@ -18,7 +19,7 @@ public abstract class AbstractEndpoint {
 
 	protected Response Process(HttpHeaders headers, String body, Pipeline pipeline) {
 
-		Exchange exchange = new Exchange(UUIDs.timeBased(), body); //use a time-based UUID, so exchanges can easily be sorted
+		Exchange exchange = new Exchange(UUIDs.timeBased(), body, new Date()); //use a time-based UUID, so exchanges can easily be sorted
 
 		for (String key : headers.getRequestHeaders().keySet()) {
 			exchange.setHeader(key, headers.getHeaderString(key));

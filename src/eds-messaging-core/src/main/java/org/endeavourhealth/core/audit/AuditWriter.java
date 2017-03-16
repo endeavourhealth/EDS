@@ -38,6 +38,7 @@ public final class AuditWriter {
 
         UUID uuid = ex.getExchangeId();
         String body = ex.getBody();
+        Date timestamp = ex.getTimestamp();
 
         //use jackson to write the headers to JSON
         String headersJson = null;
@@ -52,7 +53,7 @@ public final class AuditWriter {
 
         //always re-save the exchange, so any new/changed headers are stored in the DB
         org.endeavourhealth.core.data.audit.models.Exchange exchangeToSave = new org.endeavourhealth.core.data.audit.models.Exchange();
-        exchangeToSave.setTimestamp(new Date());
+        exchangeToSave.setTimestamp(timestamp);
         exchangeToSave.setExchangeId(uuid);
         exchangeToSave.setHeaders(headersJson);
         exchangeToSave.setBody(body);
@@ -64,10 +65,11 @@ public final class AuditWriter {
         org.endeavourhealth.core.data.audit.models.Exchange dbExchange = repository.getExchange(exchangeId);
         String body = dbExchange.getBody();
         String headersJson = dbExchange.getHeaders();
+        Date timestamp = dbExchange.getTimestamp();
 
         Map<String, String> headersMap = ObjectMapperPool.getInstance().readValue(headersJson, HashMap.class);
 
-        return new Exchange(exchangeId, body, headersMap);
+        return new Exchange(exchangeId, body, headersMap, timestamp);
     }
 
     /*public static void writeAuditEvent(Exchange ex, AuditEvent event) throws Exception {

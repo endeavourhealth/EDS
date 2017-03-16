@@ -1,6 +1,7 @@
 package org.endeavourhealth.core.rdbms.eds;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.fhirStorage.metadata.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
@@ -228,9 +229,13 @@ public class PatientSearchManager {
         for (Identifier fhirIdentifier: fhirPatient.getIdentifier()) {
             if (fhirIdentifier.getSystem().equals(IDENTIFIER_SYSTEM_NHSNUMBER)) {
                 String val = fhirIdentifier.getValue();
-                val = val.replace(" ", "");
-                if (val.length() == 10) {
-                    return val;
+
+                //got some live data with null values in here, so need to explicitly check for nulls
+                if (!Strings.isNullOrEmpty(val)) {
+                    val = val.replace(" ", "");
+                    if (val.length() == 10) {
+                        return val;
+                    }
                 }
             }
         }

@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
@@ -42,7 +43,7 @@ public class RabbitConsumer extends DefaultConsumer {
 			return;
 		}
 
-		Exchange exchange = new Exchange(messageUuid, queuedMessage.getMessageBody());
+		Exchange exchange = new Exchange(messageUuid, queuedMessage.getMessageBody(), new Date());
 		Map<String, Object> headers = properties.getHeaders();
 		if (headers != null) {
 			headers.keySet().stream()
