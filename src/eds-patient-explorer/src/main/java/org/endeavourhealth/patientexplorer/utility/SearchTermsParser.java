@@ -5,6 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -18,18 +19,17 @@ public class SearchTermsParser {
         if (StringUtils.isEmpty(searchTerms))
             return;
 
-        String[] tokens = searchTerms.split(" ");
+        //String[] tokens = searchTerms.split(" ");
+        List<String> tokens = Arrays.asList(searchTerms.split(" "));
+
+        //remove any empty tokens before any further processing, so accidental double-spaces don't cause problems
+        removeEmptyTokens(tokens);
+
+        //not the nicest way of doing this, but if we have three separate numeric tokens that total 10 chars,
+        //then mash them together as it's an NHS number search
+        combineNhsNumberTokens(tokens);
 
         for (String token : tokens) {
-            if (StringUtils.isEmpty(token))
-                continue;
-
-            token = token.trim();
-
-            //removes need to check for empty tokens when using the results of the parsed search term
-            if (StringUtils.isEmpty(token)) {
-                continue;
-            }
 
             if (StringUtils.isNumeric(token)) {
                 if (token.length() == 10)
@@ -48,6 +48,45 @@ public class SearchTermsParser {
 
             this.names.add(token);
         }
+    }
+
+    private static void removeEmptyTokens(List<String> tokens) {
+        for (int i=tokens.size()-1; i>=0; i--) {
+            String token = tokens.get(i);
+            token = token.trim();
+
+            if (StringUtils.isEmpty(token)) {
+                tokens.remove(i);
+            } else {
+                //replace with the trimmed version
+                tokens.set(i, token);
+            }
+        }
+    }
+
+    private static void combineNhsNumberTokens(List<String> tokens) {
+
+        if (tokens.size() != 3) {
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        for (String token : tokens) {
+            if (StringUtils.isNumeric(token)) {
+                sb.append(token);
+            } else {
+                return;
+            }
+        }
+
+        String combined = sb.toString();
+        if (combined.length() != 10) {
+            return;
+        }
+
+        tokens.clear();
+        tokens.add(combined);
     }
 
     public boolean hasNhsNumber() {

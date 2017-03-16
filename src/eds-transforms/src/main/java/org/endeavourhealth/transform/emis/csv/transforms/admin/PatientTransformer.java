@@ -274,6 +274,12 @@ public class PatientTransformer {
                         continue;
                     }
 
+                    //do not delete Appointment resources either. If Emis delete and subsequently un-delete a patient
+                    //they do not re-send the Appointments, so we shouldn't delete them in the first place.
+                    if (resource.getResourceType() == ResourceType.Appointment) {
+                        continue;
+                    }
+
                     fhirResourceFiler.deletePatientResource(currentState, false, patientGuid, resource);
                 }
             } catch (ResourceNotFoundException ex) {
