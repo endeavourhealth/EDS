@@ -6,7 +6,7 @@
     <form endUserRole="form" class="container-fluid">
 
         <div class="row">
-            <div class="form-group col-md-6">
+            <div class="form-group col-md-3">
                 <label class="control-label">Run date <small>(mandatory)</small></label>
                 <datetime
                   [timepicker]="false"
@@ -14,7 +14,16 @@
                   [datepicker]="{ icon: 'fa fa-calendar', autoclose: true, todayBtn: 'linked', format: 'dd-M-yyyy', todayHighlight: true }"
                   name="RunDate"></datetime>
             </div>
-            <div class="form-group col-md-6" [hidden]="hide(effectiveDate)">
+            <div class="form-group col-md-3">
+                <label class="control-label">Deceased patients</label>
+                <div class="input-group">
+                    <span class="input-group-addon">
+                        <input type="checkbox" [(ngModel)]="includeDeceased" name="IncludeDeceased">
+                    </span>
+                    <input type="text" class="form-control" readonly value="{{getDeceasedText()}}">
+                </div>
+            </div>
+            <div class="form-group col-md-3" [hidden]="hide(effectiveDate)">
                 <label class="control-label">Effective date</label>
                 <datetime
                   [timepicker]="false"
