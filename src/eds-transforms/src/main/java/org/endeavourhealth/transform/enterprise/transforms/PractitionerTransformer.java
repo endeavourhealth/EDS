@@ -1,8 +1,8 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
+import org.endeavourhealth.common.fhir.FhirValueSetUri;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
-import org.endeavourhealth.common.fhir.FhirValueSetUri;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +44,7 @@ public class PractitionerTransformer extends AbstractTransformer {
             }
 
             Integer practitionerEnterpriseOrgId = null;
-
+            LOG.trace("Transforming practitioner " + fhir.getId() + " with " + fhir.getPractitionerRole().size() + " roles and enterpriseOrganisationUuid " + enterpriseOrganisationUuid);
             for (Practitioner.PractitionerPractitionerRoleComponent role : fhir.getPractitionerRole()) {
 
                 CodeableConcept cc = role.getRole();
@@ -57,9 +57,11 @@ public class PractitionerTransformer extends AbstractTransformer {
 
                 Reference organisationReference = role.getManagingOrganization();
                 practitionerEnterpriseOrgId = findEnterpriseId(data.getOrganisations(), organisationReference);
+                LOG.trace("Got role with org ID " + practitionerEnterpriseOrgId + " from " + organisationReference);
             }
 
             if (practitionerEnterpriseOrgId == null) {
+                LOG.trace("No role, so setting to the enterpriseOrganisationUuid " + enterpriseOrganisationUuid);
                 practitionerEnterpriseOrgId = enterpriseOrganisationUuid;
             }
 
