@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 import javax.persistence.*;
 import java.util.*;
 
-public class PatientSearchManager {
-    private static final Logger LOG = LoggerFactory.getLogger(PatientSearchManager.class);
+public class PatientSearchHelper {
+    private static final Logger LOG = LoggerFactory.getLogger(PatientSearchHelper.class);
 
     private final static String IDENTIFIER_SYSTEM_NHSNUMBER = "http://fhir.nhs.net/Id/nhs-number";
 

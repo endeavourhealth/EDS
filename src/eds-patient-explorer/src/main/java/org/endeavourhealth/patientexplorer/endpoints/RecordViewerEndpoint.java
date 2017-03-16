@@ -11,7 +11,7 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.rdbms.eds.PatientSearch;
-import org.endeavourhealth.core.rdbms.eds.PatientSearchManager;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.patientexplorer.utility.ResourceFetcher;
 import org.endeavourhealth.patientexplorer.utility.SearchTermsParser;
@@ -105,16 +105,16 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
             List<PatientSearch> patientsFound = new ArrayList<>();
 
             if (parser.hasNhsNumber())
-                patientsFound.addAll(PatientSearchManager.searchByNhsNumber(serviceId, systemId, parser.getNhsNumber()));
+                patientsFound.addAll(PatientSearchHelper.searchByNhsNumber(serviceId, systemId, parser.getNhsNumber()));
 
             if (parser.hasEmisNumber())
-                patientsFound.addAll(PatientSearchManager.searchByLocalId(serviceId, systemId, parser.getEmisNumber()));
+                patientsFound.addAll(PatientSearchHelper.searchByLocalId(serviceId, systemId, parser.getEmisNumber()));
 
             if (parser.hasDateOfBirth())
-                patientsFound.addAll(PatientSearchManager.searchByDateOfBirth(serviceId, systemId, parser.getDateOfBirth()));
+                patientsFound.addAll(PatientSearchHelper.searchByDateOfBirth(serviceId, systemId, parser.getDateOfBirth()));
 
 
-            patientsFound.addAll(PatientSearchManager.searchByNames(serviceId, systemId, parser.getNames()));
+            patientsFound.addAll(PatientSearchHelper.searchByNames(serviceId, systemId, parser.getNames()));
 
             List<UIInternalIdentifier> uiInternalIdentifiers = patientsFound
                     .stream()

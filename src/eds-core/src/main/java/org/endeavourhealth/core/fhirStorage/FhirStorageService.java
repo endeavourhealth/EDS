@@ -10,7 +10,7 @@ import org.endeavourhealth.core.fhirStorage.exceptions.UnprocessableEntityExcept
 import org.endeavourhealth.core.fhirStorage.metadata.MetadataFactory;
 import org.endeavourhealth.core.fhirStorage.metadata.PatientCompartment;
 import org.endeavourhealth.core.fhirStorage.metadata.ResourceMetadata;
-import org.endeavourhealth.core.rdbms.eds.PatientSearchManager;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
 import org.hl7.fhir.instance.model.EpisodeOfCare;
 import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.Resource;
@@ -88,9 +88,9 @@ public class FhirStorageService {
         repository.save(entry);
 
         if (resource instanceof Patient) {
-            PatientSearchManager.update(serviceId, systemId, (Patient)resource);
+            PatientSearchHelper.update(serviceId, systemId, (Patient)resource);
         } else if (resource instanceof EpisodeOfCare) {
-            PatientSearchManager.update(serviceId, systemId, (EpisodeOfCare)resource);
+            PatientSearchHelper.update(serviceId, systemId, (EpisodeOfCare)resource);
         }
 
         /*if (resource instanceof Patient) {

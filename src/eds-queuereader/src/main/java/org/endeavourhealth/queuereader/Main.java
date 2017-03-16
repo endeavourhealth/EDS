@@ -14,7 +14,7 @@ import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.fhirStorage.metadata.ReferenceHelper;
-import org.endeavourhealth.core.rdbms.eds.PatientSearchManager;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
 import org.hl7.fhir.instance.formats.JsonParser;
 import org.hl7.fhir.instance.model.EpisodeOfCare;
 import org.hl7.fhir.instance.model.Patient;
@@ -1238,8 +1238,8 @@ public class Main {
 
 							Patient patient = (Patient) new JsonParser().parse(patientWrapper.getResourceData());
 
-							PatientSearchManager.update(serviceId, systemId, patient);
-							PatientSearchManager.update(serviceId, systemId, episodeOfCare);
+							PatientSearchHelper.update(serviceId, systemId, patient);
+							PatientSearchHelper.update(serviceId, systemId, episodeOfCare);
 
 						} catch (Exception ex) {
 							LOG.error("Failed on " + resourceWrapper.getResourceType() + " " + resourceWrapper.getResourceId(), ex);

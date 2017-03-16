@@ -11,7 +11,7 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.rdbms.eds.PatientSearch;
-import org.endeavourhealth.core.rdbms.eds.PatientSearchManager;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.framework.exceptions.BadRequestException;
 import org.endeavourhealth.ui.json.JsonPatientIdentifier;
@@ -74,7 +74,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         List<JsonPatientIdentifier> ret = new ArrayList<>();
 
-        List<PatientSearch> identifiers = PatientSearchManager.searchByLocalId(serviceId, systemId, localId);
+        List<PatientSearch> identifiers = PatientSearchHelper.searchByLocalId(serviceId, systemId, localId);
         for (PatientSearch identifier: identifiers) {
 
             JsonPatientIdentifier json = new JsonPatientIdentifier();
@@ -140,7 +140,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         List<JsonPatientIdentifier> ret = new ArrayList<>();
 
-        List<PatientSearch> identifiers = PatientSearchManager.searchByNhsNumber(nhsNumber);
+        List<PatientSearch> identifiers = PatientSearchHelper.searchByNhsNumber(nhsNumber);
         for (PatientSearch identifier: identifiers) {
 
             UUID serviceId = UUID.fromString(identifier.getServiceId());
@@ -228,7 +228,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         if (patientId != null) {
 
-            PatientSearch identifier = PatientSearchManager.searchByPatientId(patientId);
+            PatientSearch identifier = PatientSearchHelper.searchByPatientId(patientId);
             if (identifier != null) {
 
                 UUID serviceId = UUID.fromString(identifier.getServiceId());

@@ -5,7 +5,7 @@ import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.rdbms.eds.PatientSearch;
-import org.endeavourhealth.core.rdbms.eds.PatientSearchManager;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.patientui.json.JsonService;
 import org.slf4j.Logger;
@@ -42,7 +42,7 @@ public class MedicalRecordEndpoint extends AbstractEndpoint {
 
         String nhsNumber = getNhsNumberFromSession(sc);
 
-        List<PatientSearch> searchResults = PatientSearchManager.searchByNhsNumber(nhsNumber);
+        List<PatientSearch> searchResults = PatientSearchHelper.searchByNhsNumber(nhsNumber);
         //List<PatientIdentifierByNhsNumber> identifiers = identifierRepository.getForNhsNumber(nhsNumber);
 
         // Maintain map to prevent duplicates where multiple local id's exist

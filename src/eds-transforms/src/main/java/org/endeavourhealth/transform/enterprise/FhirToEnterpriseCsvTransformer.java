@@ -61,6 +61,9 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
 
         //if this is the first time processing this organisation's data, we will have generated the enterprise ID for that org while transforming the orgs
         Integer enterpriseOrganisationUuid = new EnterpriseIdMapRepository().getEnterpriseOrganisationIdMapping(orgNationalId);
+        if (enterpriseOrganisationUuid == null) {
+            throw new TransformException("Failed to find enterprise ID for org natioanl ID " + orgNationalId);
+        }
 
         tranformResources(ResourceType.Practitioner, new PractitionerTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
         tranformResources(ResourceType.Schedule, new ScheduleTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);

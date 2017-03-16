@@ -16,7 +16,7 @@ import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.rdbms.eds.PatientSearch;
-import org.endeavourhealth.core.rdbms.eds.PatientSearchManager;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
@@ -171,7 +171,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 	private String findPatientNhsNumber(UUID patientId) throws Exception {
 
-		PatientSearch patientSearchResult = PatientSearchManager.searchByPatientId(patientId);
+		PatientSearch patientSearchResult = PatientSearchHelper.searchByPatientId(patientId);
 		if (patientSearchResult != null) {
 			return patientSearchResult.getNhsNumber();
 		} else {

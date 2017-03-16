@@ -14,7 +14,7 @@ import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceEntry;
-import org.endeavourhealth.core.rdbms.eds.PatientSearchManager;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,7 +121,7 @@ public class FhirDeletionService {
             }
 
             //get rid of the patient identity record too (patient_identifier_by_local_id)
-            PatientSearchManager.delete(service.getId(), systemId);
+            PatientSearchHelper.delete(service.getId(), systemId);
             //patientIdentifierRepository.hardDeleteForService(service.getId(), systemId);
         }
 
