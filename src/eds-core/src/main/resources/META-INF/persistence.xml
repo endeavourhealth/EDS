@@ -8,6 +8,8 @@
         <class>org.endeavourhealth.core.mySQLDatabase.models.RegionorganisationmapEntity</class>
         <class>org.endeavourhealth.core.mySQLDatabase.models.SupraregionmapEntity</class>
         <class>org.endeavourhealth.core.mySQLDatabase.models.AddressEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.CohortEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.DataflowEntity</class>
         <properties>
             <property name="hibernate.connection.url" value="jdbc:mysql://localhost:3306/OrganisationManager"/>
             <property name="hibernate.connection.driver_class" value="com.mysql.jdbc.Driver"/>

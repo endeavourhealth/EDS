@@ -1,0 +1,42 @@
+<div class="module">
+    <div class="container-fluid">
+        <div class="module-heading">
+            Cohort Details
+            <div class="pull-right">
+                <button type="button" class="btn btn-sm btn-success" (click)="save(false)">Save</button>
+                <button type="button" class="btn btn-sm btn-warning" (click)="save(true)">Save & Close</button>
+                <button type="button" class="btn btn-sm btn-danger" (click)="close()">Cancel</button>
+            </div>
+        </div>
+        <div class="module-body">
+            <form>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Cohort Name</label>
+                        <input type="text" class="form-control" placeholder="Organisation name" [(ngModel)]="cohort.name" name="name">
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Nature</label>
+                        <input type="text" class="form-control" placeholder="Nature" [(ngModel)]="cohort.nature" name="nature">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Patient Cohort Inclusion Consent Model</label>
+                        <input type="text" class="form-control" placeholder="Patient Cohort Inclusion Consent Model" [(ngModel)]="cohort.patientCohortInclusionConsentModel" name="patientCohortInclusionConsentModel">
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Query Definitionlabel</label>
+                        <input type="text" class="form-control" placeholder="Query Definition" [(ngModel)]="cohort.queryDefinition" name="queryDefinition">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Removal Policy</label>
+                        <input type="text" class="form-control" placeholder="Removal Policy" [(ngModel)]="cohort.removalPolicy" name="removalPolicy">
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -23,6 +23,8 @@ import {CountReportModule} from "./countReport/countReport.module";
 import {ExchangeAuditModule} from "./exchangeAudit/exchangeAudit.module";
 import {OrganisationManagerModule} from "./organisationManager/organisationManager.module";
 import {RegionModule} from "./region/region.module";
+import {CohortModule} from "./cohort/cohort.module";
+import {DataFlowModule} from "./dataFlow/dataFlow.module";
 // State components
 import {DashboardComponent} from "./dashboard/dashboard.component";
 import {OrganisationListComponent} from "./organisations/organisationList.component";
@@ -47,6 +49,10 @@ import {OrganisationManagerComponent} from "./organisationManager/organisationMa
 import {RegionComponent} from "./region/region.component";
 import {RegionEditorComponent} from "./region/regionEditor.component";
 import {OrganisationManagerEditorComponent} from "./organisationManager/organisationManagerEditor.component";
+import {CohortComponent} from "./cohort/cohort.component";
+import {CohortEditorComponent} from "./cohort/cohortEditor.component";
+import {DataFlowComponent} from "./dataFlow/dataFlow.component";
+import {DataFlowEditorComponent} from "./dataFlow/dataFlowEditor.component";
 
 @NgModule(
 	Application.Define({
@@ -72,7 +78,9 @@ import {OrganisationManagerEditorComponent} from "./organisationManager/organisa
 			CountReportModule,
 			ExchangeAuditModule,
 			OrganisationManagerModule,
-			RegionModule
+			RegionModule,
+			CohortModule,
+			DataFlowModule
 		],
 		states: [
 			{name: 'app.dashboard', url: '/dashboard', component: DashboardComponent},
@@ -97,7 +105,11 @@ import {OrganisationManagerEditorComponent} from "./organisationManager/organisa
 			{name: 'app.organisationManager', url: '/organisationManager', component: OrganisationManagerComponent},
 			{name: 'app.region', url: '/region', component: RegionComponent},
 			{name: 'app.regionEditor', url: '/region/:itemAction/:itemUuid', component: RegionEditorComponent},
-			{name: 'app.organisationManagerEditor', url: '/organisationManager/:itemAction/:itemUuid', component: OrganisationManagerEditorComponent}
+			{name: 'app.organisationManagerEditor', url: '/organisationManager/:itemAction/:itemUuid', component: OrganisationManagerEditorComponent},
+			{name: 'app.cohort', url: '/cohort', component: CohortComponent},
+			{name: 'app.cohortEditor', url: '/cohort/:itemAction/:itemUuid', component: CohortEditorComponent},
+			{name: 'app.dataFlow', url: '/dataFlow', component: DataFlowComponent},
+			{name: 'app.dataFlowEditor', url: '/dataFlow/:itemAction/:itemUuid', component: DataFlowEditorComponent},
 		],
 		defaultState : { state: 'app.dashboard', params: {} }
 	})

@@ -17,6 +17,8 @@ export class LayoutService {
 			{caption: 'Audit', state: 'app.audit', icon: 'fa fa-list-ul'},
 			{caption: 'Organisation Manager', state: 'app.organisationManager', icon: 'fa fa-hospital-o'},
 			{caption: 'Regions', state: 'app.region', icon: 'fa fa-globe'},
+			{caption: 'Cohorts', state: 'app.cohort', icon: 'fa fa-user-circle'},
+			{caption: 'Data Flows', state: 'app.dataFlow', icon: 'fa fa-rocket'},
 			// {caption: 'Admin', state: 'app.admin', icon: 'fa fa-user'}
 		];
 	}

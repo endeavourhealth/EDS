@@ -75,4 +75,81 @@ create table OrganisationManager.Address (
     foreign key (OrganisationUuid) references OrganisationManager.organisation(uuid) on delete cascade
 );
 
+drop table if exists OrganisationManager.FlowDirection;
+
+create table OrganisationManager.FlowDirection (
+	id smallint not null primary key,
+    Direction varchar(100) not null
+    
+);
+
+
+drop table if exists OrganisationManager.FlowSchedule;
+
+create table OrganisationManager.FlowSchedule (
+	id smallint not null primary key,
+    FlowSchedule varchar(100) not null
+    
+);
+
+drop table if exists OrganisationManager.DataExchangeMethod;
+
+create table OrganisationManager.DataExchangeMethod (
+	id smallint not null primary key,
+    DataExhangeMethod varchar(100) not null
+    
+);
+
+drop table if exists OrganisationManager.FlowStatus;
+
+create table OrganisationManager.FlowStatus (
+	id smallint not null primary key,
+    FlowStatus varchar(100) not null
+    
+);
+
+drop table if exists OrganisationManager.Cohort;
+
+create table OrganisationManager.Cohort (
+	Uuid char(36) not null primary key,
+    Name varchar(100) not null,
+    Nature varchar(100) null,
+    PatientCohortInclusionConsentModel varchar(100) null,
+    QueryDefinition varchar(100) null,
+    RemovalPolicy varchar(100) null
+    
+);
+
+drop table if exists OrganisationManager.DataFlow;
+
+create table OrganisationManager.DataFlow (
+	Uuid char(36) not null primary key,
+    Name varchar(100) not null,
+    Status varchar(100) null,
+    /*OrganisationsInvolved - link table*/
+    DirectionId smallint null, 
+    FlowScheduleId smallint not null, 
+    ApproximateVolume int not null,
+    DataExchangeMethodId smallint not null,
+    FlowStatusId smallint not null,    
+    /*contact - link table*/
+    AdditionalDocumentation varchar(100) null,
+    SignOff varchar(10),
+    DataSet char(36) null,
+    Cohort char(36) null,
+    Subscriber varchar(100) null,
+    
+    foreign key (FlowScheduleId) references OrganisationManager.FlowSchedule(id),    
+    foreign key (DataExchangeMethodId) references OrganisationManager.DataExchangeMethod(id),
+    foreign key (FlowStatusId) references OrganisationManager.FlowStatus(id),
+    foreign key (DirectionId) references OrganisationManager.FlowDirection(id)
+    
+);
+
+
+
+
+
+
+
 

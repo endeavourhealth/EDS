@@ -1,0 +1,112 @@
+<div class="module">
+    <div class="container-fluid">
+        <div class="module-heading">
+            Data Flow Details
+            <div class="pull-right">
+                <button type="button" class="btn btn-sm btn-success" (click)="save(false)">Save</button>
+                <button type="button" class="btn btn-sm btn-warning" (click)="save(true)">Save & Close</button>
+                <button type="button" class="btn btn-sm btn-danger" (click)="close()">Cancel</button>
+            </div>
+        </div>
+        <div class="module-body">
+            <form>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Data Flow Name</label>
+                        <input type="text" class="form-control" placeholder="Organisation name" [(ngModel)]="dataFlow.name" name="name">
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Status</label>
+                        <input type="text" class="form-control" placeholder="Status" [(ngModel)]="dataFlow.status" name="status">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-3">
+                        <label class="control-label">Direction</label>
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-th-large fa-lg fa-fw"></i></span>
+                            <select class="form-control" [(ngModel)]="dataFlow.directionId" name="directionId">
+                                <option *ngFor="let direction of flowDirections" [ngValue]="direction.num">{{direction.name}}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="control-label">Flow Schedule</label>
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-th-large fa-lg fa-fw"></i></span>
+                            <select class="form-control" [(ngModel)]="dataFlow.flowScheduleId" name="flowScheduleId">
+                                <option *ngFor="let schedule of flowSchedules" [ngValue]="schedule.num">{{schedule.name}}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="control-label">Data Exchange Method</label>
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-th-large fa-lg fa-fw"></i></span>
+                            <select class="form-control" [(ngModel)]="dataFlow.dataExchangeMethodId" name="dataExchangeMethodId">
+                                <option *ngFor="let method of exchangeMethod" [ngValue]="method.num">{{method.name}}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="control-label">Flow Status</label>
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-th-large fa-lg fa-fw"></i></span>
+                            <select class="form-control" [(ngModel)]="dataFlow.flowStatusId" name="flowStatusId">
+                                <option *ngFor="let status of flowStatus" [ngValue]="status.num">{{status.name}}</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Approximate Volume</label>
+                        <input type="text" class="form-control" placeholder="Approximate Volume" [(ngModel)]="dataFlow.approximateVolume" name="approximateVolume">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Data Exchange Method</label>
+                        <input type="text" class="form-control" placeholder="Data Exchange Method" [(ngModel)]="dataFlow.dataExchangeMethod" name="dataExchangeMethod">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Flow Status</label>
+                        <input type="text" class="form-control" placeholder="Flow Status" [(ngModel)]="dataFlow.flowStatus" name="flowStatus">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Additional Documentation</label>
+                        <input type="text" class="form-control" placeholder="Additional Documentation" [(ngModel)]="dataFlow.additionalDocumentation" name="additionalDocumentation">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Sign Off</label>
+                        <input type="text" class="form-control" placeholder="Sign Off" [(ngModel)]="dataFlow.signOff" name="signOff">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Data Set</label>
+                        <input type="text" class="form-control" placeholder="Data Set" [(ngModel)]="dataFlow.dataSet" name="dataSet">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Cohort</label>
+                        <input type="text" class="form-control" placeholder="Cohort" [(ngModel)]="dataFlow.cohort" name="cohort">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Subscriber</label>
+                        <input type="text" class="form-control" placeholder="Subscriber" [(ngModel)]="dataFlow.subscriber" name="subscriber">
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
