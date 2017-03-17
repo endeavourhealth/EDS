@@ -23,9 +23,6 @@ export class RegionComponent {
 
     getRegions() {
 
-        console.log(JSON.stringify(this.regions));
-
-
          var vm = this;
          vm.regionService.getAllRegions()
          .subscribe(

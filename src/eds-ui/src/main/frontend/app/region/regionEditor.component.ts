@@ -35,6 +35,7 @@ export class RegionEditorComponent {
                 private transition : Transition
     ) {
         this.performAction(transition.params()['itemAction'], transition.params()['itemUuid']);
+        console.log(transition);
     }
 
     protected performAction(action:string, itemUuid:string) {
@@ -103,6 +104,7 @@ export class RegionEditorComponent {
     }
 
     close() {
+        console.log(this.transition);
         this.adminService.clearPendingChanges();
         this.state.go(this.transition.from());
     }

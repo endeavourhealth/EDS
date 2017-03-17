@@ -25,6 +25,9 @@ import {OrganisationManagerModule} from "./organisationManager/organisationManag
 import {RegionModule} from "./region/region.module";
 import {CohortModule} from "./cohort/cohort.module";
 import {DataFlowModule} from "./dataFlow/dataFlow.module";
+import {DsaModule} from "./dsa/dsa.module";
+import {DpaModule} from "./dpa/dpa.module";
+import {DataSharingSummaryModule} from "./dataSharingSummary/dataSharingSummary.module";
 // State components
 import {DashboardComponent} from "./dashboard/dashboard.component";
 import {OrganisationListComponent} from "./organisations/organisationList.component";
@@ -53,6 +56,12 @@ import {CohortComponent} from "./cohort/cohort.component";
 import {CohortEditorComponent} from "./cohort/cohortEditor.component";
 import {DataFlowComponent} from "./dataFlow/dataFlow.component";
 import {DataFlowEditorComponent} from "./dataFlow/dataFlowEditor.component";
+import {DsaComponent} from "./dsa/dsa.component";
+import {DsaEditorComponent} from "./dsa/dsaEditor.component";
+import {DpaComponent} from "./dpa/dpa.component";
+import {DpaEditorComponent} from "./dpa/dpaEditor.component";
+import {DataSharingSummaryComponent} from "./dataSharingSummary/dataSharingSummary.component";
+import {DataSharingSummaryEditorComponent} from "./dataSharingSummary/dataSharingSummaryEditor.component";
 
 @NgModule(
 	Application.Define({
@@ -80,7 +89,10 @@ import {DataFlowEditorComponent} from "./dataFlow/dataFlowEditor.component";
 			OrganisationManagerModule,
 			RegionModule,
 			CohortModule,
-			DataFlowModule
+			DataFlowModule,
+			DsaModule,
+			DpaModule,
+			DataSharingSummaryModule
 		],
 		states: [
 			{name: 'app.dashboard', url: '/dashboard', component: DashboardComponent},
@@ -110,6 +122,12 @@ import {DataFlowEditorComponent} from "./dataFlow/dataFlowEditor.component";
 			{name: 'app.cohortEditor', url: '/cohort/:itemAction/:itemUuid', component: CohortEditorComponent},
 			{name: 'app.dataFlow', url: '/dataFlow', component: DataFlowComponent},
 			{name: 'app.dataFlowEditor', url: '/dataFlow/:itemAction/:itemUuid', component: DataFlowEditorComponent},
+			{name: 'app.dsa', url: '/dsa', component: DsaComponent},
+			{name: 'app.dsaEditor', url: '/dsa/:itemAction/:itemUuid', component: DsaEditorComponent},
+			{name: 'app.dpa', url: '/dpa', component: DpaComponent},
+			{name: 'app.dpaEditor', url: '/dpa/:itemAction/:itemUuid', component: DpaEditorComponent},
+			{name: 'app.dataSharingSummary', url: '/dataSharingSummary', component: DataSharingSummaryComponent},
+			{name: 'app.dataSharingSummaryEditor', url: '/dataSharingSummary/:itemAction/:itemUuid', component: DataSharingSummaryEditorComponent}
 		],
 		defaultState : { state: 'app.dashboard', params: {} }
 	})

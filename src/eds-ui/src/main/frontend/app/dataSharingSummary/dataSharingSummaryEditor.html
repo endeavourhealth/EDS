@@ -1,0 +1,104 @@
+<div class="module">
+    <div class="container-fluid">
+        <div class="module-heading">
+            Data Sharing Summary Details
+            <div class="pull-right">
+                <button type="button" class="btn btn-sm btn-success" (click)="save(false)">Save</button>
+                <button type="button" class="btn btn-sm btn-warning" (click)="save(true)">Save & Close</button>
+                <button type="button" class="btn btn-sm btn-danger" (click)="close()">Cancel</button>
+            </div>
+        </div>
+        <div class="module-body">
+            <form>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Data Sharing Summary Name</label>
+                        <input type="text" class="form-control" placeholder="Organisation name" [(ngModel)]="dataSharingSummary.name" name="name">
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Description</label>
+                        <input type="text" class="form-control" placeholder="Status" [(ngModel)]="dataSharingSummary.description" name="description">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Purpose</label>
+                        <input type="text" class="form-control" placeholder="Organisation name" [(ngModel)]="dataSharingSummary.purpose" name="purpose">
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Schedule 2 Condition</label>
+                        <input type="text" class="form-control" placeholder="Status" [(ngModel)]="dataSharingSummary.schedule2Condition" name="schedule2Condition">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-3">
+                        <label class="control-label">Nature Of Information</label>
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-th-large fa-lg fa-fw"></i></span>
+                            <select class="form-control" [(ngModel)]="dataSharingSummary.natureOfInformationId" name="natureOfInformationId">
+                                <option *ngFor="let nature of NatureOfInformation" [ngValue]="nature.num">{{nature.name}}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="control-label">Format Type</label>
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-th-large fa-lg fa-fw"></i></span>
+                            <select class="form-control" [(ngModel)]="dataSharingSummary.formatTypeId" name="formatTypeId">
+                                <option *ngFor="let format of FormatTypes" [ngValue]="format.num">{{format.name}}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="control-label">Data Subject Id</label>
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-th-large fa-lg fa-fw"></i></span>
+                            <select class="form-control" [(ngModel)]="dataSharingSummary.dataSubjectTypeId" name="dataSubjectTypeId">
+                                <option *ngFor="let subject of DataSubjectTypes" [ngValue]="subject.num">{{subject.name}}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label class="control-label">Review Cycle</label>
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-th-large fa-lg fa-fw"></i></span>
+                            <select class="form-control" [(ngModel)]="dataSharingSummary.reviewCycleId" name="reviewCycleId">
+                                <option *ngFor="let cycle of ReviewCycles" [ngValue]="cycle.num">{{cycle.name}}</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Overview of Data Items</label>
+                        <input type="text" class="form-control" placeholder="Overview of Data Items" [(ngModel)]="dataSharingSummary.overviewOfDataItems" name="overviewOfDataItems">
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label class="control-label">Nature of Persons Accessing Data</label>
+                        <input type="text" class="form-control" placeholder="Nature of Persons Accessing Data" [(ngModel)]="dataSharingSummary.natureOfPersonsAccessingData" name="natureOfPersonsAccessingData">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-6">
+                        <div class="form-group">
+                            <label>Review Date</label>
+                            <datetime [timepicker]="false" [(ngModel)]="dataSharingSummary.reviewDate" name="reviewDate" [datepicker]="{ icon: 'fa fa-calendar', format: 'dd-M-yyyy', autoclose: true }" placeholder="Review Date"></datetime>
+                        </div>
+                    </div>
+                    <div class="col-xs-6">
+                        <div class="form-group">
+                            <label>Start Date</label>
+                            <datetime [timepicker]="false" [(ngModel)]="dataSharingSummary.startDate" name="startDate" [datepicker]="{ icon: 'fa fa-calendar', format: 'dd-M-yyyy', autoclose: true }" placeholder="Review Date"></datetime>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-12">
+                        <label class="control-label">Evidence Of Agreement</label>
+                        <input type="text" class="form-control" placeholder="Evidence Of Agreement" [(ngModel)]="dataSharingSummary.evidenceOfAgreement" name="evidenceOfAgreement">
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

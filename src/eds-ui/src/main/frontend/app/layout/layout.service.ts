@@ -19,6 +19,9 @@ export class LayoutService {
 			{caption: 'Regions', state: 'app.region', icon: 'fa fa-globe'},
 			{caption: 'Cohorts', state: 'app.cohort', icon: 'fa fa-user-circle'},
 			{caption: 'Data Flows', state: 'app.dataFlow', icon: 'fa fa-rocket'},
+			{caption: 'Data Sharing Agreements', state: 'app.dsa', icon: 'fa fa-check-square'},
+			{caption: 'Data Processing Agreements', state: 'app.dpa', icon: 'fa fa-check-square-o'},
+			{caption: 'Data Sharing Summary', state: 'app.dataSharingSummary', icon: 'fa fa-cogs'}
 			// {caption: 'Admin', state: 'app.admin', icon: 'fa fa-user'}
 		];
 	}

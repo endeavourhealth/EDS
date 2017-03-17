@@ -15,8 +15,8 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.util.*;
 
-@Path("/cohort")
-public final class CohortEndpoint extends AbstractEndpoint {
+@Path("/dpa")
+public final class DpaEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
 
     private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Organisation);
@@ -29,20 +29,19 @@ public final class CohortEndpoint extends AbstractEndpoint {
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-                "Cohort(s)",
-                "Cohort Id", uuid,
+                "DPA(s)",
+                "DPA Id", uuid,
                 "SearchData", searchData);
 
 
         if (uuid == null && searchData == null) {
-            LOG.trace("getCohort - list");
-
-            return getCohortList();
+            LOG.trace("getDPA - list");
+            return getDPAList();
         } else if (uuid != null){
-            LOG.trace("getCohort - single - " + uuid);
-            return getSingleCohort(uuid);
+            LOG.trace("getDPA - single - " + uuid);
+            return getSingleDPA(uuid);
         } else {
-            LOG.trace("Search Cohort - " + searchData);
+            LOG.trace("Search DPA - " + searchData);
             return search(searchData);
         }
     }
@@ -52,16 +51,16 @@ public final class CohortEndpoint extends AbstractEndpoint {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/")
     @RequiresAdmin
-    public Response post(@Context SecurityContext sc, JsonCohort cohort) throws Exception {
+    public Response post(@Context SecurityContext sc, JsonDPA dpa) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
-                "Cohort",
-                "Cohort", cohort);
+                "DPA",
+                "DPA", dpa);
 
-        if (cohort.getUuid() != null) {
-            CohortEntity.updateCohort(cohort);
+        if (dpa.getUuid() != null) {
+            DataprocessingagreementEntity.updateDPA(dpa);
         } else {
-            CohortEntity.saveCohort(cohort);
+            DataprocessingagreementEntity.saveDPA(dpa);
         }
 
         clearLogbackMarkers();
@@ -79,10 +78,10 @@ public final class CohortEndpoint extends AbstractEndpoint {
     public Response delete(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
-                "Cohort",
-                "Cohort Id", uuid);
+                "DPA",
+                "DPA Id", uuid);
 
-        CohortEntity.deleteCohort(uuid);
+        DataprocessingagreementEntity.deleteDPA(uuid);
 
         clearLogbackMarkers();
         return Response
@@ -90,34 +89,34 @@ public final class CohortEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private Response getCohortList() throws Exception {
+    private Response getDPAList() throws Exception {
 
-        List<CohortEntity> cohorts = CohortEntity.getAllCohorts();
+        List<DataprocessingagreementEntity> dpas = DataprocessingagreementEntity.getAllDPAs();
 
         clearLogbackMarkers();
         return Response
                 .ok()
-                .entity(cohorts)
+                .entity(dpas)
                 .build();
     }
 
-    private Response getSingleCohort(String uuid) throws Exception {
-        CohortEntity cohortEntity = CohortEntity.getCohort(uuid);
+    private Response getSingleDPA(String uuid) throws Exception {
+        DataprocessingagreementEntity dpaEntity = DataprocessingagreementEntity.getDPA(uuid);
 
         return Response
                 .ok()
-                .entity(cohortEntity)
+                .entity(dpaEntity)
                 .build();
 
     }
 
     private Response search(String searchData) throws Exception {
-        Iterable<CohortEntity> cohorts = CohortEntity.search(searchData);
+        Iterable<DataprocessingagreementEntity> dpas = DataprocessingagreementEntity.search(searchData);
 
         clearLogbackMarkers();
         return Response
                 .ok()
-                .entity(cohorts)
+                .entity(dpas)
                 .build();
     }
 
