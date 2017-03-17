@@ -71,21 +71,21 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
         if (region.getUuid() != null) {
             RegionEntity.updateRegion(region);
+            RegionorganisationmapEntity.deleteRegionMap(region.getUuid());
+            SupraregionmapEntity.deleteSupraRegionParentMapping(region.getUuid());
+            SupraregionmapEntity.deleteSupraRegionChildMapping(region.getUuid());
         } else {
             RegionEntity.saveRegion(region);
         }
 
         //Process Mappings
         //Region - Organisation Maps
-        RegionorganisationmapEntity.deleteRegionMap(region.getUuid());
         RegionorganisationmapEntity.saveRegionMappings(region);
 
         //Region - Parent Region Map
-        SupraregionmapEntity.deleteSupraRegionParentMapping(region.getUuid());
         SupraregionmapEntity.saveSupraRegionParentMappings(region);
 
         //Region - Child Region Map
-        SupraregionmapEntity.deleteSupraRegionChildMapping(region.getUuid());
         SupraregionmapEntity.saveSupraRegionChildMappings(region);
 
 

@@ -147,6 +147,114 @@ create table OrganisationManager.DataFlow (
 );
 
 
+drop table if exists OrganisationManager.DSAStatus;
+
+create table OrganisationManager.DSAStatus (
+	id smallint not null primary key,
+    DSAStatus varchar(100) not null
+    
+);
+
+drop table if exists OrganisationManager.DataSharingAgreement;
+
+create table OrganisationManager.DataSharingAgreement (
+	Uuid char(36) not null primary key,
+    Name varchar(100) not null,
+    Description varchar(100) null,
+    Derivation varchar(100) null, 
+    PublisherInformation varchar(100) null, 
+    SubscriberInformation varchar(100)  null,
+    PublisherContractInformation varchar(100) null,
+    SubscriberContractInformation varchar(100) null,
+    DSAStatusId smallint not null,
+    ConsentModel char(36),
+    
+    foreign key (DSAStatusId) references OrganisationManager.DSAStatus(id)    
+);
+
+drop table if exists OrganisationManager.StorageProtocol;
+
+create table OrganisationManager.StorageProtocol (
+	id smallint not null primary key,
+    StorageProtocol varchar(100) not null
+    
+);
+
+drop table if exists OrganisationManager.DataProcessingAgreement;
+
+create table OrganisationManager.DataProcessingAgreement (
+	Uuid char(36) not null primary key,
+    Name varchar(100) not null,
+    Description varchar(100) null,
+    Derivation varchar(100) null, 
+    PublisherInformation varchar(100) null, 
+    PublisherContractInformation varchar(100) null,
+    PublisherDataSet char(36) null,
+    DSAStatusId smallint not null,
+    StorageProtocolId smallint(36) not null,
+    DataFlow char(36) null,
+    ReturnToSenderPolicy varchar(100) null,
+    
+    foreign key (DSAStatusId) references OrganisationManager.DSAStatus(id),
+    foreign key (StorageProtocolId) references OrganisationManager.StorageProtocol(id)
+);
+
+drop table if exists OrganisationManager.NatureOfInformation;
+
+create table OrganisationManager.NatureOfInformation (
+	id smallint not null primary key,
+    NatureOfInformation varchar(100) not null
+    
+);
+
+drop table if exists OrganisationManager.FormatType;
+
+create table OrganisationManager.FormatType (
+	id smallint not null primary key,
+    FormatType varchar(100) not null
+    
+);
+
+drop table if exists OrganisationManager.DataSubjectType;
+
+create table OrganisationManager.DataSubjectType (
+	id smallint not null primary key,
+    DataSubjectType varchar(100) not null
+    
+);
+
+drop table if exists OrganisationManager.ReviewCycle;
+
+create table OrganisationManager.ReviewCycle (
+	id smallint not null primary key,
+    ReviewCycle varchar(100) not null
+    
+);
+
+drop table if exists OrganisationManager.DataSharingSummary;
+
+create table OrganisationManager.DataSharingSummary (
+	Uuid char(36) not null primary key,
+    Name varchar(100) not null,
+    Description varchar(100) null,
+    Purpose varchar(100) null, 
+    NatureOfInformationId smallint not null,
+    Schedule2Condition varchar(100) null,
+    BenefitToSharing varchar(200) null,
+    OverviewOfDataItems varchar(100) null,
+    FormatTypeId smallint not null,
+    DataSubjectTypeId smallint not null,
+    NatureOfPersonsAccessingData varchar(100) null,
+    ReviewCycleId smallint not null,
+    ReviewDate date null,
+    StartDate date null,
+    EvidenceOfAgreement varchar(200) null,
+    
+    foreign key (FormatTypeId) references OrganisationManager.FormatType(id),
+    foreign key (NatureOfInformationId) references OrganisationManager.NatureOfInformation(id),
+    foreign key (DataSubjectTypeId) references OrganisationManager.DataSubjectType(id),
+    foreign key (ReviewCycleId) references OrganisationManager.ReviewCycle(id)
+);
 
 
 

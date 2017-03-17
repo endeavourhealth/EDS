@@ -89,3 +89,63 @@ values ("db64e478-0a3d-11e7-bc48-80fa5b27a530", "All Patients", "Sharing Data");
 insert into OrganisationManager.DataFlow (Uuid, Name, Status, DirectionId, FlowScheduleId, ApproximateVolume, DataExchangeMethodId, FlowStatusId)
 values ("2ea68a0b-0a3e-11e7-bc48-80fa5b27a530", "Endeavour Data Flow", "Active DataFlow", 0, 1, 200000, 1, 0);
     
+/*OrganisationManager.DSAStatus*/
+insert into OrganisationManager.DSAStatus (Id, DSAStatus)
+values (0, "Active");
+
+insert into OrganisationManager.DSAStatus (Id, DSAStatus)
+values (1, "Inactive");
+
+
+/*OrganisationManager.DataSharingAgreement*/
+insert into OrganisationManager.DataSharingAgreement (Uuid, Name, Description, DSAStatusId)
+values ("e8340789-0a61-11e7-bc48-80fa5b27a530", "National Data Sharing Agreement", "Full country sharing agreement", 1)
+
+/*OrganisationManager.StorageProtocol*/
+insert into OrganisationManager.StorageProtocol (Id, StorageProtocol)
+values (0, "Audit Only");
+
+insert into OrganisationManager.StorageProtocol (Id, StorageProtocol)
+values (1, "Temporary Store and Forward");
+
+insert into OrganisationManager.StorageProtocol (Id, StorageProtocol)
+values (2, "Permanent Record Store");
+
+/*OrganisationManager.DataProcessingAgreement*/
+insert into OrganisationManager.DataProcessingAgreement (Uuid, Name, Description, DSAStatusId, StorageProtocolId)
+values ("0140a2f8-0a63-11e7-bc48-80fa5b27a530", "National Data Processing Agreement", "Full Country Processing Agreement", 0, 2);
+
+/*OrganisationManager.NatureOfInformation*/
+insert into OrganisationManager.NatureOfInformation (Id, NatureOfInformation)
+values (0, "Personal");
+
+insert into OrganisationManager.NatureOfInformation (Id, NatureOfInformation)
+values (1, "Personal Sensitive");
+
+insert into OrganisationManager.NatureOfInformation (Id, NatureOfInformation)
+values (2, "Commercial");
+
+/*OrganisationManager.FormatType*/
+insert into OrganisationManager.FormatType (Id, FormatType)
+values (0, "Removable Media");
+
+insert into OrganisationManager.FormatType (Id, FormatType)
+values (1, "Electronic Structured Data");
+
+/*OrganisationManager.DataSubjectType*/
+insert into OrganisationManager.DataSubjectType (Id, DataSubjectType)
+values (0, "Patient");
+
+/*OrganisationManager.ReviewCycle*/
+insert into OrganisationManager.ReviewCycle (Id, ReviewCycle)
+values (0, "Annually");
+
+insert into OrganisationManager.ReviewCycle (Id, ReviewCycle)
+values (1, "Monthly");
+
+insert into OrganisationManager.ReviewCycle (Id, ReviewCycle)
+values (2, "Weekly");
+
+/*OrganisationManager.DataSharingSummary*/
+insert into OrganisationManager.DataSharingSummary (Uuid, Name, Description, NatureOfInformationId, FormatTypeId, DataSubjectTypeId, ReviewCycleId)
+values ("138024c9-0aee-11e7-926e-80fa5b27a530", "National Data Summary", "Sharing data for all patients", 0, 1, 0, 1);
