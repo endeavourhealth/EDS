@@ -2,6 +2,9 @@ package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.fhir.schema.ContactRelationship;
+import org.endeavourhealth.common.fhir.schema.NhsNumberVerificationStatus;
+import org.endeavourhealth.common.fhir.schema.RegistrationType;
 import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.IdHelper;
@@ -12,14 +15,6 @@ import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.admin.Patient;
 import org.endeavourhealth.transform.emis.openhr.schema.VocSex;
 import org.endeavourhealth.transform.emis.openhr.transforms.common.SexConverter;
-import org.endeavourhealth.common.fhir.schema.ContactRelationship;
-import org.endeavourhealth.common.fhir.schema.NhsNumberVerificationStatus;
-import org.endeavourhealth.common.fhir.schema.RegistrationType;
-import org.endeavourhealth.common.fhir.CodeableConceptHelper;
-import org.endeavourhealth.common.fhir.CodingHelper;
-import org.endeavourhealth.common.fhir.ExtensionConverter;
-import org.endeavourhealth.common.fhir.IdentifierHelper;
-import org.endeavourhealth.common.fhir.NameConverter;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,7 +90,9 @@ public class PatientTransformer {
 
         Date dod = parser.getDateOfDeath();
         if (dod != null) {
-            fhirPatient.setDeceased(new DateType(dod));
+            //wrong data type
+            fhirPatient.setDeceased(new DateTimeType(dod));
+            //fhirPatient.setDeceased(new DateType(dod));
         }
 
         //EMIS only provides sex but FHIR requires gender, but will treat as the same concept
@@ -274,6 +271,12 @@ public class PatientTransformer {
                     || (edsEpisodeId != null
                             && resource.getResourceType() == fhirEpisode.getResourceType()
                             && resource.getId().equals(edsEpisodeIdStr))) {
+                        continue;
+                    }
+
+                    //do not delete Appointment resources either. If Emis delete and subsequently un-delete a patient
+                    //they do not re-send the Appointments, so we shouldn't delete them in the first place.
+                    if (resource.getResourceType() == ResourceType.Appointment) {
                         continue;
                     }
 

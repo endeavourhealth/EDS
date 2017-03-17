@@ -3,6 +3,7 @@ import {LoggerService} from "./logger.service";
 import {Logger} from "angular2-logger/core";
 import {ModuleStateService} from "./moduleState.service";
 import {EdsErrorHandler} from "./errorHandler.service";
+import {LoadingIndicatorComponent} from "./loadingIndicator.component";
 
 @NgModule({
 	providers : [
@@ -10,6 +11,12 @@ import {EdsErrorHandler} from "./errorHandler.service";
 		LoggerService,
 		ModuleStateService,
 		EdsErrorHandler,
+	],
+	declarations : [
+		LoadingIndicatorComponent
+	],
+	exports : [
+		LoadingIndicatorComponent
 	]
 })
 export class CommonModule {}

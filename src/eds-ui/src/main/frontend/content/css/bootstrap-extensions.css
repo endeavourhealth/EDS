@@ -1,5 +1,9 @@
 /* Additions/customizations to Bootstrap CSS */
 
+.sebm-google-map-container {
+    height: 600px;
+}
+
 .container-fluid {
     padding-right: 0px;
     padding-left: 0px;

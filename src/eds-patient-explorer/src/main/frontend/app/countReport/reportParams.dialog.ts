@@ -22,6 +22,7 @@ export class ReportParamsDialog implements OnInit {
     referralPriorities : Concept[];
 
     runDate : Date;
+    includeDeceased : boolean;
     effectiveDate : Date;
     regType : number;
     gender : number;
@@ -81,6 +82,10 @@ export class ReportParamsDialog implements OnInit {
         if (this.countReport.query.indexOf(':ReferralOriginalCode') >= 0) this.referralOriginalCode = null;
         if (this.countReport.query.indexOf(':ReferralType') >= 0) this.referralType = null;
         if (this.countReport.query.indexOf(':ReferralPriority') >=0 ) this.referralPriority = null;
+    }
+
+    getDeceasedText() {
+        return this.includeDeceased ? 'Include' : 'Exclude';
     }
 
     loadEncounterTypes() {
@@ -183,6 +188,7 @@ export class ReportParamsDialog implements OnInit {
         let params : any = {};
 
         params.RunDate = "'" + moment(this.runDate).format('DD/MM/YYYY') + "'";
+        params.DateOfDeath = (this.includeDeceased) ? 'null' : "'" + moment(this.runDate).format('DD/MM/YYYY') + "'";
         params.EffectiveDate = (this.effectiveDate) ? "'" + moment(this.effectiveDate).format('DD/MM/YYYY') + "'" : 'null';
         params.RegistrationType = (this.regType) ? this.regType : 'null';
         params.Gender = (this.gender) ? this.gender : 'null';

@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.enterprise;
 
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
@@ -8,7 +9,6 @@ import org.endeavourhealth.transform.common.FhirToXTransformerBase;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.endeavourhealth.transform.enterprise.transforms.*;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
@@ -36,10 +36,15 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         Organisation org = new OrganisationRepository().getById(senderOrganisationUuid);
         String orgNationalId = org.getNationalId();
 
-        OutputContainer data = tranformResources(filteredResources, orgNationalId);
+        try {
+            OutputContainer data = tranformResources(filteredResources, orgNationalId);
 
-        byte[] bytes = data.writeToZip();
-        return Base64.getEncoder().encodeToString(bytes);
+            byte[] bytes = data.writeToZip();
+            return Base64.getEncoder().encodeToString(bytes);
+
+        } catch (Exception ex) {
+            throw new TransformException("Exception transforming batch " + batchId, ex);
+        }
     }
 
     private static OutputContainer tranformResources(List<ResourceByExchangeBatch> resources, String orgNationalId) throws Exception {
@@ -56,6 +61,9 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
 
         //if this is the first time processing this organisation's data, we will have generated the enterprise ID for that org while transforming the orgs
         Integer enterpriseOrganisationUuid = new EnterpriseIdMapRepository().getEnterpriseOrganisationIdMapping(orgNationalId);
+        if (enterpriseOrganisationUuid == null) {
+            throw new TransformException("Failed to find enterprise ID for org natioanl ID " + orgNationalId);
+        }
 
         tranformResources(ResourceType.Practitioner, new PractitionerTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
         tranformResources(ResourceType.Schedule, new ScheduleTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);

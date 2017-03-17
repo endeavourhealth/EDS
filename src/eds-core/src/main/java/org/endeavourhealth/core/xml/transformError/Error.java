@@ -1,11 +1,13 @@
 
 package org.endeavourhealth.core.xml.transformError;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
 import java.util.List;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSchemaType;
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 
 /**
@@ -19,6 +21,7 @@ import java.util.List;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;element name="arg" type="{}arg" maxOccurs="unbounded" minOccurs="0"/>
+ *         &lt;element name="datetime" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/>
  *         &lt;element name="exception" type="{}exception" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -31,11 +34,14 @@ import java.util.List;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "error", propOrder = {
     "arg",
+    "datetime",
     "exception"
 })
 public class Error {
 
     protected List<Arg> arg;
+    @XmlSchemaType(name = "dateTime")
+    protected XMLGregorianCalendar datetime;
     protected Exception exception;
 
     /**
@@ -65,6 +71,30 @@ public class Error {
             arg = new ArrayList<Arg>();
         }
         return this.arg;
+    }
+
+    /**
+     * Gets the value of the datetime property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link XMLGregorianCalendar }
+     *     
+     */
+    public XMLGregorianCalendar getDatetime() {
+        return datetime;
+    }
+
+    /**
+     * Sets the value of the datetime property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link XMLGregorianCalendar }
+     *     
+     */
+    public void setDatetime(XMLGregorianCalendar value) {
+        this.datetime = value;
     }
 
     /**

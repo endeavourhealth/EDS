@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://java.sun.com/xml/ns/persistence" version="2.0">
+
+    <persistence-unit name="newPersistenceUnit">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.RegionEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.OrganisationEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.RegionorganisationmapEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.SupraregionmapEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.AddressEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.CohortEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.DataflowEntity</class>
+        <properties>
+            <property name="hibernate.connection.url" value="jdbc:mysql://localhost:3306/OrganisationManager"/>
+            <property name="hibernate.connection.driver_class" value="com.mysql.jdbc.Driver"/>
+            <property name="hibernate.connection.username" value="root"/>
+            <property name="hibernate.connection.password" value="admin"/>
+            <property name="hibernate.archive.autodetection" value="class"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="true"/>
+            <property name="hbm2ddl.auto" value="update"/>
+        </properties>
+    </persistence-unit>
+
+    <!--copied from file with the same name in COMMON repo-->
+    <persistence-unit name="ConfigurationDb">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <class>org.endeavourhealth.common.config.ConfigEntity</class>
+        <properties>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQL95Dialect"/>
+            <property name="hibernate.show_sql" value="false" />
+            <property name="hibernate.connection.provider_class" value="org.hibernate.hikaricp.internal.HikariCPConnectionProvider"/>
+            <property name="hibernate.auth" value="Container" />
+            <property name="hibernate.hikari.connectionTimeout" value="300000" />
+            <property name="hibernate.hikari.maximumPoolSize" value="10" />
+            <property name="hibernate.hikari.minimumIdle" value="5" />
+            <property name="hibernate.hikari.dataSourceClassName" value="org.postgresql.ds.PGSimpleDataSource" />
+
+            <property name="hibernate.hikari.dataSource.url" value="jdbc:postgresql://localhost:5432/config"/>
+            <property name="hibernate.hikari.dataSource.user" value="postgres"/>
+            <property name="hibernate.hikari.dataSource.password" value=""/>
+        </properties>
+    </persistence-unit>
+
+    <persistence-unit name="EdsDb">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <class>org.endeavourhealth.core.rdbms.eds.PatientSearch</class>
+        <class>org.endeavourhealth.core.rdbms.eds.PatientSearchLocalIdentifier</class>
+        <properties>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQL95Dialect"/>
+            <property name="hibernate.show_sql" value="false" />
+            <property name="hibernate.connection.provider_class" value="org.hibernate.hikaricp.internal.HikariCPConnectionProvider"/>
+            <property name="hibernate.auth" value="Container" />
+            <property name="hibernate.hikari.connectionTimeout" value="300000" />
+            <property name="hibernate.hikari.maximumPoolSize" value="10" />
+            <property name="hibernate.hikari.minimumIdle" value="5" />
+            <property name="hibernate.hikari.dataSourceClassName" value="org.postgresql.ds.PGSimpleDataSource" />
+
+            <property name="hibernate.hikari.dataSource.url" value="jdbc:postgresql://localhost:5432/config"/>
+            <property name="hibernate.hikari.dataSource.user" value="postgres"/>
+            <property name="hibernate.hikari.dataSource.password" value=""/>
+        </properties>
+    </persistence-unit>
+
+
+</persistence>

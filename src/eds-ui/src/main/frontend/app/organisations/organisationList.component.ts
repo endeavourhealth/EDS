@@ -26,6 +26,7 @@ export class OrganisationListComponent {
 				result => vm.organisations = result,
 				error => vm.log.error('Failed to load organisations', error, 'Load organisations')
 			);
+		console.log(vm.organisations);
 	}
 
 	add() {
@@ -33,6 +34,7 @@ export class OrganisationListComponent {
 	}
 
 	edit(item : Organisation) {
+		console.log(item);
 		this.$state.go('app.organisationEdit', {itemUuid: item.uuid, itemAction: 'edit'});
 	}
 

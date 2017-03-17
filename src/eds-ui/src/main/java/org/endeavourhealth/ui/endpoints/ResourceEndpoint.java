@@ -1,14 +1,13 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
-import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
-import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.framework.exceptions.BadRequestException;
 import org.endeavourhealth.ui.json.JsonResourceContainer;
@@ -34,7 +33,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(ResourceEndpoint.class);
 
     private static final ResourceRepository resourceRepository = new ResourceRepository();
-    private static final PatientIdentifierRepository identifierRepository = new PatientIdentifierRepository();
+    //private static final PatientIdentifierRepository identifierRepository = new PatientIdentifierRepository();
     private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Resource);
     /*@GET
     @Produces(MediaType.APPLICATION_JSON)

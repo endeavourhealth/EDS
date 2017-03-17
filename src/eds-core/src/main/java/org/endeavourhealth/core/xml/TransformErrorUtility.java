@@ -10,6 +10,10 @@ import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.GregorianCalendar;
 import java.util.Map;
 
 public class TransformErrorUtility {
@@ -59,6 +63,14 @@ public class TransformErrorUtility {
      */
     private static org.endeavourhealth.core.xml.transformError.Error createError(Throwable ex, Map<String, String> args) {
         org.endeavourhealth.core.xml.transformError.Error ret = new org.endeavourhealth.core.xml.transformError.Error();
+
+        try {
+            GregorianCalendar c = new GregorianCalendar();
+            XMLGregorianCalendar xmlDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(c);
+            ret.setDatetime(xmlDate);
+        } catch (DatatypeConfigurationException calendarException) {
+            LOG.error("Failed to create XML date time ", calendarException);
+        }
 
         for (Map.Entry<String,String> entry : args.entrySet()) {
             Arg arg = new Arg();

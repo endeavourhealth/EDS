@@ -97,6 +97,7 @@ public class CountReportProvider {
 			query += countReport.getCountReport().getTables();
 
 		query += " WHERE eoc.date_registered < :RunDate::date \nAND (eoc.date_registered_end IS NULL OR eoc.date_registered_end >= :RunDate::date) \n";
+		query += " AND (p.date_of_death IS NULL OR p.date_of_death >= COALESCE(:DateOfDeath::date, p.date_of_death))\n";
 		query += " AND org.ods_code = '" + odsCode + "' \n";
 		if (countReport.getCountReport().getQuery() != null)
 			query += countReport.getCountReport().getQuery();

@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.fhirStorage;
 
 import com.datastax.driver.core.utils.UUIDs;
-import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
+import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceEntry;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
@@ -10,7 +10,8 @@ import org.endeavourhealth.core.fhirStorage.exceptions.UnprocessableEntityExcept
 import org.endeavourhealth.core.fhirStorage.metadata.MetadataFactory;
 import org.endeavourhealth.core.fhirStorage.metadata.PatientCompartment;
 import org.endeavourhealth.core.fhirStorage.metadata.ResourceMetadata;
-import org.endeavourhealth.common.utility.JsonSerializer;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
+import org.hl7.fhir.instance.model.EpisodeOfCare;
 import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.Resource;
 
@@ -23,7 +24,7 @@ public class FhirStorageService {
     private static final String SCHEMA_VERSION = "0.1";
 
     private final ResourceRepository repository;
-    private final PatientIdentifierRepository identifierRepository;
+    //private final PatientIdentifierRepository identifierRepository;
 
     private final UUID serviceId;
     private final UUID systemId;
@@ -32,7 +33,7 @@ public class FhirStorageService {
         this.serviceId = serviceId;
         this.systemId = systemId;
         this.repository = new ResourceRepository();
-        identifierRepository = new PatientIdentifierRepository();
+        //identifierRepository = new PatientIdentifierRepository();
     }
 
     public FhirResponse exchangeBatchUpdate(UUID exchangeId, UUID batchId, Resource resource, boolean isNewResource) throws Exception {
@@ -87,8 +88,14 @@ public class FhirStorageService {
         repository.save(entry);
 
         if (resource instanceof Patient) {
-            identifierRepository.savePatientIdentity((Patient)resource, serviceId, systemId);
+            PatientSearchHelper.update(serviceId, systemId, (Patient)resource);
+        } else if (resource instanceof EpisodeOfCare) {
+            PatientSearchHelper.update(serviceId, systemId, (EpisodeOfCare)resource);
         }
+
+        /*if (resource instanceof Patient) {
+            identifierRepository.savePatientIdentity((Patient)resource, serviceId, systemId);
+        }*/
     }
 
     private boolean shouldSaveResource(ResourceEntry entry, boolean isNewResource) throws Exception {

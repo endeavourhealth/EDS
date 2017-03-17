@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -14,15 +15,17 @@ public class Exchange {
 	private Map<String, String> headers;
 	private UUID exchangeId = null;
 	private String body;
+	private Date timestamp;
 
-	public Exchange(UUID exchangeId, String body) {
-		this(exchangeId, body, new HashMap<>());
+	public Exchange(UUID exchangeId, String body, Date timestamp) {
+		this(exchangeId, body, new HashMap<>(), timestamp);
 	}
 
-	public Exchange(UUID exchangeId, String body, Map<String, String> headers) {
+	public Exchange(UUID exchangeId, String body, Map<String, String> headers, Date timestamp) {
 		this.exchangeId = exchangeId;
 		this.body = body;
 		this.headers = headers;
+		this.timestamp = timestamp;
 	}
 
 	public String getBody() {
@@ -39,6 +42,18 @@ public class Exchange {
 
 	public void setExchangeId(UUID exchangeId) {
 		this.exchangeId = exchangeId;
+	}
+
+	public void setHeaders(Map<String, String> headers) {
+		this.headers = headers;
+	}
+
+	public Date getTimestamp() {
+		return timestamp;
+	}
+
+	public void setTimestamp(Date timestamp) {
+		this.timestamp = timestamp;
 	}
 
 	public Map<String, String> getHeaders() {
