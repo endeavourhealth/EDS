@@ -123,7 +123,7 @@ public class OutputContainer {
         String[] columnNames = csvWriter.getCsvHeaders();
         Class[] classes = csvWriter.getColumnTypes();
         if (columnNames.length != classes.length) {
-            throw new TransformException("Column names array (" + columnNames.length + ") isn't same length as classes array (" + classes.length + ")");
+            throw new TransformException("Column names array (" + columnNames.length + ") isn't same length as classes array (" + classes.length + ") for " + csvWriter.getFileName());
         }
 
         ObjectNode jsonObject = columnClassMappingJson.putObject(fileName);

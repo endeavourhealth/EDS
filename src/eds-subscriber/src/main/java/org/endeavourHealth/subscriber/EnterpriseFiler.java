@@ -1,4 +1,4 @@
-package org.endeavourHealth.subscriber;
+package org.endeavourhealth.subscriber;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;

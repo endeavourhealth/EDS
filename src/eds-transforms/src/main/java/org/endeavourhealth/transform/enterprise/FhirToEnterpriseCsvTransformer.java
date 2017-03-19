@@ -62,16 +62,23 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
     private static String findPatientId(List<ResourceByExchangeBatch> resourceWrappers) throws Exception {
 
         for (ResourceByExchangeBatch resourceWrapper: resourceWrappers) {
+            if (resourceWrapper.getIsDeleted()) {
+                continue;
+            }
+
             String resourceTypeStr = resourceWrapper.getResourceType();
             ResourceType resourceType = ResourceType.valueOf(resourceTypeStr);
-            if (FhirResourceFiler.isPatientResource(resourceType)) {
-
-                Resource resource = AbstractTransformer.deserialiseResouce(resourceWrapper);
-                String patientId = IdHelper.getPatientId(resource);
-                if (!Strings.isNullOrEmpty(patientId)) {
-                    return patientId;
-                }
+            if (!FhirResourceFiler.isPatientResource(resourceType)) {
+                continue;
             }
+
+            Resource resource = AbstractTransformer.deserialiseResouce(resourceWrapper);
+            String patientId = IdHelper.getPatientId(resource);
+            if (Strings.isNullOrEmpty(patientId)) {
+                continue;
+            }
+
+            return patientId;
         }
 
         return null;

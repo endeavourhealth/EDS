@@ -1,4 +1,4 @@
-package org.endeavourhealth.core.rdbms.reference;
+package org.endeavourhealth.postcodeupdater;
 
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
@@ -8,6 +8,8 @@ import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.csv.CsvHelper;
+import org.endeavourhealth.core.rdbms.reference.PostcodeHelper;
+import org.endeavourhealth.core.rdbms.reference.PostcodeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-public class PostcodeReferenceUpdater {
-    private static final Logger LOG = LoggerFactory.getLogger(PostcodeReferenceUpdater.class);
+public class Main {
+    private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     private static final String LSOA_MAP_CODE = "LSOA11CD";
     private static final String LSOA_MAP_NAME = "LSOA11NM";

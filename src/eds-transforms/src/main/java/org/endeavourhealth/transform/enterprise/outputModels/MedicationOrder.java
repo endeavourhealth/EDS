@@ -83,6 +83,7 @@ public class MedicationOrder extends AbstractEnterpriseCsvWriter {
                 Long.TYPE,
                 Long.TYPE,
                 Long.TYPE,
+                Long.TYPE,
                 Long.class,
                 Long.class,
                 Date.class,
