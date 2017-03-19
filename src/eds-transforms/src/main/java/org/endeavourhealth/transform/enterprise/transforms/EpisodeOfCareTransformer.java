@@ -1,9 +1,9 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
-import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.schema.RegistrationType;
+import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,34 +17,34 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
                           Map<String, ResourceByExchangeBatch> otherResources,
-                          Integer enterpriseOrganisationUuid) throws Exception {
+                          Long enterpriseOrganisationId) throws Exception {
 
         org.endeavourhealth.transform.enterprise.outputModels.EpisodeOfCare model = data.getEpisodesOfCare();
 
-        Integer enterpriseId = mapId(resource, model);
+        Long enterpriseId = mapId(resource, model);
         if (enterpriseId == null) {
             return;
 
         } else if (resource.getIsDeleted()) {
-            model.writeDelete(enterpriseId.intValue());
+            model.writeDelete(enterpriseId.longValue());
 
         } else {
             EpisodeOfCare fhirEpisode = (EpisodeOfCare)deserialiseResouce(resource);
 
             Reference patientReference = fhirEpisode.getPatient();
-            Integer enterprisePatientUuid = findEnterpriseId(data.getPatients(), patientReference);
+            Long enterprisePatientUuid = findEnterpriseId(data.getPatients(), patientReference);
 
-            int id;
-            int organisationId;
-            int patientId;
-            int registrationTypeId;
+            long id;
+            long organisationId;
+            long patientId;
+            Integer registrationTypeId;
             Date dateRegistered = null;
             Date dateRegisteredEnd = null;
-            Integer usualGpPractitionerId = null;
+            Long usualGpPractitionerId = null;
 
-            id = enterpriseId.intValue();
-            organisationId = enterpriseOrganisationUuid.intValue();
-            patientId = enterprisePatientUuid.intValue();
+            id = enterpriseId.longValue();
+            organisationId = enterpriseOrganisationId.longValue();
+            patientId = enterprisePatientUuid.longValue();
 
             if (fhirEpisode.hasCareManager()) {
                 Reference practitionerReference = fhirEpisode.getCareManager();
@@ -65,7 +65,7 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
                 }
             }
 
-            registrationTypeId = fhirRegistrationType.ordinal();
+            registrationTypeId = new Integer(fhirRegistrationType.ordinal());
 
             Period period = fhirEpisode.getPeriod();
             if (period.hasStart()) {

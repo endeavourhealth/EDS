@@ -101,10 +101,9 @@ public class PostMessageToExchange extends PipelineComponent {
 
 	private void waitForConfirmations(Channel channel) throws PipelineException {
 		try {
-			if (!channel.waitForConfirms())
+			if (!channel.waitForConfirms()) {
 				throw new PipelineException("Messages posted but not confirmed");
-			else
-				LOG.debug("Message posted to exchange");
+			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

@@ -4,7 +4,7 @@ import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.endeavourhealth.transform.common.CsvHelper;
+import org.endeavourhealth.core.csv.CsvHelper;
 import org.endeavourhealth.transform.common.exceptions.FileFormatException;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.csv.CsvCurrentState;

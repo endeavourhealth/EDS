@@ -10,28 +10,28 @@ public class EpisodeOfCare extends AbstractEnterpriseCsvWriter {
         super(fileName, csvFormat, dateFormat, timeFormat);
     }
 
-    public void writeDelete(int id) throws Exception {
+    public void writeDelete(long id) throws Exception {
 
         super.printRecord(OutputContainer.DELETE,
                 "" + id);
     }
 
-    public void writeUpsert(int id,
-                            int organisationId,
-                            int patientId,
-                            int registrationTypeId,
+    public void writeUpsert(long id,
+                            long organisationId,
+                            long patientId,
+                            Integer registrationTypeId,
                             Date dateRegistered,
                             Date dateRegisteredEnd,
-                            Integer usualGpPractitionerId) throws Exception {
+                            Long usualGpPractitionerId) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
                 "" + id,
                 "" + organisationId,
                 "" + patientId,
-                "" + registrationTypeId,
+                convertInt(registrationTypeId),
                 convertDate(dateRegistered),
                 convertDate(dateRegisteredEnd),
-                convertInt(usualGpPractitionerId));
+                convertLong(usualGpPractitionerId));
     }
 
     @Override
@@ -52,13 +52,13 @@ public class EpisodeOfCare extends AbstractEnterpriseCsvWriter {
     public Class[] getColumnTypes() {
         return new Class[] {
                 String.class,
-                Integer.TYPE,
-                Integer.TYPE,
-                Integer.TYPE,
-                Integer.TYPE,
+                Long.TYPE,
+                Long.TYPE,
+                Long.TYPE,
+                Integer.class,
                 Date.class,
                 Date.class,
-                Integer.class
+                Long.class
         };
     }
 }

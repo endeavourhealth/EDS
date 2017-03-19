@@ -1,4 +1,4 @@
-package org.endeavourhealth.subscriber;
+package org.endeavourHealth.subscriber;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
@@ -8,7 +8,6 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +37,7 @@ public class EnterpriseFiler {
 
     private static String keywordEscapeChar = null; //different DBs use different chars to escape keywords (" on pg, ` on mysql)
 
-    public static void file(String base64, String configName) throws Exception {
+    public static void file(String base64, JsonNode config) throws Exception {
 
         byte[] bytes = Base64.getDecoder().decode(base64);
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
@@ -46,7 +45,7 @@ public class EnterpriseFiler {
 
         JsonNode columnClassMappings = null;
 
-        Connection connection = openConnection(configName);
+        Connection connection = openConnection(config);
 
         try {
             List<DeleteWrapper> deletes = new ArrayList<>();
@@ -222,6 +221,8 @@ public class EnterpriseFiler {
             //so we have to manually check for these primative types
             if (className.equals("int")) {
                 cls = Integer.TYPE;
+            } else if (className.equals("long")) {
+                cls = Long.TYPE;
             } else if (className.equals("boolean")) {
                 cls = Boolean.TYPE;
             } else {
@@ -289,10 +290,11 @@ public class EnterpriseFiler {
                 statement.setInt(index, i);
             }
 
-        } else if (fieldCls == Long.class) {
+        } else if (fieldCls == Long.class
+            || fieldCls == Long.TYPE) {
 
             if (Strings.isNullOrEmpty(value)) {
-                statement.setNull(index, Types.INTEGER);
+                statement.setNull(index, Types.BIGINT);
             } else {
                 long l = Long.parseLong(value);
                 statement.setLong(index, l);
@@ -825,9 +827,7 @@ public class EnterpriseFiler {
         connection.commit();
     }*/
 
-    private static Connection openConnection(String configName) throws Exception {
-
-        JsonNode config = ConfigManager.getConfigurationAsJson(configName, "enterprise");
+    private static Connection openConnection(JsonNode config) throws Exception {
 
         String driverClass = config.get("driverClass").asText();
         String url = config.get("url").asText();

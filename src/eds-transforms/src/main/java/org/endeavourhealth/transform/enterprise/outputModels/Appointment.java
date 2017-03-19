@@ -10,17 +10,17 @@ public class Appointment extends AbstractEnterpriseCsvWriter {
         super(fileName, csvFormat, dateFormat, timeFormat);
     }
 
-    public void writeDelete(int id) throws Exception {
+    public void writeDelete(long id) throws Exception {
 
         super.printRecord(OutputContainer.DELETE,
                 "" + id);
     }
 
-    public void writeUpsert(int id,
-                            int organisationId,
-                            int patientId,
-                            Integer practitionerId,
-                            Integer scheduleId,
+    public void writeUpsert(long id,
+                            long organisationId,
+                            long patientId,
+                            Long practitionerId,
+                            Long scheduleId,
                             Date startDate,
                             Integer plannedDuration,
                             Integer actualDuration,
@@ -34,8 +34,8 @@ public class Appointment extends AbstractEnterpriseCsvWriter {
                 "" + id,
                 "" + organisationId,
                 "" + patientId,
-                convertInt(practitionerId),
-                convertInt(scheduleId),
+                convertLong(practitionerId),
+                convertLong(scheduleId),
                 convertDate(startDate),
                 convertInt(plannedDuration),
                 convertInt(actualDuration),
@@ -70,11 +70,11 @@ public class Appointment extends AbstractEnterpriseCsvWriter {
     public Class[] getColumnTypes() {
         return new Class[] {
                 String.class,
-                Integer.TYPE,
-                Integer.TYPE,
-                Integer.TYPE,
-                Integer.class,
-                Integer.class,
+                Long.TYPE,
+                Long.TYPE,
+                Long.TYPE,
+                Long.class,
+                Long.class,
                 Date.class,
                 Integer.class,
                 Integer.class,

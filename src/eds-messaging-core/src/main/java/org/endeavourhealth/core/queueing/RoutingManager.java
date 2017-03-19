@@ -1,6 +1,5 @@
 package org.endeavourhealth.core.queueing;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.endeavourhealth.common.cache.CacheManager;
 import org.endeavourhealth.common.cache.ICacheable;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
@@ -29,7 +28,7 @@ public class RoutingManager implements ICacheable {
 
 		for (RouteGroup routeGroup : routingMap) {
 			if (Pattern.matches(routeGroup.getRegex(), identifier)) {
-				LOG.debug("Routing key [" + routeGroup.getRouteKey()+ "] found for identifier [" + identifier + "]");
+				//LOG.debug("Routing key [" + routeGroup.getRouteKey()+ "] found for identifier [" + identifier + "]");
 				return routeGroup.getRouteKey();
 			}
 		}

@@ -15,36 +15,36 @@ public class PractitionerTransformer extends AbstractTransformer {
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
                           Map<String, ResourceByExchangeBatch> otherResources,
-                          Integer enterpriseOrganisationUuid) throws Exception {
+                          Long enterpriseOrganisationId) throws Exception {
 
         org.endeavourhealth.transform.enterprise.outputModels.Practitioner model = data.getPractitioners();
 
-        Integer enterpriseId = mapId(resource, model);
+        Long enterpriseId = mapId(resource, model);
         if (enterpriseId == null) {
             return;
 
         } else if (resource.getIsDeleted()) {
-            model.writeDelete(enterpriseId.intValue());
+            model.writeDelete(enterpriseId.longValue());
 
         } else {
 
             Practitioner fhir = (Practitioner)deserialiseResouce(resource);
 
-            int id;
-            int organizaationId;
+            long id;
+            long organizaationId;
             String name = null;
             String roleCode = null;
             String roleDesc = null;
 
-            id = enterpriseId.intValue();
+            id = enterpriseId.longValue();
 
             if (fhir.hasName()) {
                 HumanName fhirName = fhir.getName();
                 name = fhirName.getText();
             }
 
-            Integer practitionerEnterpriseOrgId = null;
-            LOG.trace("Transforming practitioner " + fhir.getId() + " with " + fhir.getPractitionerRole().size() + " roles and enterpriseOrganisationUuid " + enterpriseOrganisationUuid);
+            Long practitionerEnterpriseOrgId = null;
+            //LOG.trace("Transforming practitioner " + fhir.getId() + " with " + fhir.getPractitionerRole().size() + " roles and enterpriseOrganisationUuid " + enterpriseOrganisationUuid);
             for (Practitioner.PractitionerPractitionerRoleComponent role : fhir.getPractitionerRole()) {
 
                 CodeableConcept cc = role.getRole();
@@ -57,15 +57,15 @@ public class PractitionerTransformer extends AbstractTransformer {
 
                 Reference organisationReference = role.getManagingOrganization();
                 practitionerEnterpriseOrgId = findEnterpriseId(data.getOrganisations(), organisationReference);
-                LOG.trace("Got role with org ID " + practitionerEnterpriseOrgId + " from " + organisationReference);
+                //LOG.trace("Got role with org ID " + practitionerEnterpriseOrgId + " from " + organisationReference);
             }
 
             if (practitionerEnterpriseOrgId == null) {
-                LOG.trace("No role, so setting to the enterpriseOrganisationUuid " + enterpriseOrganisationUuid);
-                practitionerEnterpriseOrgId = enterpriseOrganisationUuid;
+                //LOG.trace("No role, so setting to the enterpriseOrganisationUuid " + enterpriseOrganisationUuid);
+                practitionerEnterpriseOrgId = enterpriseOrganisationId;
             }
 
-            organizaationId = practitionerEnterpriseOrgId.intValue();
+            organizaationId = practitionerEnterpriseOrgId.longValue();
 
             model.writeUpsert(id,
                 organizaationId,
@@ -75,54 +75,4 @@ public class PractitionerTransformer extends AbstractTransformer {
         }
     }
 
-    /*public void transform(ResourceByExchangeBatch resource,
-                                 EnterpriseData data,
-                                 Map<String, ResourceByExchangeBatch> otherResources,
-                                 Integer enterpriseOrganisationUuid) throws Exception {
-
-        org.endeavourhealth.core.xml.enterprise.Practitioner model = new org.endeavourhealth.core.xml.enterprise.Practitioner();
-
-        if (!mapIdAndMode(resource, model)) {
-            return;
-        }
-
-        //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getSaveMode() == SaveMode.UPSERT) {
-
-            Practitioner fhir = (Practitioner)deserialiseResouce(resource);
-
-            if (fhir.hasName()) {
-                HumanName name = fhir.getName();
-                model.setName(name.getText());
-            }
-
-            for (Practitioner.PractitionerPractitionerRoleComponent role : fhir.getPractitionerRole()) {
-
-                CodeableConcept cc = role.getRole();
-                for (Coding coding: cc.getCoding()) {
-                    if (coding.getSystem().equals(FhirValueSetUri.VALUE_SET_JOB_ROLE_CODES)) {
-                        model.setRoleCode(coding.getCode());
-                        model.setRoleDesc(coding.getDisplay());
-                    }
-                }
-
-                Reference organisationReference = role.getManagingOrganization();
-                Integer enterpriseOrgId = findEnterpriseId(new org.endeavourhealth.core.xml.enterprise.Organization(), organisationReference);
-
-                if (enterpriseOrgId == null) {
-                    LOG.warn("" + fhir.getResourceType() + " " + fhir.getId() + " refers to " + organisationReference.getReference() + " that doesn't exist");
-                } else {
-                    model.setOrganizationId(enterpriseOrgId);
-                }
-            }
-        }
-
-        //the EMIS test data has practitioners that point to non-exist organisations,
-        //so, in order to file them in enterprise, we sub in the main org ID
-        if (model.getOrganizationId() == 0) {
-            model.setOrganizationId(enterpriseOrganisationUuid);
-        }
-
-        data.getPractitioner().add(model);
-    }*/
 }

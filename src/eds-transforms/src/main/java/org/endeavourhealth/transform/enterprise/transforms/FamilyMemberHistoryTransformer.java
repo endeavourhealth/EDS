@@ -1,10 +1,10 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
-import org.endeavourhealth.common.fhir.CodeableConceptHelper;
-import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.DateTimeType;
 import org.hl7.fhir.instance.model.Extension;
 import org.hl7.fhir.instance.model.FamilyMemberHistory;
@@ -23,23 +23,23 @@ public class FamilyMemberHistoryTransformer extends AbstractTransformer {
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
                           Map<String, ResourceByExchangeBatch> otherResources,
-                          Integer enterpriseOrganisationUuid) throws Exception {
+                          Long enterpriseOrganisationId) throws Exception {
 
         org.endeavourhealth.transform.enterprise.outputModels.Observation model = data.getObservations();
 
-        Integer enterpriseId = mapId(resource, model);
+        Long enterpriseId = mapId(resource, model);
         if (enterpriseId == null) {
             return;
 
         } else if (resource.getIsDeleted()) {
-            model.writeDelete(enterpriseId.intValue());
+            model.writeDelete(enterpriseId.longValue());
 
         } else {
 
             FamilyMemberHistory fhir = (FamilyMemberHistory)deserialiseResouce(resource);
 
             Reference patientReference = fhir.getPatient();
-            Integer enterprisePatientUuid = findEnterpriseId(data.getPatients(), patientReference);
+            Long enterprisePatientUuid = findEnterpriseId(data.getPatients(), patientReference);
 
             //the test pack has data that refers to deleted or missing patients, so if we get a null
             //patient ID here, then skip this resource
@@ -48,11 +48,11 @@ public class FamilyMemberHistoryTransformer extends AbstractTransformer {
                 return;
             }
 
-            int id;
-            int organisationId;
-            int patientId;
-            Integer encounterId = null;
-            Integer practitionerId = null;
+            long id;
+            long organisationId;
+            long patientId;
+            Long encounterId = null;
+            Long practitionerId = null;
             Date clinicalEffectiveDate = null;
             Integer datePrecisionId = null;
             Long snomedConceptId = null;
@@ -62,9 +62,9 @@ public class FamilyMemberHistoryTransformer extends AbstractTransformer {
             boolean isProblem = false;
             String originalTerm = null;
 
-            id = enterpriseId.intValue();
-            organisationId = enterpriseOrganisationUuid.intValue();
-            patientId = enterprisePatientUuid.intValue();
+            id = enterpriseId.longValue();
+            organisationId = enterpriseOrganisationId.longValue();
+            patientId = enterprisePatientUuid.longValue();
 
             if (fhir.hasExtension()) {
                 for (Extension extension: fhir.getExtension()) {

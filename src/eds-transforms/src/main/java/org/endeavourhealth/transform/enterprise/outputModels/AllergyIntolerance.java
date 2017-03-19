@@ -10,17 +10,17 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
         super(fileName, csvFormat, dateFormat, timeFormat);
     }
 
-    public void writeDelete(int id) throws Exception {
+    public void writeDelete(long id) throws Exception {
 
         super.printRecord(OutputContainer.DELETE,
                 "" + id);
     }
 
-    public void writeUpsert(int id,
-                            int organisationId,
-                            int patientId,
-                            Integer encounterId,
-                            Integer practitionerId,
+    public void writeUpsert(long id,
+                            long organisationId,
+                            long patientId,
+                            Long encounterId,
+                            Long practitionerId,
                             Date clinicalEffectiveDate,
                             Integer datePrecisionId,
                             Long snomedConceptId,
@@ -31,8 +31,8 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
                 "" + id,
                 "" + organisationId,
                 "" + patientId,
-                convertInt(encounterId),
-                convertInt(practitionerId),
+                convertLong(encounterId),
+                convertLong(practitionerId),
                 convertDate(clinicalEffectiveDate),
                 convertInt(datePrecisionId),
                 convertLong(snomedConceptId),
@@ -61,11 +61,11 @@ public class AllergyIntolerance extends AbstractEnterpriseCsvWriter {
     public Class[] getColumnTypes() {
         return new Class[] {
                 String.class,
-                Integer.TYPE,
-                Integer.TYPE,
-                Integer.TYPE,
-                Integer.class,
-                Integer.class,
+                Long.TYPE,
+                Long.TYPE,
+                Long.TYPE,
+                Long.class,
+                Long.class,
                 Date.class,
                 Integer.class,
                 Long.class,

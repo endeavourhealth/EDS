@@ -10,34 +10,36 @@ public class Encounter extends AbstractEnterpriseCsvWriter {
         super(fileName, csvFormat, dateFormat, timeFormat);
     }
 
-    public void writeDelete(int id) throws Exception {
+    public void writeDelete(long id) throws Exception {
 
         super.printRecord(OutputContainer.DELETE,
                 "" + id);
     }
 
-    public void writeUpsert(int id,
-                            int organisationId,
-                            int patientId,
-                            Integer practitionerId,
-                            Integer appointmentId,
+    public void writeUpsert(long id,
+                            long organisationId,
+                            long patientId,
+                            Long practitionerId,
+                            Long appointmentId,
                             Date clinicalEffectiveDate,
                             Integer datePrecisionId,
                             Long snomedConceptId,
                             String originalCode,
-                            String originalTerm) throws Exception {
+                            String originalTerm,
+                            Long episodeOfCareId) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
                 "" + id,
                 "" + organisationId,
                 "" + patientId,
-                convertInt(practitionerId),
-                convertInt(appointmentId),
+                convertLong(practitionerId),
+                convertLong(appointmentId),
                 convertDate(clinicalEffectiveDate),
                 convertInt(datePrecisionId),
                 convertLong(snomedConceptId),
                 originalCode,
-                originalTerm);
+                originalTerm,
+                convertLong(episodeOfCareId));
     }
 
     @Override
@@ -53,7 +55,8 @@ public class Encounter extends AbstractEnterpriseCsvWriter {
                 "date_precision_id",
                 "snomed_concept_id",
                 "original_code",
-                "original_term"
+                "original_term",
+                "episode_of_care_id"
         };
     }
 
@@ -61,16 +64,17 @@ public class Encounter extends AbstractEnterpriseCsvWriter {
     public Class[] getColumnTypes() {
         return new Class[] {
                 String.class,
-                Integer.TYPE,
-                Integer.TYPE,
-                Integer.TYPE,
-                Integer.class,
-                Integer.class,
+                Long.TYPE,
+                Long.TYPE,
+                Long.TYPE,
+                Long.class,
+                Long.class,
                 Date.class,
                 Integer.class,
                 Long.class,
                 String.class,
-                String.class
+                String.class,
+                Long.class
         };
     }
 }

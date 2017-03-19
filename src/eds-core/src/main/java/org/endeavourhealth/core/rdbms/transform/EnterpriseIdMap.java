@@ -1,5 +1,8 @@
 package org.endeavourhealth.core.rdbms.transform;
 
+import org.hibernate.annotations.Generated;
+import org.hibernate.annotations.GenerationTime;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -45,7 +48,8 @@ public class EnterpriseIdMap implements Serializable {
         this.resourceId = resourceId;
     }
 
-    @Column(name = "enterprise_id", nullable = false)
+    @Generated(GenerationTime.INSERT)
+    @Column(name = "enterprise_id", insertable = false)
     public Long getEnterpriseId() {
         return enterpriseId;
     }

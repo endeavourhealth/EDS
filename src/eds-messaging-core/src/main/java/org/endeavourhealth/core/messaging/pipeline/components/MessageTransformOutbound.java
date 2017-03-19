@@ -2,6 +2,7 @@ package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.apache.http.HttpEntity;
@@ -11,7 +12,9 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.endeavourHealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.MessageTransformOutboundConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
@@ -26,7 +29,6 @@ import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
 import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
-import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.endeavourhealth.transform.vitrucare.FhirToVitruCareXmlTransformer;
@@ -146,7 +148,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 			throw new PipelineException("Error serializing subscriber batch JSON", e);
 		}
 		exchange.setHeader(HeaderKeys.SubscriberBatch, subscriberBatchesJson);
-		LOG.trace("Message transformed (outbound)");
+		//LOG.trace("Message transformed (outbound)");
 	}
 
 	private String transform(Exchange exchange, UUID batchId, String software, String softwareVersion, Map<ResourceType, List<UUID>> resourceIds, String endpoint) throws Exception {
@@ -155,11 +157,14 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 			UUID senderOrganisationUuid = exchange.getHeaderAsUuid(HeaderKeys.SenderOrganisationUuid);
 
-			String zippedCsvs = FhirToEnterpriseCsvTransformer.transformFromFhir(senderOrganisationUuid, batchId, resourceIds);
+			JsonNode config = ConfigManager.getConfigurationAsJson(endpoint, "enterprise");
+			boolean pseudonymised = config.get("pseudonymised").asBoolean();
+
+			String zippedCsvs = FhirToEnterpriseCsvTransformer.transformFromFhir(senderOrganisationUuid, batchId, resourceIds, pseudonymised);
 
 			//file the data directly, so return null to end the pipeline
 			if (!Strings.isNullOrEmpty(zippedCsvs)) {
-				EnterpriseFiler.file(zippedCsvs, endpoint);
+				EnterpriseFiler.file(zippedCsvs, config);
 			}
 
 			return null;

@@ -2,11 +2,13 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import OpenPseudonymiser.Crypto;
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.utility.Resources;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.transform.common.reference.PostcodeReference;
-import org.endeavourhealth.transform.common.reference.ReferenceHelper;
+import org.endeavourhealth.core.rdbms.reference.PostcodeHelper;
+import org.endeavourhealth.core.rdbms.reference.PostcodeReference;
+import org.endeavourhealth.core.rdbms.transform.HouseholdHelper;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.Address;
 import org.hl7.fhir.instance.model.DateType;
@@ -24,6 +26,7 @@ public class PatientTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(PatientTransformer.class);
 
     private static final String PSEUDO_KEY_NHS_NUMBER = "NHSNumber";
+    private static final String PSEUDO_KEY_PATIENT_NUMBER = "PatientNumber";
     private static final String PSEUDO_KEY_DATE_OF_BIRTH = "DOB";
     private static final String PSEUDO_SALT_RESOURCE = "Endeavour Enterprise - East London.EncryptedSalt";
 
@@ -32,11 +35,11 @@ public class PatientTransformer extends AbstractTransformer {
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
                           Map<String, ResourceByExchangeBatch> otherResources,
-                          Integer enterpriseOrganisationUuid) throws Exception {
+                          Long enterpriseOrganisationId) throws Exception {
 
         org.endeavourhealth.transform.enterprise.outputModels.Patient model = data.getPatients();
 
-        Integer enterpriseId = mapId(resource, model);
+        Long enterpriseId = mapId(resource, model);
         if (enterpriseId == null) {
             return;
 
@@ -45,25 +48,32 @@ public class PatientTransformer extends AbstractTransformer {
             //deleteAllDependentEntities(data, resource);
 
             //and delete the patient itself
-            model.writeDelete(enterpriseId.intValue());
+            model.writeDelete(enterpriseId.longValue());
 
         } else {
             Patient fhirPatient = (Patient)deserialiseResouce(resource);
 
-            int id;
-            int organizationId;
+            long id;
+            long organizationId;
             int patientGenderId;
             String pseudoId = null;
             String nhsNumber = null;
+            Integer ageYears = null;
+            Integer ageMonths = null;
+            Integer ageWeeks = null;
             Date dateOfBirth = null;
             Date dateOfDeath = null;
             String postcode = null;
+            String postcodePrefix = null;
+            Long householdId = null;
             String lsoaCode = null;
             String lsoaName = null;
+            String msoaCode = null;
+            String msoaName = null;
             BigDecimal townsendScore = null;
 
-            id = enterpriseId.intValue();
-            organizationId = enterpriseOrganisationUuid.intValue();
+            id = enterpriseId.longValue();
+            organizationId = enterpriseOrganisationId.longValue();
 
             //Calendar cal = Calendar.getInstance();
 
@@ -91,16 +101,20 @@ public class PatientTransformer extends AbstractTransformer {
                 for (Address address: fhirPatient.getAddress()) {
                     if (address.getUse().equals(Address.AddressUse.HOME)) {
                         postcode = address.getPostalCode();
+                        postcodePrefix = findPostcodePrefix(postcode);
+                        householdId = HouseholdHelper.findOrCreateHouseholdId(address);
                     }
                 }
             }
 
             //if we've found a postcode, then get the LSOA etc. for it
             if (!Strings.isNullOrEmpty(postcode)) {
-                PostcodeReference postcodeReference = ReferenceHelper.getPostcodeReference(postcode);
+                PostcodeReference postcodeReference = PostcodeHelper.getPostcodeReference(postcode);
                 if (postcodeReference != null) {
                     lsoaCode = postcodeReference.getLsoaCode();
                     lsoaName = postcodeReference.getLsoaName();
+                    msoaCode = postcodeReference.getLsoaCode();
+                    msoaName = postcodeReference.getLsoaName();
                     townsendScore = postcodeReference.getTownsendScore();
                 }
             }
@@ -110,18 +124,62 @@ public class PatientTransformer extends AbstractTransformer {
             //adding NHS number to allow data checking
             nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
 
-            model.writeUpsert(id,
-                organizationId,
-                patientGenderId,
-                pseudoId,
-                nhsNumber,
-                dateOfBirth,
-                dateOfDeath,
-                postcode,
-                lsoaCode,
-                lsoaName,
-                townsendScore);
+            if (model.isPseduonymised()) {
+                model.writeUpsertPseudonymised(id,
+                        organizationId,
+                        patientGenderId,
+                        pseudoId,
+                        ageYears,
+                        ageMonths,
+                        ageWeeks,
+                        dateOfDeath,
+                        postcodePrefix,
+                        householdId,
+                        lsoaCode,
+                        lsoaName,
+                        msoaCode,
+                        msoaName,
+                        townsendScore);
+
+            } else {
+                model.writeUpsertIdentifiable(id,
+                        organizationId,
+                        patientGenderId,
+                        nhsNumber,
+                        dateOfBirth,
+                        dateOfDeath,
+                        postcode,
+                        householdId,
+                        lsoaCode,
+                        lsoaName,
+                        msoaCode,
+                        msoaName,
+                        townsendScore);
+
+            }
         }
+    }
+
+    private static final String findPostcodePrefix(String postcode) {
+
+        if (Strings.isNullOrEmpty(postcode)) {
+            return null;
+        }
+
+        //if the postcode is already formatted with a space, use that
+        int spaceIndex = postcode.indexOf(" ");
+        if (spaceIndex > -1) {
+            return postcode.substring(0, spaceIndex);
+        }
+
+        //if no space, then drop the last three chars off, which works
+        //for older format postcodes (e.g. AN, ANN, AAN, AANN) and the newer London ones (e.g. ANA, AANA)
+        int len = postcode.length();
+        if (len <= 3) {
+            return null;
+        }
+
+        return postcode.substring(0, len-3);
     }
 
     /**
@@ -266,23 +324,40 @@ public class PatientTransformer extends AbstractTransformer {
 
     private static String pseudonomise(Patient fhirPatient) throws Exception {
 
-        String nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
-
         String dob = null;
         if (fhirPatient.hasBirthDate()) {
             Date d = fhirPatient.getBirthDate();
             dob = new SimpleDateFormat("dd-MM-yyyy").format(d);
         }
 
-        //if we don't have either of these values, we can't generate a pseudo ID
-        if (Strings.isNullOrEmpty(nhsNumber)
-                || Strings.isNullOrEmpty(dob)) {
-            return "";
+        if (Strings.isNullOrEmpty(dob)) {
+            //we always need DoB for the psuedo ID
+            return null;
         }
 
         TreeMap keys = new TreeMap();
         keys.put(PSEUDO_KEY_DATE_OF_BIRTH, dob);
-        keys.put(PSEUDO_KEY_NHS_NUMBER, nhsNumber);
+
+        String nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
+        if (!Strings.isNullOrEmpty(nhsNumber)) {
+            keys.put(PSEUDO_KEY_NHS_NUMBER, nhsNumber);
+
+        } else {
+
+            //if we don't have an NHS number, use the Emis patient number
+            String patientNumber = null;
+            if (fhirPatient.hasIdentifier()) {
+                patientNumber = IdentifierHelper.findIdentifierValue(fhirPatient.getIdentifier(), FhirUri.IDENTIFIER_SYSTEM_EMIS_PATIENT_NUMBER);
+            }
+
+            if (!Strings.isNullOrEmpty(patientNumber)) {
+                keys.put(PSEUDO_KEY_PATIENT_NUMBER, patientNumber);
+
+            } else {
+                //if no NHS number or patient number
+                return null;
+            }
+        }
 
         Crypto crypto = new Crypto();
         crypto.SetEncryptedSalt(getEncryptedSalt());

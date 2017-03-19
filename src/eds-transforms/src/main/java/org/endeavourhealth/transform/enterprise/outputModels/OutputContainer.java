@@ -36,16 +36,16 @@ public class OutputContainer {
     private final AllergyIntolerance allergyIntolerances;
 
 
-    public OutputContainer() throws Exception {
-        this(CSV_FORMAT, DATE_FORMAT, TIME_FORMAT);
+    public OutputContainer(boolean pseduonymised) throws Exception {
+        this(CSV_FORMAT, DATE_FORMAT, TIME_FORMAT, pseduonymised);
     }
 
-    public OutputContainer(CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
+    public OutputContainer(CSVFormat csvFormat, String dateFormat, String timeFormat, boolean pseduonymised) throws Exception {
 
         organisations = new Organization("organization.csv", csvFormat, dateFormat, timeFormat);
         practitioners = new Practitioner("practitioner.csv", csvFormat, dateFormat, timeFormat);
         schedules = new Schedule("schedule.csv", csvFormat, dateFormat, timeFormat);
-        patients = new Patient("patient.csv", csvFormat, dateFormat, timeFormat);
+        patients = new Patient("patient.csv", csvFormat, dateFormat, timeFormat, pseduonymised);
         episodesOfCare = new EpisodeOfCare("episode_of_care.csv", csvFormat, dateFormat, timeFormat);
         appointments = new Appointment("appointment.csv", csvFormat, dateFormat, timeFormat);
         encounters = new Encounter("encounter.csv", csvFormat, dateFormat, timeFormat);

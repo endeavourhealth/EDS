@@ -8,19 +8,19 @@ public class Organization extends AbstractEnterpriseCsvWriter {
         super(fileName, csvFormat, dateFormat, timeFormat);
     }
 
-    public void writeDelete(int id) throws Exception {
+    public void writeDelete(long id) throws Exception {
 
         super.printRecord(OutputContainer.DELETE,
                 "" + id);
     }
 
-    public void writeUpsert(int id,
+    public void writeUpsert(long id,
                           String odsCode,
                           String name,
                           String typeCode,
                           String typeDesc,
                           String postcode,
-                          Integer parentOrganisationId) throws Exception {
+                          Long parentOrganisationId) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
                 "" + id,
@@ -29,7 +29,7 @@ public class Organization extends AbstractEnterpriseCsvWriter {
                 typeCode,
                 typeDesc,
                 postcode,
-                convertInt(parentOrganisationId));
+                convertLong(parentOrganisationId));
     }
 
     @Override
@@ -50,13 +50,13 @@ public class Organization extends AbstractEnterpriseCsvWriter {
     public Class[] getColumnTypes() {
         return new Class[] {
                 String.class,
-                Integer.TYPE,
+                Long.TYPE,
                 String.class,
                 String.class,
                 String.class,
                 String.class,
                 String.class,
-                Integer.class
+                Long.class
         };
     }
 

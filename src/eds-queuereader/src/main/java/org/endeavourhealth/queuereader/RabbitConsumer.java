@@ -54,13 +54,13 @@ public class RabbitConsumer extends DefaultConsumer {
 
 		// Process the message
 		if (pipeline.execute(exchange)) {
-			LOG.info("Successfully processed exchange {}", exchange.getExchangeId());
+			//LOG.info("Successfully processed exchange {}", exchange.getExchangeId());
 			this.getChannel().basicAck(envelope.getDeliveryTag(), false);
 			LOG.info("Have sent ACK for exchange {}", exchange.getExchangeId());
 		} else {
-			LOG.error("Failed to process exchange {}", exchange.getExchangeId());
+			//LOG.error("Failed to process exchange {}", exchange.getExchangeId());
 			this.getChannel().basicReject(envelope.getDeliveryTag(), true);
-			LOG.info("Have sent REJECT for exchange {}", exchange.getExchangeId());
+			LOG.error("Have sent REJECT for exchange {}", exchange.getExchangeId());
 		}
 	}
 }

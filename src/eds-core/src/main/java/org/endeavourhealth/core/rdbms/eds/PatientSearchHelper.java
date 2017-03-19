@@ -16,7 +16,7 @@ public class PatientSearchHelper {
 
     private final static String IDENTIFIER_SYSTEM_NHSNUMBER = "http://fhir.nhs.net/Id/nhs-number";
 
-    private static EntityManagerFactory entityManager;
+    private static EntityManagerFactory entityManagerFactory;
 
 
     public static void update(UUID serviceId, UUID systemId, Patient fhirPatient) throws Exception {
@@ -254,12 +254,12 @@ public class PatientSearchHelper {
 
     private static EntityManager getEntityManager() throws Exception {
 
-        if (entityManager == null
-                || !entityManager.isOpen()) {
+        if (entityManagerFactory == null
+                || !entityManagerFactory.isOpen()) {
             createEntityManager();
         }
 
-        return entityManager.createEntityManager();
+        return entityManagerFactory.createEntityManager();
     }
 
     private static synchronized void createEntityManager() throws Exception {
@@ -275,7 +275,7 @@ public class PatientSearchHelper {
         properties.put("hibernate.hikari.dataSource.user", user);
         properties.put("hibernate.hikari.dataSource.password", pass);
 
-        entityManager = Persistence.createEntityManagerFactory("EdsDb", properties);
+        entityManagerFactory = Persistence.createEntityManagerFactory("EdsDb", properties);
     }
 
     public static void delete(UUID serviceId, UUID systemId) throws Exception {
@@ -306,6 +306,7 @@ public class PatientSearchHelper {
         query.executeUpdate();
 
         entityManager.getTransaction().commit();
+        entityManager.close();
     }
 
     public static List<PatientSearch> searchByNhsNumber(String nhsNumber) throws Exception {

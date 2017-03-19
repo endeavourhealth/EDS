@@ -7,7 +7,7 @@ import org.endeavourhealth.common.fhir.ReferenceComponents;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.data.transform.EnterpriseIdMapRepository;
+import org.endeavourhealth.core.rdbms.transform.EnterpriseIdHelper;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.Reference;
@@ -27,7 +27,7 @@ public abstract class AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractTransformer.class);
     private static final ParserPool PARSER_POOL = new ParserPool();
 
-    private static final EnterpriseIdMapRepository idMappingRepository = new EnterpriseIdMapRepository();
+    //private static final EnterpriseIdMapRepository idMappingRepository = new EnterpriseIdMapRepository();
     private static JCS cache = null;
     private static Map<String, AtomicInteger> maxIdMap = new ConcurrentHashMap<>();
     private static ReentrantLock futuresLock = new ReentrantLock();
@@ -52,20 +52,8 @@ public abstract class AbstractTransformer {
     public abstract void transform(ResourceByExchangeBatch resource,
                                    OutputContainer data,
                                    Map<String, ResourceByExchangeBatch> otherResources,
-                                   Integer enterpriseOrganisationUuid) throws Exception;
+                                   Long enterpriseOrganisationUuid) throws Exception;
 
-    /*public abstract void transform(ResourceByExchangeBatch resource,
-                                 EnterpriseData data,
-                                 Map<String, ResourceByExchangeBatch> otherResources,
-                                 Integer enterpriseOrganisationUuid) throws Exception;*/
-
-
-    /*protected static XMLGregorianCalendar convertDate(Date date) throws Exception {
-
-        GregorianCalendar c = new GregorianCalendar();
-        c.setTime(date);
-        return DatatypeFactory.newInstance().newXMLGregorianCalendar(c);
-    }*/
 
     protected static Integer convertDatePrecision(TemporalPrecisionEnum precision) throws Exception {
         return Integer.valueOf(precision.getCalendarConstant());
@@ -73,53 +61,55 @@ public abstract class AbstractTransformer {
 
 
 
-    protected static Integer findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, Resource resource) throws Exception {
+    protected static Long findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, Resource resource) throws Exception {
         String resourceType = resource.getResourceType().toString();
         UUID resourceId = UUID.fromString(resource.getId());
         return findEnterpriseId(csvWriter, resourceType, resourceId);
     }
 
-    protected static Integer findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, Reference reference) throws Exception {
+    protected static Long findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, Reference reference) throws Exception {
         ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
         String resourceType = comps.getResourceType().toString();
         UUID resourceId = UUID.fromString(comps.getId());
         return findEnterpriseId(csvWriter, resourceType, resourceId);
     }
 
-    protected static  Integer findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, ResourceByExchangeBatch resource) throws Exception {
+    protected static Long findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, ResourceByExchangeBatch resource) throws Exception {
         return findEnterpriseId(csvWriter, resource.getResourceType(), resource.getResourceId());
     }
 
-    protected static Integer findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, UUID resourceId) throws Exception {
+    protected static Long findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, UUID resourceId) throws Exception {
         String enterpriseTableName = csvWriter.getFileNameWithoutExtension();
-        Integer ret = checkCacheForId(enterpriseTableName, resourceType, resourceId);
+        Long ret = checkCacheForId(enterpriseTableName, resourceType, resourceId);
         if (ret == null) {
-            ret = idMappingRepository.getEnterpriseIdMappingId(enterpriseTableName, resourceType, resourceId);
+            ret = EnterpriseIdHelper.findEnterpriseId(enterpriseTableName, resourceType, resourceId);
+            //ret = idMappingRepository.getEnterpriseIdMappingId(enterpriseTableName, resourceType, resourceId);
         }
         return ret;
     }
 
-
-
-    protected static Integer createEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, ResourceByExchangeBatch resource) throws Exception {
+    protected static Long createEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, ResourceByExchangeBatch resource) throws Exception {
         String resourceType = resource.getResourceType();
         UUID resourceId = resource.getResourceId();
         return createEnterpriseId(csvWriter, resourceType, resourceId);
     }
 
-    protected static Integer createEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, UUID resourceId) throws Exception {
+    protected static Long createEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, UUID resourceId) throws Exception {
         String enterpriseTableName = csvWriter.getFileNameWithoutExtension();
-        int enterpriseId = getNextId(enterpriseTableName);
+
+        Long enterpriseId = EnterpriseIdHelper.findOrCreateEnterpriseId(enterpriseTableName, resourceType, resourceId);
+        /*int enterpriseId = getNextId(enterpriseTableName);
         idMappingRepository.saveEnterpriseIdMax(enterpriseTableName, Integer.valueOf(enterpriseId));
-        idMappingRepository.saveEnterpriseIdMapping(enterpriseTableName, resourceType, resourceId, Integer.valueOf(enterpriseId));
+        idMappingRepository.saveEnterpriseIdMapping(enterpriseTableName, resourceType, resourceId, Integer.valueOf(enterpriseId));*/
+
         addIdToCache(enterpriseTableName, resourceType, resourceId, enterpriseId);
         return enterpriseId;
     }
 
-    private static Integer checkCacheForId(String enterpriseTableName, String resourceType, UUID resourceId) throws Exception {
-        return (Integer)cache.get(enterpriseTableName + ":" + resourceType + "/" + resourceId);
+    private static Long checkCacheForId(String enterpriseTableName, String resourceType, UUID resourceId) throws Exception {
+        return (Long)cache.get(enterpriseTableName + ":" + resourceType + "/" + resourceId);
     }
-    private static void addIdToCache(String enterpriseTableName, String resourceType, UUID resourceId, Integer toCache) throws Exception {
+    private static void addIdToCache(String enterpriseTableName, String resourceType, UUID resourceId, Long toCache) throws Exception {
         cache.put(enterpriseTableName + ":" + resourceType + "/" + resourceId, toCache);
     }
 
@@ -157,8 +147,8 @@ public abstract class AbstractTransformer {
         }
     }
 
-    protected static Integer mapId(ResourceByExchangeBatch resource, AbstractEnterpriseCsvWriter csvWriter) throws Exception {
-        Integer enterpriseId = findEnterpriseId(csvWriter, resource);
+    protected static Long mapId(ResourceByExchangeBatch resource, AbstractEnterpriseCsvWriter csvWriter) throws Exception {
+        Long enterpriseId = findEnterpriseId(csvWriter, resource);
 
         if (resource.getIsDeleted()) {
 
@@ -181,7 +171,7 @@ public abstract class AbstractTransformer {
     }
 
 
-    private static int getNextId(String enterpriseTableName) {
+    /*private static int getNextId(String enterpriseTableName) {
 
         AtomicInteger ai = maxIdMap.get(enterpriseTableName);
         if (ai == null) {
@@ -199,5 +189,5 @@ public abstract class AbstractTransformer {
             }
         }
         return ai.incrementAndGet();
-    }
+    }*/
 }

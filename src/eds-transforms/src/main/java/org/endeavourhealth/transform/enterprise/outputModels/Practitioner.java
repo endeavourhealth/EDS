@@ -8,15 +8,15 @@ public class Practitioner extends AbstractEnterpriseCsvWriter {
         super(fileName, csvFormat, dateFormat, timeFormat);
     }
 
-    public void writeDelete(int id) throws Exception {
+    public void writeDelete(long id) throws Exception {
 
         super.printRecord(OutputContainer.DELETE,
                 "" + id);
     }
 
 
-    public void writeUpsert(int id,
-                            int organizaationId,
+    public void writeUpsert(long id,
+                            long organizaationId,
                             String name,
                             String roleCode,
                             String roleDesc) throws Exception {
@@ -46,8 +46,8 @@ public class Practitioner extends AbstractEnterpriseCsvWriter {
     public Class[] getColumnTypes() {
         return new Class[] {
                 String.class,
-                Integer.TYPE,
-                Integer.TYPE,
+                Long.TYPE,
+                Long.TYPE,
                 String.class,
                 String.class,
                 String.class

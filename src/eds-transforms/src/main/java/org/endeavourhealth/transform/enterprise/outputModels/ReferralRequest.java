@@ -10,22 +10,22 @@ public class ReferralRequest extends AbstractEnterpriseCsvWriter {
         super(fileName, csvFormat, dateFormat, timeFormat);
     }
 
-    public void writeDelete(int id) throws Exception {
+    public void writeDelete(long id) throws Exception {
 
         super.printRecord(OutputContainer.DELETE,
                 "" + id);
     }
 
-    public void writeUpsert(int id,
-                            int organizationId,
-                            int patientId,
-                            Integer encounterId,
-                            Integer practitionerId,
+    public void writeUpsert(long id,
+                            long organizationId,
+                            long patientId,
+                            Long encounterId,
+                            Long practitionerId,
                             Date clinicalEffectiveDate,
                             Integer datePrecisionId,
                             Long snomedConceptId,
-                            Integer requesterOrganizationId,
-                            Integer recipientOrganizationId,
+                            Long requesterOrganizationId,
+                            Long recipientOrganizationId,
                             Integer priorityId,
                             Integer typeId,
                             String mode,
@@ -37,13 +37,13 @@ public class ReferralRequest extends AbstractEnterpriseCsvWriter {
                 "" + id,
                 "" + organizationId,
                 "" + patientId,
-                convertInt(encounterId),
-                convertInt(practitionerId),
+                convertLong(encounterId),
+                convertLong(practitionerId),
                 convertDate(clinicalEffectiveDate),
                 convertInt(datePrecisionId),
                 convertLong(snomedConceptId),
-                convertInt(requesterOrganizationId),
-                convertInt(recipientOrganizationId),
+                convertLong(requesterOrganizationId),
+                convertLong(recipientOrganizationId),
                 convertInt(priorityId),
                 convertInt(typeId),
                 mode,
@@ -79,16 +79,16 @@ public class ReferralRequest extends AbstractEnterpriseCsvWriter {
     public Class[] getColumnTypes() {
         return new Class[] {
                 String.class,
-                Integer.TYPE,
-                Integer.TYPE,
-                Integer.TYPE,
-                Integer.class,
-                Integer.class,
+                Long.TYPE,
+                Long.TYPE,
+                Long.TYPE,
+                Long.class,
+                Long.class,
                 Date.class,
                 Integer.class,
                 Long.class,
-                Integer.class,
-                Integer.class,
+                Long.class,
+                Long.class,
                 Integer.class,
                 Integer.class,
                 String.class,

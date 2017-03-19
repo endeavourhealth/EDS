@@ -1,11 +1,11 @@
 package org.endeavourhealth.transform.emis;
 
 import org.apache.commons.csv.CSVFormat;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.data.transform.EnterpriseIdMapRepository;
 import org.endeavourhealth.transform.common.AbstractCsvWriter;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.reverseCsv.schema.admin.Location;
@@ -15,7 +15,6 @@ import org.endeavourhealth.transform.emis.reverseCsv.transforms.AbstractTransfor
 import org.endeavourhealth.transform.emis.reverseCsv.transforms.FhirLocationTransformer;
 import org.endeavourhealth.transform.emis.reverseCsv.transforms.FhirPatientTransformer;
 import org.endeavourhealth.transform.emis.reverseCsv.transforms.FhirScheduleTransformer;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
@@ -158,9 +157,10 @@ public class FhirToEmisCsvTransformer {
 //        tranformResources(ResourceType.Organization, new OrganisationTransformer(orgNationalId), data, resources, resourcesMap, null);
 
         //if this is the first time processing this organisation's data, we will have generated the enterprise ID for that org while transforming the orgs
-        Integer enterpriseOrganisationUuid = new EnterpriseIdMapRepository().getEnterpriseOrganisationIdMapping(orgNationalId);
+        //Integer enterpriseOrganisationUuid = new EnterpriseIdMapRepository().getEnterpriseOrganisationIdMapping(orgNationalId);
+        Integer enterpriseOrganisationUuid =null;
 
-        tranformResources(ResourceType.Location, new FhirLocationTransformer(), writers, resources, resourcesMap, enterpriseOrganisationUuid);
+                tranformResources(ResourceType.Location, new FhirLocationTransformer(), writers, resources, resourcesMap, enterpriseOrganisationUuid);
 //        tranformResources(ResourceType.Practitioner, new PractitionerTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);
         tranformResources(ResourceType.Schedule, new FhirScheduleTransformer(), writers, resources, resourcesMap, enterpriseOrganisationUuid);
 //        tranformResources(ResourceType.EpisodeOfCare, new EpisodeOfCareTransformer(), data, resources, resourcesMap, enterpriseOrganisationUuid);

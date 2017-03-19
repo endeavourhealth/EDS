@@ -10,25 +10,25 @@ import java.io.Serializable;
 @Table(name = "enterprise_organisation_id_map", schema = "public", catalog = "transform")
 public class EnterpriseOrganisationIdMap implements Serializable {
 
-    private String organisationOdsCode = null;
-    private Integer enterpriseId = null;
+    private String odsCode = null;
+    private Long enterpriseId = null;
 
     @Id
     @Column(name = "ods_code", nullable = false)
-    public String getOrganisationOdsCode() {
-        return organisationOdsCode;
+    public String getOdsCode() {
+        return odsCode;
     }
 
-    public void setOrganisationOdsCode(String organisationOdsCode) {
-        this.organisationOdsCode = organisationOdsCode;
+    public void setOdsCode(String odsCode) {
+        this.odsCode = odsCode;
     }
 
     @Column(name = "enterprise_id", nullable = false)
-    public Integer getEnterpriseId() {
+    public Long getEnterpriseId() {
         return enterpriseId;
     }
 
-    public void setEnterpriseId(Integer enterpriseId) {
+    public void setEnterpriseId(Long enterpriseId) {
         this.enterpriseId = enterpriseId;
     }
 }
