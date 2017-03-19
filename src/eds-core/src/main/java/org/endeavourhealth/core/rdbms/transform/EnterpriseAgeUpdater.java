@@ -1,20 +1,13 @@
 package org.endeavourhealth.core.rdbms.transform;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.Types;
 import java.time.*;
 import java.util.Date;
-import java.util.List;
 
 public class EnterpriseAgeUpdater {
     private static final Logger LOG = LoggerFactory.getLogger(EnterpriseAgeUpdater.class);
@@ -39,7 +32,9 @@ public class EnterpriseAgeUpdater {
 
         Integer[] ret = calculateAgeValues(map);
 
+        entityManager.getTransaction().begin();
         entityManager.persist(map);
+        entityManager.getTransaction().commit();
         entityManager.close();
         return ret;
     }
@@ -60,7 +55,7 @@ public class EnterpriseAgeUpdater {
 
         if (ret[UNIT_YEARS].intValue() < 5) {
             ret[UNIT_YEARS] = null;
-            ret[UNIT_MONTHS] = new Integer(period.getMonths());
+            ret[UNIT_MONTHS] = new Integer((period.getYears() * 12) + period.getMonths());
 
             if (ret[UNIT_MONTHS].intValue() <= 12) {
                 ret[UNIT_MONTHS] = null;
@@ -189,7 +184,7 @@ public class EnterpriseAgeUpdater {
      * =================================================================================
      * No parameters
      */
-    public static void main(String[] args) throws Exception {
+    /*public static void main(String[] args) throws Exception {
 
         ConfigManager.Initialize("EnterpriseAgeUpdater");
 
@@ -315,6 +310,6 @@ public class EnterpriseAgeUpdater {
                 .setParameter("dateNextChange", new Date());
 
         return query.getResultList();
-    }
+    }*/
 
 }

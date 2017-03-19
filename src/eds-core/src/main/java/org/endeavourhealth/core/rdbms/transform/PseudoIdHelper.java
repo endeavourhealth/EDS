@@ -17,7 +17,9 @@ public class PseudoIdHelper {
         }
         map.setPseudoId(pseudoId);
 
+        entityManager.getTransaction().begin();
         entityManager.persist(map);
+        entityManager.getTransaction().commit();
         entityManager.close();
     }
 

@@ -23,7 +23,7 @@ public class PseudoIdMap implements Serializable {
         this.patientId = patientId;
     }
 
-    @Column(name = "pseudo_id", insertable = false)
+    @Column(name = "pseudo_id", nullable = false)
     public String getPseudoId() {
         return pseudoId;
     }

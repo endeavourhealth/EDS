@@ -1,4 +1,4 @@
-package org.endeavourhealth.postcodeupdater;
+package org.endeavourhealth.postcodes;
 
 import com.google.common.base.Strings;
 import org.apache.commons.csv.CSVFormat;
