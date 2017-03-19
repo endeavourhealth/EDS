@@ -8,10 +8,13 @@ import org.endeavourhealth.common.utility.Resources;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.rdbms.reference.PostcodeHelper;
 import org.endeavourhealth.core.rdbms.reference.PostcodeReference;
+import org.endeavourhealth.core.rdbms.transform.EnterpriseAgeUpdater;
 import org.endeavourhealth.core.rdbms.transform.HouseholdHelper;
+import org.endeavourhealth.core.rdbms.transform.PseudoIdHelper;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.Address;
 import org.hl7.fhir.instance.model.DateType;
+import org.hl7.fhir.instance.model.Enumerations;
 import org.hl7.fhir.instance.model.Patient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +28,8 @@ import java.util.TreeMap;
 public class PatientTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(PatientTransformer.class);
 
+    public static final String PERSON_ID_RESOURCE_TYPE = "Person";
+
     private static final String PSEUDO_KEY_NHS_NUMBER = "NHSNumber";
     private static final String PSEUDO_KEY_PATIENT_NUMBER = "PatientNumber";
     private static final String PSEUDO_KEY_DATE_OF_BIRTH = "DOB";
@@ -35,7 +40,10 @@ public class PatientTransformer extends AbstractTransformer {
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
                           Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId) throws Exception {
+                          Long enterpriseOrganisationId,
+                          Long nullEnterprisePatientId,
+                          Long nullEnterprisePersonId,
+                          String configName) throws Exception {
 
         org.endeavourhealth.transform.enterprise.outputModels.Patient model = data.getPatients();
 
@@ -44,17 +52,19 @@ public class PatientTransformer extends AbstractTransformer {
             return;
 
         } else if (resource.getIsDeleted()) {
-            //we've got records with a deleted patient but the child resources aren't deleted, so we need to manually delete them from Enterprise
-            //deleteAllDependentEntities(data, resource);
-
-            //and delete the patient itself
             model.writeDelete(enterpriseId.longValue());
 
         } else {
             Patient fhirPatient = (Patient)deserialiseResouce(resource);
 
+            Long existingPersonId = findEnterpriseId(model, PERSON_ID_RESOURCE_TYPE, fhirPatient.getId());
+
+
+
+
             long id;
             long organizationId;
+            long personId;
             int patientGenderId;
             String pseudoId = null;
             String nhsNumber = null;
@@ -74,6 +84,9 @@ public class PatientTransformer extends AbstractTransformer {
 
             id = enterpriseId.longValue();
             organizationId = enterpriseOrganisationId.longValue();
+            //personId = enterprisePersonId.longValue();
+            //TODO - finish person ID stuff
+            personId = 0;
 
             //Calendar cal = Calendar.getInstance();
 
@@ -97,6 +110,7 @@ public class PatientTransformer extends AbstractTransformer {
 
             patientGenderId = fhirPatient.getGender().ordinal();
 
+
             if (fhirPatient.hasAddress()) {
                 for (Address address: fhirPatient.getAddress()) {
                     if (address.getUse().equals(Address.AddressUse.HOME)) {
@@ -119,14 +133,26 @@ public class PatientTransformer extends AbstractTransformer {
                 }
             }
 
-            pseudoId = pseudonomise(fhirPatient);
-
-            //adding NHS number to allow data checking
-            nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
 
             if (model.isPseduonymised()) {
+
+                //if pseudonymised, all non-male/non-female genders should be treated as female
+                if (fhirPatient.getGender() != Enumerations.AdministrativeGender.FEMALE
+                        && fhirPatient.getGender() != Enumerations.AdministrativeGender.MALE) {
+                    patientGenderId = Enumerations.AdministrativeGender.FEMALE.ordinal();
+                }
+
+                pseudoId = pseudonomise(fhirPatient);
+                PseudoIdHelper.storePseudoId(fhirPatient.getId(), pseudoId);
+
+                Integer[] ageValues = EnterpriseAgeUpdater.calculateAgeValues(id, dateOfBirth, configName);
+                ageYears = ageValues[EnterpriseAgeUpdater.UNIT_YEARS];
+                ageMonths = ageValues[EnterpriseAgeUpdater.UNIT_MONTHS];
+                ageWeeks = ageValues[EnterpriseAgeUpdater.UNIT_WEEKS];
+
                 model.writeUpsertPseudonymised(id,
                         organizationId,
+                        personId,
                         patientGenderId,
                         pseudoId,
                         ageYears,
@@ -142,8 +168,12 @@ public class PatientTransformer extends AbstractTransformer {
                         townsendScore);
 
             } else {
+
+                nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
+
                 model.writeUpsertIdentifiable(id,
                         organizationId,
+                        personId,
                         patientGenderId,
                         nhsNumber,
                         dateOfBirth,

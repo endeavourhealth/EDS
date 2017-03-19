@@ -118,6 +118,10 @@ public class HouseholdHelper {
 
     private static String sanitisePostcode(String postcode) {
 
+        if (Strings.isNullOrEmpty(postcode)) {
+            return postcode;
+        }
+
         //force uppercase, so we don't need to convert in SQL
         postcode = postcode.toUpperCase();
 

@@ -6,13 +6,12 @@ import org.slf4j.LoggerFactory;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
-import java.util.UUID;
 
 public class EnterpriseIdHelper {
     private static final Logger LOG = LoggerFactory.getLogger(EnterpriseIdHelper.class);
 
 
-    public static Long findOrCreateEnterpriseId(String enterpriseTableName, String resourceType, UUID resourceId) throws Exception {
+    public static Long findOrCreateEnterpriseId(String enterpriseTableName, String resourceType, String resourceId) throws Exception {
 
         EntityManager entityManager = TransformConnection.getEntityManager();
 
@@ -38,12 +37,12 @@ public class EnterpriseIdHelper {
         }
     }
 
-    private static Long createEnterpriseId(String enterpriseTableName, String resourceType, UUID resourceId, EntityManager entityManager) throws Exception {
+    private static Long createEnterpriseId(String enterpriseTableName, String resourceType, String resourceId, EntityManager entityManager) throws Exception {
 
         EnterpriseIdMap mapping = new EnterpriseIdMap();
         mapping.setEnterpriseTableName(enterpriseTableName);
         mapping.setResourceType(resourceType);
-        mapping.setResourceId(resourceId.toString());
+        mapping.setResourceId(resourceId);
         //mapping.setEnterpriseId(new Long(0));
 
         entityManager.getTransaction().begin();
@@ -53,7 +52,7 @@ public class EnterpriseIdHelper {
         return mapping.getEnterpriseId();
     }
 
-    public static Long findEnterpriseId(String enterpriseTableName, String resourceType, UUID resourceId) throws Exception {
+    public static Long findEnterpriseId(String enterpriseTableName, String resourceType, String resourceId) throws Exception {
         EntityManager entityManager = TransformConnection.getEntityManager();
         try {
             return findEnterpriseId(enterpriseTableName, resourceType, resourceId, entityManager);
@@ -62,7 +61,7 @@ public class EnterpriseIdHelper {
         }
     }
 
-    private static Long findEnterpriseId(String enterpriseTableName, String resourceType, UUID resourceId, EntityManager entityManager) throws Exception {
+    private static Long findEnterpriseId(String enterpriseTableName, String resourceType, String resourceId, EntityManager entityManager) throws Exception {
 
         String sql = "select c"
                 + " from"
@@ -75,7 +74,7 @@ public class EnterpriseIdHelper {
         Query query = entityManager.createQuery(sql, EnterpriseIdMap.class)
                 .setParameter("enterpriseTableName", enterpriseTableName)
                 .setParameter("resourceType", resourceType)
-                .setParameter("resourceId", resourceId.toString());
+                .setParameter("resourceId", resourceId);
 
         try {
             EnterpriseIdMap result = (EnterpriseIdMap)query.getSingleResult();

@@ -17,7 +17,10 @@ public class ScheduleTransformer extends AbstractTransformer {
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
                           Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId) throws Exception {
+                          Long enterpriseOrganisationId,
+                          Long enterprisePatientId,
+                          Long enterprisePersonId,
+                          String configName) throws Exception {
 
         org.endeavourhealth.transform.enterprise.outputModels.Schedule model = data.getSchedules();
 

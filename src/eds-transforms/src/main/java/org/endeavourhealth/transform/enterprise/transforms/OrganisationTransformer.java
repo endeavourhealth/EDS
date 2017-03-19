@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.UUID;
 
 public class OrganisationTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(OrganisationTransformer.class);
@@ -27,7 +26,10 @@ public class OrganisationTransformer extends AbstractTransformer {
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
                           Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId) throws Exception {
+                          Long enterpriseOrganisationId,
+                          Long enterprisePatientId,
+                          Long enterprisePersonId,
+                          String configName) throws Exception {
 
         org.endeavourhealth.transform.enterprise.outputModels.Organization model = data.getOrganisations();
 
@@ -88,8 +90,8 @@ public class OrganisationTransformer extends AbstractTransformer {
                         //an Enterprise ID for them yet. If that happens, simply assign the Enterprise ID now.
                         if (parentOrganisationId == null) {
                             String partOfType = partOfOrganisation.getResourceType().toString();
-                            UUID partOfId = UUID.fromString(partOfReference.getId());
-                            parentOrganisationId = createEnterpriseId(data.getOrganisations(), partOfType, partOfId);
+                            String partOfId = partOfReference.getId();
+                            parentOrganisationId = findOrCreateEnterpriseId(data.getOrganisations(), partOfType, partOfId);
                         }
                     }
 

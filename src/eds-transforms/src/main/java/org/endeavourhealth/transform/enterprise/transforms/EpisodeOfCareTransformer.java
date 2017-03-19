@@ -17,7 +17,10 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
                           Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId) throws Exception {
+                          Long enterpriseOrganisationId,
+                          Long enterprisePatientId,
+                          Long enterprisePersonId,
+                          String configName) throws Exception {
 
         org.endeavourhealth.transform.enterprise.outputModels.EpisodeOfCare model = data.getEpisodesOfCare();
 
@@ -31,12 +34,13 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
         } else {
             EpisodeOfCare fhirEpisode = (EpisodeOfCare)deserialiseResouce(resource);
 
-            Reference patientReference = fhirEpisode.getPatient();
-            Long enterprisePatientUuid = findEnterpriseId(data.getPatients(), patientReference);
+            /*Reference patientReference = fhirEpisode.getPatient();
+            Long enterprisePatientId = findEnterpriseId(data.getPatients(), patientReference);*/
 
             long id;
             long organisationId;
             long patientId;
+            long personId;
             Integer registrationTypeId;
             Date dateRegistered = null;
             Date dateRegisteredEnd = null;
@@ -44,7 +48,8 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
 
             id = enterpriseId.longValue();
             organisationId = enterpriseOrganisationId.longValue();
-            patientId = enterprisePatientUuid.longValue();
+            patientId = enterprisePatientId.longValue();
+            personId = enterprisePersonId.longValue();
 
             if (fhirEpisode.hasCareManager()) {
                 Reference practitionerReference = fhirEpisode.getCareManager();
@@ -78,6 +83,7 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
             model.writeUpsert(id,
                 organisationId,
                 patientId,
+                personId,
                 registrationTypeId,
                 dateRegistered,
                 dateRegisteredEnd,

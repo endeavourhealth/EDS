@@ -15,7 +15,10 @@ public class PractitionerTransformer extends AbstractTransformer {
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
                           Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId) throws Exception {
+                          Long enterpriseOrganisationId,
+                          Long enterprisePatientId,
+                          Long enterprisePersonId,
+                          String configName) throws Exception {
 
         org.endeavourhealth.transform.enterprise.outputModels.Practitioner model = data.getPractitioners();
 

@@ -5,6 +5,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.utility.ThreadPool;
+import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.csv.CsvHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +16,9 @@ import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 public class PostcodeReferenceUpdater {
     private static final Logger LOG = LoggerFactory.getLogger(PostcodeReferenceUpdater.class);
@@ -152,6 +156,8 @@ public class PostcodeReferenceUpdater {
 
     private static void readPostcodeFile(File postcodeFile, Map<String, String> lsoaMap, Map<String, String> msoaMap, Map<String, BigDecimal> townsendMap) throws Exception {
 
+        ThreadPool threadPool = new ThreadPool(5, 1000);
+
         CSVFormat format = CSVFormat.DEFAULT;
 
         int rowsDone = 0;
@@ -196,13 +202,19 @@ public class PostcodeReferenceUpdater {
                 postcodeReference.setWard1998(ward1998);
                 postcodeReference.setTownsendScore(townsendScore);
 
-                PostcodeHelper.save(postcodeReference);
+                //bump saving into a thread pool for speed
+                List<ThreadPoolError> errors = threadPool.submit(new SavePostcodeCallable(postcodeReference));
+                handleErrors(errors);
+                //PostcodeHelper.save(postcodeReference);
 
                 rowsDone ++;
-                if (rowsDone % 1000 == 0) {
-                    LOG.info("Done " + rowsDone + " postcodes");
+                if (rowsDone % 5000 == 0) {
+                    LOG.info("Done " + rowsDone + " postcodes (of approx 2.6M)");
                 }
             }
+
+            List<ThreadPoolError> errors = threadPool.waitAndStop();
+            handleErrors(errors);
 
             LOG.info("Finshed at " + rowsDone + " postcodes");
 
@@ -211,6 +223,17 @@ public class PostcodeReferenceUpdater {
                 parser.close();
             }
         }
+    }
+
+    private static void handleErrors(List<ThreadPoolError> errors) throws Exception {
+        if (errors == null || errors.isEmpty()) {
+            return;
+        }
+
+        //if we've had multiple errors, just throw the first one, since they'll most-likely be the same
+        ThreadPoolError first = errors.get(0);
+        Exception exception = first.getException();
+        throw exception;
     }
 
     private static Map<String, BigDecimal> readTownsendMap(File townsendMapFile) throws Exception {
@@ -332,5 +355,20 @@ public class PostcodeReferenceUpdater {
             POSTCODE_2011_CENSUS_LSOA,
             POSTCODE_2011_CENSUS_MSOA,
         };
+    }
+
+    static class SavePostcodeCallable implements Callable {
+
+        private PostcodeReference postcodeReference = null;
+
+        public SavePostcodeCallable(PostcodeReference postcodeReference) {
+            this.postcodeReference = postcodeReference;
+        }
+
+        @Override
+        public Object call() throws Exception {
+            PostcodeHelper.save(postcodeReference);
+            return null;
+        }
     }
 }

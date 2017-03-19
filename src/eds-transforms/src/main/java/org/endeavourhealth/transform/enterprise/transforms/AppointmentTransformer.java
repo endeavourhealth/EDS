@@ -1,8 +1,6 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
-import org.endeavourhealth.common.fhir.ReferenceComponents;
-import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
@@ -20,7 +18,10 @@ public class AppointmentTransformer extends AbstractTransformer {
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
                           Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId) throws Exception {
+                          Long enterpriseOrganisationId,
+                          Long enterprisePatientId,
+                          Long enterprisePersonId,
+                          String configName) throws Exception {
 
         org.endeavourhealth.transform.enterprise.outputModels.Appointment model = data.getAppointments();
 
@@ -38,6 +39,7 @@ public class AppointmentTransformer extends AbstractTransformer {
             long id;
             long organisationId;
             long patientId;
+            long personId;
             Long practitionerId = null;
             Long scheduleId = null;
             Date startDate = null;
@@ -49,7 +51,7 @@ public class AppointmentTransformer extends AbstractTransformer {
             Date sentIn = null;
             Date left = null;
 
-            Long enterprisePatientId = null;
+            /*Long enterprisePatientId = null;
             if (fhir.hasParticipant()) {
                 for (Appointment.AppointmentParticipantComponent participantComponent: fhir.getParticipant()) {
                     Reference reference = participantComponent.getActor();
@@ -62,7 +64,7 @@ public class AppointmentTransformer extends AbstractTransformer {
                         practitionerId = findEnterpriseId(data.getPractitioners(), reference);
                     }
                 }
-            }
+            }*/
 
             //the test pack has data that refers to deleted or missing patients, so if we get a null
             //patient ID here, then skip this resource
@@ -74,6 +76,7 @@ public class AppointmentTransformer extends AbstractTransformer {
             id = enterpriseId.longValue();
             organisationId = enterpriseOrganisationId.longValue();
             patientId = enterprisePatientId.longValue();
+            personId = enterprisePersonId.longValue();
 
             if (fhir.getSlot().size() > 1) {
                 throw new TransformException("Cannot handle appointments linked to multiple slots " + fhir.getId());
@@ -136,6 +139,7 @@ public class AppointmentTransformer extends AbstractTransformer {
             model.writeUpsert(id,
                 organisationId,
                 patientId,
+                personId,
                 practitionerId,
                 scheduleId,
                 startDate,

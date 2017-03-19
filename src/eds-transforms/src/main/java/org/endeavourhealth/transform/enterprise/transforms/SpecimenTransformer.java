@@ -22,7 +22,10 @@ public class SpecimenTransformer extends AbstractTransformer {
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
                           Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId) throws Exception {
+                          Long enterpriseOrganisationId,
+                          Long enterprisePatientId,
+                          Long enterprisePersonId,
+                          String configName) throws Exception {
 
         org.endeavourhealth.transform.enterprise.outputModels.Observation model = data.getObservations();
 
@@ -37,12 +40,12 @@ public class SpecimenTransformer extends AbstractTransformer {
 
             Specimen fhir = (Specimen)deserialiseResouce(resource);
 
-            Reference patientReference = fhir.getSubject();
-            Long enterprisePatientUuid = findEnterpriseId(data.getPatients(), patientReference);
+            /*Reference patientReference = fhir.getSubject();
+            Long enterprisePatientId = findEnterpriseId(data.getPatients(), patientReference);*/
 
             //the test pack has data that refers to deleted or missing patients, so if we get a null
             //patient ID here, then skip this resource
-            if (enterprisePatientUuid == null) {
+            if (enterprisePatientId == null) {
                 LOG.warn("Skipping " + fhir.getResourceType() + " " + fhir.getId() + " as no Enterprise patient ID could be found for it");
                 return;
             }
@@ -50,6 +53,7 @@ public class SpecimenTransformer extends AbstractTransformer {
             long id;
             long organisationId;
             long patientId;
+            long personId;
             Long encounterId = null;
             Long practitionerId = null;
             Date clinicalEffectiveDate = null;
@@ -63,7 +67,8 @@ public class SpecimenTransformer extends AbstractTransformer {
 
             id = enterpriseId.longValue();
             organisationId = enterpriseOrganisationId.longValue();
-            patientId = enterprisePatientUuid.longValue();
+            patientId = enterprisePatientId.longValue();
+            personId = enterprisePersonId.longValue();
 
             if (fhir.hasExtension()) {
                 for (Extension extension: fhir.getExtension()) {
@@ -101,6 +106,7 @@ public class SpecimenTransformer extends AbstractTransformer {
             model.writeUpsert(id,
                     organisationId,
                     patientId,
+                    personId,
                     encounterId,
                     practitionerId,
                     clinicalEffectiveDate,

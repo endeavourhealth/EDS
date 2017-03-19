@@ -24,7 +24,10 @@ public class ReferralRequestTransformer extends AbstractTransformer {
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
                           Map<String, ResourceByExchangeBatch> otherResources,
-                          Long enterpriseOrganisationId) throws Exception {
+                          Long enterpriseOrganisationId,
+                          Long enterprisePatientId,
+                          Long enterprisePersonId,
+                          String configName) throws Exception {
 
         org.endeavourhealth.transform.enterprise.outputModels.ReferralRequest model = data.getReferralRequests();
 
@@ -39,12 +42,12 @@ public class ReferralRequestTransformer extends AbstractTransformer {
 
             ReferralRequest fhir = (ReferralRequest)deserialiseResouce(resource);
 
-            Reference patientReference = fhir.getPatient();
-            Long enterprisePatientUuid = findEnterpriseId(data.getPatients(), patientReference);
+            /*Reference patientReference = fhir.getPatient();
+            Long enterprisePatientId = findEnterpriseId(data.getPatients(), patientReference);*/
 
             //the test pack has data that refers to deleted or missing patients, so if we get a null
             //patient ID here, then skip this resource
-            if (enterprisePatientUuid == null) {
+            if (enterprisePatientId == null) {
                 LOG.warn("Skipping " + fhir.getResourceType() + " " + fhir.getId() + " as no Enterprise patient ID could be found for it");
                 return;
             }
@@ -52,6 +55,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
             long id;
             long organizationId;
             long patientId;
+            long personId;
             Long encounterId = null;
             Long practitionerId = null;
             Date clinicalEffectiveDate = null;
@@ -68,7 +72,8 @@ public class ReferralRequestTransformer extends AbstractTransformer {
 
             id = enterpriseId.longValue();
             organizationId = enterpriseOrganisationId.longValue();
-            patientId = enterprisePatientUuid.longValue();
+            patientId = enterprisePatientId.longValue();
+            personId = enterprisePersonId.longValue();
 
             if (fhir.hasEncounter()) {
                 Reference encounterReference = (Reference)fhir.getEncounter();
@@ -180,6 +185,7 @@ public class ReferralRequestTransformer extends AbstractTransformer {
             model.writeUpsert(id, 
                 organizationId,
                 patientId,
+                personId,
                 encounterId,
                 practitionerId,
                 clinicalEffectiveDate,

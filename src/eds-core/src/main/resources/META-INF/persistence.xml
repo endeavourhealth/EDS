@@ -66,6 +66,8 @@
         <class>org.endeavourhealth.core.rdbms.transform.EnterpriseIdMap</class>
         <class>org.endeavourhealth.core.rdbms.transform.EnterpriseOrganisationIdMap</class>
         <class>org.endeavourhealth.core.rdbms.transform.HouseholdIdMap</class>
+        <class>org.endeavourhealth.core.rdbms.transform.PseudoIdMap</class>
+        <class>org.endeavourhealth.core.rdbms.transform.EnterpriseAge</class>
         <properties>
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQL95Dialect"/>
             <property name="hibernate.show_sql" value="false" />

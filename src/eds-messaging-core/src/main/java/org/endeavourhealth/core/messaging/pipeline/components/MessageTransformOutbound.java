@@ -160,7 +160,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 			JsonNode config = ConfigManager.getConfigurationAsJson(endpoint, "enterprise");
 			boolean pseudonymised = config.get("pseudonymised").asBoolean();
 
-			String zippedCsvs = FhirToEnterpriseCsvTransformer.transformFromFhir(senderOrganisationUuid, batchId, resourceIds, pseudonymised);
+			String zippedCsvs = FhirToEnterpriseCsvTransformer.transformFromFhir(senderOrganisationUuid, batchId, resourceIds, pseudonymised, endpoint);
 
 			//file the data directly, so return null to end the pipeline
 			if (!Strings.isNullOrEmpty(zippedCsvs)) {

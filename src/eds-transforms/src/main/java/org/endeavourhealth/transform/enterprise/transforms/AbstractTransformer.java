@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -52,7 +51,10 @@ public abstract class AbstractTransformer {
     public abstract void transform(ResourceByExchangeBatch resource,
                                    OutputContainer data,
                                    Map<String, ResourceByExchangeBatch> otherResources,
-                                   Long enterpriseOrganisationUuid) throws Exception;
+                                   Long enterpriseOrganisationId,
+                                   Long enterprisePatientId,
+                                   Long enterprisePersonId,
+                                   String configName) throws Exception;
 
 
     protected static Integer convertDatePrecision(TemporalPrecisionEnum precision) throws Exception {
@@ -63,22 +65,22 @@ public abstract class AbstractTransformer {
 
     protected static Long findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, Resource resource) throws Exception {
         String resourceType = resource.getResourceType().toString();
-        UUID resourceId = UUID.fromString(resource.getId());
+        String resourceId = resource.getId();
         return findEnterpriseId(csvWriter, resourceType, resourceId);
     }
 
     protected static Long findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, Reference reference) throws Exception {
         ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
         String resourceType = comps.getResourceType().toString();
-        UUID resourceId = UUID.fromString(comps.getId());
+        String resourceId = comps.getId();
         return findEnterpriseId(csvWriter, resourceType, resourceId);
     }
 
     protected static Long findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, ResourceByExchangeBatch resource) throws Exception {
-        return findEnterpriseId(csvWriter, resource.getResourceType(), resource.getResourceId());
+        return findEnterpriseId(csvWriter, resource.getResourceType(), resource.getResourceId().toString());
     }
 
-    protected static Long findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, UUID resourceId) throws Exception {
+    public static Long findEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, String resourceId) throws Exception {
         String enterpriseTableName = csvWriter.getFileNameWithoutExtension();
         Long ret = checkCacheForId(enterpriseTableName, resourceType, resourceId);
         if (ret == null) {
@@ -88,32 +90,34 @@ public abstract class AbstractTransformer {
         return ret;
     }
 
-    protected static Long createEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, ResourceByExchangeBatch resource) throws Exception {
+    protected static Long findOrCreateEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, ResourceByExchangeBatch resource) throws Exception {
         String resourceType = resource.getResourceType();
-        UUID resourceId = resource.getResourceId();
-        return createEnterpriseId(csvWriter, resourceType, resourceId);
+        String resourceId = resource.getResourceId().toString();
+        return findOrCreateEnterpriseId(csvWriter, resourceType, resourceId);
     }
 
-    protected static Long createEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, UUID resourceId) throws Exception {
+    protected static Long findOrCreateEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, String resourceId) throws Exception {
         String enterpriseTableName = csvWriter.getFileNameWithoutExtension();
+        Long ret = checkCacheForId(enterpriseTableName, resourceType, resourceId);
+        if (ret == null) {
+            ret = EnterpriseIdHelper.findOrCreateEnterpriseId(enterpriseTableName, resourceType, resourceId);
+            /*int enterpriseId = getNextId(enterpriseTableName);
+            idMappingRepository.saveEnterpriseIdMax(enterpriseTableName, Integer.valueOf(enterpriseId));
+            idMappingRepository.saveEnterpriseIdMapping(enterpriseTableName, resourceType, resourceId, Integer.valueOf(enterpriseId));*/
 
-        Long enterpriseId = EnterpriseIdHelper.findOrCreateEnterpriseId(enterpriseTableName, resourceType, resourceId);
-        /*int enterpriseId = getNextId(enterpriseTableName);
-        idMappingRepository.saveEnterpriseIdMax(enterpriseTableName, Integer.valueOf(enterpriseId));
-        idMappingRepository.saveEnterpriseIdMapping(enterpriseTableName, resourceType, resourceId, Integer.valueOf(enterpriseId));*/
-
-        addIdToCache(enterpriseTableName, resourceType, resourceId, enterpriseId);
-        return enterpriseId;
+            addIdToCache(enterpriseTableName, resourceType, resourceId, ret);
+        }
+        return ret;
     }
 
-    private static Long checkCacheForId(String enterpriseTableName, String resourceType, UUID resourceId) throws Exception {
+    private static Long checkCacheForId(String enterpriseTableName, String resourceType, String resourceId) throws Exception {
         return (Long)cache.get(enterpriseTableName + ":" + resourceType + "/" + resourceId);
     }
-    private static void addIdToCache(String enterpriseTableName, String resourceType, UUID resourceId, Long toCache) throws Exception {
+    private static void addIdToCache(String enterpriseTableName, String resourceType, String resourceId, Long toCache) throws Exception {
         cache.put(enterpriseTableName + ":" + resourceType + "/" + resourceId, toCache);
     }
 
-    protected static Resource deserialiseResouce(ResourceByExchangeBatch resourceByExchangeBatch) throws Exception {
+    public static Resource deserialiseResouce(ResourceByExchangeBatch resourceByExchangeBatch) throws Exception {
 
         String json = resourceByExchangeBatch.getResourceData();
         try {
@@ -148,25 +152,14 @@ public abstract class AbstractTransformer {
     }
 
     protected static Long mapId(ResourceByExchangeBatch resource, AbstractEnterpriseCsvWriter csvWriter) throws Exception {
-        Long enterpriseId = findEnterpriseId(csvWriter, resource);
 
         if (resource.getIsDeleted()) {
-
-            //if it's a delete, but we've never sent it to enterprise, return false so we know not to send it now
-            if (enterpriseId == null) {
-                return null;
-            }
-
-            return enterpriseId;
+            //if it's a delete, then don't bother creating a new Enterprise ID if we've never previously sent it
+            //to Enterprise, since there's no point just sending a delete
+            return findEnterpriseId(csvWriter, resource);
 
         } else {
-
-            if (enterpriseId == null) {
-                //if we don't have an schema ID, the resource is new, so should be an INSERT transaction
-                enterpriseId = createEnterpriseId(csvWriter, resource);
-            }
-
-            return enterpriseId;
+            return findOrCreateEnterpriseId(csvWriter, resource);
         }
     }
 

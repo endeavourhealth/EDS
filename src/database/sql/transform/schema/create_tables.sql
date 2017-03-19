@@ -83,3 +83,42 @@ WITH (
 ALTER TABLE public.household_id_map
   OWNER TO postgres;
 
+-- Table: public.pseudo_id_map
+
+-- DROP TABLE public.pseudo_id_map;
+
+CREATE TABLE public.pseudo_id_map
+(
+  patient_id character(255) NOT NULL,
+  pseudo_id character varying(255) NOT NULL,
+  CONSTRAINT pk_pseudo_id_map PRIMARY KEY (patient_id)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.pseudo_id_map
+  OWNER TO postgres;
+
+
+-- Table: public.enterprise_age
+
+-- DROP TABLE public.enterprise_age;
+
+CREATE TABLE public.enterprise_age
+(
+  enterprise_patient_id bigint NOT NULL,
+  date_of_birth date NOT NULL,
+  date_next_change date NOT NULL,
+  enterprise_config_name character varying(255) NOT NULL,
+  CONSTRAINT pk_enterprise_age PRIMARY KEY (enterprise_patient_id)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.enterprise_age
+  OWNER TO postgres;
+
+CREATE INDEX ix_date_next_change
+  ON public.enterprise_age
+  USING btree
+  (date_next_change);

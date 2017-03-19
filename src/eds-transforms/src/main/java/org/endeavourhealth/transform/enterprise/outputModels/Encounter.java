@@ -19,6 +19,7 @@ public class Encounter extends AbstractEnterpriseCsvWriter {
     public void writeUpsert(long id,
                             long organisationId,
                             long patientId,
+                            long personId,
                             Long practitionerId,
                             Long appointmentId,
                             Date clinicalEffectiveDate,
@@ -32,6 +33,7 @@ public class Encounter extends AbstractEnterpriseCsvWriter {
                 "" + id,
                 "" + organisationId,
                 "" + patientId,
+                "" + personId,
                 convertLong(practitionerId),
                 convertLong(appointmentId),
                 convertDate(clinicalEffectiveDate),
@@ -49,6 +51,7 @@ public class Encounter extends AbstractEnterpriseCsvWriter {
                 "id",
                 "organization_id",
                 "patient_id",
+                "person_id",
                 "practitioner_id",
                 "appointment_id",
                 "clinical_effective_date",
@@ -64,6 +67,7 @@ public class Encounter extends AbstractEnterpriseCsvWriter {
     public Class[] getColumnTypes() {
         return new Class[] {
                 String.class,
+                Long.TYPE,
                 Long.TYPE,
                 Long.TYPE,
                 Long.TYPE,
