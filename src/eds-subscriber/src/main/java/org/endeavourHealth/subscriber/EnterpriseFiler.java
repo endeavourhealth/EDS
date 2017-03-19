@@ -11,6 +11,7 @@ import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.crypto.dsig.TransformException;
 import java.io.*;
 import java.math.BigDecimal;
 import java.sql.*;
@@ -213,7 +214,11 @@ public class EnterpriseFiler {
         JsonNode columnClassMappings = allColumnClassMappings.get(entryFileName);
 
         for (String column: csvHeaderMap.keySet()) {
-            String className = columnClassMappings.get(column).asText();
+            JsonNode node = columnClassMappings.get(column);
+            if (node == null) {
+                throw new TransformException("Failed to find class for column " + column + " in " + entryFileName);
+            }
+            String className = node.asText();
             Class cls = null;
 
             //getting the name of the primative types returns "int", but

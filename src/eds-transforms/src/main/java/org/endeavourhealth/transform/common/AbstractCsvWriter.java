@@ -16,27 +16,35 @@ import java.util.Date;
 public abstract class AbstractCsvWriter {
 
     private final String fileName;
-    private ByteArrayOutputStream byteOutput = null;
-    private final CSVPrinter csvPrinter;
+    private final CSVFormat csvFormat;
     private final DateFormat dateFormat;
     private final DateFormat timeFormat;
+
+    private ByteArrayOutputStream byteOutput = null;
+    private CSVPrinter csvPrinter;
     private int rowCount;
 
     public AbstractCsvWriter(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat) throws Exception {
 
-        byteOutput = new ByteArrayOutputStream();
-        OutputStreamWriter writer = new OutputStreamWriter(byteOutput);
-        BufferedWriter bufferedWriter = new BufferedWriter(writer);
-
-        csvPrinter = new CSVPrinter(bufferedWriter, csvFormat.withHeader(getCsvHeaders()));
-
         this.fileName = fileName;
+        this.csvFormat = csvFormat;
         this.dateFormat = new SimpleDateFormat(dateFormat);
         this.timeFormat = new SimpleDateFormat(timeFormat);
         this.rowCount = 0;
     }
 
     protected void printRecord(String... columns) throws IOException {
+
+        //changed to create the printer lazily, so the pseudonymised boolean is set in the Patient class
+        //before we try to get the headers
+        if (csvPrinter == null) {
+            byteOutput = new ByteArrayOutputStream();
+            OutputStreamWriter writer = new OutputStreamWriter(byteOutput);
+            BufferedWriter bufferedWriter = new BufferedWriter(writer);
+
+            csvPrinter = new CSVPrinter(bufferedWriter, csvFormat.withHeader(getCsvHeaders()));
+        }
+
         csvPrinter.printRecord((Object[])columns);
         rowCount ++;
     }

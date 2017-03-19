@@ -97,27 +97,31 @@ public class Main {
      * Parameters
      * =================================================================================
      *
-     * 1. the raw postcode data file (the big CSV file)
-     * 2. the LSOA name and code map TXT file
-     * 3. the MSOA name and code map TXT file
-     * 3. the Townsend score CSV file
+     * 1. the Config name that gives the location of the reference database
+     * 2. the raw postcode data file (the big CSV file)
+     * 3. the LSOA name and code map TXT file
+     * 4. the MSOA name and code map TXT file
+     * 5. the Townsend score CSV file
      */
     public static void main(String[] args) throws Exception {
 
-        ConfigManager.Initialize("PostcodeReferenceUpdater");
+        if (args.length != 5) {
+            LOG.error("Incorrect number of parameters. Check usage description in class commment.");
+            return;
+        }
+
+        String configName = args[0];
+        ConfigManager.Initialize(configName);
 
         try {
-            if (args.length != 4) {
-                LOG.error("Incorrect number of parameters. Check usage description in class commment.");
-                return;
-            }
+
 
             LOG.info("Postcode Reference Update Starting");
 
-            File postcodeFile = new File(args[0]);
-            File lsoaMapFile = new File(args[1]);
-            File msoaMapFile = new File(args[2]);
-            File townsendMapFile = new File(args[3]);
+            File postcodeFile = new File(args[1]);
+            File lsoaMapFile = new File(args[2]);
+            File msoaMapFile = new File(args[3]);
+            File townsendMapFile = new File(args[4]);
 
             if (!postcodeFile.exists()) {
                 LOG.error("" + postcodeFile + " doesn't exist");

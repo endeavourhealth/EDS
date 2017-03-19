@@ -87,7 +87,7 @@ public class EnterpriseAgeUpdater {
         if (values[UNIT_YEARS] != null) {
             //if counting in years, we want to update next birthday
             int updateDay = dobLocalDate.getDayOfMonth();
-            int updateMonth = dobLocalDate.getYear();
+            int updateMonth = dobLocalDate.getMonthValue();
             int updateYear = nowLocalDate.getYear();
 
             nextUpdate = createSafeLocalDate(updateYear, updateMonth, updateDay);
