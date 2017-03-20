@@ -57,11 +57,11 @@ public class PostMessageToExchange extends PipelineComponent {
 		String multicastHeader = config.getMulticastHeader();
 		if (Strings.isNullOrEmpty(multicastHeader)) {
 
-			LOG.trace("Posting exchange {} to Rabbit exchange {} with routing key {}", messageUuid, config.getExchange(), routingKey);
+			//LOG.trace("Posting exchange {} to Rabbit exchange {} with routing key {}", messageUuid, config.getExchange(), routingKey);
 			publishMessage(routingKey, messageUuid, channel, properties);
 
 		} else {
-			LOG.trace("Posting exchange {} to Rabbit exchange {} with routing key {} and multicast header {}", messageUuid, config.getExchange(), routingKey, multicastHeader);
+			//LOG.trace("Posting exchange {} to Rabbit exchange {} with routing key {} and multicast header {}", messageUuid, config.getExchange(), routingKey, multicastHeader);
 			String multicastData = exchange.getHeader(multicastHeader);
 
 			//adding handler for when we're missing multicast header data

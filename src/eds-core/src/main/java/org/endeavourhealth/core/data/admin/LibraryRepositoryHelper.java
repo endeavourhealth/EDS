@@ -1,7 +1,9 @@
 package org.endeavourhealth.core.data.admin;
 
-import org.endeavourhealth.core.data.admin.models.*;
 import org.endeavourhealth.common.utility.XmlSerializer;
+import org.endeavourhealth.core.data.admin.models.ActiveItem;
+import org.endeavourhealth.core.data.admin.models.DefinitionItemType;
+import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.endeavourhealth.core.xml.QueryDocument.System;
 import org.xml.sax.SAXException;
@@ -14,7 +16,9 @@ import java.util.List;
 import java.util.UUID;
 
 public class LibraryRepositoryHelper {
-	private static final String XSD = "QueryDocument.xsd";
+
+	//disable validation when READING XML (it's still done when writing)
+	//private static final String XSD = "QueryDocument.xsd";
 
 	private static final LibraryRepository repository = new LibraryRepository();
 
@@ -37,7 +41,8 @@ public class LibraryRepositoryHelper {
 		for (int i = 0; i < items.size(); i++) {
 			Item item = items.get(i);
 			String xml = item.getXmlContent();
-			LibraryItem libraryItem = XmlSerializer.deserializeFromString(LibraryItem.class, xml, XSD);
+			LibraryItem libraryItem = XmlSerializer.deserializeFromString(LibraryItem.class, xml, null);
+			//LibraryItem libraryItem = XmlSerializer.deserializeFromString(LibraryItem.class, xml, XSD);
 			Protocol protocol = libraryItem.getProtocol();
 			List<ServiceContract> serviceContracts = protocol.getServiceContract();
 			for (int s = 0; s < serviceContracts.size(); s++) {
@@ -48,7 +53,9 @@ public class LibraryRepositoryHelper {
 					ActiveItem activeSystemItem = repository.getActiveItemByItemId(UUID.fromString(systemUuid));
 					Item systemItem = repository.getItemByKey(activeSystemItem.getItemId(), activeSystemItem.getAuditId());
 					String systemLibraryItemXml = systemItem.getXmlContent();
-					LibraryItem systemLibraryItem = XmlSerializer.deserializeFromString(LibraryItem.class, systemLibraryItemXml, XSD);
+
+					LibraryItem systemLibraryItem = XmlSerializer.deserializeFromString(LibraryItem.class, systemLibraryItemXml, null);
+					//LibraryItem systemLibraryItem = XmlSerializer.deserializeFromString(LibraryItem.class, systemLibraryItemXml, XSD);
 					System system = systemLibraryItem.getSystem();
 					service.setSystem(system);
 
@@ -73,7 +80,8 @@ public class LibraryRepositoryHelper {
 		Item item = repository.getItemByKey(itemUuid, activeItem.getAuditId());
 
 		String xml = item.getXmlContent();
-		LibraryItem libraryItem = XmlSerializer.deserializeFromString(LibraryItem.class, xml, XSD);
+		LibraryItem libraryItem = XmlSerializer.deserializeFromString(LibraryItem.class, xml, null);
+		//LibraryItem libraryItem = XmlSerializer.deserializeFromString(LibraryItem.class, xml, XSD);
 		return libraryItem;
 
 	}

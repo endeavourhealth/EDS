@@ -136,7 +136,7 @@ CREATE SEQUENCE public.enterprise_person_id_seq
   INCREMENT 1
   MINVALUE 1
   MAXVALUE 9223372036854775807
-  START 230788
+  START 1
   CACHE 1;
 ALTER TABLE public.enterprise_person_id_seq
   OWNER TO postgres;
@@ -148,7 +148,7 @@ ALTER TABLE public.enterprise_person_id_seq
 
 CREATE TABLE public.enterprise_person_id_map
 (
-  person_id character(35) NOT NULL,
+  person_id character(36) NOT NULL,
   enterprise_person_id bigint NOT NULL DEFAULT nextval('enterprise_person_id_seq'::regclass),
   CONSTRAINT pk_enterprise_person_id_map PRIMARY KEY (person_id)
 )
