@@ -23,10 +23,16 @@ create table OrganisationManager.Organisation (
     date_of_registration date null,
     registration_person char(36) null,  /*change to not null*/
     evidence_of_registration varchar(500) null, /*change to not null*/
+    IsService boolean not null,
     
     index (name asc, ods_code asc)
 );
 
+/*
+alter table OrganisationManager.Organisation add column IsService boolean null;
+update OrganisationManager.Organisation set IsService = 0;
+alter table OrganisationManager.Organisation modify IsService boolean not null;
+*/
 
 alter table OrganisationManager.Organisation
 modify date_of_registration date null;
@@ -254,6 +260,23 @@ create table OrganisationManager.DataSharingSummary (
     foreign key (NatureOfInformationId) references OrganisationManager.NatureOfInformation(id),
     foreign key (DataSubjectTypeId) references OrganisationManager.DataSubjectType(id),
     foreign key (ReviewCycleId) references OrganisationManager.ReviewCycle(id)
+);
+
+create table OrganisationManager.MapType (
+	id smallint not null primary key,
+    MapType varchar(100) not null    
+);
+
+drop table if exists OrganisationManager.MasterMapping;
+
+create table OrganisationManager.MasterMapping (
+	ChildUuid char(36) not null,
+    ParentUUid char(36) not null,
+    MapTypeId smallint not null,
+    IsDefault boolean not null,
+    
+    foreign key (MapTypeId) references OrganisationManager.MapType(id),
+    primary key (ChildUuid, ParentUUid, MapTypeId)
 );
 
 

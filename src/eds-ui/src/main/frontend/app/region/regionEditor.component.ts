@@ -32,10 +32,10 @@ export class RegionEditorComponent {
                 private organisationManagerService : OrganisationManagerService,
                 private adminService : AdminService,
                 private regionService : RegionService,
-                private transition : Transition
+                private transition : Transition,
+                protected $state : StateService
     ) {
         this.performAction(transition.params()['itemAction'], transition.params()['itemUuid']);
-        console.log(transition);
     }
 
     protected performAction(action:string, itemUuid:string) {
@@ -147,7 +147,7 @@ export class RegionEditorComponent {
 
     private editOrganisations() {
         var vm = this;
-        OrganisationManagerPickerDialog.open(vm.$modal, vm.organisations)
+        OrganisationManagerPickerDialog.open(vm.$modal, vm.organisations, 'organisations')
             .result.then(function (result : Organisation[]) {
             vm.organisations = result;
         });
@@ -167,5 +167,13 @@ export class RegionEditorComponent {
             .result.then(function (result : Region[]) {
             vm.childRegions = result;
         });
+    }
+
+    editOrganisation(item : Organisation) {
+        this.$state.go('app.organisationManagerEditor', {itemUuid: item.uuid, itemAction: 'edit'});
+    }
+
+    editRegion(item : Organisation) {
+        this.$state.go('app.regionEditor', {itemUuid: item.uuid, itemAction: 'edit'});
     }
 }

@@ -29,8 +29,8 @@
                             <div class="table">
                                 <table class="table table-striped table-condensed">
                                     <tbody>
-                                    <tr *ngFor="let item of organisations">
-                                        <td>{{ item.name }}</td>
+                                    <tr class="hover-box show-child-on-hover" *ngFor="let item of organisations">
+                                        <td><a (click)="editOrganisation(item)">{{item.name}}</a></td>
                                         <td>{{item.odsCode}}</td>
                                     </tr>
                                     </tbody>
@@ -46,8 +46,8 @@
                             <div class="table">
                                 <table class="table table-striped table-condensed">
                                     <tbody>
-                                    <tr *ngFor="let item of parentRegions">
-                                        <td>{{ item.name }}</td>
+                                    <tr class="hover-box show-child-on-hover" *ngFor="let item of parentRegions">
+                                        <td><a (click)="editRegion(item)">{{item.name}}</a></td>
                                         <td>{{item.description}}</td>
                                     </tr>
                                     </tbody>
@@ -63,8 +63,8 @@
                             <div class="table">
                                 <table class="table table-striped table-condensed">
                                     <tbody>
-                                    <tr *ngFor="let item of childRegions">
-                                        <td>{{ item.name }}</td>
+                                    <tr class="hover-box show-child-on-hover" *ngFor="let item of childRegions">
+                                        <td><a (click)="editRegion(item)">{{item.name}}</a></td>
                                         <td>{{item.description}}</td>
                                     </tr>
                                     </tbody>

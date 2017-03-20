@@ -5,6 +5,7 @@ CREATE PROCEDURE OrganisationManager.getOrganisationsForRegion (
 	in RegionUUID char(36)
 )
 BEGIN
+  
   select 
 	o.name,
 	o.alternative_name, 
@@ -19,5 +20,6 @@ BEGIN
   join OrganisationManager.regionorganisationmap rom on rom.regionUuid = r.uuid
   join OrganisationManager.organisation o on o.uuid = rom.OrganisationUuid
   where r.uuid = RegionUUID;
+  
 END //
 DELIMITER ;

@@ -8,10 +8,7 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.common.security.SecurityUtils;
-import org.endeavourhealth.core.mySQLDatabase.models.AddressEntity;
-import org.endeavourhealth.core.mySQLDatabase.models.OrganisationEntity;
-import org.endeavourhealth.core.mySQLDatabase.models.RegionEntity;
-import org.endeavourhealth.core.mySQLDatabase.models.RegionorganisationmapEntity;
+import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.*;
 import org.slf4j.Logger;
@@ -23,6 +20,7 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Path("/organisationManager")
@@ -36,24 +34,27 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/")
-    public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
+    public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData, @QueryParam("searchType") String searchType) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Organisation(s)",
                 "Organisation Id", uuid,
                 "SearchData", searchData);
 
+        boolean searchServices = false;
+        if (searchType != null && searchType.equals("services"))
+            searchServices = true;
 
         if (uuid == null && searchData == null) {
             LOG.trace("getOrganisation - list");
 
-            return getOrganisationList();
+            return getOrganisationList(searchServices);
         } else if (uuid != null){
             LOG.trace("getOrganisation - single - " + uuid);
             return getSingleOrganisation(uuid);
         } else {
-            LOG.trace("Search Organisations - " + searchData);
-            return search(searchData);
+            LOG.trace("Search Organisations - " + searchData + searchType);
+            return search(searchData, searchServices);
         }
     }
 
@@ -69,14 +70,16 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 "Organisation", organisationManager);
 
         if (organisationManager.getUuid() != null) {
-            RegionorganisationmapEntity.deleteOrganisationMap(organisationManager.getUuid());
+            MastermappingEntity.deleteAllMappings(organisationManager.getUuid());
             OrganisationEntity.updateOrganisation(organisationManager);
-            RegionorganisationmapEntity.saveOrganisationMappings(organisationManager);
         } else {
-            RegionorganisationmapEntity.deleteOrganisationMap(organisationManager.getUuid());
+            organisationManager.setUuid(UUID.randomUUID().toString());
             OrganisationEntity.saveOrganisation(organisationManager);
-            RegionorganisationmapEntity.saveOrganisationMappings(organisationManager);
         }
+
+
+        //Process Mappings
+        MastermappingEntity.saveOrganisationMappings(organisationManager);
 
         List<JsonAddress> addresses = organisationManager.getAddresses();
         if (addresses.size() > 0) {
@@ -133,6 +136,45 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/childOrganisations")
+    public Response getChildOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Child Organisations(s)",
+                "Organisation Id", uuid);
+
+        return getChildOrganisations(uuid, (short)0);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/services")
+    public Response getServices(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "services(s)",
+                "Organisation Id", uuid);
+
+        return getChildOrganisations(uuid, (short)1);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/parentOrganisations")
+    public Response getParentOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Parent Organisations(s)",
+                "Organisation Id", uuid);
+
+        return getParentOrganisations(uuid);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Path("/addresses")
     public Response getAddresses(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -156,9 +198,9 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
         return getOrganisationMarkers(uuid);
     }
 
-    private Response getOrganisationList() throws Exception {
+    private Response getOrganisationList(boolean searchServices) throws Exception {
 
-        List<OrganisationEntity> organisations = OrganisationEntity.getAllOrganisations();
+        List<OrganisationEntity> organisations = OrganisationEntity.getAllOrganisations(searchServices);
 
         clearLogbackMarkers();
         return Response
@@ -177,8 +219,8 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
     }
 
-    private Response search(String searchData) throws Exception {
-        Iterable<OrganisationEntity> organisations = OrganisationEntity.search(searchData);
+    private Response search(String searchData, boolean searchServices) throws Exception {
+        Iterable<OrganisationEntity> organisations = OrganisationEntity.search(searchData, searchServices);
 
         clearLogbackMarkers();
         return Response
@@ -189,22 +231,9 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
     private Response getRegionsForOrganisation(String organisationUuid) throws Exception {
 
-        List<Object[]> regions = RegionEntity.getRegionsForOrganisation(organisationUuid);
+        List<Object[]> regions = RegionEntity.getParentRegionsFromMappings(organisationUuid);
 
-        List<JsonRegion> ret = new ArrayList<>();
-
-        for (Object[] regionEntity : regions) {
-            String name = regionEntity[0].toString();
-            String description = regionEntity[1]==null?"":regionEntity[1].toString();
-            String Uuid = regionEntity[2]==null?"":regionEntity[2].toString();
-
-            JsonRegion reg = new JsonRegion();
-            reg.setName(name);
-            reg.setDescription(description);
-            reg.setUuid(Uuid);
-
-            ret.add(reg);
-        }
+        List<JsonRegion> ret = EndpointHelper.JsonRegion(regions);
 
         clearLogbackMarkers();
         return Response
@@ -278,5 +307,35 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
 
     }
+
+    private Response getChildOrganisations(String organisationUuid, Short organisationType) throws Exception {
+
+        Short type = 0;
+        List<Object[]> organisations = OrganisationEntity.getChildOrganisationsFromMappings(organisationUuid, type, organisationType);
+
+        List<JsonOrganisationManager> ret = EndpointHelper.JsonOrganisation(organisations);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private Response getParentOrganisations(String organisationUuid) throws Exception {
+
+        Short type = 0;
+        List<Object[]> organisations = OrganisationEntity.getParentOrganisationsFromMappings(organisationUuid, type);
+
+        List<JsonOrganisationManager> ret = EndpointHelper.JsonOrganisation(organisations);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+
 
 }

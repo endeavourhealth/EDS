@@ -10,8 +10,10 @@ export class Organisation {
     dateOfRegistration: string;
     registrationPerson: string;
     evidenceOfRegistration: string;
-    postcode: string;
-    geolocation: string;
+    isService : string;
     regions : { [key:string]:string; };
+    parentOrganisations : { [key:string]:string; };
+    childOrganisations : { [key:string]:string; };
+    services : { [key:string]:string; };
     addresses : Address[];
 }

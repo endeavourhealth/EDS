@@ -17,7 +17,11 @@ public final class JsonOrganisationManager {
     private String registrationPerson = null;
     private String evidenceOfRegistration = null;
     private String uuid = null;
+    private String IsService = null;
     private Map<UUID, String> regions = null;
+    private Map<UUID, String> parentOrganisations = null;
+    private Map<UUID, String> childOrganisations = null;
+    private Map<UUID, String> services = null;
     private List<JsonAddress> addresses = new ArrayList<>();
 
     public String getUuid() {
@@ -106,5 +110,37 @@ public final class JsonOrganisationManager {
 
     public void setAddresses(List<JsonAddress> addresses) {
         this.addresses = addresses;
+    }
+
+    public String getIsService() {
+        return IsService;
+    }
+
+    public void setIsService(String isService) {
+        IsService = isService;
+    }
+
+    public Map<UUID, String> getParentOrganisations() {
+        return parentOrganisations;
+    }
+
+    public void setParentOrganisations(Map<UUID, String> parentOrganisations) {
+        this.parentOrganisations = parentOrganisations;
+    }
+
+    public Map<UUID, String> getChildOrganisations() {
+        return childOrganisations;
+    }
+
+    public void setChildOrganisations(Map<UUID, String> childOrganisations) {
+        this.childOrganisations = childOrganisations;
+    }
+
+    public Map<UUID, String> getServices() {
+        return services;
+    }
+
+    public void setServices(Map<UUID, String> services) {
+        this.services = services;
     }
 }

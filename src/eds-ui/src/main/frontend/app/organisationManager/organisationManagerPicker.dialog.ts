@@ -9,9 +9,10 @@ import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
     template: require('./organisationManagerPicker.html')
 })
 export class OrganisationManagerPickerDialog {
-    public static open(modalService: NgbModal, organisations : Organisation[]) {
+    public static open(modalService: NgbModal, organisations : Organisation[], searchType : string) {
         const modalRef = modalService.open(OrganisationManagerPickerDialog, { backdrop : "static"});
         modalRef.componentInstance.resultData = jQuery.extend(true, [], organisations);
+        modalRef.componentInstance.searchType = searchType;
 
         return modalRef;
     }
@@ -19,6 +20,7 @@ export class OrganisationManagerPickerDialog {
     @Input() resultData : Organisation[];
     searchData : string;
     searchResults : Organisation[];
+    searchType : string;
 
     constructor(public activeModal: NgbActiveModal,
                 private log:LoggerService,
@@ -26,7 +28,9 @@ export class OrganisationManagerPickerDialog {
 
     private search() {
         var vm = this;
-        vm.organisationManagerService.search(vm.searchData)
+        if (vm.searchData.length < 3)
+            return;
+        vm.organisationManagerService.search(vm.searchData, vm.searchType)
             .subscribe(
                 (result) => vm.searchResults = result,
                 (error) => vm.log.error(error)

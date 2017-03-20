@@ -20,10 +20,20 @@ import java.util.UUID;
 @Entity
 @NamedStoredProcedureQueries({
         @NamedStoredProcedureQuery(
-                name = "getOrganisationsForRegion",
-                procedureName = "getOrganisationsForRegion",
+                name = "getChildOrganisationsFromMappings",
+                procedureName = "getChildOrganisationsFromMappings",
                 parameters = {
-                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "UUID")
+                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "Parent"),
+                        @StoredProcedureParameter(mode = ParameterMode.IN, type = Short.class, name = "MappingType"),
+                        @StoredProcedureParameter(mode = ParameterMode.IN, type = Short.class, name = "OrganisationType")
+                }
+        ),
+        @NamedStoredProcedureQuery(
+                name = "getParentOrganisationsFromMappings",
+                procedureName = "getParentOrganisationsFromMappings",
+                parameters = {
+                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "Child"),
+                        @StoredProcedureParameter(mode = ParameterMode.IN, type = Short.class, name = "MappingType")
                 }
         )
 })
@@ -39,13 +49,16 @@ public class OrganisationEntity {
     private Integer registrationPerson;
     private String evidenceOfRegistration;
     private String uuid;
+    private byte isService;
 
-    public static List<Object[]> getOrganisationsForRegion(String regionUUID) throws Exception {
+    public static List<Object[]> getChildOrganisationsFromMappings(String parent, Short mapType, Short organisationType) throws Exception {
 
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getOrganisationsForRegion");
-        spq.setParameter("UUID", regionUUID);
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getChildOrganisationsFromMappings");
+        spq.setParameter("Parent", parent);
+        spq.setParameter("MappingType", mapType);
+        spq.setParameter("OrganisationType", organisationType);
         spq.execute();
         List<Object[]> ent = spq.getResultList();
         entityManager.close();
@@ -53,15 +66,34 @@ public class OrganisationEntity {
         return ent;
     }
 
-    public static List<OrganisationEntity> getAllOrganisations() throws Exception {
+    public static List<Object[]> getParentOrganisationsFromMappings(String parent, Short mapType) throws Exception {
+
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getParentOrganisationsFromMappings");
+        spq.setParameter("Child", parent);
+        spq.setParameter("MappingType", mapType);
+        spq.execute();
+        List<Object[]> ent = spq.getResultList();
+        entityManager.close();
+
+        return ent;
+    }
+
+    public static List<OrganisationEntity> getAllOrganisations(boolean services) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
         Root<OrganisationEntity> rootEntry = cq.from(OrganisationEntity.class);
-        CriteriaQuery<OrganisationEntity> all = cq.select(rootEntry);
-        TypedQuery<OrganisationEntity> allQuery = entityManager.createQuery(all);
-        return allQuery.getResultList();
+
+        //Services are just organisations with the isService flag set to true;
+        Predicate predicate = cb.equal(rootEntry.get("isService"), (byte)(services ? 1 : 0));
+
+        cq.where(predicate);
+        TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
+
+        return query.getResultList();
     }
 
     public static OrganisationEntity getOrganisation(String uuid) throws Exception {
@@ -80,6 +112,7 @@ public class OrganisationEntity {
         organisationEntity.setOdsCode(organisation.getOdsCode());
         organisationEntity.setIcoCode(organisation.getIcoCode());
         organisationEntity.setIgToolkitStatus(organisation.getIgToolkitStatus());
+        organisationEntity.setIsService((byte) (organisation.getIsService().equals("1")? 1 : 0));
         if (organisation.getDateOfRegistration() != null){
             organisationEntity.setDateOfRegistration(Date.valueOf(organisation.getDateOfRegistration()));
         }
@@ -98,12 +131,13 @@ public class OrganisationEntity {
         organisationEntity.setOdsCode(organisation.getOdsCode());
         organisationEntity.setIcoCode(organisation.getIcoCode());
         organisationEntity.setIgToolkitStatus(organisation.getIgToolkitStatus());
+        organisationEntity.setIsService((byte) (organisation.getIsService().equals("1")? 1 : 0));
         if (organisation.getDateOfRegistration() != null){
             organisationEntity.setDateOfRegistration(Date.valueOf(organisation.getDateOfRegistration()));
         }
         //organisationEntity.setRegistrationPerson(organisation.getRegistrationPerson());
         organisationEntity.setEvidenceOfRegistration(organisation.getEvidenceOfRegistration());
-        organisationEntity.setUuid(UUID.randomUUID().toString());
+        organisationEntity.setUuid(organisation.getUuid());
         entityManager.persist(organisationEntity);
         entityManager.getTransaction().commit();
     }
@@ -117,17 +151,17 @@ public class OrganisationEntity {
         entityManager.getTransaction().commit();
     }
 
-    public static List<OrganisationEntity> search(String expression) throws Exception {
+    public static List<OrganisationEntity> search(String expression, boolean searchServices) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
         Root<OrganisationEntity> rootEntry = cq.from(OrganisationEntity.class);
 
-        Predicate predicate = cb.or(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"),
+        Predicate predicate = cb.and(cb.equal(rootEntry.get("isService"), (byte)(searchServices ? 1 : 0)), (cb.or(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"),
                 cb.like(cb.upper(rootEntry.get("odsCode")), "%" + expression.toUpperCase() + "%"),
                 cb.like(cb.upper(rootEntry.get("alternativeName")), "%" + expression.toUpperCase() + "%"),
-                cb.like(cb.upper(rootEntry.get("icoCode")), "%" + expression.toUpperCase() + "%"));
+                cb.like(cb.upper(rootEntry.get("icoCode")), "%" + expression.toUpperCase() + "%"))));
 
         cq.where(predicate);
         TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
@@ -261,5 +295,15 @@ public class OrganisationEntity {
         result = 31 * result + (evidenceOfRegistration != null ? evidenceOfRegistration.hashCode() : 0);
         result = 31 * result + (uuid != null ? uuid.hashCode() : 0);
         return result;
+    }
+
+    @Basic
+    @Column(name = "IsService", nullable = false)
+    public byte getIsService() {
+        return isService;
+    }
+
+    public void setIsService(byte isService) {
+        this.isService = isService;
     }
 }

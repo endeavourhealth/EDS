@@ -16,6 +16,12 @@ export class OrganisationManagerService extends BaseHttp2Service  {
         return this.httpGet('api/organisationManager');
     }
 
+    getAllServices(): Observable<Organisation[]> {
+        let params = new URLSearchParams();
+        params.set('searchType','services');
+        return this.httpGet('api/organisationManager', { search : params });
+    }
+
     getOrganisation(uuid : string) : Observable<Organisation> {
         let params = new URLSearchParams();
         params.set('uuid',uuid);
@@ -28,6 +34,24 @@ export class OrganisationManagerService extends BaseHttp2Service  {
         return this.httpGet('api/organisationManager/regions', { search : params });
     }
 
+    getChildOrganisations(uuid : string) :  Observable<Organisation[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/organisationManager/childOrganisations', { search : params });
+    }
+
+    getParentOrganisations(uuid : string) :  Observable<Organisation[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/organisationManager/parentOrganisations', { search : params });
+    }
+
+    getServices(uuid : string) :  Observable<Organisation[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/organisationManager/services', { search : params });
+    }
+
     getOrganisationAddresses(uuid : string) :  Observable<Address[]> {
         let params = new URLSearchParams();
         params.set('uuid',uuid);
@@ -35,6 +59,7 @@ export class OrganisationManagerService extends BaseHttp2Service  {
     }
 
     saveOrganisation(organisation : Organisation) : Observable<any> {
+        console.log(organisation);
         return this.httpPost('api/organisationManager', organisation);
     }
 
@@ -44,9 +69,10 @@ export class OrganisationManagerService extends BaseHttp2Service  {
         return this.httpDelete('api/organisationManager', { search : params });
     }
 
-    search(searchData : string) : Observable<Organisation[]> {
+    search(searchData : string, searchType : string) : Observable<Organisation[]> {
         let params = new URLSearchParams();
         params.set('searchData',searchData);
+        params.set('searchType',searchType);
         return this.httpGet('api/organisationManager', { search : params });
     }
 

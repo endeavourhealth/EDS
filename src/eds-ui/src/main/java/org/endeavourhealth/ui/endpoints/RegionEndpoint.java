@@ -8,10 +8,7 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.common.security.SecurityUtils;
-import org.endeavourhealth.core.mySQLDatabase.models.OrganisationEntity;
-import org.endeavourhealth.core.mySQLDatabase.models.RegionEntity;
-import org.endeavourhealth.core.mySQLDatabase.models.RegionorganisationmapEntity;
-import org.endeavourhealth.core.mySQLDatabase.models.SupraregionmapEntity;
+import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.JsonOrganisation;
 import org.endeavourhealth.coreui.json.JsonOrganisationManager;
@@ -20,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.plaf.synth.Region;
+import javax.swing.text.StyledEditorKit;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -71,24 +69,14 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
         if (region.getUuid() != null) {
             RegionEntity.updateRegion(region);
-            RegionorganisationmapEntity.deleteRegionMap(region.getUuid());
-            SupraregionmapEntity.deleteSupraRegionParentMapping(region.getUuid());
-            SupraregionmapEntity.deleteSupraRegionChildMapping(region.getUuid());
+            MastermappingEntity.deleteAllMappings(region.getUuid());
         } else {
+            region.setUuid(UUID.randomUUID().toString());
             RegionEntity.saveRegion(region);
         }
 
         //Process Mappings
-        //Region - Organisation Maps
-        RegionorganisationmapEntity.saveRegionMappings(region);
-
-        //Region - Parent Region Map
-        SupraregionmapEntity.saveSupraRegionParentMappings(region);
-
-        //Region - Child Region Map
-        SupraregionmapEntity.saveSupraRegionChildMappings(region);
-
-
+        MastermappingEntity.saveRegionMappings(region);
 
         clearLogbackMarkers();
 
@@ -178,36 +166,10 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
     private Response getRegionOrganisations(String regionUUID) throws Exception {
 
-        List<Object[]> organisations = OrganisationEntity.getOrganisationsForRegion(regionUUID);
+        Short type = 1;
+        List<Object[]> organisations = OrganisationEntity.getChildOrganisationsFromMappings(regionUUID, type, (short)0);
 
-        List<JsonOrganisationManager> ret = new ArrayList<>();
-
-        for (Object[] OrganisationEntity : organisations) {
-            String name = OrganisationEntity[0].toString();
-            String alternativeName = OrganisationEntity[1]==null?"":OrganisationEntity[1].toString();
-            String odsCode = OrganisationEntity[2]==null?"":OrganisationEntity[2].toString();
-            String icoCode = OrganisationEntity[3]==null?"":OrganisationEntity[3].toString();
-            String igToolKitStatus = OrganisationEntity[4]==null?"":OrganisationEntity[4].toString();
-            String dateOfReg = OrganisationEntity[5]==null?"":OrganisationEntity[5].toString();
-            String registrationPerson = OrganisationEntity[6]==null?"":OrganisationEntity[6].toString();
-            String evidence = OrganisationEntity[7]==null?"":OrganisationEntity[7].toString();
-            String organisationUuid = OrganisationEntity[8]==null?"":OrganisationEntity[8].toString();
-
-            JsonOrganisationManager org = new JsonOrganisationManager();
-            org.setName(name);
-            org.setAlternativeName(alternativeName);
-            org.setOdsCode(odsCode);
-            org.setIcoCode(icoCode);
-            org.setIgToolkitStatus(igToolKitStatus);
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy");
-            Date date = simpleDateFormat.parse(dateOfReg);
-            org.setDateOfRegistration(dateOfReg);
-            org.setRegistrationPerson(registrationPerson);
-            org.setEvidenceOfRegistration(evidence);
-            org.setUuid(organisationUuid);
-
-            ret.add(org);
-        }
+        List<JsonOrganisationManager> ret = EndpointHelper.JsonOrganisation(organisations);
 
         clearLogbackMarkers();
         return Response
@@ -228,9 +190,9 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
     private Response getParentRegions(String regionUuid) throws Exception {
 
-        List<Object[]> regions = RegionEntity.getSupraParentRegions(regionUuid);
+        List<Object[]> regions = RegionEntity.getParentRegionsFromMappings(regionUuid);
 
-        List<JsonRegion> ret = jsonRegion(regions);
+        List<JsonRegion> ret = EndpointHelper.JsonRegion(regions);
 
         clearLogbackMarkers();
         return Response
@@ -241,34 +203,15 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
     private Response getChildRegions(String regionUuid) throws Exception {
 
-        List<Object[]> regions = RegionEntity.getSupraChildRegions(regionUuid);
+        List<Object[]> regions = RegionEntity.getChildRegionsFromMappings(regionUuid);
 
-        List<JsonRegion> ret = jsonRegion(regions);
+        List<JsonRegion> ret = EndpointHelper.JsonRegion(regions);
 
         clearLogbackMarkers();
         return Response
                 .ok()
                 .entity(ret)
                 .build();
-    }
-
-    private List<JsonRegion> jsonRegion(List<Object[]> regions) throws Exception {
-        List<JsonRegion> ret = new ArrayList<>();
-
-        for (Object[] regionEntity : regions) {
-            String name = regionEntity[0].toString();
-            String description = regionEntity[1]==null?"":regionEntity[1].toString();
-            String Uuid = regionEntity[2]==null?"":regionEntity[2].toString();
-
-            JsonRegion reg = new JsonRegion();
-            reg.setName(name);
-            reg.setDescription(description);
-            reg.setUuid(Uuid);
-
-            ret.add(reg);
-        }
-
-        return ret;
     }
 
 }

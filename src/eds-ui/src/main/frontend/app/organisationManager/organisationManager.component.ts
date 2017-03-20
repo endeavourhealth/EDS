@@ -13,6 +13,7 @@ import {Region} from "../region/models/Region";
 export class OrganisationManagerComponent {
     organisations : Organisation[];
     regions : Region[] = [];
+    services : Organisation[];
 
     constructor(private $modal: NgbModal,
                 private organisationManagerService : OrganisationManagerService,
@@ -24,15 +25,31 @@ export class OrganisationManagerComponent {
     getOrganisations() {
         var vm = this;
         vm.organisationManagerService.getOrganisations()
-            .subscribe(
-                result => vm.organisations = result,
+            .subscribe(result => {
+                    vm.organisations = result,
+                    vm.getAllServices();
+                },
                 error => vm.log.error('Failed to load organisations', error, 'Load organisations')
             );
 
     }
 
+    private getAllServices() {
+        var vm = this;
+        vm.organisationManagerService.getAllServices()
+            .subscribe(
+                result => vm.services = result,
+                error => vm.log.error('Failed to load Services', error, 'Load Services')
+            );
+    }
+
     add() {
         this.$state.go('app.organisationManagerEditor', {itemUuid: null, itemAction: 'add'});
+    }
+
+    addService() {
+        console.log("adding service");
+        this.$state.go('app.organisationManagerEditor', {itemUuid: null, itemAction: 'addService'});
     }
 
     edit(item : Organisation) {
