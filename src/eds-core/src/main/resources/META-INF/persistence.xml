@@ -83,6 +83,8 @@
     <persistence-unit name="ReferenceDB">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <class>org.endeavourhealth.core.rdbms.reference.PostcodeReference</class>
+        <class>org.endeavourhealth.core.rdbms.reference.LsoaLookup</class>
+        <class>org.endeavourhealth.core.rdbms.reference.MsoaLookup</class>
         <properties>
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQL95Dialect"/>
             <property name="hibernate.show_sql" value="false" />

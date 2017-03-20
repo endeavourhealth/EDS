@@ -13,9 +13,7 @@ public class PostcodeReference {
     private String postcodeNoSpace = null;
     private String postcode = null;
     private String lsoaCode = null;
-    private String lsoaName = null;
     private String msoaCode = null;
-    private String msoaName = null;
     private String ward = null;
     private String ward1998 = null;
     private String ccg = null;
@@ -49,15 +47,6 @@ public class PostcodeReference {
         this.lsoaCode = lsoaCode;
     }
 
-    @Column(name = "lsoa_name")
-    public String getLsoaName() {
-        return lsoaName;
-    }
-
-    public void setLsoaName(String lsoaName) {
-        this.lsoaName = lsoaName;
-    }
-
     @Column(name = "msoa_code")
     public String getMsoaCode() {
         return msoaCode;
@@ -65,15 +54,6 @@ public class PostcodeReference {
 
     public void setMsoaCode(String msoaCode) {
         this.msoaCode = msoaCode;
-    }
-
-    @Column(name = "msoa_name")
-    public String getMsoaName() {
-        return msoaName;
-    }
-
-    public void setMsoaName(String msoaName) {
-        this.msoaName = msoaName;
     }
 
     @Column(name = "ward")

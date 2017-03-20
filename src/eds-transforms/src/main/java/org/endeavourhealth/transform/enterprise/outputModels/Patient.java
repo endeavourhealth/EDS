@@ -38,9 +38,7 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                             String postcodePrefix,
                             Long householdId,
                             String lsoaCode,
-                            String lsoaName,
                             String msoaCode,
-                            String msoaName,
                             BigDecimal townsendScore) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
@@ -56,9 +54,7 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                         postcodePrefix,
                         convertLong(householdId),
                         lsoaCode,
-                        lsoaName,
                         msoaCode,
-                        msoaName,
                         convertBigDecimal(townsendScore));
     }
 
@@ -73,9 +69,7 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                                         String postcode,
                                         Long householdId,
                                         String lsoaCode,
-                                        String lsoaName,
                                         String msoaCode,
-                                        String msoaName,
                                         BigDecimal townsendScore) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
@@ -89,9 +83,7 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                 postcode,
                 convertLong(householdId),
                 lsoaCode,
-                lsoaName,
                 msoaCode,
-                msoaName,
                 convertBigDecimal(townsendScore));
     }
 
@@ -112,9 +104,7 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                     "postcode_prefix",
                     "household_id",
                     "lsoa_code",
-                    "lsoa_name",
                     "msoa_code",
-                    "msoa_name",
                     "townsend_score"
             };
         } else {
@@ -130,9 +120,7 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                     "postcode",
                     "household_id",
                     "lsoa_code",
-                    "lsoa_name",
                     "msoa_code",
-                    "msoa_name",
                     "townsend_score"
             };
         }
@@ -156,8 +144,6 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                     Long.TYPE,
                     String.class,
                     String.class,
-                    String.class,
-                    String.class,
                     BigDecimal.class
             };
         } else {
@@ -172,8 +158,6 @@ public class Patient extends AbstractEnterpriseCsvWriter {
                     Date.class,
                     String.class,
                     Long.TYPE,
-                    String.class,
-                    String.class,
                     String.class,
                     String.class,
                     BigDecimal.class

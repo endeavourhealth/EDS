@@ -77,9 +77,7 @@ public class PatientTransformer extends AbstractTransformer {
             String postcodePrefix = null;
             Long householdId = null;
             String lsoaCode = null;
-            String lsoaName = null;
             String msoaCode = null;
-            String msoaName = null;
             BigDecimal townsendScore = null;
 
             id = enterpriseId.longValue();
@@ -126,9 +124,7 @@ public class PatientTransformer extends AbstractTransformer {
                 PostcodeReference postcodeReference = PostcodeHelper.getPostcodeReference(postcode);
                 if (postcodeReference != null) {
                     lsoaCode = postcodeReference.getLsoaCode();
-                    lsoaName = postcodeReference.getLsoaName();
                     msoaCode = postcodeReference.getLsoaCode();
-                    msoaName = postcodeReference.getLsoaName();
                     townsendScore = postcodeReference.getTownsendScore();
                 }
             }
@@ -162,9 +158,7 @@ public class PatientTransformer extends AbstractTransformer {
                         postcodePrefix,
                         householdId,
                         lsoaCode,
-                        lsoaName,
                         msoaCode,
-                        msoaName,
                         townsendScore);
 
             } else {
@@ -181,9 +175,7 @@ public class PatientTransformer extends AbstractTransformer {
                         postcode,
                         householdId,
                         lsoaCode,
-                        lsoaName,
                         msoaCode,
-                        msoaName,
                         townsendScore);
 
             }

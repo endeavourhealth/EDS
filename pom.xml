@@ -68,6 +68,7 @@
         <module>src/eds-keycloak-theme</module>
         <module>src/eds-bootstrap</module>
         <module>src/eds-ui-integration-test</module>
-        <module>src/postcode-updater</module>
+        <module>src/utility-postcode-updater</module>
+        <module>src/utility-enterprise-age-updater</module>
     </modules>
 </project>

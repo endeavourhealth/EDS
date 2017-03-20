@@ -8,11 +8,13 @@ import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.utility.ThreadPool;
 import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.csv.CsvHelper;
-import org.endeavourhealth.core.rdbms.reference.PostcodeHelper;
-import org.endeavourhealth.core.rdbms.reference.PostcodeReference;
+import org.endeavourhealth.core.rdbms.reference.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
 import java.io.File;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
@@ -21,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
@@ -97,31 +100,30 @@ public class Main {
      * Parameters
      * =================================================================================
      *
-     * 1. the Config name that gives the location of the reference database
-     * 2. the raw postcode data file (the big CSV file)
-     * 3. the LSOA name and code map TXT file
-     * 4. the MSOA name and code map TXT file
-     * 5. the Townsend score CSV file
+     * 1. the raw postcode data file (the big CSV file)
+     * 2. the LSOA name and code map TXT file
+     * 3. the MSOA name and code map TXT file
+     * 4. the Townsend score CSV file
      */
     public static void main(String[] args) throws Exception {
 
-        if (args.length != 5) {
-            LOG.error("Incorrect number of parameters. Check usage description in class commment.");
+        if (args.length != 4) {
+            LOG.error("Incorrect number of parameters");
+            LOG.error("Usage: <postcode csv file> <lsoa txt file> <msoa txt file> <townsend csv file>");
             return;
         }
 
-        String configName = args[0];
-        ConfigManager.Initialize(configName);
+        ConfigManager.Initialize("PostcodeUpdater");
 
         try {
 
 
             LOG.info("Postcode Reference Update Starting");
 
-            File postcodeFile = new File(args[1]);
-            File lsoaMapFile = new File(args[2]);
-            File msoaMapFile = new File(args[3]);
-            File townsendMapFile = new File(args[4]);
+            File postcodeFile = new File(args[0]);
+            File lsoaMapFile = new File(args[1]);
+            File msoaMapFile = new File(args[2]);
+            File townsendMapFile = new File(args[3]);
 
             if (!postcodeFile.exists()) {
                 LOG.error("" + postcodeFile + " doesn't exist");
@@ -136,15 +138,13 @@ public class Main {
                 LOG.error("" + townsendMapFile + " doesn't exist");
             }
 
-            //the main file is huge (800MB+) but the others are comparatively tiny, so process both of them,
-            //to build up a map of data that we can refer to when we process the large file
-            LOG.info("Reading LSOA map");
-            Map<String, String> lsoaMap = readLsoaMap(lsoaMapFile);
-            LOG.info("Finished reading LSOA map");
+            LOG.info("Processing LSOA map");
+            saveLsoaMappings(lsoaMapFile);
+            LOG.info("Finished LSOA map");
 
-            LOG.info("Reading MSOA map");
-            Map<String, String> msoaMap = readMsoaMap(msoaMapFile);
-            LOG.info("Finished reading MSOA map");
+            LOG.info("Processing MSOA map");
+            saveMsoaMappings(msoaMapFile);
+            LOG.info("Finished MSOA map");
 
             LOG.info("Reading Townsend map");
             Map<String, BigDecimal> townsendMap = readTownsendMap(townsendMapFile);
@@ -152,7 +152,7 @@ public class Main {
 
             //now we've got our two small maps ready, start processing the bulk of the data, which will update the DB
             LOG.info("Processing Postcode file");
-            readPostcodeFile(postcodeFile, lsoaMap, msoaMap, townsendMap);
+            readPostcodeFile(postcodeFile, townsendMap);
             LOG.info("Postcode Reference Update Complete");
 
         } catch (Exception ex) {
@@ -160,7 +160,91 @@ public class Main {
         }
     }
 
-    private static void readPostcodeFile(File postcodeFile, Map<String, String> lsoaMap, Map<String, String> msoaMap, Map<String, BigDecimal> townsendMap) throws Exception {
+    private static void saveMsoaMappings(File msoaMapFile) throws Exception {
+
+        Map<String, String> msoaMap = readerLsoaOrMsoaMapFile(msoaMapFile, MSOA_MAP_CODE, MSOA_MAP_NAME);
+
+        EntityManager entityManager = ReferenceConnection.getEntityManager();
+
+        int done = 0;
+
+        for (String msoaCode: msoaMap.keySet()) {
+            String msoaName = msoaMap.get(msoaCode);
+
+            String sql = "select r"
+                    + " from MsoaLookup r"
+                    + " where r.msoaCode = :msoaCode";
+
+            Query query = entityManager
+                    .createQuery(sql, MsoaLookup.class)
+                    .setParameter("msoaCode", msoaCode);
+
+            MsoaLookup lookup = null;
+            try {
+                lookup = (MsoaLookup)query.getSingleResult();
+            } catch (NoResultException e) {
+                lookup = new MsoaLookup();
+                lookup.setMsoaCode(msoaCode);
+            }
+
+            lookup.setMsoaName(msoaName);
+
+            entityManager.getTransaction().begin();
+            entityManager.persist(lookup);
+            entityManager.getTransaction().commit();
+
+            done ++;
+            if (done % 1000 == 0) {
+                LOG.info("Done " + done + " MSOA mappings (out of approx 4K)");
+            }
+        }
+
+        entityManager.close();
+    }
+
+    private static void saveLsoaMappings(File lsoaMapFile) throws Exception {
+
+        Map<String, String> lsoaMap = readerLsoaOrMsoaMapFile(lsoaMapFile, LSOA_MAP_CODE, LSOA_MAP_NAME);
+
+        EntityManager entityManager = ReferenceConnection.getEntityManager();
+
+        int done = 0;
+
+        for (String lsoaCode: lsoaMap.keySet()) {
+            String lsoaName = lsoaMap.get(lsoaCode);
+
+            String sql = "select r"
+                    + " from LsoaLookup r"
+                    + " where r.lsoaCode = :lsoaCode";
+
+            Query query = entityManager
+                    .createQuery(sql, LsoaLookup.class)
+                    .setParameter("lsoaCode", lsoaCode);
+
+            LsoaLookup lookup = null;
+            try {
+                lookup = (LsoaLookup)query.getSingleResult();
+            } catch (NoResultException e) {
+                lookup = new LsoaLookup();
+                lookup.setLsoaCode(lsoaCode);
+            }
+
+            lookup.setLsoaName(lsoaName);
+
+            entityManager.getTransaction().begin();
+            entityManager.persist(lookup);
+            entityManager.getTransaction().commit();
+
+            done ++;
+            if (done % 1000 == 0) {
+                LOG.info("Done " + done + " LSOA mappings (out of approx 40K)");
+            }
+        }
+
+        entityManager.close();
+    }
+
+    private static void readPostcodeFile(File postcodeFile, Map<String, BigDecimal> townsendMap) throws Exception {
 
         ThreadPool threadPool = new ThreadPool(5, 1000);
 
@@ -176,40 +260,8 @@ public class Main {
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next();
 
-                String postcode = record.get(POSTCODE_SINGLE_SPACE);
-                String lsoaCode = record.get(POSTCODE_2011_CENSUS_LSOA);
-                String msoaCode = record.get(POSTCODE_2011_CENSUS_MSOA);
-                String ward = record.get(POSTCODE_WARD);
-                String ward1998 = record.get(POSTCODE_1998_WARD);
-                String ccgCode = record.get(POSTCODE_CCG_CODE);
-
-                String lsoaName = lsoaMap.get(lsoaCode);
-                String msoaName = msoaMap.get(msoaCode);
-                BigDecimal townsendScore = townsendMap.get(ward1998);
-
-                //always make sure this is uppercase
-                postcode = postcode.toUpperCase();
-
-                String postcodeNoSpace = postcode.replace(" ", "");
-
-                PostcodeReference postcodeReference = PostcodeHelper.getPostcodeReference(postcode);
-                if (postcodeReference == null) {
-                    postcodeReference = new PostcodeReference();
-                    postcodeReference.setPostcodeNoSpace(postcodeNoSpace);
-                }
-
-                postcodeReference.setPostcode(postcode);
-                postcodeReference.setCcg(ccgCode);
-                postcodeReference.setLsoaCode(lsoaCode);
-                postcodeReference.setLsoaName(lsoaName);
-                postcodeReference.setMsoaCode(msoaCode);
-                postcodeReference.setMsoaName(msoaName);
-                postcodeReference.setWard(ward);
-                postcodeReference.setWard1998(ward1998);
-                postcodeReference.setTownsendScore(townsendScore);
-
                 //bump saving into a thread pool for speed
-                List<ThreadPoolError> errors = threadPool.submit(new SavePostcodeCallable(postcodeReference));
+                List<ThreadPoolError> errors = threadPool.submit(new SavePostcodeCallable(record, townsendMap));
                 handleErrors(errors);
                 //PostcodeHelper.save(postcodeReference);
 
@@ -243,7 +295,7 @@ public class Main {
     }
 
     private static Map<String, BigDecimal> readTownsendMap(File townsendMapFile) throws Exception {
-        Map<String, BigDecimal> map = new HashMap<>();
+        Map<String, BigDecimal> map = new ConcurrentHashMap<>();
 
         CSVFormat format = CSVFormat.DEFAULT;
 
@@ -276,13 +328,6 @@ public class Main {
         return map;
     }
 
-    private static Map<String, String> readLsoaMap(File lsoaMapFile) throws Exception {
-        return readerLsoaOrMsoaMapFile(lsoaMapFile, LSOA_MAP_CODE, LSOA_MAP_NAME);
-    }
-
-    private static Map<String, String> readMsoaMap(File msoaMapFile) throws Exception {
-        return readerLsoaOrMsoaMapFile(msoaMapFile, MSOA_MAP_CODE, MSOA_MAP_NAME);
-    }
 
     private static Map<String, String> readerLsoaOrMsoaMapFile(File src, String codeCol, String nameCol) throws Exception {
         Map<String, String> map = new HashMap<>();
@@ -365,15 +410,52 @@ public class Main {
 
     static class SavePostcodeCallable implements Callable {
 
-        private PostcodeReference postcodeReference = null;
+        private CSVRecord record = null;
+        private Map<String, BigDecimal> townsendMap = null;
 
-        public SavePostcodeCallable(PostcodeReference postcodeReference) {
-            this.postcodeReference = postcodeReference;
+        public SavePostcodeCallable(CSVRecord record, Map<String, BigDecimal> townsendMap) {
+            this.record = record;
+            this.townsendMap = townsendMap;
         }
 
         @Override
         public Object call() throws Exception {
-            PostcodeHelper.save(postcodeReference);
+
+            String postcode = record.get(POSTCODE_SINGLE_SPACE);
+            String lsoaCode = record.get(POSTCODE_2011_CENSUS_LSOA);
+            String msoaCode = record.get(POSTCODE_2011_CENSUS_MSOA);
+            String ward = record.get(POSTCODE_WARD);
+            String ward1998 = record.get(POSTCODE_1998_WARD);
+            String ccgCode = record.get(POSTCODE_CCG_CODE);
+
+            BigDecimal townsendScore = townsendMap.get(ward1998);
+
+            //always make sure this is uppercase
+            postcode = postcode.toUpperCase();
+
+            String postcodeNoSpace = postcode.replace(" ", "");
+
+            EntityManager entityManager = ReferenceConnection.getEntityManager();
+
+            PostcodeReference postcodeReference = PostcodeHelper.getPostcodeReference(postcode, entityManager);
+            if (postcodeReference == null) {
+                postcodeReference = new PostcodeReference();
+                postcodeReference.setPostcodeNoSpace(postcodeNoSpace);
+            }
+
+            postcodeReference.setPostcode(postcode);
+            postcodeReference.setCcg(ccgCode);
+            postcodeReference.setLsoaCode(lsoaCode);
+            postcodeReference.setMsoaCode(msoaCode);
+            postcodeReference.setWard(ward);
+            postcodeReference.setWard1998(ward1998);
+            postcodeReference.setTownsendScore(townsendScore);
+
+            entityManager.getTransaction().begin();
+            entityManager.persist(postcodeReference);
+            entityManager.getTransaction().commit();
+
+            entityManager.close();
             return null;
         }
     }

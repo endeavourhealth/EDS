@@ -1,30 +1,30 @@
 package org.endeavourhealth.core.rdbms.reference;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.*;
-import java.util.HashMap;
-import java.util.Map;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
 
 public class PostcodeHelper {
     private static final Logger LOG = LoggerFactory.getLogger(PostcodeHelper.class);
 
-    private static EntityManagerFactory entityManagerFactory;
 
 
-    public static void save(PostcodeReference postcodeReference) throws Exception {
-        EntityManager entityManager = getEntityManager();
-        entityManager.getTransaction().begin();
-        entityManager.persist(postcodeReference);
-        entityManager.getTransaction().commit();
-        entityManager.close();
-    }
 
     public static PostcodeReference getPostcodeReference(String postcode) throws Exception {
+
+        EntityManager entityManager = ReferenceConnection.getEntityManager();
+        try {
+            return getPostcodeReference(postcode, entityManager);
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    public static PostcodeReference getPostcodeReference(String postcode, EntityManager entityManager) throws Exception {
 
         //if called with an empty postcode, just return null
         if (Strings.isNullOrEmpty(postcode)) {
@@ -41,8 +41,6 @@ public class PostcodeHelper {
                    + " from PostcodeReference r"
                    + " where r.postcodeNoSpace = :postcodeNoSpace";
 
-        EntityManager entityManager = getEntityManager();
-
         Query query = entityManager
                 .createQuery(sql, PostcodeReference.class)
                 .setParameter("postcodeNoSpace", postcode);
@@ -53,36 +51,8 @@ public class PostcodeHelper {
         } catch (NoResultException e) {
             return null;
 
-        } finally {
-            entityManager.close();
         }
     }
 
-
-    private static EntityManager getEntityManager() throws Exception {
-
-        if (entityManagerFactory == null
-                || !entityManagerFactory.isOpen()) {
-            createEntityManager();
-        }
-
-        return entityManagerFactory.createEntityManager();
-    }
-
-    private static synchronized void createEntityManager() throws Exception {
-
-        JsonNode json = ConfigManager.getConfigurationAsJson("reference_db");
-        String url = json.get("url").asText();
-        String user = json.get("username").asText();
-        String pass = json.get("password").asText();
-
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("hibernate.temp.use_jdbc_metadata_defaults", "false");
-        properties.put("hibernate.hikari.dataSource.url", url);
-        properties.put("hibernate.hikari.dataSource.user", user);
-        properties.put("hibernate.hikari.dataSource.password", pass);
-
-        entityManagerFactory = Persistence.createEntityManagerFactory("ReferenceDB", properties);
-    }
 
 }

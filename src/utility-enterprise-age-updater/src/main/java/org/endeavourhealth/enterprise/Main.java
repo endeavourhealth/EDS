@@ -67,7 +67,9 @@ public class Main {
 
                 //if we've successfully updated Enterprise, then it's time to save our updated map object
                 //with the newly calculated date of next update
+                entityManager.getTransaction().begin();
                 entityManager.persist(ageToUpdate);
+                entityManager.getTransaction().commit();
 
                 progress ++;
                 if (progress % 100 == 0) {
@@ -111,7 +113,7 @@ public class Main {
         sb.append("UPDATE patient SET ");
         sb.append("age_years = ?, ");
         sb.append("age_months = ?, ");
-        sb.append("age_weeks = ? ,");
+        sb.append("age_weeks = ? ");
         sb.append("WHERE id = ?");
 
         PreparedStatement update = connection.prepareStatement(sb.toString());

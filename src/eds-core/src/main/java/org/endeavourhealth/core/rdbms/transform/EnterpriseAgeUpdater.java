@@ -88,7 +88,7 @@ public class EnterpriseAgeUpdater {
             nextUpdate = createSafeLocalDate(updateYear, updateMonth, updateDay);
 
             //if we've already passed their birthday this year, then add a year so we update next year
-            if (nextUpdate.isBefore(nowLocalDate)) {
+            if (!nextUpdate.isAfter(nowLocalDate)) {
                 updateYear ++;
                 nextUpdate = createSafeLocalDate(updateYear, updateMonth, updateDay);
             }
@@ -102,7 +102,7 @@ public class EnterpriseAgeUpdater {
             nextUpdate = createSafeLocalDate(updateYear, updateMonth, updateDay);
 
             //if we've already passed the day in this month when we'd update, then roll forward to next month
-            if (nextUpdate.isBefore(nowLocalDate)) {
+            if (!nextUpdate.isAfter(nowLocalDate)) {
                 if (updateMonth == Month.DECEMBER.getValue()) {
                     updateYear ++;
                 } else {
@@ -132,6 +132,8 @@ public class EnterpriseAgeUpdater {
                 } else {
                     updateMonth ++;
                 }
+
+                nextUpdate = createSafeLocalDate(updateYear, updateMonth, updateDay);
             }
         }
 

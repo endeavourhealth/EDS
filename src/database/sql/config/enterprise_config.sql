@@ -9,6 +9,7 @@ VALUES
 	"password" : "",
 	"url"	: "jdbc:postgresql://localhost:5432/enterprise_data",
 	"keywordEscapeChar" : "\""
+	"pseudonymised": false
 }' );
 
 --to use mySQL
@@ -21,7 +22,7 @@ VALUES
 	"password" : "",
 	"url"	: "jdbc:mysql://localhost:3306/enterprise_data?useSSL=false",
 	"keywordEscapeChar" : "`"
+	"pseudonymised": false
 }' );
-
 
 
