@@ -133,5 +133,70 @@ public class EnterpriseIdHelper {
         }
     }
 
+    public static Long findOrCreateEnterprisePersonId(String discoveryPersonId) throws Exception {
 
+        EntityManager entityManager = TransformConnection.getEntityManager();
+
+        Long ret = findEnterprisePersonId(discoveryPersonId, entityManager);
+        if (ret != null) {
+            entityManager.close();
+            return ret;
+        }
+
+        try {
+            return createEnterprisePersonId(discoveryPersonId, entityManager);
+
+        } catch (Exception ex) {
+            //if another thread has beat us to it, we'll get an exception, so try the find again
+            ret = findEnterprisePersonId(discoveryPersonId, entityManager);
+            if (ret != null) {
+                return ret;
+            }
+
+            throw ex;
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    private static Long findEnterprisePersonId(String discoveryPersonId, EntityManager entityManager) {
+
+        String sql = "select c"
+                + " from"
+                + " EnterprisePersonIdMap c"
+                + " where c.personId = :personId";
+
+
+        Query query = entityManager.createQuery(sql, EnterprisePersonIdMap.class)
+                .setParameter("personId", discoveryPersonId);
+
+        try {
+            EnterprisePersonIdMap result = (EnterprisePersonIdMap)query.getSingleResult();
+            return result.getEnterprisePersonId();
+
+        } catch (NoResultException ex) {
+            return null;
+        }
+    }
+
+    private static Long createEnterprisePersonId(String discoveryPersonId, EntityManager entityManager) throws Exception {
+
+        EnterprisePersonIdMap mapping = new EnterprisePersonIdMap();
+        mapping.setPersonId(discoveryPersonId);
+
+        entityManager.getTransaction().begin();
+        entityManager.persist(mapping);
+        entityManager.getTransaction().commit();
+
+        return mapping.getEnterprisePersonId();
+    }
+
+    public static Long findEnterprisePersonId(String discoveryPersonId) throws Exception {
+        EntityManager entityManager = TransformConnection.getEntityManager();
+        try {
+            return findEnterprisePersonId(discoveryPersonId, entityManager);
+        } finally {
+            entityManager.close();
+        }
+    }
 }

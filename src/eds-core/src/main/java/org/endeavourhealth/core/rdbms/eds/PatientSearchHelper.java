@@ -1,22 +1,21 @@
 package org.endeavourhealth.core.rdbms.eds;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Strings;
-import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.core.fhirStorage.metadata.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.*;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
 import java.util.*;
 
 public class PatientSearchHelper {
     private static final Logger LOG = LoggerFactory.getLogger(PatientSearchHelper.class);
 
-    private final static String IDENTIFIER_SYSTEM_NHSNUMBER = "http://fhir.nhs.net/Id/nhs-number";
-
-    private static EntityManagerFactory entityManagerFactory;
+    //private final static String IDENTIFIER_SYSTEM_NHSNUMBER = "http://fhir.nhs.net/Id/nhs-number";
 
 
     public static void update(UUID serviceId, UUID systemId, Patient fhirPatient) throws Exception {
@@ -29,7 +28,7 @@ public class PatientSearchHelper {
 
     private static void update(UUID serviceId, UUID systemId, Patient fhirPatient, EpisodeOfCare fhirEpisode) throws Exception {
 
-        EntityManager entityManager = getEntityManager();
+        EntityManager entityManager = EdsConnection.getEntityManager();
         entityManager.getTransaction().begin();
 
         PatientSearch patientSearch = createOrUpdatePatientSearch(serviceId, systemId, fhirPatient, fhirEpisode, entityManager);
@@ -74,7 +73,7 @@ public class PatientSearchHelper {
         if (fhirPatient.hasIdentifier()) {
             for (Identifier fhirIdentifier : fhirPatient.getIdentifier()) {
 
-                if (!fhirIdentifier.getSystem().equalsIgnoreCase(IDENTIFIER_SYSTEM_NHSNUMBER)) {
+                if (!fhirIdentifier.getSystem().equalsIgnoreCase(FhirUri.IDENTIFIER_SYSTEM_NHSNUMBER)) {
                     String system = fhirIdentifier.getSystem();
                     String value = fhirIdentifier.getValue();
 
@@ -126,7 +125,7 @@ public class PatientSearchHelper {
 
         if (fhirPatient != null) {
 
-            String nhsNumber = findNhsNumber(fhirPatient);
+            String nhsNumber = IdentifierHelper.findNhsNumberTrueNhsNumber(fhirPatient);
             String forenames = findForenames(fhirPatient);
             String surname = findSurname(fhirPatient);
             String postcode = findPostcode(fhirPatient);
@@ -224,24 +223,6 @@ public class PatientSearchHelper {
         return null;
     }
 
-    private static String findNhsNumber(Patient fhirPatient) {
-
-        for (Identifier fhirIdentifier: fhirPatient.getIdentifier()) {
-            if (fhirIdentifier.getSystem().equals(IDENTIFIER_SYSTEM_NHSNUMBER)) {
-                String val = fhirIdentifier.getValue();
-
-                //got some live data with null values in here, so need to explicitly check for nulls
-                if (!Strings.isNullOrEmpty(val)) {
-                    val = val.replace(" ", "");
-                    if (val.length() == 10) {
-                        return val;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
     private static String findPatientId(Patient fhirPatient, EpisodeOfCare fhirEpisode) {
         if (fhirPatient != null) {
             return fhirPatient.getId();
@@ -252,35 +233,11 @@ public class PatientSearchHelper {
         }
     }
 
-    private static EntityManager getEntityManager() throws Exception {
 
-        if (entityManagerFactory == null
-                || !entityManagerFactory.isOpen()) {
-            createEntityManager();
-        }
-
-        return entityManagerFactory.createEntityManager();
-    }
-
-    private static synchronized void createEntityManager() throws Exception {
-
-        JsonNode json = ConfigManager.getConfigurationAsJson("eds_db");
-        String url = json.get("url").asText();
-        String user = json.get("username").asText();
-        String pass = json.get("password").asText();
-
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("hibernate.temp.use_jdbc_metadata_defaults", "false");
-        properties.put("hibernate.hikari.dataSource.url", url);
-        properties.put("hibernate.hikari.dataSource.user", user);
-        properties.put("hibernate.hikari.dataSource.password", pass);
-
-        entityManagerFactory = Persistence.createEntityManagerFactory("EdsDb", properties);
-    }
 
     public static void delete(UUID serviceId, UUID systemId) throws Exception {
 
-        EntityManager entityManager = getEntityManager();
+        EntityManager entityManager = EdsConnection.getEntityManager();
         entityManager.getTransaction().begin();
 
         String sql = "delete"
@@ -310,7 +267,7 @@ public class PatientSearchHelper {
     }
 
     public static List<PatientSearch> searchByNhsNumber(String nhsNumber) throws Exception {
-        EntityManager entityManager = getEntityManager();
+        EntityManager entityManager = EdsConnection.getEntityManager();
 
         String sql = "select c"
                 + " from"
@@ -326,7 +283,7 @@ public class PatientSearchHelper {
     }
 
     public static List<PatientSearch> searchByLocalId(UUID serviceId, UUID systemId, String localId) throws Exception {
-        EntityManager entityManager = getEntityManager();
+        EntityManager entityManager = EdsConnection.getEntityManager();
 
         String sql = "select c"
                 + " from"
@@ -350,7 +307,7 @@ public class PatientSearchHelper {
     }
 
     public static List<PatientSearch> searchByDateOfBirth(UUID serviceId, UUID systemId, Date dateOfBirth) throws Exception {
-        EntityManager entityManager = getEntityManager();
+        EntityManager entityManager = EdsConnection.getEntityManager();
 
         String sql = "select c"
                 + " from"
@@ -370,7 +327,7 @@ public class PatientSearchHelper {
     }
 
     public static List<PatientSearch> searchByNhsNumber(UUID serviceId, UUID systemId, String nhsNumber) throws Exception {
-        EntityManager entityManager = getEntityManager();
+        EntityManager entityManager = EdsConnection.getEntityManager();
 
         String sql = "select c"
                 + " from"
@@ -395,7 +352,7 @@ public class PatientSearchHelper {
             throw new IllegalArgumentException("Names cannot be empty");
         }
 
-        EntityManager entityManager = getEntityManager();
+        EntityManager entityManager = EdsConnection.getEntityManager();
 
         List<PatientSearch> results = null;
 
@@ -447,7 +404,7 @@ public class PatientSearchHelper {
     }
 
     public static PatientSearch searchByPatientId(UUID patientId) throws Exception {
-        EntityManager entityManager = getEntityManager();
+        EntityManager entityManager = EdsConnection.getEntityManager();
 
         String sql = "select c"
                 + " from"
@@ -461,6 +418,8 @@ public class PatientSearchHelper {
             return (PatientSearch)query.getSingleResult();
         } catch (NoResultException ex) {
             return null;
+        } finally {
+            entityManager.close();
         }
     }
 

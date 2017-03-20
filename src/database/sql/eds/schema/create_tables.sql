@@ -1,6 +1,9 @@
 
 DROP TABLE IF EXISTS patient_search_local_identifier;
 DROP TABLE IF EXISTS patient_search;
+DROP TABLE IF EXISTS patient_link;
+DROP TABLE IF EXISTS patient_link_history;
+DROP TABLE IF EXISTS patient_link_person;
 
 CREATE TABLE patient_search
 (
@@ -76,6 +79,83 @@ CREATE INDEX ix_service_system_patient_id
   USING btree
   (service_id COLLATE pg_catalog."default", system_id COLLATE pg_catalog."default", patient_id COLLATE pg_catalog."default", local_id COLLATE pg_catalog."default");
 
+-- Table: public.patient_link
+
+-- DROP TABLE public.patient_link;
+
+CREATE TABLE public.patient_link
+(
+  patient_id character(36) NOT NULL,
+  person_id character(36) NOT NULL,
+  CONSTRAINT pk_patient_link PRIMARY KEY (patient_id)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.patient_link
+  OWNER TO postgres;
+
+-- Index: public.ix_person_id
+
+-- DROP INDEX public.ix_person_id;
+
+CREATE INDEX ix_person_id
+  ON public.patient_link
+  USING btree
+  (person_id COLLATE pg_catalog."default");
+
+
+-- Table: public.patient_link_history
+
+-- DROP TABLE public.patient_link_history;
+
+CREATE TABLE public.patient_link_history
+(
+  patient_id character(36) NOT NULL,
+  updated timestamp without time zone NOT NULL,
+  new_person_id character(36) NOT NULL,
+  previous_person_id character(36),
+  CONSTRAINT pk_patient_link_history PRIMARY KEY (patient_id, updated)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.patient_link_history
+  OWNER TO postgres;
+
+-- Index: public.ix_updated
+
+-- DROP INDEX public.ix_updated;
+
+CREATE INDEX ix_updated
+  ON public.patient_link_history
+  USING btree
+  (updated);
+
+-- Table: public.patient_link_person
+
+-- DROP TABLE public.patient_link_person;
+
+CREATE TABLE public.patient_link_person
+(
+  person_id character(36) NOT NULL,
+  nhs_number character(10) NOT NULL,
+  CONSTRAINT pk_patient_link_person PRIMARY KEY (person_id)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.patient_link_person
+  OWNER TO postgres;
+
+-- Index: public.ix_nhs_number
+
+-- DROP INDEX public.ix_nhs_number;
+
+CREATE INDEX ix_nhs_number
+  ON public.patient_link_person
+  USING btree
+  (nhs_number COLLATE pg_catalog."default");
 
 
 

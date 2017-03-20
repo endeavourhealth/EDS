@@ -49,6 +49,9 @@
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <class>org.endeavourhealth.core.rdbms.eds.PatientSearch</class>
         <class>org.endeavourhealth.core.rdbms.eds.PatientSearchLocalIdentifier</class>
+        <class>org.endeavourhealth.core.rdbms.eds.PatientLink</class>
+        <class>org.endeavourhealth.core.rdbms.eds.PatientLinkHistory</class>
+        <class>org.endeavourhealth.core.rdbms.eds.PatientLinkPerson</class>
         <properties>
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQL95Dialect"/>
             <property name="hibernate.show_sql" value="false" />
@@ -68,6 +71,7 @@
         <class>org.endeavourhealth.core.rdbms.transform.HouseholdIdMap</class>
         <class>org.endeavourhealth.core.rdbms.transform.PseudoIdMap</class>
         <class>org.endeavourhealth.core.rdbms.transform.EnterpriseAge</class>
+        <class>org.endeavourhealth.core.rdbms.transform.EnterprisePersonIdMap</class>
         <properties>
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQL95Dialect"/>
             <property name="hibernate.show_sql" value="false" />

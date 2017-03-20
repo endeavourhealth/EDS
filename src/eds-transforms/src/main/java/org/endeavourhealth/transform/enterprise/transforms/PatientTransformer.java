@@ -6,9 +6,11 @@ import org.endeavourhealth.common.fhir.FhirUri;
 import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.utility.Resources;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
 import org.endeavourhealth.core.rdbms.reference.PostcodeHelper;
 import org.endeavourhealth.core.rdbms.reference.PostcodeReference;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseAgeUpdater;
+import org.endeavourhealth.core.rdbms.transform.EnterpriseIdHelper;
 import org.endeavourhealth.core.rdbms.transform.HouseholdHelper;
 import org.endeavourhealth.core.rdbms.transform.PseudoIdHelper;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
@@ -27,8 +29,6 @@ import java.util.TreeMap;
 
 public class PatientTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(PatientTransformer.class);
-
-    public static final String PERSON_ID_RESOURCE_TYPE = "Person";
 
     private static final String PSEUDO_KEY_NHS_NUMBER = "NHSNumber";
     private static final String PSEUDO_KEY_PATIENT_NUMBER = "PatientNumber";
@@ -57,10 +57,8 @@ public class PatientTransformer extends AbstractTransformer {
         } else {
             Patient fhirPatient = (Patient)deserialiseResouce(resource);
 
-            Long existingPersonId = findEnterpriseId(model, PERSON_ID_RESOURCE_TYPE, fhirPatient.getId());
-
-
-
+            String discoveryPersonId = PatientLinkHelper.getPersonId(fhirPatient.getId());
+            Long enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId);
 
             long id;
             long organizationId;
@@ -82,9 +80,7 @@ public class PatientTransformer extends AbstractTransformer {
 
             id = enterpriseId.longValue();
             organizationId = enterpriseOrganisationId.longValue();
-            //personId = enterprisePersonId.longValue();
-            //TODO - finish person ID stuff
-            personId = 0;
+            personId = enterprisePersonId.longValue();
 
             //Calendar cal = Calendar.getInstance();
 

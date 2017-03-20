@@ -10,13 +10,10 @@ import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByService;
-import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
-import org.endeavourhealth.core.fhirStorage.metadata.ReferenceHelper;
-import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
+import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
 import org.hl7.fhir.instance.formats.JsonParser;
-import org.hl7.fhir.instance.model.EpisodeOfCare;
 import org.hl7.fhir.instance.model.Patient;
 import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
@@ -46,9 +43,14 @@ public class Main {
 		}
 
 		if (args.length == 1
+				&& args[0].equalsIgnoreCase("ConvertPatientLink")) {
+			convertPatientLink();
+		}
+
+		/*if (args.length == 1
 				&& args[0].equalsIgnoreCase("ConvertPatientSearch")) {
 			convertPatientSearch();
-		}
+		}*/
 
 		//hack to get the Enterprise data streaming
 		/*try {
@@ -111,6 +113,7 @@ public class Main {
 		rabbitHandler.start();
 		LOG.info("EDS Queue reader running");
 	}
+
 
 	private static void deleteDataForService(UUID serviceId) {
 
@@ -1208,7 +1211,7 @@ public class Main {
 
 	}*/
 
-	private static void convertPatientSearch() {
+	/*private static void convertPatientSearch() {
 		LOG.info("Converting Patient Search");
 
 		ResourceRepository resourceRepository = new ResourceRepository();
@@ -1254,7 +1257,7 @@ public class Main {
 			LOG.error("", ex);
 		}
 
-	}
+	}*/
 
 	private static List<UUID> findSystemIds(Service service) throws Exception {
 
@@ -1273,4 +1276,42 @@ public class Main {
 
 		return ret;
 	}
+
+	private static void convertPatientLink() {
+		LOG.info("Converting Patient Link");
+
+		ResourceRepository resourceRepository = new ResourceRepository();
+
+		try {
+			Iterable<Service> iterable = new ServiceRepository().getAll();
+			for (Service service : iterable) {
+				UUID serviceId = service.getId();
+				LOG.info("Doing service " + service.getName());
+
+				for (UUID systemId : findSystemIds(service)) {
+
+					List<ResourceByService> resourceWrappers = resourceRepository.getResourcesByService(serviceId, systemId, ResourceType.Patient.toString());
+					for (ResourceByService resourceWrapper: resourceWrappers) {
+						if (Strings.isNullOrEmpty(resourceWrapper.getResourceData())) {
+							continue;
+						}
+
+						try {
+							Patient patient = (Patient)new JsonParser().parse(resourceWrapper.getResourceData());
+							PatientLinkHelper.updatePersonId(patient);
+
+						} catch (Exception ex) {
+							LOG.error("Failed on " + resourceWrapper.getResourceType() + " " + resourceWrapper.getResourceId(), ex);
+						}
+					}
+				}
+			}
+
+			LOG.info("Converted Patient Link");
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+	}
+
 }

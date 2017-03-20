@@ -2,6 +2,9 @@
 DROP TABLE IF EXISTS enterprise_id_map;
 DROP TABLE IF EXISTS enterprise_organisation_id_map;
 DROP TABLE IF EXISTS household_id_map;
+DROP TABLE IF EXISTS pseudo_id_map;
+DROP TABLE IF EXISTS enterprise_age;
+DROP TABLE IF EXISTS enterprise_person_id_map;
 
 -- Sequence: public.enterprise_id_seq
 
@@ -122,3 +125,35 @@ CREATE INDEX ix_date_next_change
   ON public.enterprise_age
   USING btree
   (date_next_change);
+
+
+
+-- Sequence: public.enterprise_person_id_seq
+
+-- DROP SEQUENCE public.enterprise_person_id_seq;
+
+CREATE SEQUENCE public.enterprise_person_id_seq
+  INCREMENT 1
+  MINVALUE 1
+  MAXVALUE 9223372036854775807
+  START 230788
+  CACHE 1;
+ALTER TABLE public.enterprise_person_id_seq
+  OWNER TO postgres;
+
+
+-- Table: public.enterprise_person_id_map
+
+-- DROP TABLE public.enterprise_person_id_map;
+
+CREATE TABLE public.enterprise_person_id_map
+(
+  person_id character(35) NOT NULL,
+  enterprise_person_id bigint NOT NULL DEFAULT nextval('enterprise_person_id_seq'::regclass),
+  CONSTRAINT pk_enterprise_person_id_map PRIMARY KEY (person_id)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.enterprise_person_id_map
+  OWNER TO postgres;

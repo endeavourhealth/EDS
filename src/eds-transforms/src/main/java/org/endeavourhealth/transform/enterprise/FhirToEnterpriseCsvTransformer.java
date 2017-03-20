@@ -5,6 +5,7 @@ import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseIdHelper;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.FhirToXTransformerBase;
@@ -118,8 +119,9 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         String discoveryPatientId = findPatientId(resources);
         if (!Strings.isNullOrEmpty(discoveryPatientId)) {
             enterprisePatientId = AbstractTransformer.findEnterpriseId(data.getPatients(), ResourceType.Patient.toString(), discoveryPatientId);
-            //enterprisePersonId = AbstractTransformer.findEnterpriseId(data.getPatients(), PatientTransformer.PERSON_ID_RESOURCE_TYPE, discoveryPatientId);
-            enterprisePersonId = new Long(0);
+
+            String discoveryPersonId = PatientLinkHelper.getPersonId(discoveryPatientId);
+            enterprisePersonId = EnterpriseIdHelper.findEnterprisePersonId(discoveryPersonId);
         }
 
         tranformResources(ResourceType.EpisodeOfCare, new EpisodeOfCareTransformer(), data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
