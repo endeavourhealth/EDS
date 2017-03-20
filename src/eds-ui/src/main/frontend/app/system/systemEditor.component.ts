@@ -18,7 +18,7 @@ export class SystemEditComponent extends LibraryItemComponent {
 	selectedInterface : TechnicalInterface;
 
 	//NOTE: these strings correspnd to the values in the MessageFormat class
-	formats = ["EMISOPEN", "OPENHR", "EMISCSV", "TPPCSV", "TPPXML", "FHIRJSON", "FHIRXML", "VITRUCARE", "EDWXML", "TABLEAU", "ENTERPRISE_CSV"];
+	formats = ["EMISOPEN", "OPENHR", "EMISCSV", "TPPCSV", "TPPXML", "FHIRJSON", "FHIRXML", "VITRUCARE", "EDWXML", "TABLEAU", "ENTERPRISE_CSV", "HL7V2"];
 
 	types = ["Patient Record","Demographics","Appointments","Summary","Discharge","Episode"];
 	frequencies = ["Transactional","Hourly","Daily"];

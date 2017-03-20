@@ -20,6 +20,7 @@ import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.common.exceptions.SoftwareNotSupportedException;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.EmisOpenToFhirTransformer;
+import org.endeavourhealth.transform.fhirhl7v2.FhirHl7v2Filer;
 import org.hl7.fhir.instance.model.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,7 +98,10 @@ public class MessageTransformInbound extends PipelineComponent {
 					processEmisOpenHrTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
 
 				} else if (software.equalsIgnoreCase(MessageFormat.TPP_CSV)) {
-					processTppXmlTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
+                    processTppXmlTransform(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
+
+                } else if (software.equalsIgnoreCase(MessageFormat.HL7V2)) {
+                    processHL7V2Filer(exchange, serviceId, systemId, messageVersion, software, currentErrors, batchIds, previousErrors);
 
 				} else {
 					throw new SoftwareNotSupportedException(software, messageVersion);
@@ -304,4 +308,15 @@ public class MessageTransformInbound extends PipelineComponent {
 												  TransformError previousErrors) throws Exception {
 		//TODO - plug in OpenHR transform
 	}
+
+    private void processHL7V2Filer(Exchange exchange, UUID serviceId, UUID systemId, String version,
+                                          String software, TransformError currentErrors, List<UUID> batchIds,
+                                          TransformError previousErrors) throws Exception {
+
+        UUID exchangeId = exchange.getExchangeId();
+	    String exchangeBody = exchange.getBody();
+
+        FhirHl7v2Filer fhirHl7v2Filer = new FhirHl7v2Filer();
+        fhirHl7v2Filer.file(exchangeId, exchangeBody, serviceId, systemId, currentErrors, batchIds, previousErrors);
+    }
 }
