@@ -41,8 +41,6 @@ public abstract class AbstractTransformer {
 
             cache = JCS.getInstance("EnterpriseResourceMap");
 
-            cache.get("Something");
-
         } catch (CacheException ex) {
             throw new RuntimeException("Error initialising cache", ex);
         }

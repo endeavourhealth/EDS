@@ -36,6 +36,20 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	private static final ResourceRepository resourceRepository = new ResourceRepository();
 	private static final ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
 	//private static final PatientIdentifierRepository patientIdentifierRepository = new PatientIdentifierRepository();
+	//private static JCS protocolCache = null;
+
+	/*static {
+		try {
+			protocolCache = JCS.getInstance("ProtocolCache");
+
+			IElementAttributes attributes = protocolCache.getDefaultElementAttributes();
+			attributes.setMaxLifeSeconds(60); //keep protocols cached for 60s max
+			protocolCache.setDefaultElementAttributes(attributes);
+
+		} catch (CacheException ex) {
+			throw new RuntimeException("Error creating protocol cache", ex);
+		}
+	}*/
 
 	public RunDataDistributionProtocols(RunDataDistributionProtocolsConfig config) {
 		this.config = config;
@@ -272,15 +286,10 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		List<LibraryItem> ret = new ArrayList<>();
 
 		String[] protocolIds = exchange.getHeaderAsStringArray(HeaderKeys.ProtocolIds);
-		/*String protocolIdJson = exchange.getHeader(HeaderKeys.ProtocolIds);
-		try {
-			protocolIds = ObjectMapperPool.getInstance().readValue(protocolIdJson, String[].class);
-		} catch (IOException e) {
-			throw new PipelineException("Failed to read protocol IDs from json " + protocolIdJson, e);
-		}*/
 
 		for (String protocolId: protocolIds) {
 			UUID protocolUuid = UUID.fromString(protocolId);
+
 			try {
 				LibraryItem libraryItem = LibraryRepositoryHelper.getLibraryItem(protocolUuid);
 				ret.add(libraryItem);
@@ -291,15 +300,5 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		return ret;
 	}
-	/*private LibraryItem[] getProtocols(Exchange exchange) throws PipelineException {
-		// Get the protocols
-		String protocolJson = exchange.getHeader(HeaderKeys.Protocols);
-		LibraryItem[] libraryItemList;
-		try {
-			libraryItemList = ObjectMapperPool.getInstance().readValue(protocolJson, LibraryItem[].class);
-		} catch (IOException e) {
-			throw new PipelineException(e.getMessage(), e);
-		}
-		return libraryItemList;
-	}*/
+
 }

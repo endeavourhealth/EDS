@@ -61,7 +61,7 @@ WHERE service_id IS NOT NULL
   AND eds_id IS NOT NULL
 PRIMARY KEY((resource_type, eds_id), service_id, system_id, source_id);
 
-CREATE TABLE enterprise_id_map (
+/*CREATE TABLE enterprise_id_map (
     enterprise_table_name text,
 	resource_type text, 
 	resource_id UUID, 
@@ -80,7 +80,7 @@ CREATE TABLE enterprise_organisation_id_map (
 	organisation_ods_code text, 
 	enterprise_id int, 
 PRIMARY KEY (organisation_ods_code));	  
-
+*/
 
 CREATE TABLE vitrucare_patient_id_map (
 	eds_patient_id UUID,
