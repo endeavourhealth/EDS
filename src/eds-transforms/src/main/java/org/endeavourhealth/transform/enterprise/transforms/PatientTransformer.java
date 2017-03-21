@@ -58,7 +58,7 @@ public class PatientTransformer extends AbstractTransformer {
             Patient fhirPatient = (Patient)deserialiseResouce(resource);
 
             String discoveryPersonId = PatientLinkHelper.getPersonId(fhirPatient.getId());
-            Long enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId);
+            Long enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, configName);
 
             long id;
             long organizationId;

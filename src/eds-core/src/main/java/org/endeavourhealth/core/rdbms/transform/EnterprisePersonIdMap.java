@@ -14,6 +14,7 @@ import java.io.Serializable;
 public class EnterprisePersonIdMap implements Serializable {
 
     private String personId = null;
+    private String enterpriseConfigName = null;
     private Long enterprisePersonId;
 
     @Id
@@ -24,6 +25,15 @@ public class EnterprisePersonIdMap implements Serializable {
 
     public void setPersonId(String personId) {
         this.personId = personId;
+    }
+
+    @Column(name = "enterprise_config_name", nullable = false)
+    public String getEnterpriseConfigName() {
+        return enterpriseConfigName;
+    }
+
+    public void setEnterpriseConfigName(String enterpriseConfigName) {
+        this.enterpriseConfigName = enterpriseConfigName;
     }
 
     @Generated(GenerationTime.INSERT)

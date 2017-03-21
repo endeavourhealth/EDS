@@ -133,7 +133,7 @@ public class EnterpriseIdHelper {
         }
     }
 
-    public static Long findOrCreateEnterprisePersonId(String discoveryPersonId) throws Exception {
+    public static Long findOrCreateEnterprisePersonId(String discoveryPersonId, String enterpriseConfigName) throws Exception {
 
         EntityManager entityManager = TransformConnection.getEntityManager();
 
@@ -144,7 +144,7 @@ public class EnterpriseIdHelper {
         }
 
         try {
-            return createEnterprisePersonId(discoveryPersonId, entityManager);
+            return createEnterprisePersonId(discoveryPersonId, enterpriseConfigName, entityManager);
 
         } catch (Exception ex) {
             //if another thread has beat us to it, we'll get an exception, so try the find again
@@ -179,10 +179,11 @@ public class EnterpriseIdHelper {
         }
     }
 
-    private static Long createEnterprisePersonId(String discoveryPersonId, EntityManager entityManager) throws Exception {
+    private static Long createEnterprisePersonId(String discoveryPersonId, String enterpriseConfigName, EntityManager entityManager) throws Exception {
 
         EnterprisePersonIdMap mapping = new EnterprisePersonIdMap();
         mapping.setPersonId(discoveryPersonId);
+        mapping.setEnterpriseConfigName(enterpriseConfigName);
 
         entityManager.getTransaction().begin();
         entityManager.persist(mapping);
