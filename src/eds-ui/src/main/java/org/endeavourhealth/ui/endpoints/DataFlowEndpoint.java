@@ -59,6 +59,7 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
                 "Data Flow", dataFlow);
 
         if (dataFlow.getUuid() != null) {
+            dataFlow.setUuid(UUID.randomUUID().toString());
             DataflowEntity.updateDataFlow(dataFlow);
         } else {
             DataflowEntity.saveDataFlow(dataFlow);

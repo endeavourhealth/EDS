@@ -290,7 +290,7 @@ public class DatasharingsummaryEntity {
         datasharingsummaryEntity.setReviewDate(dataSharingSummary.getReviewDate());
         datasharingsummaryEntity.setStartDate(dataSharingSummary.getStartDate());
         datasharingsummaryEntity.setEvidenceOfAgreement(dataSharingSummary.getEvidenceOfAgreement());
-        datasharingsummaryEntity.setUuid(UUID.randomUUID().toString());
+        datasharingsummaryEntity.setUuid(dataSharingSummary.getUuid());
         entityManager.persist(datasharingsummaryEntity);
         entityManager.getTransaction().commit();
     }

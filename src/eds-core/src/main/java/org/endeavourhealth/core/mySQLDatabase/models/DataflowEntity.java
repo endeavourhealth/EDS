@@ -82,7 +82,7 @@ public class DataflowEntity {
         dataflowEntity.setDataSet(dataFlow.getDataSet());
         dataflowEntity.setCohort(dataFlow.getCohort());
         dataflowEntity.setSubscriber(dataFlow.getSubscriber());
-        dataflowEntity.setUuid(UUID.randomUUID().toString());
+        dataflowEntity.setUuid(dataFlow.getUuid());
         entityManager.persist(dataflowEntity);
         entityManager.getTransaction().commit();
     }

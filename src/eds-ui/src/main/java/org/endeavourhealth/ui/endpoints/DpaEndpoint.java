@@ -58,6 +58,7 @@ public final class DpaEndpoint extends AbstractEndpoint {
                 "DPA", dpa);
 
         if (dpa.getUuid() != null) {
+            dpa.setUuid(UUID.randomUUID().toString());
             DataprocessingagreementEntity.updateDPA(dpa);
         } else {
             DataprocessingagreementEntity.saveDPA(dpa);

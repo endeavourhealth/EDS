@@ -72,8 +72,7 @@ public class AddressEntity {
     public static void saveOrganisation(JsonAddress address) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
-        //new address so set a UUID
-        address.setUuid(UUID.randomUUID().toString());
+        address.setUuid(address.getUuid());
         AddressEntity addressEntity = new AddressEntity(address);
         entityManager.getTransaction().begin();
         entityManager.persist(addressEntity);

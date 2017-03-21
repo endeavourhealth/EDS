@@ -58,6 +58,7 @@ public final class DsaEndpoint extends AbstractEndpoint {
                 "DSA", dsa);
 
         if (dsa.getUuid() != null) {
+            dsa.setUuid(UUID.randomUUID().toString());
             DatasharingagreementEntity.updateDSA(dsa);
         } else {
             DatasharingagreementEntity.saveDSA(dsa);

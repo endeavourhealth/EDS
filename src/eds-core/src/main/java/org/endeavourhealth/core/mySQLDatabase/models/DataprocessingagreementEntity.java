@@ -229,7 +229,7 @@ public class DataprocessingagreementEntity {
         dpaEntity.setStorageProtocolId(dpa.getStorageProtocolId());
         dpaEntity.setDataFlow(dpa.getDataFlow());
         dpaEntity.setReturnToSenderPolicy(dpa.getReturnToSenderPolicy());
-        dpaEntity.setUuid(UUID.randomUUID().toString());
+        dpaEntity.setUuid(dpa.getUuid());
         entityManager.persist(dpaEntity);
         entityManager.getTransaction().commit();
     }

@@ -60,6 +60,7 @@ public final class DataSharingSummaryEndpoint extends AbstractEndpoint {
                 "Data Sharing Summary", dataSharingSummary);
 
         if (dataSharingSummary.getUuid() != null) {
+            dataSharingSummary.setUuid(UUID.randomUUID().toString());
             DatasharingsummaryEntity.updateDataSharingSummary(dataSharingSummary);
         } else {
             DatasharingsummaryEntity.saveDataSharingSummary(dataSharingSummary);

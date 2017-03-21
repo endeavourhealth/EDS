@@ -213,7 +213,7 @@ public class DatasharingagreementEntity {
         dsaEntity.setSubscriberContractInformation(dsa.getSubscriberContractInformation());
         dsaEntity.setDsaStatusId(dsa.getDsaStatusId());
         dsaEntity.setConsentModel(dsa.getConsentModel());
-        dsaEntity.setUuid(UUID.randomUUID().toString());
+        dsaEntity.setUuid(dsa.getUuid());
         entityManager.persist(dsaEntity);
         entityManager.getTransaction().commit();
     }

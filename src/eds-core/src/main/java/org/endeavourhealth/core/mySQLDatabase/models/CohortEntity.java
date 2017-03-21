@@ -152,7 +152,7 @@ public class CohortEntity {
         cohortEntity.setPatientCohortInclusionConsentModel(cohort.getPatientCohortInclusionConsentModel());
         cohortEntity.setQueryDefinition(cohort.getQueryDefinition());
         cohortEntity.setRemovalPolicy(cohort.getRemovalPolicy());
-        cohortEntity.setUuid(UUID.randomUUID().toString());
+        cohortEntity.setUuid(cohort.getUuid());
         entityManager.persist(cohortEntity);
         entityManager.getTransaction().commit();
     }

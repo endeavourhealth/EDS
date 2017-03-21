@@ -84,8 +84,10 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
         List<JsonAddress> addresses = organisationManager.getAddresses();
         if (addresses.size() > 0) {
             for (JsonAddress address : addresses) {
-                if (address.getUuid() == null)
+                if (address.getUuid() == null) {
+                    address.setUuid(UUID.randomUUID().toString());
                     AddressEntity.saveOrganisation(address);
+                }
                 else
                     AddressEntity.updateOrganisation(address);
 

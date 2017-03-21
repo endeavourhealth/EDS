@@ -59,6 +59,7 @@ public final class CohortEndpoint extends AbstractEndpoint {
                 "Cohort", cohort);
 
         if (cohort.getUuid() != null) {
+            cohort.setUuid(UUID.randomUUID().toString());
             CohortEntity.updateCohort(cohort);
         } else {
             CohortEntity.saveCohort(cohort);
