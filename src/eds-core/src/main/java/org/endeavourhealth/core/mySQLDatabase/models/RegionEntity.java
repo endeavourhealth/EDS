@@ -11,31 +11,6 @@ import java.util.UUID;
 @Entity
 @NamedStoredProcedureQueries({
         @NamedStoredProcedureQuery(
-                name = "getAllRegions",
-                procedureName = "getAllRegions"
-        ),
-        @NamedStoredProcedureQuery(
-                name = "getRegionsForOrganisation",
-                procedureName = "getRegionsForOrganisation",
-                parameters = {
-                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "UUID")
-                }
-        ),
-        @NamedStoredProcedureQuery(
-                name = "getSupraChildRegions",
-                procedureName = "getSupraChildRegions",
-                parameters = {
-                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "UUID")
-                }
-        ),
-        @NamedStoredProcedureQuery(
-                name = "getSupraParentRegions",
-                procedureName = "getSupraParentRegions",
-                parameters = {
-                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "UUID")
-                }
-        ),
-        @NamedStoredProcedureQuery(
                 name = "getParentRegionsFromMappings",
                 procedureName = "getParentRegionsFromMappings",
                 parameters = {

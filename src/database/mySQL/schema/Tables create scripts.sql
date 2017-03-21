@@ -37,33 +37,6 @@ alter table OrganisationManager.Organisation modify IsService boolean not null;
 alter table OrganisationManager.Organisation
 modify date_of_registration date null;
 
-drop table if exists OrganisationManager.RegionOrganisationMap;
-
-create table OrganisationManager.RegionOrganisationMap (
-	regionUuid char(36) not null,
-    organisationUUid char(36) not null,
-    
-    primary key (regionUuid, organisationUuid),   
-    
-    
-    foreign key (regionUuid) references OrganisationManager.Region(uuid) on delete cascade,
-    foreign key (organisationUuid) references OrganisationManager.Organisation(uuid)  on delete cascade
-);
-
-
-drop table if exists OrganisationManager.SupraRegionMap;
-
-create table OrganisationManager.SupraRegionMap (
-	ParentRegionUuid char(36) not null,
-    ChildRegionUUid char(36) not null,
-    
-    primary key (ParentRegionUuid, ChildRegionUUid),   
-    
-    
-    foreign key (ParentRegionUuid) references OrganisationManager.Region(uuid) on delete cascade,
-    foreign key (ChildRegionUUid) references OrganisationManager.Region(uuid)  on delete cascade
-);
-
 drop table if exists OrganisationManager.Address;
 
 create table OrganisationManager.Address (

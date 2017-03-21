@@ -52,33 +52,6 @@ values ("aefcb614-07dc-11e7-83f3-80fa5b27a530", "2773b467-07dd-11e7-83f3-80fa5b2
 insert into OrganisationManager.MasterMapping (ChildUuid, ParentUUid, MapTypeId, IsDefault)
 values ("b61572e6-07dc-11e7-83f3-80fa5b27a530", "2bd60c36-07dd-11e7-83f3-80fa5b27a530", 1, 1);
 
-/*Region Organisation Maps*/
-/*
-insert into organisationmanager.regionorganisationmap (RegionUuid, OrganisationUuid)
-values ("2773b467-07dd-11e7-83f3-80fa5b27a530", "77f0ebd0-07dc-11e7-83f3-80fa5b27a530");
-
-insert into organisationmanager.regionorganisationmap (RegionUuid, OrganisationUuid)
-values ("2773b467-07dd-11e7-83f3-80fa5b27a530", "856e4efb-07dc-11e7-83f3-80fa5b27a530");
-
-insert into organisationmanager.regionorganisationmap (RegionUuid, OrganisationUuid)
-values ("2773b467-07dd-11e7-83f3-80fa5b27a530", "aefcb614-07dc-11e7-83f3-80fa5b27a530");
-
-insert into organisationmanager.regionorganisationmap (RegionUuid, OrganisationUuid)
-values ("2bd60c36-07dd-11e7-83f3-80fa5b27a530", "b61572e6-07dc-11e7-83f3-80fa5b27a530");
-*/
-/*Supra Region Map*/
-
-insert into organisationmanager.supraregionmap (ParentRegionUuid, ChildRegionUuid)
-values ("4e812e38-08ad-11e7-a81d-80fa5b27a530", "3bd58c4c-08ad-11e7-a81d-80fa5b27a530");
-
-insert into organisationmanager.supraregionmap (ParentRegionUuid, ChildRegionUuid)
-values ("4e812e38-08ad-11e7-a81d-80fa5b27a530", "29f15c8e-08ad-11e7-a81d-80fa5b27a530");
-
-insert into organisationmanager.supraregionmap (ParentRegionUuid, ChildRegionUuid)
-values ("4e812e38-08ad-11e7-a81d-80fa5b27a530", "2bd60c36-07dd-11e7-83f3-80fa5b27a530");
-
-insert into organisationmanager.supraregionmap (ParentRegionUuid, ChildRegionUuid)
-values ("3bd58c4c-08ad-11e7-a81d-80fa5b27a530", "2773b467-07dd-11e7-83f3-80fa5b27a530");
 
 /*OrganisationManager.FlowDirection*/
 insert into OrganisationManager.FlowDirection (Id, Direction)
