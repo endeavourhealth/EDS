@@ -45,9 +45,10 @@ public class FhirDeletionService {
         //get all the transform audits and sum up the number of batches ever created, so we know what we're aiming to delete
         List<ExchangeTransformAudit> transformAudits = getTransformAudits();
         int countBatches = 0;
-        for (ExchangeTransformAudit exchangeAudit: transformAudits) {
-            countBatches += exchangeAudit.getNumberBatchesCreated();
-        }
+        for (ExchangeTransformAudit exchangeAudit: transformAudits)
+            if (exchangeAudit.getNumberBatchesCreated() != null)
+                countBatches += exchangeAudit.getNumberBatchesCreated();
+
         LOG.trace("Found " + transformAudits.size() + " transform audits with " + countBatches + " batches to delete");
 
         //first, get rid of all the FHIR resource data
