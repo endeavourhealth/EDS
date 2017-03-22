@@ -49,9 +49,14 @@ public class EnterpriseIdHelper {
         mapping.setResourceId(resourceId);
         //mapping.setEnterpriseId(new Long(0));
 
-        entityManager.getTransaction().begin();
-        entityManager.persist(mapping);
-        entityManager.getTransaction().commit();
+        try {
+            entityManager.getTransaction().begin();
+            entityManager.persist(mapping);
+            entityManager.getTransaction().commit();
+        } catch (Exception ex) {
+            entityManager.getTransaction().rollback();
+            throw ex;
+        }
 
         return mapping.getEnterpriseId();
     }

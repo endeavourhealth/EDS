@@ -29,6 +29,31 @@ public class PatientSearchHelper {
     private static void update(UUID serviceId, UUID systemId, Patient fhirPatient, EpisodeOfCare fhirEpisode) throws Exception {
 
         EntityManager entityManager = EdsConnection.getEntityManager();
+
+        try {
+            performUpdateInTransaction(serviceId, systemId, fhirPatient, fhirEpisode, entityManager);
+
+        } catch (Exception ex) {
+            //if we get an exception during the above, it's probably because another thread has inserted for our
+            //patient at the same time (since we file patient and episode resources in parallel), so we should rollback and just try again
+            entityManager.getTransaction().rollback();
+
+            try {
+                performUpdateInTransaction(serviceId, systemId, fhirPatient, fhirEpisode, entityManager);
+
+            } catch (Exception ex2) {
+                //if we get an exception the second time around, we should rollback and throw the FIRST exception
+                entityManager.getTransaction().rollback();
+                throw ex;
+            }
+
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    private static void performUpdateInTransaction(UUID serviceId, UUID systemId, Patient fhirPatient, EpisodeOfCare fhirEpisode, EntityManager entityManager) throws Exception {
+
         entityManager.getTransaction().begin();
 
         PatientSearch patientSearch = createOrUpdatePatientSearch(serviceId, systemId, fhirPatient, fhirEpisode, entityManager);
@@ -41,11 +66,9 @@ public class PatientSearchHelper {
             }
         }
 
-        //entityManager.merge(patientSearch);
-
         entityManager.getTransaction().commit();
-        entityManager.close();
     }
+
 
     private static List<PatientSearchLocalIdentifier> createOrUpdateLocalIdentifiers(UUID serviceId, UUID systemId, Patient fhirPatient, EntityManager entityManager) {
         String patientId = findPatientId(fhirPatient, null);

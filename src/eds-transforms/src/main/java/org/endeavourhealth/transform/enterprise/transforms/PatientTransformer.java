@@ -7,6 +7,7 @@ import org.endeavourhealth.common.fhir.IdentifierHelper;
 import org.endeavourhealth.common.utility.Resources;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
+import org.endeavourhealth.core.rdbms.eds.PatientLinkPair;
 import org.endeavourhealth.core.rdbms.reference.PostcodeHelper;
 import org.endeavourhealth.core.rdbms.reference.PostcodeReference;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseAgeUpdater;
@@ -58,6 +59,15 @@ public class PatientTransformer extends AbstractTransformer {
             Patient fhirPatient = (Patient)deserialiseResouce(resource);
 
             String discoveryPersonId = PatientLinkHelper.getPersonId(fhirPatient.getId());
+
+            //when the person ID table was populated, patients who had been deleted weren't added,
+            //so we'll occasionally get null for some patients. If this happens, just do what would have
+            //been done originally and assign an ID
+            if (Strings.isNullOrEmpty(discoveryPersonId)) {
+                PatientLinkPair pair = PatientLinkHelper.updatePersonId(fhirPatient);
+                discoveryPersonId = pair.getNewPersonId();
+            }
+
             Long enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, configName);
 
             long id;
