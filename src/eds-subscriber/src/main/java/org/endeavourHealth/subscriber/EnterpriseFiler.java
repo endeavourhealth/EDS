@@ -162,39 +162,48 @@ public class EnterpriseFiler {
 
         String tableName = Files.getNameWithoutExtension(entryFileName);
 
-        try (
-            ByteArrayInputStream bais = new ByteArrayInputStream(csvBytes);
-            InputStreamReader isr = new InputStreamReader(bais);
-            CSVParser csvParser = new CSVParser(isr, CSV_FORMAT.withHeader());
-        ) {
+        ByteArrayInputStream bais = new ByteArrayInputStream(csvBytes);
+        InputStreamReader isr = new InputStreamReader(bais);
+        CSVParser csvParser = new CSVParser(isr, CSV_FORMAT.withHeader());
 
-            //find out what columns we've got
-            Map<String, Integer> csvHeaderMap = csvParser.getHeaderMap();
-            List<String> columns = new ArrayList<>();
-            HashMap<String, Class> columnClasses = new HashMap<>();
-            createHeaderColumnMap(csvHeaderMap, entryFileName, allColumnClassMappings, columns, columnClasses);
+        //find out what columns we've got
+        Map<String, Integer> csvHeaderMap = csvParser.getHeaderMap();
+        List<String> columns = new ArrayList<>();
+        HashMap<String, Class> columnClasses = new HashMap<>();
+        createHeaderColumnMap(csvHeaderMap, entryFileName, allColumnClassMappings, columns, columnClasses);
 
-            //since we're dealing with small volumes, we can just read keep all the records in memory
-            List<CSVRecord> upserts = new ArrayList<>();
-            //List<CSVRecord> deletes = new ArrayList<>();
+        //since we're dealing with small volumes, we can just read keep all the records in memory
+        List<CSVRecord> upserts = new ArrayList<>();
+        //List<CSVRecord> deletes = new ArrayList<>();
 
-            Iterator<CSVRecord> csvIterator = csvParser.iterator();
-            while (csvIterator.hasNext()) {
-                CSVRecord csvRecord = csvIterator.next();
-                String saveMode = csvRecord.get(COL_SAVE_MODE);
+        Iterator<CSVRecord> csvIterator = csvParser.iterator();
+        while (csvIterator.hasNext()) {
+            CSVRecord csvRecord = csvIterator.next();
+            String saveMode = csvRecord.get(COL_SAVE_MODE);
 
-                if (saveMode.equalsIgnoreCase(DELETE)) {
-                    //we have to play deletes in reverse, so don't delete immediately. Cache for now.
-                    deletes.add(new DeleteWrapper(tableName, csvRecord, columns, columnClasses));
-                    //deletes.add(csvRecord);
-                } else {
-                    upserts.add(csvRecord);
-                }
+            if (saveMode.equalsIgnoreCase(DELETE)) {
+                //we have to play deletes in reverse, so don't delete immediately. Cache for now.
+                deletes.add(new DeleteWrapper(tableName, csvRecord, columns, columnClasses));
+                //deletes.add(csvRecord);
+            } else {
+                upserts.add(csvRecord);
             }
-
-            fileUpserts(upserts, columns, columnClasses, tableName, connection);
-            //fileDeletes(deletes, columns, columnClasses, tableName, connection);
         }
+
+        //when doing a bulk, we can have 300,000+ practitioners, so do them in batches, so we're
+        //not keeping huge DB transactions open
+        List<CSVRecord> batch = new ArrayList<>();
+        for (CSVRecord record: upserts) {
+            batch.add(record);
+            if (batch.size() >= 20000) {
+                fileUpserts(batch, columns, columnClasses, tableName, connection);
+                batch = new ArrayList<>();
+            }
+        }
+        if (!batch.isEmpty()) {
+            fileUpserts(batch, columns, columnClasses, tableName, connection);
+        }
+        //fileUpserts(upserts, columns, columnClasses, tableName, connection);
     }
 
     private static void createHeaderColumnMap(Map<String, Integer> csvHeaderMap,
