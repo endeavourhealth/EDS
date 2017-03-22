@@ -706,6 +706,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         UUID systemId = request.getSystemId();
 
         ExchangeTransformErrorState errorState = auditRepository.getErrorState(serviceId, systemId);
+        LOG.debug("Re-running exchanges firstOnly = " + firstOnly);
 
         for (UUID exchangeId: errorState.getExchangeIdsInError()) {
 
@@ -714,9 +715,11 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
             //skip any exchange IDs we've already re-queued up to be processed again
             if (audit.isResubmitted()) {
+                LOG.debug("Not re-posting " + audit.getExchangeId() + " as it's already been resubmitted");
                 continue;
             }
 
+            LOG.debug("Re-posting " + audit.getExchangeId());
             audit.setResubmitted(true);
             auditRepository.save(audit);
 

@@ -22,7 +22,8 @@ VALUES
   </appender>
 
   <appender name="db" class="ch.qos.logback.classic.db.DBAppender">
-    <connectionSource class="ch.qos.logback.core.db.DriverManagerConnectionSource">
+    <!--<connectionSource class="ch.qos.logback.core.db.DriverManagerConnectionSource">-->
+    <connectionSource class="org.endeavourhealth.common.config.LogbackPooledConnectionSource">
       <driverClass>org.postgresql.Driver</driverClass>
       <url>jdbc:postgresql://localhost:5432/logback</url>
       <user>postgres</user>
