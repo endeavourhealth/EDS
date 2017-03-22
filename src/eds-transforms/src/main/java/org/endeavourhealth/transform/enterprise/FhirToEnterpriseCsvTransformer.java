@@ -2,6 +2,8 @@ package org.endeavourhealth.transform.enterprise;
 
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
+import org.endeavourhealth.common.utility.ThreadPool;
+import org.endeavourhealth.common.utility.ThreadPoolError;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
@@ -20,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 
 public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
 
@@ -171,10 +174,67 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
                                           Long enterprisePersonId,
                                           String configName) throws Exception {
 
+        //find all the ones we want to transform
+        List<ResourceByExchangeBatch> resourcesToTransform = new ArrayList<>();
+        for (ResourceByExchangeBatch resource: resources) {
+            if (resource.getResourceType().equals(resourceType.toString())) {
+                resourcesToTransform.add(resource);
+            }
+        }
+
+        if (resourcesToTransform.isEmpty()) {
+            return;
+        }
+
+        //remove all the resources we processed, so we can check for ones we missed at the end
+        resources.removeAll(resourcesToTransform);
+
+        //we use this function with a null transformer for resources we want to ignore
+        if (transformer != null) {
+            ThreadPool threadPool = new ThreadPool(5, 1000);
+
+            for (ResourceByExchangeBatch resource: resourcesToTransform) {
+
+                TransformResourceCallable callable = new TransformResourceCallable(transformer, resource, data,
+                                                                        resourcesMap, enterpriseOrganisationId,
+                                                                        enterprisePatientId, enterprisePersonId, configName);
+                List<ThreadPoolError> errors = threadPool.submit(callable);
+                handleErrors(errors);
+            }
+
+            List<ThreadPoolError> errors = threadPool.waitAndStop();
+            handleErrors(errors);
+        }
+
+    }
+
+    private static void handleErrors(List<ThreadPoolError> errors) throws Exception {
+        if (errors == null || errors.isEmpty()) {
+            return;
+        }
+
+        //if we've had multiple errors, just throw the first one, since they'll most-likely be the same
+        ThreadPoolError first = errors.get(0);
+        Exception exception = first.getException();
+        throw exception;
+    }
+
+
+
+    /*private static void tranformResources(ResourceType resourceType,
+                                          AbstractTransformer transformer,
+                                          OutputContainer data,
+                                          List<ResourceByExchangeBatch> resources,
+                                          Map<String, ResourceByExchangeBatch> resourcesMap,
+                                          Long enterpriseOrganisationId,
+                                          Long enterprisePatientId,
+                                          Long enterprisePersonId,
+                                          String configName) throws Exception {
+
         HashSet<ResourceByExchangeBatch> resourcesProcessed = new HashSet<>();
 
-        /*for (int i=resources.size()-1; i>=0; i--) {
-            ResourceByExchangeBatch resource = resources.get(i);*/
+        *//*for (int i=resources.size()-1; i>=0; i--) {
+            ResourceByExchangeBatch resource = resources.get(i);*//*
         for (ResourceByExchangeBatch resource: resources) {
             if (resource.getResourceType().equals(resourceType.toString())) {
 
@@ -195,7 +255,7 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
 
         //remove all the resources we processed, so we can check for ones we missed at the end
         resources.removeAll(resourcesProcessed);
-    }
+    }*/
 
     /**
      * hashes the resources by a reference to them, so the transforms can quickly look up dependant resources
@@ -217,6 +277,45 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         return ret;
     }
 
+    static class TransformResourceCallable implements Callable {
 
+        private AbstractTransformer transformer = null;
+        private ResourceByExchangeBatch resource = null;
+        private OutputContainer data = null;
+        private Map<String, ResourceByExchangeBatch> resourcesMap = null;
+        private Long enterpriseOrganisationId = null;
+        private Long enterprisePatientId = null;
+        private Long enterprisePersonId = null;
+        private String configName = null;
+
+        public TransformResourceCallable(AbstractTransformer transformer,
+                                         ResourceByExchangeBatch resource,
+                                         OutputContainer data,
+                                         Map<String, ResourceByExchangeBatch> resourcesMap,
+                                         Long enterpriseOrganisationId,
+                                         Long enterprisePatientId,
+                                         Long enterprisePersonId,
+                                         String configName) {
+
+            this.transformer = transformer;
+            this.resource = resource;
+            this.data = data;
+            this.resourcesMap = resourcesMap;
+            this.enterpriseOrganisationId = enterpriseOrganisationId;
+            this.enterprisePatientId = enterprisePatientId;
+            this.enterprisePersonId = enterprisePersonId;
+            this.configName = configName;
+        }
+
+        @Override
+        public Object call() throws Exception {
+            try {
+                transformer.transform(resource, data, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+            } catch (Exception ex) {
+                throw new TransformException("Exception transforming " + resource.getResourceType() + " " + resource.getResourceId(), ex);
+            }
+            return null;
+        }
+    }
 
 }

@@ -17,9 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class AbstractTransformer {
 
@@ -28,8 +25,8 @@ public abstract class AbstractTransformer {
 
     //private static final EnterpriseIdMapRepository idMappingRepository = new EnterpriseIdMapRepository();
     private static JCS cache = null;
-    private static Map<String, AtomicInteger> maxIdMap = new ConcurrentHashMap<>();
-    private static ReentrantLock futuresLock = new ReentrantLock();
+    /*private static Map<String, AtomicInteger> maxIdMap = new ConcurrentHashMap<>();
+    private static ReentrantLock futuresLock = new ReentrantLock();*/
 
     static {
         try {

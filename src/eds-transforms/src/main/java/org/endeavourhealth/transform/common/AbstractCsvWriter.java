@@ -33,7 +33,10 @@ public abstract class AbstractCsvWriter {
         this.rowCount = 0;
     }
 
-    protected void printRecord(String... columns) throws IOException {
+    /**
+     * syncrhonized so we can transform multiple resources to CSV in parallel, but not have problems writing them to file
+     */
+    protected synchronized void printRecord(String... columns) throws IOException {
 
         //changed to create the printer lazily, so the pseudonymised boolean is set in the Patient class
         //before we try to get the headers
@@ -49,7 +52,10 @@ public abstract class AbstractCsvWriter {
         rowCount ++;
     }
 
-    protected String convertDate(Date d) {
+    /**
+     * DateFormat class isn't thread safe, so synchronize all calls on it
+     */
+    protected synchronized String convertDate(Date d) {
         if (d == null) {
             return null;
         } else {
@@ -57,7 +63,10 @@ public abstract class AbstractCsvWriter {
         }
     }
 
-    protected String convertTime(Date d) {
+    /**
+     * DateFormat class isn't thread safe, so synchronize all calls on it
+     */
+    protected synchronized String convertTime(Date d) {
         if (d == null) {
             return null;
         } else {
