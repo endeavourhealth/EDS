@@ -52,10 +52,11 @@ export class OrganisationManagerEditorComponent {
     }
 
     createService(uuid : string) {
-
+        var vm = this;
+        vm.orgType = 'Service';
         this.organisation = {
             name: '',
-            isService: '1'
+            isService: 1
         } as Organisation;
     }
 
@@ -67,13 +68,14 @@ export class OrganisationManagerEditorComponent {
         this.parentOrganisations = [];
         this.parentOrganisations.push(parent);
         this.organisation.uuid = null;
-        this.organisation.isService = '1';
+        this.organisation.isService = 1;
+        this.orgType = 'Service';
     }
 
     create(uuid : string) {
         this.organisation = {
             name: '',
-            isService: '0'
+            isService: 0
         } as Organisation;
 
     }

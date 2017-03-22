@@ -3,7 +3,7 @@
         <div class="module-heading">
             {{orgType}} Details
             <div class="pull-right">
-                <button type="button" class="btn btn-sm btn-success" (click)="createServiceFromOrg(false)">Create Service</button>
+                <button *ngIf="(organisation.isService === 0) && (organisation.uuid)" type="button" class="btn btn-sm btn-success" (click)="createServiceFromOrg(false)">Create Service</button>
                 <button type="button" class="btn btn-sm btn-success" (click)="save(false)">Save</button>
                 <button type="button" class="btn btn-sm btn-warning" (click)="save(true)">Save & Close</button>
                 <button type="button" class="btn btn-sm btn-danger" (click)="close()">Cancel</button>

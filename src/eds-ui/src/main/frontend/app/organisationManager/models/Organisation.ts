@@ -10,7 +10,7 @@ export class Organisation {
     dateOfRegistration: string;
     registrationPerson: string;
     evidenceOfRegistration: string;
-    isService : string;
+    isService : number;
     regions : { [key:string]:string; };
     parentOrganisations : { [key:string]:string; };
     childOrganisations : { [key:string]:string; };
