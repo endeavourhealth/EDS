@@ -39,6 +39,10 @@ public class EnterpriseIdHelper {
 
     private static Long createEnterpriseId(String enterpriseTableName, String resourceType, String resourceId, EntityManager entityManager) throws Exception {
 
+        if (resourceId == null) {
+            throw new IllegalArgumentException("Null resource ID");
+        }
+
         EnterpriseIdMap mapping = new EnterpriseIdMap();
         mapping.setEnterpriseTableName(enterpriseTableName);
         mapping.setResourceType(resourceType);
