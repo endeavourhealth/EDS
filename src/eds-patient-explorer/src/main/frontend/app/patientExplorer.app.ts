@@ -15,6 +15,8 @@ import {ResourcesComponent} from "./resources/resources.component";
 import {CountReportComponent} from "./countReport/countReport.component";
 import {SqlEditorModule} from "./sqlEditor/sqlEditor.module";
 import {SqlEditorComponent} from "./sqlEditor/sqlEditor.component";
+import {GPViewComponent} from "./recordViewer/gpView.component";
+import {EpisodeViewComponent} from "./recordViewer/episodeView.component";
 
 @NgModule(
 	Application.Define({

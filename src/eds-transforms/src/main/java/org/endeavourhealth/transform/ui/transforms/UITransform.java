@@ -45,6 +45,8 @@ public class UITransform {
             return new UIMedicationStatementTransform();
         else if (resourceType == UIFamilyMemberHistory.class)
             return new UIFamilyMemberHistoryTransform();
+        else if (resourceType == UIEpisodeOfCare.class)
+            return new UIEpisodeOfCareTransform();
 
         throw new NotImplementedException(resourceType.getSimpleName());
     }

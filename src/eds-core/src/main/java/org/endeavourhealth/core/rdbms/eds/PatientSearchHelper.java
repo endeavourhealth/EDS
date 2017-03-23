@@ -309,20 +309,42 @@ public class PatientSearchHelper {
         EntityManager entityManager = EdsConnection.getEntityManager();
 
         String sql = "select c"
-                + " from"
-                + " PatientSearch c"
-                + " inner join PatientSearchLocalIdentifier l"
-                + " on c.serviceId = l.serviceId"
-                + " and c.systemId = l.systemId"
-                + " and c.patientId = l.patientId"
-                + " where l.localId = :localId"
-                + " and l.serviceId = :serviceId"
-                + " and l.systemId = :systemId";
+            + " from"
+            + " PatientSearch c"
+            + " inner join PatientSearchLocalIdentifier l"
+            + " on c.serviceId = l.serviceId"
+            + " and c.systemId = l.systemId"
+            + " and c.patientId = l.patientId"
+            + " where l.localId = :localId"
+            + " and l.serviceId = :serviceId"
+            + " and l.systemId = :systemId";
 
         Query query = entityManager.createQuery(sql, PatientSearch.class)
-                .setParameter("localId", localId)
-                .setParameter("serviceId", serviceId.toString())
-                .setParameter("systemId", systemId.toString());
+            .setParameter("localId", localId)
+            .setParameter("serviceId", serviceId.toString())
+            .setParameter("systemId", systemId.toString());
+
+        List<PatientSearch> results = query.getResultList();
+        entityManager.close();
+        return results;
+    }
+
+    public static List<PatientSearch> searchByLocalId(Set<String> serviceIds, String localId) throws Exception {
+        EntityManager entityManager = EdsConnection.getEntityManager();
+
+        String sql = "select c"
+            + " from"
+            + " PatientSearch c"
+            + " inner join PatientSearchLocalIdentifier l"
+            + " on c.serviceId = l.serviceId"
+            + " and c.systemId = l.systemId"
+            + " and c.patientId = l.patientId"
+            + " where l.localId = :localId"
+            + " and l.serviceId IN :serviceIds";
+
+        Query query = entityManager.createQuery(sql, PatientSearch.class)
+            .setParameter("localId", localId)
+            .setParameter("serviceIds", serviceIds);
 
         List<PatientSearch> results = query.getResultList();
         entityManager.close();
@@ -349,6 +371,24 @@ public class PatientSearchHelper {
         return results;
     }
 
+    public static List<PatientSearch> searchByDateOfBirth(Set<String> serviceIds, Date dateOfBirth) throws Exception {
+        EntityManager entityManager = EdsConnection.getEntityManager();
+
+        String sql = "select c"
+            + " from"
+            + " PatientSearch c"
+            + " where c.dateOfBirth = :dateOfBirth"
+            + " and c.serviceId IN :serviceIds";
+
+        Query query = entityManager.createQuery(sql, PatientSearch.class)
+            .setParameter("dateOfBirth", dateOfBirth)
+            .setParameter("serviceIds", serviceIds);
+
+        List<PatientSearch> results = query.getResultList();
+        entityManager.close();
+        return results;
+    }
+
     public static List<PatientSearch> searchByNhsNumber(UUID serviceId, UUID systemId, String nhsNumber) throws Exception {
         EntityManager entityManager = EdsConnection.getEntityManager();
 
@@ -363,6 +403,24 @@ public class PatientSearchHelper {
                 .setParameter("nhs_number", nhsNumber)
                 .setParameter("serviceId", serviceId.toString())
                 .setParameter("systemId", systemId.toString());
+
+        List<PatientSearch> results = query.getResultList();
+        entityManager.close();
+        return results;
+    }
+
+    public static List<PatientSearch> searchByNhsNumber(Set<String> serviceIds, String nhsNumber) throws Exception {
+        EntityManager entityManager = EdsConnection.getEntityManager();
+
+        String sql = "select c"
+            + " from"
+            + " PatientSearch c"
+            + " where c.nhsNumber = :nhs_number"
+            + " and c.serviceId in :serviceIds";
+
+        Query query = entityManager.createQuery(sql, PatientSearch.class)
+            .setParameter("nhs_number", nhsNumber)
+            .setParameter("serviceIds", serviceIds);
 
         List<PatientSearch> results = query.getResultList();
         entityManager.close();
@@ -418,6 +476,60 @@ public class PatientSearchHelper {
                     .setParameter("forenames", forenames)
                     .setParameter("serviceId", serviceId.toString())
                     .setParameter("systemId", systemId.toString());
+
+            results = query.getResultList();
+        }
+
+        entityManager.close();
+        return results;
+    }
+
+
+    public static List<PatientSearch> searchByNames(Set<String> serviceIds, List<String> names) throws Exception {
+
+        if (names.isEmpty()) {
+            throw new IllegalArgumentException("Names cannot be empty");
+        }
+
+        EntityManager entityManager = EdsConnection.getEntityManager();
+
+        List<PatientSearch> results = null;
+
+        //if just one name, then treat as a surname
+        if (names.size() == 1) {
+
+            String surname = names.get(0) + "%";
+
+            String sql = "select c"
+                + " from"
+                + " PatientSearch c"
+                + " where lower(c.surname) LIKE lower(:surname)"
+                + " and c.serviceId IN :serviceIds";
+
+            Query query = entityManager.createQuery(sql, PatientSearch.class)
+                .setParameter("surname", surname)
+                .setParameter("serviceIds", serviceIds);
+
+            results = query.getResultList();
+
+        } else {
+
+            //if multiple tokens, then treat all but the last as forenames
+            names = new ArrayList(names);
+            String surname = names.remove(names.size()-1) + "%";
+            String forenames = String.join("% ", names) + "%";
+
+            String sql = "select c"
+                + " from"
+                + " PatientSearch c"
+                + " where lower(c.surname) LIKE lower(:surname)"
+                + " and lower(c.forenames) LIKE lower(:forenames)"
+                + " and c.serviceId IN :serviceIds";
+
+            Query query = entityManager.createQuery(sql, PatientSearch.class)
+                .setParameter("surname", surname)
+                .setParameter("forenames", forenames)
+                .setParameter("serviceIds", serviceIds);
 
             results = query.getResultList();
         }

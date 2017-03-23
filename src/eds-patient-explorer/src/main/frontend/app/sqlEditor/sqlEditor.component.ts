@@ -15,6 +15,7 @@ export class SqlEditorComponent implements OnInit {
 	@ViewChild('sql') el:ElementRef;
 	private editor : any;
 	private resultData : string[][];
+	private running : boolean;
 
 	constructor(
 		protected $modal : NgbModal,
@@ -76,11 +77,13 @@ export class SqlEditorComponent implements OnInit {
 	private executeQuery() {
 		let vm = this;
 		let sql = vm.editor.getValue();
+		vm.running = false;
 		vm.resultData = null;
 		vm.sqlEditorService.runQuery(sql).subscribe(
 			(result) => {
 				vm.logger.success('SQL executed');
 				vm.resultData = result;
+				vm.running = false;
 				vm.refreshMetaData();
 			},
 			(error) => vm.logger.error(error._body, error, error.statusText)

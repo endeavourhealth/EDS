@@ -13,6 +13,7 @@
 						<textarea #sql id="sql" name="sql" style="width:100%">-- Loading meta data, please wait...</textarea>
 					</div>
 				</div>
+				<loadingIndicator [done]="!running"></loadingIndicator>
 				<div class="row" [hidden]="!resultData">
 					<div class="form-group col-md-12 scroll-box-350 scroll-box-horizontal">
 						<table class="table table-condensed table-striped">

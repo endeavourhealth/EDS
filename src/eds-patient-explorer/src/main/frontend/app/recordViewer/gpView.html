@@ -1,0 +1,146 @@
+<ngb-tabset activeId="summary" (tabChange)="loadDataForTab($event.nextId)" #recordTabs>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- SUMMARY -->
+                    <!------------------------------------------------------------------------------------------------->
+                    <ngb-tab id="summary" title="Summary">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
+                                <summary [activeProblems]="patientRecord.getActiveProblems()"
+                                         [pastProblems]="patientRecord.getPastProblems()"
+                                         [allergies]="patientRecord.allergies"
+                                         [immunisations]="patientRecord.immunisations"
+                                         [acuteMedication]="patientRecord.getAcuteMedication()"
+                                         [repeatMedication]="patientRecord.getRepeatMedication()"></summary>
+                            </div>
+                        </template>
+                    </ngb-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- CONSULTATIONS -->
+                    <!------------------------------------------------------------------------------------------------->
+                    <ngb-tab id="consultations" title="Consultations">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
+                              <loadingIndicator [done]="patientRecord.encounters">
+                                <consultations [consultations]="patientRecord.encounters"></consultations>
+                              </loadingIndicator>
+                            </div>
+                        </template>
+                    </ngb-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- MEDICATION -->
+                    <!------------------------------------------------------------------------------------------------->
+                    <ngb-tab id="medication" title="Medication">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
+                              <loadingIndicator [done]="patientRecord.medication">
+                                <medication title="Acute medication" [medication]="patientRecord.getAcuteMedication()" placeholder="(No acute medication)"></medication>
+                                <medication title="Repeat medication" [medication]="patientRecord.getRepeatMedication()" placeholder="(No repeat medication)"></medication>
+                                <medication title="Past medication" [medication]="patientRecord.getPastMedication()" placeholder="(No past medication)"></medication>
+                              </loadingIndicator>
+                            </div>
+                        </template>
+                    </ngb-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- PROBLEMS -->
+                    <!------------------------------------------------------------------------------------------------->
+                    <ngb-tab id="problems" title="Problems">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
+                              <loadingIndicator [done]="patientRecord.problems">
+                                <div class="container-fluid">
+                                <problems title="Active problems" [problems]="patientRecord.getActiveProblems()" placeholder="(No active problems)"></problems>
+                                <problems title="Past problems" [problems]="patientRecord.getPastProblems()" placeholder="(No past problems)"></problems>
+                                </div>
+                              </loadingIndicator>
+                            </div>
+                        </template>
+                    </ngb-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- Investigations -->
+                    <!------------------------------------------------------------------------------------------------->
+                    <ngb-tab id="investigations" title="Investigations">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
+                              <loadingIndicator [done]="patientRecord.observations">
+                                <div class="container-fluid">
+                                    <investigations [investigations]="patientRecord.getInvestigations()"></investigations>
+                                </div>
+                              </loadingIndicator>
+                            </div>
+                        </template>
+                    </ngb-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- Care History -->
+                    <!------------------------------------------------------------------------------------------------->
+                    <ngb-tab id="careHistory" title="Care History">
+                        <template ngbTabContent>
+                        <div class="tab-panel">
+                          <loadingIndicator [done]="patientRecord.observations">
+                            <div class="container-fluid">
+                                <careHistory [observations]="patientRecord.observations"></careHistory>
+                            </div>
+                          </loadingIndicator>
+                        </div>
+                        </template>
+                    </ngb-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- Allergies -->
+                    <!------------------------------------------------------------------------------------------------->
+                    <ngb-tab id="allergies" title="Allergies">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
+                              <loadingIndicator [done]="patientRecord.allergies">
+                                <allergies [allergies]="patientRecord.allergies"></allergies>
+                              </loadingIndicator>
+                            </div>
+                        </template>
+                    </ngb-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- Immunisations -->
+                    <!------------------------------------------------------------------------------------------------->
+                    <ngb-tab id="immunisations" title="Immunisations">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
+                              <loadingIndicator [done]="patientRecord.immunisations">
+                                <immunisations [immunisations]="patientRecord.immunisations"></immunisations>
+                              </loadingIndicator>
+                            </div>
+                        </template>
+                    </ngb-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- Family History -->
+                    <!------------------------------------------------------------------------------------------------->
+                    <ngb-tab id="familyHistory" title="Family History">
+                        <template ngbTabContent>
+                            <div class="tab-panel">
+                              <loadingIndicator [done]="patientRecord.familyHistory">
+                                <familyHistory [familyHistory]="patientRecord.familyHistory"></familyHistory>
+                              </loadingIndicator>
+                            </div>
+                        </template>
+                    </ngb-tab>
+
+                    <!------------------------------------------------------------------------------------------------->
+                    <!-- DIARY -->
+                    <!------------------------------------------------------------------------------------------------->
+                    <ngb-tab id="diary" title="Diary">
+                        <template ngbTabContent>
+                           <div class="tab-panel">
+                             <loadingIndicator [done]="patientRecord.diary">
+                            <div class="container-fluid">
+                                <diary [diaries]="patientRecord.diary"></diary>
+                             </div>
+                             </loadingIndicator>
+                        </div>
+                        </template>
+                    </ngb-tab>
+                </ngb-tabset>

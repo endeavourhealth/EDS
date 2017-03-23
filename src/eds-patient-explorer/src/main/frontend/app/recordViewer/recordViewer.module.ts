@@ -25,6 +25,10 @@ import {FamilyHistoryConditionComponent} from "./components/familyHistoryConditi
 import {CareHistoryComponent} from "./components/careHistory.component";
 import {InvestigationsComponent} from "./components/investigations.component";
 import {CodeTooltipComponent} from "./components/codeTooltip.component";
+import {GPViewComponent} from "./gpView.component";
+import {EpisodeViewComponent} from "./episodeView.component";
+import {LocationClass, LocationIcon} from "./pipes/location";
+import {CommonModule} from "../common/common.module";
 
 @NgModule({
 	imports : [
@@ -33,8 +37,12 @@ import {CodeTooltipComponent} from "./components/codeTooltip.component";
 		NgbModule,
 
 		TreeModule,
+
+		CommonModule,
 	],
 	declarations : [
+		EpisodeViewComponent,
+		GPViewComponent,
 		RecordViewerComponent,
 		PatientFindDialog,
 
@@ -62,6 +70,9 @@ import {CodeTooltipComponent} from "./components/codeTooltip.component";
 		CuiGender,
 		CuiQuantity,
 
+		LocationClass,
+		LocationIcon,
+
 		Parentheses
 	],
 	entryComponents : [
@@ -80,6 +91,9 @@ import {CodeTooltipComponent} from "./components/codeTooltip.component";
 		CuiNhsNumber,
 		CuiSingleLineAddress,
 		CuiGender,
+
+		LocationClass,
+		LocationIcon,
 
 		Parentheses
 	]

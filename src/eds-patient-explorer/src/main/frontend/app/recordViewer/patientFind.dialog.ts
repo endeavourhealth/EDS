@@ -67,7 +67,7 @@ export class PatientFindDialog {
         var vm = this;
         vm
           .recordViewerService
-          .findPatient(this.selectedService, vm.searchedTerms)
+          .findPerson(vm.searchedTerms)
           .subscribe((result: UIPatient[]) =>
             vm.foundPatients = linq(result).OrderBy(t => t.name.familyName).ToArray());
     }

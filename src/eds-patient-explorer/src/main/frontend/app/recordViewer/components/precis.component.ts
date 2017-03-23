@@ -1,10 +1,11 @@
 import {Component, Input} from "@angular/core";
-import {UIPatientRecord} from "../models/UIPatientRecord";
+import {UIPatient} from "../models/resources/admin/UIPatient";
 
 @Component({
 	selector : 'precis',
 	template : require('./precis.html')
 })
 export class PrecisComponent {
-	@Input() patient : UIPatientRecord;
+	@Input() person : UIPatient;
+	@Input() episode : any;
 }

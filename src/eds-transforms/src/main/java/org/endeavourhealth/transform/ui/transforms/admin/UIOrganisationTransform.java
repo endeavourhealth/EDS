@@ -7,6 +7,7 @@ public class UIOrganisationTransform {
     public static UIOrganisation transform(Organization organization) {
         return new UIOrganisation()
                 .setId(organization.getId())
-                .setName(organization.getName());
+                .setName(organization.getName())
+                .setType(organization.getType().getText());
     }
 }

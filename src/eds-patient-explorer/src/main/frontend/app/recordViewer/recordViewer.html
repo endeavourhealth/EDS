@@ -1,150 +1,21 @@
 <div class="module record-viewer">
     <div class="module-heading">
         <span>Patient explorer</span>
-        <button class="btn btn-success btn-sm pull-right" (click)="showPatientFind()"><i class="fa fa-search"></i> Find patient</button>
-        <button class="btn btn-success btn-sm pull-right" (click)="clearPatient()" [disabled]="patient == null"><i class="fa fa-times-circle"></i> Clear patient</button>
+        <button class="btn btn-success btn-sm pull-right" (click)="showPersonFind()"><i class="fa fa-search"></i> Find patient</button>
+        <button class="btn btn-success btn-sm pull-right" (click)="clearPerson()" [disabled]="person == null"><i class="fa fa-times-circle"></i> Clear patient</button>
+        <button class="btn btn-success btn-sm pull-right" (click)="clearEpisode()" *ngIf="person && episode"><i class="fa fa-bars"></i> All episodes</button>
     </div>
     <div class="module-body">
 
-        <div class="container-fluid">
-             <div name="noPatientSelectedView" *ngIf="!patient">
-                No patient selected
-            </div>
+        <div class="container-fluid" *ngIf="person">
+            <precis [person]="person" [episode]="episode"></precis>
 
-            <div name="patientSelectedView" *ngIf="patient">
-
-                <precis [patient]="patient.patient"></precis>
-
-                <ngb-tabset active="activeTab" (tabChange)="loadDataForTab($event.nextId)" #recordTabs>
-
-                    <!------------------------------------------------------------------------------------------------->
-                    <!-- SUMMARY -->
-                    <!------------------------------------------------------------------------------------------------->
-                    <ngb-tab id="summary" title="Summary">
-                        <template ngbTabContent>
-                            <div class="tab-panel">
-                                <summary [activeProblems]="patient.getActiveProblems()"
-                                         [pastProblems]="patient.getPastProblems()"
-                                         [allergies]="patient.allergies"
-                                         [immunisations]="patient.immunisations"
-                                         [acuteMedication]="patient.getAcuteMedication()"
-                                         [repeatMedication]="patient.getRepeatMedication()"></summary>
-                            </div>
-                        </template>
-                    </ngb-tab>
-
-                    <!------------------------------------------------------------------------------------------------->
-                    <!-- CONSULTATIONS -->
-                    <!------------------------------------------------------------------------------------------------->
-                    <ngb-tab id="consultations" title="Consultations">
-                        <template ngbTabContent>
-                            <div class="tab-panel">
-                                <consultations [consultations]="patient.encounters"></consultations>
-                            </div>
-                        </template>
-                    </ngb-tab>
-
-                    <!------------------------------------------------------------------------------------------------->
-                    <!-- MEDICATION -->
-                    <!------------------------------------------------------------------------------------------------->
-                    <ngb-tab id="medication" title="Medication">
-                        <template ngbTabContent>
-                            <div class="tab-panel">
-                                <medication title="Acute medication" [medication]="patient.getAcuteMedication()" placeholder="(No acute medication)"></medication>
-                                <medication title="Repeat medication" [medication]="patient.getRepeatMedication()" placeholder="(No repeat medication)"></medication>
-                                <medication title="Past medication" [medication]="patient.getPastMedication()" placeholder="(No past medication)"></medication>
-                            </div>
-                        </template>
-                    </ngb-tab>
-
-                    <!------------------------------------------------------------------------------------------------->
-                    <!-- PROBLEMS -->
-                    <!------------------------------------------------------------------------------------------------->
-                    <ngb-tab id="problems" title="Problems">
-                        <template ngbTabContent>
-                            <div class="tab-panel">
-                                <div class="container-fluid">
-                                <problems title="Active problems" [problems]="patient.getActiveProblems()" placeholder="(No active problems)"></problems>
-                                <problems title="Past problems" [problems]="patient.getPastProblems()" placeholder="(No past problems)"></problems>
-                                </div>
-                            </div>
-                        </template>
-                    </ngb-tab>
-
-                    <!------------------------------------------------------------------------------------------------->
-                    <!-- Investigations -->
-                    <!------------------------------------------------------------------------------------------------->
-                    <ngb-tab id="investigations" title="Investigations">
-                        <template ngbTabContent>
-                            <div class="tab-panel">
-                                <div class="container-fluid">
-                                    <investigations [investigations]="patient.getInvestigations()"></investigations>
-                                </div>
-                            </div>
-                        </template>
-                    </ngb-tab>
-
-                    <!------------------------------------------------------------------------------------------------->
-                    <!-- Care History -->
-                    <!------------------------------------------------------------------------------------------------->
-                    <ngb-tab id="careHistory" title="Care History">
-                        <template ngbTabContent>
-                        <div class="tab-panel">
-                            <div class="container-fluid">
-                                <careHistory [observations]="patient.observations"></careHistory>
-                            </div>
-                        </div>
-                        </template>
-                    </ngb-tab>
-
-                    <!------------------------------------------------------------------------------------------------->
-                    <!-- Allergies -->
-                    <!------------------------------------------------------------------------------------------------->
-                    <ngb-tab id="allergies" title="Allergies">
-                        <template ngbTabContent>
-                            <div class="tab-panel">
-                                <allergies [allergies]="patient.allergies"></allergies>
-                            </div>
-                        </template>
-                    </ngb-tab>
-
-                    <!------------------------------------------------------------------------------------------------->
-                    <!-- Immunisations -->
-                    <!------------------------------------------------------------------------------------------------->
-                    <ngb-tab id="immunisations" title="Immunisations">
-                        <template ngbTabContent>
-                            <div class="tab-panel">
-                                <immunisations [immunisations]="patient.immunisations"></immunisations>
-                            </div>
-                        </template>
-                    </ngb-tab>
-
-                    <!------------------------------------------------------------------------------------------------->
-                    <!-- Family History -->
-                    <!------------------------------------------------------------------------------------------------->
-                    <ngb-tab id="familyHistory" title="Family History">
-                        <template ngbTabContent>
-                            <div class="tab-panel">
-                                <familyHistory [familyHistory]="patient.familyHistory"></familyHistory>
-                            </div>
-                        </template>
-                    </ngb-tab>
-
-                    <!------------------------------------------------------------------------------------------------->
-                    <!-- DIARY -->
-                    <!------------------------------------------------------------------------------------------------->
-                    <ngb-tab id="diary" title="Diary">
-                        <template ngbTabContent>
-                           <div class="tab-panel">
-                            <div class="container-fluid">
-                                <diary [diaries]="patient.diary"></diary>
-                             </div>
-                        </div>
-                        </template>
-                    </ngb-tab>
-                </ngb-tabset>
+            <div name="noPatientSelectedView" [hidden]="patientRecord">
+                 <episodeView [person]="person" (episodeChange)="onEpisodeSelect($event)"></episodeView>
+             </div>
+            <div name="patientSelectedView" *ngIf="patientRecord">
+                <gpView [patientRecord]="patientRecord"></gpView>
             </div>
         </div>
     </div>
 </div>
-

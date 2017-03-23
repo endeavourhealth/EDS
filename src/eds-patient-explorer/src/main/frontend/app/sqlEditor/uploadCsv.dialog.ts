@@ -28,11 +28,10 @@ export class UploadCsvDialog {
     }
 
     private uploadFile() {
-        var vm = this;
-        var myReader:FileReader = new FileReader();
+        let vm = this;
+        let myReader:FileReader = new FileReader();
 
         myReader.onloadend = function(e){
-            // you can perform an action with readed data here
             vm.generateCreateTableStatement(myReader.result);
         }
 

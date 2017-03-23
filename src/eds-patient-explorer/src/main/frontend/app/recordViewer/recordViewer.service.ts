@@ -12,6 +12,8 @@ import {UIAllergy} from "./models/resources/clinical/UIAllergy";
 import {UIImmunisation} from "./models/resources/clinical/UIImmunisation";
 import {UIFamilyHistory} from "./models/resources/clinical/UIFamilyHistory";
 import {UIMedicationStatement} from "./models/resources/clinical/UIMedicationStatement";
+import {UIPerson} from "./models/resources/admin/UIPerson";
+import {UIEpisodeOfCare} from "./models/resources/clinical/UIEpisodeOfCare";
 
 @Injectable()
 export class RecordViewerService extends BaseHttp2Service {
@@ -23,6 +25,13 @@ export class RecordViewerService extends BaseHttp2Service {
         return this.httpGet('api/recordViewer/getServices');
     }
 
+    getEpisodes(person : UIPerson) : Observable<UIEpisodeOfCare[]> {
+        var params = new URLSearchParams();
+        params.append('nhsNumber', person.nhsNumber);
+
+        return this.httpGet('api/recordViewer/getEpisodes', { search : params });
+    }
+
     findPatient(service: UIService, searchTerms: string): Observable<UIPatient[]> {
         var params = new URLSearchParams();
         params.append('serviceId', service.serviceId);
@@ -30,6 +39,13 @@ export class RecordViewerService extends BaseHttp2Service {
         params.append('searchTerms', searchTerms);
 
         return this.httpGet('api/recordViewer/findPatient', {search: params});
+    }
+
+    findPerson(searchTerms: string): Observable<UIPatient[]> {
+        var params = new URLSearchParams();
+        params.append('searchTerms', searchTerms);
+
+        return this.httpGet('api/recordViewer/findPerson', {search: params});
     }
 
     getPatient(patientId: UIInternalIdentifier): Observable<UIPatient> {
