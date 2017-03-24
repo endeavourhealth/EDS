@@ -12,7 +12,7 @@ Vagrant.configure("2") do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://atlas.hashicorp.com/search.
-  config.vm.box = "ubuntu/xenial64"
+  config.vm.box = "pacharanero/endeavour"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -26,7 +26,7 @@ Vagrant.configure("2") do |config|
   # Tomcat (8080) on VM guest forwarded to localhost:8080 on host 
   config.vm.network "forwarded_port", guest: 8080, host: 8080
 
-  # PostgresQL (5432) on guest forwarded to localhost:5432 on host
+  # PostgreSQL (5432) on guest forwarded to localhost:5432 on host
   config.vm.network "forwarded_port", guest: 5432, host: 5432
 
 
@@ -47,7 +47,7 @@ Vagrant.configure("2") do |config|
 
   config.vm.provider "virtualbox" do |vb|
     # Display the VirtualBox GUI when booting the machine
-    vb.gui = true
+    # vb.gui = true
     # Customize the amount of memory on the VM:
     vb.memory = "2048"
   end
