@@ -230,13 +230,24 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save, "Post to exchange",
                 "Exchange ID", request.getExchangeId(),
-                "Exchange Name", request.getExchangeName());
+                "Service ID", request.getServiceId(),
+                "Exchange Name", request.getExchangeName(),
+                "Post All", request.isPostAllExchanges());
 
-        UUID exchangeId = request.getExchangeId();
+        UUID selectedExchangeId = request.getExchangeId();
+        UUID serviceId = request.getServiceId();
         String exchangeName = request.getExchangeName();
         boolean postAllExchanges = request.isPostAllExchanges();
-//TODO - finish
-        postToExchange(exchangeId, exchangeName);
+        if (postAllExchanges) {
+
+            List<UUID> exchangeIds = auditRepository.getExchangeIdsForService(serviceId);
+            for (UUID exchangeId: exchangeIds) {
+                postToExchange(exchangeId, exchangeName);
+            }
+
+        } else {
+            postToExchange(selectedExchangeId, exchangeName);
+        }
 
         clearLogbackMarkers();
 

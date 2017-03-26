@@ -51,6 +51,7 @@ export class ExchangeAuditComponent {
 
 		this.service = new Service();
 		this.exchangesToShow = 100;
+		this.postAllExchanges = false;
 
 		var uuid = transition.params()['serviceUuid'];
 
@@ -201,8 +202,9 @@ export class ExchangeAuditComponent {
 	postToExchange(exchangeName: string) {
 		var vm = this;
 		var exchangeId = vm.selectedExchange.exchangeId;
+		var serviceId = this.service.uuid;
 
-		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, exchangeName, this.postAllExchanges).subscribe(
+		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, serviceId, exchangeName, this.postAllExchanges).subscribe(
 			(result) => {
 				vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
 
@@ -239,5 +241,9 @@ export class ExchangeAuditComponent {
 		this.searchTab = tab;
 		console.log("Tab: " + tab);
 
+	}
+
+	checkboxChanged() {
+		console.log('checkbox changed = ' + this.postAllExchanges);
 	}
 }
