@@ -39,6 +39,8 @@ export class ExchangeAuditComponent {
 	selectedExchange: Exchange;
 	busyPostingToExchange: Subscription;
 
+	postAllExchanges: boolean;
+
 
 	constructor(private $modal : NgbModal,
 				private $window : StateService,
@@ -200,7 +202,7 @@ export class ExchangeAuditComponent {
 		var vm = this;
 		var exchangeId = vm.selectedExchange.exchangeId;
 
-		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, exchangeName).subscribe(
+		this.busyPostingToExchange = vm.exchangeAuditService.postToExchange(exchangeId, exchangeName, this.postAllExchanges).subscribe(
 			(result) => {
 				vm.log.success('Successfully posted to ' + exchangeName + ' exchange', 'Post to Exchange');
 

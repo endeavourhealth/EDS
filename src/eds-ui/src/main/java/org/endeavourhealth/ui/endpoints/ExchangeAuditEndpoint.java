@@ -234,7 +234,8 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         UUID exchangeId = request.getExchangeId();
         String exchangeName = request.getExchangeName();
-
+        boolean postAllExchanges = request.isPostAllExchanges();
+//TODO - finish
         postToExchange(exchangeId, exchangeName);
 
         clearLogbackMarkers();

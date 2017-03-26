@@ -9,6 +9,7 @@ public class JsonPostToExchangeRequest {
 
     private UUID exchangeId;
     private String exchangeName;
+    private boolean postAllExchanges;
 
     public JsonPostToExchangeRequest() {}
 
@@ -26,5 +27,13 @@ public class JsonPostToExchangeRequest {
 
     public void setExchangeName(String exchangeName) {
         this.exchangeName = exchangeName;
+    }
+
+    public boolean isPostAllExchanges() {
+        return postAllExchanges;
+    }
+
+    public void setPostAllExchanges(boolean postAllExchanges) {
+        this.postAllExchanges = postAllExchanges;
     }
 }
