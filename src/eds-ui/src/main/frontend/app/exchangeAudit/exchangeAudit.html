@@ -125,6 +125,10 @@
                                 <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsProtocol')">Protocol</button>
                                 <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsTransform')">Transform</button>
                                 <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsSubscriber')">Subscriber</button>
+
+                                <input type="checkbox" [(ngModel)]="postAllExchanges" [disabled]="busyPostingToExchange" (click)="checkboxChanged()">
+                                Do ALL Exchanges
+
                                 <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
                             </div>
                         </div>

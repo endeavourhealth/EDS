@@ -11,6 +11,9 @@ export class Organisation {
     registrationPerson: string;
     evidenceOfRegistration: string;
     isService : number;
+    bulkImported : number;
+    bulkItemUpdated : number;
+    bulkConflictedWith : string;
     regions : { [key:string]:string; };
     parentOrganisations : { [key:string]:string; };
     childOrganisations : { [key:string]:string; };

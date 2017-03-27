@@ -1,5 +1,7 @@
 package org.endeavourhealth.core.data.audit;
 
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.mapping.Mapper;
 import com.google.common.collect.Lists;
 import org.endeavourhealth.common.cassandra.Repository;
@@ -8,10 +10,7 @@ import org.endeavourhealth.core.data.audit.models.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class AuditRepository extends Repository{
 
@@ -159,10 +158,10 @@ public class AuditRepository extends Repository{
         return Lists.newArrayList(accessor.getAllExchangeTransformAudits(serviceId, systemId, exchangeId));
     }
 
-    public List<Exchange> getAllExchanges() {
+    /*public List<Exchange> getAllExchanges() {
         AuditAccessor accessor = getMappingManager().createAccessor(AuditAccessor.class);
         return Lists.newArrayList(accessor.getAllExchanges());
-    }
+    }*/
 
     public List<ExchangeByService> getExchangesByService(UUID serviceId, int maxRows, Date dateFrom, Date dateTo) {
         AuditAccessor accessor = getMappingManager().createAccessor(AuditAccessor.class);
@@ -184,4 +183,18 @@ public class AuditRepository extends Repository{
         return mapper.get(serviceId, systemId, exchangeId, versionUuid);
     }
 
+    public List<UUID> getExchangeIdsForService(UUID serviceId) {
+        AuditAccessor accessor = getMappingManager().createAccessor(AuditAccessor.class);
+        ResultSet resultSet = accessor.getExchangeIdsForService(serviceId);
+
+        List<UUID> ret = new ArrayList<>();
+        while (!resultSet.isExhausted()) {
+            Row row = resultSet.one();
+            UUID uuid = row.getUUID(0);
+            ret.add(uuid);
+        }
+
+        //the accessor returns them most recent first, so reverse it so they're most recent last
+        return Lists.reverse(ret);
+    }
 }

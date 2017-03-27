@@ -11,6 +11,7 @@ import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.*;
+import org.endeavourhealth.ui.utility.CsvHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +21,12 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.*;
+import java.io.File;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Path("/organisationManager")
@@ -73,7 +79,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
             MastermappingEntity.deleteAllMappings(organisationManager.getUuid());
             OrganisationEntity.updateOrganisation(organisationManager);
         } else {
-            organisationManager.setUuid(UUID.randomUUID().toString());
+            organisationManager.setUuid(UUID.nameUUIDFromBytes((organisationManager.getName() + organisationManager.getOdsCode()).getBytes()).toString());
             OrganisationEntity.saveOrganisation(organisationManager);
         }
 
@@ -84,12 +90,15 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
         List<JsonAddress> addresses = organisationManager.getAddresses();
         if (addresses.size() > 0) {
             for (JsonAddress address : addresses) {
+                if (address.getOrganisationUuid() == null)
+                    address.setOrganisationUuid(organisationManager.getUuid());
+
                 if (address.getUuid() == null) {
                     address.setUuid(UUID.randomUUID().toString());
-                    AddressEntity.saveOrganisation(address);
+                    AddressEntity.saveAddress(address);
                 }
                 else
-                    AddressEntity.updateOrganisation(address);
+                    AddressEntity.updateAddress(address);
 
                 getGeolocation(address);
             }
@@ -200,6 +209,107 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
         return getOrganisationMarkers(uuid);
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/editedBulks")
+    @RequiresAdmin
+    public Response getUpdatedBulkOrganisations(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "Organisation",
+                "Organisation", null);
+
+        List<OrganisationEntity> organisations = OrganisationEntity.getUpdatedBulkOrganisations();
+
+        return Response
+                .ok()
+                .entity(organisations)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/conflicts")
+    @RequiresAdmin
+    public Response getConflictedOrganisations(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "Organisation",
+                "Organisation", null);
+
+        List<OrganisationEntity> organisations = OrganisationEntity.getConflictedOrganisations();
+
+        return Response
+                .ok()
+                .entity(organisations)
+                .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/organisationStatistics")
+    @RequiresAdmin
+    public Response getOrganisationsStatistics(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "Organisation Statistics",
+                "Organisation", null);
+
+        return generateStatistics(OrganisationEntity.getOrganisationStatistics());
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/serviceStatistics")
+    @RequiresAdmin
+    public Response getServiceStatistics(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "Service Statistics",
+                "Organisation", null);
+
+       return generateStatistics(OrganisationEntity.getServiceStatistics());
+    }
+
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/deleteBulks")
+    @RequiresAdmin
+    public Response deleteBulks(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+                "Organisation",
+                "Organisation Id", null);
+
+        OrganisationEntity.deleteUneditedBulkOrganisations();
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .build();
+    }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Path("/upload")
+    @RequiresAdmin
+    public Response post(@Context SecurityContext sc, String csvFile) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "Organisation",
+                "Organisation", csvFile);
+        System.out.println(csvFile);
+
+        return processCSVFile(csvFile);
+    }
+
+
     private Response getOrganisationList(boolean searchServices) throws Exception {
 
         List<OrganisationEntity> organisations = OrganisationEntity.getAllOrganisations(searchServices);
@@ -236,6 +346,25 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
         List<Object[]> regions = RegionEntity.getParentRegionsFromMappings(organisationUuid);
 
         List<JsonRegion> ret = EndpointHelper.JsonRegion(regions);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private Response generateStatistics(List<Object []> statistics) throws Exception {
+
+        List<JsonOrganisationManagerStatistics> ret = new ArrayList<>();
+
+        for (Object[] stat : statistics) {
+            JsonOrganisationManagerStatistics jsonStat = new JsonOrganisationManagerStatistics();
+            jsonStat.setLabel(stat[0].toString());
+            jsonStat.setValue(stat[1].toString());
+
+            ret.add(jsonStat);
+        }
 
         clearLogbackMarkers();
         return Response
@@ -338,6 +467,83 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+    private Response processCSVFile(String csvData) throws Exception {
+        boolean found = false;
 
+        OrganisationEntity.deleteUneditedBulkOrganisations();
+
+        List<OrganisationEntity> updatedBulkOrganisations = OrganisationEntity.getUpdatedBulkOrganisations();
+
+        List<OrganisationEntity> organisationEntities = new ArrayList<>();
+        List<AddressEntity> addressEntities = new ArrayList<>();
+
+        Scanner scanner = new Scanner(csvData);
+
+        while (scanner.hasNext()) {
+            List<String> org = CsvHelper.parseLine(scanner.nextLine());
+            OrganisationEntity importedOrg = createOrganisationEntity(org);
+
+            for (OrganisationEntity oe : updatedBulkOrganisations){
+                if (oe.getUuid().equals(importedOrg.getUuid())) {
+                    found = true;
+                }
+            }
+
+            if (found) {
+                //already have this org and it has been updated so set the conflicted UUID to the UUID of the original org and generate a new UUID
+                importedOrg.setBulkConflictedWith(importedOrg.getUuid());
+                importedOrg.setUuid(UUID.nameUUIDFromBytes((importedOrg.getName() + importedOrg.getOdsCode() + "conflict").getBytes()).toString());
+            }
+
+            organisationEntities.add(importedOrg);
+            addressEntities.add(createAddressEntity(org, importedOrg.getUuid()));
+
+            found = false;
+        }
+
+        OrganisationEntity.bulkSaveOrganisation(organisationEntities);
+        AddressEntity.bulkSaveAddresses(addressEntities);
+
+        return Response
+                .ok()
+                .build();
+    }
+
+    private OrganisationEntity createOrganisationEntity(List<String> org) throws Exception {
+
+        OrganisationEntity organisationEntity = new OrganisationEntity();
+        organisationEntity.setName(org.get(1));
+        organisationEntity.setOdsCode(org.get(0));
+        organisationEntity.setUuid(UUID.nameUUIDFromBytes((organisationEntity.getName() + organisationEntity.getOdsCode()).getBytes()).toString());
+
+        organisationEntity.setIsService((byte)0);
+        organisationEntity.setBulkImported((byte)1);
+        organisationEntity.setBulkItemUpdated((byte)0);
+
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
+        Date date = format.parse(org.get(10));
+
+        LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+        organisationEntity.setDateOfRegistration(java.sql.Date.valueOf(localDate));
+
+        return organisationEntity;
+    }
+
+    private AddressEntity createAddressEntity(List<String> org, String organisationUuid) throws Exception {
+
+        AddressEntity addressEntity = new AddressEntity();
+        addressEntity.setUuid(UUID.randomUUID().toString());
+        addressEntity.setOrganisationUuid(organisationUuid);
+
+        addressEntity.setBuildingName(org.get(4));
+        addressEntity.setNumberAndStreet(org.get(5));
+        addressEntity.setLocality(org.get(6));
+        addressEntity.setCity(org.get(7));
+        addressEntity.setCounty(org.get(8));
+        addressEntity.setPostcode(org.get(9));
+
+        return addressEntity;
+    }
 
 }

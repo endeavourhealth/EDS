@@ -1,6 +1,6 @@
 import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-import {StateService} from "ui-router-ng2";
+import {StateService, Transition} from "ui-router-ng2";
 import {Organisation} from "./models/Organisation";
 import {LoggerService} from "../common/logger.service";
 import {OrganisationManagerService} from "./organisationManager.service";
@@ -12,22 +12,34 @@ import {Region} from "../region/models/Region";
 })
 export class OrganisationManagerComponent {
     organisations : Organisation[];
-    regions : Region[] = [];
-    services : Organisation[];
+    modeType : string;
 
     constructor(private $modal: NgbModal,
                 private organisationManagerService : OrganisationManagerService,
                 private log : LoggerService,
-                protected $state : StateService) {
-        this.getOrganisations();
+                protected $state : StateService,
+                private transition : Transition,
+                private state : StateService) {
+        this.performAction(transition.params()['mode']);
     }
 
+    protected performAction(mode:string) {
+        switch (mode) {
+            case 'organisations':
+                this.modeType = 'Organisation';
+                this.getOrganisations();
+                break;
+            case 'services':
+                this.modeType = 'Service';
+                this.getAllServices();
+                break;
+        }
+    }
     getOrganisations() {
         var vm = this;
         vm.organisationManagerService.getOrganisations()
             .subscribe(result => {
-                    vm.organisations = result,
-                    vm.getAllServices();
+                    vm.organisations = result
                 },
                 error => vm.log.error('Failed to load organisations', error, 'Load organisations')
             );
@@ -38,18 +50,16 @@ export class OrganisationManagerComponent {
         var vm = this;
         vm.organisationManagerService.getAllServices()
             .subscribe(
-                result => vm.services = result,
+                result => vm.organisations = result,
                 error => vm.log.error('Failed to load Services', error, 'Load Services')
             );
     }
 
     add() {
-        this.$state.go('app.organisationManagerEditor', {itemUuid: null, itemAction: 'add'});
-    }
-
-    addService() {
-        console.log("adding service");
-        this.$state.go('app.organisationManagerEditor', {itemUuid: null, itemAction: 'addService'});
+        if (this.modeType === 'Organisation')
+            this.$state.go('app.organisationManagerEditor', {itemUuid: null, itemAction: 'add'});
+        else
+            this.$state.go('app.organisationManagerEditor', {itemUuid: null, itemAction: 'addService'});
     }
 
     edit(item : Organisation) {
@@ -93,4 +103,9 @@ export class OrganisationManagerComponent {
                 (error) => vm.log.error('Failed to delete Organisation', error, 'Delete Organisation')
             );
     }
+
+    close() {
+        this.state.go(this.transition.from());
+    }
+
 }

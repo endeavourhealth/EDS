@@ -8,6 +8,7 @@ import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import java.time.*;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 public class EnterpriseAgeUpdater {
     private static final Logger LOG = LoggerFactory.getLogger(EnterpriseAgeUpdater.class);
@@ -59,7 +60,13 @@ public class EnterpriseAgeUpdater {
 
             if (ret[UNIT_MONTHS].intValue() <= 12) {
                 ret[UNIT_MONTHS] = null;
-                ret[UNIT_WEEKS] = new Integer(period.getDays() / 7);
+
+                //period doesn't help with calculating the number of days in each month, so use an alternative
+                //method to calculate the number of days
+                long millis = new Date().getTime() - map.getDateOfBirth().getTime();
+                int days = (int)TimeUnit.DAYS.convert(millis, TimeUnit.MILLISECONDS);
+                ret[UNIT_WEEKS] = new Integer(days);
+                //ret[UNIT_WEEKS] = new Integer(period.getDays() / 7);
             }
         }
 
@@ -113,8 +120,34 @@ public class EnterpriseAgeUpdater {
             }
 
         } else {
+            int updateDay = dobLocalDate.getDayOfMonth();
+            int updateMonth = dobLocalDate.getMonthValue();
+            int updateYear = dobLocalDate.getYear();
+
+            nextUpdate = createSafeLocalDate(updateYear, updateMonth, updateDay);
+
+            //keep looping until we find a date after today, adding a week each time
+            while (!nextUpdate.isAfter(nowLocalDate)) {
+                updateDay += 7;
+
+                //see if we've gone into the next month
+                LocalDate dummy = LocalDate.of(updateYear, updateMonth, 1);
+                int monthLen = dummy.lengthOfMonth();
+                if (updateDay > monthLen) {
+                    updateDay -= monthLen;
+                    updateMonth ++;
+
+                    if (updateMonth > 12) {
+                        updateMonth = 1;
+                        updateYear ++;
+                    }
+                }
+
+                nextUpdate = createSafeLocalDate(updateYear, updateMonth, updateDay);
+            }
+
             //if counting in weeks, we want to update the date after the day of birth in the next week
-            int updateDay = dobLocalDate.getDayOfMonth() + 7;
+            /*int updateDay = dobLocalDate.getDayOfMonth() + 7;
             int updateMonth = nowLocalDate.getMonthValue();
             int updateYear = nowLocalDate.getYear();
 
@@ -134,7 +167,7 @@ public class EnterpriseAgeUpdater {
                 }
 
                 nextUpdate = createSafeLocalDate(updateYear, updateMonth, updateDay);
-            }
+            }*/
         }
 
         Date nextUpdateDate = Date.from(nextUpdate.atStartOfDay(ZoneId.systemDefault()).toInstant());

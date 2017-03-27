@@ -18,6 +18,9 @@ public final class JsonOrganisationManager {
     private String evidenceOfRegistration = null;
     private String uuid = null;
     private String IsService = null;
+    private String bulkImported = null;
+    private String bulkItemUpdated = null;
+    private String bulkConflictedWith = null;
     private Map<UUID, String> regions = null;
     private Map<UUID, String> parentOrganisations = null;
     private Map<UUID, String> childOrganisations = null;
@@ -142,5 +145,29 @@ public final class JsonOrganisationManager {
 
     public void setServices(Map<UUID, String> services) {
         this.services = services;
+    }
+
+    public String getBulkImported() {
+        return bulkImported;
+    }
+
+    public void setBulkImported(String bulkImported) {
+        this.bulkImported = bulkImported;
+    }
+
+    public String getBulkItemUpdated() {
+        return bulkItemUpdated;
+    }
+
+    public void setBulkItemUpdated(String bulkItemUpdated) {
+        this.bulkItemUpdated = bulkItemUpdated;
+    }
+
+    public String getBulkConflictedWith() {
+        return bulkConflictedWith;
+    }
+
+    public void setBulkConflictedWith(String bulkConflictedWith) {
+        this.bulkConflictedWith = bulkConflictedWith;
     }
 }

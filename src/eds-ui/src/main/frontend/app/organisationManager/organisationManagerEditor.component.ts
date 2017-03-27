@@ -56,7 +56,8 @@ export class OrganisationManagerEditorComponent {
         vm.orgType = 'Service';
         this.organisation = {
             name: '',
-            isService: 1
+            isService: 1,
+            bulkImported : 0
         } as Organisation;
     }
 

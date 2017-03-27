@@ -4,14 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.MessageTransformOutboundConfig;
@@ -28,7 +20,6 @@ import org.endeavourhealth.core.messaging.pipeline.SubscriberBatch;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
 import org.endeavourhealth.core.xml.QueryDocument.ServiceContract;
 import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
-import org.endeavourhealth.subscriber.EnterpriseFiler;
 import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.endeavourhealth.transform.vitrucare.FhirToVitruCareXmlTransformer;
@@ -36,9 +27,7 @@ import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -55,29 +44,6 @@ public class MessageTransformOutbound extends PipelineComponent {
 		this.config = config;
 	}
 
-	/**
-	 * hacked version of this fn to force data into Enterprise DB
-     */
-/*
-	@Override
-	public void process(Exchange exchange) throws PipelineException {
-
-		TransformBatch transformBatch = getTransformBatch(exchange);
-
-		String serviceIdStr = exchange.getHeader(HeaderKeys.SenderServiceUuid);
-		UUID serviceId = UUID.fromString(serviceIdStr);
-		String orgIdStr = exchange.getHeader(HeaderKeys.SenderOrganisationUuid);
-		UUID orgId = UUID.fromString(orgIdStr);
-
-		try {
-			String outbound = EnterpriseFhirTransformer.transformFromFhir(serviceId, orgId, transformBatch.getBatchId(), null);
-			EnterpriseFiler.file(outbound);
-
-		} catch (Exception ex) {
-			throw new PipelineException("Exception saving to Enterprise DB", ex);
-		}
-	}
-*/
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
@@ -106,7 +72,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 			try {
 				technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetails(systemUuidStr, technicalInterfaceUuidStr);
 			} catch (Exception ex) {
-				throw new PipelineException("Failed to retrieve technical interface", ex);
+				throw new PipelineException("Failed to retrieve technical interface for system " + systemUuidStr + " and technical interface " + technicalInterfaceUuidStr + " for protocol " + transformBatch.getProtocolId(), ex);
 			}
 			/*LOG.debug("Technical interface found for system " + systemUuidStr + " and interface id " + technicalInterfaceUuidStr + " = " + (technicalInterface != null));
 			LOG.debug("Name {} UUID {} Frequency {} MessageType {} MessageFormat {} MessageFormatVersion {}",
@@ -132,9 +98,11 @@ public class MessageTransformOutbound extends PipelineComponent {
 				new QueuedMessageRepository().save(messageUuid, outboundData);
 
 				SubscriberBatch subscriberBatch = new SubscriberBatch();
-				subscriberBatch.setTechnicalInterface(technicalInterface);
-				subscriberBatch.setEndpoints(Lists.newArrayList(endpoint));
-				subscriberBatch.setOutputMessageId(messageUuid);
+				subscriberBatch.setQueuedMessageId(messageUuid);
+				subscriberBatch.setEndpoint(endpoint);
+				subscriberBatch.setSoftware(software);
+				subscriberBatch.setSoftwareVersion(softwareVersion);
+				subscriberBatch.setTechnicalInterfaceId(UUID.fromString(technicalInterfaceUuidStr));
 
 				subscriberBatches.add(subscriberBatch);
 			}
@@ -162,28 +130,30 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 			String zippedCsvs = FhirToEnterpriseCsvTransformer.transformFromFhir(senderOrganisationUuid, batchId, resourceIds, pseudonymised, endpoint);
 
-			//file the data directly, so return null to end the pipeline
+			return zippedCsvs;
+			/*//file the data directly, so return null to end the pipeline
 			if (!Strings.isNullOrEmpty(zippedCsvs)) {
 				EnterpriseFiler.file(zippedCsvs, config);
 			}
 
-			return null;
+			return null;*/
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
 
 			String xml = FhirToVitruCareXmlTransformer.transformFromFhir(batchId, resourceIds);
-			if (!Strings.isNullOrEmpty(xml)) {
+
+			return xml;
+			/*if (!Strings.isNullOrEmpty(xml)) {
 				sendHttpPost(xml, endpoint);
 			}
-			return null;
-			//return xml;
+			return null;*/
 
 		} else {
 			throw new PipelineException("Unsupported outbound software " + software + " for exchange " + exchange.getExchangeId());
 		}
 	}
 
-	private static void sendHttpPost(String payload, String url) throws Exception {
+	/*private static void sendHttpPost(String payload, String url) throws Exception {
 
 		//String url = "http://127.0.0.1:8002/notify";
 		//String url = "http://localhost:8002";
@@ -201,14 +171,14 @@ public class MessageTransformOutbound extends PipelineComponent {
 		// add header
 		//post.setHeader("User-Agent", USER_AGENT);
 
-		/*List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
+		*//*List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
 		urlParameters.add(new BasicNameValuePair("sn", "C02G8416DRJM"));
 		urlParameters.add(new BasicNameValuePair("cn", ""));
 		urlParameters.add(new BasicNameValuePair("locale", ""));
 		urlParameters.add(new BasicNameValuePair("caller", ""));
 		urlParameters.add(new BasicNameValuePair("num", "12345"));
 
-		post.setEntity(new UrlEncodedFormEntity(urlParameters));*/
+		post.setEntity(new UrlEncodedFormEntity(urlParameters));*//*
 
 		HttpEntity entity = new ByteArrayEntity(payload.getBytes("UTF-8"));
 		post.setEntity(entity);
@@ -233,7 +203,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 		if (statusCode != HttpStatus.SC_OK) {
 			throw new IOException("Failed to post to " + url);
 		}
-	}
+	}*/
 
 	/*@Override
 	public void process(Exchange exchange) throws PipelineException {
@@ -339,7 +309,6 @@ public class MessageTransformOutbound extends PipelineComponent {
 		try {
 			return ObjectMapperPool.getInstance().readValue(transformBatchJson, TransformBatch.class);
 		} catch (IOException e) {
-			LOG.error("Error deserializing transformation batch JSON", e);
 			throw new PipelineException("Error deserializing transformation batch JSON", e);
 		}
 	}

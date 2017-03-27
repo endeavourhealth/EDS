@@ -6,16 +6,18 @@ import {OrganisationManagerComponent} from "./organisationManager.component";
 import {OrganisationManagerEditorComponent} from "./organisationManagerEditor.component";
 import {OrganisationManagerService} from "./organisationManager.service";
 import {OrganisationManagerPickerDialog} from './organisationManagerPicker.dialog';
+import {OrganisationManagerOverviewComponent} from './organisationManagerOverview.component';
 
 @NgModule({
     imports : [
         BrowserModule,
         FormsModule,
-        NgbModule,
+        NgbModule
     ],
     declarations : [
         OrganisationManagerComponent,
         OrganisationManagerEditorComponent,
+        OrganisationManagerOverviewComponent,
         OrganisationManagerPickerDialog
     ],
     entryComponents : [

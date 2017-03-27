@@ -170,24 +170,36 @@ export class EpisodeViewComponent {
 				orgData.data.push({
 					x : episode.period.start.date,
 					y : this.getOrgTypeValue(episode.managingOrganisation.type),
-					events : { mouseOver : () => this.hoverEpisode(episode) }
+					events : {
+						mouseOver : () => this.hoverEpisode(episode),
+						click : () => this.selectEpisode(episode)
+					}
 				});
 				if (episode.period.end) {
 					orgData.data.push({
 						x : episode.period.end.date,
 						y : this.getOrgTypeValue(episode.managingOrganisation.type),
-						events : { mouseOver : () => this.hoverEpisode(episode) }
+						events : {
+							mouseOver : () => this.hoverEpisode(episode),
+							click : () => this.selectEpisode(episode)
+						}
 				});
 					orgData.data.push({
 						x : episode.period.end.date,
 						y : null,
-						events : { mouseOver : () => this.hoverEpisode(episode) }
+						events : {
+							mouseOver : () => this.hoverEpisode(episode),
+							click : () => this.selectEpisode(episode)
+						}
 					});
 				} else {
 					orgData.data.push({
 						x: new Date().getTime(),
 						y: this.getOrgTypeValue(episode.managingOrganisation.type),
-						events: {mouseOver: () => this.hoverEpisode(episode)}
+						events: {
+							mouseOver: () => this.hoverEpisode(episode),
+							click : () => this.selectEpisode(episode)
+						}
 					});
 				}
 			}

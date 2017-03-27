@@ -69,17 +69,36 @@ public class AddressEntity {
         return query.getResultList();
     }
 
-    public static void saveOrganisation(JsonAddress address) throws Exception {
+    public static void bulkSaveAddresses(List<AddressEntity> addressEntities) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
-        address.setUuid(address.getUuid());
+        int batchSize = 50;
+
+        entityManager.getTransaction().begin();
+
+        for (int i = 0; i < addressEntities.size(); i++) {
+            AddressEntity addressEntity = addressEntities.get(i);
+            entityManager.persist(addressEntity);
+            if (i % batchSize == 0){
+                entityManager.flush();
+                entityManager.clear();
+            }
+        }
+
+        entityManager.getTransaction().commit();
+    }
+
+    public static void saveAddress(JsonAddress address) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
         AddressEntity addressEntity = new AddressEntity(address);
+        addressEntity.setUuid(address.getUuid());
         entityManager.getTransaction().begin();
         entityManager.persist(addressEntity);
         entityManager.getTransaction().commit();
     }
 
-    public static void updateOrganisation(JsonAddress address) throws Exception {
+    public static void updateAddress(JsonAddress address) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
         AddressEntity addressEntity = entityManager.find(AddressEntity.class, address.getUuid());

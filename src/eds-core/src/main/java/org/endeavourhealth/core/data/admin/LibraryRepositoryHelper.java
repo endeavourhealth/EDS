@@ -105,10 +105,6 @@ public class LibraryRepositoryHelper {
 				.findFirst()
 				.get();
 
-		if (technicalInterface == null) {
-			throw new Exception("Failed to find technical interface for system " + systemUuidStr + " and technical interface " + technicalInterfaceUuidStr);
-		}
-
 		return technicalInterface;
 	}
 }

@@ -23,6 +23,12 @@
                     <input type="text" class="form-control" readonly value="{{getDeceasedText()}}">
                 </div>
             </div>
+						<div class="form-group col-md-3">
+							<label class="control-label">Organisation <small>(mandatory)</small></label>
+							<select class="form-control" [(ngModel)]="organisation" name="Organisation">
+								<option *ngFor="let item of userOrganisations" value="{{item.id}}">{{item.name}}</option>
+							</select>
+						</div>
             <div class="form-group col-md-3" [hidden]="hide(effectiveDate)">
                 <label class="control-label">Effective date</label>
                 <datetime
@@ -188,5 +194,5 @@
 
 <div class="modal-footer">
     <button type="button" class="btn bnt-default" (click)="cancel()">Cancel</button>
-    <button type="button" class="btn btn-primary" *ngIf="!editMode" (click)="ok()" [disabled]="!runDate">OK</button>
+    <button type="button" class="btn btn-primary" *ngIf="!editMode" (click)="ok()" [disabled]="!runDate || !organisation">OK</button>
 </div>

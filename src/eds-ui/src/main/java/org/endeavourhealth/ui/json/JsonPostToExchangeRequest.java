@@ -8,7 +8,9 @@ import java.util.UUID;
 public class JsonPostToExchangeRequest {
 
     private UUID exchangeId;
+    private UUID serviceId;
     private String exchangeName;
+    private boolean postAllExchanges;
 
     public JsonPostToExchangeRequest() {}
 
@@ -20,11 +22,27 @@ public class JsonPostToExchangeRequest {
         this.exchangeId = exchangeId;
     }
 
+    public UUID getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(UUID serviceId) {
+        this.serviceId = serviceId;
+    }
+
     public String getExchangeName() {
         return exchangeName;
     }
 
     public void setExchangeName(String exchangeName) {
         this.exchangeName = exchangeName;
+    }
+
+    public boolean isPostAllExchanges() {
+        return postAllExchanges;
+    }
+
+    public void setPostAllExchanges(boolean postAllExchanges) {
+        this.postAllExchanges = postAllExchanges;
     }
 }

@@ -45,17 +45,17 @@ public final class CountReportEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/runReport")
-    public Response runReport(@Context SecurityContext sc, @QueryParam("reportUuid") UUID reportUuid, @QueryParam("organisationUuid") UUID organisationUuid, String reportParamsJson) throws Exception {
+    public Response runReport(@Context SecurityContext sc, @QueryParam("reportUuid") UUID reportUuid, String reportParamsJson) throws Exception {
         try {
             UUID userUuid = SecurityUtils.getCurrentUserId(sc);
-            userAudit.save(userUuid, organisationUuid, AuditAction.Run, "Report",
+            userAudit.save(userUuid, getOrganisationUuidFromToken(sc), AuditAction.Run, "Report",
                 "uuid", reportUuid,
                 "params", reportParamsJson);
             LOG.debug("runReport");
 
             Map<String, String> reportParams = ObjectMapperPool.getInstance().readValue(reportParamsJson, new TypeReference<Map<String, String>>() {
             });
-            LibraryItem ret = countReportProvider.runReport(userUuid, reportUuid, organisationUuid, reportParams);
+            LibraryItem ret = countReportProvider.runReport(userUuid, reportUuid, reportParams);
 
             return Response
                 .ok(ret, MediaType.APPLICATION_JSON_TYPE)
