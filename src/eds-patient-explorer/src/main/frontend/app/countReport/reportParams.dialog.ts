@@ -26,7 +26,7 @@ export class ReportParamsDialog implements OnInit {
     referralPriorities : Concept[];
 
     runDate : Date;
-    includeDeceased : boolean;
+    includeDeceased : boolean = false;
     organisationUuid : string;
     effectiveDate : Date;
     regType : number;
