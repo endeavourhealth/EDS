@@ -8,6 +8,7 @@ import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import java.time.*;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 public class EnterpriseAgeUpdater {
     private static final Logger LOG = LoggerFactory.getLogger(EnterpriseAgeUpdater.class);
@@ -59,7 +60,13 @@ public class EnterpriseAgeUpdater {
 
             if (ret[UNIT_MONTHS].intValue() <= 12) {
                 ret[UNIT_MONTHS] = null;
-                ret[UNIT_WEEKS] = new Integer(period.getDays() / 7);
+
+                //period doesn't help with calculating the number of days in each month, so use an alternative
+                //method to calculate the number of days
+                long millis = new Date().getTime() - map.getDateOfBirth().getTime();
+                int days = (int)TimeUnit.DAYS.convert(millis, TimeUnit.MILLISECONDS);
+                ret[UNIT_WEEKS] = new Integer(days);
+                //ret[UNIT_WEEKS] = new Integer(period.getDays() / 7);
             }
         }
 
