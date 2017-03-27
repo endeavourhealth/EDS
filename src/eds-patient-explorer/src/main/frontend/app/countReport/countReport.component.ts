@@ -81,8 +81,7 @@ export class CountReportComponent {
 
 	executeReport(params : Map<string, string>) {
 		var vm = this;
-		var organisationUuid : string = vm.securityService.getCurrentUser().organisation;
-		vm.countReportService.runReport(this.libraryItem.uuid, organisationUuid, params)
+		vm.countReportService.runReport(this.libraryItem.uuid, params)
 			.subscribe(
 				(result) => {
 					vm.logger.success('Report successfully run', result, 'Run report');

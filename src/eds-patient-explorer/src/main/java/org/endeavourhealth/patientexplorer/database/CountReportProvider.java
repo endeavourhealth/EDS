@@ -23,9 +23,9 @@ import java.util.*;
 public class CountReportProvider {
 	private static final Logger LOG = LoggerFactory.getLogger(CountReportProvider.class);
 
-	public LibraryItem runReport(UUID userUuid, UUID reportUuid, UUID organisationUuid, Map<String,String> reportParams) throws Exception {
+	public LibraryItem runReport(UUID userUuid, UUID reportUuid, Map<String,String> reportParams) throws Exception {
 		ServiceRepository svcRepo = new ServiceRepository();
-		Service svc = svcRepo.getById(organisationUuid);
+		Service svc = svcRepo.getById(UUID.fromString(reportParams.get("OrganisationUuid")));
 		String odsCode = svc.getLocalIdentifier();
 
 		LOG.trace("GettingLibraryItem for UUID {}", reportUuid);

@@ -11,10 +11,9 @@ export class CountReportService extends BaseHttp2Service {
 		super(http);
 	}
 
-	runReport(reportUuid: string, organisationUuid : string, reportParams: Map<string, string>): Observable<LibraryItem> {
+	runReport(reportUuid: string, reportParams: Map<string, string>): Observable<LibraryItem> {
 		let params = new URLSearchParams();
 		params.set('reportUuid', reportUuid);
-		params.set('organisationUuid', organisationUuid);
 
 		return this.httpPost('api/countReport/runReport', reportParams, {search: params});
 	}
@@ -43,4 +42,9 @@ export class CountReportService extends BaseHttp2Service {
 		return this.httpGet('api/countReport/referralPriorities');
 	}
 
+	getServiceName(uuid : string) : Observable<string> {
+		let params = new URLSearchParams();
+		params.set('serviceId', uuid);
+		return this.httpGet('api/recordViewer/getServiceName', {search: params});
+	}
 }

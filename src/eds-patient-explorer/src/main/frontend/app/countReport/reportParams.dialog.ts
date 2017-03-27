@@ -9,6 +9,8 @@ import {CountReportService} from "./countReport.service";
 import {Practitioner} from "../practitioner/models/Practitioner";
 import {PractitionerPickerDialog} from "../practitioner/practitionerPicker.dialog";
 import {CountReport} from "./models/CountReport";
+import {OrgRole} from "../layout/models/OrgRole";
+import {SecurityService} from "../security/security.service";
 
 @Component({
     selector: 'ngbd-modal-content',
@@ -17,12 +19,15 @@ import {CountReport} from "./models/CountReport";
 export class ReportParamsDialog implements OnInit {
     @Input() countReport : CountReport;
 
-    encounterTypes : Concept[];
+		organisation : OrgRole;
+		userOrganisations : OrgRole[];
+		encounterTypes : Concept[];
     referralTypes : Concept[];
     referralPriorities : Concept[];
 
     runDate : Date;
     includeDeceased : boolean;
+    organisationUuid : string;
     effectiveDate : Date;
     regType : number;
     gender : number;
@@ -51,10 +56,12 @@ export class ReportParamsDialog implements OnInit {
     constructor(protected modalService : NgbModal,
                 protected activeModal: NgbActiveModal,
                 protected codingService : CodingService,
+                protected securityService : SecurityService,
                 protected countReportService : CountReportService) {
         this.loadEncounterTypes();
         this.loadReferralTypes();
         this.loadReferralPriorities();
+        this.loadUserOrganisations();
     }
 
     ngOnInit(): void {
@@ -184,11 +191,33 @@ export class ReportParamsDialog implements OnInit {
         return item === undefined;
     }
 
+	loadUserOrganisations() {
+		let vm = this;
+		if (!vm.userOrganisations) {
+
+			vm.userOrganisations = [];
+			for(let orgGroup of vm.securityService.getCurrentUser().organisationGroups) {
+				let orgRole = new OrgRole(orgGroup.organisationId, 'Loading...');
+				vm.countReportService.getServiceName(orgRole.id)
+					.subscribe(
+						(result) => {
+							if (result != null && result != '') {
+								orgRole.name = result;
+								vm.userOrganisations.push(orgRole);
+							}
+						}
+					);
+			}
+		}
+		return vm.userOrganisations;
+	}
+
     ok() {
         let params : any = {};
 
         params.RunDate = "'" + moment(this.runDate).format('DD/MM/YYYY') + "'";
-        params.DateOfDeath = (this.includeDeceased) ? 'null' : "'" + moment(this.runDate).format('DD/MM/YYYY') + "'";
+				params.OrganisationUuid = this.organisation;
+				params.DateOfDeath = (this.includeDeceased) ? 'null' : "'" + moment(this.runDate).format('DD/MM/YYYY') + "'";
         params.EffectiveDate = (this.effectiveDate) ? "'" + moment(this.effectiveDate).format('DD/MM/YYYY') + "'" : 'null';
         params.RegistrationType = (this.regType) ? this.regType : 'null';
         params.Gender = (this.gender) ? this.gender : 'null';
