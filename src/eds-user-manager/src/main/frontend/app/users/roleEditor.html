@@ -1,0 +1,50 @@
+<div class="modal-header">
+	<button type="button" class="close" (click)="cancel()" aria-hidden="true">&times;</button>
+	<h4 class="modal-title">{{dialogTitle}}</h4>
+</div>
+<div class="modal-body">
+	<form RoleDetails="form" class="container-fluid">
+		<div class="row">
+			<div class="form-group col-md-6">
+				<div>
+					<label class="control-label">Role name</label>
+					<input type="text" class="form-control" placeholder="Rolename" [(ngModel)]="resultData.name" name="rolename" #rolename>
+				</div>
+				<div>
+					<label for="description">Description</label>
+					<textarea class="form-control" id="description" [(ngModel)]="resultData.description" name="description" #description></textarea>
+				</div>
+				<div>
+					<label class="control-label">Organisation</label>
+					<div class="input-group">
+						<input type="text" name="searchTerm" placeholder="Organisation search..." class="form-control">
+						<span class="btn input-group-addon"><i class="fa fa-search" title="Search"></i></span>
+					</div>
+
+				</div>
+			</div>
+			<div class="form-group col-md-6">
+				<label class="control-label">Client Access Profiles</label>
+				<div class="table scroll-box-350 form-control" style="min-height: 220px">
+					<loadingIndicator [done]="availableClients">
+						<ul class="list-group" *ngFor="let client of availableClients" >
+							<h4 class="list-group-item-heading">{{client.name}}</h4>
+							<li class="list-group-item" *ngFor="let clientRole of client.clientRoles" #clientlist>
+								<div class="check-box">
+									<input type="checkbox" (ngModel)="clientRole.uuid" (ngModelChange)="processCheckedClientRole($event, clientRole)" name="optRadio" value="{{clientRole.uuid}}">  {{clientRole.name}}
+									<span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{clientRole.description}}" *ngIf="clientRole.description"></span>
+								</div>
+							</li>
+						</ul>
+					</loadingIndicator>
+				</div>
+			</div>
+		</div>
+	</form>
+</div>
+<div class="modal-footer">
+	<button type="button" class="btn"
+					(click)="cancel()">Cancel</button>
+	<button type="button" class="btn btn-primary"
+					(click)="save();">Save</button>
+</div>
