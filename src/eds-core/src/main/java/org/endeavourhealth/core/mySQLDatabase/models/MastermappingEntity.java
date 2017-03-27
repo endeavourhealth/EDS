@@ -102,86 +102,100 @@ public class MastermappingEntity {
     public static void saveOrganisationMappings(JsonOrganisationManager organisation) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
-        Map<UUID, String> regions = organisation.getRegions();
-        regions.forEach( (k,v) -> {
-            MastermappingEntity mme = new MastermappingEntity();
-            entityManager.getTransaction().begin();
-            mme.setChildUuid(organisation.getUuid());
-            mme.setParentUUid(k.toString());
-            mme.setMapTypeId((short)1);
-            entityManager.persist(mme);
-            entityManager.getTransaction().commit();
-        });
+        if (organisation.getRegions() != null) {
+            Map<UUID, String> regions = organisation.getRegions();
+            regions.forEach((k, v) -> {
+                MastermappingEntity mme = new MastermappingEntity();
+                entityManager.getTransaction().begin();
+                mme.setChildUuid(organisation.getUuid());
+                mme.setParentUUid(k.toString());
+                mme.setMapTypeId((short) 1);
+                entityManager.persist(mme);
+                entityManager.getTransaction().commit();
+            });
+        }
 
-        Map<UUID, String> parentOrganisations = organisation.getParentOrganisations();
-        parentOrganisations.forEach( (k,v) -> {
-            MastermappingEntity mme = new MastermappingEntity();
-            entityManager.getTransaction().begin();
-            mme.setChildUuid(organisation.getUuid());
-            mme.setParentUUid(k.toString());
-            mme.setMapTypeId((short)0);
-            entityManager.persist(mme);
-            entityManager.getTransaction().commit();
-        });
+        if (organisation.getParentOrganisations() != null) {
+            Map<UUID, String> parentOrganisations = organisation.getParentOrganisations();
+            parentOrganisations.forEach((k, v) -> {
+                MastermappingEntity mme = new MastermappingEntity();
+                entityManager.getTransaction().begin();
+                mme.setChildUuid(organisation.getUuid());
+                mme.setParentUUid(k.toString());
+                mme.setMapTypeId((short) 0);
+                entityManager.persist(mme);
+                entityManager.getTransaction().commit();
+            });
+        }
 
-        Map<UUID, String> childOrganisations = organisation.getChildOrganisations();
-        childOrganisations.forEach( (k,v) -> {
-            MastermappingEntity mme = new MastermappingEntity();
-            entityManager.getTransaction().begin();
-            mme.setChildUuid(k.toString());
-            mme.setParentUUid(organisation.getUuid());
-            mme.setMapTypeId((short)0);
-            entityManager.persist(mme);
-            entityManager.getTransaction().commit();
-        });
+        if (organisation.getChildOrganisations() != null) {
+            Map<UUID, String> childOrganisations = organisation.getChildOrganisations();
+            childOrganisations.forEach((k, v) -> {
+                MastermappingEntity mme = new MastermappingEntity();
+                entityManager.getTransaction().begin();
+                mme.setChildUuid(k.toString());
+                mme.setParentUUid(organisation.getUuid());
+                mme.setMapTypeId((short) 0);
+                entityManager.persist(mme);
+                entityManager.getTransaction().commit();
+            });
+        }
 
-        Map<UUID, String> services = organisation.getServices();
-        services.forEach( (k,v) -> {
-            MastermappingEntity mme = new MastermappingEntity();
-            entityManager.getTransaction().begin();
-            mme.setChildUuid(k.toString());
-            mme.setParentUUid(organisation.getUuid());
-            mme.setMapTypeId((short)0);
-            entityManager.persist(mme);
-            entityManager.getTransaction().commit();
-        });
+        if (organisation.getServices() != null) {
+            Map<UUID, String> services = organisation.getServices();
+            services.forEach((k, v) -> {
+                MastermappingEntity mme = new MastermappingEntity();
+                entityManager.getTransaction().begin();
+                mme.setChildUuid(k.toString());
+                mme.setParentUUid(organisation.getUuid());
+                mme.setMapTypeId((short) 0);
+                entityManager.persist(mme);
+                entityManager.getTransaction().commit();
+            });
+        }
     }
 
     public static void saveRegionMappings(JsonRegion region) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
-        Map<UUID, String> parentRegions = region.getParentRegions();
-        parentRegions.forEach((k, v) -> {
-            MastermappingEntity mme = new MastermappingEntity();
-            entityManager.getTransaction().begin();
-            mme.setChildUuid(region.getUuid());
-            mme.setParentUUid(k.toString());
-            mme.setMapTypeId((short) 1);
-            entityManager.persist(mme);
-            entityManager.getTransaction().commit();
-        });
+        if (region.getParentRegions() != null) {
+            Map<UUID, String> parentRegions = region.getParentRegions();
+            parentRegions.forEach((k, v) -> {
+                MastermappingEntity mme = new MastermappingEntity();
+                entityManager.getTransaction().begin();
+                mme.setChildUuid(region.getUuid());
+                mme.setParentUUid(k.toString());
+                mme.setMapTypeId((short) 1);
+                entityManager.persist(mme);
+                entityManager.getTransaction().commit();
+            });
+        }
 
-        Map<UUID, String> childRegions = region.getChildRegions();
-        childRegions.forEach((k, v) -> {
-            MastermappingEntity mme = new MastermappingEntity();
-            entityManager.getTransaction().begin();
-            mme.setChildUuid(k.toString());
-            mme.setParentUUid(region.getUuid());
-            mme.setMapTypeId((short) 1);
-            entityManager.persist(mme);
-            entityManager.getTransaction().commit();
-        });
+        if (region.getChildRegions() != null) {
+            Map<UUID, String> childRegions = region.getChildRegions();
+            childRegions.forEach((k, v) -> {
+                MastermappingEntity mme = new MastermappingEntity();
+                entityManager.getTransaction().begin();
+                mme.setChildUuid(k.toString());
+                mme.setParentUUid(region.getUuid());
+                mme.setMapTypeId((short) 1);
+                entityManager.persist(mme);
+                entityManager.getTransaction().commit();
+            });
+        }
 
-        Map<UUID, String> organisations = region.getOrganisations();
-        organisations.forEach((k, v) -> {
-            MastermappingEntity mme = new MastermappingEntity();
-            entityManager.getTransaction().begin();
-            mme.setChildUuid(k.toString());
-            mme.setParentUUid(region.getUuid());
-            mme.setMapTypeId((short) 1);
-            entityManager.persist(mme);
-            entityManager.getTransaction().commit();
-        });
+        if (region.getOrganisations() != null) {
+            Map<UUID, String> organisations = region.getOrganisations();
+            organisations.forEach((k, v) -> {
+                MastermappingEntity mme = new MastermappingEntity();
+                entityManager.getTransaction().begin();
+                mme.setChildUuid(k.toString());
+                mme.setParentUUid(region.getUuid());
+                mme.setMapTypeId((short) 1);
+                entityManager.persist(mme);
+                entityManager.getTransaction().commit();
+            });
+        }
     }
 
 }

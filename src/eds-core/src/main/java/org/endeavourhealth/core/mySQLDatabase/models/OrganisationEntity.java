@@ -35,9 +35,21 @@ import java.util.UUID;
                         @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "Child"),
                         @StoredProcedureParameter(mode = ParameterMode.IN, type = Short.class, name = "MappingType")
                 }
+        ),
+        @NamedStoredProcedureQuery(
+                name = "deleteUneditedBulkOrganisations",
+                procedureName = "deleteUneditedBulkOrganisations"
+        ),
+        @NamedStoredProcedureQuery(
+                name = "getServiceStatistics",
+                procedureName = "getServiceStatistics"
+        ),
+        @NamedStoredProcedureQuery(
+                name = "getOrganisationStatistics",
+                procedureName = "getOrganisationStatistics"
         )
 })
-@Table(name = "organisation", schema = "organisationmanager")
+@Table(name = "organisation", schema = "organisationmanager", catalog = "")
 public class OrganisationEntity {
 
     private String name;
@@ -50,6 +62,9 @@ public class OrganisationEntity {
     private String evidenceOfRegistration;
     private String uuid;
     private byte isService;
+    private byte bulkImported;
+    private byte bulkItemUpdated;
+    private String bulkConflictedWith;
 
     public static List<Object[]> getChildOrganisationsFromMappings(String parent, Short mapType, Short organisationType) throws Exception {
 
@@ -80,6 +95,38 @@ public class OrganisationEntity {
         return ent;
     }
 
+    public static void deleteUneditedBulkOrganisations() throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("deleteUneditedBulkOrganisations");
+        spq.execute();
+        entityManager.close();
+    }
+
+    public static List<Object[]> getOrganisationStatistics() throws Exception {
+
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getOrganisationStatistics");
+        spq.execute();
+        List<Object[]> ent = spq.getResultList();
+        entityManager.close();
+
+        return ent;
+    }
+
+    public static List<Object[]> getServiceStatistics() throws Exception {
+
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getServiceStatistics");
+        spq.execute();
+        List<Object[]> ent = spq.getResultList();
+        entityManager.close();
+
+        return ent;
+    }
+
     public static List<OrganisationEntity> getAllOrganisations(boolean services) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
@@ -88,7 +135,7 @@ public class OrganisationEntity {
         Root<OrganisationEntity> rootEntry = cq.from(OrganisationEntity.class);
 
         //Services are just organisations with the isService flag set to true;
-        Predicate predicate = cb.equal(rootEntry.get("isService"), (byte)(services ? 1 : 0));
+        Predicate predicate = cb.equal(rootEntry.get("isService"), (byte) (services ? 1 : 0));
 
         cq.where(predicate);
         TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
@@ -112,8 +159,9 @@ public class OrganisationEntity {
         organisationEntity.setOdsCode(organisation.getOdsCode());
         organisationEntity.setIcoCode(organisation.getIcoCode());
         organisationEntity.setIgToolkitStatus(organisation.getIgToolkitStatus());
-        organisationEntity.setIsService((byte) (organisation.getIsService().equals("1")? 1 : 0));
-        if (organisation.getDateOfRegistration() != null){
+        organisationEntity.setIsService((byte) (organisation.getIsService().equals("1") ? 1 : 0));
+        organisationEntity.setBulkItemUpdated((byte)1);
+        if (organisation.getDateOfRegistration() != null) {
             organisationEntity.setDateOfRegistration(Date.valueOf(organisation.getDateOfRegistration()));
         }
         //organisationEntity.setRegistrationPerson(organisation.getRegistrationPerson());
@@ -131,14 +179,37 @@ public class OrganisationEntity {
         organisationEntity.setOdsCode(organisation.getOdsCode());
         organisationEntity.setIcoCode(organisation.getIcoCode());
         organisationEntity.setIgToolkitStatus(organisation.getIgToolkitStatus());
-        organisationEntity.setIsService((byte) (organisation.getIsService().equals("1")? 1 : 0));
-        if (organisation.getDateOfRegistration() != null){
+        organisationEntity.setIsService((byte) (organisation.getIsService().equals("1") ? 1 : 0));
+        organisationEntity.setBulkImported((byte) (organisation.getBulkImported().equals("1") ? 1 : 0));
+        organisationEntity.setBulkItemUpdated((byte) (organisation.getBulkItemUpdated().equals("1") ? 1 : 0));
+        if (organisation.getDateOfRegistration() != null) {
             organisationEntity.setDateOfRegistration(Date.valueOf(organisation.getDateOfRegistration()));
         }
         //organisationEntity.setRegistrationPerson(organisation.getRegistrationPerson());
         organisationEntity.setEvidenceOfRegistration(organisation.getEvidenceOfRegistration());
         organisationEntity.setUuid(organisation.getUuid());
         entityManager.persist(organisationEntity);
+        entityManager.getTransaction().commit();
+        entityManager.close();
+
+    }
+
+    public static void bulkSaveOrganisation(List<OrganisationEntity> organisationEntities) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        int batchSize = 50;
+
+        entityManager.getTransaction().begin();
+
+        for (int i = 0; i < organisationEntities.size(); i++) {
+            OrganisationEntity organisationEntity = organisationEntities.get(i);
+            entityManager.persist(organisationEntity);
+            if (i % batchSize == 0){
+                entityManager.flush();
+                entityManager.clear();
+            }
+        }
+
         entityManager.getTransaction().commit();
     }
 
@@ -158,10 +229,39 @@ public class OrganisationEntity {
         CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
         Root<OrganisationEntity> rootEntry = cq.from(OrganisationEntity.class);
 
-        Predicate predicate = cb.and(cb.equal(rootEntry.get("isService"), (byte)(searchServices ? 1 : 0)), (cb.or(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"),
+        Predicate predicate = cb.and(cb.equal(rootEntry.get("isService"), (byte) (searchServices ? 1 : 0)), (cb.or(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"),
                 cb.like(cb.upper(rootEntry.get("odsCode")), "%" + expression.toUpperCase() + "%"),
                 cb.like(cb.upper(rootEntry.get("alternativeName")), "%" + expression.toUpperCase() + "%"),
                 cb.like(cb.upper(rootEntry.get("icoCode")), "%" + expression.toUpperCase() + "%"))));
+
+        cq.where(predicate);
+        TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
+        return query.getResultList();
+    }
+
+    public static List<OrganisationEntity> getUpdatedBulkOrganisations() throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
+        Root<OrganisationEntity> rootEntry = cq.from(OrganisationEntity.class);
+
+        Predicate predicate = cb.and(cb.equal(rootEntry.get("bulkImported"), (byte) 1),
+            (cb.equal(rootEntry.get("bulkItemUpdated"), (byte) 1)));
+
+        cq.where(predicate);
+        TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
+        return query.getResultList();
+    }
+
+    public static List<OrganisationEntity> getConflictedOrganisations() throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
+        Root<OrganisationEntity> rootEntry = cq.from(OrganisationEntity.class);
+
+        Predicate predicate = cb.isNotNull(rootEntry.get("bulkConflictedWith"));
 
         cq.where(predicate);
         TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
@@ -179,7 +279,7 @@ public class OrganisationEntity {
     }
 
     @Basic
-    @Column(name = "alternative_name", nullable = false, length = 100)
+    @Column(name = "alternative_name", nullable = true, length = 100)
     public String getAlternativeName() {
         return alternativeName;
     }
@@ -305,5 +405,35 @@ public class OrganisationEntity {
 
     public void setIsService(byte isService) {
         this.isService = isService;
+    }
+
+    @Basic
+    @Column(name = "BulkImported", nullable = false)
+    public byte getBulkImported() {
+        return bulkImported;
+    }
+
+    public void setBulkImported(byte bulkImported) {
+        this.bulkImported = bulkImported;
+    }
+
+    @Basic
+    @Column(name = "BulkItemUpdated", nullable = false)
+    public byte getBulkItemUpdated() {
+        return bulkItemUpdated;
+    }
+
+    public void setBulkItemUpdated(byte bulkItemUpdated) {
+        this.bulkItemUpdated = bulkItemUpdated;
+    }
+
+    @Basic
+    @Column(name = "BulkConflictedWith", nullable = true, length = 36)
+    public String getBulkConflictedWith() {
+        return bulkConflictedWith;
+    }
+
+    public void setBulkConflictedWith(String bulkConflictedWith) {
+        this.bulkConflictedWith = bulkConflictedWith;
     }
 }

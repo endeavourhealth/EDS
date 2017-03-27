@@ -49,9 +49,10 @@ import {TransformErrorsComponent} from "./transformErrors/transformErrors.compon
 import {CountReportEditComponent} from "./countReport/countReport.component";
 import {ExchangeAuditComponent} from "./exchangeAudit/exchangeAudit.component";
 import {OrganisationManagerComponent} from "./organisationManager/organisationManager.component";
+import {OrganisationManagerEditorComponent} from "./organisationManager/organisationManagerEditor.component";
+import {OrganisationManagerOverviewComponent} from "./organisationManager/organisationManagerOverview.component";
 import {RegionComponent} from "./region/region.component";
 import {RegionEditorComponent} from "./region/regionEditor.component";
-import {OrganisationManagerEditorComponent} from "./organisationManager/organisationManagerEditor.component";
 import {CohortComponent} from "./cohort/cohort.component";
 import {CohortEditorComponent} from "./cohort/cohortEditor.component";
 import {DataFlowComponent} from "./dataFlow/dataFlow.component";
@@ -114,10 +115,11 @@ import {DataSharingSummaryEditorComponent} from "./dataSharingSummary/dataSharin
 			{name: 'app.transformErrors', url: '/transformErrors', component: TransformErrorsComponent},
 			{name: 'app.exchangeAudit', url: '/exchangeAudit/:serviceUuid', component: ExchangeAuditComponent},
 			{name: 'app.countReportEdit', url: '/countReportEdit/:itemAction/:itemUuid', component: CountReportEditComponent},
-			{name: 'app.organisationManager', url: '/organisationManager', component: OrganisationManagerComponent},
+			{name: 'app.organisationManagerOverview', url: '/organisationManager/overview', component: OrganisationManagerOverviewComponent},
+			{name: 'app.organisationManager', url: '/organisationManager/:mode', component: OrganisationManagerComponent},
+			{name: 'app.organisationManagerEditor', url: '/organisationManager/:itemAction/:itemUuid', component: OrganisationManagerEditorComponent},
 			{name: 'app.region', url: '/region', component: RegionComponent},
 			{name: 'app.regionEditor', url: '/region/:itemAction/:itemUuid', component: RegionEditorComponent},
-			{name: 'app.organisationManagerEditor', url: '/organisationManager/:itemAction/:itemUuid', component: OrganisationManagerEditorComponent},
 			{name: 'app.cohort', url: '/cohort', component: CohortComponent},
 			{name: 'app.cohortEditor', url: '/cohort/:itemAction/:itemUuid', component: CohortEditorComponent},
 			{name: 'app.dataFlow', url: '/dataFlow', component: DataFlowComponent},

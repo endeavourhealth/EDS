@@ -6,6 +6,7 @@ import {Organisation} from "./models/Organisation";
 import {Region} from "../region/models/Region";
 import {Address} from "./models/Address";
 import {Marker} from "../region/models/Marker";
+import {OrganisationManagerStatistics} from "./models/OrganisationManagerStatistics";
 
 @Injectable()
 export class OrganisationManagerService extends BaseHttp2Service  {
@@ -59,7 +60,6 @@ export class OrganisationManagerService extends BaseHttp2Service  {
     }
 
     saveOrganisation(organisation : Organisation) : Observable<any> {
-        console.log(organisation);
         return this.httpPost('api/organisationManager', organisation);
     }
 
@@ -82,5 +82,28 @@ export class OrganisationManagerService extends BaseHttp2Service  {
         return this.httpGet('api/organisationManager/markers', { search : params });
     }
 
+    getUpdatedBulkOrganisations() : Observable<any> {
+        return this.httpGet('api/organisationManager/editedBulks');
+    }
+
+    getConflictedOrganisations() : Observable<any> {
+        return this.httpGet('api/organisationManager/conflicts');
+    }
+
+    deleteBulks() : Observable<any> {
+        return this.httpDelete('api/organisationManager/deleteBulks');
+    }
+
+    uploadCsv(csvData : String) : Observable<any> {
+        return this.httpPost('api/organisationManager/upload', csvData);
+    }
+
+    getOrganisationStatistics() : Observable<OrganisationManagerStatistics[]> {
+        return this.httpGet('api/organisationManager/organisationStatistics');
+    }
+
+    getServiceStatistics() : Observable<OrganisationManagerStatistics[]> {
+        return this.httpGet('api/organisationManager/serviceStatistics');
+    }
 
 }

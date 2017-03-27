@@ -16,7 +16,7 @@ drop table if exists OrganisationManager.Organisation;
 create table OrganisationManager.Organisation (
 	uuid char(36) not null primary key,
     name varchar(100) not null,
-    alternative_name varchar(100) not null,
+    alternative_name varchar(100) null,
     ods_code varchar(10) null,
     ico_code varchar(10) null,
     ig_toolkit_status varchar(10) null,
@@ -24,14 +24,20 @@ create table OrganisationManager.Organisation (
     registration_person char(36) null,  /*change to not null*/
     evidence_of_registration varchar(500) null, /*change to not null*/
     IsService boolean not null,
+    BulkImported boolean not null,
+    BulkItemUpdated boolean not null,
+    BulkConflictedWith char(36) null,
     
     index (name asc, ods_code asc)
 );
 
+
 /*
-alter table OrganisationManager.Organisation add column IsService boolean null;
-update OrganisationManager.Organisation set IsService = 0;
-alter table OrganisationManager.Organisation modify IsService boolean not null;
+alter table OrganisationManager.Organisation add column BulkConflictedWith char(36) null;
+
+alter table OrganisationManager.Organisation add column BulkItemUpdated boolean null;
+update OrganisationManager.Organisation set BulkItemUpdated = 0;
+alter table OrganisationManager.Organisation modify BulkItemUpdated boolean not null;
 */
 
 alter table OrganisationManager.Organisation
