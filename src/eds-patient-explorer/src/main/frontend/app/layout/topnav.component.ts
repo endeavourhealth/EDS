@@ -17,4 +17,12 @@ export class TopnavComponent {
 
 		vm.currentUser = this.securityService.getCurrentUser();
 	}
+
+	navigateUserAccount() {
+		window.location.href = "eds-user-manager/#/app/users/userManagerUserView";
+	}
+
+	logout() {
+		this.securityService.logout();
+	};
 }
