@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.endeavourhealth.common.security.models.EndUser;
 import org.keycloak.representations.idm.UserRepresentation;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -15,10 +17,17 @@ public final class JsonEndUser {
     private String title = null;
     private String forename = null;
     private String surname = null;
+    private String email = null;
+    private String mobile = null;
+    private String photo = null;
+    private String totp = null;
     private Boolean superUser = null; //using non-primative types because serialisation to JSON can skip nulls, if we want
     private Boolean admin = null;
     private Integer permissions = null; //to be removed after isEDSAdmin is adopted
     private Boolean mustChangePassword = null;
+
+    private List<JsonEndUserRole> userRoles = null;
+
 
     public JsonEndUser() {
     }
@@ -28,7 +37,24 @@ public final class JsonEndUser {
         this.username = keycloakUser.getUsername();
         this.forename = keycloakUser.getFirstName();
         this.surname = keycloakUser.getLastName();
+        this.email = keycloakUser.getEmail();
+        this.totp = keycloakUser.isTotp()==true ? "yes" : "no";
+
+        //Extract attributes such as mobile and photo, remove start and end [] chars
+        Map<String, Object> userAttributes = keycloakUser.getAttributes();
+        if (userAttributes != null) {
+            for (String attributeKey : userAttributes.keySet()) {
+                if (attributeKey.equalsIgnoreCase("mobile")) {
+                    Object obj = userAttributes.get(attributeKey);
+                    this.mobile = obj.toString().substring(1, obj.toString().length()-1);
+                } else if (attributeKey.equalsIgnoreCase("photo")) {
+                    Object obj = userAttributes.get(attributeKey);
+                    this.photo = obj.toString().substring(1, obj.toString().length()-1);;
+                }
+            }
+        }
     }
+
 
     public JsonEndUser(EndUser endUser, Boolean isAdmin, Boolean mustChangePassword) {
         this.uuid = endUser.getId();
@@ -36,6 +62,7 @@ public final class JsonEndUser {
         this.title = endUser.getTitle();
         this.forename = endUser.getForename();
         this.surname = endUser.getSurname();
+        this.email = endUser.getEmail();
         this.superUser = Boolean.valueOf(endUser.getIsSuperUser());
         this.admin = isAdmin;
         this.mustChangePassword = mustChangePassword;
@@ -101,6 +128,10 @@ public final class JsonEndUser {
         this.surname = surname;
     }
 
+    public String getEmail() { return email; }
+
+    public void setEmail() {this.email = email; }
+
     public Boolean getAdmin() {
         return admin;
     }
@@ -132,4 +163,25 @@ public final class JsonEndUser {
     public void setMustChangePassword(Boolean mustChangePassword) {
         this.mustChangePassword = mustChangePassword;
     }
+
+    public List<JsonEndUserRole> getUserRoles() {
+        return userRoles;
+    }
+
+    public void setUserRoles(List<JsonEndUserRole> userRoles) {
+        this.userRoles = userRoles;
+    }
+
+    public String getMobile() {return mobile; }
+
+    public void setMobile(String mobile) { this.mobile = mobile;}
+
+    public String getPhoto() {return photo; }
+
+    public void setPhoto(String photo) { this.photo = photo;}
+
+    public String getTOTP() {return totp; }
+
+    public void setTOTP(String totp) { this.totp = totp;}
+
 }
