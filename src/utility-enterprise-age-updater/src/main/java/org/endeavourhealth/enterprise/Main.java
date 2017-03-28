@@ -58,9 +58,11 @@ public class Main {
                     if (currentConnection != null) {
                         currentConnection.close();
                     }
+
                     currentConfigName = ageToUpdate.getEnterpriseConfigName();
                     JsonNode config = ConfigManager.getConfigurationAsJson(currentConfigName, "enterprise");
                     currentConnection = openConnection(config);
+                    LOG.info("Updating ages on " + currentConfigName);
                 }
 
                 updateEnterprise(ageToUpdate.getEnterprisePatientId(), ages, currentConnection);
@@ -142,6 +144,8 @@ public class Main {
         update.executeBatch();
 
         connection.commit();
+
+        LOG.info("Updated patient " + enterprisePatientId + " to ages " + ages[EnterpriseAgeUpdater.UNIT_YEARS] + "y, " + ages[EnterpriseAgeUpdater.UNIT_MONTHS] + "m " + ages[EnterpriseAgeUpdater.UNIT_WEEKS] + " wks");
     }
 
     private static List<EnterpriseAge> findAgesToUpdate(EntityManager entityManager) {
