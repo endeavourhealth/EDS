@@ -44,6 +44,8 @@
         <mysql.version>6.0.5</mysql.version>
         <junit.version>4.12</junit.version>
         <swagger.version>1.5.10</swagger.version>
+        <slack-integration.version>1.2.1</slack-integration.version>
+
     </properties>
 
     <repositories>
