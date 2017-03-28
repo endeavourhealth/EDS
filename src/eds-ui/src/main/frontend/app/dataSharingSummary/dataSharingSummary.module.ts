@@ -6,6 +6,7 @@ import {DataSharingSummaryComponent} from "./dataSharingSummary.component";
 import {DataSharingSummaryEditorComponent} from "./dataSharingSummaryEditor.component";
 import {DataSharingSummaryService} from "./dataSharingSummary.service";
 import {NKDatetimeModule} from "ng2-datetime/ng2-datetime";
+import {DataSharingSummaryPickerDialog} from './dataSharingSummaryPicker.dialog'
 
 @NgModule({
     imports : [
@@ -16,9 +17,11 @@ import {NKDatetimeModule} from "ng2-datetime/ng2-datetime";
     ],
     declarations : [
         DataSharingSummaryComponent,
-        DataSharingSummaryEditorComponent
+        DataSharingSummaryEditorComponent,
+        DataSharingSummaryPickerDialog
     ],
     entryComponents : [
+        DataSharingSummaryPickerDialog
     ],
     providers : [
         DataSharingSummaryService

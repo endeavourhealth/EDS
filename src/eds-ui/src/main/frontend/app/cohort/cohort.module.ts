@@ -5,6 +5,7 @@ import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {CohortComponent} from "./cohort.component";
 import {CohortEditorComponent} from "./cohortEditor.component";
 import {CohortService} from "./cohort.service";
+import {CohortPickerDialog} from './cohortPicker.dialog';
 
 @NgModule({
     imports : [
@@ -14,9 +15,11 @@ import {CohortService} from "./cohort.service";
     ],
     declarations : [
         CohortComponent,
-        CohortEditorComponent
+        CohortEditorComponent,
+        CohortPickerDialog
     ],
     entryComponents : [
+        CohortPickerDialog
     ],
     providers : [
         CohortService

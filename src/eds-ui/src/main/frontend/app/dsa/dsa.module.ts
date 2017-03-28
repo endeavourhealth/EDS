@@ -5,6 +5,7 @@ import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {DsaComponent} from "./dsa.component";
 import {DsaEditorComponent} from "./dsaEditor.component";
 import {DsaService} from "./dsa.service";
+import {DsaPickerDialog} from './dsaPicker.dialog'
 
 @NgModule({
     imports : [
@@ -14,9 +15,11 @@ import {DsaService} from "./dsa.service";
     ],
     declarations : [
         DsaComponent,
-        DsaEditorComponent
+        DsaEditorComponent,
+        DsaPickerDialog
     ],
     entryComponents : [
+        DsaPickerDialog
     ],
     providers : [
         DsaService
