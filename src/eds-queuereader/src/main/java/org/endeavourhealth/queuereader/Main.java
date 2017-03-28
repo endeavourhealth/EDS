@@ -96,12 +96,14 @@ public class Main {
 			return;
 		}
 
+		String configId = args[0];
+
 		LOG.info("--------------------------------------------------");
-		LOG.info("EDS Queue Reader " + args[0]);
+		LOG.info("EDS Queue Reader " + configId);
 		LOG.info("--------------------------------------------------");
 
 		LOG.info("Fetching queuereader configuration");
-		String configXml = ConfigManager.getConfiguration(args[0]);
+		String configXml = ConfigManager.getConfiguration(configId);
 		QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
 
 		// Instantiate rabbit handler

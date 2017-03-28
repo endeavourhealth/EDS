@@ -1,9 +1,13 @@
 package org.endeavourhealth.queuereader;
 
+import com.google.common.base.Strings;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
+import net.gpedro.integrations.slack.SlackApi;
+import net.gpedro.integrations.slack.SlackException;
+import net.gpedro.integrations.slack.SlackMessage;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.data.admin.models.QueuedMessage;
@@ -20,11 +24,15 @@ import java.util.UUID;
 public class RabbitConsumer extends DefaultConsumer {
 	private static final Logger LOG = LoggerFactory.getLogger(RabbitConsumer.class);
 
-	PipelineProcessor pipeline;
+	private PipelineProcessor pipeline;
+	private QueueReaderConfiguration configuration;
+	private UUID lastExchangeRejected;
 
 	public RabbitConsumer(Channel channel, QueueReaderConfiguration configuration) {
 		super(channel);
-		pipeline = new PipelineProcessor(configuration.getPipeline());
+
+		this.pipeline = new PipelineProcessor(configuration.getPipeline());
+		this.configuration = configuration;
 	}
 
 	@Override
@@ -60,7 +68,41 @@ public class RabbitConsumer extends DefaultConsumer {
 		} else {
 			//LOG.error("Failed to process exchange {}", exchange.getExchangeId());
 			this.getChannel().basicReject(envelope.getDeliveryTag(), true);
+			sendSlackAlert(exchange);
 			LOG.error("Have sent REJECT for exchange {}", exchange.getExchangeId());
+		}
+	}
+
+	private void sendSlackAlert(Exchange exchange) {
+		String slackUrl = configuration.getRejectionSlackAlertUrl();
+		if (Strings.isNullOrEmpty(slackUrl)) {
+			LOG.error("No Slack URL set in config XML for alerting of rejections");
+			return;
+		}
+
+		String queueName = configuration.getQueue();
+
+		UUID exchangeId = exchange.getExchangeId();
+		if (lastExchangeRejected != null
+			&& lastExchangeRejected.equals(exchangeId)) {
+			return;
+		}
+
+		lastExchangeRejected = exchangeId;
+
+		String s = "Exchange " + exchangeId + " rejected in " + queueName;
+		if (exchange.getException() != null) {
+
+		}
+
+		SlackMessage message = new SlackMessage();
+
+		try {
+			SlackApi slackApi = new SlackApi(slackUrl);
+			slackApi.call(message);
+
+		} catch (SlackException ex) {
+			LOG.error("Error sending Slack notification to " + slackUrl, ex);
 		}
 	}
 }

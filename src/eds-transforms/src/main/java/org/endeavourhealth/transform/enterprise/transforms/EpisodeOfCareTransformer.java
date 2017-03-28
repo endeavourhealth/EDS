@@ -1,5 +1,6 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
+import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.fhir.schema.RegistrationType;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
@@ -41,7 +42,7 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
             long organisationId;
             long patientId;
             long personId;
-            Integer registrationTypeId;
+            Integer registrationTypeId = null;
             Date dateRegistered = null;
             Date dateRegisteredEnd = null;
             Long usualGpPractitionerId = null;
@@ -57,22 +58,16 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
             }
 
             //the registration type is a field on the Patient resource, even though it should really be part of the episode
-            RegistrationType fhirRegistrationType = null;
-
             Patient fhirPatient = (Patient)findResource(fhirEpisode.getPatient(), otherResources);
-            if (fhirPatient != null //if a patient has been subsequently deleted, this will be null
-                    && fhirPatient.hasExtension()) {
+            if (fhirPatient != null) { //if a patient has been subsequently deleted, this will be null)
 
-                for (Extension extension: fhirPatient.getExtension()) {
-                    if (extension.getUrl().equals(FhirExtensionUri.PATIENT_REGISTRATION_TYPE)) {
-                        Coding coding = (Coding)extension.getValue();
-                        fhirRegistrationType = RegistrationType.fromCode(coding.getCode());
-
-                    }
+                Extension extension = ExtensionConverter.findExtension(fhirPatient, FhirExtensionUri.PATIENT_REGISTRATION_TYPE);
+                if (extension != null) {
+                    Coding coding = (Coding)extension.getValue();
+                    RegistrationType fhirRegistrationType = RegistrationType.fromCode(coding.getCode());
+                    registrationTypeId = new Integer(fhirRegistrationType.ordinal());
                 }
             }
-
-            registrationTypeId = new Integer(fhirRegistrationType.ordinal());
 
             Period period = fhirEpisode.getPeriod();
             if (period.hasStart()) {
