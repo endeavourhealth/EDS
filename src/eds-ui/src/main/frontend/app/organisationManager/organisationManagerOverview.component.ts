@@ -73,9 +73,12 @@ export class OrganisationManagerOverviewComponent {
 
         myReader.onloadend = function(e){
             // you can perform an action with readed data here
+            vm.log.success('Uploading File', null, 'Upload');
             vm.organisationManagerService.uploadCsv(myReader.result)
                     .subscribe(result => {
-                        vm.log.success('Organisations uploaded successfully');
+                        vm.log.success('Organisations uploaded successfully', null, 'Success');
+                        vm.getOrganisationStatistics();
+                        vm.getServiceStatistics();
                         vm.getConflictingOrganisations();
                     },
                     error => vm.log.error('Failed to upload bulk organisations', error, 'Upload Bulk Organisations')

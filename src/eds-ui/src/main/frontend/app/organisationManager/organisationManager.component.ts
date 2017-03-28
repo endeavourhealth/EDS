@@ -5,7 +5,9 @@ import {Organisation} from "./models/Organisation";
 import {LoggerService} from "../common/logger.service";
 import {OrganisationManagerService} from "./organisationManager.service";
 import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
-import {Region} from "../region/models/Region";
+
+import * as _ from 'underscore';
+import { PaginationService } from '../pagination/pagination.service';
 
 @Component({
     template: require('./organisationManager.html')
@@ -13,13 +15,28 @@ import {Region} from "../region/models/Region";
 export class OrganisationManagerComponent {
     organisations : Organisation[];
     modeType : string;
+    searchData : string;
+    searchType : string;
+
+    // array of all items to be paged
+    private allItems: Organisation[];
+
+    // pager object
+    pager: any = {};
+
+    // paged items
+    pagedItems: any[];
+
+    //page size
+    pageSize : number = 15;
 
     constructor(private $modal: NgbModal,
                 private organisationManagerService : OrganisationManagerService,
                 private log : LoggerService,
                 protected $state : StateService,
                 private transition : Transition,
-                private state : StateService) {
+                private state : StateService,
+                private paginationService : PaginationService) {
         this.performAction(transition.params()['mode']);
     }
 
@@ -27,10 +44,12 @@ export class OrganisationManagerComponent {
         switch (mode) {
             case 'organisations':
                 this.modeType = 'Organisation';
+                this.searchType = 'organisation';
                 this.getOrganisations();
                 break;
             case 'services':
                 this.modeType = 'Service';
+                this.searchType = 'services';
                 this.getAllServices();
                 break;
         }
@@ -39,18 +58,34 @@ export class OrganisationManagerComponent {
         var vm = this;
         vm.organisationManagerService.getOrganisations()
             .subscribe(result => {
-                    vm.organisations = result
+                    this.allItems = result;
+                    this.organisations = result;
+                    this.setPage(1);
                 },
                 error => vm.log.error('Failed to load organisations', error, 'Load organisations')
             );
 
     }
 
+    setPage(page: number) {
+        if (page < 1 || page > this.pager.totalPages) {
+            return;
+        }
+
+        // get pager object from service
+        this.pager = this.paginationService.getPager(this.allItems.length, page, this.pageSize);
+
+        // get current page of items
+        this.pagedItems = this.allItems.slice(this.pager.startIndex, this.pager.endIndex + 1);
+    }
+
     private getAllServices() {
         var vm = this;
         vm.organisationManagerService.getAllServices()
-            .subscribe(
-                result => vm.organisations = result,
+            .subscribe(result => {
+                    this.allItems = result;
+                    this.setPage(1);
+                },
                 error => vm.log.error('Failed to load Services', error, 'Load Services')
             );
     }
@@ -105,7 +140,24 @@ export class OrganisationManagerComponent {
     }
 
     close() {
+        console.log(this.transition.from);
+        console.log(this.state);
         this.state.go(this.transition.from());
+    }
+
+    private search() {
+        var vm = this;
+        if (vm.searchData.length < 3) {
+            vm.allItems = vm.organisations;
+            return;
+        }
+        vm.organisationManagerService.search(vm.searchData, vm.searchType)
+            .subscribe(result => {
+                    vm.allItems = result;
+                    vm.setPage(1);
+                },
+                error => vm.log.error(error)
+            );
     }
 
 }

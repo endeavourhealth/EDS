@@ -144,6 +144,8 @@ export class OrganisationManagerEditorComponent {
     }
 
     close() {
+        console.log(this.transition);
+        this.$state.go('app.organisationManager', {mode: 'organisations'});
         this.adminService.clearPendingChanges();
         this.state.go(this.transition.from());
     }

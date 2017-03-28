@@ -15,20 +15,20 @@ BEGIN
     where IsService = 0;
     
     insert into OrganisationStatistics (label, value)
-    select 'Number of Bulk Imported Organisations', count(*) 
+    select 'Bulk Imported Organisations', count(*) 
     from OrganisationManager.Organisation
     where BulkImported = 1
     and IsService = 0;
     
     insert into OrganisationStatistics (label, value)
-    select 'Number of Edited Bulk Imported Organisations', count(*) 
+    select 'Edited Bulk Imported Organisations', count(*) 
     from OrganisationManager.Organisation
     where BulkImported = 1
     and BulkItemUpdated = 1
     and IsService = 0;
     
     insert into OrganisationStatistics (label, value)
-    select 'Number of Manually Created Organisations', count(*) 
+    select 'Manually Created Organisations', count(*) 
     from OrganisationManager.Organisation
     where BulkImported = 0
     and IsService = 0;

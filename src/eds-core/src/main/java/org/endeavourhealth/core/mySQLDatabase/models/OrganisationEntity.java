@@ -49,7 +49,7 @@ import java.util.UUID;
                 procedureName = "getOrganisationStatistics"
         )
 })
-@Table(name = "organisation", schema = "organisationmanager", catalog = "")
+@Table(name = "organisation", schema = "organisationmanager")
 public class OrganisationEntity {
 
     private String name;
@@ -137,7 +137,7 @@ public class OrganisationEntity {
         //Services are just organisations with the isService flag set to true;
         Predicate predicate = cb.equal(rootEntry.get("isService"), (byte) (services ? 1 : 0));
 
-        cq.where(predicate);
+        cq.where(predicate).orderBy(cb.asc(rootEntry.get("name")));
         TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
 
         return query.getResultList();
@@ -234,7 +234,7 @@ public class OrganisationEntity {
                 cb.like(cb.upper(rootEntry.get("alternativeName")), "%" + expression.toUpperCase() + "%"),
                 cb.like(cb.upper(rootEntry.get("icoCode")), "%" + expression.toUpperCase() + "%"))));
 
-        cq.where(predicate);
+        cq.where(predicate).orderBy(cb.asc(rootEntry.get("name")));
         TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
         return query.getResultList();
     }

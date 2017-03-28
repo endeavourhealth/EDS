@@ -28,6 +28,7 @@ import {DataFlowModule} from "./dataFlow/dataFlow.module";
 import {DsaModule} from "./dsa/dsa.module";
 import {DpaModule} from "./dpa/dpa.module";
 import {DataSharingSummaryModule} from "./dataSharingSummary/dataSharingSummary.module";
+import {PaginationModule} from './pagination/pagination.module';
 // State components
 import {DashboardComponent} from "./dashboard/dashboard.component";
 import {OrganisationListComponent} from "./organisations/organisationList.component";
@@ -93,7 +94,8 @@ import {DataSharingSummaryEditorComponent} from "./dataSharingSummary/dataSharin
 			DataFlowModule,
 			DsaModule,
 			DpaModule,
-			DataSharingSummaryModule
+			DataSharingSummaryModule,
+			PaginationModule
 		],
 		states: [
 			{name: 'app.dashboard', url: '/dashboard', component: DashboardComponent},
