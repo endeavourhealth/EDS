@@ -130,7 +130,7 @@ public class PatientTransformer extends AbstractTransformer {
                 PostcodeReference postcodeReference = PostcodeHelper.getPostcodeReference(postcode);
                 if (postcodeReference != null) {
                     lsoaCode = postcodeReference.getLsoaCode();
-                    msoaCode = postcodeReference.getLsoaCode();
+                    msoaCode = postcodeReference.getMsoaCode();
                     townsendScore = postcodeReference.getTownsendScore();
                 }
             }
