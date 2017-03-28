@@ -54,6 +54,10 @@ public class ConsultationTransformer {
             return;
         }
 
+        //link the consultation to our episode of care
+        Reference episodeReference = csvHelper.createEpisodeReference(patientGuid);
+        fhirEncounter.addEpisodeOfCare(episodeReference);
+
         fhirEncounter.setStatus(Encounter.EncounterState.FINISHED);
 
         String appointmentGuid = parser.getAppointmentSlotGuid();

@@ -1094,6 +1094,11 @@ public class EmisCsvHelper {
             addRelationshipsToExistingResource(entry.getKey(), ResourceType.Encounter, entry.getValue(), fhirResourceFiler, FhirExtensionUri.ENCOUNTER_COMPONENTS);
     }
 
+    public Reference createEpisodeReference(String patientGuid) {
+        //the episode of care just uses the patient GUID as its ID, so that's all we need to refer to it too
+        return ReferenceHelper.createReference(ResourceType.EpisodeOfCare, patientGuid);
+    }
+
 
     /**
      * temporary storage class for changes to the practitioners involved in a session

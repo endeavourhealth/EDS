@@ -60,7 +60,9 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
             RegistrationType fhirRegistrationType = null;
 
             Patient fhirPatient = (Patient)findResource(fhirEpisode.getPatient(), otherResources);
-            if (fhirPatient.hasExtension()) {
+            if (fhirPatient != null //if a patient has been subsequently deleted, this will be null
+                    && fhirPatient.hasExtension()) {
+
                 for (Extension extension: fhirPatient.getExtension()) {
                     if (extension.getUrl().equals(FhirExtensionUri.PATIENT_REGISTRATION_TYPE)) {
                         Coding coding = (Coding)extension.getValue();
