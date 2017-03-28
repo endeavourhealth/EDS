@@ -324,3 +324,7 @@ index.d.ts
 **/typings/globals
 
 id_file
+
+# Vagrant
+.vagrant/
+*.box
