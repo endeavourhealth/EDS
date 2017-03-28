@@ -18,7 +18,7 @@ export class EkbCodingService extends BaseHttp2Service implements CodingService 
 		params.append('start', '0');
 
 		var observable = Observable.create(observer => {
-			vm.httpGet('/api/ekb/search/sct', {search: params, withCredentials: false})
+			vm.httpGet('/api/ekb/search/sct', {search: params})
 				.subscribe(
 					(response) => observer.next(response),
 					(exception) => observer.error(exception)
