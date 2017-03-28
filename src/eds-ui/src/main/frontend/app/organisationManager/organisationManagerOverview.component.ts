@@ -22,6 +22,7 @@ export class OrganisationManagerOverviewComponent {
     conflictedOrgs : Organisation[];
     orgStats : OrganisationManagerStatistics[];
     serviceStats : OrganisationManagerStatistics[];
+    regionStats : OrganisationManagerStatistics[];
 
     constructor(private $modal: NgbModal,
                 private organisationManagerService: OrganisationManagerService,
@@ -35,6 +36,7 @@ export class OrganisationManagerOverviewComponent {
         var vm = this;
         vm.getOrganisationStatistics();
         vm.getServiceStatistics();
+        vm.getRegionStatistics();
         vm.getConflictingOrganisations();
 
     }
@@ -59,6 +61,16 @@ export class OrganisationManagerOverviewComponent {
             );
     }
 
+    getRegionStatistics() {
+        var vm= this;
+        vm.organisationManagerService.getRegionStatistics()
+            .subscribe(result => {
+                    vm.regionStats = result
+                },
+                error => vm.log.error('Failed to load region statistics', error, 'Load regoion statistics')
+            );
+    }
+
     fileChange(event) {
         let fileList: FileList = event.target.files;
         if(fileList.length > 0)
@@ -79,6 +91,7 @@ export class OrganisationManagerOverviewComponent {
                         vm.log.success('Organisations uploaded successfully', null, 'Success');
                         vm.getOrganisationStatistics();
                         vm.getServiceStatistics();
+                        vm.getRegionStatistics();
                         vm.getConflictingOrganisations();
                     },
                     error => vm.log.error('Failed to upload bulk organisations', error, 'Upload Bulk Organisations')
@@ -165,5 +178,9 @@ export class OrganisationManagerOverviewComponent {
 
     goToServices() {
         this.$state.go('app.organisationManager', {mode: 'services'});
+    }
+
+    goToRegions() {
+        this.$state.go('app.region');
     }
 }

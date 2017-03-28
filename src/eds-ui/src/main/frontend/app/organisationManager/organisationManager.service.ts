@@ -106,4 +106,8 @@ export class OrganisationManagerService extends BaseHttp2Service  {
         return this.httpGet('api/organisationManager/serviceStatistics');
     }
 
+    getRegionStatistics() : Observable<OrganisationManagerStatistics[]> {
+        return this.httpGet('api/organisationManager/regionStatistics');
+    }
+
 }

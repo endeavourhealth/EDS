@@ -18,8 +18,8 @@
                                 </div>
                             </div>
                             <br>
-                            <div class="col-md-4 col-md-offset-4">
-                                <button type="button" class="btn btn-sm btn-primary" (click)="goToOrganisations()">View Organisations</button>
+                            <div class="pull-right">
+                                <button type="button" class="btn btn-sm btn-info" (click)="goToOrganisations()">View Organisations</button>
                             </div>
                         </div>
                     </div>
@@ -37,14 +37,33 @@
                                 </div>
                             </div>
                             <br>
-                            <div class="col-md-4 col-md-offset-4">
-                                <button type="button" class="btn btn-sm btn-primary" (click)="goToServices()">View Services</button>
+                            <div class="pull-right">
+                                <button type="button" class="btn btn-sm btn-warning" (click)="goToServices()">View Services</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="row">
+                <div class="col-md-6">
+                    <div class="panel panel-success">
+                        <div class="panel-heading">Regions</div>
+                        <div class="panel-body">
+                            <div class="row" *ngFor="let regionStat of regionStats">
+                                <div class="col-md-6">
+                                    {{regionStat.label}}
+                                </div>
+                                <div class="col-md-6">
+                                    {{regionStat.value}}
+                                </div>
+                            </div>
+                            <br>
+                            <div class="pull-right">
+                                <button type="button" class="btn btn-sm btn-success" (click)="goToRegions()">View Regions</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="col-md-6">
                     <div class="panel panel-primary">
                         <div class="panel-heading">Bulk Upload</div>
@@ -65,6 +84,8 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="row">
                 <div class="col-md-6">
                     <div class="panel panel-danger" *ngIf="conflictedOrgs?.length > 0">
                         <div class="panel-heading">Conflicting Organisations</div>

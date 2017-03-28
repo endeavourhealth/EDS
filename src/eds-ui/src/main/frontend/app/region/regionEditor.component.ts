@@ -97,16 +97,15 @@ export class RegionEditorComponent {
             .subscribe(saved => {
                     vm.adminService.clearPendingChanges();
                     vm.log.success('Item saved', vm.region, 'Saved');
-                    if (close) { vm.state.go(vm.transition.from()); }
+                    if (close) { this.$state.go('app.organisationManagerOverview'); }
                 },
                 error => vm.log.error('Error saving', error, 'Error')
             );
     }
 
     close() {
-        console.log(this.transition);
         this.adminService.clearPendingChanges();
-        this.state.go(this.transition.from());
+        this.$state.go('app.organisationManagerOverview');
     }
 
     private getRegionOrganisations() {

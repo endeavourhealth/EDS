@@ -47,6 +47,10 @@ import java.util.UUID;
         @NamedStoredProcedureQuery(
                 name = "getOrganisationStatistics",
                 procedureName = "getOrganisationStatistics"
+        ),
+        @NamedStoredProcedureQuery(
+                name = "getRegionStatistics",
+                procedureName = "getRegionStatistics"
         )
 })
 @Table(name = "organisation", schema = "organisationmanager")
@@ -103,23 +107,11 @@ public class OrganisationEntity {
         entityManager.close();
     }
 
-    public static List<Object[]> getOrganisationStatistics() throws Exception {
+    public static List<Object[]> getStatistics(String procName) throws Exception {
 
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getOrganisationStatistics");
-        spq.execute();
-        List<Object[]> ent = spq.getResultList();
-        entityManager.close();
-
-        return ent;
-    }
-
-    public static List<Object[]> getServiceStatistics() throws Exception {
-
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getServiceStatistics");
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery(procName);
         spq.execute();
         List<Object[]> ent = spq.getResultList();
         entityManager.close();
