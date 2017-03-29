@@ -93,7 +93,7 @@ ALTER TABLE public.household_id_map
 
 CREATE TABLE public.pseudo_id_map
 (
-  patient_id character(255) NOT NULL,
+  patient_id character varying(255) NOT NULL,
   pseudo_id character varying(255) NOT NULL,
   CONSTRAINT pk_pseudo_id_map PRIMARY KEY (patient_id)
 )
@@ -150,7 +150,7 @@ ALTER TABLE public.enterprise_person_id_seq
 CREATE TABLE public.enterprise_person_id_map
 (
   person_id character(36) NOT NULL,
-  enterprise_config_name character(255) NOT NULL,
+  enterprise_config_name character varying(255) NOT NULL,
   enterprise_person_id bigint NOT NULL DEFAULT nextval('enterprise_person_id_seq'::regclass),
   CONSTRAINT pk_enterprise_person_id_map PRIMARY KEY (person_id, enterprise_config_name)
 )

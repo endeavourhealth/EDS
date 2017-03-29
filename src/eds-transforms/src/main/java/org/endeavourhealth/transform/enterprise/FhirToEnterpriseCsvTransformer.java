@@ -124,7 +124,7 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
             enterprisePatientId = AbstractTransformer.findEnterpriseId(data.getPatients(), ResourceType.Patient.toString(), discoveryPatientId);
 
             String discoveryPersonId = PatientLinkHelper.getPersonId(discoveryPatientId);
-            enterprisePersonId = EnterpriseIdHelper.findEnterprisePersonId(discoveryPersonId, configName);
+            enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, configName);
         }
 
         tranformResources(ResourceType.EpisodeOfCare, new EpisodeOfCareTransformer(), data, resources, resourcesMap, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
