@@ -23,7 +23,8 @@ public class EpisodeOfCare extends AbstractEnterpriseCsvWriter {
                             Integer registrationTypeId,
                             Date dateRegistered,
                             Date dateRegisteredEnd,
-                            Long usualGpPractitionerId) throws Exception {
+                            Long usualGpPractitionerId,
+                            Long managingOrganisationId) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
                 "" + id,
@@ -33,7 +34,8 @@ public class EpisodeOfCare extends AbstractEnterpriseCsvWriter {
                 convertInt(registrationTypeId),
                 convertDate(dateRegistered),
                 convertDate(dateRegisteredEnd),
-                convertLong(usualGpPractitionerId));
+                convertLong(usualGpPractitionerId),
+                convertLong(managingOrganisationId));
     }
 
     @Override
@@ -47,7 +49,8 @@ public class EpisodeOfCare extends AbstractEnterpriseCsvWriter {
                 "registration_type_id",
                 "date_registered",
                 "date_registered_end",
-                "usual_gp_practitioner_id"
+                "usual_gp_practitioner_id",
+                "managing_organization_id"
         };
     }
 
@@ -62,6 +65,7 @@ public class EpisodeOfCare extends AbstractEnterpriseCsvWriter {
                 Integer.class,
                 Date.class,
                 Date.class,
+                Long.class,
                 Long.class
         };
     }

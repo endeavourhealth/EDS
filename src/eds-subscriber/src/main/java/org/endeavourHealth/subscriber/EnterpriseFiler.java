@@ -391,7 +391,18 @@ public class EnterpriseFiler {
         int tableColumns = columns.size()-1; //substract one because we don't save the save_mode
         String parameters = createParameters(tableColumns);
 
-        PreparedStatement insert = connection.prepareStatement("insert into " + tableName + " values (" + parameters + ")");
+        StringBuilder sb = new StringBuilder();
+        for (String column: columns) {
+            if (!column.equals(COL_SAVE_MODE)) {
+                if (sb.length() > 0) {
+                    sb.append(", ");
+                }
+                sb.append(column);
+            }
+        }
+        String columnStr = sb.toString();
+
+        PreparedStatement insert = connection.prepareStatement("insert into " + tableName + " (" + columnStr + ") values (" + parameters + ")");
 
         for (CSVRecord csvRecord: csvRecords) {
 

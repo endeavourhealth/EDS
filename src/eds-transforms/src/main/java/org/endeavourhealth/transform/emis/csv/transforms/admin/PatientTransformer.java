@@ -68,7 +68,7 @@ public class PatientTransformer {
         fhirEpisode.setPatient(csvHelper.createPatientReference(patientGuid.toString()));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (parser.getDeleted() || parser.getIsConfidential()) {
+        if (parser.getDeleted()) {
             //Emis send us a delete for a patient WITHOUT a corresponding delete for all other data, so
             //we need to manually delete all dependant resources
             deleteEntirePatientRecord(fhirResourceFiler, csvHelper, parser.getCurrentState(), patientGuid, fhirPatient, fhirEpisode);

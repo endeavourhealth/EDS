@@ -35,7 +35,7 @@ public class DrugRecordPreTransformer {
                                     FhirResourceFiler fhirResourceFiler,
                                     EmisCsvHelper csvHelper) throws Exception {
 
-        if (parser.getDeleted() || parser.getIsConfidential()) {
+        if (parser.getDeleted()) {
             return;
         }
 

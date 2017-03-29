@@ -49,7 +49,7 @@ public class ConsultationTransformer {
         fhirEncounter.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (parser.getDeleted() || parser.getIsConfidential()) {
+        if (parser.getDeleted()) {
             fhirResourceFiler.deletePatientResource(parser.getCurrentState(), patientGuid, fhirEncounter);
             return;
         }

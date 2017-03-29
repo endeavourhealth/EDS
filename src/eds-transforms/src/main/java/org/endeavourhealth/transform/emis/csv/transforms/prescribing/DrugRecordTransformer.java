@@ -1,17 +1,17 @@
 package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.CodingHelper;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.schema.MedicationAuthorisationType;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
-import org.endeavourhealth.common.fhir.CodingHelper;
-import org.endeavourhealth.common.fhir.ExtensionConverter;
-import org.endeavourhealth.common.fhir.FhirExtensionUri;
-import org.endeavourhealth.common.fhir.FhirUri;
-import org.endeavourhealth.common.fhir.schema.MedicationAuthorisationType;
 import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;
@@ -53,7 +53,7 @@ public class DrugRecordTransformer {
         fhirMedicationStatement.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (parser.getDeleted() || parser.getIsConfidential()) {
+        if (parser.getDeleted()) {
             fhirResourceFiler.deletePatientResource(parser.getCurrentState(), patientGuid, fhirMedicationStatement);
             return;
         }

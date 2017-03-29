@@ -33,7 +33,7 @@ public class DiaryPreTransformer {
                                        EmisCsvHelper csvHelper,
                                        String version) throws Exception {
 
-        if (parser.getDeleted() || parser.getIsConfidential()) {
+        if (parser.getDeleted()) {
             return;
         }
 

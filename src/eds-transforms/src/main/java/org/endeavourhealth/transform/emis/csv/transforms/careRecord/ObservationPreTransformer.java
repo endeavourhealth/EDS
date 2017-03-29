@@ -41,7 +41,7 @@ public class ObservationPreTransformer {
 
     private static void processLine(Observation parser, EmisCsvHelper csvHelper, FhirResourceFiler fhirResourceFiler, String version) throws Exception {
 
-        if (parser.getDeleted() || parser.getIsConfidential()) {
+        if (parser.getDeleted()) {
             return;
         }
 
