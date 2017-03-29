@@ -89,7 +89,8 @@ public class AppointmentTransformer extends AbstractTransformer {
                 scheduleId = findEnterpriseId(data.getSchedules(), scheduleReference);
 
             } else {
-                throw new TransformException("Failed to find " + slotReference + " for " + fhir.getResourceType() + " " + fhir.getId());
+                LOG.warn("Failed to find " + slotReference.getReference() + " for " + fhir.getResourceType() + " " + fhir.getId());
+                //throw new TransformException();
             }
 
             startDate = fhir.getStart();
