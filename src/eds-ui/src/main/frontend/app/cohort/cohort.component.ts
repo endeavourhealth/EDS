@@ -58,4 +58,8 @@ export class CohortComponent {
                 (error) => vm.log.error('Failed to delete Cohort', error, 'Delete Cohort')
             );
     }
+
+    close() {
+        this.$state.go('app.dataSharingSummaryOverview');
+    }
 }

@@ -67,7 +67,7 @@ export class OrganisationManagerOverviewComponent {
             .subscribe(result => {
                     vm.regionStats = result
                 },
-                error => vm.log.error('Failed to load region statistics', error, 'Load regoion statistics')
+                error => vm.log.error('Failed to load region statistics', error, 'Load region statistics')
             );
     }
 

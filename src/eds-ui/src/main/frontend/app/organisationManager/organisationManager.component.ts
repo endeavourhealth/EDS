@@ -140,9 +140,7 @@ export class OrganisationManagerComponent {
     }
 
     close() {
-        console.log(this.transition.from);
-        console.log(this.state);
-        this.state.go(this.transition.from());
+        this.$state.go('app.organisationManagerOverview');
     }
 
     private search() {

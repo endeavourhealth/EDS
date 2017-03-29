@@ -62,6 +62,7 @@ import {DsaComponent} from "./dsa/dsa.component";
 import {DsaEditorComponent} from "./dsa/dsaEditor.component";
 import {DpaComponent} from "./dpa/dpa.component";
 import {DpaEditorComponent} from "./dpa/dpaEditor.component";
+import {DataSharingSummaryOverviewComponent} from "./dataSharingSummary/dataSharingSummaryOverview.component";
 import {DataSharingSummaryComponent} from "./dataSharingSummary/dataSharingSummary.component";
 import {DataSharingSummaryEditorComponent} from "./dataSharingSummary/dataSharingSummaryEditor.component";
 
@@ -130,6 +131,7 @@ import {DataSharingSummaryEditorComponent} from "./dataSharingSummary/dataSharin
 			{name: 'app.dsaEditor', url: '/dsa/:itemAction/:itemUuid', component: DsaEditorComponent},
 			{name: 'app.dpa', url: '/dpa', component: DpaComponent},
 			{name: 'app.dpaEditor', url: '/dpa/:itemAction/:itemUuid', component: DpaEditorComponent},
+			{name: 'app.dataSharingSummaryOverview', url: '/dataSharingSummary/overview', component: DataSharingSummaryOverviewComponent},
 			{name: 'app.dataSharingSummary', url: '/dataSharingSummary', component: DataSharingSummaryComponent},
 			{name: 'app.dataSharingSummaryEditor', url: '/dataSharingSummary/:itemAction/:itemUuid', component: DataSharingSummaryEditorComponent}
 		],

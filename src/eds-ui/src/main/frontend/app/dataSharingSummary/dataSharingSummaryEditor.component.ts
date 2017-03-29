@@ -38,7 +38,8 @@ export class DataSharingSummaryEditorComponent {
                 private log:LoggerService,
                 private adminService : AdminService,
                 private dataSharingSummaryService : DataSharingSummaryService,
-                private transition : Transition
+                private transition : Transition,
+                protected $state : StateService
     ) {
         this.performAction(transition.params()['itemAction'], transition.params()['itemUuid']);
     }
@@ -79,7 +80,7 @@ export class DataSharingSummaryEditorComponent {
             .subscribe(saved => {
                     vm.adminService.clearPendingChanges();
                     vm.log.success('Item saved', vm.dataSharingSummary, 'Saved');
-                    if (close) { vm.state.go(vm.transition.from()); }
+                    if (close) { vm.$state.go('app.dataSharingSummaryOverview'); }
                 },
                 error => vm.log.error('Error saving', error, 'Error')
             );
@@ -87,6 +88,6 @@ export class DataSharingSummaryEditorComponent {
 
     close() {
         this.adminService.clearPendingChanges();
-        this.state.go(this.transition.from());
+        this.$state.go('app.dataSharingSummaryOverview');
     }
 }

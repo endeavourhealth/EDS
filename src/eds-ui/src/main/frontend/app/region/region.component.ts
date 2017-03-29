@@ -60,4 +60,8 @@ export class RegionComponent {
                 (error) => vm.log.error('Failed to delete Region', error, 'Delete Region')
             );
     }
+
+    close() {
+        this.$state.go('app.organisationManagerOverview');
+    }
 }

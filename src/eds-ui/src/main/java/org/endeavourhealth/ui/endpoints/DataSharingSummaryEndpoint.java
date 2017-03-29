@@ -92,6 +92,20 @@ public final class DataSharingSummaryEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/statistics")
+    @RequiresAdmin
+    public Response getServiceStatistics(@Context SecurityContext sc, @QueryParam("type") String type) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "Statistics",
+                "type", type);
+
+        return generateStatistics(DatasharingsummaryEntity.getStatistics(getStatisticsProcedureFromType(type)));
+    }
+
     private Response getDataSharingSummaryList() throws Exception {
 
         List<DatasharingsummaryEntity> dataSharingSummaries = DatasharingsummaryEntity.getAllDataSharingSummaries();
@@ -121,6 +135,37 @@ public final class DataSharingSummaryEndpoint extends AbstractEndpoint {
                 .ok()
                 .entity(datasharingsummaryEntities)
                 .build();
+    }
+
+    private Response generateStatistics(List<Object []> statistics) throws Exception {
+
+        List<JsonOrganisationManagerStatistics> ret = new ArrayList<>();
+
+        for (Object[] stat : statistics) {
+            JsonOrganisationManagerStatistics jsonStat = new JsonOrganisationManagerStatistics();
+            jsonStat.setLabel(stat[0].toString());
+            jsonStat.setValue(stat[1].toString());
+
+            ret.add(jsonStat);
+        }
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private String getStatisticsProcedureFromType(String type) throws Exception {
+
+        switch (type){
+            case "summary" : return "getDataSharingSummaryStatistics";
+            case "dpa" : return "getDataProcessingAgreementStatistics";
+            case "dsa" : return "getDataSharingAgreementStatistics";
+            case "dataflow" : return "getDataFlowStatistics";
+            case "cohort" : return "getCohortStatistics";
+            default : throw new Exception("Invalid statistics type");
+        }
     }
 
 }

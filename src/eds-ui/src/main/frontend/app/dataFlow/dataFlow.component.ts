@@ -58,4 +58,8 @@ export class DataFlowComponent {
                 (error) => vm.log.error('Failed to delete Data flow', error, 'Delete Data flow')
             );
     }
+
+    close() {
+        this.$state.go('app.dataSharingSummaryOverview');
+    }
 }
