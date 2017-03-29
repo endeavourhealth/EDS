@@ -120,7 +120,7 @@ public abstract class EmisCsvToFhirTransformer {
      * the Emis schema changes without notice, so rather than define the version in the SFTP reader,
      * we simply look at the files to work out what version it really is
      */
-    private static String determineVersion(File dir) throws Exception {
+    public static String determineVersion(File dir) throws Exception {
 
         String[] versions = new String[]{VERSION_5_0, VERSION_5_1, VERSION_5_3, VERSION_5_4};
         Exception lastException = null;

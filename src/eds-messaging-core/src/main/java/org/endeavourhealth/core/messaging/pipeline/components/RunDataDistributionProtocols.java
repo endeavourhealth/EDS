@@ -153,7 +153,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			return checkExplicitCohort(protocolId, serviceId, exchangeId, batchId);
 
 		} else if (cohort.equals(COHORT_DEFINING_SERVICES)) {
-			return checkServiceDefinedCohort(protocol, serviceId, exchangeId, batchId);
+			return checkServiceDefinedCohort(protocolId, protocol, serviceId, exchangeId, batchId);
 
 		} else {
 
@@ -161,17 +161,22 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 		}
 	}
 
-	private boolean checkServiceDefinedCohort(Protocol protocol, UUID serviceId, UUID exchangeId, UUID batchId) throws PipelineException {
+	private boolean checkServiceDefinedCohort(UUID protocolId, Protocol protocol, UUID serviceId, UUID exchangeId, UUID batchId) throws PipelineException {
 
 		//find the list of services that define the cohort
 		HashSet<String> serviceIdsDefiningCohort = new HashSet<>();
 		for (ServiceContract serviceContract: protocol.getServiceContract()) {
-			if (serviceContract.isDefinesCohort() != null
+			if (serviceContract.getActive() == ServiceContractActive.TRUE
+					&& serviceContract.isDefinesCohort() != null
 					&& serviceContract.isDefinesCohort().booleanValue()) {
 				Service service = serviceContract.getService();
 				String serviceIdStr = service.getUuid();
 				serviceIdsDefiningCohort.add(serviceIdStr);
 			}
+		}
+
+		if (serviceIdsDefiningCohort.isEmpty()) {
+			throw new PipelineException("Protocol " + protocolId + " has cohort to be service-defined, but has no service contracts that define it");
 		}
 
 		//check to see if our service is one of the defining service contracts
