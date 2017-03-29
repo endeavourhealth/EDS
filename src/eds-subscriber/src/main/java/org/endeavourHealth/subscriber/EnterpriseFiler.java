@@ -44,6 +44,9 @@ public class EnterpriseFiler {
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         ZipInputStream zis = new ZipInputStream(bais);
 
+        String url = config.get("url").asText();
+        LOG.trace("Filing " + bytes.length + "b into " + url);
+
         JsonNode columnClassMappings = null;
 
         Connection connection = openConnection(config);
@@ -76,7 +79,7 @@ public class EnterpriseFiler {
             //if we get an exception, write out the zip file, so we can investigate what was being filed
             writeZipFile(bytes);
 
-            throw ex;
+            throw new TransformException("Exception filing to " + url, ex);
 
         } finally {
             if (zis != null) {
@@ -388,21 +391,33 @@ public class EnterpriseFiler {
             return;
         }
 
+
         int tableColumns = columns.size()-1; //substract one because we don't save the save_mode
         String parameters = createParameters(tableColumns);
 
-        StringBuilder sb = new StringBuilder();
-        for (String column: columns) {
-            if (!column.equals(COL_SAVE_MODE)) {
-                if (sb.length() > 0) {
-                    sb.append(", ");
-                }
-                sb.append(column);
-            }
-        }
-        String columnStr = sb.toString();
+        //the version with the named columns doesn't seem to work on all versions of MySQL, so removing until can fix
+        //but we need it for the episode_of_care table, which has additional columns
+        PreparedStatement insert = null;
 
-        PreparedStatement insert = connection.prepareStatement("insert into " + tableName + " (" + columnStr + ") values (" + parameters + ")");
+        if (!tableName.equalsIgnoreCase("episode_of_care")) {
+            insert = connection.prepareStatement("insert into " + tableName + " values (" + parameters + ")");
+
+        } else {
+
+            StringBuilder sb = new StringBuilder();
+            for (String column: columns) {
+                if (!column.equals(COL_SAVE_MODE)) {
+                    if (sb.length() > 0) {
+                        sb.append(", ");
+                    }
+                    sb.append(keywordEscapeChar + column + keywordEscapeChar);
+                }
+            }
+            String columnStr = sb.toString();
+
+            insert = connection.prepareStatement("insert into " + tableName + " (" + columnStr + ") values (" + parameters + ")");
+        }
+
 
         for (CSVRecord csvRecord: csvRecords) {
 
