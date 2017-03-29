@@ -3,6 +3,7 @@ import {URLSearchParams, Http} from "@angular/http";
 import {Observable} from "rxjs";
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 import {DataSharingSummary} from "./models/DataSharingSummary";
+import {OrganisationManagerStatistics} from "../organisationManager/models/OrganisationManagerStatistics";
 
 @Injectable()
 export class DataSharingSummaryService extends BaseHttp2Service  {
@@ -32,5 +33,11 @@ export class DataSharingSummaryService extends BaseHttp2Service  {
         let params = new URLSearchParams();
         params.set('searchData',searchData);
         return this.httpGet('api/dataSharingSummary', { search : params });
+    }
+
+    getStatistics(type : string) : Observable<OrganisationManagerStatistics[]> {
+        let params = new URLSearchParams();
+        params.set('type',type);
+        return this.httpGet('api/dataSharingSummary/statistics', { search : params });
     }
 }

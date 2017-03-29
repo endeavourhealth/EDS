@@ -14,6 +14,13 @@
             <form>
                 <div class="row">
                     <div class="form-group col-md-12">
+                        <label class="control-label">Search {{orgType}}</label>
+                        <input type="text" class="form-control" placeholder="Search term" aria-describedby="searchTerm"
+                               [(ngModel)]="searchData" (keyup)="search()" autofocus name="searchData">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-12">
                         <div class="table">
                             <table class="table table-striped table-condensed">
                                 <thead>
@@ -24,7 +31,7 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                <tr class="hover-box show-child-on-hover" *ngFor="let organisation of organisations">
+                                <tr class="hover-box show-child-on-hover" *ngFor="let organisation of pagedItems">
                                     <td>
                                         <a (click)="edit(organisation)">{{organisation.name}}</a>
                                         <span class="fa fa-info-circle fa-right-pad text-muted" ngbTooltip="{{organisation.alternativeName}}" *ngIf="organisation.alternativeName"></span>
@@ -38,6 +45,25 @@
                                 </tr>
                                 </tbody>
                             </table>
+
+                            <!-- pager -->
+                            <ul *ngIf="pager.pages && pager.pages.length" class="pagination">
+                                <li [ngClass]="{disabled:pager.currentPage === 1}">
+                                    <a (click)="setPage(1)">First</a>
+                                </li>
+                                <li [ngClass]="{disabled:pager.currentPage === 1}">
+                                    <a (click)="setPage(pager.currentPage - 1)">Previous</a>
+                                </li>
+                                <li *ngFor="let page of pager.pages" [ngClass]="{active:pager.currentPage === page}">
+                                    <a (click)="setPage(page)">{{page}}</a>
+                                </li>
+                                <li [ngClass]="{disabled:pager.currentPage === pager.totalPages}">
+                                    <a (click)="setPage(pager.currentPage + 1)">Next</a>
+                                </li>
+                                <li [ngClass]="{disabled:pager.currentPage === pager.totalPages}">
+                                    <a (click)="setPage(pager.totalPages)">Last</a>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>

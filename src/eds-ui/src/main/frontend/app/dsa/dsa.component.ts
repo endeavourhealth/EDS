@@ -58,4 +58,8 @@ export class DsaComponent {
                 (error) => vm.log.error('Failed to delete Data Sharing Agreement', error, 'Delete Data Sharing Agreement')
             );
     }
+
+    close() {
+        this.$state.go('app.dataSharingSummaryOverview');
+    }
 }

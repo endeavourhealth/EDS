@@ -1,30 +1,22 @@
 package org.endeavourhealth.ui.endpoints;
 
-import com.rabbitmq.tools.json.JSONReader;
-import net.sourceforge.jtds.jdbc.DateTime;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
-import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
-import org.endeavourhealth.coreui.json.JsonOrganisation;
 import org.endeavourhealth.coreui.json.JsonOrganisationManager;
 import org.endeavourhealth.coreui.json.JsonRegion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.plaf.synth.Region;
-import javax.swing.text.StyledEditorKit;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import java.sql.ResultSet;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Path("/region")

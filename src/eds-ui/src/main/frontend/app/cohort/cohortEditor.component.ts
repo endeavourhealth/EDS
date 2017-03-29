@@ -18,7 +18,8 @@ export class CohortEditorComponent {
                 private log:LoggerService,
                 private adminService : AdminService,
                 private cohortService : CohortService,
-                private transition : Transition
+                private transition : Transition,
+                protected $state : StateService
     ) {
         this.performAction(transition.params()['itemAction'], transition.params()['itemUuid']);
     }
@@ -57,7 +58,7 @@ export class CohortEditorComponent {
             .subscribe(saved => {
                     vm.adminService.clearPendingChanges();
                     vm.log.success('Item saved', vm.cohort, 'Saved');
-                    if (close) { vm.state.go(vm.transition.from()); }
+                    if (close) { vm.$state.go('app.dataSharingSummaryOverview'); }
                 },
                 error => vm.log.error('Error saving', error, 'Error')
             );
@@ -65,6 +66,6 @@ export class CohortEditorComponent {
 
     close() {
         this.adminService.clearPendingChanges();
-        this.state.go(this.transition.from());
+        this.$state.go('app.dataSharingSummaryOverview');
     }
 }

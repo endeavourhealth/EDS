@@ -5,6 +5,7 @@ import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {DataFlowComponent} from "./dataFlow.component";
 import {DataFlowEditorComponent} from "./dataFlowEditor.component";
 import {DataFlowService} from "./dataFlow.service";
+import {DataFlowPickerDialog} from './dataFlowPicker.dialog';
 
 @NgModule({
     imports : [
@@ -14,9 +15,11 @@ import {DataFlowService} from "./dataFlow.service";
     ],
     declarations : [
         DataFlowComponent,
-        DataFlowEditorComponent
+        DataFlowEditorComponent,
+        DataFlowPickerDialog
     ],
     entryComponents : [
+        DataFlowPickerDialog
     ],
     providers : [
         DataFlowService

@@ -58,4 +58,8 @@ export class DataSharingSummaryComponent {
                 (error) => vm.log.error('Failed to delete Data Sharing Summary', error, 'Delete Data Sharing Summary')
             );
     }
+
+    close() {
+        this.$state.go('app.dataSharingSummaryOverview');
+    }
 }

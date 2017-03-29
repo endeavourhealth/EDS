@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
+import java.util.List;
 
 public class EnterpriseIdHelper {
     private static final Logger LOG = LoggerFactory.getLogger(EnterpriseIdHelper.class);
@@ -146,7 +147,7 @@ public class EnterpriseIdHelper {
 
         EntityManager entityManager = TransformConnection.getEntityManager();
 
-        Long ret = findEnterprisePersonId(discoveryPersonId, entityManager);
+        Long ret = findEnterprisePersonId(discoveryPersonId, enterpriseConfigName, entityManager);
         if (ret != null) {
             entityManager.close();
             return ret;
@@ -157,7 +158,7 @@ public class EnterpriseIdHelper {
 
         } catch (Exception ex) {
             //if another thread has beat us to it, we'll get an exception, so try the find again
-            ret = findEnterprisePersonId(discoveryPersonId, entityManager);
+            ret = findEnterprisePersonId(discoveryPersonId, enterpriseConfigName, entityManager);
             if (ret != null) {
                 return ret;
             }
@@ -168,16 +169,18 @@ public class EnterpriseIdHelper {
         }
     }
 
-    private static Long findEnterprisePersonId(String discoveryPersonId, EntityManager entityManager) {
+    private static Long findEnterprisePersonId(String discoveryPersonId, String enterpriseConfigName, EntityManager entityManager) {
 
         String sql = "select c"
                 + " from"
                 + " EnterprisePersonIdMap c"
-                + " where c.personId = :personId";
+                + " where c.personId = :personId"
+                + " and c.enterpriseConfigName = :enterpriseConfigName";
 
 
         Query query = entityManager.createQuery(sql, EnterprisePersonIdMap.class)
-                .setParameter("personId", discoveryPersonId);
+                .setParameter("personId", discoveryPersonId)
+                .setParameter("enterpriseConfigName", enterpriseConfigName);
 
         try {
             EnterprisePersonIdMap result = (EnterprisePersonIdMap)query.getSingleResult();
@@ -201,10 +204,32 @@ public class EnterpriseIdHelper {
         return mapping.getEnterprisePersonId();
     }
 
-    public static Long findEnterprisePersonId(String discoveryPersonId) throws Exception {
+    public static Long findEnterprisePersonId(String discoveryPersonId, String enterpriseConfigName) throws Exception {
         EntityManager entityManager = TransformConnection.getEntityManager();
         try {
-            return findEnterprisePersonId(discoveryPersonId, entityManager);
+            return findEnterprisePersonId(discoveryPersonId, enterpriseConfigName, entityManager);
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    public static List<EnterprisePersonIdMap> findEnterprisePersonMapsForPersonId(String discoveryPersonId) throws Exception {
+
+        EntityManager entityManager = TransformConnection.getEntityManager();
+
+        String sql = "select c"
+                + " from"
+                + " EnterprisePersonIdMap c"
+                + " where c.personId = :personId";
+
+
+        Query query = entityManager.createQuery(sql, EnterprisePersonIdMap.class)
+                .setParameter("personId", discoveryPersonId);
+
+        try {
+            List<EnterprisePersonIdMap> ret = query.getResultList();
+            return ret;
+
         } finally {
             entityManager.close();
         }

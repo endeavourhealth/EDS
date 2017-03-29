@@ -17,6 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -82,6 +84,7 @@ public class RabbitConsumer extends DefaultConsumer {
 
 		String queueName = configuration.getQueue();
 
+		//it'll just keep failing the same exchange repeatedly, so only send the alert the first time
 		UUID exchangeId = exchange.getExchangeId();
 		if (lastExchangeRejected != null
 			&& lastExchangeRejected.equals(exchangeId)) {
@@ -91,11 +94,21 @@ public class RabbitConsumer extends DefaultConsumer {
 		lastExchangeRejected = exchangeId;
 
 		String s = "Exchange " + exchangeId + " rejected in " + queueName;
+
 		if (exchange.getException() != null) {
 
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			Throwable exception = exchange.getException();
+			exception.printStackTrace(pw);
+			String exceptionStr = sw.toString();
+
+			s += "\n```";
+			s += exceptionStr;
+			s += "```";
 		}
 
-		SlackMessage message = new SlackMessage();
+		SlackMessage message = new SlackMessage(s);
 
 		try {
 			SlackApi slackApi = new SlackApi(slackUrl);

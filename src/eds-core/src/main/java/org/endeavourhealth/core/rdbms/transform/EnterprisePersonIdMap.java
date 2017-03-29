@@ -27,6 +27,7 @@ public class EnterprisePersonIdMap implements Serializable {
         this.personId = personId;
     }
 
+    @Id
     @Column(name = "enterprise_config_name", nullable = false)
     public String getEnterpriseConfigName() {
         return enterpriseConfigName;

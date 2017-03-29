@@ -258,7 +258,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 "Organisation Statistics",
                 "Organisation", null);
 
-        return generateStatistics(OrganisationEntity.getOrganisationStatistics());
+        return generateStatistics(OrganisationEntity.getStatistics("getOrganisationStatistics"));
     }
 
     @GET
@@ -272,7 +272,21 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 "Service Statistics",
                 "Organisation", null);
 
-       return generateStatistics(OrganisationEntity.getServiceStatistics());
+       return generateStatistics(OrganisationEntity.getStatistics("getServiceStatistics"));
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/regionStatistics")
+    @RequiresAdmin
+    public Response getRegionStatistics(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "Service Statistics",
+                "Organisation", null);
+
+        return generateStatistics(OrganisationEntity.getStatistics("getRegionStatistics"));
     }
 
     @DELETE

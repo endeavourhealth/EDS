@@ -13,6 +13,28 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
+@NamedStoredProcedureQueries({
+        @NamedStoredProcedureQuery(
+                name = "getDataSharingSummaryStatistics",
+                procedureName = "getDataSharingSummaryStatistics"
+        ),
+        @NamedStoredProcedureQuery(
+                name = "getDataProcessingAgreementStatistics",
+                procedureName = "getDataProcessingAgreementStatistics"
+        ),
+        @NamedStoredProcedureQuery(
+                name = "getDataSharingAgreementStatistics",
+                procedureName = "getDataSharingAgreementStatistics"
+        ),
+        @NamedStoredProcedureQuery(
+                name = "getDataFlowStatistics",
+                procedureName = "getDataFlowStatistics"
+        ),
+        @NamedStoredProcedureQuery(
+                name = "getCohortStatistics",
+                procedureName = "getCohortStatistics"
+        )
+})
 @Table(name = "datasharingsummary", schema = "organisationmanager")
 public class DatasharingsummaryEntity {
     private String uuid;
@@ -230,6 +252,18 @@ public class DatasharingsummaryEntity {
         result = 31 * result + (startDate != null ? startDate.hashCode() : 0);
         result = 31 * result + (evidenceOfAgreement != null ? evidenceOfAgreement.hashCode() : 0);
         return result;
+    }
+
+    public static List<Object[]> getStatistics(String procName) throws Exception {
+
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery(procName);
+        spq.execute();
+        List<Object[]> ent = spq.getResultList();
+        entityManager.close();
+
+        return ent;
     }
 
     public static List<DatasharingsummaryEntity> getAllDataSharingSummaries() throws Exception {

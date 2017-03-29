@@ -58,4 +58,8 @@ export class DpaComponent {
                 (error) => vm.log.error('Failed to delete Data Processing Agreement', error, 'Delete Data Processing Agreement')
             );
     }
+
+    close() {
+        this.$state.go('app.dataSharingSummaryOverview');
+    }
 }

@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS household_id_map;
 DROP TABLE IF EXISTS pseudo_id_map;
 DROP TABLE IF EXISTS enterprise_age;
 DROP TABLE IF EXISTS enterprise_person_id_map;
+DROP TABLE IF EXISTS enterprise_person_update_history;
 
 -- Sequence: public.enterprise_id_seq
 
@@ -92,7 +93,7 @@ ALTER TABLE public.household_id_map
 
 CREATE TABLE public.pseudo_id_map
 (
-  patient_id character(255) NOT NULL,
+  patient_id character varying(255) NOT NULL,
   pseudo_id character varying(255) NOT NULL,
   CONSTRAINT pk_pseudo_id_map PRIMARY KEY (patient_id)
 )
@@ -149,12 +150,28 @@ ALTER TABLE public.enterprise_person_id_seq
 CREATE TABLE public.enterprise_person_id_map
 (
   person_id character(36) NOT NULL,
-  enterprise_config_name character(255) NOT NULL,
+  enterprise_config_name character varying(255) NOT NULL,
   enterprise_person_id bigint NOT NULL DEFAULT nextval('enterprise_person_id_seq'::regclass),
-  CONSTRAINT pk_enterprise_person_id_map PRIMARY KEY (person_id)
+  CONSTRAINT pk_enterprise_person_id_map PRIMARY KEY (person_id, enterprise_config_name)
 )
 WITH (
   OIDS=FALSE
 );
 ALTER TABLE public.enterprise_person_id_map
+  OWNER TO postgres;
+
+
+-- Table: public.person_update_history
+
+-- DROP TABLE public.enterprise_person_update_history;
+
+CREATE TABLE public.enterprise_person_update_history
+(
+  date_run timestamp without time zone NOT NULL,
+  CONSTRAINT pk_person_update_history PRIMARY KEY (date_run)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.enterprise_person_update_history
   OWNER TO postgres;

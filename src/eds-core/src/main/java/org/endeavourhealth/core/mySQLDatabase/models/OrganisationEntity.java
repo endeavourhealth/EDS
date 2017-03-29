@@ -47,9 +47,13 @@ import java.util.UUID;
         @NamedStoredProcedureQuery(
                 name = "getOrganisationStatistics",
                 procedureName = "getOrganisationStatistics"
+        ),
+        @NamedStoredProcedureQuery(
+                name = "getRegionStatistics",
+                procedureName = "getRegionStatistics"
         )
 })
-@Table(name = "organisation", schema = "organisationmanager", catalog = "")
+@Table(name = "organisation", schema = "organisationmanager")
 public class OrganisationEntity {
 
     private String name;
@@ -103,23 +107,11 @@ public class OrganisationEntity {
         entityManager.close();
     }
 
-    public static List<Object[]> getOrganisationStatistics() throws Exception {
+    public static List<Object[]> getStatistics(String procName) throws Exception {
 
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getOrganisationStatistics");
-        spq.execute();
-        List<Object[]> ent = spq.getResultList();
-        entityManager.close();
-
-        return ent;
-    }
-
-    public static List<Object[]> getServiceStatistics() throws Exception {
-
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getServiceStatistics");
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery(procName);
         spq.execute();
         List<Object[]> ent = spq.getResultList();
         entityManager.close();
@@ -137,7 +129,7 @@ public class OrganisationEntity {
         //Services are just organisations with the isService flag set to true;
         Predicate predicate = cb.equal(rootEntry.get("isService"), (byte) (services ? 1 : 0));
 
-        cq.where(predicate);
+        cq.where(predicate).orderBy(cb.asc(rootEntry.get("name")));
         TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
 
         return query.getResultList();
@@ -234,7 +226,7 @@ public class OrganisationEntity {
                 cb.like(cb.upper(rootEntry.get("alternativeName")), "%" + expression.toUpperCase() + "%"),
                 cb.like(cb.upper(rootEntry.get("icoCode")), "%" + expression.toUpperCase() + "%"))));
 
-        cq.where(predicate);
+        cq.where(predicate).orderBy(cb.asc(rootEntry.get("name")));
         TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
         return query.getResultList();
     }

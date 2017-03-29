@@ -137,7 +137,7 @@ export class OrganisationManagerEditorComponent {
             .subscribe(saved => {
                     vm.adminService.clearPendingChanges();
                     vm.log.success('Item saved', vm.organisation, 'Saved');
-                    if (close) { vm.state.go(vm.transition.from()); }
+                    if (close) { this.$state.go('app.organisationManagerOverview'); }
                 },
                 error => vm.log.error('Error saving', error, 'Error')
             );
@@ -145,7 +145,7 @@ export class OrganisationManagerEditorComponent {
 
     close() {
         this.adminService.clearPendingChanges();
-        this.state.go(this.transition.from());
+        this.$state.go('app.organisationManagerOverview');
     }
 
     addAddress() {
