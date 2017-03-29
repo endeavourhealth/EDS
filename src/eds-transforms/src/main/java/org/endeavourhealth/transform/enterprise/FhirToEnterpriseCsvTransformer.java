@@ -199,7 +199,10 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
 
         //we use this function with a null transformer for resources we want to ignore
         if (transformer != null) {
-            ThreadPool threadPool = new ThreadPool(5, 1000);
+            //limit to 10 threads, but don't create too many unnecessarily if we only have a few resources
+            int threads = Math.min(10, resources.size()/10);
+
+            ThreadPool threadPool = new ThreadPool(threads, 1000);
 
             for (ResourceByExchangeBatch resource: resourcesToTransform) {
 
