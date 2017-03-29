@@ -15,9 +15,9 @@
                                 <i class="fa fa-user" id="username" aria-hidden="true"></i>
                             </span>
                             <#if usernameEditDisabled??>
-                                <input id="username" class="${properties.kcInputClass!}" name="username" value="${(login.username!'')?html}" type="text" placeholder="${msg("email")}" disabled />
+                                <input id="username" class="${properties.kcInputClass!}" name="username" value="${(login.username!'')?html}" type="text" placeholder="${msg("username")}" disabled />
                             <#else>
-                                <input id="username" class="${properties.kcInputClass!}" name="username" value="${(login.username!'')?html}" type="text" placeholder="${msg("email")}" autofocus />
+                                <input id="username" class="${properties.kcInputClass!}" name="username" value="${(login.username!'')?html}" type="text" placeholder="${msg("username")}" autofocus />
                             </#if>
                         </div>
                     </div>
