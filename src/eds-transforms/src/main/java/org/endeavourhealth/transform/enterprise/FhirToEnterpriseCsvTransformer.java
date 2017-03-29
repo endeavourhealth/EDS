@@ -124,6 +124,14 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
             enterprisePatientId = AbstractTransformer.findEnterpriseId(data.getPatients(), ResourceType.Patient.toString(), discoveryPatientId);
 
             String discoveryPersonId = PatientLinkHelper.getPersonId(discoveryPatientId);
+
+            //if we've got some cases where we've got a deleted patient but non-deleted patient-related resources
+            //all in the same batch, because Emis sent it like that. In that case we won't have a person ID, so
+            //return out without processing any of the remaining resources, since they're for a deleted patient.
+            if (Strings.isNullOrEmpty(discoveryPersonId)) {
+                return data;
+            }
+
             enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, configName);
         }
 
