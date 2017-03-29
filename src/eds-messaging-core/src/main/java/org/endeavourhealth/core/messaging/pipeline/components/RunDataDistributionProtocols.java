@@ -10,11 +10,13 @@ import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
 import org.endeavourhealth.core.messaging.pipeline.TransformBatch;
+import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
 import org.endeavourhealth.core.rdbms.eds.PatientSearch;
 import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
 import org.endeavourhealth.core.xml.QueryDocument.*;
@@ -30,6 +32,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 	private static final String COHORT_ALL = "All Patients";
 	private static final String COHORT_EXPLICIT = "Explicit Patients";
+	private static final String COHORT_DEFINING_SERVICES = "Defining Services";
 
 	private RunDataDistributionProtocolsConfig config;
 	private static final PatientCohortRepository cohortRepository = new PatientCohortRepository();
@@ -101,7 +104,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 			//check if this batch falls into the protocol cohort
 			UUID protocolId = UUID.fromString(libraryItem.getUuid());
-			if (!checkCohort(protocol.getCohort(), protocolId, serviceId, exchangeId, batchId)) {
+			if (!checkCohort(protocol, protocolId, serviceId, exchangeId, batchId)) {
 				continue;
 			}
 
@@ -134,9 +137,10 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 	}
 
 
-	private boolean checkCohort(String cohort, UUID protocolId, UUID serviceId, UUID exchangeId, UUID batchId) throws PipelineException {
+	private boolean checkCohort(Protocol protocol, UUID protocolId, UUID serviceId, UUID exchangeId, UUID batchId) throws PipelineException {
 
 		//if no cohort is defined, then treat this to mean we PASS the check
+		String cohort = protocol.getCohort();
 		if (Strings.isNullOrEmpty(cohort)) {
 			LOG.info("Protocol doesn't have cohort explicitly set, so assuming ALL PATIENTS");
 			return true;
@@ -146,39 +150,116 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			return true;
 
 		} else if (cohort.equals(COHORT_EXPLICIT)) {
+			return checkExplicitCohort(protocolId, serviceId, exchangeId, batchId);
 
-			//find the patient ID for the batch
-			UUID patientId = null;
-			try {
-				patientId = findPatientId(exchangeId, batchId);
-			} catch (Exception ex) {
-				throw new PipelineException("Failed to find patient ID for batch " + batchId, ex);
-			}
-			//LOG.trace("exchange " + exchangeId + " batch " + batchId + " -> patient ID " + patientId);
-
-			if (patientId == null) {
-				//if there's no patient ID, then this is just admin resources, so return false;
-				return false;
-			}
-
-			try {
-				String nhsNumber = findPatientNhsNumber(patientId);
-				//LOG.trace("patient ID " + patientId + " -> nhs number " + nhsNumber);
-
-				if (Strings.isNullOrEmpty(nhsNumber)) {
-					return false;
-				}
-
-				boolean inCohort = cohortRepository.isInCohort(protocolId, serviceId, nhsNumber);
-				//LOG.trace("protocol " + protocolId + " service " + serviceId + " nhs number " + nhsNumber + " -> in cohort " + inCohort);
-				return inCohort;
-			} catch (Exception ex) {
-				throw new PipelineException("Exception in protocol " + protocolId, ex);
-			}
+		} else if (cohort.equals(COHORT_DEFINING_SERVICES)) {
+			return checkServiceDefinedCohort(protocol, serviceId, exchangeId, batchId);
 
 		} else {
 
 			throw new PipelineException("Unknown cohort " + cohort + " in protocol " + protocolId);
+		}
+	}
+
+	private boolean checkServiceDefinedCohort(Protocol protocol, UUID serviceId, UUID exchangeId, UUID batchId) throws PipelineException {
+
+		//find the list of services that define the cohort
+		HashSet<String> serviceIdsDefiningCohort = new HashSet<>();
+		for (ServiceContract serviceContract: protocol.getServiceContract()) {
+			if (serviceContract.isDefinesCohort() != null
+					&& serviceContract.isDefinesCohort().booleanValue()) {
+				Service service = serviceContract.getService();
+				String serviceIdStr = service.getUuid();
+				serviceIdsDefiningCohort.add(serviceIdStr);
+			}
+		}
+
+		//check to see if our service is one of the defining service contracts
+		if (serviceIdsDefiningCohort.contains(serviceId.toString())) {
+			return true;
+		}
+
+		//if our service isn't one of the cohort-defining ones, then we need to see if our patient is registered at one
+		//of the cohort-defining services
+		UUID patientUuid = null;
+		try {
+			patientUuid = findPatientId(exchangeId, batchId);
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to find patient ID for batch " + batchId, ex);
+		}
+
+		//if there's no patient ID, then this is admin resources batch, so return true so it goes through unfiltered
+		if (patientUuid == null) {
+			return true;
+		}
+		String patientId = patientUuid.toString();
+
+		//find the global person ID our patient belongs to
+		String personId = null;
+		try {
+			personId = PatientLinkHelper.getPersonId(patientId);
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to find person ID for batch " + batchId + " and patientId " + patientId, ex);
+		}
+
+		//get all the patient IDs our person is matched to
+		List<String> patientIds = null;
+		try {
+			patientIds = PatientLinkHelper.getPatientIds(personId);
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to find person ID for batch " + batchId + " and personId " + personId, ex);
+		}
+
+		for (String otherPatientId: patientIds) {
+
+			//skip the patient ID we started with since we know our service doesn't define the cohort
+			if (otherPatientId.equals(patientId)) {
+				continue;
+			}
+
+			ResourceHistory resourceHistory = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), UUID.fromString(otherPatientId));
+			if (resourceHistory == null
+					|| resourceHistory.getIsDeleted()) {
+				continue;
+			}
+
+			//if the other patient resouce does belong to one of our cohort defining services, then let it through
+			UUID otherPatientServiceId = resourceHistory.getServiceId();
+			if (serviceIdsDefiningCohort.contains(otherPatientServiceId.toString())) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private boolean checkExplicitCohort(UUID protocolId, UUID serviceId, UUID exchangeId, UUID batchId) throws PipelineException {
+		//find the patient ID for the batch
+		UUID patientId = null;
+		try {
+			patientId = findPatientId(exchangeId, batchId);
+		} catch (Exception ex) {
+			throw new PipelineException("Failed to find patient ID for batch " + batchId, ex);
+		}
+
+		//if there's no patient ID, then this is admin resources batch, so return true so it goes through unfiltered
+		if (patientId == null) {
+			return true;
+		}
+
+		try {
+			String nhsNumber = findPatientNhsNumber(patientId);
+			//LOG.trace("patient ID " + patientId + " -> nhs number " + nhsNumber);
+
+			if (Strings.isNullOrEmpty(nhsNumber)) {
+				return false;
+			}
+
+			boolean inCohort = cohortRepository.isInCohort(protocolId, serviceId, nhsNumber);
+			//LOG.trace("protocol " + protocolId + " service " + serviceId + " nhs number " + nhsNumber + " -> in cohort " + inCohort);
+			return inCohort;
+		} catch (Exception ex) {
+			throw new PipelineException("Exception in protocol " + protocolId, ex);
 		}
 	}
 

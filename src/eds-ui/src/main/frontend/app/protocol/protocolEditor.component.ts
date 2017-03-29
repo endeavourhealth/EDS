@@ -59,8 +59,8 @@ export class ProtocolEditComponent {
 		this.loadServices();
 		this.loadSystems();
 
-
-		this.cohorts = ['All Patients', 'Explicit Patients'];
+		this.cohorts = ['All Patients', 'Explicit Patients', 'Defining Services'];
+		//this.cohorts = ['All Patients', 'Explicit Patients'];
 		//this.loadCohorts(); //hard-coding these for now
 		console.log('Cohorts = ' + this.cohorts);
 		console.log('Cohorts = ' + this.cohorts.length);
@@ -230,5 +230,11 @@ export class ProtocolEditComponent {
 				vm.technicalInterfaces.push(technicalInterface);
 			}
 		}
+	}
+
+	isCohortDefinedByServices(): boolean {
+		var p = this.libraryItem.protocol;
+		var cohort = p.cohort;
+		return cohort == 'Defining Services';
 	}
 }

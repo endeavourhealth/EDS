@@ -13,7 +13,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class LibraryRepositoryHelper {
 
@@ -21,6 +23,8 @@ public class LibraryRepositoryHelper {
 	//private static final String XSD = "QueryDocument.xsd";
 
 	private static final LibraryRepository repository = new LibraryRepository();
+
+	private static final Map<String, ExpiringCache<TechnicalInterface>> technicalInterfaceCache = new ConcurrentHashMap<>();
 
 	public static List<LibraryItem> getProtocolsByServiceId(String serviceId) throws ParserConfigurationException, IOException, SAXException, JAXBException {
 		DefinitionItemType itemType = DefinitionItemType.Protocol;
@@ -106,5 +110,58 @@ public class LibraryRepositoryHelper {
 				.get();
 
 		return technicalInterface;
+	}
+
+	/**
+	 * uses a cache to cut load on deserialising Technical Interfaces. Cached TIs only stay in the cache for a minute before
+	 * being reloaded from the DB. Would ideally like to use JCS for this caching, but that requires the cached object
+	 * implement Serializable, which I don't want to do. So this is a quick alternative.
+     */
+	public static TechnicalInterface getTechnicalInterfaceDetailsUsingCache(String systemUuidStr, String technicalInterfaceUuidStr) throws Exception {
+
+		String cacheKey = systemUuidStr + ":" + technicalInterfaceUuidStr;
+		ExpiringCache<TechnicalInterface> cacheWrapper = technicalInterfaceCache.get(cacheKey);
+		if (cacheWrapper == null
+				|| cacheWrapper.isExpired()) {
+
+			synchronized (technicalInterfaceCache) {
+
+				//once in the sync block, make another check, in case another thread has refreshed our cache for us
+				cacheWrapper = technicalInterfaceCache.get(cacheKey);
+				if (cacheWrapper == null
+						|| cacheWrapper.isExpired()) {
+
+					TechnicalInterface ti = getTechnicalInterfaceDetails(systemUuidStr, technicalInterfaceUuidStr);
+					cacheWrapper = new ExpiringCache<>(ti, 1000 * 60);
+					technicalInterfaceCache.put(cacheKey, cacheWrapper);
+				}
+			}
+		}
+		return cacheWrapper.getObject();
+	}
+}
+
+/**
+ * simple cache wrapper to allow us to expire items in the map
+ */
+class ExpiringCache<T> {
+	private T object;
+	private long expiry;
+
+	public ExpiringCache(T object, long msLife) {
+		this.object = object;
+		this.expiry = java.lang.System.currentTimeMillis() + msLife;
+	}
+
+	public boolean isExpired() {
+		return java.lang.System.currentTimeMillis() > expiry;
+	}
+
+	public T getObject() {
+		return object;
+	}
+
+	public long getExpiry() {
+		return expiry;
 	}
 }

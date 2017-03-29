@@ -81,7 +81,9 @@
 									<th class="col-md-2">Type</th>
 									<th class="col-md-4">Service</th>
 									<th class="col-md-2">System</th>
+									<th class="col-md-2">Interface</th>
 									<th class="col-md-2">Active</th>
+									<th class="col-md-2" *ngIf="isCohortDefinedByServices()">Cohort</th>
 									<th class="col-md-2"></th>
 								</tr>
 								</thead>
@@ -93,7 +95,9 @@
 									<td>{{item.type}}</td>
 									<td>{{item.service.name}}</td>
 									<td>{{item.system.name}}</td>
+									<td>{{item.technicalInterface.name}}</td>
 									<td>{{item.active}}</td>
+									<td *ngIf="isCohortDefinedByServices()">{{item.definesCohort}}</td>
 									<td>
 										<div class="child-to-show">
 											<button type="button" class="btn btn-danger btn-xs pull-right" (click)="removeContract(this)">
@@ -162,6 +166,14 @@
 								</div>
 							</div>
 						</div>
+
+						<div class="row" *ngIf="isCohortDefinedByServices()">
+							<div class="form-group col-md-12">
+								<label>Defines Cohort</label>
+								<input type="checkbox" [(ngModel)]="selectedContract.definesCohort" name="definesCohort">
+							</div>
+						</div>
+
 					</div>
 				</div>
 			</form>

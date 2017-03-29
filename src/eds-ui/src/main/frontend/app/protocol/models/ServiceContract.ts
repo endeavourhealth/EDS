@@ -8,4 +8,5 @@ export class ServiceContract {
     system : System;
     technicalInterface : TechnicalInterface;
     active : string;
+    definesCohort: boolean;
 }

@@ -70,7 +70,9 @@ public class MessageTransformOutbound extends PipelineComponent {
 			String systemUuidStr = serviceContract.getSystem().getUuid();
 			TechnicalInterface technicalInterface = null;
 			try {
-				technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetails(systemUuidStr, technicalInterfaceUuidStr);
+				//use a function that caches them for a minute at a time
+				technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetailsUsingCache(systemUuidStr, technicalInterfaceUuidStr);
+				//technicalInterface = LibraryRepositoryHelper.getTechnicalInterfaceDetails(systemUuidStr, technicalInterfaceUuidStr);
 			} catch (Exception ex) {
 				throw new PipelineException("Failed to retrieve technical interface for system " + systemUuidStr + " and technical interface " + technicalInterfaceUuidStr + " for protocol " + transformBatch.getProtocolId(), ex);
 			}

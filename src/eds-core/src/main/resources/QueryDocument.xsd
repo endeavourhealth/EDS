@@ -305,6 +305,7 @@
 			<xs:element name="system" type="system"/>
 			<xs:element name="technicalInterface" type="technicalInterface"/>
 			<xs:element name="active" type="serviceContractActive"/>
+			<xs:element name="definesCohort" type="xs:boolean" minOccurs="0"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="composition">
