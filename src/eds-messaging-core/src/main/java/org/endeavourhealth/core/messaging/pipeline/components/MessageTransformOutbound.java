@@ -53,6 +53,8 @@ public class MessageTransformOutbound extends PipelineComponent {
 		UUID batchId = transformBatch.getBatchId();
 		Map<ResourceType, List<UUID>> resourceIds = transformBatch.getResourceIds();
 
+		LOG.trace("Transforming exchange " + exchange.getExchangeId() + " and batch " + batchId);
+
 		// Run the transform, creating a subscriber batch for each
 		// (Holds transformed message id and destination endpoints)
 		List<SubscriberBatch> subscriberBatches = new ArrayList<>();

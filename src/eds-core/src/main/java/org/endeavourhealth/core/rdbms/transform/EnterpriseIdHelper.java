@@ -99,6 +99,7 @@ public class EnterpriseIdHelper {
 
         EntityManager entityManager = TransformConnection.getEntityManager();
         EnterpriseOrganisationIdMap mapping = findEnterpriseOrganisationMapping(odsCode, entityManager);
+
         if (mapping == null) {
             mapping = new EnterpriseOrganisationIdMap();
             mapping.setOdsCode(odsCode);
@@ -109,6 +110,9 @@ public class EnterpriseIdHelper {
         entityManager.getTransaction().begin();
         entityManager.persist(mapping);
         entityManager.getTransaction().commit();
+
+
+
         entityManager.close();
     }
 
