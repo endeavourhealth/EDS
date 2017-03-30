@@ -70,6 +70,10 @@ public class PractitionerTransformer extends AbstractTransformer {
 
             organizaationId = practitionerEnterpriseOrgId.longValue();
 
+            if (organizaationId != enterpriseOrganisationId.longValue()) {
+                return;
+            }
+
             model.writeUpsert(id,
                 organizaationId,
                 name,
