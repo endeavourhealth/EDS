@@ -250,12 +250,14 @@ drop table if exists OrganisationManager.MasterMapping;
 
 create table OrganisationManager.MasterMapping (
 	ChildUuid char(36) not null,
+    ChildMapTypeId smallint not null,
     ParentUUid char(36) not null,
-    MapTypeId smallint not null,
+    ParentMapTypeId smallint not null,
     IsDefault boolean not null,
     
-    foreign key (MapTypeId) references OrganisationManager.MapType(id),
-    primary key (ChildUuid, ParentUUid, MapTypeId)
+    foreign key (ChildMapTypeId) references OrganisationManager.MapType(id),
+    foreign key (ParentMapTypeId) references OrganisationManager.MapType(id),
+    primary key (ChildUuid, ChildMapTypeId, ParentUUid, ParentMapTypeId)
 );
 
 

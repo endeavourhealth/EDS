@@ -5,12 +5,15 @@ import {LoggerService} from "../common/logger.service";
 import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Dsa} from "./models/Dsa";
+import {DataFlowPickerDialog} from "../dataFlow/dataFlowPicker.dialog";
+import {DataFlow} from "../dataFlow/models/DataFlow";
 
 @Component({
     template: require('./dsaEditor.html')
 })
 export class DsaEditorComponent {
     dsa : Dsa = <Dsa>{};
+    dataFlows : DataFlow [];
 
     status = [
         {num: 0, name : "Active"},
@@ -50,7 +53,7 @@ export class DsaEditorComponent {
         vm.dsaService.getDsa(uuid)
             .subscribe(result =>  {
                     vm.dsa = result;
-                    console.log(result);
+                    vm.getLinkedDataFlows();
                 },
                 error => vm.log.error('Error loading', error, 'Error')
             );
@@ -58,6 +61,12 @@ export class DsaEditorComponent {
 
     save(close : boolean) {
         var vm = this;
+        // Populate data flows before save
+        vm.dsa.dataFlows= {};
+        for (var idx in this.dataFlows) {
+            var dataflow : DataFlow = this.dataFlows[idx];
+            this.dsa.dataFlows[dataflow.uuid] = dataflow.name;
+        }
 
         vm.dsaService.saveDsa(vm.dsa)
             .subscribe(saved => {
@@ -72,5 +81,26 @@ export class DsaEditorComponent {
     close() {
         this.adminService.clearPendingChanges();
         this.$state.go('app.dataSharingSummaryOverview');
+    }
+
+    private editDataFlows() {
+        var vm = this;
+        DataFlowPickerDialog.open(vm.$modal, vm.dataFlows)
+            .result.then(function (result : DataFlow[]) {
+            vm.dataFlows = result;
+        });
+    }
+
+    private editDataFlow(item : DataFlow) {
+        this.$state.go('app.dataFlowEditor', {itemUuid: item.uuid, itemAction: 'edit'});
+    }
+
+    private getLinkedDataFlows() {
+        var vm = this;
+        vm.dsaService.getLinkedDataFlows(vm.dsa.uuid)
+            .subscribe(
+                result => vm.dataFlows = result,
+                error => vm.log.error('Failed to load linked Data Flows', error, 'Load Linked Data Flows')
+            );
     }
 }

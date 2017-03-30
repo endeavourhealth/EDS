@@ -4,18 +4,18 @@ DELIMITER //
 CREATE PROCEDURE OrganisationManager.getCohortStatistics (
 )
 BEGIN
-  create temporary table CohortStatistics (
+  create temporary table OrganisationManager.CohortStatistics (
 	label varchar(100) not null,
     value varchar(100) not null
     );
     
-    insert into CohortStatistics (label, value)
+    insert into OrganisationManager.CohortStatistics (label, value)
     select 'Total Number of Cohorts', count(*) 
     from OrganisationManager.Cohort;
     
-    select label, value from CohortStatistics;
+    select label, value from OrganisationManager.CohortStatistics;
     
-    drop table CohortStatistics;
+    drop table OrganisationManager.CohortStatistics;
     
   
 END //

@@ -5,12 +5,18 @@ import {LoggerService} from "../common/logger.service";
 import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {DataFlow} from "./models/DataFlow";
+import {DsaPickerDialog} from "../dsa/dsaPicker.dialog";
+import {DpaPickerDialog} from "../dpa/dpaPicker.dialog";
+import {Dsa} from "../dsa/models/Dsa";
+import {Dpa} from "../dpa/models/Dpa";
 
 @Component({
     template: require('./dataFlowEditor.html')
 })
 export class DataFlowEditorComponent {
     dataFlow : DataFlow = <DataFlow>{};
+    dsas : Dsa[];
+    dpas : Dpa[];
 
     flowDirections = [
         {num: 0, name : "Inbound"},
@@ -65,7 +71,8 @@ export class DataFlowEditorComponent {
         vm.dataFlowService.getDataFlow(uuid)
             .subscribe(result =>  {
                     vm.dataFlow = result;
-                    console.log(result);
+                    vm.getLinkedDpas();
+                    vm.getLinkedDsas();
                 },
                 error => vm.log.error('Error loading', error, 'Error')
             );
@@ -73,6 +80,19 @@ export class DataFlowEditorComponent {
 
     save(close : boolean) {
         var vm = this;
+        // Populate Data Sharing Agreements before save
+        vm.dataFlow.dsas= {};
+        for (var idx in this.dsas) {
+            var dsa : Dsa = this.dsas[idx];
+            this.dataFlow.dsas[dsa.uuid] = dsa.name;
+        }
+
+        // Populate Data Processing Agreements before save
+        vm.dataFlow.dpas= {};
+        for (var idx in this.dpas) {
+            var dpa : Dpa = this.dpas[idx];
+            this.dataFlow.dpas[dpa.uuid] = dpa.name;
+        }
 
         vm.dataFlowService.saveDataFlow(vm.dataFlow)
             .subscribe(saved => {
@@ -93,5 +113,47 @@ export class DataFlowEditorComponent {
     toNumber(){
         this.dataFlow.directionId = +this.dataFlow.directionId;
         console.log(this.dataFlow.directionId);
+    }
+
+    private editDataSharingAgreements() {
+        var vm = this;
+        DsaPickerDialog.open(vm.$modal, vm.dsas)
+            .result.then(function (result : Dsa[]) {
+            vm.dsas = result;
+        });
+    }
+
+    private editDataProcessingAgreements() {
+        var vm = this;
+        DpaPickerDialog.open(vm.$modal, vm.dpas)
+            .result.then(function (result : Dpa[]) {
+            vm.dpas = result;
+        });
+    }
+
+    private editDataSharingAgreement(item : Dsa) {
+        this.$state.go('app.dsaEditor', {itemUuid: item.uuid, itemAction: 'edit'});
+    }
+
+    private editDataProcessingAgreement(item : Dpa) {
+        this.$state.go('app.dpaEditor', {itemUuid: item.uuid, itemAction: 'edit'});
+    }
+
+    private getLinkedDpas() {
+        var vm = this;
+        vm.dataFlowService.getLinkedDpas(vm.dataFlow.uuid)
+            .subscribe(
+                result => vm.dpas = result,
+                error => vm.log.error('Failed to load linked Data Processing Agreement', error, 'Load Linked Data Processing Agreement')
+            );
+    }
+
+    private getLinkedDsas() {
+        var vm = this;
+        vm.dataFlowService.getLinkedDsas(vm.dataFlow.uuid)
+            .subscribe(
+                result => vm.dsas = result,
+                error => vm.log.error('Failed to load linked Data Sharing Agreement', error, 'Load Linked Data Sharing Agreement')
+            );
     }
 }

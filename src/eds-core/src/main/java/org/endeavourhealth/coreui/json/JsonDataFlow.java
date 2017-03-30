@@ -3,6 +3,7 @@ package org.endeavourhealth.coreui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.Map;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -20,6 +21,8 @@ public class JsonDataFlow {
     private String dataSet = null;
     private String cohort = null;
     private String subscriber = null;
+    private Map<UUID, String> dsas = null;
+    private Map<UUID, String> dpas = null;
 
     public String getUuid() {
         return uuid;
@@ -123,5 +126,21 @@ public class JsonDataFlow {
 
     public void setSubscriber(String subscriber) {
         this.subscriber = subscriber;
+    }
+
+    public Map<UUID, String> getDsas() {
+        return dsas;
+    }
+
+    public void setDsas(Map<UUID, String> dsas) {
+        this.dsas = dsas;
+    }
+
+    public Map<UUID, String> getDpas() {
+        return dpas;
+    }
+
+    public void setDpas(Map<UUID, String> dpas) {
+        this.dpas = dpas;
     }
 }

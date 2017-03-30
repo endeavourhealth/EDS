@@ -257,4 +257,19 @@ public class DataprocessingagreementEntity {
         TypedQuery<DataprocessingagreementEntity> query = entityManager.createQuery(cq);
         return query.getResultList();
     }
+
+    public static List<DataprocessingagreementEntity> getDPAsFromList(List<String> dpas) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<DataprocessingagreementEntity> cq = cb.createQuery(DataprocessingagreementEntity.class);
+        Root<DataprocessingagreementEntity> rootEntry = cq.from(DataprocessingagreementEntity.class);
+
+        Predicate predicate = rootEntry.get("uuid").in(dpas);
+
+        cq.where(predicate);
+        TypedQuery<DataprocessingagreementEntity> query = entityManager.createQuery(cq);
+
+        return query.getResultList();
+    }
 }

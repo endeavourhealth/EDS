@@ -20,23 +20,6 @@ import java.util.UUID;
 @Entity
 @NamedStoredProcedureQueries({
         @NamedStoredProcedureQuery(
-                name = "getChildOrganisationsFromMappings",
-                procedureName = "getChildOrganisationsFromMappings",
-                parameters = {
-                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "Parent"),
-                        @StoredProcedureParameter(mode = ParameterMode.IN, type = Short.class, name = "MappingType"),
-                        @StoredProcedureParameter(mode = ParameterMode.IN, type = Short.class, name = "OrganisationType")
-                }
-        ),
-        @NamedStoredProcedureQuery(
-                name = "getParentOrganisationsFromMappings",
-                procedureName = "getParentOrganisationsFromMappings",
-                parameters = {
-                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "Child"),
-                        @StoredProcedureParameter(mode = ParameterMode.IN, type = Short.class, name = "MappingType")
-                }
-        ),
-        @NamedStoredProcedureQuery(
                 name = "deleteUneditedBulkOrganisations",
                 procedureName = "deleteUneditedBulkOrganisations"
         ),
@@ -70,35 +53,6 @@ public class OrganisationEntity {
     private byte bulkItemUpdated;
     private String bulkConflictedWith;
 
-    public static List<Object[]> getChildOrganisationsFromMappings(String parent, Short mapType, Short organisationType) throws Exception {
-
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getChildOrganisationsFromMappings");
-        spq.setParameter("Parent", parent);
-        spq.setParameter("MappingType", mapType);
-        spq.setParameter("OrganisationType", organisationType);
-        spq.execute();
-        List<Object[]> ent = spq.getResultList();
-        entityManager.close();
-
-        return ent;
-    }
-
-    public static List<Object[]> getParentOrganisationsFromMappings(String parent, Short mapType) throws Exception {
-
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getParentOrganisationsFromMappings");
-        spq.setParameter("Child", parent);
-        spq.setParameter("MappingType", mapType);
-        spq.execute();
-        List<Object[]> ent = spq.getResultList();
-        entityManager.close();
-
-        return ent;
-    }
-
     public static void deleteUneditedBulkOrganisations() throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
@@ -117,6 +71,21 @@ public class OrganisationEntity {
         entityManager.close();
 
         return ent;
+    }
+
+    public static List<OrganisationEntity> getOrganisationsFromList(List<String> organisations) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
+        Root<OrganisationEntity> rootEntry = cq.from(OrganisationEntity.class);
+
+        Predicate predicate = rootEntry.get("uuid").in(organisations);
+
+        cq.where(predicate);
+        TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
+
+        return query.getResultList();
     }
 
     public static List<OrganisationEntity> getAllOrganisations(boolean services) throws Exception {

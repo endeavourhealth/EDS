@@ -5,6 +5,7 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.core.mySQLDatabase.MapType;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.*;
@@ -58,11 +59,14 @@ public final class DsaEndpoint extends AbstractEndpoint {
                 "DSA", dsa);
 
         if (dsa.getUuid() != null) {
-            dsa.setUuid(UUID.randomUUID().toString());
+            MastermappingEntity.deleteAllMappings(dsa.getUuid());
             DatasharingagreementEntity.updateDSA(dsa);
         } else {
+            dsa.setUuid(UUID.randomUUID().toString());
             DatasharingagreementEntity.saveDSA(dsa);
         }
+
+        MastermappingEntity.saveDataSharingAgreementMappings(dsa);
 
         clearLogbackMarkers();
 
@@ -88,6 +92,19 @@ public final class DsaEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/dataflows")
+    public Response getLinkedCohorts(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "dataflow(s)",
+                "DSA Id", uuid);
+
+        return getLinkedDataFlows(uuid);
     }
 
     private Response getDSAList() throws Exception {
@@ -118,6 +135,19 @@ public final class DsaEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .entity(dsas)
+                .build();
+    }
+
+    private Response getLinkedDataFlows(String dsaUuid) throws Exception {
+
+        List<String> dataFlowUuids = MastermappingEntity.getChildMappings(dsaUuid, MapType.DATASHARINGAGREEMENT.getMapType(), MapType.DATAFLOW.getMapType());
+
+        List<DataflowEntity> ret = DataflowEntity.getDataFlowsFromList(dataFlowUuids);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
                 .build();
     }
 

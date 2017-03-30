@@ -8,6 +8,7 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.core.mySQLDatabase.MapType;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.*;
@@ -357,9 +358,9 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
     private Response getRegionsForOrganisation(String organisationUuid) throws Exception {
 
-        List<Object[]> regions = RegionEntity.getParentRegionsFromMappings(organisationUuid);
+        List<String> regionUuids = MastermappingEntity.getParentMappings(organisationUuid, MapType.ORGANISATION.getMapType(), MapType.REGION.getMapType());
 
-        List<JsonRegion> ret = EndpointHelper.JsonRegion(regions);
+        List<RegionEntity> ret = RegionEntity.getRegionsFromList(regionUuids);
 
         clearLogbackMarkers();
         return Response
@@ -455,10 +456,9 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
     private Response getChildOrganisations(String organisationUuid, Short organisationType) throws Exception {
 
-        Short type = 0;
-        List<Object[]> organisations = OrganisationEntity.getChildOrganisationsFromMappings(organisationUuid, type, organisationType);
+        List<String> organisationUuids = MastermappingEntity.getChildMappings(organisationUuid, MapType.ORGANISATION.getMapType(), MapType.ORGANISATION.getMapType());
 
-        List<JsonOrganisationManager> ret = EndpointHelper.JsonOrganisation(organisations);
+        List<OrganisationEntity> ret = OrganisationEntity.getOrganisationsFromList(organisationUuids);
 
         clearLogbackMarkers();
         return Response
@@ -469,10 +469,9 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
     private Response getParentOrganisations(String organisationUuid) throws Exception {
 
-        Short type = 0;
-        List<Object[]> organisations = OrganisationEntity.getParentOrganisationsFromMappings(organisationUuid, type);
+        List<String> organisationUuids = MastermappingEntity.getParentMappings(organisationUuid, MapType.ORGANISATION.getMapType(), MapType.ORGANISATION.getMapType());
 
-        List<JsonOrganisationManager> ret = EndpointHelper.JsonOrganisation(organisations);
+        List<OrganisationEntity> ret = OrganisationEntity.getOrganisationsFromList(organisationUuids);
 
         clearLogbackMarkers();
         return Response

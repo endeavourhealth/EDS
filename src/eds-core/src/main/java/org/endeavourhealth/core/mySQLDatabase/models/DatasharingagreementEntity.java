@@ -241,4 +241,19 @@ public class DatasharingagreementEntity {
         TypedQuery<DatasharingagreementEntity> query = entityManager.createQuery(cq);
         return query.getResultList();
     }
+
+    public static List<DatasharingagreementEntity> getDSAsFromList(List<String> dsas) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<DatasharingagreementEntity> cq = cb.createQuery(DatasharingagreementEntity.class);
+        Root<DatasharingagreementEntity> rootEntry = cq.from(DatasharingagreementEntity.class);
+
+        Predicate predicate = rootEntry.get("uuid").in(dsas);
+
+        cq.where(predicate);
+        TypedQuery<DatasharingagreementEntity> query = entityManager.createQuery(cq);
+
+        return query.getResultList();
+    }
 }

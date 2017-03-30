@@ -2,6 +2,7 @@ package org.endeavourhealth.coreui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.Map;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -12,6 +13,7 @@ public class JsonCohort {
     private String patientCohortInclusionConsentModel = null;
     private String queryDefinition = null;
     private String removalPolicy = null;
+    private Map<UUID, String> dpas = null;
 
     public String getUuid() {
         return uuid;
@@ -59,5 +61,13 @@ public class JsonCohort {
 
     public void setRemovalPolicy(String removalPolicy) {
         this.removalPolicy = removalPolicy;
+    }
+
+    public Map<UUID, String> getDpas() {
+        return dpas;
+    }
+
+    public void setDpas(Map<UUID, String> dpas) {
+        this.dpas = dpas;
     }
 }

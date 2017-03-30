@@ -123,6 +123,21 @@ public class CohortEntity {
         return allQuery.getResultList();
     }
 
+    public static List<CohortEntity> getCohortsFromList(List<String> cohorts) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<CohortEntity> cq = cb.createQuery(CohortEntity.class);
+        Root<CohortEntity> rootEntry = cq.from(CohortEntity.class);
+
+        Predicate predicate = rootEntry.get("uuid").in(cohorts);
+
+        cq.where(predicate);
+        TypedQuery<CohortEntity> query = entityManager.createQuery(cq);
+
+        return query.getResultList();
+    }
+
     public static CohortEntity getCohort(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 

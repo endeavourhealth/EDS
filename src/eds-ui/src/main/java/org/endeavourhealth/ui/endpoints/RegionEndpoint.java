@@ -5,6 +5,7 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.core.mySQLDatabase.MapType;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.JsonOrganisationManager;
@@ -158,15 +159,14 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
     private Response getRegionOrganisations(String regionUUID) throws Exception {
 
-        Short type = 1;
-        List<Object[]> organisations = OrganisationEntity.getChildOrganisationsFromMappings(regionUUID, type, (short)0);
+        List<String> organisationUuids = MastermappingEntity.getChildMappings(regionUUID, MapType.REGION.getMapType(), MapType.ORGANISATION.getMapType());
 
-        List<JsonOrganisationManager> ret = EndpointHelper.JsonOrganisation(organisations);
+        List<OrganisationEntity> orgs = OrganisationEntity.getOrganisationsFromList(organisationUuids);
 
         clearLogbackMarkers();
         return Response
                 .ok()
-                .entity(ret)
+                .entity(orgs)
                 .build();
     }
 
@@ -182,9 +182,9 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
     private Response getParentRegions(String regionUuid) throws Exception {
 
-        List<Object[]> regions = RegionEntity.getParentRegionsFromMappings(regionUuid);
+        List<String> regionUuids = MastermappingEntity.getParentMappings(regionUuid, MapType.REGION.getMapType(), MapType.REGION.getMapType());
 
-        List<JsonRegion> ret = EndpointHelper.JsonRegion(regions);
+        List<RegionEntity> ret = RegionEntity.getRegionsFromList(regionUuids);
 
         clearLogbackMarkers();
         return Response
@@ -195,9 +195,9 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
     private Response getChildRegions(String regionUuid) throws Exception {
 
-        List<Object[]> regions = RegionEntity.getChildRegionsFromMappings(regionUuid);
+        List<String> regionUuids = MastermappingEntity.getChildMappings(regionUuid, MapType.REGION.getMapType(), MapType.REGION.getMapType());
 
-        List<JsonRegion> ret = EndpointHelper.JsonRegion(regions);
+        List<RegionEntity> ret = RegionEntity.getRegionsFromList(regionUuids);
 
         clearLogbackMarkers();
         return Response

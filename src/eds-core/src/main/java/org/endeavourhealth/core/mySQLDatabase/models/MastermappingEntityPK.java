@@ -10,7 +10,8 @@ import java.io.Serializable;
 public class MastermappingEntityPK implements Serializable {
     private String childUuid;
     private String parentUUid;
-    private short mapTypeId;
+    private short childMapTypeId;
+    private short parentMapTypeId;
 
     @Column(name = "ChildUuid", nullable = false, length = 36)
     @Id
@@ -32,16 +33,6 @@ public class MastermappingEntityPK implements Serializable {
         this.parentUUid = parentUUid;
     }
 
-    @Column(name = "MapTypeId", nullable = false)
-    @Id
-    public short getMapTypeId() {
-        return mapTypeId;
-    }
-
-    public void setMapTypeId(short mapTypeId) {
-        this.mapTypeId = mapTypeId;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -49,7 +40,8 @@ public class MastermappingEntityPK implements Serializable {
 
         MastermappingEntityPK that = (MastermappingEntityPK) o;
 
-        if (mapTypeId != that.mapTypeId) return false;
+        if (childMapTypeId != that.childMapTypeId) return false;
+        if (parentMapTypeId != that.parentMapTypeId) return false;
         if (childUuid != null ? !childUuid.equals(that.childUuid) : that.childUuid != null) return false;
         if (parentUUid != null ? !parentUUid.equals(that.parentUUid) : that.parentUUid != null) return false;
 
@@ -60,7 +52,28 @@ public class MastermappingEntityPK implements Serializable {
     public int hashCode() {
         int result = childUuid != null ? childUuid.hashCode() : 0;
         result = 31 * result + (parentUUid != null ? parentUUid.hashCode() : 0);
-        result = 31 * result + (int) mapTypeId;
+        result = 31 * result + (int) childMapTypeId;
+        result = 31 * result + (int) parentMapTypeId;
         return result;
+    }
+
+    @Column(name = "ChildMapTypeId", nullable = false)
+    @Id
+    public short getChildMapTypeId() {
+        return childMapTypeId;
+    }
+
+    public void setChildMapTypeId(short childMapTypeId) {
+        this.childMapTypeId = childMapTypeId;
+    }
+
+    @Column(name = "ParentMapTypeId", nullable = false)
+    @Id
+    public short getParentMapTypeId() {
+        return parentMapTypeId;
+    }
+
+    public void setParentMapTypeId(short parentMapTypeId) {
+        this.parentMapTypeId = parentMapTypeId;
     }
 }

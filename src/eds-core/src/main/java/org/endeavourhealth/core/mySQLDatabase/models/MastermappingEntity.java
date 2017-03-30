@@ -1,10 +1,16 @@
 package org.endeavourhealth.core.mySQLDatabase.models;
 
+import org.endeavourhealth.core.mySQLDatabase.MapType;
 import org.endeavourhealth.core.mySQLDatabase.PersistenceManager;
-import org.endeavourhealth.coreui.json.JsonOrganisationManager;
-import org.endeavourhealth.coreui.json.JsonRegion;
+import org.endeavourhealth.coreui.json.*;
 
 import javax.persistence.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -18,13 +24,184 @@ import java.util.UUID;
     )
 })
 @Entity
-@Table(name = "mastermapping", schema = "organisationmanager")
+@Table(name = "mastermapping", schema = "organisationmanager", catalog = "")
 @IdClass(MastermappingEntityPK.class)
 public class MastermappingEntity {
     private String childUuid;
     private String parentUUid;
-    private short mapTypeId;
     private byte isDefault;
+    private short childMapTypeId;
+    private short parentMapTypeId;
+
+    public static void deleteAllMappings(String uuid) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("deleteAllMappings");
+        spq.setParameter("UUID", uuid);
+        spq.execute();
+        entityManager.close();
+    }
+
+    public static void saveParentMappings(Map<UUID, String> parents, Short parentMapTypeId, String childUuid, Short childMapTypeId) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        parents.forEach((k, v) -> {
+            MastermappingEntity mme = new MastermappingEntity();
+            entityManager.getTransaction().begin();
+            mme.setChildUuid(childUuid);
+            mme.setChildMapTypeId(childMapTypeId);
+            mme.setParentUUid(k.toString());
+            mme.setParentMapTypeId(parentMapTypeId);
+            entityManager.persist(mme);
+            entityManager.getTransaction().commit();
+        });
+
+    }
+
+    public static void saveChildMappings(Map<UUID, String> children, Short childMapTypeId, String parentUuid, Short parentMapTypeId) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        children.forEach((k, v) -> {
+            MastermappingEntity mme = new MastermappingEntity();
+            entityManager.getTransaction().begin();
+            mme.setChildUuid(k.toString());
+            mme.setChildMapTypeId(childMapTypeId);
+            mme.setParentUUid(parentUuid);
+            mme.setParentMapTypeId(parentMapTypeId);
+            entityManager.persist(mme);
+            entityManager.getTransaction().commit();
+        });
+
+    }
+
+    public static List<String> getParentMappings(String childUuid, Short childMapTypeId, Short parentMapTypeId) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<MastermappingEntity> cq = cb.createQuery(MastermappingEntity.class);
+        Root<MastermappingEntity> rootEntry = cq.from(MastermappingEntity.class);
+
+        Predicate predicate = cb.and(cb.equal(rootEntry.get("childUuid"), childUuid ),
+                cb.equal(rootEntry.get("childMapTypeId"), childMapTypeId),
+                cb.equal(rootEntry.get("parentMapTypeId"), parentMapTypeId));
+
+        cq.where(predicate);
+        TypedQuery<MastermappingEntity> query = entityManager.createQuery(cq);
+        List<MastermappingEntity> maps =  query.getResultList();
+
+        List<String> parents = new ArrayList<>();
+        for(MastermappingEntity mme : maps){
+            parents.add(mme.getParentUUid());
+        }
+
+        return parents;
+    }
+
+    public static List<String> getChildMappings(String parentUuid, Short parentMapTypeId, Short childMapTypeId) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<MastermappingEntity> cq = cb.createQuery(MastermappingEntity.class);
+        Root<MastermappingEntity> rootEntry = cq.from(MastermappingEntity.class);
+
+        Predicate predicate = cb.and(cb.equal(rootEntry.get("parentUUid"), parentUuid ),
+                cb.equal(rootEntry.get("parentMapTypeId"), parentMapTypeId),
+                cb.equal(rootEntry.get("childMapTypeId"), childMapTypeId));
+
+        cq.where(predicate);
+        TypedQuery<MastermappingEntity> query = entityManager.createQuery(cq);
+        List<MastermappingEntity> maps =  query.getResultList();
+
+        List<String> children = new ArrayList<>();
+        for(MastermappingEntity mme : maps){
+            children.add(mme.getChildUuid());
+        }
+
+        return children;
+    }
+
+    public static void saveOrganisationMappings(JsonOrganisationManager organisation) throws Exception {
+
+        if (organisation.getRegions() != null) {
+            Map<UUID, String> regions = organisation.getRegions();
+            saveParentMappings(regions, MapType.REGION.getMapType(), organisation.getUuid(), MapType.ORGANISATION.getMapType());
+        }
+
+        if (organisation.getParentOrganisations() != null) {
+            Map<UUID, String> parentOrganisations = organisation.getParentOrganisations();
+            saveParentMappings(parentOrganisations, MapType.ORGANISATION.getMapType(), organisation.getUuid(), MapType.ORGANISATION.getMapType());
+        }
+
+        if (organisation.getChildOrganisations() != null) {
+            Map<UUID, String> childOrganisations = organisation.getChildOrganisations();
+            saveChildMappings(childOrganisations, MapType.ORGANISATION.getMapType(), organisation.getUuid(), MapType.ORGANISATION.getMapType());
+        }
+
+        if (organisation.getServices() != null) {
+            Map<UUID, String> services = organisation.getServices();
+            saveChildMappings(services, MapType.SERVICE.getMapType(), organisation.getUuid(), MapType.ORGANISATION.getMapType());
+        }
+    }
+
+    public static void saveRegionMappings(JsonRegion region) throws Exception {
+
+        if (region.getParentRegions() != null) {
+            Map<UUID, String> parentRegions = region.getParentRegions();
+            saveParentMappings(parentRegions, MapType.REGION.getMapType(), region.getUuid(), MapType.REGION.getMapType());
+        }
+
+        if (region.getChildRegions() != null) {
+            Map<UUID, String> childRegions = region.getChildRegions();
+            saveChildMappings(childRegions, MapType.REGION.getMapType(), region.getUuid(), MapType.REGION.getMapType());
+        }
+
+        if (region.getOrganisations() != null) {
+            Map<UUID, String> organisations = region.getOrganisations();
+            saveChildMappings(organisations, MapType.ORGANISATION.getMapType(), region.getUuid(), MapType.REGION.getMapType());
+        }
+    }
+
+    public static void saveDataSharingAgreementMappings(JsonDSA dsa) throws Exception {
+
+        if (dsa.getDataFlows() != null) {
+            Map<UUID, String> dataFlows = dsa.getDataFlows();
+            saveChildMappings(dataFlows, MapType.DATAFLOW.getMapType(), dsa.getUuid(), MapType.DATASHARINGAGREEMENT.getMapType());
+        }
+    }
+
+    public static void saveDataFlowMappings(JsonDataFlow dataFlow) throws Exception {
+
+        if (dataFlow.getDsas() != null) {
+            Map<UUID, String> dsas = dataFlow.getDsas();
+            saveParentMappings(dsas, MapType.DATASHARINGAGREEMENT.getMapType(),  dataFlow.getUuid(), MapType.DATAFLOW.getMapType());
+        }
+
+        if (dataFlow.getDpas() != null) {
+            Map<UUID, String> dpas = dataFlow.getDpas();
+            saveChildMappings(dpas, MapType.DATAPROCESSINGAGREEMENT.getMapType(), dataFlow.getUuid(), MapType.DATAFLOW.getMapType());
+        }
+    }
+
+    public static void saveDataProcessingAgreementMappings(JsonDPA dpa) throws Exception {
+
+        if (dpa.getDataFlows() != null) {
+            Map<UUID, String> dataFlows = dpa.getDataFlows();
+            saveParentMappings(dataFlows, MapType.DATAFLOW.getMapType(), dpa.getUuid(), MapType.DATAPROCESSINGAGREEMENT.getMapType());
+        }
+
+        if (dpa.getCohorts() != null) {
+            Map<UUID, String> cohorts = dpa.getCohorts();
+            saveChildMappings(cohorts, MapType.COHORT.getMapType(), dpa.getUuid(), MapType.DATAPROCESSINGAGREEMENT.getMapType());
+        }
+    }
+
+    public static void saveCohortMappings(JsonCohort cohort) throws Exception {
+
+        if (cohort.getDpas() != null) {
+            Map<UUID, String> dataFlows = cohort.getDpas();
+            saveParentMappings(dataFlows, MapType.DATAFLOW.getMapType(), cohort.getUuid(), MapType.COHORT.getMapType());
+        }
+    }
 
     @Id
     @Column(name = "ChildUuid", nullable = false, length = 36)
@@ -46,16 +223,6 @@ public class MastermappingEntity {
         this.parentUUid = parentUUid;
     }
 
-    @Id
-    @Column(name = "MapTypeId", nullable = false)
-    public short getMapTypeId() {
-        return mapTypeId;
-    }
-
-    public void setMapTypeId(short mapTypeId) {
-        this.mapTypeId = mapTypeId;
-    }
-
     @Basic
     @Column(name = "IsDefault", nullable = false)
     public byte getIsDefault() {
@@ -73,7 +240,8 @@ public class MastermappingEntity {
 
         MastermappingEntity that = (MastermappingEntity) o;
 
-        if (mapTypeId != that.mapTypeId) return false;
+        if (childMapTypeId != that.childMapTypeId) return false;
+        if (parentMapTypeId != that.parentMapTypeId) return false;
         if (isDefault != that.isDefault) return false;
         if (childUuid != null ? !childUuid.equals(that.childUuid) : that.childUuid != null) return false;
         if (parentUUid != null ? !parentUUid.equals(that.parentUUid) : that.parentUUid != null) return false;
@@ -85,117 +253,29 @@ public class MastermappingEntity {
     public int hashCode() {
         int result = childUuid != null ? childUuid.hashCode() : 0;
         result = 31 * result + (parentUUid != null ? parentUUid.hashCode() : 0);
-        result = 31 * result + (int) mapTypeId;
+        result = 31 * result + (int) childMapTypeId;
+        result = 31 * result + (int) parentMapTypeId;
         result = 31 * result + (int) isDefault;
         return result;
     }
 
-    public static void deleteAllMappings(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("deleteAllMappings");
-        spq.setParameter("UUID", uuid);
-        spq.execute();
-        entityManager.close();
+    @Id
+    @Column(name = "ChildMapTypeId", nullable = false)
+    public short getChildMapTypeId() {
+        return childMapTypeId;
     }
 
-    public static void saveOrganisationMappings(JsonOrganisationManager organisation) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        if (organisation.getRegions() != null) {
-            Map<UUID, String> regions = organisation.getRegions();
-            regions.forEach((k, v) -> {
-                MastermappingEntity mme = new MastermappingEntity();
-                entityManager.getTransaction().begin();
-                mme.setChildUuid(organisation.getUuid());
-                mme.setParentUUid(k.toString());
-                mme.setMapTypeId((short) 1);
-                entityManager.persist(mme);
-                entityManager.getTransaction().commit();
-            });
-        }
-
-        if (organisation.getParentOrganisations() != null) {
-            Map<UUID, String> parentOrganisations = organisation.getParentOrganisations();
-            parentOrganisations.forEach((k, v) -> {
-                MastermappingEntity mme = new MastermappingEntity();
-                entityManager.getTransaction().begin();
-                mme.setChildUuid(organisation.getUuid());
-                mme.setParentUUid(k.toString());
-                mme.setMapTypeId((short) 0);
-                entityManager.persist(mme);
-                entityManager.getTransaction().commit();
-            });
-        }
-
-        if (organisation.getChildOrganisations() != null) {
-            Map<UUID, String> childOrganisations = organisation.getChildOrganisations();
-            childOrganisations.forEach((k, v) -> {
-                MastermappingEntity mme = new MastermappingEntity();
-                entityManager.getTransaction().begin();
-                mme.setChildUuid(k.toString());
-                mme.setParentUUid(organisation.getUuid());
-                mme.setMapTypeId((short) 0);
-                entityManager.persist(mme);
-                entityManager.getTransaction().commit();
-            });
-        }
-
-        if (organisation.getServices() != null) {
-            Map<UUID, String> services = organisation.getServices();
-            services.forEach((k, v) -> {
-                MastermappingEntity mme = new MastermappingEntity();
-                entityManager.getTransaction().begin();
-                mme.setChildUuid(k.toString());
-                mme.setParentUUid(organisation.getUuid());
-                mme.setMapTypeId((short) 0);
-                entityManager.persist(mme);
-                entityManager.getTransaction().commit();
-            });
-        }
+    public void setChildMapTypeId(short childMapTypeId) {
+        this.childMapTypeId = childMapTypeId;
     }
 
-    public static void saveRegionMappings(JsonRegion region) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        if (region.getParentRegions() != null) {
-            Map<UUID, String> parentRegions = region.getParentRegions();
-            parentRegions.forEach((k, v) -> {
-                MastermappingEntity mme = new MastermappingEntity();
-                entityManager.getTransaction().begin();
-                mme.setChildUuid(region.getUuid());
-                mme.setParentUUid(k.toString());
-                mme.setMapTypeId((short) 1);
-                entityManager.persist(mme);
-                entityManager.getTransaction().commit();
-            });
-        }
-
-        if (region.getChildRegions() != null) {
-            Map<UUID, String> childRegions = region.getChildRegions();
-            childRegions.forEach((k, v) -> {
-                MastermappingEntity mme = new MastermappingEntity();
-                entityManager.getTransaction().begin();
-                mme.setChildUuid(k.toString());
-                mme.setParentUUid(region.getUuid());
-                mme.setMapTypeId((short) 1);
-                entityManager.persist(mme);
-                entityManager.getTransaction().commit();
-            });
-        }
-
-        if (region.getOrganisations() != null) {
-            Map<UUID, String> organisations = region.getOrganisations();
-            organisations.forEach((k, v) -> {
-                MastermappingEntity mme = new MastermappingEntity();
-                entityManager.getTransaction().begin();
-                mme.setChildUuid(k.toString());
-                mme.setParentUUid(region.getUuid());
-                mme.setMapTypeId((short) 1);
-                entityManager.persist(mme);
-                entityManager.getTransaction().commit();
-            });
-        }
+    @Id
+    @Column(name = "ParentMapTypeId", nullable = false)
+    public short getParentMapTypeId() {
+        return parentMapTypeId;
     }
 
+    public void setParentMapTypeId(short parentMapTypeId) {
+        this.parentMapTypeId = parentMapTypeId;
+    }
 }

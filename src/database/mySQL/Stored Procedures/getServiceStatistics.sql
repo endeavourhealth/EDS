@@ -4,33 +4,32 @@ DELIMITER //
 CREATE PROCEDURE OrganisationManager.getServiceStatistics (
 )
 BEGIN
-  create temporary table ServiceStatistics (
+  create temporary table OrganisationManager.ServiceStatistics (
 	label varchar(100) not null,
     value varchar(100) not null
     );
     
-    insert into ServiceStatistics (label, value)
+    insert into OrganisationManager.ServiceStatistics (label, value)
     select 'Total Number of Services', count(*) 
     from OrganisationManager.Organisation 
     where isService = 1;
     
-    insert into ServiceStatistics (label, value)
+    insert into OrganisationManager.ServiceStatistics (label, value)
     select 'Services linked to an organisation', count(distinct o.uuid) 
     from OrganisationManager.Organisation o
-    join organisationmanager.mastermapping mm on mm.childUuid = o.Uuid
-    where o.isService = 1
-    and mm.mapTypeId = 0;
+    join organisationmanager.mastermapping mm on mm.childUuid = o.Uuid and mm.childMapTypeId = 0
+    where o.isService = 1;
     
-    insert into ServiceStatistics (label, value)
+    insert into OrganisationManager.ServiceStatistics (label, value)
     select 'Orphaned Services', count(o.uuid) 
     from OrganisationManager.Organisation o
-    left outer join organisationmanager.mastermapping mm on mm.childUuid = o.Uuid
+    left outer join organisationmanager.mastermapping mm on mm.childUuid = o.Uuid and mm.childMapTypeId = 0
     where o.isService = 1
-    and mm.mapTypeId is null;
+    and mm.childMapTypeId is null;
     
-    select label, value from ServiceStatistics;
+    select label, value from OrganisationManager.ServiceStatistics;
     
-    drop table ServiceStatistics;
+    drop table OrganisationManager.ServiceStatistics;
     
   
 END //

@@ -3,6 +3,8 @@ import {URLSearchParams, Http} from "@angular/http";
 import {Observable} from "rxjs";
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 import {Dpa} from "./models/Dpa";
+import {DataFlow} from "../dataFlow/models/DataFlow";
+import {Cohort} from "../cohort/models/Cohort";
 
 @Injectable()
 export class DpaService extends BaseHttp2Service  {
@@ -32,5 +34,17 @@ export class DpaService extends BaseHttp2Service  {
         let params = new URLSearchParams();
         params.set('searchData',searchData);
         return this.httpGet('api/dpa', { search : params });
+    }
+
+    getLinkedDataFlows(uuid : string) :  Observable<DataFlow[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/dpa/dataflows', { search : params });
+    }
+
+    getLinkedCohorts(uuid : string) :  Observable<Cohort[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/dpa/cohorts', { search : params });
     }
 }

@@ -111,6 +111,21 @@ public class DataflowEntity {
         return query.getResultList();
     }
 
+    public static List<DataflowEntity> getDataFlowsFromList(List<String> dataFlows) throws Exception {
+        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<DataflowEntity> cq = cb.createQuery(DataflowEntity.class);
+        Root<DataflowEntity> rootEntry = cq.from(DataflowEntity.class);
+
+        Predicate predicate = rootEntry.get("uuid").in(dataFlows);
+
+        cq.where(predicate);
+        TypedQuery<DataflowEntity> query = entityManager.createQuery(cq);
+
+        return query.getResultList();
+    }
+
     @Id
     @Column(name = "Uuid", nullable = false, length = 36)
     public String getUuid() {
