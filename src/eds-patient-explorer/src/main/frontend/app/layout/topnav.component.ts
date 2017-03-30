@@ -19,7 +19,9 @@ export class TopnavComponent {
 	}
 
 	navigateUserAccount() {
-		window.location.href = "eds-user-manager/#/app/users/userManagerUserView";
+		var url = window.location.protocol + "//" + window.location.host;
+		url = url + "/eds-user-manager/#/app/users/userManagerUserView";
+		window.location.href = url;
 	}
 
 	logout() {
