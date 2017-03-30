@@ -10,8 +10,8 @@ import {UIImmunisation} from "./resources/clinical/UIImmunisation";
 import {UIFamilyHistory} from "./resources/clinical/UIFamilyHistory";
 import {UIMedicationStatement} from "./resources/clinical/UIMedicationStatement";
 
-export class UIPatientRecord {
-    patient: UIPatient;
+export class UIPersonRecord {
+    patients: UIPatient[];
     conditions: UICondition[];
     problems: UIProblem[];
     encounters: UIEncounter[];
@@ -22,8 +22,8 @@ export class UIPatientRecord {
     immunisations : UIImmunisation[];
     familyHistory : UIFamilyHistory[];
 
-    constructor(patient?: UIPatient) {
-        this.patient = patient;
+    constructor(patients: UIPatient[]) {
+        this.patients = patients;
     }
 
     public getActiveProblems(): UIProblem[] {

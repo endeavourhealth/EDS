@@ -25,7 +25,7 @@ export class EpisodeViewComponent {
 		this.loadEpisodes();
 	}
 
-	@Output() episodeChange: EventEmitter<UIEpisodeOfCare> = new EventEmitter<UIEpisodeOfCare>();
+	@Output() episodeChange: EventEmitter<UIEpisodeOfCare[]> = new EventEmitter<UIEpisodeOfCare[]>();
 	private _person: UIPerson;
 	private _chart : any;
 	private _hoverEpisode : UIEpisodeOfCare;
@@ -37,7 +37,6 @@ export class EpisodeViewComponent {
 
 	loadEpisodes() {
 		let vm = this;
-		// let episodes = this.getDummyEpisodeData();
 		vm.recordViewerService.getEpisodes(vm._person).subscribe(
 			(episodes : UIEpisodeOfCare[]) => {
 				vm.currentEpisodes = linq(episodes)
@@ -49,13 +48,25 @@ export class EpisodeViewComponent {
 					.OrderByDescending(t => t.period.start.date)
 					.ToArray();
 				vm.showTimeLine();
-		 	},
-		 	(error) => vm.logger.error("Error loading episodes",error)
-		 );
+			},
+			(error) => vm.logger.error("Error loading episodes",error)
+		);
 	}
 
 	selectEpisode(episode: UIEpisodeOfCare) {
-		this.episodeChange.emit(episode);
+		this.episodeChange.emit([episode]);
+	}
+
+	selectCurrentEpisodes() {
+		this.episodeChange.emit(this.currentEpisodes);
+	}
+
+	selectPastEpisodes() {
+		this.episodeChange.emit(this.pastEpisodes);
+	}
+
+	selectAllEpisodes() {
+		this.episodeChange.emit(this.currentEpisodes.concat(this.pastEpisodes));
 	}
 
 	showTimeLine() {
@@ -223,91 +234,6 @@ export class EpisodeViewComponent {
 
 	hoverEpisode(episode : UIEpisodeOfCare) {
 		this._hoverEpisode = episode;
-	}
-
-	getDummyEpisodeData() : any[] {
-		let patientId = {
-			resourceId: "b9da1825-c411-4852-bcdf-b4091d5542a7",
-			serviceId: "db7eba14-4a89-4090-abf8-af6c60742cb1",
-			systemId: "db8fa60e-08ff-4b61-ba4c-6170e6cb8df7"
-		};
-
-		return [
-			{
-				managingOrganisation : {name : "LGI", type : "Hospital"},
-				period : {start : {date : Date.UTC(1973,9,26)}, end : {date : Date.UTC(1973,9, 30)}},
-				patient : { patientId : patientId }
-			},
-			{
-				managingOrganisation : {name : "LGI", type : "Hospital"},
-				period : {start : {date : Date.UTC(1978,4, 23,11,0,0)}, end : {date : Date.UTC(1978,4, 23,14,30,0)}},
-				patient : { patientId : patientId }
-			},
-			{
-				managingOrganisation : {name : "LGI", type : "Hospital"},
-				period : {start : {date : Date.UTC(1983,1,2)}, end : {date : Date.UTC(1983,1, 20)}},
-				patient : { patientId : patientId }
-			},
-			{
-				managingOrganisation : {name : "Huddersfield Royal Infirmary", type : "Hospital"},
-				period : {start : {date : Date.UTC(1993,3,6)}, end : {date : Date.UTC(1993,3, 8)}},
-				patient : { patientId : patientId }
-			},
-			{
-				managingOrganisation : {name : "Huddersfield Royal Infirmary", type : "Hospital"},
-				period : {start : {date : Date.UTC(1993,3,10)}, end : {date : Date.UTC(1993,3, 12)}},
-				patient : { patientId : patientId }
-			},
-			{
-				managingOrganisation : {name : "Huddersfield Royal Infirmary", type : "Hospital"},
-				period : {start : {date : Date.UTC(1993,3,14)}, end : {date : Date.UTC(1993,6, 30)}},
-				patient : { patientId : patientId }
-			},
-			{
-				managingOrganisation : {name : "LGI", type : "Hospital"},
-				period : {start : {date : Date.UTC(2017,1,2)}, end : null},
-				patient : { patientId : patientId }
-			},
-
-
-			{
-				managingOrganisation : {name : "Diabetes Clinic", type : "Community"},
-				period : {start : {date : Date.UTC(2011,5,12)}, end : {date : Date.UTC(2011, 11, 12)}},
-				patient : { patientId : patientId }
-			},
-			{
-				managingOrganisation : {name : "Diabetes Clinic", type : "Community"},
-				period : {start : {date : Date.UTC(2013,7,18)}, end : {date : Date.UTC(2013, 9, 25)}},
-				patient : { patientId : patientId }
-			},
-			{
-				managingOrganisation : {name : "Diabetes Clinic", type : "Community"},
-				period : {start : {date : Date.UTC(2016,11,12)}, end : null},
-				patient : { patientId : patientId }
-			},
-
-			{
-				managingOrganisation : {name : "Golcar Surgery", type : "GP Surgery"},
-				period : {start : {date : Date.UTC(1973,9,30)}, end : {date : Date.UTC(1980, 2, 17)}},
-				patient : { patientId : patientId }
-			},
-			{
-				managingOrganisation : {name : "Croft House", type : "GP Surgery"},
-				period : {start : {date : Date.UTC(1980,2,18)}, end : {date : Date.UTC(1992, 8, 5)}},
-				patient : { patientId : patientId }
-			},
-			{
-				managingOrganisation : {name : "Leeds University", type : "GP Surgery"},
-				period : {start : {date : Date.UTC(1992,8,5)}, end : {date : Date.UTC(1996, 6, 15)}},
-				patient : { patientId : patientId }
-			},
-			{
-				managingOrganisation : {name : "Croft House", type : "GP Surgery"},
-				period : {start : {date : Date.UTC(1996,6,30)}, end : null},
-				patient : { patientId : patientId }
-			},
-
-		];
 	}
 }
 

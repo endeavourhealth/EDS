@@ -6,11 +6,11 @@
 			<div class="col-sm-2"><span class="precis-label">Gender</span> <span class="precis-value">{{person.gender | cuiGender}}</span></div>
 			<div class="col-sm-2"><span class="precis-label">NHS No.</span> <span class="precis-value">{{person.nhsNumber | cuiNhsNumber}}</span></div>
 		</div>
-		<div *ngIf="episode" class="row">
+		<div *ngIf="episodes" class="row">
 			<hr>
-			<div class="col-sm-5"><span class="precis-patientname"><i class="fa" [ngClass]="episode.managingOrganisation.type | locationIcon"></i> {{episode.managingOrganisation.name }}</span></div>
-			<div class="col-sm-2"><span class="precis-label">Start</span> <span class="precis-value">{{episode.period.start | cuiDate}}</span></div>
-			<div class="col-sm-2" *ngIf="episode.period.end"><span class="precis-label">End</span> <span class="precis-value">{{episode.period.end | cuiDate}}</span></div>
+			<div class="col-sm-5"><span class="precis-patientname"><i class="fa" [ngClass]="getEpisodeType() | locationIcon"></i> {{getName()}}</span></div>
+			<div class="col-sm-2"><span class="precis-label">Start</span> <span class="precis-value">{{getPeriodStart() | cuiDate}}</span></div>
+			<div class="col-sm-2" *ngIf="getPeriodEnd()"><span class="precis-label">End</span> <span class="precis-value">{{ getPeriodEnd() | cuiDate}}</span></div>
 		</div>
 	</div>
 </div>

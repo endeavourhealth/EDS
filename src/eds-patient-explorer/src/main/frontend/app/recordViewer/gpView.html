@@ -6,12 +6,12 @@
                     <ngb-tab id="summary" title="Summary">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                                <summary [activeProblems]="patientRecord.getActiveProblems()"
-                                         [pastProblems]="patientRecord.getPastProblems()"
-                                         [allergies]="patientRecord.allergies"
-                                         [immunisations]="patientRecord.immunisations"
-                                         [acuteMedication]="patientRecord.getAcuteMedication()"
-                                         [repeatMedication]="patientRecord.getRepeatMedication()"></summary>
+                                <summary [activeProblems]="personRecord.getActiveProblems()"
+                                         [pastProblems]="personRecord.getPastProblems()"
+                                         [allergies]="personRecord.allergies"
+                                         [immunisations]="personRecord.immunisations"
+                                         [acuteMedication]="personRecord.getAcuteMedication()"
+                                         [repeatMedication]="personRecord.getRepeatMedication()"></summary>
                             </div>
                         </template>
                     </ngb-tab>
@@ -22,8 +22,8 @@
                     <ngb-tab id="consultations" title="Consultations">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                              <loadingIndicator [done]="patientRecord.encounters">
-                                <consultations [consultations]="patientRecord.encounters"></consultations>
+                              <loadingIndicator [done]="personRecord.encounters">
+                                <consultations [consultations]="personRecord.encounters"></consultations>
                               </loadingIndicator>
                             </div>
                         </template>
@@ -35,10 +35,10 @@
                     <ngb-tab id="medication" title="Medication">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                              <loadingIndicator [done]="patientRecord.medication">
-                                <medication title="Acute medication" [medication]="patientRecord.getAcuteMedication()" placeholder="(No acute medication)"></medication>
-                                <medication title="Repeat medication" [medication]="patientRecord.getRepeatMedication()" placeholder="(No repeat medication)"></medication>
-                                <medication title="Past medication" [medication]="patientRecord.getPastMedication()" placeholder="(No past medication)"></medication>
+                              <loadingIndicator [done]="personRecord.medication">
+                                <medication title="Acute medication" [medication]="personRecord.getAcuteMedication()" placeholder="(No acute medication)"></medication>
+                                <medication title="Repeat medication" [medication]="personRecord.getRepeatMedication()" placeholder="(No repeat medication)"></medication>
+                                <medication title="Past medication" [medication]="personRecord.getPastMedication()" placeholder="(No past medication)"></medication>
                               </loadingIndicator>
                             </div>
                         </template>
@@ -50,10 +50,10 @@
                     <ngb-tab id="problems" title="Problems">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                              <loadingIndicator [done]="patientRecord.problems">
+                              <loadingIndicator [done]="personRecord.problems">
                                 <div class="container-fluid">
-                                <problems title="Active problems" [problems]="patientRecord.getActiveProblems()" placeholder="(No active problems)"></problems>
-                                <problems title="Past problems" [problems]="patientRecord.getPastProblems()" placeholder="(No past problems)"></problems>
+                                <problems title="Active problems" [problems]="personRecord.getActiveProblems()" placeholder="(No active problems)"></problems>
+                                <problems title="Past problems" [problems]="personRecord.getPastProblems()" placeholder="(No past problems)"></problems>
                                 </div>
                               </loadingIndicator>
                             </div>
@@ -66,9 +66,9 @@
                     <ngb-tab id="investigations" title="Investigations">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                              <loadingIndicator [done]="patientRecord.observations">
+                              <loadingIndicator [done]="personRecord.observations">
                                 <div class="container-fluid">
-                                    <investigations [investigations]="patientRecord.getInvestigations()"></investigations>
+                                    <investigations [investigations]="personRecord.getInvestigations()"></investigations>
                                 </div>
                               </loadingIndicator>
                             </div>
@@ -81,9 +81,9 @@
                     <ngb-tab id="careHistory" title="Care History">
                         <template ngbTabContent>
                         <div class="tab-panel">
-                          <loadingIndicator [done]="patientRecord.observations">
+                          <loadingIndicator [done]="personRecord.observations">
                             <div class="container-fluid">
-                                <careHistory [observations]="patientRecord.observations"></careHistory>
+                                <careHistory [observations]="personRecord.observations"></careHistory>
                             </div>
                           </loadingIndicator>
                         </div>
@@ -96,8 +96,8 @@
                     <ngb-tab id="allergies" title="Allergies">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                              <loadingIndicator [done]="patientRecord.allergies">
-                                <allergies [allergies]="patientRecord.allergies"></allergies>
+                              <loadingIndicator [done]="personRecord.allergies">
+                                <allergies [allergies]="personRecord.allergies"></allergies>
                               </loadingIndicator>
                             </div>
                         </template>
@@ -109,8 +109,8 @@
                     <ngb-tab id="immunisations" title="Immunisations">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                              <loadingIndicator [done]="patientRecord.immunisations">
-                                <immunisations [immunisations]="patientRecord.immunisations"></immunisations>
+                              <loadingIndicator [done]="personRecord.immunisations">
+                                <immunisations [immunisations]="personRecord.immunisations"></immunisations>
                               </loadingIndicator>
                             </div>
                         </template>
@@ -122,8 +122,8 @@
                     <ngb-tab id="familyHistory" title="Family History">
                         <template ngbTabContent>
                             <div class="tab-panel">
-                              <loadingIndicator [done]="patientRecord.familyHistory">
-                                <familyHistory [familyHistory]="patientRecord.familyHistory"></familyHistory>
+                              <loadingIndicator [done]="personRecord.familyHistory">
+                                <familyHistory [familyHistory]="personRecord.familyHistory"></familyHistory>
                               </loadingIndicator>
                             </div>
                         </template>
@@ -135,9 +135,9 @@
                     <ngb-tab id="diary" title="Diary">
                         <template ngbTabContent>
                            <div class="tab-panel">
-                             <loadingIndicator [done]="patientRecord.diary">
+                             <loadingIndicator [done]="personRecord.diary">
                             <div class="container-fluid">
-                                <diary [diaries]="patientRecord.diary"></diary>
+                                <diary [diaries]="personRecord.diary"></diary>
                              </div>
                              </loadingIndicator>
                         </div>
