@@ -184,9 +184,11 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
 
         //find all the ones we want to transform
         List<ResourceByExchangeBatch> resourcesToTransform = new ArrayList<>();
+        HashSet<ResourceByExchangeBatch> hsResourcesToTransform = new HashSet<>();
         for (ResourceByExchangeBatch resource: resources) {
             if (resource.getResourceType().equals(resourceType.toString())) {
                 resourcesToTransform.add(resource);
+                hsResourcesToTransform.add(resource);
             }
         }
 
@@ -195,7 +197,14 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         }
 
         //remove all the resources we processed, so we can check for ones we missed at the end
-        resources.removeAll(resourcesToTransform);
+        //removeAll is really slow, so changing around
+        for (int i=resources.size()-1; i>=0; i--) {
+            ResourceByExchangeBatch r = resources.get(i);
+            if (hsResourcesToTransform.contains(r)) {
+                resources.remove(i);
+            }
+        }
+        //resources.removeAll(resourcesToTransform);
 
         //we use this function with a null transformer for resources we want to ignore
         if (transformer != null) {
