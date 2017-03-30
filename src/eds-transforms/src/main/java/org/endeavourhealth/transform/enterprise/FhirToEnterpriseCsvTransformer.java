@@ -43,6 +43,8 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
             return null;
         }
 
+        LOG.trace("Transforming batch " + batchId + " and " + filteredResources.size() + " resources for " + configName);
+
         //we need to find the sender organisation national ID for the data in the batch
         Organisation org = new OrganisationRepository().getById(senderOrganisationUuid);
         String orgNationalId = org.getNationalId();
