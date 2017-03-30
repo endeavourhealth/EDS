@@ -256,7 +256,7 @@ public class DatasharingsummaryEntity {
 
     public static List<Object[]> getStatistics(String procName) throws Exception {
 
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery(procName);
         spq.execute();
@@ -267,7 +267,7 @@ public class DatasharingsummaryEntity {
     }
 
     public static List<DatasharingsummaryEntity> getAllDataSharingSummaries() throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<DatasharingsummaryEntity> cq = cb.createQuery(DatasharingsummaryEntity.class);
@@ -282,7 +282,7 @@ public class DatasharingsummaryEntity {
     }
 
     public static DatasharingsummaryEntity getDataSharingSummary(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DatasharingsummaryEntity ret = entityManager.find(DatasharingsummaryEntity.class, uuid);
 
@@ -292,7 +292,7 @@ public class DatasharingsummaryEntity {
     }
 
     public static void updateDataSharingSummary(JsonDataSharingSummary dataSharingSummary) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DatasharingsummaryEntity datasharingsummaryEntity = entityManager.find(DatasharingsummaryEntity.class, dataSharingSummary.getUuid());
         entityManager.getTransaction().begin();
@@ -316,7 +316,7 @@ public class DatasharingsummaryEntity {
     }
 
     public static void saveDataSharingSummary(JsonDataSharingSummary dataSharingSummary) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DatasharingsummaryEntity datasharingsummaryEntity = new DatasharingsummaryEntity();
         entityManager.getTransaction().begin();
@@ -342,7 +342,7 @@ public class DatasharingsummaryEntity {
     }
 
     public static void deleteDataSharingSummary(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DatasharingsummaryEntity datasharingsummaryEntity = entityManager.find(DatasharingsummaryEntity.class, uuid);
         entityManager.getTransaction().begin();
@@ -353,7 +353,7 @@ public class DatasharingsummaryEntity {
     }
 
     public static List<DatasharingsummaryEntity> search(String expression) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<DatasharingsummaryEntity> cq = cb.createQuery(DatasharingsummaryEntity.class);

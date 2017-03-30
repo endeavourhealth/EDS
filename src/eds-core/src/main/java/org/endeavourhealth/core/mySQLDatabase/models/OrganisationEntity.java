@@ -54,7 +54,7 @@ public class OrganisationEntity {
     private String bulkConflictedWith;
 
     public static void deleteUneditedBulkOrganisations() throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("deleteUneditedBulkOrganisations");
         spq.execute();
@@ -63,7 +63,7 @@ public class OrganisationEntity {
 
     public static List<Object[]> getStatistics(String procName) throws Exception {
 
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery(procName);
         spq.execute();
@@ -74,7 +74,7 @@ public class OrganisationEntity {
     }
 
     public static List<OrganisationEntity> getOrganisationsFromList(List<String> organisations) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
@@ -93,7 +93,7 @@ public class OrganisationEntity {
     }
 
     public static List<OrganisationEntity> getAllOrganisations(boolean services) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
@@ -113,7 +113,7 @@ public class OrganisationEntity {
     }
 
     public static OrganisationEntity getOrganisation(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         OrganisationEntity ret = entityManager.find(OrganisationEntity.class, uuid);
 
@@ -123,7 +123,7 @@ public class OrganisationEntity {
     }
 
     public static void updateOrganisation(JsonOrganisationManager organisation) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         OrganisationEntity organisationEntity = entityManager.find(OrganisationEntity.class, organisation.getUuid());
         entityManager.getTransaction().begin();
@@ -145,7 +145,7 @@ public class OrganisationEntity {
     }
 
     public static void saveOrganisation(JsonOrganisationManager organisation) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         OrganisationEntity organisationEntity = new OrganisationEntity();
         entityManager.getTransaction().begin();
@@ -171,7 +171,7 @@ public class OrganisationEntity {
     }
 
     public static void bulkSaveOrganisation(List<OrganisationEntity> organisationEntities) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         int batchSize = 50;
 
@@ -192,7 +192,7 @@ public class OrganisationEntity {
     }
 
     public static void deleteOrganisation(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         OrganisationEntity organisationEntity = entityManager.find(OrganisationEntity.class, uuid);
         entityManager.getTransaction().begin();
@@ -203,7 +203,7 @@ public class OrganisationEntity {
     }
 
     public static List<OrganisationEntity> search(String expression, boolean searchServices) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
@@ -224,7 +224,7 @@ public class OrganisationEntity {
     }
 
     public static List<OrganisationEntity> getUpdatedBulkOrganisations() throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);
@@ -243,7 +243,7 @@ public class OrganisationEntity {
     }
 
     public static List<OrganisationEntity> getConflictedOrganisations() throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<OrganisationEntity> cq = cb.createQuery(OrganisationEntity.class);

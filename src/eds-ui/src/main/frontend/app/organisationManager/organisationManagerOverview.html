@@ -7,6 +7,25 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="panel panel-info">
+                        <div class="panel-heading">Regions</div>
+                        <div class="panel-body">
+                            <div class="row" *ngFor="let regionStat of regionStats">
+                                <div class="col-md-6">
+                                    {{regionStat.label}}
+                                </div>
+                                <div class="col-md-6">
+                                    {{regionStat.value}}
+                                </div>
+                            </div>
+                            <br>
+                            <div class="pull-right">
+                                <button type="button" class="btn btn-sm btn-info" (click)="goToRegions()">View Regions</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="panel panel-success">
                         <div class="panel-heading">Organisations</div>
                         <div class="panel-body">
                             <div class="row" *ngFor="let stat of orgStats">
@@ -19,11 +38,13 @@
                             </div>
                             <br>
                             <div class="pull-right">
-                                <button type="button" class="btn btn-sm btn-info" (click)="goToOrganisations()">View Organisations</button>
+                                <button type="button" class="btn btn-sm btn-success" (click)="goToOrganisations()">View Organisations</button>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="row">
                 <div class="col-md-6">
                     <div class="panel panel-warning">
                         <div class="panel-heading">Services</div>
@@ -39,27 +60,6 @@
                             <br>
                             <div class="pull-right">
                                 <button type="button" class="btn btn-sm btn-warning" (click)="goToServices()">View Services</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="panel panel-success">
-                        <div class="panel-heading">Regions</div>
-                        <div class="panel-body">
-                            <div class="row" *ngFor="let regionStat of regionStats">
-                                <div class="col-md-6">
-                                    {{regionStat.label}}
-                                </div>
-                                <div class="col-md-6">
-                                    {{regionStat.value}}
-                                </div>
-                            </div>
-                            <br>
-                            <div class="pull-right">
-                                <button type="button" class="btn btn-sm btn-success" (click)="goToRegions()">View Regions</button>
                             </div>
                         </div>
                     </div>

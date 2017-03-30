@@ -179,7 +179,7 @@ public class DataprocessingagreementEntity {
     }
 
     public static List<DataprocessingagreementEntity> getAllDPAs() throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<DataprocessingagreementEntity> cq = cb.createQuery(DataprocessingagreementEntity.class);
@@ -194,7 +194,7 @@ public class DataprocessingagreementEntity {
     }
 
     public static DataprocessingagreementEntity getDPA(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DataprocessingagreementEntity ret = entityManager.find(DataprocessingagreementEntity.class, uuid);
 
@@ -204,7 +204,7 @@ public class DataprocessingagreementEntity {
     }
 
     public static void updateDPA(JsonDPA dpa) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DataprocessingagreementEntity dpaEntity = entityManager.find(DataprocessingagreementEntity.class, dpa.getUuid());
         entityManager.getTransaction().begin();
@@ -224,7 +224,7 @@ public class DataprocessingagreementEntity {
     }
 
     public static void saveDPA(JsonDPA dpa) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DataprocessingagreementEntity dpaEntity = new DataprocessingagreementEntity();
         entityManager.getTransaction().begin();
@@ -247,7 +247,7 @@ public class DataprocessingagreementEntity {
     }
 
     public static void deleteDPA(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DataprocessingagreementEntity dpaEntity = entityManager.find(DataprocessingagreementEntity.class, uuid);
         entityManager.getTransaction().begin();
@@ -258,7 +258,7 @@ public class DataprocessingagreementEntity {
     }
 
     public static List<DataprocessingagreementEntity> search(String expression) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<DataprocessingagreementEntity> cq = cb.createQuery(DataprocessingagreementEntity.class);
@@ -277,7 +277,7 @@ public class DataprocessingagreementEntity {
     }
 
     public static List<DataprocessingagreementEntity> getDPAsFromList(List<String> dpas) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<DataprocessingagreementEntity> cq = cb.createQuery(DataprocessingagreementEntity.class);

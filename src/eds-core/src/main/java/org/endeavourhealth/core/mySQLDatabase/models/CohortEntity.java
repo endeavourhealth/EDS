@@ -113,7 +113,7 @@ public class CohortEntity {
     }
 
     public static List<CohortEntity> getAllCohorts() throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<CohortEntity> cq = cb.createQuery(CohortEntity.class);
@@ -128,7 +128,7 @@ public class CohortEntity {
     }
 
     public static List<CohortEntity> getCohortsFromList(List<String> cohorts) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<CohortEntity> cq = cb.createQuery(CohortEntity.class);
@@ -147,7 +147,7 @@ public class CohortEntity {
     }
 
     public static CohortEntity getCohort(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CohortEntity ret = entityManager.find(CohortEntity.class, uuid);
         entityManager.close();
@@ -156,7 +156,7 @@ public class CohortEntity {
     }
 
     public static void updateCohort(JsonCohort cohort) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CohortEntity cohortEntity = entityManager.find(CohortEntity.class, cohort.getUuid());
         entityManager.getTransaction().begin();
@@ -171,7 +171,7 @@ public class CohortEntity {
     }
 
     public static void saveCohort(JsonCohort cohort) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CohortEntity cohortEntity = new CohortEntity();
         entityManager.getTransaction().begin();
@@ -188,7 +188,7 @@ public class CohortEntity {
     }
 
     public static void deleteCohort(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CohortEntity cohortEntity = entityManager.find(CohortEntity.class, uuid);
         entityManager.getTransaction().begin();
@@ -199,7 +199,7 @@ public class CohortEntity {
     }
 
     public static List<CohortEntity> search(String expression) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<CohortEntity> cq = cb.createQuery(CohortEntity.class);

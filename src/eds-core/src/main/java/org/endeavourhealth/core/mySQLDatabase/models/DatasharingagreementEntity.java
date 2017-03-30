@@ -166,7 +166,7 @@ public class DatasharingagreementEntity {
     }
 
     public static List<DatasharingagreementEntity> getAllDSAs() throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<DatasharingagreementEntity> cq = cb.createQuery(DatasharingagreementEntity.class);
@@ -181,7 +181,7 @@ public class DatasharingagreementEntity {
     }
 
     public static DatasharingagreementEntity getDSA(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DatasharingagreementEntity ret = entityManager.find(DatasharingagreementEntity.class, uuid);
 
@@ -191,7 +191,7 @@ public class DatasharingagreementEntity {
     }
 
     public static void updateDSA(JsonDSA dsa) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DatasharingagreementEntity dsaEntity = entityManager.find(DatasharingagreementEntity.class, dsa.getUuid());
         entityManager.getTransaction().begin();
@@ -210,7 +210,7 @@ public class DatasharingagreementEntity {
     }
 
     public static void saveDSA(JsonDSA dsa) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DatasharingagreementEntity dsaEntity = new DatasharingagreementEntity();
         entityManager.getTransaction().begin();
@@ -231,7 +231,7 @@ public class DatasharingagreementEntity {
     }
 
     public static void deleteDSA(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DatasharingagreementEntity dsaEntity = entityManager.find(DatasharingagreementEntity.class, uuid);
         entityManager.getTransaction().begin();
@@ -242,7 +242,7 @@ public class DatasharingagreementEntity {
     }
 
     public static List<DatasharingagreementEntity> search(String expression) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<DatasharingagreementEntity> cq = cb.createQuery(DatasharingagreementEntity.class);
@@ -261,7 +261,7 @@ public class DatasharingagreementEntity {
     }
 
     public static List<DatasharingagreementEntity> getDSAsFromList(List<String> dsas) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<DatasharingagreementEntity> cq = cb.createQuery(DatasharingagreementEntity.class);

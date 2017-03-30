@@ -34,7 +34,7 @@ public class MastermappingEntity {
     private short parentMapTypeId;
 
     public static void deleteAllMappings(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("deleteAllMappings");
         spq.setParameter("UUID", uuid);
@@ -43,7 +43,7 @@ public class MastermappingEntity {
     }
 
     public static void saveParentMappings(Map<UUID, String> parents, Short parentMapTypeId, String childUuid, Short childMapTypeId) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         parents.forEach((k, v) -> {
             MastermappingEntity mme = new MastermappingEntity();
@@ -61,7 +61,7 @@ public class MastermappingEntity {
     }
 
     public static void saveChildMappings(Map<UUID, String> children, Short childMapTypeId, String parentUuid, Short parentMapTypeId) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         children.forEach((k, v) -> {
             MastermappingEntity mme = new MastermappingEntity();
@@ -78,7 +78,7 @@ public class MastermappingEntity {
     }
 
     public static List<String> getParentMappings(String childUuid, Short childMapTypeId, Short parentMapTypeId) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<MastermappingEntity> cq = cb.createQuery(MastermappingEntity.class);
@@ -103,7 +103,7 @@ public class MastermappingEntity {
     }
 
     public static List<String> getChildMappings(String parentUuid, Short parentMapTypeId, Short childMapTypeId) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<MastermappingEntity> cq = cb.createQuery(MastermappingEntity.class);

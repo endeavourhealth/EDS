@@ -17,7 +17,7 @@ public class RegionEntity {
     private String uuid;
 
     public static List<RegionEntity> getAllRegions() throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<RegionEntity> cq = cb.createQuery(RegionEntity.class);
@@ -33,7 +33,7 @@ public class RegionEntity {
 
     public static RegionEntity getSingleRegion(String uuid) throws Exception {
 
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         RegionEntity ret = entityManager.find(RegionEntity.class, uuid);
 
@@ -44,7 +44,7 @@ public class RegionEntity {
     }
 
     public static void updateRegion(JsonRegion region) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         RegionEntity re = entityManager.find(RegionEntity.class, region.getUuid());
         entityManager.getTransaction().begin();
@@ -56,7 +56,7 @@ public class RegionEntity {
     }
 
     public static void saveRegion(JsonRegion region) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         RegionEntity re = new RegionEntity();
         entityManager.getTransaction().begin();
@@ -70,7 +70,7 @@ public class RegionEntity {
     }
 
     public static void deleteRegion(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         RegionEntity re = entityManager.find(RegionEntity.class, uuid);
         entityManager.getTransaction().begin();
@@ -81,7 +81,7 @@ public class RegionEntity {
     }
 
     public static List<RegionEntity> getRegionsFromList(List<String> regions) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<RegionEntity> cq = cb.createQuery(RegionEntity.class);
@@ -100,7 +100,7 @@ public class RegionEntity {
     }
 
     public static List<RegionEntity> search(String expression) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<RegionEntity> cq = cb.createQuery(RegionEntity.class);

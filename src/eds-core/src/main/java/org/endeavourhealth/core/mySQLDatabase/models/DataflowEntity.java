@@ -29,7 +29,7 @@ public class DataflowEntity {
     private Short directionId;
 
     public static List<DataflowEntity> getAllDataFlows() throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<DataflowEntity> cq = cb.createQuery(DataflowEntity.class);
@@ -44,7 +44,7 @@ public class DataflowEntity {
     }
 
     public static DataflowEntity getDataFlow(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DataflowEntity ret = entityManager.find(DataflowEntity.class, uuid);
 
@@ -54,7 +54,7 @@ public class DataflowEntity {
     }
 
     public static void updateDataFlow(JsonDataFlow dataFlow) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DataflowEntity dataflowEntity = entityManager.find(DataflowEntity.class, dataFlow.getUuid());
         entityManager.getTransaction().begin();
@@ -76,7 +76,7 @@ public class DataflowEntity {
     }
 
     public static void saveDataFlow(JsonDataFlow dataFlow) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DataflowEntity dataflowEntity = new DataflowEntity();
         entityManager.getTransaction().begin();
@@ -100,7 +100,7 @@ public class DataflowEntity {
     }
 
     public static void deleteDataFlow(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         DataflowEntity dataflowEntity = entityManager.find(DataflowEntity.class, uuid);
         entityManager.getTransaction().begin();
@@ -111,7 +111,7 @@ public class DataflowEntity {
     }
 
     public static List<DataflowEntity> search(String expression) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<DataflowEntity> cq = cb.createQuery(DataflowEntity.class);
@@ -130,7 +130,7 @@ public class DataflowEntity {
     }
 
     public static List<DataflowEntity> getDataFlowsFromList(List<String> dataFlows) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<DataflowEntity> cq = cb.createQuery(DataflowEntity.class);
