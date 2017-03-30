@@ -13,8 +13,12 @@
 		<table class="table table-condensed table-striped table-hover table-selectable clinical-items-table">
 			<thead>
 				<th>Consultation date</th>
-				<th>Type (Location)</th>
+				<th>Reason</th>
+				<th>Provider</th>
+				<th>Location (active)</th>
 				<th>Performed by</th>
+				<th>Class</th>
+				<th>Status</th>
 			</thead>
 			<tbody>
 				<tr *ngIf="!filteredConsultations || filteredConsultations.length == 0"><td colspan="2"><i>(no consultations)</i></td></tr>
@@ -23,12 +27,15 @@
 					<td>
 						<div *ngFor="let reason of consultation.reason">
 							<span class="problem-associated-text">{{ reason.text }}</span>
-							<span class="problem-term-significance-text" *ngIf="consultation.serviceProvider"> {{consultation.serviceProvider.name}}</span>
 						</div>
 					</td>
+					<td><span class="problem-term-significance-text"> {{consultation.serviceProvider?.name}}</span></td>
+					<td>{{consultation.location?.name}}<span class="fa fa-copyright" *ngIf="consultation.location?.description" ngbTooltip="{{consultation.location?.description}}"></span></td>
 					<td>
 						<span class="problem-term-text">{{ consultation.performedBy?.name | cuiName }}</span>
 					</td>
+					<td>{{ consultation.class_ }}</td>
+					<td>{{ consultation.status }}</td>
 				</tr>
 			</tbody>
 		</table>

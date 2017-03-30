@@ -60,7 +60,9 @@ export class RecordViewerComponent {
 			vm.episodes = episodes;
 
 			let o : Observable<UIPatient>[] = linq(vm.episodes)
-				.Select(e => vm.recordViewerService.getPatient(e.patient.patientId))
+				.Select(e => e.patient.patientId)
+				.Distinct()
+				.Select(p => vm.recordViewerService.getPatient(p))
 				.ToArray();
 
 			Observable.forkJoin(o)

@@ -5,11 +5,13 @@ import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.transform.ui.helpers.CodeHelper;
 import org.endeavourhealth.transform.ui.helpers.ExtensionHelper;
 import org.endeavourhealth.transform.ui.helpers.ReferencedResources;
+import org.endeavourhealth.transform.ui.models.resources.admin.UILocation;
 import org.endeavourhealth.transform.ui.models.resources.clinicial.UIEncounter;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIOrganisation;
 import org.endeavourhealth.transform.ui.models.types.UICodeableConcept;
 import org.endeavourhealth.transform.ui.models.types.UIPeriod;
 import org.endeavourhealth.transform.ui.models.resources.admin.UIPractitioner;
+import org.endeavourhealth.transform.ui.transforms.admin.UILocationTransform;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -30,13 +32,16 @@ public class UIEncounterTransform extends UIClinicalTransform<Encounter, UIEncou
         return new UIEncounter()
                 .setId(encounter.getId())
                 .setStatus(getStatus(encounter))
+								.setClass_(getClass(encounter))
+								.setTypes(getTypes(encounter))
                 .setPerformedBy(getPerformedBy(encounter, referencedResources))
                 .setRecordedBy(getRecordedBy(encounter, referencedResources))
                 .setPeriod(getPeriod(encounter.getPeriod()))
                 .setServiceProvider(getServiceProvider(encounter, referencedResources))
                 .setRecordedDate(getRecordedDateExtensionValue(encounter))
                 .setEncounterSource(getEncounterSource(encounter))
-                .setReason(getEncounterReasons(encounter));
+                .setReason(getEncounterReasons(encounter))
+								.setLocation(getActiveLocation(encounter));
     }
 
     private static UICodeableConcept getEncounterSource(Encounter encounter) {
@@ -62,15 +67,42 @@ public class UIEncounterTransform extends UIClinicalTransform<Encounter, UIEncou
         return encounter.getStatus().toCode();
     }
 
-    private static UIPractitioner getPerformedBy(Encounter encounter, ReferencedResources referencedResources) {
-        for (Encounter.EncounterParticipantComponent component : encounter.getParticipant())
-            if (component.getType().size() > 0)
-                if (component.getType().get(0).getCoding().size() > 0)
-                    if (component.getType().get(0).getCoding().get(0).getCode().equals("PPRF"))
-                        return referencedResources.getUIPractitioner(component.getIndividual());
+    private static String getClass(Encounter encounter) {
+    	if (!encounter.hasClass_())
+    		return null;
 
-        return null;
-    }
+    	return encounter.getClass_().toCode();
+		}
+
+		private static List<UICodeableConcept> getTypes(Encounter encounter) {
+    	if (!encounter.hasType())
+    		return null;
+
+			List<UICodeableConcept> types = new ArrayList<>();
+
+			for(CodeableConcept type : encounter.getType()) {
+				types.add(CodeHelper.convert(type));
+			}
+
+			return types;
+		}
+
+    private static UIPractitioner getPerformedBy(Encounter encounter, ReferencedResources referencedResources) {
+			for (Encounter.EncounterParticipantComponent component : encounter.getParticipant())
+				if (component.getType().size() > 0)
+					if (component.getType().get(0).getCoding().size() > 0)
+						if (component.getType().get(0).getCoding().get(0).getCode().equals("PPRF"))
+							return referencedResources.getUIPractitioner(component.getIndividual());
+
+			// If no primary performer, look for attender
+			for (Encounter.EncounterParticipantComponent component : encounter.getParticipant())
+				if (component.getType().size() > 0)
+					if (component.getType().get(0).getCoding().size() > 0)
+						if (component.getType().get(0).getCoding().get(0).getCode().equals("ATND"))
+							return referencedResources.getUIPractitioner(component.getIndividual());
+
+			return null;
+		}
 
     private static UIPractitioner getRecordedBy(Encounter encounter, ReferencedResources referencedResources) {
         for (Encounter.EncounterParticipantComponent component : encounter.getParticipant())
@@ -90,6 +122,16 @@ public class UIEncounterTransform extends UIClinicalTransform<Encounter, UIEncou
 
         return reasons;
     }
+
+    private static UILocation getActiveLocation(Encounter encounter) {
+
+    	for(Encounter.EncounterLocationComponent location : encounter.getLocation()) {
+    		if (location.hasLocation() && location.hasStatus() && location.getStatus() == Encounter.EncounterLocationStatus.ACTIVE)
+    			return UILocationTransform.transform(location.getLocationTarget());
+			}
+
+			return null;
+		}
 
     public List<Reference> getReferences(List<Encounter> encounters) {
         return StreamExtension.concat(

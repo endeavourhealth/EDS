@@ -34,6 +34,6 @@ export class PrecisComponent {
 		if (this.episodes && this.episodes.length == 1)
 			return this.episodes[0].managingOrganisation.name;
 		else
-			return 'Multiple episodes';
+			return this.episodes.length.toString() + ' organisations';
 	}
 }

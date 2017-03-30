@@ -5,7 +5,7 @@
 </h4>
 <div id="timeline" style="min-width: 310px; height: 200px; margin: 0 auto"></div>
 
-<h4 class="page-sub-header">Current episodes<small> ({{currentEpisodes?.length}} items)</small> <button class="btn btn-sm" (click)="selectCurrentEpisodes()">View current</button></h4>
+<h4 class="page-sub-header">Current episodes<small> ({{currentEpisodes?.length}} items)</small> <button class="btn btn-sm" (click)="selectCurrentEpisodes()">Current episode organisations</button></h4>
 
 <loadingIndicator [done]="currentEpisodes">
 	<div class="container-fluid">
@@ -25,7 +25,7 @@
 	</div>
 </loadingIndicator>
 
-<h4 class="page-sub-header">Past episodes<small> ({{pastEpisodes?.length}} items)</small> <button class="btn btn-sm" (click)="selectAllEpisodes()">View all</button></h4>
+<h4 class="page-sub-header">Past episodes<small> ({{pastEpisodes?.length}} items)</small> <button class="btn btn-sm" (click)="selectAllEpisodes()">All organisations</button></h4>
 
 <loadingIndicator [done]="pastEpisodes">
 	<div class="container-fluid">

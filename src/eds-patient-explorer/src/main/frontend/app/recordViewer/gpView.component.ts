@@ -23,8 +23,8 @@ export class GPViewComponent {
 	private _person: UIPersonRecord;
 
 	@Input()
-	set personRecord(patient: UIPersonRecord) {
-		this._person = patient;
+	set personRecord(person: UIPersonRecord) {
+		this._person = person;
 
 		if (this._person != null)
 			this.loadDataForTab(this.activeId);
