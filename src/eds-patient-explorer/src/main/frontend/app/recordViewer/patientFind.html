@@ -17,6 +17,7 @@
             </div>
         </form>
 
+			<loadingIndicator [done]="!loading">
         <div class="table-selectable" *ngIf="foundPatients">
             <div class="scroll-box-350">
                 <table class="table table-hover">
@@ -36,6 +37,7 @@
                 </table>
             </div>
         </div>
+			</loadingIndicator>
     </div>
 </div>
 

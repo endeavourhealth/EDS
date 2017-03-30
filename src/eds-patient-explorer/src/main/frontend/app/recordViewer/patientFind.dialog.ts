@@ -22,6 +22,7 @@ import {SecurityService} from "../security/security.service";
 export class PatientFindDialog {
 
     selectedService: UIService = null;
+    loading : boolean = false;
     searchTerms: string;
     searchedTerms: string;
     foundPatients: UIPatient[];
@@ -63,13 +64,17 @@ export class PatientFindDialog {
     findPatient() {
         this.searchedTerms = this.searchTerms;
         this.foundPatients = null;
+        this.loading = true;
 
         var vm = this;
         vm
           .recordViewerService
           .findPerson(vm.searchedTerms)
-          .subscribe((result: UIPatient[]) =>
-            vm.foundPatients = linq(result).OrderBy(t => t.name.familyName).ToArray());
+          .subscribe((result: UIPatient[]) => {
+							vm.foundPatients = linq(result).OrderBy(t => t.name.familyName).ToArray()
+							vm.loading = false;
+						}
+					);
     }
 
     selectPatient(patient: UIPatient, close: boolean) {
