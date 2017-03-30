@@ -15,6 +15,7 @@ import {UIOrganisation} from "./models/resources/admin/UIOrganisation";
 	template : require('./episodeView.html')
 })
 export class EpisodeViewComponent {
+	private UNKNOWN : number = 2;
 	private GP : number = 1;
 	private COMMUNITY : number = -1;
 	private HOSPITAL : number = -2;
@@ -105,7 +106,7 @@ export class EpisodeViewComponent {
 			xAxis: {
 
 				maxPadding : 0,
-				offset:-95,
+				offset:-78,
 				lineWidth:2,
 				lineColor:'#000000',
 				max : new Date().getTime(),
@@ -117,6 +118,7 @@ export class EpisodeViewComponent {
 			},
 			yAxis: {
 				categories: {
+					"2" : "Unknown",
 					"1": "GP Surgery",
 					"0" : "",
 					"-1": 'Community',
@@ -130,10 +132,10 @@ export class EpisodeViewComponent {
 				},
 				lineWidth:2,
 				lineColor:'#000000',
-				max : 1,
+				max : 2,
 				min : -2,
 				title: {
-					text: '  Secondary         Primary'
+					text: 'Secondary          GP     N/K'
 				}
 			},
 			tooltip: {
@@ -228,7 +230,7 @@ export class EpisodeViewComponent {
 			case 'Community' :
 				return this.COMMUNITY;
 			default:
-				return 0;
+				return this.UNKNOWN;
 		}
 	}
 
