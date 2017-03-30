@@ -85,7 +85,11 @@ public class OrganisationEntity {
         cq.where(predicate);
         TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
 
-        return query.getResultList();
+        List<OrganisationEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static List<OrganisationEntity> getAllOrganisations(boolean services) throws Exception {
@@ -101,13 +105,21 @@ public class OrganisationEntity {
         cq.where(predicate).orderBy(cb.asc(rootEntry.get("name")));
         TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
 
-        return query.getResultList();
+        List<OrganisationEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static OrganisationEntity getOrganisation(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
-        return entityManager.find(OrganisationEntity.class, uuid);
+        OrganisationEntity ret = entityManager.find(OrganisationEntity.class, uuid);
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static void updateOrganisation(JsonOrganisationManager organisation) throws Exception {
@@ -128,6 +140,8 @@ public class OrganisationEntity {
         //organisationEntity.setRegistrationPerson(organisation.getRegistrationPerson());
         organisationEntity.setEvidenceOfRegistration(organisation.getEvidenceOfRegistration());
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void saveOrganisation(JsonOrganisationManager organisation) throws Exception {
@@ -153,6 +167,7 @@ public class OrganisationEntity {
         entityManager.getTransaction().commit();
         entityManager.close();
 
+        entityManager.close();
     }
 
     public static void bulkSaveOrganisation(List<OrganisationEntity> organisationEntities) throws Exception {
@@ -172,6 +187,8 @@ public class OrganisationEntity {
         }
 
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void deleteOrganisation(String uuid) throws Exception {
@@ -181,6 +198,8 @@ public class OrganisationEntity {
         entityManager.getTransaction().begin();
         entityManager.remove(organisationEntity);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static List<OrganisationEntity> search(String expression, boolean searchServices) throws Exception {
@@ -197,7 +216,11 @@ public class OrganisationEntity {
 
         cq.where(predicate).orderBy(cb.asc(rootEntry.get("name")));
         TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
-        return query.getResultList();
+        List<OrganisationEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static List<OrganisationEntity> getUpdatedBulkOrganisations() throws Exception {
@@ -212,7 +235,11 @@ public class OrganisationEntity {
 
         cq.where(predicate);
         TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
-        return query.getResultList();
+        List<OrganisationEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static List<OrganisationEntity> getConflictedOrganisations() throws Exception {
@@ -226,7 +253,11 @@ public class OrganisationEntity {
 
         cq.where(predicate);
         TypedQuery<OrganisationEntity> query = entityManager.createQuery(cq);
-        return query.getResultList();
+        List<OrganisationEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     @Basic

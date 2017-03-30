@@ -24,14 +24,22 @@ public class RegionEntity {
         Root<RegionEntity> rootEntry = cq.from(RegionEntity.class);
         CriteriaQuery<RegionEntity> all = cq.select(rootEntry);
         TypedQuery<RegionEntity> allQuery = entityManager.createQuery(all);
-        return allQuery.getResultList();
+        List<RegionEntity> ret = allQuery.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static RegionEntity getSingleRegion(String uuid) throws Exception {
 
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
-        return entityManager.find(RegionEntity.class, uuid);
+        RegionEntity ret = entityManager.find(RegionEntity.class, uuid);
+
+        entityManager.close();
+
+        return ret;
 
     }
 
@@ -43,6 +51,8 @@ public class RegionEntity {
         re.setDescription(region.getDescription());
         re.setName(region.getName());
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void saveRegion(JsonRegion region) throws Exception {
@@ -56,7 +66,7 @@ public class RegionEntity {
         entityManager.persist(re);
         entityManager.getTransaction().commit();
 
-
+        entityManager.close();
     }
 
     public static void deleteRegion(String uuid) throws Exception {
@@ -66,6 +76,8 @@ public class RegionEntity {
         entityManager.getTransaction().begin();
         entityManager.remove(re);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static List<RegionEntity> getRegionsFromList(List<String> regions) throws Exception {
@@ -80,7 +92,11 @@ public class RegionEntity {
         cq.where(predicate);
         TypedQuery<RegionEntity> query = entityManager.createQuery(cq);
 
-        return query.getResultList();
+        List<RegionEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static List<RegionEntity> search(String expression) throws Exception {
@@ -95,7 +111,11 @@ public class RegionEntity {
 
         cq.where(predicate);
         TypedQuery<RegionEntity> query = entityManager.createQuery(cq);
-        return query.getResultList();
+        List<RegionEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     @Basic

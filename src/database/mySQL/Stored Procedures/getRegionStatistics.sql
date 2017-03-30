@@ -24,7 +24,7 @@ BEGIN
     select 'Regions containing a region', count(distinct r.uuid) 
     from OrganisationManager.Region r
     join organisationmanager.mastermapping mm on mm.parentUuid = r.Uuid and mm.ParentMapTypeId = 2
-    join OrganisationManager.Region cr on cr.Uuid = mm.ChildUuid and mm.childMapTypeId = 1;
+    join OrganisationManager.Region cr on cr.Uuid = mm.ChildUuid and mm.childMapTypeId = 2;
     
     insert into OrganisationManager.RegionStatistics (label, value)
     select 'Regions belonging to a region', count(distinct cr.uuid) 

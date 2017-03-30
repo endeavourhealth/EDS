@@ -66,7 +66,9 @@ public class AddressEntity {
         cq.where(predicate);
 
         TypedQuery<AddressEntity> query = entityManager.createQuery(cq);
-        return query.getResultList();
+        List<AddressEntity> ret = query.getResultList();
+        entityManager.close();
+        return ret;
     }
 
     public static void bulkSaveAddresses(List<AddressEntity> addressEntities) throws Exception {
@@ -86,6 +88,8 @@ public class AddressEntity {
         }
 
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void saveAddress(JsonAddress address) throws Exception {
@@ -96,6 +100,8 @@ public class AddressEntity {
         entityManager.getTransaction().begin();
         entityManager.persist(addressEntity);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void updateAddress(JsonAddress address) throws Exception {
@@ -112,6 +118,8 @@ public class AddressEntity {
         addressEntity.setPostcode(address.getPostcode());
         addressEntity.setGeolocationReprocess((byte)0);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void updateGeolocation(JsonAddress address) throws Exception {
@@ -123,6 +131,8 @@ public class AddressEntity {
         addressEntity.setLng(address.getLng());
         addressEntity.setGeolocationReprocess((byte)0);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static List<Object[]> getOrganisationsMarkers(String regionUUID) throws Exception {
@@ -133,6 +143,7 @@ public class AddressEntity {
         spq.setParameter("RegionId", regionUUID);
         spq.execute();
         List<Object[]> ent = spq.getResultList();
+
         entityManager.close();
 
         return ent;

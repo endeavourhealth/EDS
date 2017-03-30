@@ -36,13 +36,21 @@ public class DataflowEntity {
         Root<DataflowEntity> rootEntry = cq.from(DataflowEntity.class);
         CriteriaQuery<DataflowEntity> all = cq.select(rootEntry);
         TypedQuery<DataflowEntity> allQuery = entityManager.createQuery(all);
-        return allQuery.getResultList();
+        List<DataflowEntity> ret =  allQuery.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static DataflowEntity getDataFlow(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
-        return entityManager.find(DataflowEntity.class, uuid);
+        DataflowEntity ret = entityManager.find(DataflowEntity.class, uuid);
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static void updateDataFlow(JsonDataFlow dataFlow) throws Exception {
@@ -63,6 +71,8 @@ public class DataflowEntity {
         dataflowEntity.setCohort(dataFlow.getCohort());
         dataflowEntity.setSubscriber(dataFlow.getSubscriber());
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void saveDataFlow(JsonDataFlow dataFlow) throws Exception {
@@ -85,6 +95,8 @@ public class DataflowEntity {
         dataflowEntity.setUuid(dataFlow.getUuid());
         entityManager.persist(dataflowEntity);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void deleteDataFlow(String uuid) throws Exception {
@@ -94,6 +106,8 @@ public class DataflowEntity {
         entityManager.getTransaction().begin();
         entityManager.remove(dataflowEntity);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static List<DataflowEntity> search(String expression) throws Exception {
@@ -108,7 +122,11 @@ public class DataflowEntity {
 
         cq.where(predicate);
         TypedQuery<DataflowEntity> query = entityManager.createQuery(cq);
-        return query.getResultList();
+        List<DataflowEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static List<DataflowEntity> getDataFlowsFromList(List<String> dataFlows) throws Exception {
@@ -123,7 +141,11 @@ public class DataflowEntity {
         cq.where(predicate);
         TypedQuery<DataflowEntity> query = entityManager.createQuery(cq);
 
-        return query.getResultList();
+        List<DataflowEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     @Id

@@ -57,7 +57,8 @@ export class OrganisationManagerEditorComponent {
         this.organisation = {
             name: '',
             isService: 1,
-            bulkImported : 0
+            bulkImported : 0,
+            bulkItemUpdated : 0
         } as Organisation;
     }
 

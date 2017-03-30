@@ -155,7 +155,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 "Child Organisations(s)",
                 "Organisation Id", uuid);
 
-        return getChildOrganisations(uuid, (short)0);
+        return getChildOrganisations(uuid, MapType.ORGANISATION.getMapType());
     }
 
     @GET
@@ -168,7 +168,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 "services(s)",
                 "Organisation Id", uuid);
 
-        return getChildOrganisations(uuid, (short)1);
+        return getChildOrganisations(uuid, MapType.SERVICE.getMapType());
     }
 
     @GET
@@ -458,7 +458,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
     private Response getChildOrganisations(String organisationUuid, Short organisationType) throws Exception {
 
-        List<String> organisationUuids = MastermappingEntity.getChildMappings(organisationUuid, MapType.ORGANISATION.getMapType(), MapType.ORGANISATION.getMapType());
+        List<String> organisationUuids = MastermappingEntity.getChildMappings(organisationUuid, MapType.ORGANISATION.getMapType(), organisationType);
         List<OrganisationEntity> ret = new ArrayList<>();
 
         if (organisationUuids.size() > 0)

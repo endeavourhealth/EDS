@@ -274,13 +274,21 @@ public class DatasharingsummaryEntity {
         Root<DatasharingsummaryEntity> rootEntry = cq.from(DatasharingsummaryEntity.class);
         CriteriaQuery<DatasharingsummaryEntity> all = cq.select(rootEntry);
         TypedQuery<DatasharingsummaryEntity> allQuery = entityManager.createQuery(all);
-        return allQuery.getResultList();
+        List<DatasharingsummaryEntity> ret = allQuery.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static DatasharingsummaryEntity getDataSharingSummary(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
-        return entityManager.find(DatasharingsummaryEntity.class, uuid);
+        DatasharingsummaryEntity ret = entityManager.find(DatasharingsummaryEntity.class, uuid);
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static void updateDataSharingSummary(JsonDataSharingSummary dataSharingSummary) throws Exception {
@@ -303,6 +311,8 @@ public class DatasharingsummaryEntity {
         datasharingsummaryEntity.setStartDate(dataSharingSummary.getStartDate());
         datasharingsummaryEntity.setEvidenceOfAgreement(dataSharingSummary.getEvidenceOfAgreement());
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void saveDataSharingSummary(JsonDataSharingSummary dataSharingSummary) throws Exception {
@@ -327,6 +337,8 @@ public class DatasharingsummaryEntity {
         datasharingsummaryEntity.setUuid(dataSharingSummary.getUuid());
         entityManager.persist(datasharingsummaryEntity);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void deleteDataSharingSummary(String uuid) throws Exception {
@@ -336,6 +348,8 @@ public class DatasharingsummaryEntity {
         entityManager.getTransaction().begin();
         entityManager.remove(datasharingsummaryEntity);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static List<DatasharingsummaryEntity> search(String expression) throws Exception {
@@ -350,6 +364,10 @@ public class DatasharingsummaryEntity {
 
         cq.where(predicate);
         TypedQuery<DatasharingsummaryEntity> query = entityManager.createQuery(cq);
-        return query.getResultList();
+        List<DatasharingsummaryEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 }

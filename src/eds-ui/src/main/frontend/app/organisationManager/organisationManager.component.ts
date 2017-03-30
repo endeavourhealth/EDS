@@ -130,8 +130,9 @@ export class OrganisationManagerComponent {
         vm.organisationManagerService.deleteOrganisation(item.uuid)
             .subscribe(
                 () => {
-                    var index = vm.organisations.indexOf(item);
-                    vm.organisations.splice(index, 1);
+                    var index = vm.allItems.indexOf(item);
+                    vm.allItems.splice(index, 1);
+                    vm.setPage(vm.pager.currentPage);
                     vm.log.success('Organisation deleted', item, 'Delete Organisation');
                 },
                 (error) => vm.log.error('Failed to delete Organisation', error, 'Delete Organisation')

@@ -186,13 +186,21 @@ public class DataprocessingagreementEntity {
         Root<DataprocessingagreementEntity> rootEntry = cq.from(DataprocessingagreementEntity.class);
         CriteriaQuery<DataprocessingagreementEntity> all = cq.select(rootEntry);
         TypedQuery<DataprocessingagreementEntity> allQuery = entityManager.createQuery(all);
-        return allQuery.getResultList();
+        List<DataprocessingagreementEntity> ret =  allQuery.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static DataprocessingagreementEntity getDPA(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
-        return entityManager.find(DataprocessingagreementEntity.class, uuid);
+        DataprocessingagreementEntity ret = entityManager.find(DataprocessingagreementEntity.class, uuid);
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static void updateDPA(JsonDPA dpa) throws Exception {
@@ -211,6 +219,8 @@ public class DataprocessingagreementEntity {
         dpaEntity.setDataFlow(dpa.getDataFlow());
         dpaEntity.setReturnToSenderPolicy(dpa.getReturnToSenderPolicy());
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void saveDPA(JsonDPA dpa) throws Exception {
@@ -232,6 +242,8 @@ public class DataprocessingagreementEntity {
         dpaEntity.setUuid(dpa.getUuid());
         entityManager.persist(dpaEntity);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void deleteDPA(String uuid) throws Exception {
@@ -241,6 +253,8 @@ public class DataprocessingagreementEntity {
         entityManager.getTransaction().begin();
         entityManager.remove(dpaEntity);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static List<DataprocessingagreementEntity> search(String expression) throws Exception {
@@ -255,7 +269,11 @@ public class DataprocessingagreementEntity {
 
         cq.where(predicate);
         TypedQuery<DataprocessingagreementEntity> query = entityManager.createQuery(cq);
-        return query.getResultList();
+        List<DataprocessingagreementEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static List<DataprocessingagreementEntity> getDPAsFromList(List<String> dpas) throws Exception {
@@ -270,6 +288,10 @@ public class DataprocessingagreementEntity {
         cq.where(predicate);
         TypedQuery<DataprocessingagreementEntity> query = entityManager.createQuery(cq);
 
-        return query.getResultList();
+        List<DataprocessingagreementEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 }

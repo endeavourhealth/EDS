@@ -56,6 +56,8 @@ public class MastermappingEntity {
             entityManager.getTransaction().commit();
         });
 
+        entityManager.close();
+
     }
 
     public static void saveChildMappings(Map<UUID, String> children, Short childMapTypeId, String parentUuid, Short parentMapTypeId) throws Exception {
@@ -72,6 +74,7 @@ public class MastermappingEntity {
             entityManager.getTransaction().commit();
         });
 
+        entityManager.close();
     }
 
     public static List<String> getParentMappings(String childUuid, Short childMapTypeId, Short parentMapTypeId) throws Exception {
@@ -93,6 +96,8 @@ public class MastermappingEntity {
         for(MastermappingEntity mme : maps){
             parents.add(mme.getParentUUid());
         }
+
+        entityManager.close();
 
         return parents;
     }
@@ -117,29 +122,37 @@ public class MastermappingEntity {
             children.add(mme.getChildUuid());
         }
 
+        entityManager.close();
+
         return children;
     }
 
     public static void saveOrganisationMappings(JsonOrganisationManager organisation) throws Exception {
+        //Default to organisation
+        Short organisationType = MapType.ORGANISATION.getMapType();
 
-        if (organisation.getRegions() != null) {
-            Map<UUID, String> regions = organisation.getRegions();
-            saveParentMappings(regions, MapType.REGION.getMapType(), organisation.getUuid(), MapType.ORGANISATION.getMapType());
+        if (organisation.getIsService().equals("0")) {
+            if (organisation.getRegions() != null) {
+                Map<UUID, String> regions = organisation.getRegions();
+                saveParentMappings(regions, MapType.REGION.getMapType(), organisation.getUuid(), MapType.ORGANISATION.getMapType());
+            }
+
+            if (organisation.getChildOrganisations() != null) {
+                Map<UUID, String> childOrganisations = organisation.getChildOrganisations();
+                saveChildMappings(childOrganisations, MapType.ORGANISATION.getMapType(), organisation.getUuid(), MapType.ORGANISATION.getMapType());
+            }
+
+            if (organisation.getServices() != null) {
+                Map<UUID, String> services = organisation.getServices();
+                saveChildMappings(services, MapType.SERVICE.getMapType(), organisation.getUuid(), MapType.ORGANISATION.getMapType());
+            }
+        } else {
+            organisationType = MapType.SERVICE.getMapType();
         }
 
         if (organisation.getParentOrganisations() != null) {
             Map<UUID, String> parentOrganisations = organisation.getParentOrganisations();
-            saveParentMappings(parentOrganisations, MapType.ORGANISATION.getMapType(), organisation.getUuid(), MapType.ORGANISATION.getMapType());
-        }
-
-        if (organisation.getChildOrganisations() != null) {
-            Map<UUID, String> childOrganisations = organisation.getChildOrganisations();
-            saveChildMappings(childOrganisations, MapType.ORGANISATION.getMapType(), organisation.getUuid(), MapType.ORGANISATION.getMapType());
-        }
-
-        if (organisation.getServices() != null) {
-            Map<UUID, String> services = organisation.getServices();
-            saveChildMappings(services, MapType.SERVICE.getMapType(), organisation.getUuid(), MapType.ORGANISATION.getMapType());
+            saveParentMappings(parentOrganisations, MapType.ORGANISATION.getMapType(), organisation.getUuid(), organisationType);
         }
     }
 

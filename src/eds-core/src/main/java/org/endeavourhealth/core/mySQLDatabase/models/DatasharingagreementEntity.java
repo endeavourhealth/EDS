@@ -173,13 +173,21 @@ public class DatasharingagreementEntity {
         Root<DatasharingagreementEntity> rootEntry = cq.from(DatasharingagreementEntity.class);
         CriteriaQuery<DatasharingagreementEntity> all = cq.select(rootEntry);
         TypedQuery<DatasharingagreementEntity> allQuery = entityManager.createQuery(all);
-        return allQuery.getResultList();
+        List<DatasharingagreementEntity> ret = allQuery.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static DatasharingagreementEntity getDSA(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
 
-        return entityManager.find(DatasharingagreementEntity.class, uuid);
+        DatasharingagreementEntity ret = entityManager.find(DatasharingagreementEntity.class, uuid);
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static void updateDSA(JsonDSA dsa) throws Exception {
@@ -197,6 +205,8 @@ public class DatasharingagreementEntity {
         dsaEntity.setDsaStatusId(dsa.getDsaStatusId());
         dsaEntity.setConsentModel(dsa.getConsentModel());
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void saveDSA(JsonDSA dsa) throws Exception {
@@ -216,6 +226,8 @@ public class DatasharingagreementEntity {
         dsaEntity.setUuid(dsa.getUuid());
         entityManager.persist(dsaEntity);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void deleteDSA(String uuid) throws Exception {
@@ -225,6 +237,8 @@ public class DatasharingagreementEntity {
         entityManager.getTransaction().begin();
         entityManager.remove(dsaEntity);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static List<DatasharingagreementEntity> search(String expression) throws Exception {
@@ -239,7 +253,11 @@ public class DatasharingagreementEntity {
 
         cq.where(predicate);
         TypedQuery<DatasharingagreementEntity> query = entityManager.createQuery(cq);
-        return query.getResultList();
+        List<DatasharingagreementEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static List<DatasharingagreementEntity> getDSAsFromList(List<String> dsas) throws Exception {
@@ -254,6 +272,10 @@ public class DatasharingagreementEntity {
         cq.where(predicate);
         TypedQuery<DatasharingagreementEntity> query = entityManager.createQuery(cq);
 
-        return query.getResultList();
+        List<DatasharingagreementEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 }
