@@ -38,6 +38,8 @@ export class EpisodeViewComponent {
 
 	loadEpisodes() {
 		let vm = this;
+		vm.currentEpisodes = null;
+		vm.pastEpisodes = null;
 		vm.recordViewerService.getEpisodes(vm._person).subscribe(
 			(episodes : UIEpisodeOfCare[]) => {
 				vm.currentEpisodes = linq(episodes)
