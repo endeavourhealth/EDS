@@ -25,6 +25,11 @@ public class TransformConnection {
 
     private static synchronized void createEntityManager() throws Exception {
 
+        if (entityManagerFactory != null
+                && entityManagerFactory.isOpen()) {
+            return;
+        }
+
         JsonNode json = ConfigManager.getConfigurationAsJson("transform_db");
         String url = json.get("url").asText();
         String user = json.get("username").asText();
