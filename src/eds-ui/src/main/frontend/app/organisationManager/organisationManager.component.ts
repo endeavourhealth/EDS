@@ -74,7 +74,6 @@ export class OrganisationManagerComponent {
 
         // get pager object from service
         this.pager = this.paginationService.getPager(this.allItems.length, page, this.pageSize);
-
         // get current page of items
         this.pagedItems = this.allItems.slice(this.pager.startIndex, this.pager.endIndex + 1);
     }
@@ -152,6 +151,7 @@ export class OrganisationManagerComponent {
         vm.organisationManagerService.search(vm.searchData, vm.searchType)
             .subscribe(result => {
                     vm.allItems = result;
+                    vm.pager = {};
                     vm.setPage(1);
                 },
                 error => vm.log.error(error)

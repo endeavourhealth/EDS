@@ -154,8 +154,10 @@ public final class DpaEndpoint extends AbstractEndpoint {
     private Response getLinkedDataFlows(String dpaUuid) throws Exception {
 
         List<String> dataFlowUuids = MastermappingEntity.getParentMappings(dpaUuid, MapType.DATAPROCESSINGAGREEMENT.getMapType(), MapType.DATAFLOW.getMapType());
+        List<DataflowEntity> ret = new ArrayList<>();
 
-        List<DataflowEntity> ret = DataflowEntity.getDataFlowsFromList(dataFlowUuids);
+        if (dataFlowUuids.size() > 0)
+            ret = DataflowEntity.getDataFlowsFromList(dataFlowUuids);
 
         clearLogbackMarkers();
         return Response
@@ -165,9 +167,12 @@ public final class DpaEndpoint extends AbstractEndpoint {
     }
 
     private Response getLinkedCohorts(String dpaUuid) throws Exception {
-        List<String> regionUuids = MastermappingEntity.getChildMappings(dpaUuid, MapType.DATAPROCESSINGAGREEMENT.getMapType(), MapType.COHORT.getMapType());
+        List<String> cohorts = MastermappingEntity.getChildMappings(dpaUuid, MapType.DATAPROCESSINGAGREEMENT.getMapType(), MapType.COHORT.getMapType());
 
-        List<CohortEntity> ret = CohortEntity.getCohortsFromList(regionUuids);
+        List<CohortEntity> ret = new ArrayList<>();
+
+        if (cohorts.size() > 0)
+            ret = CohortEntity.getCohortsFromList(cohorts);
 
         clearLogbackMarkers();
         return Response

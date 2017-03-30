@@ -143,7 +143,10 @@ public final class CohortEndpoint extends AbstractEndpoint {
 
         List<String> dpaUuids = MastermappingEntity.getParentMappings(cohortUuid, MapType.COHORT.getMapType(), MapType.DATAPROCESSINGAGREEMENT.getMapType());
 
-        List<DataprocessingagreementEntity> ret = DataprocessingagreementEntity.getDPAsFromList(dpaUuids);
+        List<DataprocessingagreementEntity> ret = new ArrayList<>();
+
+        if (dpaUuids.size() > 0)
+            ret = DataprocessingagreementEntity.getDPAsFromList(dpaUuids);
 
         clearLogbackMarkers();
         return Response

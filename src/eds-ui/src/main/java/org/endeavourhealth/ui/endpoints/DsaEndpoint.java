@@ -142,7 +142,10 @@ public final class DsaEndpoint extends AbstractEndpoint {
 
         List<String> dataFlowUuids = MastermappingEntity.getChildMappings(dsaUuid, MapType.DATASHARINGAGREEMENT.getMapType(), MapType.DATAFLOW.getMapType());
 
-        List<DataflowEntity> ret = DataflowEntity.getDataFlowsFromList(dataFlowUuids);
+        List<DataflowEntity> ret = new ArrayList<>();
+
+        if (dataFlowUuids.size() > 0)
+            ret = DataflowEntity.getDataFlowsFromList(dataFlowUuids);
 
         clearLogbackMarkers();
         return Response

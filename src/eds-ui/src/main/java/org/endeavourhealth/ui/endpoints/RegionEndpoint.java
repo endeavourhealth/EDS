@@ -160,13 +160,15 @@ public final class RegionEndpoint extends AbstractEndpoint {
     private Response getRegionOrganisations(String regionUUID) throws Exception {
 
         List<String> organisationUuids = MastermappingEntity.getChildMappings(regionUUID, MapType.REGION.getMapType(), MapType.ORGANISATION.getMapType());
+        List<OrganisationEntity> ret = new ArrayList<>();
 
-        List<OrganisationEntity> orgs = OrganisationEntity.getOrganisationsFromList(organisationUuids);
+        if (organisationUuids.size() > 0)
+            ret = OrganisationEntity.getOrganisationsFromList(organisationUuids);
 
         clearLogbackMarkers();
         return Response
                 .ok()
-                .entity(orgs)
+                .entity(ret)
                 .build();
     }
 
@@ -183,8 +185,10 @@ public final class RegionEndpoint extends AbstractEndpoint {
     private Response getParentRegions(String regionUuid) throws Exception {
 
         List<String> regionUuids = MastermappingEntity.getParentMappings(regionUuid, MapType.REGION.getMapType(), MapType.REGION.getMapType());
+        List<RegionEntity> ret = new ArrayList<>();
 
-        List<RegionEntity> ret = RegionEntity.getRegionsFromList(regionUuids);
+        if (regionUuids.size() > 0)
+            ret = RegionEntity.getRegionsFromList(regionUuids);
 
         clearLogbackMarkers();
         return Response
@@ -196,8 +200,10 @@ public final class RegionEndpoint extends AbstractEndpoint {
     private Response getChildRegions(String regionUuid) throws Exception {
 
         List<String> regionUuids = MastermappingEntity.getChildMappings(regionUuid, MapType.REGION.getMapType(), MapType.REGION.getMapType());
+        List<RegionEntity> ret = new ArrayList<>();
 
-        List<RegionEntity> ret = RegionEntity.getRegionsFromList(regionUuids);
+        if (regionUuids.size() > 0)
+            ret = RegionEntity.getRegionsFromList(regionUuids);
 
         clearLogbackMarkers();
         return Response

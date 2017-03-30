@@ -86,17 +86,15 @@ export class OrganisationManagerEditorComponent {
         vm.organisationManagerService.getOrganisation(uuid)
             .subscribe(result =>  {
                     vm.organisation = result;
-                    vm.getOrganisationRegions();
-                    vm.getOrganisationAddresses();
-                    vm.getChildOrganisations();
-                    vm.getParentOrganisations();
-                    vm.getServices();
-                    console.log(vm.organisation);
-                    console.log(vm.organisation.isService);
                     if (vm.organisation.isService) {
                         vm.orgType = 'Service';
+                    } else { //only get these for organisations, not services
+                        vm.getOrganisationRegions();
+                        vm.getOrganisationAddresses();
+                        vm.getChildOrganisations();
+                        vm.getServices();
                     }
-                    console.log(vm.orgType);
+                    vm.getParentOrganisations();
                 },
                 error => vm.log.error('Error loading', error, 'Error')
             );

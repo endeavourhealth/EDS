@@ -359,8 +359,10 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     private Response getRegionsForOrganisation(String organisationUuid) throws Exception {
 
         List<String> regionUuids = MastermappingEntity.getParentMappings(organisationUuid, MapType.ORGANISATION.getMapType(), MapType.REGION.getMapType());
+        List<RegionEntity> ret = new ArrayList<>();
 
-        List<RegionEntity> ret = RegionEntity.getRegionsFromList(regionUuids);
+        if (regionUuids.size() > 0)
+            ret = RegionEntity.getRegionsFromList(regionUuids);
 
         clearLogbackMarkers();
         return Response
@@ -457,8 +459,10 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     private Response getChildOrganisations(String organisationUuid, Short organisationType) throws Exception {
 
         List<String> organisationUuids = MastermappingEntity.getChildMappings(organisationUuid, MapType.ORGANISATION.getMapType(), MapType.ORGANISATION.getMapType());
+        List<OrganisationEntity> ret = new ArrayList<>();
 
-        List<OrganisationEntity> ret = OrganisationEntity.getOrganisationsFromList(organisationUuids);
+        if (organisationUuids.size() > 0)
+            ret = OrganisationEntity.getOrganisationsFromList(organisationUuids);
 
         clearLogbackMarkers();
         return Response
@@ -470,8 +474,10 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     private Response getParentOrganisations(String organisationUuid) throws Exception {
 
         List<String> organisationUuids = MastermappingEntity.getParentMappings(organisationUuid, MapType.ORGANISATION.getMapType(), MapType.ORGANISATION.getMapType());
+        List<OrganisationEntity> ret = new ArrayList<>();
 
-        List<OrganisationEntity> ret = OrganisationEntity.getOrganisationsFromList(organisationUuids);
+        if (organisationUuids.size() > 0)
+            ret = OrganisationEntity.getOrganisationsFromList(organisationUuids);
 
         clearLogbackMarkers();
         return Response
