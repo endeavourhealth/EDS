@@ -316,7 +316,6 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
                 "Organisation",
                 "Organisation", csvFile);
-        System.out.println(csvFile);
 
         return processCSVFile(csvFile);
     }
