@@ -53,6 +53,21 @@ CREATE INDEX ix_service_system_patient
   USING btree
   (service_id COLLATE pg_catalog."default", system_id COLLATE pg_catalog."default", patient_id COLLATE pg_catalog."default");
 
+-- Cross-org search indexes (exclude system_id)
+CREATE INDEX ix_service_date_of_birth
+  ON public.patient_search
+  USING btree
+  (service_id COLLATE pg_catalog."default", date_of_birth);
+
+CREATE INDEX ix_service_nhs_number
+  ON public.patient_search
+  USING btree
+  (service_id COLLATE pg_catalog."default", nhs_number COLLATE pg_catalog."default");
+
+CREATE INDEX ix_service_surname_forenames
+  ON public.patient_search
+  USING btree
+  (service_id COLLATE pg_catalog."default", surname COLLATE pg_catalog."default", forenames COLLATE pg_catalog."default");
 
 CREATE TABLE patient_search_local_identifier
 (
