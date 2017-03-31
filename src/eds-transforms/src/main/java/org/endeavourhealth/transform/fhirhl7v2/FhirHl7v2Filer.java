@@ -42,7 +42,7 @@ public class FhirHl7v2Filer {
                 .filter(t -> t.getResourceType() != ResourceType.MessageHeader)
                 .collect(Collectors.toList());
 
-        fhirResourceFiler.saveAdminResource(null, adminResources.toArray(new Resource[0]));
+        fhirResourceFiler.saveAdminResource(null, false, adminResources.toArray(new Resource[0]));
     }
 
     private void savePatientResources(FhirResourceFiler fhirResourceFiler, Bundle bundle) throws Exception {
@@ -59,6 +59,6 @@ public class FhirHl7v2Filer {
                 .map(t -> (Patient)t)
                 .collect(StreamExtension.singleCollector());
 
-        fhirResourceFiler.savePatientResource(null, patient.getId(), patientResources.toArray(new Resource[0]));
+        fhirResourceFiler.savePatientResource(null, false, patient.getId(), patientResources.toArray(new Resource[0]));
     }
 }
