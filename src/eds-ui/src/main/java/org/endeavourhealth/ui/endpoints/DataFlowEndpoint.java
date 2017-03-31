@@ -60,14 +60,14 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
                 "Data Flow", dataFlow);
 
         if (dataFlow.getUuid() != null) {
-            MastermappingEntity.deleteAllMappings(dataFlow.getUuid());
-            DataflowEntity.updateDataFlow(dataFlow);
+            MasterMappingEntity.deleteAllMappings(dataFlow.getUuid());
+            DataFlowEntity.updateDataFlow(dataFlow);
         } else {
             dataFlow.setUuid(UUID.randomUUID().toString());
-            DataflowEntity.saveDataFlow(dataFlow);
+            DataFlowEntity.saveDataFlow(dataFlow);
         }
 
-        MastermappingEntity.saveDataFlowMappings(dataFlow);
+        MasterMappingEntity.saveDataFlowMappings(dataFlow);
 
         clearLogbackMarkers();
 
@@ -87,7 +87,7 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
                 "Data Flow",
                 "Data Flow Id", uuid);
 
-        DataflowEntity.deleteDataFlow(uuid);
+        DataFlowEntity.deleteDataFlow(uuid);
 
         clearLogbackMarkers();
         return Response
@@ -123,7 +123,7 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
 
     private Response getDataFlowList() throws Exception {
 
-        List<DataflowEntity> dataFlows = DataflowEntity.getAllDataFlows();
+        List<DataFlowEntity> dataFlows = DataFlowEntity.getAllDataFlows();
 
         clearLogbackMarkers();
         return Response
@@ -133,7 +133,7 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
     }
 
     private Response getSingleDataFlow(String uuid) throws Exception {
-        DataflowEntity dataFlow = DataflowEntity.getDataFlow(uuid);
+        DataFlowEntity dataFlow = DataFlowEntity.getDataFlow(uuid);
 
         return Response
                 .ok()
@@ -143,7 +143,7 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
     }
 
     private Response search(String searchData) throws Exception {
-        Iterable<DataflowEntity> dataflows = DataflowEntity.search(searchData);
+        Iterable<DataFlowEntity> dataflows = DataFlowEntity.search(searchData);
 
         clearLogbackMarkers();
         return Response
@@ -154,9 +154,9 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
 
     private Response getLinkedDpas(String dataFlowUuid) throws Exception {
 
-        List<String> dpaUuids = MastermappingEntity.getChildMappings(dataFlowUuid, MapType.DATAFLOW.getMapType(), MapType.DATAPROCESSINGAGREEMENT.getMapType());
+        List<String> dpaUuids = MasterMappingEntity.getChildMappings(dataFlowUuid, MapType.DATAFLOW.getMapType(), MapType.DATAPROCESSINGAGREEMENT.getMapType());
 
-        List<DataprocessingagreementEntity> ret = DataprocessingagreementEntity.getDPAsFromList(dpaUuids);
+        List<DataProcessingAgreementEntity> ret = DataProcessingAgreementEntity.getDPAsFromList(dpaUuids);
 
         clearLogbackMarkers();
         return Response
@@ -167,9 +167,9 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
 
     private Response getLinkedDsas(String dataFlowUuid) throws Exception {
 
-        List<String> dsaUuids = MastermappingEntity.getParentMappings(dataFlowUuid, MapType.DATAFLOW.getMapType(), MapType.DATASHARINGAGREEMENT.getMapType());
+        List<String> dsaUuids = MasterMappingEntity.getParentMappings(dataFlowUuid, MapType.DATAFLOW.getMapType(), MapType.DATASHARINGAGREEMENT.getMapType());
 
-        List<DatasharingagreementEntity> ret = DatasharingagreementEntity.getDSAsFromList(dsaUuids);
+        List<DataSharingAgreementEntity> ret = DataSharingAgreementEntity.getDSAsFromList(dsaUuids);
 
         clearLogbackMarkers();
         return Response

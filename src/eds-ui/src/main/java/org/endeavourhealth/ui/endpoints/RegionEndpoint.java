@@ -8,7 +8,6 @@ import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.mySQLDatabase.MapType;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
-import org.endeavourhealth.coreui.json.JsonOrganisationManager;
 import org.endeavourhealth.coreui.json.JsonRegion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,14 +61,14 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
         if (region.getUuid() != null) {
             RegionEntity.updateRegion(region);
-            MastermappingEntity.deleteAllMappings(region.getUuid());
+            MasterMappingEntity.deleteAllMappings(region.getUuid());
         } else {
             region.setUuid(UUID.randomUUID().toString());
             RegionEntity.saveRegion(region);
         }
 
         //Process Mappings
-        MastermappingEntity.saveRegionMappings(region);
+        MasterMappingEntity.saveRegionMappings(region);
 
         clearLogbackMarkers();
 
@@ -159,7 +158,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
     private Response getRegionOrganisations(String regionUUID) throws Exception {
 
-        List<String> organisationUuids = MastermappingEntity.getChildMappings(regionUUID, MapType.REGION.getMapType(), MapType.ORGANISATION.getMapType());
+        List<String> organisationUuids = MasterMappingEntity.getChildMappings(regionUUID, MapType.REGION.getMapType(), MapType.ORGANISATION.getMapType());
         List<OrganisationEntity> ret = new ArrayList<>();
 
         if (organisationUuids.size() > 0)
@@ -184,7 +183,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
     private Response getParentRegions(String regionUuid) throws Exception {
 
-        List<String> regionUuids = MastermappingEntity.getParentMappings(regionUuid, MapType.REGION.getMapType(), MapType.REGION.getMapType());
+        List<String> regionUuids = MasterMappingEntity.getParentMappings(regionUuid, MapType.REGION.getMapType(), MapType.REGION.getMapType());
         List<RegionEntity> ret = new ArrayList<>();
 
         if (regionUuids.size() > 0)
@@ -199,7 +198,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
     private Response getChildRegions(String regionUuid) throws Exception {
 
-        List<String> regionUuids = MastermappingEntity.getChildMappings(regionUuid, MapType.REGION.getMapType(), MapType.REGION.getMapType());
+        List<String> regionUuids = MasterMappingEntity.getChildMappings(regionUuid, MapType.REGION.getMapType(), MapType.REGION.getMapType());
         List<RegionEntity> ret = new ArrayList<>();
 
         if (regionUuids.size() > 0)

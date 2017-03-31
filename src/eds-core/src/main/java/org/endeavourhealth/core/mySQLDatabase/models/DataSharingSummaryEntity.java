@@ -10,7 +10,6 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.sql.Date;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 @NamedStoredProcedureQueries({
@@ -35,8 +34,8 @@ import java.util.UUID;
                 procedureName = "getCohortStatistics"
         )
 })
-@Table(name = "datasharingsummary", schema = "organisationmanager")
-public class DatasharingsummaryEntity {
+@Table(name = "DataSharingSummary", schema = "OrganisationManager")
+public class DataSharingSummaryEntity {
     private String uuid;
     private String name;
     private String description;
@@ -208,7 +207,7 @@ public class DatasharingsummaryEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DatasharingsummaryEntity that = (DatasharingsummaryEntity) o;
+        DataSharingSummaryEntity that = (DataSharingSummaryEntity) o;
 
         if (natureOfInformationId != that.natureOfInformationId) return false;
         if (formatTypeId != that.formatTypeId) return false;
@@ -266,25 +265,25 @@ public class DatasharingsummaryEntity {
         return ent;
     }
 
-    public static List<DatasharingsummaryEntity> getAllDataSharingSummaries() throws Exception {
+    public static List<DataSharingSummaryEntity> getAllDataSharingSummaries() throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DatasharingsummaryEntity> cq = cb.createQuery(DatasharingsummaryEntity.class);
-        Root<DatasharingsummaryEntity> rootEntry = cq.from(DatasharingsummaryEntity.class);
-        CriteriaQuery<DatasharingsummaryEntity> all = cq.select(rootEntry);
-        TypedQuery<DatasharingsummaryEntity> allQuery = entityManager.createQuery(all);
-        List<DatasharingsummaryEntity> ret = allQuery.getResultList();
+        CriteriaQuery<DataSharingSummaryEntity> cq = cb.createQuery(DataSharingSummaryEntity.class);
+        Root<DataSharingSummaryEntity> rootEntry = cq.from(DataSharingSummaryEntity.class);
+        CriteriaQuery<DataSharingSummaryEntity> all = cq.select(rootEntry);
+        TypedQuery<DataSharingSummaryEntity> allQuery = entityManager.createQuery(all);
+        List<DataSharingSummaryEntity> ret = allQuery.getResultList();
 
         entityManager.close();
 
         return ret;
     }
 
-    public static DatasharingsummaryEntity getDataSharingSummary(String uuid) throws Exception {
+    public static DataSharingSummaryEntity getDataSharingSummary(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DatasharingsummaryEntity ret = entityManager.find(DatasharingsummaryEntity.class, uuid);
+        DataSharingSummaryEntity ret = entityManager.find(DataSharingSummaryEntity.class, uuid);
 
         entityManager.close();
 
@@ -294,22 +293,22 @@ public class DatasharingsummaryEntity {
     public static void updateDataSharingSummary(JsonDataSharingSummary dataSharingSummary) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DatasharingsummaryEntity datasharingsummaryEntity = entityManager.find(DatasharingsummaryEntity.class, dataSharingSummary.getUuid());
+        DataSharingSummaryEntity dataSharingSummaryEntity = entityManager.find(DataSharingSummaryEntity.class, dataSharingSummary.getUuid());
         entityManager.getTransaction().begin();
-        datasharingsummaryEntity.setName(dataSharingSummary.getName());
-        datasharingsummaryEntity.setDescription(dataSharingSummary.getDescription());
-        datasharingsummaryEntity.setPurpose(dataSharingSummary.getPurpose());
-        datasharingsummaryEntity.setNatureOfInformationId(dataSharingSummary.getNatureOfInformationId());
-        datasharingsummaryEntity.setSchedule2Condition(dataSharingSummary.getSchedule2Condition());
-        datasharingsummaryEntity.setBenefitToSharing(dataSharingSummary.getBenefitToSharing());
-        datasharingsummaryEntity.setOverviewOfDataItems(dataSharingSummary.getOverviewOfDataItems());
-        datasharingsummaryEntity.setFormatTypeId(dataSharingSummary.getFormatTypeId());
-        datasharingsummaryEntity.setDataSubjectTypeId(dataSharingSummary.getDataSubjectTypeId());
-        datasharingsummaryEntity.setNatureOfPersonsAccessingData(dataSharingSummary.getNatureOfPersonsAccessingData());
-        datasharingsummaryEntity.setReviewCycleId(dataSharingSummary.getReviewCycleId());
-        datasharingsummaryEntity.setReviewDate(dataSharingSummary.getReviewDate());
-        datasharingsummaryEntity.setStartDate(dataSharingSummary.getStartDate());
-        datasharingsummaryEntity.setEvidenceOfAgreement(dataSharingSummary.getEvidenceOfAgreement());
+        dataSharingSummaryEntity.setName(dataSharingSummary.getName());
+        dataSharingSummaryEntity.setDescription(dataSharingSummary.getDescription());
+        dataSharingSummaryEntity.setPurpose(dataSharingSummary.getPurpose());
+        dataSharingSummaryEntity.setNatureOfInformationId(dataSharingSummary.getNatureOfInformationId());
+        dataSharingSummaryEntity.setSchedule2Condition(dataSharingSummary.getSchedule2Condition());
+        dataSharingSummaryEntity.setBenefitToSharing(dataSharingSummary.getBenefitToSharing());
+        dataSharingSummaryEntity.setOverviewOfDataItems(dataSharingSummary.getOverviewOfDataItems());
+        dataSharingSummaryEntity.setFormatTypeId(dataSharingSummary.getFormatTypeId());
+        dataSharingSummaryEntity.setDataSubjectTypeId(dataSharingSummary.getDataSubjectTypeId());
+        dataSharingSummaryEntity.setNatureOfPersonsAccessingData(dataSharingSummary.getNatureOfPersonsAccessingData());
+        dataSharingSummaryEntity.setReviewCycleId(dataSharingSummary.getReviewCycleId());
+        dataSharingSummaryEntity.setReviewDate(dataSharingSummary.getReviewDate());
+        dataSharingSummaryEntity.setStartDate(dataSharingSummary.getStartDate());
+        dataSharingSummaryEntity.setEvidenceOfAgreement(dataSharingSummary.getEvidenceOfAgreement());
         entityManager.getTransaction().commit();
 
         entityManager.close();
@@ -318,24 +317,24 @@ public class DatasharingsummaryEntity {
     public static void saveDataSharingSummary(JsonDataSharingSummary dataSharingSummary) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DatasharingsummaryEntity datasharingsummaryEntity = new DatasharingsummaryEntity();
+        DataSharingSummaryEntity dataSharingSummaryEntity = new DataSharingSummaryEntity();
         entityManager.getTransaction().begin();
-        datasharingsummaryEntity.setName(dataSharingSummary.getName());
-        datasharingsummaryEntity.setDescription(dataSharingSummary.getDescription());
-        datasharingsummaryEntity.setPurpose(dataSharingSummary.getPurpose());
-        datasharingsummaryEntity.setNatureOfInformationId(dataSharingSummary.getNatureOfInformationId());
-        datasharingsummaryEntity.setSchedule2Condition(dataSharingSummary.getSchedule2Condition());
-        datasharingsummaryEntity.setBenefitToSharing(dataSharingSummary.getBenefitToSharing());
-        datasharingsummaryEntity.setOverviewOfDataItems(dataSharingSummary.getOverviewOfDataItems());
-        datasharingsummaryEntity.setFormatTypeId(dataSharingSummary.getFormatTypeId());
-        datasharingsummaryEntity.setDataSubjectTypeId(dataSharingSummary.getDataSubjectTypeId());
-        datasharingsummaryEntity.setNatureOfPersonsAccessingData(dataSharingSummary.getNatureOfPersonsAccessingData());
-        datasharingsummaryEntity.setReviewCycleId(dataSharingSummary.getReviewCycleId());
-        datasharingsummaryEntity.setReviewDate(dataSharingSummary.getReviewDate());
-        datasharingsummaryEntity.setStartDate(dataSharingSummary.getStartDate());
-        datasharingsummaryEntity.setEvidenceOfAgreement(dataSharingSummary.getEvidenceOfAgreement());
-        datasharingsummaryEntity.setUuid(dataSharingSummary.getUuid());
-        entityManager.persist(datasharingsummaryEntity);
+        dataSharingSummaryEntity.setName(dataSharingSummary.getName());
+        dataSharingSummaryEntity.setDescription(dataSharingSummary.getDescription());
+        dataSharingSummaryEntity.setPurpose(dataSharingSummary.getPurpose());
+        dataSharingSummaryEntity.setNatureOfInformationId(dataSharingSummary.getNatureOfInformationId());
+        dataSharingSummaryEntity.setSchedule2Condition(dataSharingSummary.getSchedule2Condition());
+        dataSharingSummaryEntity.setBenefitToSharing(dataSharingSummary.getBenefitToSharing());
+        dataSharingSummaryEntity.setOverviewOfDataItems(dataSharingSummary.getOverviewOfDataItems());
+        dataSharingSummaryEntity.setFormatTypeId(dataSharingSummary.getFormatTypeId());
+        dataSharingSummaryEntity.setDataSubjectTypeId(dataSharingSummary.getDataSubjectTypeId());
+        dataSharingSummaryEntity.setNatureOfPersonsAccessingData(dataSharingSummary.getNatureOfPersonsAccessingData());
+        dataSharingSummaryEntity.setReviewCycleId(dataSharingSummary.getReviewCycleId());
+        dataSharingSummaryEntity.setReviewDate(dataSharingSummary.getReviewDate());
+        dataSharingSummaryEntity.setStartDate(dataSharingSummary.getStartDate());
+        dataSharingSummaryEntity.setEvidenceOfAgreement(dataSharingSummary.getEvidenceOfAgreement());
+        dataSharingSummaryEntity.setUuid(dataSharingSummary.getUuid());
+        entityManager.persist(dataSharingSummaryEntity);
         entityManager.getTransaction().commit();
 
         entityManager.close();
@@ -344,27 +343,27 @@ public class DatasharingsummaryEntity {
     public static void deleteDataSharingSummary(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DatasharingsummaryEntity datasharingsummaryEntity = entityManager.find(DatasharingsummaryEntity.class, uuid);
+        DataSharingSummaryEntity dataSharingSummaryEntity = entityManager.find(DataSharingSummaryEntity.class, uuid);
         entityManager.getTransaction().begin();
-        entityManager.remove(datasharingsummaryEntity);
+        entityManager.remove(dataSharingSummaryEntity);
         entityManager.getTransaction().commit();
 
         entityManager.close();
     }
 
-    public static List<DatasharingsummaryEntity> search(String expression) throws Exception {
+    public static List<DataSharingSummaryEntity> search(String expression) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DatasharingsummaryEntity> cq = cb.createQuery(DatasharingsummaryEntity.class);
-        Root<DatasharingsummaryEntity> rootEntry = cq.from(DatasharingsummaryEntity.class);
+        CriteriaQuery<DataSharingSummaryEntity> cq = cb.createQuery(DataSharingSummaryEntity.class);
+        Root<DataSharingSummaryEntity> rootEntry = cq.from(DataSharingSummaryEntity.class);
 
         Predicate predicate = cb.or(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"),
                 cb.like(cb.upper(rootEntry.get("description")), "%" + expression.toUpperCase() + "%"));
 
         cq.where(predicate);
-        TypedQuery<DatasharingsummaryEntity> query = entityManager.createQuery(cq);
-        List<DatasharingsummaryEntity> ret = query.getResultList();
+        TypedQuery<DataSharingSummaryEntity> query = entityManager.createQuery(cq);
+        List<DataSharingSummaryEntity> ret = query.getResultList();
 
         entityManager.close();
 

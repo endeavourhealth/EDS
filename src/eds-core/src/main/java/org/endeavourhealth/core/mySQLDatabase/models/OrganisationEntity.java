@@ -36,7 +36,7 @@ import java.util.UUID;
                 procedureName = "getRegionStatistics"
         )
 })
-@Table(name = "organisation", schema = "organisationmanager")
+@Table(name = "Organisation", schema = "OrganisationManager")
 public class OrganisationEntity {
 
     private String name;
@@ -341,52 +341,13 @@ public class OrganisationEntity {
     }
 
     @Id
-    @Column(name = "Uuid", nullable = false, length = 36)
+    @Column(name = "uuid", nullable = false, length = 36)
     public String getUuid() {
         return uuid;
     }
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        OrganisationEntity that = (OrganisationEntity) o;
-
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
-        if (alternativeName != null ? !alternativeName.equals(that.alternativeName) : that.alternativeName != null)
-            return false;
-        if (odsCode != null ? !odsCode.equals(that.odsCode) : that.odsCode != null) return false;
-        if (icoCode != null ? !icoCode.equals(that.icoCode) : that.icoCode != null) return false;
-        if (igToolkitStatus != null ? !igToolkitStatus.equals(that.igToolkitStatus) : that.igToolkitStatus != null)
-            return false;
-        if (dateOfRegistration != null ? !dateOfRegistration.equals(that.dateOfRegistration) : that.dateOfRegistration != null)
-            return false;
-        if (registrationPerson != null ? !registrationPerson.equals(that.registrationPerson) : that.registrationPerson != null)
-            return false;
-        if (evidenceOfRegistration != null ? !evidenceOfRegistration.equals(that.evidenceOfRegistration) : that.evidenceOfRegistration != null)
-            return false;
-        if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (alternativeName != null ? alternativeName.hashCode() : 0);
-        result = 31 * result + (odsCode != null ? odsCode.hashCode() : 0);
-        result = 31 * result + (icoCode != null ? icoCode.hashCode() : 0);
-        result = 31 * result + (igToolkitStatus != null ? igToolkitStatus.hashCode() : 0);
-        result = 31 * result + (dateOfRegistration != null ? dateOfRegistration.hashCode() : 0);
-        result = 31 * result + (registrationPerson != null ? registrationPerson.hashCode() : 0);
-        result = 31 * result + (evidenceOfRegistration != null ? evidenceOfRegistration.hashCode() : 0);
-        result = 31 * result + (uuid != null ? uuid.hashCode() : 0);
-        return result;
     }
 
     @Basic
@@ -427,5 +388,44 @@ public class OrganisationEntity {
 
     public void setBulkConflictedWith(String bulkConflictedWith) {
         this.bulkConflictedWith = bulkConflictedWith;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        OrganisationEntity that = (OrganisationEntity) o;
+
+        if (name != null ? !name.equals(that.name) : that.name != null) return false;
+        if (alternativeName != null ? !alternativeName.equals(that.alternativeName) : that.alternativeName != null)
+            return false;
+        if (odsCode != null ? !odsCode.equals(that.odsCode) : that.odsCode != null) return false;
+        if (icoCode != null ? !icoCode.equals(that.icoCode) : that.icoCode != null) return false;
+        if (igToolkitStatus != null ? !igToolkitStatus.equals(that.igToolkitStatus) : that.igToolkitStatus != null)
+            return false;
+        if (dateOfRegistration != null ? !dateOfRegistration.equals(that.dateOfRegistration) : that.dateOfRegistration != null)
+            return false;
+        if (registrationPerson != null ? !registrationPerson.equals(that.registrationPerson) : that.registrationPerson != null)
+            return false;
+        if (evidenceOfRegistration != null ? !evidenceOfRegistration.equals(that.evidenceOfRegistration) : that.evidenceOfRegistration != null)
+            return false;
+        if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (alternativeName != null ? alternativeName.hashCode() : 0);
+        result = 31 * result + (odsCode != null ? odsCode.hashCode() : 0);
+        result = 31 * result + (icoCode != null ? icoCode.hashCode() : 0);
+        result = 31 * result + (igToolkitStatus != null ? igToolkitStatus.hashCode() : 0);
+        result = 31 * result + (dateOfRegistration != null ? dateOfRegistration.hashCode() : 0);
+        result = 31 * result + (registrationPerson != null ? registrationPerson.hashCode() : 0);
+        result = 31 * result + (evidenceOfRegistration != null ? evidenceOfRegistration.hashCode() : 0);
+        result = 31 * result + (uuid != null ? uuid.hashCode() : 0);
+        return result;
     }
 }

@@ -9,11 +9,10 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
-@Table(name = "datasharingagreement", schema = "organisationmanager")
-public class DatasharingagreementEntity {
+@Table(name = "DataSharingAgreement", schema = "OrganisationManager")
+public class DataSharingAgreementEntity {
     private String uuid;
     private String name;
     private String description;
@@ -130,7 +129,7 @@ public class DatasharingagreementEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DatasharingagreementEntity that = (DatasharingagreementEntity) o;
+        DataSharingAgreementEntity that = (DataSharingAgreementEntity) o;
 
         if (dsaStatusId != that.dsaStatusId) return false;
         if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) return false;
@@ -165,25 +164,25 @@ public class DatasharingagreementEntity {
         return result;
     }
 
-    public static List<DatasharingagreementEntity> getAllDSAs() throws Exception {
+    public static List<DataSharingAgreementEntity> getAllDSAs() throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DatasharingagreementEntity> cq = cb.createQuery(DatasharingagreementEntity.class);
-        Root<DatasharingagreementEntity> rootEntry = cq.from(DatasharingagreementEntity.class);
-        CriteriaQuery<DatasharingagreementEntity> all = cq.select(rootEntry);
-        TypedQuery<DatasharingagreementEntity> allQuery = entityManager.createQuery(all);
-        List<DatasharingagreementEntity> ret = allQuery.getResultList();
+        CriteriaQuery<DataSharingAgreementEntity> cq = cb.createQuery(DataSharingAgreementEntity.class);
+        Root<DataSharingAgreementEntity> rootEntry = cq.from(DataSharingAgreementEntity.class);
+        CriteriaQuery<DataSharingAgreementEntity> all = cq.select(rootEntry);
+        TypedQuery<DataSharingAgreementEntity> allQuery = entityManager.createQuery(all);
+        List<DataSharingAgreementEntity> ret = allQuery.getResultList();
 
         entityManager.close();
 
         return ret;
     }
 
-    public static DatasharingagreementEntity getDSA(String uuid) throws Exception {
+    public static DataSharingAgreementEntity getDSA(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DatasharingagreementEntity ret = entityManager.find(DatasharingagreementEntity.class, uuid);
+        DataSharingAgreementEntity ret = entityManager.find(DataSharingAgreementEntity.class, uuid);
 
         entityManager.close();
 
@@ -193,7 +192,7 @@ public class DatasharingagreementEntity {
     public static void updateDSA(JsonDSA dsa) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DatasharingagreementEntity dsaEntity = entityManager.find(DatasharingagreementEntity.class, dsa.getUuid());
+        DataSharingAgreementEntity dsaEntity = entityManager.find(DataSharingAgreementEntity.class, dsa.getUuid());
         entityManager.getTransaction().begin();
         dsaEntity.setName(dsa.getName());
         dsaEntity.setDescription(dsa.getDescription());
@@ -212,7 +211,7 @@ public class DatasharingagreementEntity {
     public static void saveDSA(JsonDSA dsa) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DatasharingagreementEntity dsaEntity = new DatasharingagreementEntity();
+        DataSharingAgreementEntity dsaEntity = new DataSharingAgreementEntity();
         entityManager.getTransaction().begin();
         dsaEntity.setName(dsa.getName());
         dsaEntity.setDescription(dsa.getDescription());
@@ -233,7 +232,7 @@ public class DatasharingagreementEntity {
     public static void deleteDSA(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DatasharingagreementEntity dsaEntity = entityManager.find(DatasharingagreementEntity.class, uuid);
+        DataSharingAgreementEntity dsaEntity = entityManager.find(DataSharingAgreementEntity.class, uuid);
         entityManager.getTransaction().begin();
         entityManager.remove(dsaEntity);
         entityManager.getTransaction().commit();
@@ -241,38 +240,38 @@ public class DatasharingagreementEntity {
         entityManager.close();
     }
 
-    public static List<DatasharingagreementEntity> search(String expression) throws Exception {
+    public static List<DataSharingAgreementEntity> search(String expression) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DatasharingagreementEntity> cq = cb.createQuery(DatasharingagreementEntity.class);
-        Root<DatasharingagreementEntity> rootEntry = cq.from(DatasharingagreementEntity.class);
+        CriteriaQuery<DataSharingAgreementEntity> cq = cb.createQuery(DataSharingAgreementEntity.class);
+        Root<DataSharingAgreementEntity> rootEntry = cq.from(DataSharingAgreementEntity.class);
 
         Predicate predicate = cb.or(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"),
                 cb.like(cb.upper(rootEntry.get("description")), "%" + expression.toUpperCase() + "%"));
 
         cq.where(predicate);
-        TypedQuery<DatasharingagreementEntity> query = entityManager.createQuery(cq);
-        List<DatasharingagreementEntity> ret = query.getResultList();
+        TypedQuery<DataSharingAgreementEntity> query = entityManager.createQuery(cq);
+        List<DataSharingAgreementEntity> ret = query.getResultList();
 
         entityManager.close();
 
         return ret;
     }
 
-    public static List<DatasharingagreementEntity> getDSAsFromList(List<String> dsas) throws Exception {
+    public static List<DataSharingAgreementEntity> getDSAsFromList(List<String> dsas) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DatasharingagreementEntity> cq = cb.createQuery(DatasharingagreementEntity.class);
-        Root<DatasharingagreementEntity> rootEntry = cq.from(DatasharingagreementEntity.class);
+        CriteriaQuery<DataSharingAgreementEntity> cq = cb.createQuery(DataSharingAgreementEntity.class);
+        Root<DataSharingAgreementEntity> rootEntry = cq.from(DataSharingAgreementEntity.class);
 
         Predicate predicate = rootEntry.get("uuid").in(dsas);
 
         cq.where(predicate);
-        TypedQuery<DatasharingagreementEntity> query = entityManager.createQuery(cq);
+        TypedQuery<DataSharingAgreementEntity> query = entityManager.createQuery(cq);
 
-        List<DatasharingagreementEntity> ret = query.getResultList();
+        List<DataSharingAgreementEntity> ret = query.getResultList();
 
         entityManager.close();
 

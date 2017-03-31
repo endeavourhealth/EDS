@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "region", schema = "organisationmanager")
+@Table(name = "Region", schema = "OrganisationManager")
 public class RegionEntity {
     private int id;
     private String name;
@@ -163,7 +163,7 @@ public class RegionEntity {
     }
 
     @Id
-    @Column(name = "Uuid", nullable = false, length = 36)
+    @Column(name = "uuid", nullable = false, length = 36)
     public String getUuid() {
         return uuid;
     }

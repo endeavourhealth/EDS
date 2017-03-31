@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "cohort", schema = "organisationmanager")
+@Table(name = "Cohort", schema = "OrganisationManager")
 public class CohortEntity {
     private String uuid;
     private String name;

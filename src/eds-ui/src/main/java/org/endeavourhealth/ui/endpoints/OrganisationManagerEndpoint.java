@@ -22,12 +22,9 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.*;
-import java.io.File;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Path("/organisationManager")
@@ -77,7 +74,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 "Organisation", organisationManager);
 
         if (organisationManager.getUuid() != null) {
-            MastermappingEntity.deleteAllMappings(organisationManager.getUuid());
+            MasterMappingEntity.deleteAllMappings(organisationManager.getUuid());
             OrganisationEntity.updateOrganisation(organisationManager);
         } else {
             organisationManager.setUuid(UUID.nameUUIDFromBytes((organisationManager.getName() + organisationManager.getOdsCode()).getBytes()).toString());
@@ -86,7 +83,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
 
         //Process Mappings
-        MastermappingEntity.saveOrganisationMappings(organisationManager);
+        MasterMappingEntity.saveOrganisationMappings(organisationManager);
 
         List<JsonAddress> addresses = organisationManager.getAddresses();
         if (addresses.size() > 0) {
@@ -358,7 +355,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
     private Response getRegionsForOrganisation(String organisationUuid) throws Exception {
 
-        List<String> regionUuids = MastermappingEntity.getParentMappings(organisationUuid, MapType.ORGANISATION.getMapType(), MapType.REGION.getMapType());
+        List<String> regionUuids = MasterMappingEntity.getParentMappings(organisationUuid, MapType.ORGANISATION.getMapType(), MapType.REGION.getMapType());
         List<RegionEntity> ret = new ArrayList<>();
 
         if (regionUuids.size() > 0)
@@ -458,7 +455,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
     private Response getChildOrganisations(String organisationUuid, Short organisationType) throws Exception {
 
-        List<String> organisationUuids = MastermappingEntity.getChildMappings(organisationUuid, MapType.ORGANISATION.getMapType(), organisationType);
+        List<String> organisationUuids = MasterMappingEntity.getChildMappings(organisationUuid, MapType.ORGANISATION.getMapType(), organisationType);
         List<OrganisationEntity> ret = new ArrayList<>();
 
         if (organisationUuids.size() > 0)
@@ -473,7 +470,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
     private Response getParentOrganisations(String organisationUuid) throws Exception {
 
-        List<String> organisationUuids = MastermappingEntity.getParentMappings(organisationUuid, MapType.ORGANISATION.getMapType(), MapType.ORGANISATION.getMapType());
+        List<String> organisationUuids = MasterMappingEntity.getParentMappings(organisationUuid, MapType.ORGANISATION.getMapType(), MapType.ORGANISATION.getMapType());
         List<OrganisationEntity> ret = new ArrayList<>();
 
         if (organisationUuids.size() > 0)

@@ -9,11 +9,10 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
-@Table(name = "dataprocessingagreement", schema = "organisationmanager")
-public class DataprocessingagreementEntity {
+@Table(name = "DataProcessingAgreement", schema = "OrganisationManager")
+public class DataProcessingAgreementEntity {
     private String uuid;
     private String name;
     private String description;
@@ -141,7 +140,7 @@ public class DataprocessingagreementEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DataprocessingagreementEntity that = (DataprocessingagreementEntity) o;
+        DataProcessingAgreementEntity that = (DataProcessingAgreementEntity) o;
 
         if (dsaStatusId != that.dsaStatusId) return false;
         if (storageProtocolId != that.storageProtocolId) return false;
@@ -178,25 +177,25 @@ public class DataprocessingagreementEntity {
         return result;
     }
 
-    public static List<DataprocessingagreementEntity> getAllDPAs() throws Exception {
+    public static List<DataProcessingAgreementEntity> getAllDPAs() throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DataprocessingagreementEntity> cq = cb.createQuery(DataprocessingagreementEntity.class);
-        Root<DataprocessingagreementEntity> rootEntry = cq.from(DataprocessingagreementEntity.class);
-        CriteriaQuery<DataprocessingagreementEntity> all = cq.select(rootEntry);
-        TypedQuery<DataprocessingagreementEntity> allQuery = entityManager.createQuery(all);
-        List<DataprocessingagreementEntity> ret =  allQuery.getResultList();
+        CriteriaQuery<DataProcessingAgreementEntity> cq = cb.createQuery(DataProcessingAgreementEntity.class);
+        Root<DataProcessingAgreementEntity> rootEntry = cq.from(DataProcessingAgreementEntity.class);
+        CriteriaQuery<DataProcessingAgreementEntity> all = cq.select(rootEntry);
+        TypedQuery<DataProcessingAgreementEntity> allQuery = entityManager.createQuery(all);
+        List<DataProcessingAgreementEntity> ret =  allQuery.getResultList();
 
         entityManager.close();
 
         return ret;
     }
 
-    public static DataprocessingagreementEntity getDPA(String uuid) throws Exception {
+    public static DataProcessingAgreementEntity getDPA(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DataprocessingagreementEntity ret = entityManager.find(DataprocessingagreementEntity.class, uuid);
+        DataProcessingAgreementEntity ret = entityManager.find(DataProcessingAgreementEntity.class, uuid);
 
         entityManager.close();
 
@@ -206,7 +205,7 @@ public class DataprocessingagreementEntity {
     public static void updateDPA(JsonDPA dpa) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DataprocessingagreementEntity dpaEntity = entityManager.find(DataprocessingagreementEntity.class, dpa.getUuid());
+        DataProcessingAgreementEntity dpaEntity = entityManager.find(DataProcessingAgreementEntity.class, dpa.getUuid());
         entityManager.getTransaction().begin();
         dpaEntity.setName(dpa.getName());
         dpaEntity.setDescription(dpa.getDescription());
@@ -226,7 +225,7 @@ public class DataprocessingagreementEntity {
     public static void saveDPA(JsonDPA dpa) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DataprocessingagreementEntity dpaEntity = new DataprocessingagreementEntity();
+        DataProcessingAgreementEntity dpaEntity = new DataProcessingAgreementEntity();
         entityManager.getTransaction().begin();
         dpaEntity.setName(dpa.getName());
         dpaEntity.setName(dpa.getName());
@@ -249,7 +248,7 @@ public class DataprocessingagreementEntity {
     public static void deleteDPA(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DataprocessingagreementEntity dpaEntity = entityManager.find(DataprocessingagreementEntity.class, uuid);
+        DataProcessingAgreementEntity dpaEntity = entityManager.find(DataProcessingAgreementEntity.class, uuid);
         entityManager.getTransaction().begin();
         entityManager.remove(dpaEntity);
         entityManager.getTransaction().commit();
@@ -257,38 +256,38 @@ public class DataprocessingagreementEntity {
         entityManager.close();
     }
 
-    public static List<DataprocessingagreementEntity> search(String expression) throws Exception {
+    public static List<DataProcessingAgreementEntity> search(String expression) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DataprocessingagreementEntity> cq = cb.createQuery(DataprocessingagreementEntity.class);
-        Root<DataprocessingagreementEntity> rootEntry = cq.from(DataprocessingagreementEntity.class);
+        CriteriaQuery<DataProcessingAgreementEntity> cq = cb.createQuery(DataProcessingAgreementEntity.class);
+        Root<DataProcessingAgreementEntity> rootEntry = cq.from(DataProcessingAgreementEntity.class);
 
         Predicate predicate = cb.or(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"),
                 cb.like(cb.upper(rootEntry.get("description")), "%" + expression.toUpperCase() + "%"));
 
         cq.where(predicate);
-        TypedQuery<DataprocessingagreementEntity> query = entityManager.createQuery(cq);
-        List<DataprocessingagreementEntity> ret = query.getResultList();
+        TypedQuery<DataProcessingAgreementEntity> query = entityManager.createQuery(cq);
+        List<DataProcessingAgreementEntity> ret = query.getResultList();
 
         entityManager.close();
 
         return ret;
     }
 
-    public static List<DataprocessingagreementEntity> getDPAsFromList(List<String> dpas) throws Exception {
+    public static List<DataProcessingAgreementEntity> getDPAsFromList(List<String> dpas) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DataprocessingagreementEntity> cq = cb.createQuery(DataprocessingagreementEntity.class);
-        Root<DataprocessingagreementEntity> rootEntry = cq.from(DataprocessingagreementEntity.class);
+        CriteriaQuery<DataProcessingAgreementEntity> cq = cb.createQuery(DataProcessingAgreementEntity.class);
+        Root<DataProcessingAgreementEntity> rootEntry = cq.from(DataProcessingAgreementEntity.class);
 
         Predicate predicate = rootEntry.get("uuid").in(dpas);
 
         cq.where(predicate);
-        TypedQuery<DataprocessingagreementEntity> query = entityManager.createQuery(cq);
+        TypedQuery<DataProcessingAgreementEntity> query = entityManager.createQuery(cq);
 
-        List<DataprocessingagreementEntity> ret = query.getResultList();
+        List<DataProcessingAgreementEntity> ret = query.getResultList();
 
         entityManager.close();
 

@@ -59,14 +59,14 @@ public final class DsaEndpoint extends AbstractEndpoint {
                 "DSA", dsa);
 
         if (dsa.getUuid() != null) {
-            MastermappingEntity.deleteAllMappings(dsa.getUuid());
-            DatasharingagreementEntity.updateDSA(dsa);
+            MasterMappingEntity.deleteAllMappings(dsa.getUuid());
+            DataSharingAgreementEntity.updateDSA(dsa);
         } else {
             dsa.setUuid(UUID.randomUUID().toString());
-            DatasharingagreementEntity.saveDSA(dsa);
+            DataSharingAgreementEntity.saveDSA(dsa);
         }
 
-        MastermappingEntity.saveDataSharingAgreementMappings(dsa);
+        MasterMappingEntity.saveDataSharingAgreementMappings(dsa);
 
         clearLogbackMarkers();
 
@@ -86,7 +86,7 @@ public final class DsaEndpoint extends AbstractEndpoint {
                 "DSA",
                 "DSA Id", uuid);
 
-        DatasharingagreementEntity.deleteDSA(uuid);
+        DataSharingAgreementEntity.deleteDSA(uuid);
 
         clearLogbackMarkers();
         return Response
@@ -109,7 +109,7 @@ public final class DsaEndpoint extends AbstractEndpoint {
 
     private Response getDSAList() throws Exception {
 
-        List<DatasharingagreementEntity> dsas = DatasharingagreementEntity.getAllDSAs();
+        List<DataSharingAgreementEntity> dsas = DataSharingAgreementEntity.getAllDSAs();
 
         clearLogbackMarkers();
         return Response
@@ -119,7 +119,7 @@ public final class DsaEndpoint extends AbstractEndpoint {
     }
 
     private Response getSingleDSA(String uuid) throws Exception {
-        DatasharingagreementEntity dsaEntity = DatasharingagreementEntity.getDSA(uuid);
+        DataSharingAgreementEntity dsaEntity = DataSharingAgreementEntity.getDSA(uuid);
 
         return Response
                 .ok()
@@ -129,7 +129,7 @@ public final class DsaEndpoint extends AbstractEndpoint {
     }
 
     private Response search(String searchData) throws Exception {
-        Iterable<DatasharingagreementEntity> dsas = DatasharingagreementEntity.search(searchData);
+        Iterable<DataSharingAgreementEntity> dsas = DataSharingAgreementEntity.search(searchData);
 
         clearLogbackMarkers();
         return Response
@@ -140,12 +140,12 @@ public final class DsaEndpoint extends AbstractEndpoint {
 
     private Response getLinkedDataFlows(String dsaUuid) throws Exception {
 
-        List<String> dataFlowUuids = MastermappingEntity.getChildMappings(dsaUuid, MapType.DATASHARINGAGREEMENT.getMapType(), MapType.DATAFLOW.getMapType());
+        List<String> dataFlowUuids = MasterMappingEntity.getChildMappings(dsaUuid, MapType.DATASHARINGAGREEMENT.getMapType(), MapType.DATAFLOW.getMapType());
 
-        List<DataflowEntity> ret = new ArrayList<>();
+        List<DataFlowEntity> ret = new ArrayList<>();
 
         if (dataFlowUuids.size() > 0)
-            ret = DataflowEntity.getDataFlowsFromList(dataFlowUuids);
+            ret = DataFlowEntity.getDataFlowsFromList(dataFlowUuids);
 
         clearLogbackMarkers();
         return Response

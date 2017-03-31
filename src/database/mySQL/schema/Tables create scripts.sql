@@ -31,18 +31,6 @@ create table OrganisationManager.Organisation (
     index (name asc, ods_code asc)
 );
 
-
-/*
-alter table OrganisationManager.Organisation add column BulkConflictedWith char(36) null;
-
-alter table OrganisationManager.Organisation add column BulkItemUpdated boolean null;
-update OrganisationManager.Organisation set BulkItemUpdated = 0;
-alter table OrganisationManager.Organisation modify BulkItemUpdated boolean not null;
-*/
-
-alter table OrganisationManager.Organisation
-modify date_of_registration date null;
-
 drop table if exists OrganisationManager.Address;
 
 create table OrganisationManager.Address (
@@ -57,7 +45,7 @@ create table OrganisationManager.Address (
     Geolocation varchar(100) null,
     GeolocationReprocess tinyint(1),        
     
-    foreign key (OrganisationUuid) references OrganisationManager.organisation(uuid) on delete cascade
+    foreign key (OrganisationUuid) references OrganisationManager.Organisation(uuid) on delete cascade
 );
 
 drop table if exists OrganisationManager.FlowDirection;
@@ -240,6 +228,8 @@ create table OrganisationManager.DataSharingSummary (
     foreign key (DataSubjectTypeId) references OrganisationManager.DataSubjectType(id),
     foreign key (ReviewCycleId) references OrganisationManager.ReviewCycle(id)
 );
+
+drop table if exists OrganisationManager.MapType;
 
 create table OrganisationManager.MapType (
 	id smallint not null primary key,

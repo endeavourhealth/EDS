@@ -24,9 +24,9 @@ import java.util.UUID;
     )
 })
 @Entity
-@Table(name = "mastermapping", schema = "organisationmanager", catalog = "")
-@IdClass(MastermappingEntityPK.class)
-public class MastermappingEntity {
+@Table(name = "MasterMapping", schema = "OrganisationManager")
+@IdClass(MasterMappingEntityPK.class)
+public class MasterMappingEntity {
     private String childUuid;
     private String parentUUid;
     private byte isDefault;
@@ -46,7 +46,7 @@ public class MastermappingEntity {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         parents.forEach((k, v) -> {
-            MastermappingEntity mme = new MastermappingEntity();
+            MasterMappingEntity mme = new MasterMappingEntity();
             entityManager.getTransaction().begin();
             mme.setChildUuid(childUuid);
             mme.setChildMapTypeId(childMapTypeId);
@@ -64,7 +64,7 @@ public class MastermappingEntity {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         children.forEach((k, v) -> {
-            MastermappingEntity mme = new MastermappingEntity();
+            MasterMappingEntity mme = new MasterMappingEntity();
             entityManager.getTransaction().begin();
             mme.setChildUuid(k.toString());
             mme.setChildMapTypeId(childMapTypeId);
@@ -81,19 +81,19 @@ public class MastermappingEntity {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<MastermappingEntity> cq = cb.createQuery(MastermappingEntity.class);
-        Root<MastermappingEntity> rootEntry = cq.from(MastermappingEntity.class);
+        CriteriaQuery<MasterMappingEntity> cq = cb.createQuery(MasterMappingEntity.class);
+        Root<MasterMappingEntity> rootEntry = cq.from(MasterMappingEntity.class);
 
         Predicate predicate = cb.and(cb.equal(rootEntry.get("childUuid"), childUuid ),
                 cb.equal(rootEntry.get("childMapTypeId"), childMapTypeId),
                 cb.equal(rootEntry.get("parentMapTypeId"), parentMapTypeId));
 
         cq.where(predicate);
-        TypedQuery<MastermappingEntity> query = entityManager.createQuery(cq);
-        List<MastermappingEntity> maps =  query.getResultList();
+        TypedQuery<MasterMappingEntity> query = entityManager.createQuery(cq);
+        List<MasterMappingEntity> maps =  query.getResultList();
 
         List<String> parents = new ArrayList<>();
-        for(MastermappingEntity mme : maps){
+        for(MasterMappingEntity mme : maps){
             parents.add(mme.getParentUUid());
         }
 
@@ -106,19 +106,19 @@ public class MastermappingEntity {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<MastermappingEntity> cq = cb.createQuery(MastermappingEntity.class);
-        Root<MastermappingEntity> rootEntry = cq.from(MastermappingEntity.class);
+        CriteriaQuery<MasterMappingEntity> cq = cb.createQuery(MasterMappingEntity.class);
+        Root<MasterMappingEntity> rootEntry = cq.from(MasterMappingEntity.class);
 
         Predicate predicate = cb.and(cb.equal(rootEntry.get("parentUUid"), parentUuid ),
                 cb.equal(rootEntry.get("parentMapTypeId"), parentMapTypeId),
                 cb.equal(rootEntry.get("childMapTypeId"), childMapTypeId));
 
         cq.where(predicate);
-        TypedQuery<MastermappingEntity> query = entityManager.createQuery(cq);
-        List<MastermappingEntity> maps =  query.getResultList();
+        TypedQuery<MasterMappingEntity> query = entityManager.createQuery(cq);
+        List<MasterMappingEntity> maps =  query.getResultList();
 
         List<String> children = new ArrayList<>();
-        for(MastermappingEntity mme : maps){
+        for(MasterMappingEntity mme : maps){
             children.add(mme.getChildUuid());
         }
 
@@ -251,7 +251,7 @@ public class MastermappingEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        MastermappingEntity that = (MastermappingEntity) o;
+        MasterMappingEntity that = (MasterMappingEntity) o;
 
         if (childMapTypeId != that.childMapTypeId) return false;
         if (parentMapTypeId != that.parentMapTypeId) return false;

@@ -22,7 +22,7 @@ import java.util.UUID;
         )
 })
 @Entity
-@Table(name = "address", schema = "organisationmanager")
+@Table(name = "Address", schema = "OrganisationManager")
 public class AddressEntity {
     private String uuid;
     private String organisationUuid;

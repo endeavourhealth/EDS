@@ -17,13 +17,13 @@ BEGIN
     insert into OrganisationManager.ServiceStatistics (label, value)
     select 'Services linked to an organisation', count(distinct o.uuid) 
     from OrganisationManager.Organisation o
-    join organisationmanager.mastermapping mm on mm.childUuid = o.Uuid and mm.childMapTypeId = 0
+    join OrganisationManager.MasterMapping mm on mm.childUuid = o.Uuid and mm.childMapTypeId = 0
     where o.isService = 1;
     
     insert into OrganisationManager.ServiceStatistics (label, value)
     select 'Orphaned Services', count(mm.childUuid) 
     from OrganisationManager.Organisation o
-    left outer join organisationmanager.mastermapping mm on mm.childUuid = o.Uuid and mm.childMapTypeId = 0
+    left outer join OrganisationManager.MasterMapping mm on mm.childUuid = o.Uuid and mm.childMapTypeId = 0
     where o.isService = 1
     and mm.childMapTypeId is null;
     

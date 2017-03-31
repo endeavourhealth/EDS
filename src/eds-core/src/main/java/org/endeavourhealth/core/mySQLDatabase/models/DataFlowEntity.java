@@ -9,11 +9,10 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
-@Table(name = "dataflow", schema = "organisationmanager")
-public class DataflowEntity {
+@Table(name = "DataFlow", schema = "OrganisationManager")
+public class DataFlowEntity {
     private String uuid;
     private String name;
     private String status;
@@ -28,25 +27,25 @@ public class DataflowEntity {
     private String subscriber;
     private Short directionId;
 
-    public static List<DataflowEntity> getAllDataFlows() throws Exception {
+    public static List<DataFlowEntity> getAllDataFlows() throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DataflowEntity> cq = cb.createQuery(DataflowEntity.class);
-        Root<DataflowEntity> rootEntry = cq.from(DataflowEntity.class);
-        CriteriaQuery<DataflowEntity> all = cq.select(rootEntry);
-        TypedQuery<DataflowEntity> allQuery = entityManager.createQuery(all);
-        List<DataflowEntity> ret =  allQuery.getResultList();
+        CriteriaQuery<DataFlowEntity> cq = cb.createQuery(DataFlowEntity.class);
+        Root<DataFlowEntity> rootEntry = cq.from(DataFlowEntity.class);
+        CriteriaQuery<DataFlowEntity> all = cq.select(rootEntry);
+        TypedQuery<DataFlowEntity> allQuery = entityManager.createQuery(all);
+        List<DataFlowEntity> ret =  allQuery.getResultList();
 
         entityManager.close();
 
         return ret;
     }
 
-    public static DataflowEntity getDataFlow(String uuid) throws Exception {
+    public static DataFlowEntity getDataFlow(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DataflowEntity ret = entityManager.find(DataflowEntity.class, uuid);
+        DataFlowEntity ret = entityManager.find(DataFlowEntity.class, uuid);
 
         entityManager.close();
 
@@ -56,20 +55,20 @@ public class DataflowEntity {
     public static void updateDataFlow(JsonDataFlow dataFlow) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DataflowEntity dataflowEntity = entityManager.find(DataflowEntity.class, dataFlow.getUuid());
+        DataFlowEntity dataFlowEntity = entityManager.find(DataFlowEntity.class, dataFlow.getUuid());
         entityManager.getTransaction().begin();
-        dataflowEntity.setName(dataFlow.getName());
-        dataflowEntity.setStatus(dataFlow.getStatus());
-        dataflowEntity.setDirectionId(dataFlow.getDirectionId());
-        dataflowEntity.setFlowScheduleId(dataFlow.getFlowScheduleId());
-        dataflowEntity.setApproximateVolume(dataFlow.getApproximateVolume());
-        dataflowEntity.setDataExchangeMethodId(dataFlow.getDataExchangeMethodId());
-        dataflowEntity.setFlowStatusId(dataFlow.getFlowStatusId());
-        dataflowEntity.setAdditionalDocumentation(dataFlow.getAdditionalDocumentation());
-        dataflowEntity.setSignOff(dataFlow.getSignOff());
-        dataflowEntity.setDataSet(dataFlow.getDataSet());
-        dataflowEntity.setCohort(dataFlow.getCohort());
-        dataflowEntity.setSubscriber(dataFlow.getSubscriber());
+        dataFlowEntity.setName(dataFlow.getName());
+        dataFlowEntity.setStatus(dataFlow.getStatus());
+        dataFlowEntity.setDirectionId(dataFlow.getDirectionId());
+        dataFlowEntity.setFlowScheduleId(dataFlow.getFlowScheduleId());
+        dataFlowEntity.setApproximateVolume(dataFlow.getApproximateVolume());
+        dataFlowEntity.setDataExchangeMethodId(dataFlow.getDataExchangeMethodId());
+        dataFlowEntity.setFlowStatusId(dataFlow.getFlowStatusId());
+        dataFlowEntity.setAdditionalDocumentation(dataFlow.getAdditionalDocumentation());
+        dataFlowEntity.setSignOff(dataFlow.getSignOff());
+        dataFlowEntity.setDataSet(dataFlow.getDataSet());
+        dataFlowEntity.setCohort(dataFlow.getCohort());
+        dataFlowEntity.setSubscriber(dataFlow.getSubscriber());
         entityManager.getTransaction().commit();
 
         entityManager.close();
@@ -78,22 +77,22 @@ public class DataflowEntity {
     public static void saveDataFlow(JsonDataFlow dataFlow) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DataflowEntity dataflowEntity = new DataflowEntity();
+        DataFlowEntity dataFlowEntity = new DataFlowEntity();
         entityManager.getTransaction().begin();
-        dataflowEntity.setName(dataFlow.getName());
-        dataflowEntity.setStatus(dataFlow.getStatus());
-        dataflowEntity.setDirectionId(dataFlow.getDirectionId());
-        dataflowEntity.setFlowScheduleId(dataFlow.getFlowScheduleId());
-        dataflowEntity.setApproximateVolume(dataFlow.getApproximateVolume());
-        dataflowEntity.setDataExchangeMethodId(dataFlow.getDataExchangeMethodId());
-        dataflowEntity.setFlowStatusId(dataFlow.getFlowStatusId());
-        dataflowEntity.setAdditionalDocumentation(dataFlow.getAdditionalDocumentation());
-        dataflowEntity.setSignOff(dataFlow.getSignOff());
-        dataflowEntity.setDataSet(dataFlow.getDataSet());
-        dataflowEntity.setCohort(dataFlow.getCohort());
-        dataflowEntity.setSubscriber(dataFlow.getSubscriber());
-        dataflowEntity.setUuid(dataFlow.getUuid());
-        entityManager.persist(dataflowEntity);
+        dataFlowEntity.setName(dataFlow.getName());
+        dataFlowEntity.setStatus(dataFlow.getStatus());
+        dataFlowEntity.setDirectionId(dataFlow.getDirectionId());
+        dataFlowEntity.setFlowScheduleId(dataFlow.getFlowScheduleId());
+        dataFlowEntity.setApproximateVolume(dataFlow.getApproximateVolume());
+        dataFlowEntity.setDataExchangeMethodId(dataFlow.getDataExchangeMethodId());
+        dataFlowEntity.setFlowStatusId(dataFlow.getFlowStatusId());
+        dataFlowEntity.setAdditionalDocumentation(dataFlow.getAdditionalDocumentation());
+        dataFlowEntity.setSignOff(dataFlow.getSignOff());
+        dataFlowEntity.setDataSet(dataFlow.getDataSet());
+        dataFlowEntity.setCohort(dataFlow.getCohort());
+        dataFlowEntity.setSubscriber(dataFlow.getSubscriber());
+        dataFlowEntity.setUuid(dataFlow.getUuid());
+        entityManager.persist(dataFlowEntity);
         entityManager.getTransaction().commit();
 
         entityManager.close();
@@ -102,46 +101,46 @@ public class DataflowEntity {
     public static void deleteDataFlow(String uuid) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        DataflowEntity dataflowEntity = entityManager.find(DataflowEntity.class, uuid);
+        DataFlowEntity dataFlowEntity = entityManager.find(DataFlowEntity.class, uuid);
         entityManager.getTransaction().begin();
-        entityManager.remove(dataflowEntity);
+        entityManager.remove(dataFlowEntity);
         entityManager.getTransaction().commit();
 
         entityManager.close();
     }
 
-    public static List<DataflowEntity> search(String expression) throws Exception {
+    public static List<DataFlowEntity> search(String expression) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DataflowEntity> cq = cb.createQuery(DataflowEntity.class);
-        Root<DataflowEntity> rootEntry = cq.from(DataflowEntity.class);
+        CriteriaQuery<DataFlowEntity> cq = cb.createQuery(DataFlowEntity.class);
+        Root<DataFlowEntity> rootEntry = cq.from(DataFlowEntity.class);
 
         Predicate predicate = cb.or(cb.like(cb.upper(rootEntry.get("name")), "%" + expression.toUpperCase() + "%"),
                 cb.like(cb.upper(rootEntry.get("status")), "%" + expression.toUpperCase() + "%"));
 
         cq.where(predicate);
-        TypedQuery<DataflowEntity> query = entityManager.createQuery(cq);
-        List<DataflowEntity> ret = query.getResultList();
+        TypedQuery<DataFlowEntity> query = entityManager.createQuery(cq);
+        List<DataFlowEntity> ret = query.getResultList();
 
         entityManager.close();
 
         return ret;
     }
 
-    public static List<DataflowEntity> getDataFlowsFromList(List<String> dataFlows) throws Exception {
+    public static List<DataFlowEntity> getDataFlowsFromList(List<String> dataFlows) throws Exception {
         EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-        CriteriaQuery<DataflowEntity> cq = cb.createQuery(DataflowEntity.class);
-        Root<DataflowEntity> rootEntry = cq.from(DataflowEntity.class);
+        CriteriaQuery<DataFlowEntity> cq = cb.createQuery(DataFlowEntity.class);
+        Root<DataFlowEntity> rootEntry = cq.from(DataFlowEntity.class);
 
         Predicate predicate = rootEntry.get("uuid").in(dataFlows);
 
         cq.where(predicate);
-        TypedQuery<DataflowEntity> query = entityManager.createQuery(cq);
+        TypedQuery<DataFlowEntity> query = entityManager.createQuery(cq);
 
-        List<DataflowEntity> ret = query.getResultList();
+        List<DataFlowEntity> ret = query.getResultList();
 
         entityManager.close();
 
@@ -273,7 +272,7 @@ public class DataflowEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DataflowEntity that = (DataflowEntity) o;
+        DataFlowEntity that = (DataFlowEntity) o;
 
         if (flowScheduleId != that.flowScheduleId) return false;
         if (dataExchangeMethodId != that.dataExchangeMethodId) return false;

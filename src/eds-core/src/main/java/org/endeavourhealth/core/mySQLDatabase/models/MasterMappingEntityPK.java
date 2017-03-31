@@ -4,10 +4,7 @@ import javax.persistence.Column;
 import javax.persistence.Id;
 import java.io.Serializable;
 
-/**
- * Created by studu on 20/03/2017.
- */
-public class MastermappingEntityPK implements Serializable {
+public class MasterMappingEntityPK implements Serializable {
     private String childUuid;
     private String parentUUid;
     private short childMapTypeId;
@@ -38,7 +35,7 @@ public class MastermappingEntityPK implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        MastermappingEntityPK that = (MastermappingEntityPK) o;
+        MasterMappingEntityPK that = (MasterMappingEntityPK) o;
 
         if (childMapTypeId != that.childMapTypeId) return false;
         if (parentMapTypeId != that.parentMapTypeId) return false;

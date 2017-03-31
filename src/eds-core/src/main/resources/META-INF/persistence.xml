@@ -7,11 +7,11 @@
         <class>org.endeavourhealth.core.mySQLDatabase.models.OrganisationEntity</class>
         <class>org.endeavourhealth.core.mySQLDatabase.models.AddressEntity</class>
         <class>org.endeavourhealth.core.mySQLDatabase.models.CohortEntity</class>
-        <class>org.endeavourhealth.core.mySQLDatabase.models.DataflowEntity</class>
-        <class>org.endeavourhealth.core.mySQLDatabase.models.DataprocessingagreementEntity</class>
-        <class>org.endeavourhealth.core.mySQLDatabase.models.DatasharingagreementEntity</class>
-        <class>org.endeavourhealth.core.mySQLDatabase.models.DatasharingsummaryEntity</class>
-        <class>org.endeavourhealth.core.mySQLDatabase.models.MastermappingEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.DataFlowEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.DataProcessingAgreementEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.DataSharingAgreementEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.DataSharingSummaryEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.MasterMappingEntity</class>
         <properties>
             <property name="hibernate.connection.driver_class" value="com.mysql.jdbc.Driver"/>
             <property name="hibernate.archive.autodetection" value="class"/>

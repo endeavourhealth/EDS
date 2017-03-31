@@ -59,14 +59,14 @@ public final class DpaEndpoint extends AbstractEndpoint {
                 "DPA", dpa);
 
         if (dpa.getUuid() != null) {
-            MastermappingEntity.deleteAllMappings(dpa.getUuid());
-            DataprocessingagreementEntity.updateDPA(dpa);
+            MasterMappingEntity.deleteAllMappings(dpa.getUuid());
+            DataProcessingAgreementEntity.updateDPA(dpa);
         } else {
             dpa.setUuid(UUID.randomUUID().toString());
-            DataprocessingagreementEntity.saveDPA(dpa);
+            DataProcessingAgreementEntity.saveDPA(dpa);
         }
 
-        MastermappingEntity.saveDataProcessingAgreementMappings(dpa);
+        MasterMappingEntity.saveDataProcessingAgreementMappings(dpa);
 
         clearLogbackMarkers();
 
@@ -86,7 +86,7 @@ public final class DpaEndpoint extends AbstractEndpoint {
                 "DPA",
                 "DPA Id", uuid);
 
-        DataprocessingagreementEntity.deleteDPA(uuid);
+        DataProcessingAgreementEntity.deleteDPA(uuid);
 
         clearLogbackMarkers();
         return Response
@@ -122,7 +122,7 @@ public final class DpaEndpoint extends AbstractEndpoint {
 
     private Response getDPAList() throws Exception {
 
-        List<DataprocessingagreementEntity> dpas = DataprocessingagreementEntity.getAllDPAs();
+        List<DataProcessingAgreementEntity> dpas = DataProcessingAgreementEntity.getAllDPAs();
 
         clearLogbackMarkers();
         return Response
@@ -132,7 +132,7 @@ public final class DpaEndpoint extends AbstractEndpoint {
     }
 
     private Response getSingleDPA(String uuid) throws Exception {
-        DataprocessingagreementEntity dpaEntity = DataprocessingagreementEntity.getDPA(uuid);
+        DataProcessingAgreementEntity dpaEntity = DataProcessingAgreementEntity.getDPA(uuid);
 
         return Response
                 .ok()
@@ -142,7 +142,7 @@ public final class DpaEndpoint extends AbstractEndpoint {
     }
 
     private Response search(String searchData) throws Exception {
-        Iterable<DataprocessingagreementEntity> dpas = DataprocessingagreementEntity.search(searchData);
+        Iterable<DataProcessingAgreementEntity> dpas = DataProcessingAgreementEntity.search(searchData);
 
         clearLogbackMarkers();
         return Response
@@ -153,11 +153,11 @@ public final class DpaEndpoint extends AbstractEndpoint {
 
     private Response getLinkedDataFlows(String dpaUuid) throws Exception {
 
-        List<String> dataFlowUuids = MastermappingEntity.getParentMappings(dpaUuid, MapType.DATAPROCESSINGAGREEMENT.getMapType(), MapType.DATAFLOW.getMapType());
-        List<DataflowEntity> ret = new ArrayList<>();
+        List<String> dataFlowUuids = MasterMappingEntity.getParentMappings(dpaUuid, MapType.DATAPROCESSINGAGREEMENT.getMapType(), MapType.DATAFLOW.getMapType());
+        List<DataFlowEntity> ret = new ArrayList<>();
 
         if (dataFlowUuids.size() > 0)
-            ret = DataflowEntity.getDataFlowsFromList(dataFlowUuids);
+            ret = DataFlowEntity.getDataFlowsFromList(dataFlowUuids);
 
         clearLogbackMarkers();
         return Response
@@ -167,7 +167,7 @@ public final class DpaEndpoint extends AbstractEndpoint {
     }
 
     private Response getLinkedCohorts(String dpaUuid) throws Exception {
-        List<String> cohorts = MastermappingEntity.getChildMappings(dpaUuid, MapType.DATAPROCESSINGAGREEMENT.getMapType(), MapType.COHORT.getMapType());
+        List<String> cohorts = MasterMappingEntity.getChildMappings(dpaUuid, MapType.DATAPROCESSINGAGREEMENT.getMapType(), MapType.COHORT.getMapType());
 
         List<CohortEntity> ret = new ArrayList<>();
 

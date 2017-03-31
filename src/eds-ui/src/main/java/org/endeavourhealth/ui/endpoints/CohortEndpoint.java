@@ -60,14 +60,14 @@ public final class CohortEndpoint extends AbstractEndpoint {
                 "Cohort", cohort);
 
         if (cohort.getUuid() != null) {
-            MastermappingEntity.deleteAllMappings(cohort.getUuid());
+            MasterMappingEntity.deleteAllMappings(cohort.getUuid());
             CohortEntity.updateCohort(cohort);
         } else {
             cohort.setUuid(UUID.randomUUID().toString());
             CohortEntity.saveCohort(cohort);
         }
 
-        MastermappingEntity.saveCohortMappings(cohort);
+        MasterMappingEntity.saveCohortMappings(cohort);
 
         clearLogbackMarkers();
 
@@ -141,12 +141,12 @@ public final class CohortEndpoint extends AbstractEndpoint {
 
     private Response getLinkedDpas(String cohortUuid) throws Exception {
 
-        List<String> dpaUuids = MastermappingEntity.getParentMappings(cohortUuid, MapType.COHORT.getMapType(), MapType.DATAPROCESSINGAGREEMENT.getMapType());
+        List<String> dpaUuids = MasterMappingEntity.getParentMappings(cohortUuid, MapType.COHORT.getMapType(), MapType.DATAPROCESSINGAGREEMENT.getMapType());
 
-        List<DataprocessingagreementEntity> ret = new ArrayList<>();
+        List<DataProcessingAgreementEntity> ret = new ArrayList<>();
 
         if (dpaUuids.size() > 0)
-            ret = DataprocessingagreementEntity.getDPAsFromList(dpaUuids);
+            ret = DataProcessingAgreementEntity.getDPAsFromList(dpaUuids);
 
         clearLogbackMarkers();
         return Response
