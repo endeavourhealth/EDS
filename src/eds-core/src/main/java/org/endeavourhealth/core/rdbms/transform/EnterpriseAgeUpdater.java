@@ -102,14 +102,9 @@ public class EnterpriseAgeUpdater {
 
         } else if (values[UNIT_MONTHS] != null) {
             //if counting in months, we want to update the day after the day of birth in the next month
-
-
             int updateDay = dobLocalDate.getDayOfMonth();
             int updateMonth = nowLocalDate.getMonthValue();
             int updateYear = nowLocalDate.getYear();
-
-
-
 
             nextUpdate = createSafeLocalDate(updateYear, updateMonth, updateDay);
 
