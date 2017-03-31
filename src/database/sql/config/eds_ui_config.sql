@@ -44,3 +44,13 @@ VALUES
    "username" : "postgres",
    "password" : ""
 }');
+
+
+INSERT INTO config
+(app_id, config_id, config_data)
+VALUES
+('eds-ui', 'OrganisationManagerDB','{
+   "url" : "jdbc:mysql://URL_OF_SERVER/OrganisationManager",
+   "username" : "USERNAME",
+   "password" : "PASSWORD"
+}');
