@@ -42,7 +42,8 @@ create table OrganisationManager.Address (
     City varchar(100) null,
     County varchar(100) null,
     Postcode varchar(100) null,
-    Geolocation varchar(100) null,
+    lat float(10,6) null,
+    lng float(10,6) null,
     GeolocationReprocess tinyint(1),        
     
     foreign key (OrganisationUuid) references OrganisationManager.Organisation(uuid) on delete cascade

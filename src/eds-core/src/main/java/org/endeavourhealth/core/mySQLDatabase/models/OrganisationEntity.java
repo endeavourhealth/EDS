@@ -165,7 +165,6 @@ public class OrganisationEntity {
         organisationEntity.setUuid(organisation.getUuid());
         entityManager.persist(organisationEntity);
         entityManager.getTransaction().commit();
-        entityManager.close();
 
         entityManager.close();
     }

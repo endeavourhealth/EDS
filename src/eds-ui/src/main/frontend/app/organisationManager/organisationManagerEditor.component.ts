@@ -77,7 +77,9 @@ export class OrganisationManagerEditorComponent {
     create(uuid : string) {
         this.organisation = {
             name: '',
-            isService: 0
+            isService: 0,
+            bulkImported : 0,
+            bulkItemUpdated : 0
         } as Organisation;
 
     }

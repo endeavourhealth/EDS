@@ -155,8 +155,10 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
     private Response getLinkedDpas(String dataFlowUuid) throws Exception {
 
         List<String> dpaUuids = MasterMappingEntity.getChildMappings(dataFlowUuid, MapType.DATAFLOW.getMapType(), MapType.DATAPROCESSINGAGREEMENT.getMapType());
+        List<DataProcessingAgreementEntity> ret = new ArrayList<>();
 
-        List<DataProcessingAgreementEntity> ret = DataProcessingAgreementEntity.getDPAsFromList(dpaUuids);
+        if (dpaUuids.size() > 0)
+            ret = DataProcessingAgreementEntity.getDPAsFromList(dpaUuids);
 
         clearLogbackMarkers();
         return Response
@@ -168,8 +170,10 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
     private Response getLinkedDsas(String dataFlowUuid) throws Exception {
 
         List<String> dsaUuids = MasterMappingEntity.getParentMappings(dataFlowUuid, MapType.DATAFLOW.getMapType(), MapType.DATASHARINGAGREEMENT.getMapType());
+        List<DataSharingAgreementEntity> ret = new ArrayList<>();
 
-        List<DataSharingAgreementEntity> ret = DataSharingAgreementEntity.getDSAsFromList(dsaUuids);
+        if (dsaUuids.size() > 0)
+            ret = DataSharingAgreementEntity.getDSAsFromList(dsaUuids);
 
         clearLogbackMarkers();
         return Response
