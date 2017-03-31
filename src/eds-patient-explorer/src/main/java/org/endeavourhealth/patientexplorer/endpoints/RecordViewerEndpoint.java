@@ -194,23 +194,27 @@ public final class RecordViewerEndpoint extends AbstractEndpoint {
 
         // Get episodes of care for each
         for(PatientSearch patientSearch : patientSearches) {
-            UIPatient patient = getPatient(
-                UUID.fromString(patientSearch.getServiceId()),
-                UUID.fromString(patientSearch.getSystemId()),
-                UUID.fromString(patientSearch.getPatientId())
-            );
+        	try {
+						UIPatient patient = getPatient(
+								UUID.fromString(patientSearch.getServiceId()),
+								UUID.fromString(patientSearch.getSystemId()),
+								UUID.fromString(patientSearch.getPatientId())
+						);
 
-            List<UIEpisodeOfCare> episodesOfCare = getClinicalResources(
-                UUID.fromString(patientSearch.getServiceId()),
-                UUID.fromString(patientSearch.getSystemId()),
-                UUID.fromString(patientSearch.getPatientId()),
-                EpisodeOfCare.class,
-                UIEpisodeOfCare.class
-            );
+						List<UIEpisodeOfCare> episodesOfCare = getClinicalResources(
+								UUID.fromString(patientSearch.getServiceId()),
+								UUID.fromString(patientSearch.getSystemId()),
+								UUID.fromString(patientSearch.getPatientId()),
+								EpisodeOfCare.class,
+								UIEpisodeOfCare.class
+						);
 
-            episodesOfCare.forEach(episode -> episode.setPatient(patient));
+						episodesOfCare.forEach(episode -> episode.setPatient(patient));
 
-            episodes.addAll(episodesOfCare);
+						episodes.addAll(episodesOfCare);
+					} catch (Exception e) {
+        		LOG.error(e.getMessage(), patientSearch.getServiceId(), patientSearch.getSystemId(), patientSearch.getPatientId());
+					}
         }
 
         return buildResponse(
