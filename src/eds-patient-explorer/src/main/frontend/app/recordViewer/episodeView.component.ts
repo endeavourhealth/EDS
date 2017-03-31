@@ -226,8 +226,10 @@ export class EpisodeViewComponent {
 	getOrgTypeValue(organisationType : String) {
 		switch (organisationType) {
 			case 'GP Surgery':
+			case 'PR':
 				return this.GP;
 			case 'Hospital' :
+			case 'TR' :
 				return this.HOSPITAL;
 			case 'Community' :
 				return this.COMMUNITY;

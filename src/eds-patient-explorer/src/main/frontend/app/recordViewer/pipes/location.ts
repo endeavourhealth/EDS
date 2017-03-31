@@ -5,8 +5,10 @@ export class LocationClass implements PipeTransform {
 	transform(locationType: string): string {
 		switch (locationType) {
 			case 'GP Surgery':
+			case 'PR':
 				return 'panel-success';
 			case 'Hospital' :
+			case 'TR' :
 				return 'panel-danger';
 			case 'Community' :
 				return 'panel-warning';
