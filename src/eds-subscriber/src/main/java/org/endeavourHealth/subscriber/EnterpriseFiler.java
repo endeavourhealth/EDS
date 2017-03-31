@@ -43,14 +43,14 @@ public class EnterpriseFiler {
     private static Map<String, HikariDataSource> connectionPools = new ConcurrentHashMap<>();
     private static Map<String, String> escapeCharacters = new ConcurrentHashMap<>();
 
-    public static void file(String base64, JsonNode config) throws Exception {
+    public static void file(UUID batchId, String base64, JsonNode config) throws Exception {
 
         byte[] bytes = Base64.getDecoder().decode(base64);
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         ZipInputStream zis = new ZipInputStream(bais);
 
         String url = config.get("url").asText();
-        LOG.trace("Filing " + bytes.length + "b into " + url);
+        LOG.trace("Filing " + bytes.length + "b from batch " + batchId + " into " + url);
 
         JsonNode columnClassMappings = null;
 
