@@ -62,7 +62,27 @@ public class PatientSearchHelper {
         if (fhirPatient != null) {
             List<PatientSearchLocalIdentifier> localIdentifiers = createOrUpdateLocalIdentifiers(serviceId, systemId, fhirPatient, entityManager);
             for (PatientSearchLocalIdentifier localIdentifier: localIdentifiers) {
-                entityManager.persist(localIdentifier);
+
+                //adding try/catch to investigate a problem that has happened once but can't be replicated
+                //entityManager.persist(localIdentifier);
+                try {
+                    entityManager.persist(localIdentifier);
+
+                } catch (Exception ex) {
+                    String msg = ex.getMessage();
+                    if (msg.indexOf("A different object with the same identifier value was already associated with the session") > -1) {
+
+                        LOG.error("Failed to persist PatientSearchLocalIdentifier for service " + localIdentifier.getServiceId()
+                                + " system " + localIdentifier.getSystemId()
+                                + " patient " + localIdentifier.getPatientId()
+                                + " ID system " + localIdentifier.getLocalIdSystem()
+                                + " ID value " + localIdentifier.getLocalId()
+                                + " date " + localIdentifier.getLastUpdated().getTime());
+
+                        LOG.error("Entity being persisted is in entity cache = " + entityManager.contains(localIdentifier));
+                    }
+                    throw ex;
+                }
             }
         }
 
