@@ -226,7 +226,7 @@ export class OrganisationManagerEditorComponent {
 
     private getParentOrganisations() {
         var vm = this;
-        vm.organisationManagerService.getParentOrganisations(vm.organisation.uuid)
+        vm.organisationManagerService.getParentOrganisations(vm.organisation.uuid, vm.organisation.isService)
             .subscribe(
                 result => vm.parentOrganisations = result,
                 error => vm.log.error('Failed to load parent organisations', error, 'Load parent organisation')

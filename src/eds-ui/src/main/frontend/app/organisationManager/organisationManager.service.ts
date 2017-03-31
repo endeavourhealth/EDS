@@ -41,9 +41,10 @@ export class OrganisationManagerService extends BaseHttp2Service  {
         return this.httpGet('api/organisationManager/childOrganisations', { search : params });
     }
 
-    getParentOrganisations(uuid : string) :  Observable<Organisation[]> {
+    getParentOrganisations(uuid : string, isService : number) :  Observable<Organisation[]> {
         let params = new URLSearchParams();
         params.set('uuid',uuid);
+        params.set('isService', isService.toString());
         return this.httpGet('api/organisationManager/parentOrganisations', { search : params });
     }
 

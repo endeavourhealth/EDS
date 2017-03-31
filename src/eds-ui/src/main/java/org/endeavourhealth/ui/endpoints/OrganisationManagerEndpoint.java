@@ -172,13 +172,18 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/parentOrganisations")
-    public Response getParentOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+    public Response getParentOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("isService") String isService) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Parent Organisations(s)",
                 "Organisation Id", uuid);
 
-        return getParentOrganisations(uuid);
+        Short orgType = MapType.ORGANISATION.getMapType();
+        if (isService.equals("1"))
+            orgType = MapType.SERVICE.getMapType();
+
+
+        return getParentOrganisations(uuid, orgType);
     }
 
     @GET
@@ -467,9 +472,9 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private Response getParentOrganisations(String organisationUuid) throws Exception {
+    private Response getParentOrganisations(String organisationUuid, Short orgType) throws Exception {
 
-        List<String> organisationUuids = MasterMappingEntity.getParentMappings(organisationUuid, MapType.ORGANISATION.getMapType(), MapType.ORGANISATION.getMapType());
+        List<String> organisationUuids = MasterMappingEntity.getParentMappings(organisationUuid, orgType, MapType.ORGANISATION.getMapType());
         List<OrganisationEntity> ret = new ArrayList<>();
 
         if (organisationUuids.size() > 0)
