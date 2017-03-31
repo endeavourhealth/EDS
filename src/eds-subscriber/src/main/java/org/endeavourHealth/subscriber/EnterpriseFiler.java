@@ -205,6 +205,8 @@ public class EnterpriseFiler {
         List<CSVRecord> batch = new ArrayList<>();
         for (CSVRecord record: upserts) {
             batch.add(record);
+
+            //in testing, batches of 20000 seemed best, although there wasn't much difference between batches of 5000 up to 100000
             if (batch.size() >= 20000) {
                 fileUpserts(batch, columns, columnClasses, tableName, connection, keywordEscapeChar);
                 batch = new ArrayList<>();

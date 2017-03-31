@@ -1,24 +1,19 @@
 package org.endeavourhealth.queuereader;
 
-import com.google.common.base.Strings;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
-import net.gpedro.integrations.slack.SlackApi;
-import net.gpedro.integrations.slack.SlackException;
-import net.gpedro.integrations.slack.SlackMessage;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.data.admin.models.QueuedMessage;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.pipeline.PipelineProcessor;
+import org.endeavourhealth.core.messaging.slack.SlackHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -76,46 +71,19 @@ public class RabbitConsumer extends DefaultConsumer {
 	}
 
 	private void sendSlackAlert(Exchange exchange) {
-		String slackUrl = configuration.getRejectionSlackAlertUrl();
-		if (Strings.isNullOrEmpty(slackUrl)) {
-			LOG.error("No Slack URL set in config XML for alerting of rejections");
-			return;
-		}
 
 		String queueName = configuration.getQueue();
+		UUID exchangeId = exchange.getExchangeId();
 
 		//it'll just keep failing the same exchange repeatedly, so only send the alert the first time
-		UUID exchangeId = exchange.getExchangeId();
 		if (lastExchangeRejected != null
 			&& lastExchangeRejected.equals(exchangeId)) {
 			return;
 		}
-
 		lastExchangeRejected = exchangeId;
 
 		String s = "Exchange " + exchangeId + " rejected in " + queueName;
 
-		if (exchange.getException() != null) {
-
-			StringWriter sw = new StringWriter();
-			PrintWriter pw = new PrintWriter(sw);
-			Throwable exception = exchange.getException();
-			exception.printStackTrace(pw);
-			String exceptionStr = sw.toString();
-
-			s += "\n```";
-			s += exceptionStr;
-			s += "```";
-		}
-
-		SlackMessage message = new SlackMessage(s);
-
-		try {
-			SlackApi slackApi = new SlackApi(slackUrl);
-			slackApi.call(message);
-
-		} catch (SlackException ex) {
-			LOG.error("Error sending Slack notification to " + slackUrl, ex);
-		}
+		SlackHelper.sendSlackMessage(s, exchange.getException());
 	}
 }

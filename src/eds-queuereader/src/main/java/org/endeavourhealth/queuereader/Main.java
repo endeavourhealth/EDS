@@ -19,6 +19,7 @@ import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
+import org.endeavourhealth.core.messaging.slack.SlackHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
@@ -59,49 +60,6 @@ public class Main {
 			fixConfidentialPatients(args[1]);
 		}
 
-		/*if (args.length == 1
-				&& args[0].equalsIgnoreCase("ConvertPatientSearch")) {
-			convertPatientSearch();
-		}*/
-
-		//hack to get the Enterprise data streaming
-		/*try {
-			if (args.length >= 2) {
-				UUID serviceUuid = UUID.fromString(args[0]);
-				String configName = args[1];
-				UUID exchangeUuid = null;
-				UUID batchUuid = null;
-
-				if (args.length >= 3) {
-					exchangeUuid = UUID.fromString(args[2]);
-
-					if (args.length >= 4) {
-						batchUuid = UUID.fromString(args[3]);
-					}
-				}
-
-				startEnterpriseStream(serviceUuid, configName, exchangeUuid, batchUuid);
-			}
-		} catch (IllegalArgumentException iae) {
-			//fine, just let it continue to below
-		} catch (Exception ex) {
-			LOG.error("", ex);
-			return;
-		}*/
-
-		/*if (args.length >= 3
-				&& args[0].equals("FixProblems")) {
-
-			UUID serviceId = UUID.fromString(args[1]);
-			String sharedStoragePath = args[2];
-			boolean testMode = true;
-			if (args.length > 3) {
-				testMode = Boolean.parseBoolean(args[3]);
-			}
-
-			fixProblems(serviceId, sharedStoragePath, testMode);
-			return;
-		}*/
 
 		if (args.length != 1) {
 			LOG.error("Usage: queuereader config_id");
@@ -117,6 +75,7 @@ public class Main {
 		LOG.info("Fetching queuereader configuration");
 		String configXml = ConfigManager.getConfiguration(configId);
 		QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
+		SlackHelper.setSlackUrl(configuration.getRejectionSlackAlertUrl());
 
 		// Instantiate rabbit handler
 		LOG.info("Creating EDS queue reader");
