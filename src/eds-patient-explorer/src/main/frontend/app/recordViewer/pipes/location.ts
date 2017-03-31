@@ -23,8 +23,10 @@ export class LocationIcon implements PipeTransform {
 			case '':
 				return 'fa-fw';
 			case 'GP Surgery':
+			case 'PR':
 				return 'fa-user-md';
 			case 'Hospital' :
+			case 'TR' :
 				return 'fa-hospital-o';
 			case 'Community' :
 				return 'fa-medkit';
