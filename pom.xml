@@ -60,7 +60,6 @@
         <module>src/cassandra</module>
         <module>src/eds-messaging-api</module>
         <module>src/eds-messaging-core</module>
-        <module>src/eds-patient-ui</module>
         <module>src/eds-patient-explorer</module>
         <module>src/eds-queuereader</module>
         <module>src/eds-subscriber</module>
