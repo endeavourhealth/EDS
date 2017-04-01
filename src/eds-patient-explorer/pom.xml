@@ -261,6 +261,13 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>npm set no progress</id>
+                        <goals><goal>npm</goal></goals>
+                        <configuration>
+                            <arguments>set progress=false</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>npm install</id>
                         <goals><goal>npm</goal></goals>
                     </execution>
