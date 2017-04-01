@@ -107,37 +107,7 @@ public class EnterpriseIdHelper {
                 entityManager.getTransaction().begin();
                 entityManager.persist(mapping);
                 entityManager.getTransaction().commit();
-
-            } else {
-
-                mapping = new EnterpriseOrganisationIdMap();
-                mapping.setOdsCode(odsCode);
-                mapping.setEnterpriseId(enterpriseId);
-
-                try {
-                    entityManager.getTransaction().begin();
-                    entityManager.persist(mapping);
-                    entityManager.getTransaction().commit();
-
-                } catch (Exception ex) {
-                    entityManager.getTransaction().rollback();
-
-                    //if we had an exception saving the new record, it'll be because another thread has
-                    //just saved a record with the same key, so simply re-retrieve and update it
-                    mapping = findEnterpriseOrganisationMapping(odsCode, entityManager);
-                    if (mapping == null) {
-                        throw ex;
-
-                    } else {
-                        mapping.setEnterpriseId(enterpriseId);
-
-                        entityManager.getTransaction().begin();
-                        entityManager.persist(mapping);
-                        entityManager.getTransaction().commit();
-                    }
-                }
             }
-
         } finally {
             entityManager.close();
         }
