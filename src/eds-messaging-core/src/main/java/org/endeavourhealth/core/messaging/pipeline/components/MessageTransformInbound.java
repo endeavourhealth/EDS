@@ -122,7 +122,9 @@ public class MessageTransformInbound extends PipelineComponent {
 
 			//send an alert if we've had an error while trying to process an exchange
 			if (currentErrors.getError().size() > 0) {
-				sendSlackAlert(exchange, software, currentErrors);
+				//sendSlackAlert(exchange, software, currentErrors);
+
+                throw new Exception("Failing transform");
 			}
 
 		} else {
