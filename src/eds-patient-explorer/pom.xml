@@ -257,7 +257,6 @@
                         <goals><goal>install-node-and-npm</goal></goals>
                         <configuration>
                             <nodeVersion>${node.version}</nodeVersion>
-                            <npmVersion>${npm.version}</npmVersion>
                         </configuration>
                     </execution>
                     <execution>
