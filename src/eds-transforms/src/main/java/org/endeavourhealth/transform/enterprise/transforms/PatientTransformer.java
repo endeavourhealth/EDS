@@ -117,10 +117,12 @@ public class PatientTransformer extends AbstractTransformer {
 
             if (fhirPatient.hasAddress()) {
                 for (Address address: fhirPatient.getAddress()) {
-                    if (address.getUse().equals(Address.AddressUse.HOME)) {
+                    if (address.getUse() != null //got Homerton data will null address use
+                            && address.getUse().equals(Address.AddressUse.HOME)) {
                         postcode = address.getPostalCode();
                         postcodePrefix = findPostcodePrefix(postcode);
                         householdId = HouseholdHelper.findOrCreateHouseholdId(address);
+                        break;
                     }
                 }
             }
@@ -134,7 +136,6 @@ public class PatientTransformer extends AbstractTransformer {
                     townsendScore = postcodeReference.getTownsendScore();
                 }
             }
-
 
             if (model.isPseduonymised()) {
 
