@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
 public class ExchangeAuditEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(ExchangeAuditEndpoint .class);
 
-    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Organisation);
+    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.ExchangeAudit);
     private static final AuditRepository auditRepository = new AuditRepository();
     private static final ServiceRepository serviceRepository = new ServiceRepository();
     private static final LibraryRepository libraryRepository = new LibraryRepository();
@@ -233,6 +233,15 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "Service ID", request.getServiceId(),
                 "Exchange Name", request.getExchangeName(),
                 "Post All", request.isPostAllExchanges());
+
+        /*LOG.info("-----posting to exchange");
+        Throwable t = new RuntimeException();
+        t.fillInStackTrace();
+        t.printStackTrace();
+        for (int i=0; i<20; i++) {
+            Thread.sleep(1000 * 60);
+            LOG.info("Sleeping " + i);
+        }*/
 
         UUID selectedExchangeId = request.getExchangeId();
         UUID serviceId = request.getServiceId();

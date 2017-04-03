@@ -145,7 +145,11 @@ public class PatientTransformer extends AbstractTransformer {
                 }
 
                 pseudoId = pseudonomise(fhirPatient);
-                PseudoIdHelper.storePseudoId(fhirPatient.getId(), pseudoId);
+
+                //only persist the pseudo ID if it's non-null
+                if (!Strings.isNullOrEmpty(pseudoId)) {
+                    PseudoIdHelper.storePseudoId(fhirPatient.getId(), pseudoId);
+                }
 
                 Integer[] ageValues = EnterpriseAgeUpdater.calculateAgeValues(id, dateOfBirth, configName);
                 ageYears = ageValues[EnterpriseAgeUpdater.UNIT_YEARS];

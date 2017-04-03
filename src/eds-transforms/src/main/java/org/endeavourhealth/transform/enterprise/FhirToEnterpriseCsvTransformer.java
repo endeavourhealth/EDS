@@ -94,7 +94,7 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
     private static OutputContainer tranformResources(List<ResourceByExchangeBatch> resources, String orgNationalId, 
                                                      boolean pseudonymised, String configName) throws Exception {
 
-        //hash the resources by eference to them, so the transforms can quickly look up dependant resources
+        //hash the resources by reference to them, so the transforms can quickly look up dependant resources
         Map<String, ResourceByExchangeBatch> resourcesMap = hashResourcesByReference(resources);
 
         OutputContainer data = new OutputContainer(pseudonymised);
@@ -124,6 +124,9 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         String discoveryPatientId = findPatientId(resources);
         if (!Strings.isNullOrEmpty(discoveryPatientId)) {
             enterprisePatientId = AbstractTransformer.findEnterpriseId(data.getPatients(), ResourceType.Patient.toString(), discoveryPatientId);
+            if (enterprisePatientId == null) {
+                throw new TransformException("No enterprise patient ID found for discovery patient " + discoveryPatientId);
+            }
 
             String discoveryPersonId = PatientLinkHelper.getPersonId(discoveryPatientId);
 
