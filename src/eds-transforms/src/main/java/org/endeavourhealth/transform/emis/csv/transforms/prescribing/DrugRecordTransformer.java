@@ -37,7 +37,7 @@ public class DrugRecordTransformer {
     }
 
 
-    private static void createResource(DrugRecord parser,
+    public static void createResource(DrugRecord parser,
                                        FhirResourceFiler fhirResourceFiler,
                                        EmisCsvHelper csvHelper,
                                        String version) throws Exception {

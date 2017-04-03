@@ -35,7 +35,7 @@ public class IssueRecordTransformer {
     }
 
 
-    private static void createResource(IssueRecord parser,
+    public static void createResource(IssueRecord parser,
                                        FhirResourceFiler fhirResourceFiler,
                                        EmisCsvHelper csvHelper,
                                        String version) throws Exception {

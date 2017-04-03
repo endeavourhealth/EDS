@@ -38,7 +38,7 @@ public class DiaryTransformer {
     }
 
 
-    private static void createResource(Diary parser,
+    public static void createResource(Diary parser,
                                        FhirResourceFiler fhirResourceFiler,
                                        EmisCsvHelper csvHelper,
                                        String version) throws Exception {
