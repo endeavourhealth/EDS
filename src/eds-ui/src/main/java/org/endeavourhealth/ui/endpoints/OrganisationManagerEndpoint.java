@@ -1,8 +1,10 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
@@ -429,9 +431,11 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     }
 
     private void getGeolocation(JsonAddress address) throws Exception {
-        String url = "https://maps.googleapis.com/maps/api/geocode/json?address=";
-        String apiKey = "AIzaSyBuLpebNb3ZNXFYpya0s5_ZXBXhMNjENik";
         Client client = ClientBuilder.newClient();
+
+        JsonNode json = ConfigManager.getConfigurationAsJson("GoogleMapsAPI");
+        String url = json.get("url").asText();
+        String apiKey = json.get("apiKey").asText();
 
         WebTarget resource = client.target(url + address.getPostcode().replace(" ", "+") + "&key=" + apiKey);
 
