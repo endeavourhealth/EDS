@@ -30,8 +30,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Path("/usermanager")
 public final class UserManagerEndpoint extends AbstractEndpoint {
@@ -80,7 +79,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 		return roleMapping;
 	}
 
-	public List<RoleRepresentation> keycloakGetRoleComposites(String roleName){
+	private List<RoleRepresentation> keycloakGetRoleComposites(String roleName){
 		if(!initKeycloakAdmin) {
 			initKeycloakAdminClient();
 		}
@@ -103,7 +102,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 		return roleComposites;
 	}
 
-	public List<RoleRepresentation> keycloakGetAvailableRealmRoles(String userId){
+	private List<RoleRepresentation> keycloakGetAvailableRealmRoles(String userId){
 		if(!initKeycloakAdmin) {
 			initKeycloakAdminClient();
 		}
@@ -133,7 +132,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 		return userAvailableRoles;
 	}
 
-	public List<ClientRepresentation> keycloakGetRealmClients() {
+	private List<ClientRepresentation> keycloakGetRealmClients() {
 		if (!initKeycloakAdmin) {
 			initKeycloakAdminClient();
 		}
@@ -157,7 +156,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 		return realmClients;
 	}
 
-	public List<RoleRepresentation> keycloakGetClientRoles(String clientId) {
+	private List<RoleRepresentation> keycloakGetClientRoles(String clientId) {
 		if (!initKeycloakAdmin) {
 			initKeycloakAdminClient();
 		}
@@ -181,7 +180,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 		return clientRoles;
 	}
 
-	public List<RoleRepresentation> removeSystemRoles (List<RoleRepresentation> rolesIn) {
+	private List<RoleRepresentation> removeSystemRoles (List<RoleRepresentation> rolesIn) {
 		//Remove $system roles and the eds_user role (default for all users to enable API calls for logged in user)
 
 		List<RoleRepresentation> rolesOut = new ArrayList<>();;
@@ -195,7 +194,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 		return rolesOut;
 	}
 
-	public List<ClientRepresentation> removeSystemClients (List<ClientRepresentation> clientsIn) {
+	private List<ClientRepresentation> removeSystemClients (List<ClientRepresentation> clientsIn) {
 		//Remove $system clients
 
 		List<ClientRepresentation> clientsOut = new ArrayList<>();;
@@ -350,7 +349,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 				.build();
 	}
 
-	public List<RoleRepresentation> getUserRealmRoles(String userId) {
+	private List<RoleRepresentation> getUserRealmRoles(String userId) {
 		//Firstly, get the mapping representation for the user
 		MappingsRepresentation userRoleMap = new MappingsRepresentation();
 		userRoleMap = keycloakGetUserRoleMappings(userId);
@@ -359,7 +358,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 		return removeSystemRoles(userRoleMap.getRealmMappings());
 	}
 
-	public List<JsonEndUserRole> JsonGetUserRoles(String userId) {
+	private List<JsonEndUserRole> JsonGetUserRoles(String userId) {
 		//Get all available roles (Realm or for the user), removing the system roles
 		List<RoleRepresentation> availableRealmRoles = getUserRealmRoles(userId);
 
@@ -455,9 +454,13 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 		userRep.setFirstName(user.getForename());
 		userRep.setEmail(user.getEmail());
 
-		//Set the user attributes such as mobile and photo
+		//Set the user attributes such as mobile and photo and v1 organisation-id
 		userRep.singleAttribute("Mobile", user.getMobile());
 		userRep.singleAttribute("Photo", user.getPhoto());
+		//Preserve v1 organisation-id as the keycloak API has a bug which deletes all attributes
+		if (user.getDefaultOrgId().trim()!="") {
+			userRep.singleAttribute("organisation-id", user.getDefaultOrgId());
+		}
 
 		//setting TOTP to true means the user needs to reconfigure TOTP on login
 //		if (user.getTOTP().equalsIgnoreCase("yes")) {

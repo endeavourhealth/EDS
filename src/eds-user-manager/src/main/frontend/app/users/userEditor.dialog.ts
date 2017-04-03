@@ -57,6 +57,7 @@ export class UserEditorDialog {
 				email: '',
 				mobile: '',
 				photo: '',
+				defaultOrgId: '',
 				totp: 'no',
 				userRoles: []
 			} as User;
@@ -73,6 +74,7 @@ export class UserEditorDialog {
 				email: this.resultData.email,
 				mobile: this.resultData.mobile,
 				photo: this.resultData.photo == null ? '': this.resultData.photo,
+				defaultOrgId: this.resultData.defaultOrgId == null ? '': this.resultData.defaultOrgId,
 				totp: 'no',
 				userRoles: this.resultData.userRoles
 			} as User;
