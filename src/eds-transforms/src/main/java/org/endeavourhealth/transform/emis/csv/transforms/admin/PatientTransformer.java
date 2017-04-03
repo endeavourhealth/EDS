@@ -45,7 +45,7 @@ public class PatientTransformer {
     }
 
 
-    private static void createResource(Patient parser,
+    public static void createResource(Patient parser,
                                       FhirResourceFiler fhirResourceFiler,
                                       EmisCsvHelper csvHelper,
                                        String version) throws Exception {

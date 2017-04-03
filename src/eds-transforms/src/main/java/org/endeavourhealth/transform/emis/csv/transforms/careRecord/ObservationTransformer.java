@@ -41,9 +41,9 @@ public class ObservationTransformer {
                 Observation observationParser = (Observation)parser;
 
                 if (observationParser.getDeleted()) {
-                    deleteResource(version, observationParser, fhirResourceFiler, csvHelper);
+                    deleteResource(observationParser, fhirResourceFiler, csvHelper, version);
                 } else {
-                    createResource(version, observationParser, fhirResourceFiler, csvHelper);
+                    createResource(observationParser, fhirResourceFiler, csvHelper, version);
                 }
             } catch (Exception ex) {
                 fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
@@ -51,10 +51,10 @@ public class ObservationTransformer {
         }
     }
 
-    private static void deleteResource(String version,
-                                       Observation parser,
+    private static void deleteResource(Observation parser,
                                        FhirResourceFiler fhirResourceFiler,
-                                       EmisCsvHelper csvHelper) throws Exception {
+                                       EmisCsvHelper csvHelper,
+                                       String version) throws Exception {
 
         ResourceType resourceType = findOriginalTargetResourceType(fhirResourceFiler, csvHelper, parser);
         if (resourceType != null) {
@@ -140,10 +140,10 @@ public class ObservationTransformer {
     }
     
 
-    private static void createResource(String version,
-                                       Observation parser,
+    public static void createResource(Observation parser,
                                        FhirResourceFiler fhirResourceFiler,
-                                       EmisCsvHelper csvHelper) throws Exception {
+                                       EmisCsvHelper csvHelper,
+                                       String version) throws Exception {
 
         //the code ID should NEVER be null, but the test data has nulls, so adding this to handle those rows gracefully
         if ((version.equalsIgnoreCase(EmisCsvToFhirTransformer.VERSION_5_0)
