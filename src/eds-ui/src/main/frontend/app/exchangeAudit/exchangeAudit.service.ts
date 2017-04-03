@@ -102,5 +102,11 @@ export class ExchangeAuditService extends BaseHttp2Service {
         return this.httpGet('api/exchangeAudit/getTransformErrorLines', { search : params});
     }
 
-
+    postTest(serviceId: string):Observable<any> {
+        var request = {
+            'serviceId': serviceId
+        };
+        console.log("Post test in service class");
+        return this.httpPost('api/exchangeAudit/postTest', request);
+    }
 }
