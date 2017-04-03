@@ -9,26 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@NamedStoredProcedureQueries({
-        @NamedStoredProcedureQuery(
-                name = "getParentRegionsFromMappings",
-                procedureName = "getParentRegionsFromMappings",
-                parameters = {
-                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "Child"),
-                        @StoredProcedureParameter(mode = ParameterMode.IN, type = Short.class, name = "MappingType")
-                }
-        ),
-        @NamedStoredProcedureQuery(
-                name = "getChildRegionsFromMappings",
-                procedureName = "getChildRegionsFromMappings",
-                parameters = {
-                        @StoredProcedureParameter(mode = ParameterMode.IN, type = String.class, name = "Parent"),
-                        @StoredProcedureParameter(mode = ParameterMode.IN, type = Short.class, name = "MappingType")
-                }
-        )
-})
-
-@Table(name = "region", schema = "organisationmanager")
+@Table(name = "Region", schema = "OrganisationManager")
 public class RegionEntity {
     private int id;
     private String name;
@@ -36,36 +17,46 @@ public class RegionEntity {
     private String uuid;
 
     public static List<RegionEntity> getAllRegions() throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<RegionEntity> cq = cb.createQuery(RegionEntity.class);
         Root<RegionEntity> rootEntry = cq.from(RegionEntity.class);
         CriteriaQuery<RegionEntity> all = cq.select(rootEntry);
         TypedQuery<RegionEntity> allQuery = entityManager.createQuery(all);
-        return allQuery.getResultList();
+        List<RegionEntity> ret = allQuery.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static RegionEntity getSingleRegion(String uuid) throws Exception {
 
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
-        return entityManager.find(RegionEntity.class, uuid);
+        RegionEntity ret = entityManager.find(RegionEntity.class, uuid);
+
+        entityManager.close();
+
+        return ret;
 
     }
 
     public static void updateRegion(JsonRegion region) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         RegionEntity re = entityManager.find(RegionEntity.class, region.getUuid());
         entityManager.getTransaction().begin();
         re.setDescription(region.getDescription());
         re.setName(region.getName());
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void saveRegion(JsonRegion region) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         RegionEntity re = new RegionEntity();
         entityManager.getTransaction().begin();
@@ -75,20 +66,41 @@ public class RegionEntity {
         entityManager.persist(re);
         entityManager.getTransaction().commit();
 
-
+        entityManager.close();
     }
 
     public static void deleteRegion(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         RegionEntity re = entityManager.find(RegionEntity.class, uuid);
         entityManager.getTransaction().begin();
         entityManager.remove(re);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
+    }
+
+    public static List<RegionEntity> getRegionsFromList(List<String> regions) throws Exception {
+        EntityManager entityManager = PersistenceManager.getEntityManager();
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<RegionEntity> cq = cb.createQuery(RegionEntity.class);
+        Root<RegionEntity> rootEntry = cq.from(RegionEntity.class);
+
+        Predicate predicate = rootEntry.get("uuid").in(regions);
+
+        cq.where(predicate);
+        TypedQuery<RegionEntity> query = entityManager.createQuery(cq);
+
+        List<RegionEntity> ret = query.getResultList();
+
+        entityManager.close();
+
+        return ret;
     }
 
     public static List<RegionEntity> search(String expression) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<RegionEntity> cq = cb.createQuery(RegionEntity.class);
@@ -99,76 +111,11 @@ public class RegionEntity {
 
         cq.where(predicate);
         TypedQuery<RegionEntity> query = entityManager.createQuery(cq);
-        return query.getResultList();
-    }
+        List<RegionEntity> ret = query.getResultList();
 
-    public static List<Object[]> getRegionsForOrganisation(String organisationUuid) throws Exception {
-
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getRegionsForOrganisation");
-        spq.setParameter("UUID", organisationUuid);
-        spq.execute();
-        List<Object[]> ent = spq.getResultList();
         entityManager.close();
 
-        return ent;
-    }
-
-    public static List<Object[]> getParentRegionsFromMappings(String Uuid) throws Exception {
-
-        short type = 1;
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getParentRegionsFromMappings");
-        spq.setParameter("Child", Uuid);
-        spq.setParameter("MappingType", type);
-        spq.execute();
-        List<Object[]> ent = spq.getResultList();
-        entityManager.close();
-
-        return ent;
-    }
-
-    public static List<Object[]> getChildRegionsFromMappings(String Uuid) throws Exception {
-
-        short type = 1;
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getChildRegionsFromMappings");
-        spq.setParameter("Parent", Uuid);
-        spq.setParameter("MappingType", type);
-        spq.execute();
-        List<Object[]> ent = spq.getResultList();
-        entityManager.close();
-
-        return ent;
-    }
-
-    public static List<Object[]> getSupraParentRegions(String organisationUuid) throws Exception {
-
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getSupraParentRegions");
-        spq.setParameter("UUID", organisationUuid);
-        spq.execute();
-        List<Object[]> ent = spq.getResultList();
-        entityManager.close();
-
-        return ent;
-    }
-
-    public static List<Object[]> getSupraChildRegions(String organisationUuid) throws Exception {
-
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
-
-        StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getSupraChildRegions");
-        spq.setParameter("UUID", organisationUuid);
-        spq.execute();
-        List<Object[]> ent = spq.getResultList();
-        entityManager.close();
-
-        return ent;
+        return ret;
     }
 
     @Basic
@@ -216,7 +163,7 @@ public class RegionEntity {
     }
 
     @Id
-    @Column(name = "Uuid", nullable = false, length = 36)
+    @Column(name = "uuid", nullable = false, length = 36)
     public String getUuid() {
         return uuid;
     }

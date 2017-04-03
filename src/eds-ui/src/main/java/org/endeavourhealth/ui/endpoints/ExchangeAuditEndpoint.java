@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
 public class ExchangeAuditEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(ExchangeAuditEndpoint .class);
 
-    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Organisation);
+    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.ExchangeAudit);
     private static final AuditRepository auditRepository = new AuditRepository();
     private static final ServiceRepository serviceRepository = new ServiceRepository();
     private static final LibraryRepository libraryRepository = new LibraryRepository();
@@ -233,6 +233,15 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "Service ID", request.getServiceId(),
                 "Exchange Name", request.getExchangeName(),
                 "Post All", request.isPostAllExchanges());
+
+        /*LOG.info("-----posting to exchange");
+        Throwable t = new RuntimeException();
+        t.fillInStackTrace();
+        t.printStackTrace();
+        for (int i=0; i<20; i++) {
+            Thread.sleep(1000 * 60);
+            LOG.info("Sleeping " + i);
+        }*/
 
         UUID selectedExchangeId = request.getExchangeId();
         UUID serviceId = request.getServiceId();
@@ -778,6 +787,34 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .entity(lines)
+                .build();
+    }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/postTest")
+    @RequiresAdmin
+    public Response postTest(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save, "Testing Post Rerequesting");
+
+        LOG.info("-----posting to exchange for service " + request.getServiceId());
+        Throwable t = new RuntimeException();
+        t.fillInStackTrace();
+        LOG.error("", t);
+
+        for (int i=0; i<20; i++) {
+            LOG.info("Sleeping " + i);
+            Thread.sleep(1000 * 60);
+        }
+        LOG.info("Done");
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
                 .build();
     }
 }

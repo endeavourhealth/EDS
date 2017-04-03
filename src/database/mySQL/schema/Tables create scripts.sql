@@ -31,18 +31,6 @@ create table OrganisationManager.Organisation (
     index (name asc, ods_code asc)
 );
 
-
-/*
-alter table OrganisationManager.Organisation add column BulkConflictedWith char(36) null;
-
-alter table OrganisationManager.Organisation add column BulkItemUpdated boolean null;
-update OrganisationManager.Organisation set BulkItemUpdated = 0;
-alter table OrganisationManager.Organisation modify BulkItemUpdated boolean not null;
-*/
-
-alter table OrganisationManager.Organisation
-modify date_of_registration date null;
-
 drop table if exists OrganisationManager.Address;
 
 create table OrganisationManager.Address (
@@ -54,10 +42,11 @@ create table OrganisationManager.Address (
     City varchar(100) null,
     County varchar(100) null,
     Postcode varchar(100) null,
-    Geolocation varchar(100) null,
+    lat float(10,6) null,
+    lng float(10,6) null,
     GeolocationReprocess tinyint(1),        
     
-    foreign key (OrganisationUuid) references OrganisationManager.organisation(uuid) on delete cascade
+    foreign key (OrganisationUuid) references OrganisationManager.Organisation(uuid) on delete cascade
 );
 
 drop table if exists OrganisationManager.FlowDirection;
@@ -241,6 +230,8 @@ create table OrganisationManager.DataSharingSummary (
     foreign key (ReviewCycleId) references OrganisationManager.ReviewCycle(id)
 );
 
+drop table if exists OrganisationManager.MapType;
+
 create table OrganisationManager.MapType (
 	id smallint not null primary key,
     MapType varchar(100) not null    
@@ -250,12 +241,14 @@ drop table if exists OrganisationManager.MasterMapping;
 
 create table OrganisationManager.MasterMapping (
 	ChildUuid char(36) not null,
+    ChildMapTypeId smallint not null,
     ParentUUid char(36) not null,
-    MapTypeId smallint not null,
+    ParentMapTypeId smallint not null,
     IsDefault boolean not null,
     
-    foreign key (MapTypeId) references OrganisationManager.MapType(id),
-    primary key (ChildUuid, ParentUUid, MapTypeId)
+    foreign key (ChildMapTypeId) references OrganisationManager.MapType(id),
+    foreign key (ParentMapTypeId) references OrganisationManager.MapType(id),
+    primary key (ChildUuid, ChildMapTypeId, ParentUUid, ParentMapTypeId)
 );
 
 

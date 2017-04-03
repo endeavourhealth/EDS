@@ -64,7 +64,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 
 		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
 			JsonNode config = ConfigManager.getConfigurationAsJson(endpoint, "enterprise");
-			EnterpriseFiler.file(payload, config);
+			EnterpriseFiler.file(batchId, payload, config);
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
 			sendHttpPost(payload, endpoint);

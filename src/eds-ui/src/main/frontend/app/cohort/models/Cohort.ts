@@ -5,4 +5,5 @@ export class Cohort {
     patientCohortInclusionConsentModel: string;
     QueryDefinition: string;
     RemovalPolicy: string;
+    dpas : { [key:string]:string; };
 }

@@ -12,8 +12,11 @@ import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.messaging.slack.SlackHelper;
 import org.endeavourhealth.core.xml.TransformErrorSerializer;
 import org.endeavourhealth.core.xml.TransformErrorUtility;
+import org.endeavourhealth.core.xml.transformError.Error;
+import org.endeavourhealth.core.xml.transformError.ExceptionLine;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.FhirDeltaResourceFilter;
 import org.endeavourhealth.transform.common.MessageFormat;
@@ -117,6 +120,12 @@ public class MessageTransformInbound extends PipelineComponent {
 				TransformErrorUtility.addTransformError(currentErrors, ex, args);
 			}
 
+			//send an alert if we've had an error while trying to process an exchange
+			if (currentErrors.getError().size() > 0) {
+				//sendSlackAlert(exchange, software, currentErrors);
+
+                throw new Exception("Failing transform");
+			}
 
 		} else {
 			LOG.info("NOT performing transform for Exchange {} because previous Exchange went into error", exchange.getExchangeId());
@@ -135,6 +144,46 @@ public class MessageTransformInbound extends PipelineComponent {
 		createTransformAudit(serviceId, systemId, exchange.getExchangeId(), transformStarted, currentErrors, batchIds);
 
 		return batchIds;
+	}
+
+	private void sendSlackAlert(Exchange exchange, String software, TransformError currentErrors) {
+
+		int countErrors = currentErrors.getError().size();
+
+		String message = "Error ";
+		if (countErrors > 1) {
+			message += "1 of " + countErrors + " ";
+		}
+		message += "in inbound transform from " + software + " for exchange " + exchange.getExchangeId() + "\n";
+		message += "view the full error details on the Transform Errors page of EDS-UI";
+
+		Error error = currentErrors.getError().get(0);
+		List<String> lines = new ArrayList<>();
+
+		org.endeavourhealth.core.xml.transformError.Exception exception = error.getException();
+		while (exception != null) {
+
+			if (exception.getMessage() != null) {
+				lines.add(exception.getMessage());
+			}
+
+			for (ExceptionLine line : exception.getLine()) {
+				String cls = line.getClazz();
+				String method = line.getMethod();
+				Integer lineNumber = line.getLine();
+
+				lines.add("\u00a0\u00a0\u00a0\u00a0at " + cls + "." + method + ":" + lineNumber);
+			}
+
+			exception = exception.getCause();
+			if (exception != null) {
+				lines.add("Caused by:");
+			}
+		}
+
+		String attachment = String.join("\n", lines);
+
+		SlackHelper.sendSlackMessage(message, attachment);
 	}
 
 	/**

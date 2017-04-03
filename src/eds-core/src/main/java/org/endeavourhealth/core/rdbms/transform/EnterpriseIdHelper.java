@@ -98,7 +98,26 @@ public class EnterpriseIdHelper {
     public static void saveEnterpriseOrganisationId(String odsCode, Long enterpriseId) throws Exception {
 
         EntityManager entityManager = TransformConnection.getEntityManager();
+
+        try {
+            EnterpriseOrganisationIdMap mapping = findEnterpriseOrganisationMapping(odsCode, entityManager);
+            if (mapping != null) {
+                mapping.setEnterpriseId(enterpriseId);
+
+                entityManager.getTransaction().begin();
+                entityManager.persist(mapping);
+                entityManager.getTransaction().commit();
+            }
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    /*public static void saveEnterpriseOrganisationId(String odsCode, Long enterpriseId) throws Exception {
+
+        EntityManager entityManager = TransformConnection.getEntityManager();
         EnterpriseOrganisationIdMap mapping = findEnterpriseOrganisationMapping(odsCode, entityManager);
+
         if (mapping == null) {
             mapping = new EnterpriseOrganisationIdMap();
             mapping.setOdsCode(odsCode);
@@ -109,8 +128,9 @@ public class EnterpriseIdHelper {
         entityManager.getTransaction().begin();
         entityManager.persist(mapping);
         entityManager.getTransaction().commit();
+
         entityManager.close();
-    }
+    }*/
 
     private static EnterpriseOrganisationIdMap findEnterpriseOrganisationMapping(String odsCode,  EntityManager entityManager) throws Exception {
 

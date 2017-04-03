@@ -65,7 +65,7 @@ public class EnterpriseAgeUpdater {
                 //method to calculate the number of days
                 long millis = new Date().getTime() - map.getDateOfBirth().getTime();
                 int days = (int)TimeUnit.DAYS.convert(millis, TimeUnit.MILLISECONDS);
-                ret[UNIT_WEEKS] = new Integer(days);
+                ret[UNIT_WEEKS] = new Integer(days / 7);
                 //ret[UNIT_WEEKS] = new Integer(period.getDays() / 7);
             }
         }
@@ -186,6 +186,23 @@ public class EnterpriseAgeUpdater {
             if (day == 29
                     && month == Month.FEBRUARY.getValue()) {
                 return createSafeLocalDate(year, Month.MARCH.getValue(), 1);
+
+            } else if (day == 31
+                        && month == Month.APRIL.getValue()) {
+                return createSafeLocalDate(year, Month.MAY.getValue(), 1);
+
+            } else if (day == 31
+                    && month == Month.JUNE.getValue()) {
+                return createSafeLocalDate(year, Month.JULY.getValue(), 1);
+
+            } else if (day == 31
+                    && month == Month.SEPTEMBER.getValue()) {
+                return createSafeLocalDate(year, Month.OCTOBER.getValue(), 1);
+
+            } else if (day == 31
+                    && month == Month.NOVEMBER.getValue()) {
+                return createSafeLocalDate(year, Month.DECEMBER.getValue(), 1);
+
             } else {
                 throw ex;
             }

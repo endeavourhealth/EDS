@@ -1,22 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <persistence xmlns="http://java.sun.com/xml/ns/persistence" version="2.0">
 
-    <persistence-unit name="newPersistenceUnit">
+    <persistence-unit name="OrganisationManager">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <class>org.endeavourhealth.core.mySQLDatabase.models.RegionEntity</class>
         <class>org.endeavourhealth.core.mySQLDatabase.models.OrganisationEntity</class>
         <class>org.endeavourhealth.core.mySQLDatabase.models.AddressEntity</class>
         <class>org.endeavourhealth.core.mySQLDatabase.models.CohortEntity</class>
-        <class>org.endeavourhealth.core.mySQLDatabase.models.DataflowEntity</class>
-        <class>org.endeavourhealth.core.mySQLDatabase.models.DataprocessingagreementEntity</class>
-        <class>org.endeavourhealth.core.mySQLDatabase.models.DatasharingagreementEntity</class>
-        <class>org.endeavourhealth.core.mySQLDatabase.models.DatasharingsummaryEntity</class>
-        <class>org.endeavourhealth.core.mySQLDatabase.models.MastermappingEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.DataFlowEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.DataProcessingAgreementEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.DataSharingAgreementEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.DataSharingSummaryEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.MasterMappingEntity</class>
         <properties>
-            <property name="hibernate.connection.url" value="jdbc:mysql://localhost:3306/OrganisationManager"/>
             <property name="hibernate.connection.driver_class" value="com.mysql.jdbc.Driver"/>
-            <property name="hibernate.connection.username" value="root"/>
-            <property name="hibernate.connection.password" value="admin"/>
             <property name="hibernate.archive.autodetection" value="class"/>
             <property name="hibernate.show_sql" value="false"/>
             <property name="hibernate.format_sql" value="true"/>
@@ -35,8 +32,9 @@
             <property name="hibernate.connection.provider_class" value="org.hibernate.hikaricp.internal.HikariCPConnectionProvider"/>
             <property name="hibernate.auth" value="Container" />
             <property name="hibernate.hikari.connectionTimeout" value="300000" />
-            <property name="hibernate.hikari.maximumPoolSize" value="10" />
-            <property name="hibernate.hikari.minimumIdle" value="5" />
+            <property name="hibernate.hikari.maximumPoolSize" value="5" />
+            <property name="hibernate.hikari.minimumIdle" value="1" />
+            <property name="hibernate.hikari.idleTimeout" value="60000" />
             <property name="hibernate.hikari.dataSourceClassName" value="org.postgresql.ds.PGSimpleDataSource" />
 
             <property name="hibernate.hikari.dataSource.url" value="jdbc:postgresql://localhost:5432/config"/>
@@ -60,6 +58,7 @@
             <property name="hibernate.hikari.connectionTimeout" value="300000" />
             <property name="hibernate.hikari.maximumPoolSize" value="10" />
             <property name="hibernate.hikari.minimumIdle" value="5" />
+            <property name="hibernate.hikari.idleTimeout" value="60000" />
             <property name="hibernate.hikari.dataSourceClassName" value="org.postgresql.ds.PGSimpleDataSource" />
         </properties>
     </persistence-unit>
@@ -81,6 +80,7 @@
             <property name="hibernate.hikari.connectionTimeout" value="300000" />
             <property name="hibernate.hikari.maximumPoolSize" value="10" />
             <property name="hibernate.hikari.minimumIdle" value="5" />
+            <property name="hibernate.hikari.idleTimeout" value="60000" />
             <property name="hibernate.hikari.dataSourceClassName" value="org.postgresql.ds.PGSimpleDataSource" />
         </properties>
     </persistence-unit>
@@ -97,7 +97,8 @@
             <property name="hibernate.auth" value="Container" />
             <property name="hibernate.hikari.connectionTimeout" value="300000" />
             <property name="hibernate.hikari.maximumPoolSize" value="10" />
-            <property name="hibernate.hikari.minimumIdle" value="5" />
+            <property name="hibernate.hikari.minimumIdle" value="3" />
+            <property name="hibernate.hikari.idleTimeout" value="60000" />
             <property name="hibernate.hikari.dataSourceClassName" value="org.postgresql.ds.PGSimpleDataSource" />
         </properties>
     </persistence-unit>

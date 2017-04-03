@@ -4,18 +4,18 @@ DELIMITER //
 CREATE PROCEDURE OrganisationManager.getDataSharingAgreementStatistics (
 )
 BEGIN
-  create temporary table DataSharingAgreementStatistics (
+  create temporary table OrganisationManager.DataSharingAgreementStatistics (
 	label varchar(100) not null,
     value varchar(100) not null
     );
     
-    insert into DataSharingAgreementStatistics (label, value)
+    insert into OrganisationManager.DataSharingAgreementStatistics (label, value)
     select 'Total Number of Data Sharing Agreements', count(*) 
     from OrganisationManager.DataSharingAgreement;
     
-    select label, value from DataSharingAgreementStatistics;
+    select label, value from OrganisationManager.DataSharingAgreementStatistics;
     
-    drop table DataSharingAgreementStatistics;
+    drop table OrganisationManager.DataSharingAgreementStatistics;
     
   
 END //

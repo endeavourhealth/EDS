@@ -2,6 +2,9 @@ package org.endeavourhealth.coreui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.Map;
+import java.util.UUID;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class JsonDPA {
     private String uuid = null;
@@ -15,6 +18,8 @@ public class JsonDPA {
     private Short storageProtocolId = null;
     private String dataFlow = null;
     private String returnToSenderPolicy = null;
+    private Map<UUID, String> dataFlows = null;
+    private Map<UUID, String> cohorts = null;
 
     public String getUuid() {
         return uuid;
@@ -102,5 +107,21 @@ public class JsonDPA {
 
     public void setReturnToSenderPolicy(String returnToSenderPolicy) {
         this.returnToSenderPolicy = returnToSenderPolicy;
+    }
+
+    public Map<UUID, String> getDataFlows() {
+        return dataFlows;
+    }
+
+    public void setDataFlows(Map<UUID, String> dataFlows) {
+        this.dataFlows = dataFlows;
+    }
+
+    public Map<UUID, String> getCohorts() {
+        return cohorts;
+    }
+
+    public void setCohorts(Map<UUID, String> cohorts) {
+        this.cohorts = cohorts;
     }
 }

@@ -30,7 +30,7 @@ export class DataSharingSummaryOverviewComponent {
 
     getOverview() {
         var vm = this;
-        vm.getSummaryStatistics();
+        //vm.getSummaryStatistics();
         vm.getDpaStatistics();
         vm.getDsaStatistics();
         vm.getDataFlowStatistics();

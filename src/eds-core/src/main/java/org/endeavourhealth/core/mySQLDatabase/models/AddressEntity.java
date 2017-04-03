@@ -22,7 +22,7 @@ import java.util.UUID;
         )
 })
 @Entity
-@Table(name = "address", schema = "organisationmanager")
+@Table(name = "Address", schema = "OrganisationManager")
 public class AddressEntity {
     private String uuid;
     private String organisationUuid;
@@ -56,7 +56,7 @@ public class AddressEntity {
     }
 
     public static List<AddressEntity> getAddressesForOrganisation(String uuid) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<AddressEntity> cq = cb.createQuery(AddressEntity.class);
@@ -66,11 +66,13 @@ public class AddressEntity {
         cq.where(predicate);
 
         TypedQuery<AddressEntity> query = entityManager.createQuery(cq);
-        return query.getResultList();
+        List<AddressEntity> ret = query.getResultList();
+        entityManager.close();
+        return ret;
     }
 
     public static void bulkSaveAddresses(List<AddressEntity> addressEntities) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         int batchSize = 50;
 
@@ -86,20 +88,24 @@ public class AddressEntity {
         }
 
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void saveAddress(JsonAddress address) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         AddressEntity addressEntity = new AddressEntity(address);
         addressEntity.setUuid(address.getUuid());
         entityManager.getTransaction().begin();
         entityManager.persist(addressEntity);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void updateAddress(JsonAddress address) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         AddressEntity addressEntity = entityManager.find(AddressEntity.class, address.getUuid());
         entityManager.getTransaction().begin();
@@ -112,10 +118,12 @@ public class AddressEntity {
         addressEntity.setPostcode(address.getPostcode());
         addressEntity.setGeolocationReprocess((byte)0);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static void updateGeolocation(JsonAddress address) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         AddressEntity addressEntity = entityManager.find(AddressEntity.class, address.getUuid());
         entityManager.getTransaction().begin();
@@ -123,16 +131,19 @@ public class AddressEntity {
         addressEntity.setLng(address.getLng());
         addressEntity.setGeolocationReprocess((byte)0);
         entityManager.getTransaction().commit();
+
+        entityManager.close();
     }
 
     public static List<Object[]> getOrganisationsMarkers(String regionUUID) throws Exception {
 
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = PersistenceManager.getEntityManager();
 
         StoredProcedureQuery spq = entityManager.createNamedStoredProcedureQuery("getOrganisationMarkers");
         spq.setParameter("RegionId", regionUUID);
         spq.execute();
         List<Object[]> ent = spq.getResultList();
+
         entityManager.close();
 
         return ent;

@@ -33,7 +33,7 @@ public class ConsultationTransformer {
         }
     }
 
-    private static void createResource(Consultation parser,
+    public static void createResource(Consultation parser,
                                         FhirResourceFiler fhirResourceFiler,
                                         EmisCsvHelper csvHelper,
                                         String version) throws Exception {

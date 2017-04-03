@@ -12,4 +12,6 @@ export class DataFlow {
     dataSet : string;
     cohort : string;
     subscriber : string;
+    dsas : { [key:string]:string; };
+    dpas : { [key:string]:string; };
 }

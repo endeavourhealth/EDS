@@ -38,6 +38,7 @@ export class ExchangeAuditComponent {
 	exchanges: Exchange[];
 	selectedExchange: Exchange;
 	busyPostingToExchange: Subscription;
+	busyTestingPost: Subscription;
 
 	postAllExchanges: boolean;
 
@@ -245,5 +246,24 @@ export class ExchangeAuditComponent {
 
 	checkboxChanged() {
 		console.log('checkbox changed = ' + this.postAllExchanges);
+	}
+
+	postTest() {
+		var vm = this;
+		var serviceId = this.service.uuid;
+		console.log("Post test in component class");
+
+		this.busyTestingPost = vm.exchangeAuditService.postTest(serviceId).subscribe(
+			(result) => {
+				console.log("Post test successful");
+				vm.log.success('Successfully tested post');
+				this.busyPostingToExchange = null;
+			},
+			(error) => {
+				console.log("Post test failed");
+				vm.log.error('Failed to test post')
+				this.busyPostingToExchange = null;
+			}
+		)
 	}
 }

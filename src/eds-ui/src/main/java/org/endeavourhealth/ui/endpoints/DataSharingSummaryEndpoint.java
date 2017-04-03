@@ -61,9 +61,9 @@ public final class DataSharingSummaryEndpoint extends AbstractEndpoint {
 
         if (dataSharingSummary.getUuid() != null) {
             dataSharingSummary.setUuid(UUID.randomUUID().toString());
-            DatasharingsummaryEntity.updateDataSharingSummary(dataSharingSummary);
+            DataSharingSummaryEntity.updateDataSharingSummary(dataSharingSummary);
         } else {
-            DatasharingsummaryEntity.saveDataSharingSummary(dataSharingSummary);
+            DataSharingSummaryEntity.saveDataSharingSummary(dataSharingSummary);
         }
 
         clearLogbackMarkers();
@@ -84,7 +84,7 @@ public final class DataSharingSummaryEndpoint extends AbstractEndpoint {
                 "Data Sharing Summary",
                 "Data Sharing Summary Id", uuid);
 
-        DatasharingsummaryEntity.deleteDataSharingSummary(uuid);
+        DataSharingSummaryEntity.deleteDataSharingSummary(uuid);
 
         clearLogbackMarkers();
         return Response
@@ -103,12 +103,12 @@ public final class DataSharingSummaryEndpoint extends AbstractEndpoint {
                 "Statistics",
                 "type", type);
 
-        return generateStatistics(DatasharingsummaryEntity.getStatistics(getStatisticsProcedureFromType(type)));
+        return generateStatistics(DataSharingSummaryEntity.getStatistics(getStatisticsProcedureFromType(type)));
     }
 
     private Response getDataSharingSummaryList() throws Exception {
 
-        List<DatasharingsummaryEntity> dataSharingSummaries = DatasharingsummaryEntity.getAllDataSharingSummaries();
+        List<DataSharingSummaryEntity> dataSharingSummaries = DataSharingSummaryEntity.getAllDataSharingSummaries();
 
         clearLogbackMarkers();
         return Response
@@ -118,7 +118,7 @@ public final class DataSharingSummaryEndpoint extends AbstractEndpoint {
     }
 
     private Response getSingleDataSharingSummary(String uuid) throws Exception {
-        DatasharingsummaryEntity dataSharingSummary = DatasharingsummaryEntity.getDataSharingSummary(uuid);
+        DataSharingSummaryEntity dataSharingSummary = DataSharingSummaryEntity.getDataSharingSummary(uuid);
 
         return Response
                 .ok()
@@ -128,7 +128,7 @@ public final class DataSharingSummaryEndpoint extends AbstractEndpoint {
     }
 
     private Response search(String searchData) throws Exception {
-        Iterable<DatasharingsummaryEntity> datasharingsummaryEntities = DatasharingsummaryEntity.search(searchData);
+        Iterable<DataSharingSummaryEntity> datasharingsummaryEntities = DataSharingSummaryEntity.search(searchData);
 
         clearLogbackMarkers();
         return Response

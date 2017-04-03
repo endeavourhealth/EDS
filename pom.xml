@@ -9,10 +9,10 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <node.version>v5.5.0</node.version>
-        <npm.version>3.3.12</npm.version>
-
-        <eds-common.version>2.49</eds-common.version>
+        <node.version>v6.10.1</node.version>
+        <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
+        <frontend-maven-plugin.version>1.4</frontend-maven-plugin.version>
+        <eds-common.version>2.53</eds-common.version>
 
         <amqp-client.version>3.6.2</amqp-client.version>
         <cassandra-driver.version>3.1.1</cassandra-driver.version>
@@ -60,8 +60,6 @@
         <module>src/cassandra</module>
         <module>src/eds-messaging-api</module>
         <module>src/eds-messaging-core</module>
-        <module>src/eds-patient-ui</module>
-        <module>src/eds-patient-explorer</module>
         <module>src/eds-queuereader</module>
         <module>src/eds-subscriber</module>
         <module>src/eds-transforms</module>

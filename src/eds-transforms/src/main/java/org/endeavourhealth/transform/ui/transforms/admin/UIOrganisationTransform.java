@@ -8,6 +8,19 @@ public class UIOrganisationTransform {
         return new UIOrganisation()
                 .setId(organization.getId())
                 .setName(organization.getName())
-                .setType(organization.getType().getText());
+                .setType(getOrganizationType(organization));
     }
+
+    public static String getOrganizationType(Organization organization) {
+			if (!organization.hasType())
+				return null;
+
+			if (organization.getType().hasText())
+    		return organization.getType().getText();
+
+    	if (!organization.getType().hasCoding() || organization.getType().getCoding().size() == 0)
+    		return null;
+
+    	return organization.getType().getCoding().get(0).getCode();
+		}
 }

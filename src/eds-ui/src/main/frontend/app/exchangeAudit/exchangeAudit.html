@@ -6,6 +6,8 @@
             <button type="button" class="btn btn-sm btn-success" (click)="refreshExchanges()">Refresh</button>
             <!--<button type="button" class="btn btn-sm btn-danger" (click)="createMissingData()">Create Data</button>-->
             <button type="button" class="btn btn-sm btn-default" (click)="close()">Close</button>
+
+            <button type="button" class="btn btn-sm btn-danger" (click)="postTest()">Test Post</button>
         </div>
     </div>
     <div class="module-body">
@@ -48,7 +50,7 @@
                                                     </div>
 
                                                     <div class="form-group">
-                                                        <label>Showing:</label>
+                                                        <label>Showing Last:</label>
                                                         <input name="ExchangesToShow" type="number" class="form-control" [(ngModel)]="exchangesToShow" required>
                                                     </div>
 

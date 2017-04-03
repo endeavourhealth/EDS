@@ -34,6 +34,7 @@ insert into OrganisationManager.Organisation (name, alternative_name, ods_code, 
 values ("West Street GP Surgery Service", "Westy Street GP", "C33333", "ef71a067-0d3e-11e7-8387-80fa5b27a530", 1);
 
 /*OrganisationManager.MasterMapping*/
+/*
 insert into OrganisationManager.MasterMapping (ChildUuid, ParentUUid, MapTypeId, IsDefault)
 values ("d43a509a-0d3e-11e7-8387-80fa5b27a530", "b61572e6-07dc-11e7-83f3-80fa5b27a530", 0, 0);
 
@@ -51,7 +52,7 @@ values ("aefcb614-07dc-11e7-83f3-80fa5b27a530", "2773b467-07dd-11e7-83f3-80fa5b2
 
 insert into OrganisationManager.MasterMapping (ChildUuid, ParentUUid, MapTypeId, IsDefault)
 values ("b61572e6-07dc-11e7-83f3-80fa5b27a530", "2bd60c36-07dd-11e7-83f3-80fa5b27a530", 1, 1);
-
+*/
 
 /*OrganisationManager.FlowDirection*/
 insert into OrganisationManager.FlowDirection (Id, Direction)
@@ -151,8 +152,23 @@ values ("138024c9-0aee-11e7-926e-80fa5b27a530", "National Data Summary", "Sharin
 
 /*OrganisationManager.MapType*/
 insert into OrganisationManager.MapType (Id, MapType)
-values (0, "Organisation");
+values (0, "Service");
 
 insert into OrganisationManager.MapType (Id, MapType)
-values (1, "Region");
+values (1, "Organisation");
+
+insert into OrganisationManager.MapType (Id, MapType)
+values (2, "Region");
+
+insert into OrganisationManager.MapType (Id, MapType)
+values (3, "Data Sharing Agreement");
+
+insert into OrganisationManager.MapType (Id, MapType)
+values (4, "Data Flow");
+
+insert into OrganisationManager.MapType (Id, MapType)
+values (5, "Data Processing Agreement");
+
+insert into OrganisationManager.MapType (Id, MapType)
+values (6, "Cohort");
 

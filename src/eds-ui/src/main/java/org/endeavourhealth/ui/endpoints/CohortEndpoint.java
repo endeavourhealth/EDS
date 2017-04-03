@@ -5,6 +5,7 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.core.mySQLDatabase.MapType;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.*;
@@ -59,11 +60,14 @@ public final class CohortEndpoint extends AbstractEndpoint {
                 "Cohort", cohort);
 
         if (cohort.getUuid() != null) {
-            cohort.setUuid(UUID.randomUUID().toString());
+            MasterMappingEntity.deleteAllMappings(cohort.getUuid());
             CohortEntity.updateCohort(cohort);
         } else {
+            cohort.setUuid(UUID.randomUUID().toString());
             CohortEntity.saveCohort(cohort);
         }
+
+        MasterMappingEntity.saveCohortMappings(cohort);
 
         clearLogbackMarkers();
 
@@ -89,6 +93,19 @@ public final class CohortEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/dpas")
+    public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "DPA(s)",
+                "Cohort Id", uuid);
+
+        return getLinkedDpas(uuid);
     }
 
     private Response getCohortList() throws Exception {
@@ -119,6 +136,22 @@ public final class CohortEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .entity(cohorts)
+                .build();
+    }
+
+    private Response getLinkedDpas(String cohortUuid) throws Exception {
+
+        List<String> dpaUuids = MasterMappingEntity.getParentMappings(cohortUuid, MapType.COHORT.getMapType(), MapType.DATAPROCESSINGAGREEMENT.getMapType());
+
+        List<DataProcessingAgreementEntity> ret = new ArrayList<>();
+
+        if (dpaUuids.size() > 0)
+            ret = DataProcessingAgreementEntity.getDPAsFromList(dpaUuids);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
                 .build();
     }
 

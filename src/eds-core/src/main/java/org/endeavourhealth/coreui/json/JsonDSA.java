@@ -2,6 +2,9 @@ package org.endeavourhealth.coreui.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.Map;
+import java.util.UUID;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class JsonDSA {
     private String uuid = null;
@@ -14,6 +17,7 @@ public class JsonDSA {
     private String subscriberContractInformation = null;
     private Short dsaStatusId = null;
     private String consentModel = null;
+    private Map<UUID, String> dataFlows = null;
 
     public String getUuid() {
         return uuid;
@@ -93,5 +97,13 @@ public class JsonDSA {
 
     public void setConsentModel(String consentModel) {
         this.consentModel = consentModel;
+    }
+
+    public Map<UUID, String> getDataFlows() {
+        return dataFlows;
+    }
+
+    public void setDataFlows(Map<UUID, String> dataFlows) {
+        this.dataFlows = dataFlows;
     }
 }

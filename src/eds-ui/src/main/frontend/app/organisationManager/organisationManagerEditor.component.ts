@@ -57,7 +57,8 @@ export class OrganisationManagerEditorComponent {
         this.organisation = {
             name: '',
             isService: 1,
-            bulkImported : 0
+            bulkImported : 0,
+            bulkItemUpdated : 0
         } as Organisation;
     }
 
@@ -76,7 +77,9 @@ export class OrganisationManagerEditorComponent {
     create(uuid : string) {
         this.organisation = {
             name: '',
-            isService: 0
+            isService: 0,
+            bulkImported : 0,
+            bulkItemUpdated : 0
         } as Organisation;
 
     }
@@ -86,17 +89,15 @@ export class OrganisationManagerEditorComponent {
         vm.organisationManagerService.getOrganisation(uuid)
             .subscribe(result =>  {
                     vm.organisation = result;
-                    vm.getOrganisationRegions();
-                    vm.getOrganisationAddresses();
-                    vm.getChildOrganisations();
-                    vm.getParentOrganisations();
-                    vm.getServices();
-                    console.log(vm.organisation);
-                    console.log(vm.organisation.isService);
                     if (vm.organisation.isService) {
                         vm.orgType = 'Service';
+                    } else { //only get these for organisations, not services
+                        vm.getOrganisationRegions();
+                        vm.getOrganisationAddresses();
+                        vm.getChildOrganisations();
+                        vm.getServices();
                     }
-                    console.log(vm.orgType);
+                    vm.getParentOrganisations();
                 },
                 error => vm.log.error('Error loading', error, 'Error')
             );
@@ -225,7 +226,7 @@ export class OrganisationManagerEditorComponent {
 
     private getParentOrganisations() {
         var vm = this;
-        vm.organisationManagerService.getParentOrganisations(vm.organisation.uuid)
+        vm.organisationManagerService.getParentOrganisations(vm.organisation.uuid, vm.organisation.isService)
             .subscribe(
                 result => vm.parentOrganisations = result,
                 error => vm.log.error('Failed to load parent organisations', error, 'Load parent organisation')

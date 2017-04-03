@@ -74,7 +74,6 @@ export class OrganisationManagerComponent {
 
         // get pager object from service
         this.pager = this.paginationService.getPager(this.allItems.length, page, this.pageSize);
-
         // get current page of items
         this.pagedItems = this.allItems.slice(this.pager.startIndex, this.pager.endIndex + 1);
     }
@@ -131,8 +130,9 @@ export class OrganisationManagerComponent {
         vm.organisationManagerService.deleteOrganisation(item.uuid)
             .subscribe(
                 () => {
-                    var index = vm.organisations.indexOf(item);
-                    vm.organisations.splice(index, 1);
+                    var index = vm.allItems.indexOf(item);
+                    vm.allItems.splice(index, 1);
+                    vm.setPage(vm.pager.currentPage);
                     vm.log.success('Organisation deleted', item, 'Delete Organisation');
                 },
                 (error) => vm.log.error('Failed to delete Organisation', error, 'Delete Organisation')
@@ -152,6 +152,7 @@ export class OrganisationManagerComponent {
         vm.organisationManagerService.search(vm.searchData, vm.searchType)
             .subscribe(result => {
                     vm.allItems = result;
+                    vm.pager = {};
                     vm.setPage(1);
                 },
                 error => vm.log.error(error)

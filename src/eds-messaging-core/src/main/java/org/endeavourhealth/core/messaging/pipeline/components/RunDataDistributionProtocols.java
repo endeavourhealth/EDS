@@ -195,6 +195,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 
 		//if there's no patient ID, then this is admin resources batch, so return true so it goes through unfiltered
 		if (patientUuid == null) {
+			LOG.trace("No patient ID for batch " + batchId + " in exchange " + exchangeId + " so passing protocol " + protocolId + " check");
 			return true;
 		}
 		String patientId = patientUuid.toString();
@@ -215,6 +216,8 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			throw new PipelineException("Failed to find person ID for batch " + batchId + " and personId " + personId, ex);
 		}
 
+		LOG.trace("Found " + patientIds.size() + " patient IDs for patient " + patientId + " and person " + personId + " for batch " + batchId + " in exchange " + exchangeId + " for protocol " + protocolId + " check");
+
 		for (String otherPatientId: patientIds) {
 
 			//skip the patient ID we started with since we know our service doesn't define the cohort
@@ -231,6 +234,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			//if the other patient resouce does belong to one of our cohort defining services, then let it through
 			UUID otherPatientServiceId = resourceHistory.getServiceId();
 			if (serviceIdsDefiningCohort.contains(otherPatientServiceId.toString())) {
+				LOG.trace("Patient ID " + otherPatientId + " is in cohort for batch " + batchId + " in exchange " + exchangeId + " so passing protocol " + protocolId + " check");
 				return true;
 			}
 		}

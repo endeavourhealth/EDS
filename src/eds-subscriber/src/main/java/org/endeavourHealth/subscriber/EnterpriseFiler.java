@@ -3,6 +3,7 @@ package org.endeavourhealth.subscriber;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
+import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -18,6 +19,7 @@ import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -36,20 +38,24 @@ public class EnterpriseFiler {
 
     //private static final String ZIP_ENTRY = "EnterpriseData.xml";
 
-    private static String keywordEscapeChar = null; //different DBs use different chars to escape keywords (" on pg, ` on mysql)
+    //private static String keywordEscapeChar = null; //different DBs use different chars to escape keywords (" on pg, ` on mysql)
 
-    public static void file(String base64, JsonNode config) throws Exception {
+    private static Map<String, HikariDataSource> connectionPools = new ConcurrentHashMap<>();
+    private static Map<String, String> escapeCharacters = new ConcurrentHashMap<>();
+
+    public static void file(UUID batchId, String base64, JsonNode config) throws Exception {
 
         byte[] bytes = Base64.getDecoder().decode(base64);
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         ZipInputStream zis = new ZipInputStream(bais);
 
         String url = config.get("url").asText();
-        LOG.trace("Filing " + bytes.length + "b into " + url);
+        LOG.trace("Filing " + bytes.length + "b from batch " + batchId + " into " + url);
 
         JsonNode columnClassMappings = null;
 
-        Connection connection = openConnection(config);
+        Connection connection = openConnection(url, config);
+        String keywordEscapeChar = getKeywordEscapeChar(url);
 
         try {
             List<DeleteWrapper> deletes = new ArrayList<>();
@@ -68,7 +74,7 @@ public class EnterpriseFiler {
                     columnClassMappings = ObjectMapperPool.getInstance().readTree(jsonStr);
 
                 } else {
-                    fileCsvData(entryFileName, entryBytes, columnClassMappings, connection, deletes);
+                    fileCsvData(entryFileName, entryBytes, columnClassMappings, connection, keywordEscapeChar, deletes);
                 }
             }
 
@@ -90,6 +96,7 @@ public class EnterpriseFiler {
             }
         }
     }
+
 
     private static void writeZipFile(byte[] bytes) {
         File f = new File("EnterpriseFileError.zip");
@@ -161,7 +168,7 @@ public class EnterpriseFiler {
         return baos.toByteArray();
     }
 
-    private static void fileCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection, List<DeleteWrapper> deletes) throws Exception {
+    private static void fileCsvData(String entryFileName, byte[] csvBytes, JsonNode allColumnClassMappings, Connection connection, String keywordEscapeChar, List<DeleteWrapper> deletes) throws Exception {
 
         String tableName = Files.getNameWithoutExtension(entryFileName);
 
@@ -198,13 +205,15 @@ public class EnterpriseFiler {
         List<CSVRecord> batch = new ArrayList<>();
         for (CSVRecord record: upserts) {
             batch.add(record);
+
+            //in testing, batches of 20000 seemed best, although there wasn't much difference between batches of 5000 up to 100000
             if (batch.size() >= 20000) {
-                fileUpserts(batch, columns, columnClasses, tableName, connection);
+                fileUpserts(batch, columns, columnClasses, tableName, connection, keywordEscapeChar);
                 batch = new ArrayList<>();
             }
         }
         if (!batch.isEmpty()) {
-            fileUpserts(batch, columns, columnClasses, tableName, connection);
+            fileUpserts(batch, columns, columnClasses, tableName, connection, keywordEscapeChar);
         }
         //fileUpserts(upserts, columns, columnClasses, tableName, connection);
     }
@@ -333,7 +342,7 @@ public class EnterpriseFiler {
     }
 
     private static void fileUpserts(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
-                                    String tableName, Connection connection) throws Exception {
+                                    String tableName, Connection connection, String keywordEscapeChar) throws Exception {
 
         if (csvRecords.isEmpty()) {
             return;
@@ -341,7 +350,7 @@ public class EnterpriseFiler {
 
         //first try treating all the objects as inserts
         try {
-            fileInserts(csvRecords, columns, columnClasses, tableName, connection);
+            fileInserts(csvRecords, columns, columnClasses, tableName, connection, keywordEscapeChar);
 
         } catch (SQLException ex) {
             //if we get a SQL Exception, then it's probably because one of the objects is an update, so we try to
@@ -355,7 +364,7 @@ public class EnterpriseFiler {
                 singleRecords.add(singleRecord);
 
                 try {
-                    fileUpdates(singleRecords, columns, columnClasses, tableName, connection);
+                    fileUpdates(singleRecords, columns, columnClasses, tableName, connection, keywordEscapeChar);
 
                 } catch (SQLException ex3) {
                     StringBuffer s = new StringBuffer();
@@ -378,14 +387,14 @@ public class EnterpriseFiler {
                     List<CSVRecord> singleRecord = new ArrayList<>();
                     singleRecord.add(csvRecord);
 
-                    fileUpserts(singleRecord, columns, columnClasses, tableName, connection);
+                    fileUpserts(singleRecord, columns, columnClasses, tableName, connection, keywordEscapeChar);
                 }
             }
         }
     }
 
     private static void fileInserts(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
-                                    String tableName, Connection connection) throws Exception {
+                                    String tableName, Connection connection, String keywordEscapeChar) throws Exception {
 
         if (csvRecords.isEmpty()) {
             return;
@@ -448,7 +457,7 @@ public class EnterpriseFiler {
     }
 
     private static void fileUpdates(List<CSVRecord> csvRecords, List<String> columns, HashMap<String, Class> columnClasses,
-                                    String tableName, Connection connection) throws Exception {
+                                    String tableName, Connection connection, String keywordEscapeChar) throws Exception {
 
         if (csvRecords.isEmpty()) {
             return;
@@ -867,7 +876,49 @@ public class EnterpriseFiler {
         connection.commit();
     }*/
 
-    private static Connection openConnection(JsonNode config) throws Exception {
+    private static String getKeywordEscapeChar(String url) {
+        return escapeCharacters.get(url);
+    }
+
+    private static Connection openConnection(String url, JsonNode config) throws Exception {
+
+        HikariDataSource pool = connectionPools.get(url);
+        if (pool == null) {
+            synchronized (connectionPools) {
+                pool = connectionPools.get(url);
+                if (pool == null) {
+
+                    String driverClass = config.get("driverClass").asText();
+                    String username = config.get("username").asText();
+                    String password = config.get("password").asText();
+
+                    //force the driver to be loaded
+                    Class.forName(driverClass);
+
+                    pool = new HikariDataSource();
+                    pool.setJdbcUrl(url);
+                    pool.setUsername(username);
+                    pool.setPassword(password);
+                    pool.setMaximumPoolSize(5);
+                    pool.setMinimumIdle(1);
+                    pool.setIdleTimeout(60000);
+                    pool.setPoolName("EnterpriseFilerConnectionPool" + url);
+                    pool.setAutoCommit(false);
+
+                    connectionPools.put(url, pool);
+
+                    //cache the escape string too, since getting the metadata each time is extra load
+                    Connection conn = pool.getConnection();
+                    String escapeStr = conn.getMetaData().getIdentifierQuoteString();
+                    escapeCharacters.put(url, escapeStr);
+                    conn.close();
+                }
+            }
+        }
+
+        return pool.getConnection();
+    }
+    /*private static Connection openConnection(JsonNode config) throws Exception {
 
         String driverClass = config.get("driverClass").asText();
         String url = config.get("url").asText();
@@ -883,7 +934,7 @@ public class EnterpriseFiler {
         conn.setAutoCommit(false);
 
         return conn;
-    }
+    }*/
 }
 
 

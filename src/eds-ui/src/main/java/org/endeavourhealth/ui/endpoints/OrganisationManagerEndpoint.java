@@ -1,13 +1,16 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.core.mySQLDatabase.MapType;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.*;
@@ -21,12 +24,9 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.*;
-import java.io.File;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Path("/organisationManager")
@@ -76,7 +76,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 "Organisation", organisationManager);
 
         if (organisationManager.getUuid() != null) {
-            MastermappingEntity.deleteAllMappings(organisationManager.getUuid());
+            MasterMappingEntity.deleteAllMappings(organisationManager.getUuid());
             OrganisationEntity.updateOrganisation(organisationManager);
         } else {
             organisationManager.setUuid(UUID.nameUUIDFromBytes((organisationManager.getName() + organisationManager.getOdsCode()).getBytes()).toString());
@@ -85,7 +85,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
 
         //Process Mappings
-        MastermappingEntity.saveOrganisationMappings(organisationManager);
+        MasterMappingEntity.saveOrganisationMappings(organisationManager);
 
         List<JsonAddress> addresses = organisationManager.getAddresses();
         if (addresses.size() > 0) {
@@ -154,7 +154,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 "Child Organisations(s)",
                 "Organisation Id", uuid);
 
-        return getChildOrganisations(uuid, (short)0);
+        return getChildOrganisations(uuid, MapType.ORGANISATION.getMapType());
     }
 
     @GET
@@ -167,20 +167,25 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 "services(s)",
                 "Organisation Id", uuid);
 
-        return getChildOrganisations(uuid, (short)1);
+        return getChildOrganisations(uuid, MapType.SERVICE.getMapType());
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/parentOrganisations")
-    public Response getParentOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+    public Response getParentOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("isService") String isService) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
                 "Parent Organisations(s)",
                 "Organisation Id", uuid);
 
-        return getParentOrganisations(uuid);
+        Short orgType = MapType.ORGANISATION.getMapType();
+        if (isService.equals("1"))
+            orgType = MapType.SERVICE.getMapType();
+
+
+        return getParentOrganisations(uuid, orgType);
     }
 
     @GET
@@ -318,7 +323,6 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
                 "Organisation",
                 "Organisation", csvFile);
-        System.out.println(csvFile);
 
         return processCSVFile(csvFile);
     }
@@ -357,9 +361,11 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
     private Response getRegionsForOrganisation(String organisationUuid) throws Exception {
 
-        List<Object[]> regions = RegionEntity.getParentRegionsFromMappings(organisationUuid);
+        List<String> regionUuids = MasterMappingEntity.getParentMappings(organisationUuid, MapType.ORGANISATION.getMapType(), MapType.REGION.getMapType());
+        List<RegionEntity> ret = new ArrayList<>();
 
-        List<JsonRegion> ret = EndpointHelper.JsonRegion(regions);
+        if (regionUuids.size() > 0)
+            ret = RegionEntity.getRegionsFromList(regionUuids);
 
         clearLogbackMarkers();
         return Response
@@ -425,9 +431,11 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     }
 
     private void getGeolocation(JsonAddress address) throws Exception {
-        String url = "https://maps.googleapis.com/maps/api/geocode/json?address=";
-        String apiKey = "AIzaSyBuLpebNb3ZNXFYpya0s5_ZXBXhMNjENik";
         Client client = ClientBuilder.newClient();
+
+        JsonNode json = ConfigManager.getConfigurationAsJson("GoogleMapsAPI");
+        String url = json.get("url").asText();
+        String apiKey = json.get("apiKey").asText();
 
         WebTarget resource = client.target(url + address.getPostcode().replace(" ", "+") + "&key=" + apiKey);
 
@@ -455,10 +463,11 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
 
     private Response getChildOrganisations(String organisationUuid, Short organisationType) throws Exception {
 
-        Short type = 0;
-        List<Object[]> organisations = OrganisationEntity.getChildOrganisationsFromMappings(organisationUuid, type, organisationType);
+        List<String> organisationUuids = MasterMappingEntity.getChildMappings(organisationUuid, MapType.ORGANISATION.getMapType(), organisationType);
+        List<OrganisationEntity> ret = new ArrayList<>();
 
-        List<JsonOrganisationManager> ret = EndpointHelper.JsonOrganisation(organisations);
+        if (organisationUuids.size() > 0)
+            ret = OrganisationEntity.getOrganisationsFromList(organisationUuids);
 
         clearLogbackMarkers();
         return Response
@@ -467,12 +476,13 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    private Response getParentOrganisations(String organisationUuid) throws Exception {
+    private Response getParentOrganisations(String organisationUuid, Short orgType) throws Exception {
 
-        Short type = 0;
-        List<Object[]> organisations = OrganisationEntity.getParentOrganisationsFromMappings(organisationUuid, type);
+        List<String> organisationUuids = MasterMappingEntity.getParentMappings(organisationUuid, orgType, MapType.ORGANISATION.getMapType());
+        List<OrganisationEntity> ret = new ArrayList<>();
 
-        List<JsonOrganisationManager> ret = EndpointHelper.JsonOrganisation(organisations);
+        if (organisationUuids.size() > 0)
+            ret = OrganisationEntity.getOrganisationsFromList(organisationUuids);
 
         clearLogbackMarkers();
         return Response

@@ -9,4 +9,5 @@ export class Dsa {
     subscriberContractInformation : string;
     dsaStatusId : number;
     consentModel : string;
+    dataFlows : { [key:string]:string; };
 }

@@ -11,8 +11,7 @@ BEGIN
     a.lng
   from organisationmanager.organisation o
   join organisationmanager.address a on a.organisationUuid = o.Uuid
-  join organisationmanager.MasterMapping mm on mm.ChildUuid = o.Uuid
-  where mm.ParentUuid = RegionId
-  and mm.MapTypeId = 1;
+  join organisationmanager.MasterMapping mm on mm.ChildUuid = o.Uuid and mm.ChildMapTypeId = 1
+  where mm.ParentUuid = RegionId;
 END //
 DELIMITER ;

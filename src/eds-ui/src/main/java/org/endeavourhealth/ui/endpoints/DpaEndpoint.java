@@ -5,6 +5,7 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.core.mySQLDatabase.MapType;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.*;
@@ -58,11 +59,14 @@ public final class DpaEndpoint extends AbstractEndpoint {
                 "DPA", dpa);
 
         if (dpa.getUuid() != null) {
-            dpa.setUuid(UUID.randomUUID().toString());
-            DataprocessingagreementEntity.updateDPA(dpa);
+            MasterMappingEntity.deleteAllMappings(dpa.getUuid());
+            DataProcessingAgreementEntity.updateDPA(dpa);
         } else {
-            DataprocessingagreementEntity.saveDPA(dpa);
+            dpa.setUuid(UUID.randomUUID().toString());
+            DataProcessingAgreementEntity.saveDPA(dpa);
         }
+
+        MasterMappingEntity.saveDataProcessingAgreementMappings(dpa);
 
         clearLogbackMarkers();
 
@@ -82,7 +86,7 @@ public final class DpaEndpoint extends AbstractEndpoint {
                 "DPA",
                 "DPA Id", uuid);
 
-        DataprocessingagreementEntity.deleteDPA(uuid);
+        DataProcessingAgreementEntity.deleteDPA(uuid);
 
         clearLogbackMarkers();
         return Response
@@ -90,9 +94,35 @@ public final class DpaEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/dataflows")
+    public Response getLinkedDataFlows(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "dataflows(s)",
+                "DPA Id", uuid);
+
+        return getLinkedDataFlows(uuid);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/cohorts")
+    public Response getLinkedCohorts(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "cohorts(s)",
+                "DPA Id", uuid);
+
+        return getLinkedCohorts(uuid);
+    }
+
     private Response getDPAList() throws Exception {
 
-        List<DataprocessingagreementEntity> dpas = DataprocessingagreementEntity.getAllDPAs();
+        List<DataProcessingAgreementEntity> dpas = DataProcessingAgreementEntity.getAllDPAs();
 
         clearLogbackMarkers();
         return Response
@@ -102,7 +132,7 @@ public final class DpaEndpoint extends AbstractEndpoint {
     }
 
     private Response getSingleDPA(String uuid) throws Exception {
-        DataprocessingagreementEntity dpaEntity = DataprocessingagreementEntity.getDPA(uuid);
+        DataProcessingAgreementEntity dpaEntity = DataProcessingAgreementEntity.getDPA(uuid);
 
         return Response
                 .ok()
@@ -112,12 +142,42 @@ public final class DpaEndpoint extends AbstractEndpoint {
     }
 
     private Response search(String searchData) throws Exception {
-        Iterable<DataprocessingagreementEntity> dpas = DataprocessingagreementEntity.search(searchData);
+        Iterable<DataProcessingAgreementEntity> dpas = DataProcessingAgreementEntity.search(searchData);
 
         clearLogbackMarkers();
         return Response
                 .ok()
                 .entity(dpas)
+                .build();
+    }
+
+    private Response getLinkedDataFlows(String dpaUuid) throws Exception {
+
+        List<String> dataFlowUuids = MasterMappingEntity.getParentMappings(dpaUuid, MapType.DATAPROCESSINGAGREEMENT.getMapType(), MapType.DATAFLOW.getMapType());
+        List<DataFlowEntity> ret = new ArrayList<>();
+
+        if (dataFlowUuids.size() > 0)
+            ret = DataFlowEntity.getDataFlowsFromList(dataFlowUuids);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private Response getLinkedCohorts(String dpaUuid) throws Exception {
+        List<String> cohorts = MasterMappingEntity.getChildMappings(dpaUuid, MapType.DATAPROCESSINGAGREEMENT.getMapType(), MapType.COHORT.getMapType());
+
+        List<CohortEntity> ret = new ArrayList<>();
+
+        if (cohorts.size() > 0)
+            ret = CohortEntity.getCohortsFromList(cohorts);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
                 .build();
     }
 

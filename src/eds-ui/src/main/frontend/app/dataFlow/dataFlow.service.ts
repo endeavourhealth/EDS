@@ -3,6 +3,8 @@ import {URLSearchParams, Http} from "@angular/http";
 import {Observable} from "rxjs";
 import {BaseHttp2Service} from "../core/baseHttp2.service";
 import {DataFlow} from "./models/DataFlow";
+import {Dpa} from "../dpa/models/Dpa";
+import {Dsa} from "../dsa/models/Dsa";
 
 @Injectable()
 export class DataFlowService extends BaseHttp2Service  {
@@ -32,5 +34,17 @@ export class DataFlowService extends BaseHttp2Service  {
         let params = new URLSearchParams();
         params.set('searchData',searchData);
         return this.httpGet('api/dataFlow', { search : params });
+    }
+
+    getLinkedDpas(uuid : string) :  Observable<Dpa[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/dataFlow/dpas', { search : params });
+    }
+
+    getLinkedDsas(uuid : string) :  Observable<Dsa[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/dataFlow/dsas', { search : params });
     }
 }

@@ -117,10 +117,12 @@ public class PatientTransformer extends AbstractTransformer {
 
             if (fhirPatient.hasAddress()) {
                 for (Address address: fhirPatient.getAddress()) {
-                    if (address.getUse().equals(Address.AddressUse.HOME)) {
+                    if (address.getUse() != null //got Homerton data will null address use
+                            && address.getUse().equals(Address.AddressUse.HOME)) {
                         postcode = address.getPostalCode();
                         postcodePrefix = findPostcodePrefix(postcode);
                         householdId = HouseholdHelper.findOrCreateHouseholdId(address);
+                        break;
                     }
                 }
             }
@@ -135,7 +137,6 @@ public class PatientTransformer extends AbstractTransformer {
                 }
             }
 
-
             if (model.isPseduonymised()) {
 
                 //if pseudonymised, all non-male/non-female genders should be treated as female
@@ -145,7 +146,11 @@ public class PatientTransformer extends AbstractTransformer {
                 }
 
                 pseudoId = pseudonomise(fhirPatient);
-                PseudoIdHelper.storePseudoId(fhirPatient.getId(), pseudoId);
+
+                //only persist the pseudo ID if it's non-null
+                if (!Strings.isNullOrEmpty(pseudoId)) {
+                    PseudoIdHelper.storePseudoId(fhirPatient.getId(), pseudoId);
+                }
 
                 Integer[] ageValues = EnterpriseAgeUpdater.calculateAgeValues(id, dateOfBirth, configName);
                 ageYears = ageValues[EnterpriseAgeUpdater.UNIT_YEARS];

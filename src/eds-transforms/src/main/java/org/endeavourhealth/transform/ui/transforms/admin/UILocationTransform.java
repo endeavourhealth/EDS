@@ -6,6 +6,8 @@ import org.hl7.fhir.instance.model.Location;
 public class UILocationTransform {
     public static UILocation transform(Location location) {
         return new UILocation()
-                .setId(location.getId());
+                .setId(location.getId())
+								.setName(location.getName())
+								.setDescription(location.getDescription());
     }
 }

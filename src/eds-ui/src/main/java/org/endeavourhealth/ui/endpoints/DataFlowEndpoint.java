@@ -5,6 +5,7 @@ import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.core.mySQLDatabase.MapType;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.*;
@@ -59,11 +60,14 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
                 "Data Flow", dataFlow);
 
         if (dataFlow.getUuid() != null) {
-            dataFlow.setUuid(UUID.randomUUID().toString());
-            DataflowEntity.updateDataFlow(dataFlow);
+            MasterMappingEntity.deleteAllMappings(dataFlow.getUuid());
+            DataFlowEntity.updateDataFlow(dataFlow);
         } else {
-            DataflowEntity.saveDataFlow(dataFlow);
+            dataFlow.setUuid(UUID.randomUUID().toString());
+            DataFlowEntity.saveDataFlow(dataFlow);
         }
+
+        MasterMappingEntity.saveDataFlowMappings(dataFlow);
 
         clearLogbackMarkers();
 
@@ -83,7 +87,7 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
                 "Data Flow",
                 "Data Flow Id", uuid);
 
-        DataflowEntity.deleteDataFlow(uuid);
+        DataFlowEntity.deleteDataFlow(uuid);
 
         clearLogbackMarkers();
         return Response
@@ -91,9 +95,35 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/dpas")
+    public Response getLinkedDpas(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "DPA(s)",
+                "DPA Id", uuid);
+
+        return getLinkedDpas(uuid);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/dsas")
+    public Response getLinkedDsas(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "DSA(s)",
+                "DSA Id", uuid);
+
+        return getLinkedDsas(uuid);
+    }
+
     private Response getDataFlowList() throws Exception {
 
-        List<DataflowEntity> dataFlows = DataflowEntity.getAllDataFlows();
+        List<DataFlowEntity> dataFlows = DataFlowEntity.getAllDataFlows();
 
         clearLogbackMarkers();
         return Response
@@ -103,7 +133,7 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
     }
 
     private Response getSingleDataFlow(String uuid) throws Exception {
-        DataflowEntity dataFlow = DataflowEntity.getDataFlow(uuid);
+        DataFlowEntity dataFlow = DataFlowEntity.getDataFlow(uuid);
 
         return Response
                 .ok()
@@ -113,12 +143,42 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
     }
 
     private Response search(String searchData) throws Exception {
-        Iterable<DataflowEntity> dataflows = DataflowEntity.search(searchData);
+        Iterable<DataFlowEntity> dataflows = DataFlowEntity.search(searchData);
 
         clearLogbackMarkers();
         return Response
                 .ok()
                 .entity(dataflows)
+                .build();
+    }
+
+    private Response getLinkedDpas(String dataFlowUuid) throws Exception {
+
+        List<String> dpaUuids = MasterMappingEntity.getChildMappings(dataFlowUuid, MapType.DATAFLOW.getMapType(), MapType.DATAPROCESSINGAGREEMENT.getMapType());
+        List<DataProcessingAgreementEntity> ret = new ArrayList<>();
+
+        if (dpaUuids.size() > 0)
+            ret = DataProcessingAgreementEntity.getDPAsFromList(dpaUuids);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private Response getLinkedDsas(String dataFlowUuid) throws Exception {
+
+        List<String> dsaUuids = MasterMappingEntity.getParentMappings(dataFlowUuid, MapType.DATAFLOW.getMapType(), MapType.DATASHARINGAGREEMENT.getMapType());
+        List<DataSharingAgreementEntity> ret = new ArrayList<>();
+
+        if (dsaUuids.size() > 0)
+            ret = DataSharingAgreementEntity.getDSAsFromList(dsaUuids);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
                 .build();
     }
 
