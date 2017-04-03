@@ -216,7 +216,7 @@ public class RunDataDistributionProtocols extends PipelineComponent {
 			throw new PipelineException("Failed to find person ID for batch " + batchId + " and personId " + personId, ex);
 		}
 
-		LOG.trace("Found " + patientIds.size() + " for patient " + patientId + " and person " + personId + " for batch " + batchId + " in exchange " + exchangeId + " so passing protocol " + protocolId + " check");
+		LOG.trace("Found " + patientIds.size() + " patient IDs for patient " + patientId + " and person " + personId + " for batch " + batchId + " in exchange " + exchangeId + " for protocol " + protocolId + " check");
 
 		for (String otherPatientId: patientIds) {
 

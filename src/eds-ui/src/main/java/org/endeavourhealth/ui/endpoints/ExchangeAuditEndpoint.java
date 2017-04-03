@@ -789,5 +789,33 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .entity(lines)
                 .build();
     }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/postTest")
+    @RequiresAdmin
+    public Response postTest(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
+        super.setLogbackMarkers(sc);
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save, "Testing Post Rerequesting");
+
+        LOG.info("-----posting to exchange for service " + request.getServiceId());
+        Throwable t = new RuntimeException();
+        t.fillInStackTrace();
+        LOG.error("", t);
+
+        for (int i=0; i<20; i++) {
+            LOG.info("Sleeping " + i);
+            Thread.sleep(1000 * 60);
+        }
+        LOG.info("Done");
+
+        clearLogbackMarkers();
+
+        return Response
+                .ok()
+                .build();
+    }
 }
 
