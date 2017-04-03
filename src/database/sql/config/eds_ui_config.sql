@@ -54,3 +54,12 @@ VALUES
    "username" : "USERNAME",
    "password" : "PASSWORD"
 }');
+
+INSERT INTO config
+(app_id, config_id, config_data)
+VALUES
+('eds-ui', 'GoogleMapsAPI','{
+   "url" : "https://maps.googleapis.com/maps/api/geocode/json?address=",
+   "apiKey" : "API_KEY"
+}');
+
