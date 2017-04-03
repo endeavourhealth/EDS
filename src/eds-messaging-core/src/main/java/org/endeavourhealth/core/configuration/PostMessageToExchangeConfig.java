@@ -17,8 +17,6 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;extension base="{}ComponentConfig">
  *       &lt;sequence>
- *         &lt;element name="Credentials" type="{}Credentials"/>
- *         &lt;element name="Nodes" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="Exchange" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="RoutingHeader" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="MulticastHeader" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
@@ -32,8 +30,6 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "PostMessageToExchangeConfig", propOrder = {
-    "credentials",
-    "nodes",
     "exchange",
     "routingHeader",
     "multicastHeader"
@@ -42,64 +38,12 @@ public class PostMessageToExchangeConfig
     extends ComponentConfig
 {
 
-    @XmlElement(name = "Credentials", required = true)
-    protected Credentials credentials;
-    @XmlElement(name = "Nodes", required = true)
-    protected String nodes;
     @XmlElement(name = "Exchange", required = true)
     protected String exchange;
     @XmlElement(name = "RoutingHeader", required = true)
     protected String routingHeader;
     @XmlElement(name = "MulticastHeader")
     protected String multicastHeader;
-
-    /**
-     * Gets the value of the credentials property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Credentials }
-     *     
-     */
-    public Credentials getCredentials() {
-        return credentials;
-    }
-
-    /**
-     * Sets the value of the credentials property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Credentials }
-     *     
-     */
-    public void setCredentials(Credentials value) {
-        this.credentials = value;
-    }
-
-    /**
-     * Gets the value of the nodes property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getNodes() {
-        return nodes;
-    }
-
-    /**
-     * Sets the value of the nodes property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setNodes(String value) {
-        this.nodes = value;
-    }
 
     /**
      * Gets the value of the exchange property.

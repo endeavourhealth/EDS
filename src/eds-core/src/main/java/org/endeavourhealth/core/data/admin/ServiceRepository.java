@@ -2,7 +2,7 @@ package org.endeavourhealth.core.data.admin;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.mapping.Mapper;
-import org.endeavourhealth.core.data.Repository;
+import org.endeavourhealth.common.cassandra.Repository;
 import org.endeavourhealth.core.data.admin.accessors.ServiceAccessor;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
@@ -74,8 +74,10 @@ public class ServiceRepository extends Repository {
 
 		for (UUID orgUuid : service.getOrganisations().keySet()) {
 			Organisation organisation = orgMapper.get(orgUuid);
-			organisation.getServices().remove(service.getId());
-			batchStatement.add(orgMapper.saveQuery(organisation));
+			if (organisation != null) {
+				organisation.getServices().remove(service.getId());
+				batchStatement.add(orgMapper.saveQuery(organisation));
+			}
 		}
 
 		getSession().execute(batchStatement);

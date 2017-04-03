@@ -1,7 +1,7 @@
 package org.endeavourhealth.ui.entitymap;
 
-import org.endeavourhealth.core.utility.Resources;
-import org.endeavourhealth.core.utility.XmlSerializer;
+import org.endeavourhealth.common.utility.Resources;
+import org.endeavourhealth.common.utility.XmlSerializer;
 import org.endeavourhealth.ui.entitymap.models.EntityMap;
 
 public class EntityMapHelper {

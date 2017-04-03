@@ -6,6 +6,7 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
 
 
@@ -19,7 +20,7 @@ import javax.xml.bind.annotation.XmlType;
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
- *         &lt;element name="enabled" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="enabled" type="{}protocolEnabled"/>
  *         &lt;element name="patientConsent" type="{http://www.w3.org/2001/XMLSchema}string"/>
  *         &lt;element name="cohort" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
  *         &lt;element name="dataSet" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/>
@@ -43,7 +44,8 @@ import javax.xml.bind.annotation.XmlType;
 public class Protocol {
 
     @XmlElement(required = true)
-    protected String enabled;
+    @XmlSchemaType(name = "string")
+    protected ProtocolEnabled enabled;
     @XmlElement(required = true)
     protected String patientConsent;
     protected String cohort;
@@ -55,10 +57,10 @@ public class Protocol {
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link ProtocolEnabled }
      *     
      */
-    public String getEnabled() {
+    public ProtocolEnabled getEnabled() {
         return enabled;
     }
 
@@ -67,10 +69,10 @@ public class Protocol {
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link ProtocolEnabled }
      *     
      */
-    public void setEnabled(String value) {
+    public void setEnabled(ProtocolEnabled value) {
         this.enabled = value;
     }
 

@@ -1,0 +1,110 @@
+<div class="module">
+    <div class="container-fluid">
+        <div class="module-heading">
+            Data Sharing Overview
+        </div>
+        <div class="module-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="panel panel-info">
+                        <div class="panel-heading">Data Sharing Agreements</div>
+                        <div class="panel-body">
+                            <div class="row" *ngFor="let dsa of dsaStats">
+                                <div class="col-md-6">
+                                    {{dsa.label}}
+                                </div>
+                                <div class="col-md-6">
+                                    {{dsa.value}}
+                                </div>
+                            </div>
+                            <br>
+                            <div class="pull-right">
+                                <button type="button" class="btn btn-sm btn-info" (click)="goToDsa()">View Data Sharing Agreements</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="panel panel-success">
+                        <div class="panel-heading">Data Flows</div>
+                        <div class="panel-body">
+                            <div class="row" *ngFor="let dataflow of dataflowStats">
+                                <div class="col-md-6">
+                                    {{dataflow.label}}
+                                </div>
+                                <div class="col-md-6">
+                                    {{dataflow.value}}
+                                </div>
+                            </div>
+                            <br>
+                            <div class="pull-right">
+                                <button type="button" class="btn btn-sm btn-success" (click)="goToDataFlow()">View Data Flows</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="panel panel-warning">
+                        <div class="panel-heading">Data Processing Agreements</div>
+                        <div class="panel-body">
+                            <div class="row" *ngFor="let dpa of dpaStats">
+                                <div class="col-md-6">
+                                    {{dpa.label}}
+                                </div>
+                                <div class="col-md-6">
+                                    {{dpa.value}}
+                                </div>
+                            </div>
+                            <br>
+                            <div class="pull-right">
+                                <button type="button" class="btn btn-sm btn-warning" (click)="goToDpa()">View Data Processing Agreements</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">Cohorts</div>
+                        <div class="panel-body">
+                            <div class="row" *ngFor="let cohort of cohortStats">
+                                <div class="col-md-6">
+                                    {{cohort.label}}
+                                </div>
+                                <div class="col-md-6">
+                                    {{cohort.value}}
+                                </div>
+                            </div>
+                            <br>
+                            <div class="pull-right">
+                                <button type="button" class="btn btn-sm btn-primary" (click)="goToCohorts()">View Cohorts</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row" *ngIf="summaryStats">
+                <div class="col-md-6">
+                    <div class="panel panel-info">
+                        <div class="panel-heading">Data Sharing Summary</div>
+                        <div class="panel-body">
+                            <div class="row" *ngFor="let stat of summaryStats">
+                                <div class="col-md-6">
+                                    {{stat.label}}
+                                </div>
+                                <div class="col-md-6">
+                                    {{stat.value}}
+                                </div>
+                            </div>
+                            <br>
+                            <div class="pull-right">
+                                <button type="button" class="btn btn-sm btn-info" (click)="goToSummary()">View Data Sharing Summaries</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Discovery Authentication Service</title>
+
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.23.0/codemirror.css" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.23.0/addon/hint/show-hint.css" />
+
+	</head>
+	<body>
+		<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+		<script>
+			window.jQuery = window.$ = jQuery;
+		</script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/5.0.0/highcharts.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/highchartTable/2.0.0/jquery.highchartTable.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2014-11-29/FileSaver.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.23.0/codemirror.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.23.0/mode/sql/sql.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.23.0/addon/hint/show-hint.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.23.0/addon/hint/sql-hint.js"></script>
+
+		<ui-view>
+			<style type="text/css">
+
+				#pre-bootstrap {
+					background-color: #FFFFFF ;
+					bottom: 0px ;
+					left: 0px ;
+					position: fixed ;
+					right: 0px ;
+					top: 0px ;
+					z-index: 999999 ;
+				}
+
+				#pre-bootstrap div.messaging {
+					color: #337ab7 ;
+					font-family: monospace ;
+					left: 0px ;
+					margin-top: -37px ;
+					position: absolute ;
+					right: 0px ;
+					text-align: center ;
+					top: 50% ;
+				}
+
+				#pre-bootstrap h1 {
+					font-size: 26px ;
+					line-height: 35px ;
+					margin: 0px 0px 20px 0px ;
+				}
+
+				#pre-bootstrap p {
+					font-size: 18px ;
+					line-height: 14px ;
+					margin: 0px 0px 0px 0px ;
+				}
+
+			</style>
+
+			<div id="pre-bootstrap">
+				<div class="messaging">
+
+					<h1>
+						Please wait...
+					</h1>
+
+					<p>
+						Your Endeavour Health application is loading!
+					</p>
+
+				</div>
+			</div>
+		</ui-view>
+	</body>
+</html>
+

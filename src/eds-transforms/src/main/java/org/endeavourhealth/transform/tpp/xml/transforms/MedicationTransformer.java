@@ -1,10 +1,11 @@
 package org.endeavourhealth.transform.tpp.xml.transforms;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.transform.common.FhirHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.fhir.CodeableConceptHelper;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.tpp.xml.schema.*;
 import org.endeavourhealth.transform.tpp.xml.schema.Medication;
 import org.hl7.fhir.instance.model.*;
@@ -55,7 +56,7 @@ public class MedicationTransformer {
 
         fhirMedicationOrder.setStatus(convertStatus(endDate, endReason));
 
-        fhirMedicationOrder.setPatient(ReferenceHelper.createReference(Patient.class, fhirResources));
+        fhirMedicationOrder.setPatient(FhirHelper.findAndCreateReference(Patient.class, fhirResources));
 
         String userName = tppEvent.getUserName();
         if (!Strings.isNullOrEmpty(userName)) {

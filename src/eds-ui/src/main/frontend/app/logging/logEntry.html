@@ -1,0 +1,73 @@
+<div class="modal-header">
+	<button type="button" class="close" (click)="cancel()" aria-hidden="true">&times;</button>
+	<h4 class="modal-title"><i [ngClass]="getLevelIcon(logEntry.levelString)"></i> Log Entry : {{logEntry.timestmp | date:'dd-MMM-yyyy HH:mm:ss'}}</h4>
+</div>
+<div class="modal-body">
+	<form endUserRole="form" class="container-fluid">
+		<div class="row">
+			<div class="form-group col-md-1">
+				<label class="control-label">Message</label>
+			</div>
+			<div class="form-group col-md-11">
+				{{logEntry.formattedMessage}}
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="form-group col-md-1">
+				<label class="control-label">Logger</label>
+			</div>
+			<div class="form-group col-md-11">
+				{{logEntry.loggerName}}
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="form-group col-md-1">
+				<label class="control-label">Level</label>
+			</div>
+			<div class="form-group col-md-5">
+				{{logEntry.levelString}}
+			</div>
+			<div class="form-group col-md-1">
+				<label class="control-label">Thread</label>
+			</div>
+			<div class="form-group col-md-5">
+				{{logEntry.threadName}}
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="form-group col-md-1">
+				<label class="control-label">File</label>
+			</div>
+			<div class="form-group col-md-5">
+				{{logEntry.callerFilename}}
+			</div>
+			<div class="form-group col-md-1">
+				<label class="control-label">Method</label>
+			</div>
+			<div class="form-group col-md-5">
+				{{logEntry.callerMethod}} (~{{logEntry.callerLine}})
+			</div>
+		</div>
+		<div class="row">
+			<div class="form-group col-md-1">
+				<label class="control-label">Args</label>
+			</div>
+			<div class="form-group col-md-11">
+				{{logEntry.arg0}} {{logEntry.arg1}} {{logEntry.arg2}} {{logEntry.arg3}}
+			</div>
+		</div>
+		<div class="row">
+			<div class="form-group col-md-12">
+				<label class="control-label">Stack Trace</label>
+				<pre class="stackTrace">{{stackTrace}}</pre>
+			</div>
+		</div>
+	</form>
+</div>
+<div class="modal-footer">
+	<button type="button" class="btn btn-primary" *ngIf="!editMode" (click)="ok()">Close</button>
+</div>
+

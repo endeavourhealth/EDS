@@ -1,0 +1,409 @@
+/* Endeavour specific CSS */
+
+/**********************************************************************************************************************/
+/* TITLE BAR */
+/**********************************************************************************************************************/
+.title-text {
+  font-size: 18px;
+  line-height: 50px;
+  color: gray;
+  margin-left:10px;
+  vertical-align: middle;
+}
+
+.loggedin-text {
+    color: gray;
+    line-height: 50px;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+.nhs-logo {
+    height: 50px;
+    width: 60px;
+    line-height: 50px;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 20px;
+    color: #fff;
+    float: left;
+    font-style: italic;
+    font-weight: bold;
+    background: #337ab7 linear-gradient(to bottom, #337ab7 0%, #2e6da4 100%) repeat-x;
+}
+
+/**********************************************************************************************************************/
+/* MODULE LAYOUT*/
+/**********************************************************************************************************************/
+.module {
+    padding-top: 51px;
+    padding-left: 60px;
+    padding-right: 0px;
+}
+
+.module-heading {
+    position: fixed;
+    padding: 8px 70px 8px 20px;
+    border-bottom: 1px solid #eee;
+    color: #fff;
+    background-color: #337ab7;
+    width: 100%;
+    font-size: 16px;
+    height: 45px;
+    line-height: 28px;
+    z-index: 100;
+}
+
+.module-body {
+    padding-top: 65px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.module-footer {
+    position: fixed;
+    bottom: 0px;
+    width: 100%;
+    padding-left: 20px;
+    padding-right: 80px;
+}
+
+/**********************************************************************************************************************/
+/* COMMON */
+/**********************************************************************************************************************/
+.center-float {
+    left:50%;
+    top:50%;
+    -webkit-transform: translate(-50%, -50%);
+    -moz-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    position:absolute;
+}
+
+.bordered-box {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+    -webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
+    -o-transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+    transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+}
+
+.zero-pad {
+    padding-right: 0px;
+    padding-left: 0px;
+}
+
+.striped {
+    border-top: 1px solid #eee;
+    background-color: #ffffff;
+}
+
+.striped:nth-of-type(odd) {
+    background-color: #f8f8f8;
+}
+
+.scroll-box-50 {
+    height: 50px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.scroll-box-100 {
+    height: 100px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.scroll-box-150 {
+    height: 150px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.scroll-box-300 {
+    height: 300px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.scroll-box-350 {
+    height: 350px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.scroll-box-400 {
+    height: 400px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.scroll-box-500 {
+    height: 500px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+.scroll-box-horizontal {
+  overflow-x: scroll;
+}
+
+.show-child-on-hover .child-to-show {
+    display: none;
+}
+
+.show-child-on-hover:hover .child-to-show {
+    display: inline;
+}
+
+.show-child-on-hover .child-to-hide {
+    display: inline;
+}
+
+.show-child-on-hover:hover .child-to-hide {
+    display: none;
+}
+
+.folder-item {
+    display:inline-block;
+    width: 100%;
+    height: 20px;
+}
+
+.selection {
+    background : #afd9ee !important;
+}
+
+.previous-selection {
+    background : #afd9ee !important;
+}
+
+.dragtarget-over {
+    border: 1px solid #dae2ea !important;
+    padding: 0px;
+    background: #f8faff !important;
+}
+
+.hover-box:hover {
+    background: #d3e9f6 !important;
+    cursor: pointer;
+}
+
+.vcenter {
+    min-height: 100%; /* Fallback for vh unit */
+    min-height: 100vh;
+    /* You might also want to use
+                           'height' property instead.
+
+                           Note that for percentage values of
+                           'height' or 'min-height' properties,
+                           the 'height' of the parent element
+                           should be specified explicitly.
+
+                           In this case the parent of '.vertical-center'
+                           is the <body> element */
+
+    /* Make it a flex container */
+    display: -webkit-box;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+
+    /* Align the bootstrap's container vertically */
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -moz-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+
+    /* In legacy web browsers such as Firefox 9
+       we need to specify the width of the flex container */
+    width: 100%;
+
+    /* Also 'margin: 0 auto' doesn't have any effect on flex items in such web browsers
+       hence the bootstrap's container won't be aligned to the center anymore.
+
+       Therefore, we should use the following declarations to get it centered again */
+    -webkit-box-pack: center;
+    -moz-box-pack: center;
+    -ms-flex-pack: center;
+    -webkit-justify-content: center;
+    justify-content: center;
+}
+
+.table-selectable {
+
+  tbody tr.selected,
+  tbody tr.selected:hover {
+    background: #93c9e9;
+  }
+
+  tbody tr:hover {
+    background: #d3e9f6;
+    cursor: pointer;
+  }
+}
+
+/**********************************************************************************************************************/
+/* LOADING INDICATOR */
+/**********************************************************************************************************************/
+
+div.loading {
+  background: transparent;
+  width:      100%;
+  height:     100%;
+  min-height: 80px;
+  top:        0;
+  left:       0;
+  position:   relative;
+}
+
+div.loadingOverlay {
+  opacity:    0.66;
+  background: #000;
+  width:      100%;
+  height:     100%;
+  z-index:    10;
+  top:        0;
+  left:       0;
+  position:   fixed;
+}
+
+div.loadingCaption {
+  text-align: center ;
+  font-family: monospace ;
+  font-weight: normal;
+  top: 50% ;
+  width:      100%;
+  height:     100%;
+  font-size: 26px ;
+  line-height: 35px ;
+  margin: 0px 0px 20px 0px ;
+  position: absolute ;
+}
+
+/**********************************************************************************************************************/
+/* RECORD VIEWER */
+/**********************************************************************************************************************/
+.record-viewer {
+
+    .precis {
+        background-color: #f1f8fc;
+
+    .precis-patientname {
+      font-weight: bold;
+      font-size: 120%;
+    }
+
+    .precis-label {
+      font-style: italic;
+    }
+
+    .precis-value {
+      font-weight: bold;
+    }
+  }
+
+  .tab-panel {
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    border-radius: 0px 0px 5px 5px;
+    padding: 10px;
+  }
+
+  .page-sub-header {
+    background: #93c9e9 linear-gradient(to right, #93c9e9 0%, #ffffff 100%);
+    padding: 10px;
+  }
+
+  .consultation-title {
+    font-weight: bold;
+  }
+
+  .consultation-header {
+    // background: #93c9e9 linear-gradient(to right, #93c9e9 0%, #ffffff 100%);
+  }
+}
+
+.clinical-items-table {
+
+  tr td:first-of-type {
+    width: 20%;
+  }
+
+  .problem-term-text {
+    font-weight: bold;
+  }
+
+  .problem-term-significance-text {
+    font-style: italic;
+  }
+
+  .problem-detail {
+    padding: 8px;
+  }
+
+  .collapsed .toggle-icon:before {
+    content: "\f13a";
+  }
+
+  .toggle-icon:before {
+    content: "\f139";
+  }
+
+  .showing-row td {
+    border-bottom-width: 0;
+    font-size: 16px;
+
+    .problem-detail {
+      border-bottom-width: 0;
+
+
+      table {
+        tr {
+          td:first-of-type {
+            width: 20%;
+          }
+
+          td {
+            padding: 5px;
+            font-size: 14px;
+          }
+
+        }
+      }
+    }
+  }
+}
+
+#patient-find-search-results {
+  margin-top: 20px;
+}
+
+#patient-find-search-criteria {
+  margin-bottom: 10px;
+}
+
+#patient-find-service-chooser {
+  width: 100%;
+
+  margin-bottom: 10px;
+
+  button {
+    width: 100%;
+    text-align: left;
+
+    .caret {
+      float: right;
+      margin-top: 8px;
+    }
+  }
+
+  ul {
+    width: 100%;
+  }
+}

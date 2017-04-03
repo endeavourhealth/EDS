@@ -5,7 +5,6 @@ import com.datastax.driver.mapping.annotations.Column;
 import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Table;
 
-import java.util.Date;
 import java.util.UUID;
 
 @Table(keyspace = "admin", name = "item")

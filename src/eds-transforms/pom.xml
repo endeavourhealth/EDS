@@ -4,10 +4,6 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.endeavourhealth</groupId>
-    <artifactId>eds-transforms</artifactId>
-    <version>1.0-SNAPSHOT</version>
-
     <parent>
         <groupId>org.endeavourhealth</groupId>
         <artifactId>eds</artifactId>
@@ -15,13 +11,28 @@
         <relativePath>../../</relativePath>
     </parent>
 
+    <artifactId>eds-transforms</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
     <dependencies>
 
         <!-- dependent on EDS modules -->
         <dependency>
             <groupId>org.endeavourhealth</groupId>
             <artifactId>eds-core</artifactId>
-            <version>${project.version}</version>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>cache</artifactId>
+            <version>${eds-common.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>fhir</artifactId>
+            <version>${eds-common.version}</version>
         </dependency>
 
         <!-- base FHIR resources (to be replaced with Endeavour extensions -->
@@ -62,9 +73,15 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.4.2</version>
+            <version>${jackson.version}</version>
         </dependency>
 
+        <!--open pseudonomiser -->
+        <dependency>
+            <groupId>org.openpseudonymiser</groupId>
+            <artifactId>cryptolib</artifactId>
+            <version>0.9.7</version>
+        </dependency>
 
         <!-- eCache caching framework -->
         <!--<dependency>-->
@@ -82,18 +99,28 @@
 
     <build>
 
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.1</version>
-            <configuration>
-                <source>${java.version}</source>
-                <target>${java.version}</target>
-            </configuration>
-        </plugin>
-    </plugins>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+        </plugins>
 
     </build>
+
+    <!--OpenPseudonomiser isn't in an online Maven repo, so has been installed in a local repo folder -->
+    <!--See https://devcenter.heroku.com/articles/local-maven-dependencies -->
+    <repositories>
+        <repository>
+            <id>project.local</id>
+            <name>project</name>
+            <url>file:${project.basedir}/repo</url>
+        </repository>
+    </repositories>
 
 </project>

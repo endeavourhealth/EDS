@@ -2,7 +2,7 @@ package org.endeavourhealth.core.data.ehr;
 
 import com.datastax.driver.mapping.Mapper;
 import com.google.common.collect.Lists;
-import org.endeavourhealth.core.data.Repository;
+import org.endeavourhealth.common.cassandra.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.PersonConsentAccessor;
 import org.endeavourhealth.core.data.ehr.models.PersonConsentGlobal;
 import org.endeavourhealth.core.data.ehr.models.PersonConsentOrganisation;

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <xs:element name="patientCreate" type="payload"/>
+    <xs:element name="patientUpdate" type="payload"/>
+    <xs:element name="patientReplace" type="payload"/>
+    <xs:element name="patientDataDelete" type="payload"/>
+
+    <xs:complexType name="payload">
+        <xs:sequence>
+            <xs:element name="patientGUID" type="xs:string"/>
+            <xs:element name="dateofbirth" type="xs:date" minOccurs="0"/>
+            <xs:element name="gender" type="xs:string" minOccurs="0"/>
+            <xs:element name="clinicalTerm" type="clinicalTerm" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="medication" type="medication" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="clinicalTerm">
+        <xs:sequence>
+            <xs:element name="code" type="xs:string" minOccurs="0"/>
+            <xs:element name="description" type="xs:string" minOccurs="0"/>
+            <xs:element name="value" type="xs:decimal" minOccurs="0"/>
+            <xs:element name="units" type="xs:string" minOccurs="0"/>
+            <xs:element name="lowerRecommendedBound" type="xs:decimal" minOccurs="0"/>
+            <xs:element name="upperRecommendedBound" type="xs:decimal" minOccurs="0"/>
+            <xs:element name="startDate" type="xs:date" minOccurs="0"/>
+            <xs:element name="endDate" type="xs:date" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="medication">
+        <xs:sequence>
+            <xs:element name="productId" type="xs:string" minOccurs="0"/>
+            <xs:element name="productName" type="xs:string" minOccurs="0"/>
+            <xs:element name="startDate" type="xs:date" minOccurs="0"/>
+            <xs:element name="endDate" type="xs:date" minOccurs="0"/>
+            <xs:element name="dose" type="xs:string" minOccurs="0"/>
+            <xs:element name="quanity" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

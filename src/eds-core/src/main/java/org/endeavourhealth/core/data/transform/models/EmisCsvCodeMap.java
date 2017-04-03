@@ -10,19 +10,16 @@ import java.util.UUID;
 @Table(keyspace = "transform", name = "emis_csv_code_map")
 public class EmisCsvCodeMap {
 
-    @PartitionKey
-    @Column(name = "service_id")
-    private UUID serviceId = null;
+    @PartitionKey(0)
+    @Column(name = "data_sharing_agreement_guid")
+    private String dataSharingAgreementGuid = null;
     @ClusteringColumn(0)
-    @Column(name = "system_id")
-    private UUID systemId = null;
-    @ClusteringColumn(1)
     @Column(name = "medication")
     private boolean medication = false;
-    @ClusteringColumn(2)
+    @ClusteringColumn(1)
     @Column(name = "code_id")
     private Long codeId = null;
-    @ClusteringColumn(3)
+    @ClusteringColumn(2)
     @Column(name = "time_uuid")
     private UUID timeUuid = null;
     @Column(name = "code_type")
@@ -45,22 +42,17 @@ public class EmisCsvCodeMap {
     private String nationalCodeCategory = null;
     @Column(name = "national_code_description")
     private String nationalCodeDescription = null;
+    @Column(name = "parent_code_id")
+    private Long parentCodeId = null;
 
+    public EmisCsvCodeMap() {}
 
-    public UUID getServiceId() {
-        return serviceId;
+    public String getDataSharingAgreementGuid() {
+        return dataSharingAgreementGuid;
     }
 
-    public void setServiceId(UUID serviceId) {
-        this.serviceId = serviceId;
-    }
-
-    public UUID getSystemId() {
-        return systemId;
-    }
-
-    public void setSystemId(UUID systemId) {
-        this.systemId = systemId;
+    public void setDataSharingAgreementGuid(String dataSharingAgreementGuid) {
+        this.dataSharingAgreementGuid = dataSharingAgreementGuid;
     }
 
     public boolean isMedication() {
@@ -165,5 +157,13 @@ public class EmisCsvCodeMap {
 
     public void setNationalCodeDescription(String nationalCodeDescription) {
         this.nationalCodeDescription = nationalCodeDescription;
+    }
+
+    public Long getParentCodeId() {
+        return parentCodeId;
+    }
+
+    public void setParentCodeId(Long parentCodeId) {
+        this.parentCodeId = parentCodeId;
     }
 }

@@ -1,84 +1,80 @@
 package org.endeavourhealth.transform.emis.csv.transforms.careRecord;
 
 import com.google.common.base.Strings;
-import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.exceptions.FutureException;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.common.fhir.AnnotationHelper;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary;
-import org.endeavourhealth.transform.fhir.AnnotationHelper;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.FhirUri;
 import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.Meta;
 import org.hl7.fhir.instance.model.ProcedureRequest;
 import org.hl7.fhir.instance.model.StringType;
 
 import java.util.Date;
+import java.util.Map;
 
 public class DiaryTransformer {
 
     public static void transform(String version,
-                                 String folderPath,
-                                 CSVFormat csvFormat,
-                                 CsvProcessor csvProcessor,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Diary parser = new Diary(version, folderPath, csvFormat);
-        try {
-            while (parser.nextRecord()) {
-                createProcedureRequest(version, parser, csvProcessor, csvHelper);
+        AbstractCsvParser parser = parsers.get(Diary.class);
+        while (parser.nextRecord()) {
+
+            try {
+                createResource((Diary)parser, fhirResourceFiler, csvHelper, version);
+            } catch (Exception ex) {
+                fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
             }
-        } catch (FutureException fe) {
-            throw fe;
-        } catch (Exception ex) {
-            throw new TransformException(parser.getErrorLine(), ex);
-        } finally {
-            parser.close();
         }
     }
 
-    private static void createProcedureRequest(String version,
-                                               Diary diaryParser,
-                                               CsvProcessor csvProcessor,
-                                               EmisCsvHelper csvHelper) throws Exception {
+
+    public static void createResource(Diary parser,
+                                       FhirResourceFiler fhirResourceFiler,
+                                       EmisCsvHelper csvHelper,
+                                       String version) throws Exception {
 
         ProcedureRequest fhirRequest = new ProcedureRequest();
         fhirRequest.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PROCEDURE_REQUEST));
 
-        String diaryGuid = diaryParser.getDiaryGuid();
-        String patientGuid = diaryParser.getPatientGuid();
+        String diaryGuid = parser.getDiaryGuid();
+        String patientGuid = parser.getPatientGuid();
 
         EmisCsvHelper.setUniqueId(fhirRequest, patientGuid, diaryGuid);
 
         fhirRequest.setSubject(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (diaryParser.getDeleted() || diaryParser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(patientGuid, fhirRequest);
+        if (parser.getDeleted()) {
+            fhirResourceFiler.deletePatientResource(parser.getCurrentState(), patientGuid, fhirRequest);
             return;
         }
 
-        Long codeId = diaryParser.getCodeId();
-        fhirRequest.setCode(csvHelper.findClinicalCode(codeId, csvProcessor));
+        Long codeId = parser.getCodeId();
+        fhirRequest.setCode(csvHelper.findClinicalCode(codeId));
 
-        String originalTerm = diaryParser.getOriginalTerm();
+        String originalTerm = parser.getOriginalTerm();
         if (!Strings.isNullOrEmpty(originalTerm)) {
             CodeableConcept fhirConcept = fhirRequest.getCode();
             fhirConcept.setText(originalTerm);
         }
 
-        Date effectiveDate = diaryParser.getEffectiveDate();
+        Date effectiveDate = parser.getEffectiveDate();
         if (effectiveDate != null) {
-            String effectiveDatePrecision = diaryParser.getEffectiveDatePrecision();
+            String effectiveDatePrecision = parser.getEffectiveDatePrecision();
             fhirRequest.setScheduled(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
         }
 
-        String freeTextDuration = diaryParser.getDurationTerm();
+        String freeTextDuration = parser.getDurationTerm();
         if (!Strings.isNullOrEmpty(freeTextDuration)) {
             fhirRequest.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROCEDURE_REQUEST_SCHEDULE_TEXT, new StringType(freeTextDuration)));
         }
@@ -86,47 +82,48 @@ public class DiaryTransformer {
         //handle mis-spelt column in EMIS test pack
         //String clinicianGuid = diaryParser.getClinicianUserInRoleGuid();
         String clinicianGuid = null;
-        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
-            clinicianGuid = diaryParser.getClinicanUserInRoleGuid();
+        if (version.equals(EmisCsvToFhirTransformer.VERSION_5_0)
+                || version.equals(EmisCsvToFhirTransformer.VERSION_5_1)) {
+            clinicianGuid = parser.getClinicanUserInRoleGuid();
         } else {
-            clinicianGuid = diaryParser.getClinicianUserInRoleGuid();
+            clinicianGuid = parser.getClinicianUserInRoleGuid();
         }
 
-        if (clinicianGuid != null) {
+        if (!Strings.isNullOrEmpty(clinicianGuid)) {
             fhirRequest.setPerformer(csvHelper.createPractitionerReference(clinicianGuid));
         }
 
-        String associatedText = diaryParser.getAssociatedText();
+        String associatedText = parser.getAssociatedText();
         fhirRequest.addNotes(AnnotationHelper.createAnnotation(associatedText));
 
-        String locationTypeDescription = diaryParser.getLocationTypeDescription();
+        String locationTypeDescription = parser.getLocationTypeDescription();
         if (!Strings.isNullOrEmpty(locationTypeDescription)) {
             fhirRequest.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.PROCEDURE_REQUEST_LOCATION_DESCRIPTION, new StringType(locationTypeDescription)));
         }
 
-        Date entererdDateTime = diaryParser.getEnteredDateTime();
+        Date entererdDateTime = parser.getEnteredDateTime();
         if (entererdDateTime != null) {
             fhirRequest.setOrderedOn(entererdDateTime);
         }
 
-        String enterdByGuid = diaryParser.getEnteredByUserInRoleGuid();
-        if (enterdByGuid != null) {
+        String enterdByGuid = parser.getEnteredByUserInRoleGuid();
+        if (!Strings.isNullOrEmpty(enterdByGuid)) {
             fhirRequest.setOrderer(csvHelper.createPractitionerReference(enterdByGuid));
         }
 
-        String consultationGuid = diaryParser.getConsultationGuid();
-        if (consultationGuid != null) {
+        String consultationGuid = parser.getConsultationGuid();
+        if (!Strings.isNullOrEmpty(consultationGuid)) {
             fhirRequest.setEncounter(csvHelper.createEncounterReference(consultationGuid, patientGuid));
         }
 
-        if (diaryParser.getIsComplete()) {
+        if (parser.getIsComplete()) {
             fhirRequest.setStatus(ProcedureRequest.ProcedureRequestStatus.COMPLETED);
-        } else if (diaryParser.getIsActive()) {
+        } else if (parser.getIsActive()) {
             fhirRequest.setStatus(ProcedureRequest.ProcedureRequestStatus.REQUESTED);
         } else {
             fhirRequest.setStatus(ProcedureRequest.ProcedureRequestStatus.SUSPENDED);
         }
 
-        csvProcessor.savePatientResource(patientGuid, fhirRequest);
+        fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirRequest);
     }
 }

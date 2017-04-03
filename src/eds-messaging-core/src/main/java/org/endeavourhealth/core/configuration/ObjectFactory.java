@@ -30,6 +30,30 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link QueueReaderConfiguration }
+     * 
+     */
+    public QueueReaderConfiguration createQueueReaderConfiguration() {
+        return new QueueReaderConfiguration();
+    }
+
+    /**
+     * Create an instance of {@link Pipeline }
+     * 
+     */
+    public Pipeline createPipeline() {
+        return new Pipeline();
+    }
+
+    /**
+     * Create an instance of {@link ForEachConfig }
+     * 
+     */
+    public ForEachConfig createForEachConfig() {
+        return new ForEachConfig();
+    }
+
+    /**
      * Create an instance of {@link PostToRestConfig }
      * 
      */

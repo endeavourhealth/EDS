@@ -1,8 +1,13 @@
 package org.endeavourhealth.transform.tpp.xml.transforms;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.transform.common.FhirHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.IdentifierHelper;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.tpp.xml.schema.Address;
 import org.endeavourhealth.transform.tpp.xml.schema.*;
 import org.hl7.fhir.instance.model.*;
@@ -27,7 +32,7 @@ public class DemographicTransformer {
         fhirPatient.setId(patientUid);
         fhirResources.add(fhirPatient);
 
-        fhirPatient.setManagingOrganization(ReferenceHelper.createReference(Organization.class, fhirResources));
+        fhirPatient.setManagingOrganization(FhirHelper.findAndCreateReference(Organization.class, fhirResources));
 
         transformIdentity(fhirPatient, patientUid, tppId);
         transformName(fhirPatient, tppDemographics);
@@ -85,7 +90,7 @@ public class DemographicTransformer {
         String patientId = fhirPatient.getId();
         fhirEpisode.setPatient(ReferenceHelper.createReference(ResourceType.Patient, patientId));
 
-        fhirEpisode.setManagingOrganization(ReferenceHelper.createReference(Organization.class, fhirResources));
+        fhirEpisode.setManagingOrganization(FhirHelper.findAndCreateReference(Organization.class, fhirResources));
     }
 
     private static void transformUsualGp(Patient fhirPatient, Demographics tppDemographics, List<Resource> fhirResources) throws TransformException {
@@ -102,21 +107,21 @@ public class DemographicTransformer {
 
         String homeTel = tppDemographics.getHomeTelephone();
         if (!Strings.isNullOrEmpty(homeTel)) {
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.HOME, homeTel);
             fhirPatient.addTelecom(contactPoint);
         }
 
         String workTel = tppDemographics.getWorkTelephone();
         if (!Strings.isNullOrEmpty(workTel)) {
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.WORK, workTel);
             fhirPatient.addTelecom(contactPoint);
         }
 
         String mobTel = tppDemographics.getMobileTelephone();
         if (!Strings.isNullOrEmpty(mobTel)) {
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.MOBILE, mobTel);
             fhirPatient.addTelecom(contactPoint);
         }
@@ -124,7 +129,7 @@ public class DemographicTransformer {
         String altTel = tppDemographics.getAlternateTelephone();
         if (!Strings.isNullOrEmpty(altTel)) {
             //treat alternative number as a second home number
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.PHONE,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.PHONE,
                     ContactPoint.ContactPointUse.HOME, altTel);
             fhirPatient.addTelecom(contactPoint);
         }
@@ -132,7 +137,7 @@ public class DemographicTransformer {
         String email = tppDemographics.getEmailAddress();
         if (!Strings.isNullOrEmpty(email)) {
             //assume the email address is a home email, rather than work
-            ContactPoint contactPoint = ContactPointHelper.createContactPoint(ContactPoint.ContactPointSystem.EMAIL,
+            ContactPoint contactPoint = ContactPointHelper.create(ContactPoint.ContactPointSystem.EMAIL,
                     ContactPoint.ContactPointUse.HOME, email);
             fhirPatient.addTelecom(contactPoint);
         }

@@ -1,6 +1,6 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import org.endeavourhealth.core.cache.ParserPool;
+import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.core.configuration.EnvelopMessageConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;

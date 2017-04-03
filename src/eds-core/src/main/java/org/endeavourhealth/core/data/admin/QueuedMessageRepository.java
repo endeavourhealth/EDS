@@ -1,7 +1,7 @@
 package org.endeavourhealth.core.data.admin;
 
 import com.datastax.driver.mapping.Mapper;
-import org.endeavourhealth.core.data.Repository;
+import org.endeavourhealth.common.cassandra.Repository;
 import org.endeavourhealth.core.data.admin.models.QueuedMessage;
 
 import java.util.UUID;

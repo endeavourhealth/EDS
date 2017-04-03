@@ -18,7 +18,7 @@ public interface ResourceIdMapAccessor {
                                            @Param("resource_type") String resourceType,
                                            @Param("source_id") String sourceId);
 
-    @Query("SELECT * FROM transform.resource_id_map_by_eds_id WHERE resource_type = :resource_type AND eds_id = :eds_id")
+    @Query("SELECT * FROM transform.resource_id_map_by_eds_id WHERE resource_type = :resource_type AND eds_id = :eds_id LIMIT 1")
     Result<ResourceIdMapByEdsId> getResourceIdMapByEdsId(@Param("resource_type") String resourceType,
                                                          @Param("eds_id") UUID edsId);
 

@@ -32,6 +32,7 @@ import javax.xml.bind.annotation.XmlType;
     "exchangeHeaders"
 })
 @XmlSeeAlso({
+    ForEachConfig.class,
     PostToRestConfig.class,
     RunDataDistributionProtocolsConfig.class,
     ReturnResponseAcknowledgementConfig.class,

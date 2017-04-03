@@ -21,6 +21,7 @@ import javax.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
  *       &lt;sequence>
  *         &lt;choice maxOccurs="unbounded">
+ *           &lt;element name="ForeEach" type="{}ForEachConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="OpenEnvelope" type="{}OpenEnvelopeConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="EnvelopMessage" type="{}EnvelopMessageConfig" maxOccurs="unbounded" minOccurs="0"/>
  *           &lt;element name="LoadSenderConfiguration" type="{}LoadSenderConfigurationConfig" minOccurs="0"/>
@@ -53,6 +54,7 @@ import javax.xml.bind.annotation.XmlType;
 public class Pipeline {
 
     @XmlElements({
+        @XmlElement(name = "ForeEach", type = ForEachConfig.class),
         @XmlElement(name = "OpenEnvelope", type = OpenEnvelopeConfig.class),
         @XmlElement(name = "EnvelopMessage", type = EnvelopMessageConfig.class),
         @XmlElement(name = "LoadSenderConfiguration", type = LoadSenderConfigurationConfig.class),
@@ -90,6 +92,7 @@ public class Pipeline {
      * 
      * <p>
      * Objects of the following type(s) are allowed in the list
+     * {@link ForEachConfig }
      * {@link OpenEnvelopeConfig }
      * {@link EnvelopMessageConfig }
      * {@link LoadSenderConfigurationConfig }

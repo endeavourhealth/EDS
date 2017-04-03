@@ -4,11 +4,12 @@ import com.datastax.driver.mapping.annotations.ClusteringColumn;
 import com.datastax.driver.mapping.annotations.Column;
 import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Table;
+import org.endeavourhealth.core.data.ehr.HasResourceDataJson;
 
 import java.util.UUID;
 
 @Table(keyspace = "ehr", name = "resource_by_exchange_batch")
-public class ResourceByExchangeBatch {
+public class ResourceByExchangeBatch implements HasResourceDataJson {
     @PartitionKey
     @Column(name = "batch_id")
     private UUID batchId;

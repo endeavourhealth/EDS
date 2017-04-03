@@ -1,5 +1,7 @@
 package org.endeavourhealth.ui.framework.exceptions;
 
+import org.endeavourhealth.coreui.framework.exceptions.MappedException;
+
 import javax.ws.rs.core.Response;
 
 public class NotAuthorizedException extends MappedException {

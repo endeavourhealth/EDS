@@ -1,6 +1,6 @@
 // Drop and recreate the keyspace
 DROP KEYSPACE IF EXISTS ehr;
-CREATE KEYSPACE ehr WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
+CREATE KEYSPACE ehr WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 3 };
 
 USE ehr;
 
@@ -32,10 +32,15 @@ CREATE TABLE resource_history (
   is_deleted boolean,
   schema_version text,
   resource_data text,
+  resource_checksum bigint,
   PRIMARY KEY ((resource_id, resource_type), version)
-) WITH CLUSTERING ORDER BY (version DESC);
+) WITH CLUSTERING
+ORDER BY (version DESC);
 
-CREATE TABLE resource_history_by_service (
+alter table resource_history
+WITH compression = { 'sstable_compression' : 'LZ4Compressor' };
+
+/*CREATE TABLE resource_history_by_service (
   service_id uuid,
   system_id uuid,
   resource_type text,
@@ -45,8 +50,9 @@ CREATE TABLE resource_history_by_service (
   is_deleted boolean,
   schema_version text,
   resource_data text,
-  PRIMARY KEY ((service_id, system_id, resource_type), created_at, resource_id, version)
-) WITH CLUSTERING ORDER BY (created_at DESC, resource_id ASC, version DESC);
+  PRIMARY KEY ((service_id, system_id, resource_type), resource_id, version)
+) WITH CLUSTERING ORDER BY (resource_id ASC, version DESC)
+WITH compression = { 'sstable_compression' : 'LZ4Compressor' };*/
 
 CREATE TABLE resource_by_service (
   service_id uuid,
@@ -60,7 +66,8 @@ CREATE TABLE resource_by_service (
   resource_metadata text,
   resource_data text,
   PRIMARY KEY((service_id, system_id, resource_type), resource_id)
-);
+)
+WITH compression = { 'sstable_compression' : 'LZ4Compressor' };
 
 CREATE MATERIALIZED VIEW resource_by_patient AS
 SELECT service_id, system_id, patient_id, resource_type, resource_id, schema_version, resource_metadata, resource_data
@@ -70,7 +77,8 @@ WHERE service_id IS NOT NULL
   AND patient_id IS NOT NULL
   AND resource_type IS NOT NULL
   AND resource_id IS NOT NULL
-PRIMARY KEY((service_id, system_id, patient_id), resource_type, resource_id);
+PRIMARY KEY((service_id, system_id, patient_id), resource_type, resource_id)
+WITH compression = { 'sstable_compression' : 'LZ4Compressor' };
 
 CREATE TABLE resource_by_exchange_batch (
   batch_id uuid,
@@ -82,12 +90,14 @@ CREATE TABLE resource_by_exchange_batch (
   schema_version text,
   resource_data text,
   PRIMARY KEY((batch_id), resource_type, resource_id, version)
-);
+)
+WITH compression = { 'sstable_compression' : 'LZ4Compressor' };
 
 CREATE TABLE exchange_batch (
   exchange_id uuid,
   batch_id uuid,
   inserted_at timestamp,
+  eds_patient_id uuid,
   PRIMARY KEY((exchange_id), batch_id)
 );
 
@@ -120,69 +130,6 @@ CREATE TABLE person_consent_organisation (
 	WITH CLUSTERING ORDER BY (protocol_id ASC, organisation_id ASC, timestamp DESC);
 	
 
-
-DROP MATERIALIZED VIEW IF EXISTS patient_identifier_by_nhs_number;
-DROP MATERIALIZED VIEW IF EXISTS patient_identifier_by_patient_id;
-DROP TABLE IF EXISTS patient_identifier_by_local_id;
-DROP TABLE IF EXISTS patient_identifier; --old table name
-	
-CREATE TABLE patient_identifier_by_local_id (
-	service_id UUID,
-	system_id UUID,
-	nhs_number text,
-	forenames text,
-	surname text,
-	date_of_birth TIMESTAMP,
-	postcode text,
-	gender text,
-	patient_id UUID,
-	timestamp TIMESTAMP,
-	version TIMEUUID,
-	local_id TEXT,
-	local_id_system TEXT,
-	PRIMARY KEY ((service_id), system_id, local_id, local_id_system, version))
-	WITH CLUSTERING ORDER BY (system_id ASC, local_id ASC, local_id_system ASC, version DESC);
-	
-CREATE MATERIALIZED VIEW patient_identifier_by_nhs_number AS  
-	SELECT service_id, system_id, nhs_number, forenames, surname, date_of_birth, postcode, gender,
-			patient_id, timestamp, version, local_id, local_id_system
-	FROM patient_identifier_by_local_id  
-	WHERE service_id IS NOT NULL  
-	AND system_id IS NOT NULL  
-	AND nhs_number IS NOT NULL  
-	AND forenames IS NOT NULL  
-	AND surname IS NOT NULL  
-	AND date_of_birth IS NOT NULL  
-	AND postcode IS NOT NULL  
-	AND gender IS NOT NULL  
-	AND patient_id IS NOT NULL  
-	AND timestamp IS NOT NULL  
-	AND version IS NOT NULL  
-	AND local_id IS NOT NULL  
-	AND local_id_system IS NOT NULL  
-	PRIMARY KEY ((nhs_number), service_id, system_id, local_id, local_id_system, version);
-
-	
-CREATE MATERIALIZED VIEW patient_identifier_by_patient_id AS  
-	SELECT service_id, system_id, nhs_number, forenames, surname, date_of_birth, postcode, gender,
-			patient_id, timestamp, version, local_id, local_id_system
-	FROM patient_identifier_by_local_id  
-	WHERE service_id IS NOT NULL  
-	AND system_id IS NOT NULL  
-	AND nhs_number IS NOT NULL  
-	AND forenames IS NOT NULL  
-	AND surname IS NOT NULL  
-	AND date_of_birth IS NOT NULL  
-	AND postcode IS NOT NULL  
-	AND gender IS NOT NULL  
-	AND patient_id IS NOT NULL  
-	AND timestamp IS NOT NULL  
-	AND version IS NOT NULL  
-	AND local_id IS NOT NULL  
-	AND local_id_system IS NOT NULL  
-	PRIMARY KEY ((patient_id), service_id, system_id, local_id, local_id_system, version)
-	WITH CLUSTERING ORDER BY (service_id ASC, system_id ASC, local_id ASC, local_id_system ASC, version DESC);
-	
 
 
 

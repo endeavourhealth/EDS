@@ -29,6 +29,7 @@
 				<xs:element name="dataSet" type="dataSet"/>
 				<xs:element name="protocol" type="protocol"/>
 				<xs:element name="system" type="system"/>
+				<xs:element name="countReport" type="countReport"/>
 			</xs:choice>
 		</xs:sequence>
 	</xs:complexType>
@@ -247,9 +248,15 @@
 			<xs:element name="composition" type="composition" maxOccurs="unbounded"/>
 		</xs:sequence>
 	</xs:complexType>
+	<xs:simpleType name="protocolEnabled">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="TRUE"/>
+			<xs:enumeration value="FALSE"/>
+		</xs:restriction>
+	</xs:simpleType>
 	<xs:complexType name="protocol">
 		<xs:sequence>
-			<xs:element name="enabled" type="xs:string"/>
+			<xs:element name="enabled" type="protocolEnabled"/>
 			<xs:element name="patientConsent" type="xs:string"/>
 			<xs:element name="cohort" type="xs:string" minOccurs="0"/>
 			<xs:element name="dataSet" type="xs:string" minOccurs="0"/>
@@ -285,13 +292,20 @@
 			<xs:enumeration value="SUBSCRIBER"/>
 		</xs:restriction>
 	</xs:simpleType>
+	<xs:simpleType name="serviceContractActive">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="TRUE"/>
+			<xs:enumeration value="FALSE"/>
+		</xs:restriction>
+	</xs:simpleType>
 	<xs:complexType name="serviceContract">
 		<xs:sequence>
 			<xs:element name="type" type="serviceContractType"/>
 			<xs:element name="service" type="service"/>
 			<xs:element name="system" type="system"/>
 			<xs:element name="technicalInterface" type="technicalInterface"/>
-			<xs:element name="active" type="xs:string"/>
+			<xs:element name="active" type="serviceContractActive"/>
+			<xs:element name="definesCohort" type="xs:boolean" minOccurs="0"/>
 		</xs:sequence>
 	</xs:complexType>
 	<xs:complexType name="composition">
@@ -338,6 +352,16 @@
 	<xs:complexType name="valueSet">
 		<xs:sequence>
 			<xs:element name="value" type="xs:string" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="countReport">
+		<xs:sequence>
+			<xs:element name="fields" type="xs:string" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="tables" type="xs:string" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="query" type="xs:string" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="status" type="xs:string" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="lastRun" type="xs:dateTime" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="count" type="xs:int" minOccurs="0" maxOccurs="1"/>
 		</xs:sequence>
 	</xs:complexType>
 </xs:schema>

@@ -1,17 +1,18 @@
 package org.endeavourhealth.transform.common.idmappers;
 
+import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.MedicationOrder;
 import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.ResourceType;
 
 import java.util.UUID;
 
 public class IdMapperMedicationOrder extends BaseIdMapper {
-    @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
-        MedicationOrder medicationOrder = (MedicationOrder)resource;
 
-        super.mapResourceId(medicationOrder, serviceId, systemId);
-        super.mapExtensions(medicationOrder, serviceId, systemId);
+    @Override
+    public boolean mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
+        MedicationOrder medicationOrder = (MedicationOrder)resource;
 
         if (medicationOrder.hasIdentifier()) {
             super.mapIdentifiers(medicationOrder.getIdentifier(), resource, serviceId, systemId);
@@ -60,5 +61,17 @@ public class IdMapperMedicationOrder extends BaseIdMapper {
         if (medicationOrder.hasPriorPrescription()) {
             super.mapReference(medicationOrder.getPriorPrescription(), resource, serviceId, systemId);
         }
+
+        return super.mapCommonResourceFields(medicationOrder, serviceId, systemId, mapResourceId);
+    }
+
+    @Override
+    public String getPatientId(Resource resource) throws PatientResourceException {
+
+        MedicationOrder medicationOrder = (MedicationOrder)resource;
+        if (medicationOrder.hasPatient()) {
+            return ReferenceHelper.getReferenceId(medicationOrder.getPatient(), ResourceType.Patient);
+        }
+        return null;
     }
 }

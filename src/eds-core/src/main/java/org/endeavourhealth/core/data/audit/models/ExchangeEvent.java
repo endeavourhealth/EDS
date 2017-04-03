@@ -7,17 +7,19 @@ import com.datastax.driver.mapping.annotations.Table;
 import java.util.Date;
 import java.util.UUID;
 
-@Table(keyspace = "audit", name = "exchangeEvent")
+@Table(keyspace = "audit", name = "exchange_event")
 public class ExchangeEvent {
 
     @PartitionKey(value = 1)
     @Column(name = "timestamp")
     private Date timestamp = null;
+
     @PartitionKey(value = 0)
-    @Column(name = "exchangeId")
+    @Column(name = "exchange_id")
     private UUID exchangeId = null;
-    @Column(name = "event")
-    private Integer event = null;
+
+    @Column(name = "event_desc")
+    private String eventDesc = null;
 
     public Date getTimestamp() {
         return timestamp;
@@ -35,11 +37,11 @@ public class ExchangeEvent {
         this.exchangeId = exchangeId;
     }
 
-    public Integer getEvent() {
-        return event;
+    public String getEventDesc() {
+        return eventDesc;
     }
 
-    public void setEvent(Integer event) {
-        this.event = event;
+    public void setEventDesc(String eventDesc) {
+        this.eventDesc = eventDesc;
     }
 }

@@ -7,7 +7,9 @@ import com.datastax.driver.mapping.annotations.Param;
 import com.datastax.driver.mapping.annotations.Query;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
+import org.endeavourhealth.core.data.ehr.models.ResourceByService;
 
+import java.util.List;
 import java.util.UUID;
 
 @Accessor
@@ -26,6 +28,10 @@ public interface ResourceAccessor {
     @Query("SELECT * FROM ehr.resource_by_exchange_batch WHERE batch_id = :batch_id")
     Result<ResourceByExchangeBatch> getResourcesForBatch(@Param("batch_id") UUID batchId);
 
+    @Query("SELECT * FROM ehr.resource_by_exchange_batch WHERE batch_id = :batch_id AND resource_type = :resource_type")
+    Result<ResourceByExchangeBatch> getResourcesForBatch(@Param("batch_id") UUID batchId,
+                                                         @Param("resource_type") String resourceType);
+
     @Query("SELECT count(*) FROM ehr.resource_by_service WHERE service_id = :service_id AND system_id = :system_id AND resource_type = :resource_type")
     ResultSet getResourceCountByService(@Param("service_id") UUID serviceId,
                                         @Param("system_id") UUID systemId,
@@ -35,4 +41,20 @@ public interface ResourceAccessor {
     ResultSet getMetadataByService(@Param("service_id") UUID serviceId,
                                    @Param("system_id") UUID systemId,
                                    @Param("resource_type") String resourceType);
+
+    @Query("SELECT * FROM ehr.resource_by_service WHERE service_id = :service_id AND system_id = :system_id AND resource_type = :resource_type and resource_id IN :resource_id")
+    Result<ResourceByService> getResourcesByService(@Param("service_id") UUID serviceId,
+                                                    @Param("system_id") UUID systemId,
+                                                    @Param("resource_type") String resourceType,
+                                                    @Param("resource_id") List<UUID> resourceIds);
+
+    @Query("SELECT * FROM ehr.resource_by_service WHERE service_id = :service_id AND system_id = :system_id AND resource_type = :resource_type LIMIT 1")
+    Result<ResourceByService> getFirstResourceByService(@Param("service_id") UUID serviceId,
+                                                        @Param("system_id") UUID systemId,
+                                                        @Param("resource_type") String resourceType);
+
+    @Query("SELECT * FROM ehr.resource_by_service WHERE service_id = :service_id AND system_id = :system_id AND resource_type = :resource_type")
+    Result<ResourceByService> getResourcesByService(@Param("service_id") UUID serviceId,
+                                                        @Param("system_id") UUID systemId,
+                                                        @Param("resource_type") String resourceType);
 }

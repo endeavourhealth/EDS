@@ -1,15 +1,28 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import org.endeavourhealth.core.cache.ParserPool;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.endeavourhealth.core.audit.AuditWriter;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.core.configuration.OpenEnvelopeConfig;
+import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
+import org.endeavourhealth.core.data.admin.models.ActiveItem;
+import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
+import org.endeavourhealth.core.data.audit.AuditRepository;
+import org.endeavourhealth.core.data.audit.models.ExchangeByService;
+import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
+import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
+import org.endeavourhealth.core.xml.QueryDocument.System;
+import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
+import org.endeavourhealth.core.xml.QueryDocumentSerializer;
 import org.hl7.fhir.instance.model.Binary;
 import org.hl7.fhir.instance.model.Bundle;
 import org.hl7.fhir.instance.model.MessageHeader;
@@ -18,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -61,6 +75,9 @@ public class OpenEnvelope extends PipelineComponent {
 			processHeader(exchange, messageHeader);
 			processBody(exchange, binary);
 
+			//commit what we've just received to the DB
+			AuditWriter.writeExchange(exchange);
+
 		} catch (Exception e) {
 			throw new PipelineException(e.getMessage(), e);
 		}
@@ -103,12 +120,30 @@ public class OpenEnvelope extends PipelineComponent {
 		}
 
 		if (service == null) {
-			throw new PipelineException("No service found for organisation " + organisation.getId());
+			throw new PipelineException("No service found for organisation " + organisation.getId() + " opening exchange " + exchange.getExchangeId());
 		}
+
+		String software = exchange.getHeader(HeaderKeys.SourceSystem);
+		String version = exchange.getHeader(HeaderKeys.SystemVersion);
+		UUID systemUuid = findSystemId(service, software, version);
+
+		if (systemUuid == null) {
+			throw new PipelineException("No service found for service " + service.getId() + " software " + software + " version " + version + " opening exchange " + exchange.getExchangeId());
+		}
+
+		//record the service-exchange linkage, so we can retrieve exchanges by service
+		ExchangeByService exchangeByService = new ExchangeByService();
+		exchangeByService.setExchangeId(exchange.getExchangeId());
+		exchangeByService.setServiceId(service.getId());
+		exchangeByService.setTimestamp(new Date());
+		new AuditRepository().save(exchangeByService);
 
 		exchange.setHeader(HeaderKeys.SenderServiceUuid, service.getId().toString());
 		exchange.setHeader(HeaderKeys.SenderOrganisationUuid, organisation.getId().toString());
+		exchange.setHeader(HeaderKeys.SenderSystemUuid, systemUuid.toString());
 
+		//commit what we've just added to the DB
+		AuditWriter.writeExchange(exchange);
 	}
 	/*private void getSenderUuid(Exchange exchange) throws PipelineException {
 
@@ -148,6 +183,39 @@ public class OpenEnvelope extends PipelineComponent {
 		exchange.setHeader(HeaderKeys.SenderOrganisationUuid, organisation.getId().toString());
 
 	}*/
+
+	private UUID findSystemId(Service service, String software, String messageVersion) throws PipelineException {
+
+		List<JsonServiceInterfaceEndpoint> endpoints = null;
+		try {
+			endpoints = ObjectMapperPool.getInstance().readValue(service.getEndpoints(), new TypeReference<List<JsonServiceInterfaceEndpoint>>() {});
+
+			for (JsonServiceInterfaceEndpoint endpoint: endpoints) {
+
+				UUID endpointSystemId = endpoint.getSystemUuid();
+				String endpointInterfaceId = endpoint.getTechnicalInterfaceUuid().toString();
+
+				LibraryRepository libraryRepository = new LibraryRepository();
+				ActiveItem activeItem = libraryRepository.getActiveItemByItemId(endpointSystemId);
+				Item item = libraryRepository.getItemByKey(endpointSystemId, activeItem.getAuditId());
+				LibraryItem libraryItem = QueryDocumentSerializer.readLibraryItemFromXml(item.getXmlContent());
+				System system = libraryItem.getSystem();
+				for (TechnicalInterface technicalInterface: system.getTechnicalInterface()) {
+
+					if (endpointInterfaceId.equals(technicalInterface.getUuid())
+							&& technicalInterface.getMessageFormat().equalsIgnoreCase(software)
+							&& technicalInterface.getMessageFormatVersion().equalsIgnoreCase(messageVersion)) {
+
+						return endpointSystemId;
+					}
+				}
+			}
+		} catch (Exception e) {
+			throw new PipelineException("Failed to process endpoints from service " + service.getId());
+		}
+
+		return null;
+	}
 
 	private void processBody(Exchange exchange, Binary binary) {
 		exchange.setHeader(HeaderKeys.MessageFormat, binary.getContentType());

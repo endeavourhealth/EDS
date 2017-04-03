@@ -1,3 +1,9 @@
-/// <reference path="../../typings/index.d.ts" />
+import {NgModule} from "@angular/core";
+import {ConfigService} from "./config.service";
 
-angular.module('app.config', []);
+@NgModule({
+	providers : [
+		ConfigService
+	]
+})
+export class ConfigModule {}

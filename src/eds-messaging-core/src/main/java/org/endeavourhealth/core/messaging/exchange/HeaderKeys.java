@@ -16,17 +16,14 @@ public abstract class HeaderKeys {
 	// Derrived from the SenderLocalIdentifier
 	public static final String SenderServiceUuid = "SenderServiceUuid";
 	public static final String SenderOrganisationUuid = "SenderOrganisationUuid";
-
+	public static final String SenderSystemUuid = "SenderSystemUuid";
 
 	public static final String MessageFormat = "MessageFormat";
 
-
 	// Transform
-	public static final String BatchIds = "BatchIds";
-
-	// Pipeline
+	public static final String BatchIdsJson = "BatchIds";
 	public static final String DestinationAddress = "DestinationAddress";
 	public static final String TransformBatch = "TransformBatch";
-	public static final String Protocols = "Protocols";
+	public static final String ProtocolIds = "Protocols";
 	public static final String SubscriberBatch = "SubscriberBatch";
 }

@@ -5,6 +5,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
+import org.endeavourhealth.core.queueing.RabbitConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +21,7 @@ public class RabbitHandler {
 	private RabbitConsumer consumer;
 
 	public RabbitHandler(QueueReaderConfiguration configuration) throws Exception {
-		LOG.info("Connecting to Rabbit queue {} at {}", configuration.getQueue(), configuration.getNodes());
+		LOG.info("Connecting to Rabbit queue {} at {}", configuration.getQueue(), RabbitConfig.getInstance().getNodes());
 
 		this.configuration = configuration;
 
@@ -39,10 +40,16 @@ public class RabbitHandler {
 		ConnectionFactory connectionFactory = new ConnectionFactory();
 		connectionFactory.setAutomaticRecoveryEnabled(true);
 		connectionFactory.setTopologyRecoveryEnabled(true);
-		connectionFactory.setUsername(configuration.getCredentials().getUsername());
-		connectionFactory.setPassword(configuration.getCredentials().getPassword());
+		connectionFactory.setUsername(RabbitConfig.getInstance().getUsername());
+		connectionFactory.setPassword(RabbitConfig.getInstance().getPassword());
 
-		Address[] addresses = Address.parseAddresses(configuration.getNodes());
+		Address[] addresses = Address.parseAddresses(RabbitConfig.getInstance().getNodes());
+
+		/*LOG.trace("User: " + RabbitConfig.getInstance().getUsername());
+		LOG.trace("Password: " + RabbitConfig.getInstance().getPassword());
+		for (Address address: addresses) {
+			LOG.trace("Node: " + address);
+		}*/
 
 		return connectionFactory.newConnection(addresses);
 	}

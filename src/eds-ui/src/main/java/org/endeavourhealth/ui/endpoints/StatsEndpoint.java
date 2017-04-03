@@ -1,11 +1,15 @@
 package org.endeavourhealth.ui.endpoints;
 
+import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditAction;
+import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.core.fhirStorage.statistics.PatientStatistics;
 import org.endeavourhealth.core.fhirStorage.statistics.ResourceStatistics;
 import org.endeavourhealth.core.fhirStorage.statistics.StorageStatistics;
 import org.endeavourhealth.core.fhirStorage.statistics.StorageStatisticsService;
-import org.endeavourhealth.core.security.SecurityUtils;
+import org.endeavourhealth.common.security.SecurityUtils;
 
+import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +26,8 @@ import java.util.UUID;
 public final class StatsEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(StatsEndpoint.class);
 
+    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Stats);
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -29,6 +35,11 @@ public final class StatsEndpoint extends AbstractEndpoint {
     public Response getStorageStatistics(@Context SecurityContext sc,
                                          @QueryParam("serviceList") List<String> services,
                                          @QueryParam("systemList") List<String> systems) throws Exception {
+
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Statistics",
+            "Service list", services,
+            "System list", systems);
 
         UUID userUuid = SecurityUtils.getCurrentUserId(sc);
         UUID orgUuid = getOrganisationUuidFromToken(sc);
@@ -48,6 +59,7 @@ public final class StatsEndpoint extends AbstractEndpoint {
         resourceNames.add("Condition");
         resourceNames.add("AllergyIntolerance");
         resourceNames.add("Procedure");
+        resourceNames.add("Immunization");
         resourceNames.add("ReferralRequest");
         resourceNames.add("Appointment");
         resourceNames.add("Encounter");

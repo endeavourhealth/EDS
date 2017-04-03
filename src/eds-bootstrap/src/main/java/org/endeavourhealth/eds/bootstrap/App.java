@@ -21,9 +21,18 @@ public class App {
 
         LOG.info("{}", (Object[])args);
 
-        if(args.length != 1) {
+        if(args.length < 1) {
             LOG.info("Please pass the config file path as the first argument and try again...");
         }
+
+        String task = "bootstrap";
+
+        if(args.length > 1) {
+            task = args[1];
+        }
+
+        LOG.info("task = '{}'", task);
+        LOG.info("------------------------------------------");
 
         File configFile = new File(args[0]);
 
@@ -33,11 +42,18 @@ public class App {
         try {
             config = objectMapper.readValue(configFile, Config.class);
         } catch (IOException e) {
-            LOG.error(e.getMessage());
+            LOG.error("Error reading configuration", e);
             return;
         }
 
         BootstrapKeycloak b = new BootstrapKeycloak();
-        b.bootstrap(config);
+
+        if(task.equalsIgnoreCase("bootstrap")) {
+            b.bootstrap(config);
+        } else if(task.equalsIgnoreCase("users")) {
+            b.users(config);
+        } else if(task.equalsIgnoreCase("eds-ui-client")) {
+            b.edsUIClient(config);
+        }
     }
 }

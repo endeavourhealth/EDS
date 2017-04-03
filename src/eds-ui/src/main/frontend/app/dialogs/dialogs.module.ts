@@ -1,3 +1,21 @@
-/// <reference path="../../typings/index.d.ts" />
+import {NgModule} from "@angular/core";
+import {BrowserModule} from "@angular/platform-browser";
+import {FormsModule} from "@angular/forms";
+import {InputBoxDialog} from "./inputBox/inputBox.dialog";
+import {MessageBoxDialog} from "./messageBox/messageBox.dialog";
 
-angular.module('app.dialogs', []);
+@NgModule({
+	imports : [
+		BrowserModule,
+		FormsModule,
+	],
+	declarations : [
+		InputBoxDialog,
+		MessageBoxDialog,
+	],
+	entryComponents : [
+		InputBoxDialog,
+		MessageBoxDialog,
+	]
+})
+export class DialogsModule {}

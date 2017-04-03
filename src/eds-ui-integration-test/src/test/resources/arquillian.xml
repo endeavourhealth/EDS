@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<arquillian
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://jboss.org/schema/arquillian"
+        xsi:schemaLocation="http://jboss.org/schema/arquillian http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+
+    <!--<container qualifier="tomcat" default="true">-->
+        <!--<configuration>-->
+            <!--<property name="jmxPort">1099</property>-->
+            <!--&lt;!&ndash;<property name="jmxPort">8089</property>&ndash;&gt;-->
+            <!--<property name="host">localhost</property>-->
+            <!--<property name="port">8080</property>-->
+            <!--<property name="user">arquillian</property>-->
+            <!--<property name="pass">arquillian</property>-->
+        <!--</configuration>-->
+    <!--</container>-->
+
+    <!--<container qualifier="tomcat" default="true">-->
+        <!--<configuration>-->
+        <!--</configuration>-->
+    <!--</container>-->
+
+    <!--<container qualifier="tomcat" default="true">-->
+        <!--<configuration>-->
+            <!--<property name="bindHttpPort">8080</property>-->
+            <!--<property name="jmxPort">8089</property>-->
+            <!--&lt;!&ndash;<property name="catalinaHome">${tomcat.managed.home}</property>&ndash;&gt;-->
+            <!--<property name="catalinaBase">/Users/mark/opt/apache-tomcat-8.0.33-keycloak</property>-->
+            <!--<property name="catalinaHome">/Users/mark/opt/apache-tomcat-8.0.33-keycloak</property>-->
+            <!--<property name="user">arquillian</property>-->
+            <!--<property name="pass">arquillian</property>-->
+            <!--<property name="startupTimeoutInSeconds">30</property>-->
+        <!--</configuration>-->
+    <!--</container>-->
+
+    <extension qualifier="webdriver">
+        <property name="browser">phantomjs</property>
+    </extension>
+
+</arquillian>

@@ -12,6 +12,7 @@
                         <jaxb:property name="PipelineComponents"/>
                     </xs:appinfo>
                 </xs:annotation>
+                <xs:element name="ForeEach" type="ForEachConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="OpenEnvelope" type="OpenEnvelopeConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="EnvelopMessage" type="EnvelopMessageConfig" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="LoadSenderConfiguration" type="LoadSenderConfigurationConfig" minOccurs="0" maxOccurs="1"/>

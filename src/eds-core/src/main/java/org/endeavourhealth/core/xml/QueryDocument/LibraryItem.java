@@ -29,6 +29,7 @@ import javax.xml.bind.annotation.XmlType;
  *           &lt;element name="dataSet" type="{}dataSet"/>
  *           &lt;element name="protocol" type="{}protocol"/>
  *           &lt;element name="system" type="{}system"/>
+ *           &lt;element name="countReport" type="{}countReport"/>
  *         &lt;/choice>
  *       &lt;/sequence>
  *     &lt;/restriction>
@@ -50,7 +51,8 @@ import javax.xml.bind.annotation.XmlType;
     "codeSet",
     "dataSet",
     "protocol",
-    "system"
+    "system",
+    "countReport"
 })
 public class LibraryItem {
 
@@ -68,6 +70,7 @@ public class LibraryItem {
     protected DataSet dataSet;
     protected Protocol protocol;
     protected System system;
+    protected CountReport countReport;
 
     /**
      * Gets the value of the uuid property.
@@ -331,6 +334,30 @@ public class LibraryItem {
      */
     public void setSystem(System value) {
         this.system = value;
+    }
+
+    /**
+     * Gets the value of the countReport property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link CountReport }
+     *     
+     */
+    public CountReport getCountReport() {
+        return countReport;
+    }
+
+    /**
+     * Sets the value of the countReport property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link CountReport }
+     *     
+     */
+    public void setCountReport(CountReport value) {
+        this.countReport = value;
     }
 
 }

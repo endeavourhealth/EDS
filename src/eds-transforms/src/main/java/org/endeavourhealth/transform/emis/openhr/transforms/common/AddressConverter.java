@@ -9,7 +9,7 @@ import org.hl7.fhir.instance.model.Address;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.endeavourhealth.transform.fhir.AddressConverter.createAddress;
+import static org.endeavourhealth.common.fhir.AddressConverter.createAddress;
 
 public class AddressConverter
 {

@@ -283,6 +283,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link CountReport }
+     * 
+     */
+    public CountReport createCountReport() {
+        return new CountReport();
+    }
+
+    /**
      * Create an instance of {@link Restriction }
      * 
      */

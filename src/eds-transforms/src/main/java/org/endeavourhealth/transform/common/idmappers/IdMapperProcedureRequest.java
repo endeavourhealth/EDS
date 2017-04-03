@@ -1,18 +1,18 @@
 package org.endeavourhealth.transform.common.idmappers;
 
+import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.ProcedureRequest;
 import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.ResourceType;
 
 import java.util.UUID;
 
 public class IdMapperProcedureRequest extends BaseIdMapper {
 
     @Override
-    public void mapIds(Resource resource, UUID serviceId, UUID systemId) {
+    public boolean mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
         ProcedureRequest procedureRequest = (ProcedureRequest)resource;
-
-        super.mapResourceId(procedureRequest, serviceId, systemId);
-        super.mapExtensions(procedureRequest, serviceId, systemId);
 
         if (procedureRequest.hasIdentifier()) {
             super.mapIdentifiers(procedureRequest.getIdentifier(), resource, serviceId, systemId);
@@ -36,5 +36,17 @@ public class IdMapperProcedureRequest extends BaseIdMapper {
         if (procedureRequest.hasOrderer()) {
             super.mapReference(procedureRequest.getOrderer(), resource, serviceId, systemId);
         }
+
+        return super.mapCommonResourceFields(procedureRequest, serviceId, systemId, mapResourceId);
+    }
+
+    @Override
+    public String getPatientId(Resource resource) throws PatientResourceException {
+
+        ProcedureRequest procedureRequest = (ProcedureRequest)resource;
+        if (procedureRequest.hasSubject()) {
+            return ReferenceHelper.getReferenceId(procedureRequest.getSubject(), ResourceType.Patient);
+        }
+        return null;
     }
 }

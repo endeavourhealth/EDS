@@ -16,7 +16,21 @@ public class ValidateSender extends PipelineComponent {
 	public ValidateSender(ValidateSenderConfig config) {
 		this.config = config;
 	}
+
 	@Override
+	public void process(Exchange exchange) throws PipelineException {
+		String protocolIds = exchange.getHeader(HeaderKeys.ProtocolIds);
+
+		if (protocolIds == null || protocolIds.isEmpty()) {
+			LOG.debug("Sender invalid");
+			throw new PipelineException("No valid protocols found for source/publisher");
+
+		} else {
+			LOG.debug("Sender valid");
+		}
+	}
+
+/*	@Override
 	public void process(Exchange exchange) throws PipelineException {
 		String protocols = exchange.getHeader(HeaderKeys.Protocols);
 
@@ -26,5 +40,5 @@ public class ValidateSender extends PipelineComponent {
 		} else {
 			LOG.debug("Sender valid");
 		}
-	}
+	}*/
 }

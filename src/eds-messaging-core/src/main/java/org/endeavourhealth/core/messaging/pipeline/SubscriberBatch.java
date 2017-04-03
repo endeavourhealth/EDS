@@ -1,38 +1,52 @@
 package org.endeavourhealth.core.messaging.pipeline;
 
-import org.endeavourhealth.core.xml.QueryDocument.TechnicalInterface;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 public class SubscriberBatch {
-	private TechnicalInterface technicalInterface;
-	private UUID outputMessageId;
-	private List<String> endpoints;
 
-	public SubscriberBatch() {
-		endpoints = new ArrayList<>();
+	private UUID queuedMessageId = null;
+	private String endpoint = null;
+	private String software = null;
+	private String softwareVersion = null;
+	private UUID technicalInterfaceId = null;
+
+	public UUID getQueuedMessageId() {
+		return queuedMessageId;
 	}
 
-
-	public List<String> getEndpoints() {
-		return endpoints;
+	public void setQueuedMessageId(UUID queuedMessageId) {
+		this.queuedMessageId = queuedMessageId;
 	}
 
-	public UUID getOutputMessageId() {
-		return outputMessageId;
+	public String getEndpoint() {
+		return endpoint;
 	}
 
-	public void setOutputMessageId(UUID outputMessageId) {
-		this.outputMessageId = outputMessageId;
+	public void setEndpoint(String endpoint) {
+		this.endpoint = endpoint;
 	}
 
-	public TechnicalInterface getTechnicalInterface() {
-		return technicalInterface;
+	public String getSoftware() {
+		return software;
 	}
 
-	public void setTechnicalInterface(TechnicalInterface technicalInterface) {
-		this.technicalInterface = technicalInterface;
+	public void setSoftware(String software) {
+		this.software = software;
+	}
+
+	public String getSoftwareVersion() {
+		return softwareVersion;
+	}
+
+	public void setSoftwareVersion(String softwareVersion) {
+		this.softwareVersion = softwareVersion;
+	}
+
+	public UUID getTechnicalInterfaceId() {
+		return technicalInterfaceId;
+	}
+
+	public void setTechnicalInterfaceId(UUID technicalInterfaceId) {
+		this.technicalInterfaceId = technicalInterfaceId;
 	}
 }

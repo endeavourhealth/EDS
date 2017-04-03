@@ -1,7 +1,11 @@
 package org.endeavourhealth.transform.tpp.xml.transforms;
 
+import org.endeavourhealth.transform.common.FhirHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.fhir.*;
+import org.endeavourhealth.common.fhir.AnnotationHelper;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.tpp.xml.schema.Event;
 import org.endeavourhealth.transform.tpp.xml.schema.Vaccination;
 import org.hl7.fhir.instance.model.*;
@@ -29,9 +33,9 @@ public class VaccinationTransformer {
         fhirImmunisation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_IMMUNIZATION));
         fhirResources.add(fhirImmunisation);
 
-        fhirImmunisation.setPatient(ReferenceHelper.createReference(Patient.class, fhirResources));
+        fhirImmunisation.setPatient(FhirHelper.findAndCreateReference(Patient.class, fhirResources));
         fhirImmunisation.setPerformer(ReferenceHelper.createReference(ResourceType.Practitioner, tppEvent.getUserName()));
-        fhirImmunisation.setEncounter(ReferenceHelper.createReference(fhirEncounter));
+        fhirImmunisation.setEncounter(ReferenceHelper.createReferenceExternal(fhirEncounter));
         fhirImmunisation.setStatus(MedicationAdministration.MedicationAdministrationStatus.COMPLETED.toCode());
         fhirImmunisation.setWasNotGiven(false);
         fhirImmunisation.setReported(false);
@@ -39,10 +43,5 @@ public class VaccinationTransformer {
         fhirImmunisation.addNote(AnnotationHelper.createAnnotation(notes));
         fhirImmunisation.setVaccineCode(CodeableConceptHelper.createCodeableConcept(name));
         fhirImmunisation.setDate(tppEvent.getDateTime().toGregorianCalendar().getTime());
-
-
-
-
-
     }
 }

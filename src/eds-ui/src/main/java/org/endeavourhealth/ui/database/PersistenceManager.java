@@ -1,5 +1,8 @@
 package org.endeavourhealth.ui.database;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,9 +14,6 @@ import java.util.Map;
 
 public enum PersistenceManager {
     INSTANCE;
-    private static final String JDBC_URL_ENV_VAR = "LOGBACK_JDBC_URL";
-    private static final String JDBC_USER_ENV_VAR = "LOGBACK_JDBC_USERNAME";
-    private static final String JDBC_PASSWORD_ENV_VAR = "LOGBACK_JDBC_PASSWORD";
     private static final Logger LOG = LoggerFactory.getLogger(PersistenceManager.class);
 
     private EntityManagerFactory emFactory;
@@ -30,20 +30,22 @@ public enum PersistenceManager {
     private synchronized EntityManagerFactory getEmFactory() {
         if (emFactory == null) {
             try {
-                Map<String, String> envVars = System.getenv();
+                String logbackDbJson = ConfigManager.getConfiguration("logbackDb");
+                JsonNode logbackDb = ObjectMapperPool.getInstance().readTree(logbackDbJson);
+
                 Map<String, Object> override = new HashMap<>();
 
-                if (envVars.containsKey(JDBC_URL_ENV_VAR))
-                    override.put("hibernate.connection.url", envVars.get(JDBC_URL_ENV_VAR));
-                if (envVars.containsKey(JDBC_USER_ENV_VAR))
-                    override.put("hibernate.connection.username", envVars.get(JDBC_USER_ENV_VAR));
-                if (envVars.containsKey(JDBC_PASSWORD_ENV_VAR))
-                    override.put("hibernate.connection.password", envVars.get(JDBC_PASSWORD_ENV_VAR));
+                if (logbackDb.has("url"))
+                    override.put("hibernate.hikari.dataSource.url", logbackDb.get("url").asText());
+                if (logbackDb.has("username"))
+                    override.put("hibernate.hikari.dataSource.user", logbackDb.get("username").asText());
+                if (logbackDb.has("password"))
+                    override.put("hibernate.hikari.dataSource.password", logbackDb.get("password").asText());
 
-                emFactory = Persistence.createEntityManagerFactory("NewPersistenceUnit", override);
+                emFactory = Persistence.createEntityManagerFactory("LogbackDb", override);
             }
             catch (Exception e) {
-                LOG.error("Error initializing persistence manager : " + e.getMessage());
+                LOG.error("Error initializing persistence manager", e);
             }
         }
 

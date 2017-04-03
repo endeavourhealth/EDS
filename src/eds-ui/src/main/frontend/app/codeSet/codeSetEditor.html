@@ -1,0 +1,42 @@
+<div class="module">
+	<div class="container-fluid">
+		<div class="module-heading">
+			Code Set
+			<div class="pull-right">
+				<button type="button" class="btn btn-sm btn-success" (click)="save(false)">Save</button>
+				<button type="button" class="btn btn-sm btn-warning" (click)="save(true)">Save & Close</button>
+				<button type="button" class="btn btn-sm btn-danger" (click)="close()">Cancel</button>
+			</div>
+		</div>
+		<div class="module-body">
+			<form>
+				<div class="row">
+					<div class="form-group col-md-6">
+						<label for="name">Name</label>
+						<input type="text" class="form-control" id="name" [(ngModel)]="libraryItem.name" name="name">
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-12">
+						<label for="description">Description</label>
+						<textarea class="form-control" id="description" [(ngModel)]="libraryItem.description" name="description"></textarea>
+					</div>
+				</div>
+				<div class="row">
+					<div class="form-group col-md-12">
+						<label>Codes</label> <small class="text-muted">(Click box to edit)</small>
+						<div class="scroll-box-150 form-control" style="cursor: pointer;" (click)="showCodePicker()">
+							<span *ngFor="let selection of libraryItem.codeSet.codeSetValue">
+								{{ getTerm(selection.code) }}
+								<span class="label label-success" *ngIf="selection.includeChildren && (!selection.exclusion || selection.exclusion.length == 0)">All children</span>
+								<span class="label label-warning" *ngIf="selection.includeChildren && (selection.exclusion && selection.exclusion.length > 0)">Some children</span>
+								<span class="label label-danger" *ngIf="!selection.includeChildren">No children</span>
+								<span *ngIf="!this.$last">  |  </span>
+							</span>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>

@@ -40,8 +40,9 @@ public class Snomed {
         try {
 
             //by default the Java Caching System has a load of logging enabled, which is really slow, so turn it off
-            org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger("org.apache.jcs");
-            logger.setLevel(org.apache.log4j.Level.OFF);
+            //not longer required, since it no longer uses log4J and the new default doesn't have debug enabled
+            /*org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger("org.apache.jcs");
+            logger.setLevel(org.apache.log4j.Level.OFF);*/
 
             cachedTermsForConceptAndDescription = JCS.getInstance("SnomedTermsForConceptAndDescription");
             cachedDescendantForConcept = JCS.getInstance("SnomedDescendantsForConcept");
@@ -118,11 +119,11 @@ public class Snomed {
      * returns all descendant codes
      */
     public static List<Long> getDescendants(long conceptCode) throws Exception {
-        List<Long> descendants = (List<Long>)cachedDescendantForConcept.get(new Long(conceptCode));
+        List<Long> descendants = (List<Long>)cachedDescendantForConcept.get(Long.valueOf(conceptCode));
         if (descendants == null) {
             JsonElement json = executeTermlexGet("hierarchy/" + conceptCode + "/descendants");
             descendants = getCodesFromJsonArray(json);
-            cachedDescendantForConcept.put(new Long(conceptCode), descendants);
+            cachedDescendantForConcept.put(Long.valueOf(conceptCode), descendants);
         }
 
         return descendants;

@@ -14,6 +14,9 @@ public class ResourceEntry {
     private String schemaVersion;
     private String resourceMetadata;
     private String resourceData;
+    private long resourceChecksum;
+    private UUID batchId;
+    private UUID exchangeId;
 
     public UUID getResourceId() {
         return resourceId;
@@ -93,5 +96,29 @@ public class ResourceEntry {
 
     public void setResourceData(String resourceData) {
         this.resourceData = resourceData;
+    }
+
+    public long getResourceChecksum() {
+        return resourceChecksum;
+    }
+
+    public void setResourceChecksum(long resourceChecksum) {
+        this.resourceChecksum = resourceChecksum;
+    }
+
+    public UUID getBatchId() {
+        return batchId;
+    }
+
+    public void setBatchId(UUID batchId) {
+        this.batchId = batchId;
+    }
+
+    public UUID getExchangeId() {
+        return exchangeId;
+    }
+
+    public void setExchangeId(UUID exchangeId) {
+        this.exchangeId = exchangeId;
     }
 }

@@ -2,7 +2,7 @@ package org.endeavourhealth.transform.ceg.transforms;
 
 import org.endeavourhealth.transform.ceg.models.AbstractModel;
 import org.endeavourhealth.transform.ceg.models.PatientDemographics;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.hl7.fhir.instance.model.*;
 
 import java.math.BigInteger;
@@ -42,7 +42,7 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
             Calendar cal = Calendar.getInstance();
             cal.setTime(dod);
             int year = cal.get(Calendar.YEAR);
-            model.setYearOfDeath(new Integer(year));
+            model.setYearOfDeath(Integer.valueOf(year));
         }
 
         String gender = fhirPatient.getGender().getDisplay();
@@ -80,7 +80,7 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
             Calendar cal = Calendar.getInstance();
             cal.setTime(dod);
             int year = cal.get(Calendar.YEAR);
-            model.setYearOfDeath(new Integer(year));
+            model.setYearOfDeath(Integer.valueOf(year));
         }
 
         String gender = fhirPatient.getGender().getDisplay();

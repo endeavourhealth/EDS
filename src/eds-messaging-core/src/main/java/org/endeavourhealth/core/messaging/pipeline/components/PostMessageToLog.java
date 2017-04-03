@@ -1,6 +1,5 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import org.endeavourhealth.core.audit.AuditEvent;
 import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.PostMessageToLogConfig;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -20,7 +19,18 @@ public class PostMessageToLog extends PipelineComponent {
 
 	@Override
 	public void process(Exchange exchange) throws PipelineException {
-		AuditEvent auditEvent = getAuditEvent();
+		String eventType = config.getEventType();
+
+		try {
+			AuditWriter.writeExchangeEvent(exchange, eventType);
+
+		} catch (Exception e) {
+			throw new PipelineException("Failed to write exchange " + exchange.getExchangeId() + " " + eventType + " to audit DB", e);
+		}
+	}
+
+	/*public void process(Exchange exchange) throws PipelineException {
+		AuditEvent auditEvent = AuditEvent.fromString(config.getEventType());
 
 		try {
 			AuditWriter.writeAuditEvent(exchange, auditEvent);
@@ -29,15 +39,6 @@ public class PostMessageToLog extends PipelineComponent {
 			LOG.error("Error writing exchange to audit", e);
 			// throw new PipelineException(e.getMessage());
 		}
-	}
+	}*/
 
-	private AuditEvent getAuditEvent() {
-		if ("Receive".equals(config.getEventType()))
-			return AuditEvent.RECEIVE;
-		if ("Validate".equals(config.getEventType()))
-			return AuditEvent.VALIDATE;
-		if ("Send".equals(config.getEventType()))
-			return AuditEvent.SEND;
-		throw new IllegalArgumentException("Unknown audit event type");
-	}
 }

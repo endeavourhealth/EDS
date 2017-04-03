@@ -2,7 +2,7 @@ package org.endeavourhealth.core.data.admin;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.mapping.Mapper;
-import org.endeavourhealth.core.data.Repository;
+import org.endeavourhealth.common.cassandra.Repository;
 import org.endeavourhealth.core.data.admin.accessors.LibraryAccessor;
 import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.admin.models.Audit;

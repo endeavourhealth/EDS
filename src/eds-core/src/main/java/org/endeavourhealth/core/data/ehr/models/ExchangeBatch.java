@@ -21,6 +21,9 @@ public class ExchangeBatch {
     @Column(name = "inserted_at")
     private Date insertedAt;
 
+    @Column(name = "eds_patient_id")
+    private UUID edsPatientId;
+
     public UUID getExchangeId() {
         return exchangeId;
     }
@@ -43,5 +46,13 @@ public class ExchangeBatch {
 
     public void setInsertedAt(Date insertedAt) {
         this.insertedAt = insertedAt;
+    }
+
+    public UUID getEdsPatientId() {
+        return edsPatientId;
+    }
+
+    public void setEdsPatientId(UUID edsPatientId) {
+        this.edsPatientId = edsPatientId;
     }
 }

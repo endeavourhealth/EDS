@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+    <xs:element name="transformError" type="transformError"/>
+
+    <xs:complexType name="transformError">
+        <xs:sequence>
+            <xs:element name="error" type="error" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="error">
+        <xs:sequence>
+            <xs:element name="arg" type="arg" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="datetime" type="xs:dateTime" minOccurs="0"/>
+            <xs:element name="exception" type="exception" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="arg">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="value" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="exception">
+        <xs:sequence>
+            <xs:element name="message" type="xs:string" minOccurs="0"/>
+            <xs:element name="line" type="exceptionLine" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="cause" type="exception" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="exceptionLine">
+        <xs:sequence>
+            <xs:element name="class" type="xs:string"/>
+            <xs:element name="method" type="xs:string"/>
+            <xs:element name="line" type="xs:int" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>

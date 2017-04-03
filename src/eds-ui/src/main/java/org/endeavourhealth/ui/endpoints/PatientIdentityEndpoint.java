@@ -1,16 +1,19 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.google.common.base.Strings;
+import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.Item;
 import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.data.ehr.PatientIdentifierRepository;
-import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByLocalId;
-import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByNhsNumber;
-import org.endeavourhealth.core.data.ehr.models.PatientIdentifierByPatientId;
-import org.endeavourhealth.ui.framework.exceptions.BadRequestException;
+import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditAction;
+import org.endeavourhealth.core.data.audit.models.AuditModule;
+import org.endeavourhealth.core.rdbms.eds.PatientSearch;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
+import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
+import org.endeavourhealth.coreui.framework.exceptions.BadRequestException;
 import org.endeavourhealth.ui.json.JsonPatientIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,9 +35,11 @@ import java.util.UUID;
 public final class PatientIdentityEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(PatientIdentityEndpoint.class);
 
-    private static final PatientIdentifierRepository identifierRepository = new PatientIdentifierRepository();
+    //private static final PatientIdentifierRepository identifierRepository = new PatientIdentifierRepository();
     private static final ServiceRepository serviceRepository = new ServiceRepository();
     private static final LibraryRepository libraryRepository = new LibraryRepository();
+
+    private UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.PatientIdentity);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -45,6 +50,11 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
                          @QueryParam("localId") String localId) throws Exception {
 
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Patient By Local Id",
+            "Service Id", serviceIdStr,
+            "System Id", systemIdStr,
+            "Local Id", localId);
 
         if (Strings.isNullOrEmpty(serviceIdStr)) {
             throw new BadRequestException("A service must be selected");
@@ -64,7 +74,27 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         List<JsonPatientIdentifier> ret = new ArrayList<>();
 
-        List<PatientIdentifierByLocalId> identifiers = identifierRepository.getForLocalId(serviceId, systemId, localId);
+        List<PatientSearch> identifiers = PatientSearchHelper.searchByLocalId(serviceId, systemId, localId);
+        for (PatientSearch identifier: identifiers) {
+
+            JsonPatientIdentifier json = new JsonPatientIdentifier();
+            json.setServiceId(serviceId);
+            json.setServiceName(serviceName);
+            json.setSystemId(systemId);
+            json.setSystemName(systemName);
+            json.setNhsNumber(identifier.getNhsNumber());
+            json.setForenames(identifier.getForenames());
+            json.setSurname(identifier.getSurname());
+            json.setDateOfBirth(identifier.getDateOfBirth());
+            json.setPostcode(identifier.getPostcode());
+            json.setGender(identifier.getGender());
+            json.setPatientId(UUID.fromString(identifier.getPatientId()));
+            //json.setLocalId(identifier.getLocalId());
+            //json.setLocalIdSystem(identifier.getLocalIdSystem());
+
+            ret.add(json);
+        }
+        /*List<PatientIdentifierByLocalId> identifiers = identifierRepository.getForLocalId(serviceId, systemId, localId);
         for (PatientIdentifierByLocalId identifier: identifiers) {
 
             JsonPatientIdentifier json = new JsonPatientIdentifier();
@@ -83,7 +113,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
             json.setLocalIdSystem(identifier.getLocalIdSystem());
 
             ret.add(json);
-        }
+        }*/
 
         removeDuplicates(ret);
 
@@ -100,6 +130,9 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
     @Path("/byNhsNumber")
     public Response byNhsNumber(@Context SecurityContext sc, @QueryParam("nhsNumber") String nhsNumber) throws Exception {
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Patient By NHS Number",
+            "NHS Number", nhsNumber);
 
         if (Strings.isNullOrEmpty(nhsNumber)) {
             throw new BadRequestException("NHS number must be entered");
@@ -107,7 +140,33 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         List<JsonPatientIdentifier> ret = new ArrayList<>();
 
-        List<PatientIdentifierByNhsNumber> identifiers = identifierRepository.getForNhsNumber(nhsNumber);
+        List<PatientSearch> identifiers = PatientSearchHelper.searchByNhsNumber(nhsNumber);
+        for (PatientSearch identifier: identifiers) {
+
+            UUID serviceId = UUID.fromString(identifier.getServiceId());
+            UUID systemId = UUID.fromString(identifier.getSystemId());
+
+            String serviceName = getServiceNameForId(serviceId);
+            String systemName = getSystemNameForId(systemId);
+
+            JsonPatientIdentifier json = new JsonPatientIdentifier();
+            json.setServiceId(serviceId);
+            json.setServiceName(serviceName);
+            json.setSystemId(systemId);
+            json.setSystemName(systemName);
+            json.setNhsNumber(identifier.getNhsNumber());
+            json.setForenames(identifier.getForenames());
+            json.setSurname(identifier.getSurname());
+            json.setDateOfBirth(identifier.getDateOfBirth());
+            json.setPostcode(identifier.getPostcode());
+            json.setGender(identifier.getGender());
+            json.setPatientId(UUID.fromString(identifier.getPatientId()));
+            //json.setLocalId(identifier.getLocalId());
+            //json.setLocalIdSystem(identifier.getLocalIdSystem());
+
+            ret.add(json);
+        }
+        /*List<PatientIdentifierByNhsNumber> identifiers = identifierRepository.getForNhsNumber(nhsNumber);
         for (PatientIdentifierByNhsNumber identifier: identifiers) {
 
             UUID serviceId = identifier.getServiceId();
@@ -132,7 +191,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
             json.setLocalIdSystem(identifier.getLocalIdSystem());
 
             ret.add(json);
-        }
+        }*/
 
         removeDuplicates(ret);
 
@@ -150,6 +209,9 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
     @Path("/byPatientId")
     public Response byPatientId(@Context SecurityContext sc, @QueryParam("patientId") String patientIdStr) throws Exception {
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Patient",
+            "Patient Id", patientIdStr);
 
         if (Strings.isNullOrEmpty(patientIdStr)) {
             throw new BadRequestException("Patient ID must be entered");
@@ -166,7 +228,33 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
 
         if (patientId != null) {
 
-            PatientIdentifierByPatientId identifier = identifierRepository.getMostRecentByPatientId(patientId);
+            PatientSearch identifier = PatientSearchHelper.searchByPatientId(patientId);
+            if (identifier != null) {
+
+                UUID serviceId = UUID.fromString(identifier.getServiceId());
+                UUID systemId = UUID.fromString(identifier.getSystemId());
+
+                String serviceName = getServiceNameForId(serviceId);
+                String systemName = getSystemNameForId(systemId);
+
+                JsonPatientIdentifier json = new JsonPatientIdentifier();
+                json.setServiceId(serviceId);
+                json.setServiceName(serviceName);
+                json.setSystemId(systemId);
+                json.setSystemName(systemName);
+                json.setNhsNumber(identifier.getNhsNumber());
+                json.setForenames(identifier.getForenames());
+                json.setSurname(identifier.getSurname());
+                json.setDateOfBirth(identifier.getDateOfBirth());
+                json.setPostcode(identifier.getPostcode());
+                json.setGender(identifier.getGender());
+                json.setPatientId(UUID.fromString(identifier.getPatientId()));
+                //json.setLocalId(identifier.getLocalId());
+                //json.setLocalIdSystem(identifier.getLocalIdSystem());
+
+                ret.add(json);
+            }
+            /*PatientIdentifierByPatientId identifier = identifierRepository.getMostRecentByPatientId(patientId);
             if (identifier != null) {
 
                 UUID serviceId = identifier.getServiceId();
@@ -191,7 +279,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
                 json.setLocalIdSystem(identifier.getLocalIdSystem());
 
                 ret.add(json);
-            }
+            }*/
         }
 
         removeDuplicates(ret);
@@ -277,7 +365,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
             Service service = serviceRepository.getById(serviceId);
             return service.getName();
         } catch (NullPointerException ex ) {
-            LOG.error("Failed to find service for ID {}", serviceId);
+            LOG.error("Failed to find service for ID " + serviceId, ex);
             return "UNKNOWN";
         }
 
@@ -288,7 +376,7 @@ public final class PatientIdentityEndpoint extends AbstractEndpoint {
             Item item = libraryRepository.getItemByKey(systemId, activeItem.getAuditId());
             return item.getTitle();
         } catch (NullPointerException ex) {
-            LOG.error("Failed to find system for ID {}", systemId);
+            LOG.error("Failed to find system for ID " + systemId, ex);
             return "UNKNOWN";
         }
 

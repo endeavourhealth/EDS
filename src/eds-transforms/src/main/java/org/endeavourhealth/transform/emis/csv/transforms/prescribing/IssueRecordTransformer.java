@@ -1,48 +1,44 @@
 package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
 import com.google.common.base.Strings;
-import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.exceptions.FutureException;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.QuantityHelper;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.QuantityHelper;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.Date;
+import java.util.Map;
 
 public class IssueRecordTransformer {
 
     public static void transform(String version,
-                                 String folderPath,
-                                 CSVFormat csvFormat,
-                                 CsvProcessor csvProcessor,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        IssueRecord parser = new IssueRecord(version, folderPath, csvFormat);
-        try {
-            while (parser.nextRecord()) {
-                createResource(version, parser, csvProcessor, csvHelper);
+        AbstractCsvParser parser = parsers.get(IssueRecord.class);
+        while (parser.nextRecord()) {
+
+            try {
+                createResource((IssueRecord)parser, fhirResourceFiler, csvHelper, version);
+            } catch (Exception ex) {
+                fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
             }
-        } catch (FutureException fe) {
-            throw fe;
-        } catch (Exception ex) {
-            throw new TransformException(parser.getErrorLine(), ex);
-        } finally {
-            parser.close();
         }
     }
 
-    private static void createResource(String version,
-                                       IssueRecord parser,
-                                       CsvProcessor csvProcessor,
-                                       EmisCsvHelper csvHelper) throws Exception {
+
+    public static void createResource(IssueRecord parser,
+                                       FhirResourceFiler fhirResourceFiler,
+                                       EmisCsvHelper csvHelper,
+                                       String version) throws Exception {
 
         MedicationOrder fhirMedication = new MedicationOrder();
         fhirMedication.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_ORDER));
@@ -55,8 +51,8 @@ public class IssueRecordTransformer {
         fhirMedication.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(patientGuid, fhirMedication);
+        if (parser.getDeleted()) {
+            fhirResourceFiler.deletePatientResource(parser.getCurrentState(), patientGuid, fhirMedication);
             return;
         }
 
@@ -72,7 +68,8 @@ public class IssueRecordTransformer {
         //need to handle mis-spelt column name in EMIS test pack
         //String clinicianGuid = parser.getClinicianUserInRoleGuid();
         String clinicianGuid = null;
-        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+        if (version.equals(EmisCsvToFhirTransformer.VERSION_5_0)
+                || version.equals(EmisCsvToFhirTransformer.VERSION_5_1)) {
             clinicianGuid = parser.getClinicanUserInRoleGuid();
         } else {
             clinicianGuid = parser.getClinicianUserInRoleGuid();
@@ -81,7 +78,7 @@ public class IssueRecordTransformer {
         fhirMedication.setPrescriber(csvHelper.createPractitionerReference(clinicianGuid));
 
         Long codeId = parser.getCodeId();
-        fhirMedication.setMedication(csvHelper.findMedication(codeId, csvProcessor));
+        fhirMedication.setMedication(csvHelper.findMedication(codeId));
 
         String dose = parser.getDosage();
         MedicationOrder.MedicationOrderDosageInstructionComponent fhirDose = fhirMedication.addDosageInstruction();
@@ -100,7 +97,7 @@ public class IssueRecordTransformer {
 
         //if the Medication is linked to a Problem, then use the problem's Observation as the Medication reason
         String problemObservationGuid = parser.getProblemObservationGuid();
-        if (problemObservationGuid != null) {
+        if (!Strings.isNullOrEmpty(problemObservationGuid)) {
             fhirMedication.setReason(csvHelper.createObservationReference(problemObservationGuid, patientGuid));
         }
 
@@ -113,18 +110,27 @@ public class IssueRecordTransformer {
             fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
         }
 
-        Date enteredDateTime = parser.getEnteredDateTime();
+        //in the earliest version of the extract, we only got the entered date and not time
+        Date enteredDateTime = null;
+        if (version.equals(EmisCsvToFhirTransformer.VERSION_5_0)) {
+            enteredDateTime = parser.getEnteredDate();
+        } else {
+            enteredDateTime = parser.getEnteredDateTime();
+        }
+
         if (enteredDateTime != null) {
             fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(enteredDateTime)));
         }
 
-        csvProcessor.savePatientResource(patientGuid, fhirMedication);
+        fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirMedication);
 
+/*
         //if this record is linked to a problem, store this relationship in the helper
         csvHelper.cacheProblemRelationship(problemObservationGuid,
                 patientGuid,
                 issueRecordGuid,
                 fhirMedication.getResourceType());
+*/
 
     }
 

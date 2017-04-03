@@ -1,0 +1,23 @@
+.tree {
+    width: 100%;
+}
+
+.node-wrapper {
+    width: 100%;
+}
+
+.tree-node {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+}
+
+.node-content-wrapper {
+    flex-grow: 1;
+    position: relative;
+}
+
+.tree-children {
+    flex-grow: 1;
+    width: 100%;
+}

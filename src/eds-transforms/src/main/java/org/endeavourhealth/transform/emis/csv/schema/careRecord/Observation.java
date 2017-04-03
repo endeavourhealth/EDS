@@ -1,16 +1,16 @@
 package org.endeavourhealth.transform.emis.csv.schema.careRecord;
 
-import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 
+import java.io.File;
 import java.util.Date;
 
-public class Observation extends AbstractCsvTransformer {
+public class Observation extends AbstractCsvParser {
 
-    public Observation(String version, String folderPath, CSVFormat csvFormat) throws Exception {
-        super(version, folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
+    public Observation(String version, File f, boolean openParser) throws Exception {
+        super(version, f, openParser, EmisCsvToFhirTransformer.CSV_FORMAT, EmisCsvToFhirTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvToFhirTransformer.TIME_FORMAT);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class Observation extends AbstractCsvTransformer {
     public Long getCodeId() {
         return super.getLong("CodeId");
     }
-    public String getProblemUGuid() {
+    public String getProblemGuid() {
         return super.getString("ProblemGuid");
     }
     public String getAssociatedText() {

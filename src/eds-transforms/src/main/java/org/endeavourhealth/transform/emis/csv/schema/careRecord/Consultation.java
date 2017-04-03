@@ -1,38 +1,60 @@
 package org.endeavourhealth.transform.emis.csv.schema.careRecord;
 
-import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 
+import java.io.File;
 import java.util.Date;
 
-public class Consultation extends AbstractCsvTransformer {
+public class Consultation extends AbstractCsvParser {
 
-    public Consultation(String version, String folderPath, CSVFormat csvFormat) throws Exception {
-        super(version, folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
+    public Consultation(String version, File f, boolean openParser) throws Exception {
+        super(version, f, openParser, EmisCsvToFhirTransformer.CSV_FORMAT, EmisCsvToFhirTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvToFhirTransformer.TIME_FORMAT);
     }
 
     @Override
     protected String[] getCsvHeaders(String version) {
-        return new String[]{
-                "ConsultationGuid",
-                "PatientGuid",
-                "OrganisationGuid",
-                "EffectiveDate",
-                "EffectiveDatePrecision",
-                "EnteredDate",
-                "EnteredTime",
-                "ClinicianUserInRoleGuid",
-                "EnteredByUserInRoleGuid",
-                "AppointmentSlotGuid",
-                "ConsultationSourceTerm",
-                "ConsultationSourceCodeId",
-                "Complete",
-                "Deleted",
-                "IsConfidential",
-                "ProcessingId"
-        };
+
+        if (version.equals(EmisCsvToFhirTransformer.VERSION_5_0)) {
+            return new String[]{
+                    "ConsultationGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "EffectiveDate",
+                    "EffectiveDatePrecision",
+                    "EnteredDate",
+                    //"EnteredTime", //the earliest version (we've seen) doesn't have this column
+                    "ClinicianUserInRoleGuid",
+                    "EnteredByUserInRoleGuid",
+                    "AppointmentSlotGuid",
+                    "ConsultationSourceTerm",
+                    "ConsultationSourceCodeId",
+                    "Complete",
+                    "Deleted",
+                    "IsConfidential",
+                    "ProcessingId"
+            };
+        } else {
+            return new String[]{
+                    "ConsultationGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "EffectiveDate",
+                    "EffectiveDatePrecision",
+                    "EnteredDate",
+                    "EnteredTime",
+                    "ClinicianUserInRoleGuid",
+                    "EnteredByUserInRoleGuid",
+                    "AppointmentSlotGuid",
+                    "ConsultationSourceTerm",
+                    "ConsultationSourceCodeId",
+                    "Complete",
+                    "Deleted",
+                    "IsConfidential",
+                    "ProcessingId"
+            };
+        }
     }
 
     public String getConsultationGuid() {
@@ -49,6 +71,9 @@ public class Consultation extends AbstractCsvTransformer {
     }
     public String getEffectiveDatePrecision() {
         return super.getString("EffectiveDatePrecision");
+    }
+    public Date getEnteredDate() throws TransformException {
+        return super.getDate("EnteredDate");
     }
     public Date getEnteredDateTime() throws TransformException {
         return super.getDateTime("EnteredDate", "EnteredTime");

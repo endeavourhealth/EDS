@@ -38,7 +38,6 @@ public class ObservationMetadata extends AbstractResourceMetadata implements Pat
             Code newCode = new Code();
             newCode.setSystem(system);
             newCode.setCode(code);
-            newCode.setDisplay(display);
 
             codes.add(newCode);
         }

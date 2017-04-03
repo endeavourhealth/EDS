@@ -1,11 +1,12 @@
 package org.endeavourhealth.core.data.ehr.models;
 
 import com.datastax.driver.mapping.annotations.*;
+import org.endeavourhealth.core.data.ehr.HasResourceDataJson;
 
 import java.util.UUID;
 
 @Table(keyspace = "ehr", name = "resource_by_patient")
-public class ResourceByPatient {
+public class ResourceByPatient implements HasResourceDataJson {
     @PartitionKey(0)
     @Column(name = "service_id")
     private UUID serviceId;

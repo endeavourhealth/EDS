@@ -1,3 +1,21 @@
-/// <reference path="../../typings/index.d.ts" />
+import {NgModule} from "@angular/core";
+import {BrowserModule} from "@angular/platform-browser";
+import {FormsModule} from "@angular/forms";
+import {StatsComponent} from "./stats.component";
+import {StatsService} from "./stats.service";
+import {NKDatetimeModule} from "ng2-datetime/ng2-datetime";
 
-angular.module('app.stats', []);
+@NgModule({
+	imports : [
+		BrowserModule,
+		FormsModule,
+		NKDatetimeModule,
+	],
+	declarations : [
+		StatsComponent
+	],
+	providers : [
+		StatsService
+	]
+})
+export class StatsModule {}

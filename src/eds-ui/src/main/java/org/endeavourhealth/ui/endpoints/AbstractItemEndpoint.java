@@ -4,6 +4,7 @@ import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.models.*;
 import org.endeavourhealth.core.xml.QueryDocument.QueryDocument;
 import org.endeavourhealth.core.xml.QueryDocumentSerializer;
+import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.ui.DependencyType;
 import org.endeavourhealth.ui.json.JsonDeleteResponse;
 import org.endeavourhealth.ui.json.JsonMoveItem;
@@ -125,7 +126,8 @@ public abstract class AbstractItemEndpoint extends AbstractEndpoint {
                     && itemType != DefinitionItemType.Query
                     && itemType != DefinitionItemType.DataSet
                     && itemType != DefinitionItemType.Protocol
-                    && itemType != DefinitionItemType.System) {
+                    && itemType != DefinitionItemType.System
+                    && itemType != DefinitionItemType.CountReport) {
                 throw new BadRequestException("Library folder UUID " + containingFolderUuid + " cannot contain a " + itemType);
             }
         } else {

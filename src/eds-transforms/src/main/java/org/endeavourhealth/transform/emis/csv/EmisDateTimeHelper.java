@@ -11,6 +11,7 @@ public class EmisDateTimeHelper {
 
 
     public static DateTimeType createDateTimeType(Date date, String precision) throws Exception {
+
         if (date == null) {
             return null;
         }

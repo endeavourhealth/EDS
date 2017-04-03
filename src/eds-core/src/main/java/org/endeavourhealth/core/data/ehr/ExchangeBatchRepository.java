@@ -2,7 +2,7 @@ package org.endeavourhealth.core.data.ehr;
 
 import com.datastax.driver.mapping.Mapper;
 import com.google.common.collect.Lists;
-import org.endeavourhealth.core.data.Repository;
+import org.endeavourhealth.common.cassandra.Repository;
 import org.endeavourhealth.core.data.ehr.accessors.ExchangeBatchAccessor;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 
@@ -23,5 +23,10 @@ public class ExchangeBatchRepository extends Repository {
     public List<ExchangeBatch> retrieveForExchangeId(UUID exchangeId) {
         ExchangeBatchAccessor accessor = getMappingManager().createAccessor(ExchangeBatchAccessor.class);
         return Lists.newArrayList(accessor.getForExchangeId(exchangeId));
+    }
+
+    public ExchangeBatch getForExchangeAndBatchId(UUID exchangeId, UUID batchId) {
+        Mapper<ExchangeBatch> mapper = getMappingManager().mapper(ExchangeBatch.class);
+        return mapper.get(exchangeId, batchId);
     }
 }

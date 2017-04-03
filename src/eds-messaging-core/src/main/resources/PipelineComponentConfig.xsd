@@ -1,6 +1,20 @@
 <?xml version="1.0"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
     <xs:include schemaLocation="Common.xsd"/>
+    <xs:include schemaLocation="Pipeline.xsd"/>
+
+    <xs:complexType name="ForEachConfig">
+        <xs:complexContent>
+            <xs:extension base="ComponentConfig">
+                <xs:sequence>
+                    <xs:element name="Pipeline" type="Pipeline" minOccurs="1" maxOccurs="1"/>
+                </xs:sequence>
+                <xs:attribute name="Header" type="xs:string"/>
+                <xs:attribute name="InList" type="xs:string"/>
+                <xs:attribute name="InCsv" type="xs:string"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
 
     <xs:complexType name="OpenEnvelopeConfig">
         <xs:complexContent>
@@ -30,15 +44,7 @@
         <xs:complexContent>
             <xs:extension base="ComponentConfig">
                 <xs:sequence>
-                    <xs:element name="EventType" minOccurs="1" maxOccurs="1">
-                        <xs:simpleType>
-                            <xs:restriction base="xs:string">
-                                <xs:enumeration value="Receive"/>
-                                <xs:enumeration value="Validate"/>
-                                <xs:enumeration value="Send"/>
-                            </xs:restriction>
-                        </xs:simpleType>
-                    </xs:element>
+                    <xs:element name="EventType" type="xs:string" minOccurs="1" maxOccurs="1"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -48,8 +54,6 @@
         <xs:complexContent>
             <xs:extension base="ComponentConfig">
                 <xs:sequence>
-                    <xs:element name="Credentials" type="Credentials" minOccurs="1" maxOccurs="1"/>
-                    <xs:element name="Nodes" type="xs:string" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="Exchange" type="xs:string" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="RoutingHeader" type="xs:string" minOccurs="1" maxOccurs="1"/>
                     <xs:element name="MulticastHeader" type="xs:string" minOccurs="0" maxOccurs="1"/>
@@ -68,7 +72,8 @@
         <xs:complexContent>
             <xs:extension base="ComponentConfig">
                 <xs:sequence>
-                    <xs:element name="SharedStoragePath" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="SharedStoragePath" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                    <xs:element name="FilingThreadLimit" type="xs:int" minOccurs="1" maxOccurs="1"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>

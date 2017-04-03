@@ -2,7 +2,7 @@ package org.endeavourhealth.core.data.ehr;
 
 import com.datastax.driver.core.Row;
 import org.endeavourhealth.core.fhirStorage.metadata.ResourceMetadata;
-import org.endeavourhealth.core.utility.JsonSerializer;
+import org.endeavourhealth.common.utility.JsonSerializer;
 
 import java.util.Iterator;
 import java.util.function.Consumer;

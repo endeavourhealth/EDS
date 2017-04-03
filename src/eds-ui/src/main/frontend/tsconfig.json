@@ -1,15 +1,21 @@
 {
 	"compilerOptions": {
-		"module": "amd",
+		"module": "commonjs",
 		"target": "es5",
-		"noImplicitAny": true,
-		"suppressImplicitAnyIndexErrors": true,
-		"rootDir": ".",
+		"moduleResolution": "node",
 		"sourceMap": true,
-		"outDir":"../webapp"
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"noImplicitAny": false,
+		"suppressImplicitAnyIndexErrors": true,
+		"removeComments": true,
+		"rootDir": ".",
+		"outDir":"../webapp",
+		"lib": ["es2015", "dom"]
 	},
 	"exclude": [
 		"node_modules",
-		"typings"
+		"typings",
+		"dist"
 	]
 }

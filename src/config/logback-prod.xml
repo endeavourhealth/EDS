@@ -9,6 +9,7 @@
   <logger name="ch.qos.logback" level="ERROR"/>
   <logger name="com.mchange" level="ERROR"/>
   <logger name="com.datastax" level="ERROR"/>
+  <logger name="ca.uhn" level="ERROR"/>
 
   <!-- enable INFO logging for Endeavour code -->
   <logger name="org.endeavourhealth" level="INFO"/>
@@ -17,6 +18,7 @@
   <root level="INFO">
     <appender-ref ref="stdout" />
     <appender-ref ref="db_async" />
+    <appender-ref ref="file" />
   </root>
 
 </included>

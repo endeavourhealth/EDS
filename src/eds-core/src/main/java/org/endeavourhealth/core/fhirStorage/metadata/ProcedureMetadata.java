@@ -38,7 +38,6 @@ public class ProcedureMetadata extends AbstractResourceMetadata implements Patie
             Code newCode = new Code();
             newCode.setSystem(system);
             newCode.setCode(code);
-            newCode.setDisplay(display);
 
             codes.add(newCode);
         }

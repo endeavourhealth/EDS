@@ -1,37 +1,61 @@
 package org.endeavourhealth.transform.emis.csv.schema.careRecord;
 
-import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 
+import java.io.File;
 import java.util.Date;
 
-public class Problem extends AbstractCsvTransformer {
+public class Problem extends AbstractCsvParser {
 
-    public Problem(String version, String folderPath, CSVFormat csvFormat) throws Exception {
-        super(version, folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
+    public Problem(String version, File f, boolean openParser) throws Exception {
+        super(version, f, openParser, EmisCsvToFhirTransformer.CSV_FORMAT, EmisCsvToFhirTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvToFhirTransformer.TIME_FORMAT);
     }
 
     @Override
     protected String[] getCsvHeaders(String version) {
-        return new String[]{
-                "ObservationGuid",
-                "PatientGuid",
-                "OrganisationGuid",
-                "ParentProblemObservationGuid",
-                "Comment",
-                "EndDate",
-                "EndDatePrecision",
-                "ExpectedDuration",
-                "LastReviewDate",
-                "LastReviewDatePrecision",
-                "LastReviewUserInRoleGuid",
-                "ParentProblemRelationship",
-                "ProblemStatusDescription",
-                "SignificanceDescription",
-                "ProcessingId"
-        };
+
+        //the older versions didn't have the Deleted column
+        if (version.equals(EmisCsvToFhirTransformer.VERSION_5_0)
+                || version.equals(EmisCsvToFhirTransformer.VERSION_5_1)) {
+            return new String[]{
+                    "ObservationGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "ParentProblemObservationGuid",
+                    "Comment",
+                    "EndDate",
+                    "EndDatePrecision",
+                    "ExpectedDuration",
+                    "LastReviewDate",
+                    "LastReviewDatePrecision",
+                    "LastReviewUserInRoleGuid",
+                    "ParentProblemRelationship",
+                    "ProblemStatusDescription",
+                    "SignificanceDescription",
+                    "ProcessingId"
+            };
+        } else {
+            return new String[]{
+                    "ObservationGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "ParentProblemObservationGuid",
+                    "Deleted",
+                    "Comment",
+                    "EndDate",
+                    "EndDatePrecision",
+                    "ExpectedDuration",
+                    "LastReviewDate",
+                    "LastReviewDatePrecision",
+                    "LastReviewUserInRoleGuid",
+                    "ParentProblemRelationship",
+                    "ProblemStatusDescription",
+                    "SignificanceDescription",
+                    "ProcessingId"
+            };
+        }
     }
 
     public String getObservationGuid() {
@@ -72,6 +96,9 @@ public class Problem extends AbstractCsvTransformer {
     }
     public String getParentProblemRelationship() {
         return super.getString("ParentProblemRelationship");
+    }
+    public boolean getDeleted() {
+        return super.getBoolean("Deleted");
     }
     public String getComment() {
         return super.getString("Comment");

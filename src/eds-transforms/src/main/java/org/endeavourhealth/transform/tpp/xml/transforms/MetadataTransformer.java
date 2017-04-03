@@ -1,8 +1,8 @@
 package org.endeavourhealth.transform.tpp.xml.transforms;
 
+import org.endeavourhealth.transform.common.FhirHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
-import org.endeavourhealth.transform.fhir.ResourceHelper;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.tpp.xml.schema.Metadata;
 import org.endeavourhealth.transform.tpp.xml.schema.Site;
 import org.endeavourhealth.transform.tpp.xml.schema.User;
@@ -30,7 +30,7 @@ public class MetadataTransformer {
 
     private static void linkOrganisations(List<Resource> fhirResources) throws TransformException {
 
-        Organization fhirOrganisation = ResourceHelper.findResourceOfType(Organization.class, fhirResources);
+        Organization fhirOrganisation = FhirHelper.findResourceOfType(Organization.class, fhirResources);
         String orgId = fhirOrganisation.getId();
 
         //link all locations to the organisation

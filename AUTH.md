@@ -287,4 +287,62 @@ In production the following things should be considered:
 - LDAP users used for SFTP authentication should be stored in a clustered LDAP instance - OpenLDAP can be configured to run in a master-master replica pair.
 - Server logs from both Tomcat and Keycloak should be collected using FileBeats and sent to LogStash.
 
+Use the [EDS bootstrapping tool](src/eds-bootstrap) to set the configuration and [see instructions for usage here](src/eds-bootstrap/README.me).  
 
+# Installation Guide
+
+- Download Keycloak 2.0.0.Latest
+- Unzip contents into `/opt/jboss/keycloak`
+- Make sure you have the following build artifacts:
+    - `eds-keycloak-providers.jar`
+    - `eds-keycloak-theme-1.0-SNAPSHOT.jar`
+- Setup the theme by unziping the theme contents to `/opt/jboss/keycloak/themes`
+- Set the custom providers:
+
+    ```
+    # Add custom providers
+    /opt/jboss/keycloak/bin/jboss-cli.sh --command="module add --name=org.endeavourhealth.eds-keycloak-providers --resources=<ARTIFACT_DIR>/eds-keycloak-providers.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-common,org.keycloak.keycloak-server-spi,org.keycloak.keycloak-services,org.jboss.resteasy.resteasy-jaxrs,org.jboss.logging,javax.ws.rs.api"
+    
+    # Modify the keycloak-server.json file (NB: after Keycloak v2.1.0 this will need to be done in the standalone.xml file)
+    jq '.providers |= .+ ["module:org.endeavourhealth.eds-keycloak-providers"]' /opt/jboss/keycloak/standalone/configuration/keycloak-server.json > /tmp/keycloak-server.json
+    cp /tmp/keycloak-server.json /opt/jboss/keycloak/standalone/configuration/keycloak-server.json
+    ```
+
+- Set up JDBC:
+    - Run
+
+        ```bash
+        xmlstarlet ed --inplace -N ds=urn:jboss:domain:datasources:4.0 -s '//ds:datasource[@jndi-name="java:jboss/datasources/KeycloakDS"]/ds:connection-url' -t text -n '' -v "jdbc:postgresql://$POSTGRES_HOST/" -s '//ds:datasource[@jndi-name="java:jboss/datasources/KeycloakDS"]/ds:security/ds:user-name' -t text -n '' -v "$POSTGRES_USER" -s '//ds:datasource[@jndi-name="java:jboss/datasources/KeycloakDS"]/ds:security/ds:password' -t text -n '' -v "$POSTGRES_PASSWORD" /opt/jboss/keycloak/standalone/configuration/standalone.xml
+        ```
+
+    - Download `https://jdbc.postgresql.org/download/postgresql-9.4.1209.jar` to `/opt/jboss/keycloak/modules/org/postgresql/main/`
+    - Create this file in `/opt/jboss/keycloak/modules/org/postgresql/main/module.xml`
+
+        ```xml
+        <module xmlns="urn:jboss:module:1.3" name="org.postgresql">
+           <resources>
+              <resource-root path="postgresql-9.4.1209.jar"/>
+           </resources>
+           <dependencies>
+              <module name="javax.api"/>
+              <module name="javax.transaction.api"/>
+           </dependencies>
+        </module>
+        ```
+
+- Make sure `Host` headers are used by setting `proxy-address-forwarding="true"` in `standalone.xml`:
+
+    ```xml
+    <subsystem xmlns="urn:jboss:domain:undertow:3.0">
+        <buffer-cache name="default"/>
+        <server name="default-server">
+            <http-listener name="default" proxy-address-forwarding="true" socket-binding="http" redirect-socket="https"/>
+            <host name="default-host" alias="localhost">
+                <location name="/" handler="welcome-content"/>
+                <filter-ref name="server-header"/>
+                <filter-ref name="x-powered-by-header"/>
+            </host>
+        </server>
+    ```
+    
+Start the Keycloak server with `/opt/jboss/keycloak/bin/standalone.sh` for testing, but this should really be run as a service - configure this as appropriate for your Linux distribution.

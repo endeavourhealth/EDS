@@ -1,31 +1,21 @@
-/// <reference path="../../typings/index.d.ts" />
+import {BaseHttp2Service} from "../core/baseHttp2.service";
+import {ConfigurationResource} from "./ConfigurationResource";
+import {Injectable} from "@angular/core";
+import {Http, URLSearchParams} from "@angular/http";
+import {Observable} from "rxjs";
 
-module app.config {
-	'use strict';
+@Injectable()
+export class ConfigService extends BaseHttp2Service {
+	constructor(http : Http) { super (http); }
 
-	export interface IConfigService {
-		getConfig(configurationId : string):ng.IPromise<ConfigurationResource>;
-		saveConfig(configResource : ConfigurationResource):ng.IPromise<ConfigurationResource>;
+	getConfig(configurationId : string) : Observable<ConfigurationResource> {
+		let params = new URLSearchParams();
+		params.set('configurationId',configurationId);
+
+		return this.httpGet('api/config/getConfig', { search : params });
 	}
 
-	export class ConfigService extends core.BaseHttpService implements IConfigService {
-
-		getConfig(configurationId : string):ng.IPromise<ConfigurationResource> {
-			var request = {
-				params: {
-					'configurationId': configurationId
-				}
-			};
-
-			return this.httpGet('api/config/getConfig', request);
-		}
-
-		saveConfig(configResource : ConfigurationResource):ng.IPromise<ConfigurationResource> {
-			return this.httpPost('api/config/saveConfig', configResource);
-		}
+	saveConfig(configResource : ConfigurationResource):Observable<ConfigurationResource> {
+		return this.httpPost('api/config/saveConfig', configResource);
 	}
-
-	angular
-		.module('app.config')
-		.service('ConfigService', ConfigService);
 }

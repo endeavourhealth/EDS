@@ -1,93 +1,90 @@
 package org.endeavourhealth.transform.emis.csv.transforms.prescribing;
 
 import com.google.common.base.Strings;
-import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.exceptions.FutureException;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
+import org.endeavourhealth.common.fhir.CodingHelper;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.schema.MedicationAuthorisationType;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.EmisDateTimeHelper;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord;
-import org.endeavourhealth.transform.fhir.CodingHelper;
-import org.endeavourhealth.transform.fhir.ExtensionConverter;
-import org.endeavourhealth.transform.fhir.FhirExtensionUri;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.schema.MedicationAuthorisationType;
 import org.hl7.fhir.instance.model.*;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.Map;
 
 public class DrugRecordTransformer {
 
     public static void transform(String version,
-                                 String folderPath,
-                                 CSVFormat csvFormat,
-                                 CsvProcessor csvProcessor,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        DrugRecord parser = new DrugRecord(version, folderPath, csvFormat);
-        try {
-            while (parser.nextRecord()) {
-                createResource(version, parser, csvProcessor, csvHelper);
+        AbstractCsvParser parser = parsers.get(DrugRecord.class);
+        while (parser.nextRecord()) {
+
+            try {
+                createResource((DrugRecord)parser, fhirResourceFiler, csvHelper, version);
+            } catch (Exception ex) {
+                fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
             }
-        } catch (FutureException fe) {
-            throw fe;
-        } catch (Exception ex) {
-            throw new TransformException(parser.getErrorLine(), ex);
-        } finally {
-            parser.close();
         }
     }
 
-    private static void createResource(String version,
-                                       DrugRecord parser,
-                                       CsvProcessor csvProcessor,
-                                       EmisCsvHelper csvHelper) throws Exception {
 
-        MedicationStatement fhirMedication = new MedicationStatement();
-        fhirMedication.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_AUTHORISATION));
+    public static void createResource(DrugRecord parser,
+                                       FhirResourceFiler fhirResourceFiler,
+                                       EmisCsvHelper csvHelper,
+                                       String version) throws Exception {
+
+        MedicationStatement fhirMedicationStatement = new MedicationStatement();
+        fhirMedicationStatement.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_MEDICATION_AUTHORISATION));
 
         String drugRecordGuid = parser.getDrugRecordGuid();
         String patientGuid = parser.getPatientGuid();
 
-        EmisCsvHelper.setUniqueId(fhirMedication, patientGuid, drugRecordGuid);
+        EmisCsvHelper.setUniqueId(fhirMedicationStatement, patientGuid, drugRecordGuid);
 
-        fhirMedication.setPatient(csvHelper.createPatientReference(patientGuid));
+        fhirMedicationStatement.setPatient(csvHelper.createPatientReference(patientGuid));
 
         //if the Resource is to be deleted from the data store, then stop processing the CSV row
-        if (parser.getDeleted() || parser.getIsConfidential()) {
-            csvProcessor.deletePatientResource(patientGuid, fhirMedication);
+        if (parser.getDeleted()) {
+            fhirResourceFiler.deletePatientResource(parser.getCurrentState(), patientGuid, fhirMedicationStatement);
             return;
         }
 
         //need to handle mis-spelt column name in EMIS test pack
         //String clinicianGuid = parser.getClinicianUserInRoleGuid();
         String clinicianGuid = null;
-        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+        if (version.equals(EmisCsvToFhirTransformer.VERSION_5_0)
+                || version.equals(EmisCsvToFhirTransformer.VERSION_5_1)) {
             clinicianGuid = parser.getClinicanUserInRoleGuid();
         } else {
             clinicianGuid = parser.getClinicianUserInRoleGuid();
         }
 
-        fhirMedication.setInformationSource(csvHelper.createPractitionerReference(clinicianGuid));
+        fhirMedicationStatement.setInformationSource(csvHelper.createPractitionerReference(clinicianGuid));
 
         Date effectiveDate = parser.getEffectiveDate();
         String effectiveDatePrecision = parser.getEffectiveDatePrecision();
-        fhirMedication.setDateAssertedElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
+        fhirMedicationStatement.setDateAssertedElement(EmisDateTimeHelper.createDateTimeType(effectiveDate, effectiveDatePrecision));
 
         if (parser.getIsActive()) {
-            fhirMedication.setStatus(MedicationStatement.MedicationStatementStatus.ACTIVE);
+            fhirMedicationStatement.setStatus(MedicationStatement.MedicationStatementStatus.ACTIVE);
         } else {
-            fhirMedication.setStatus(MedicationStatement.MedicationStatementStatus.COMPLETED);
+            fhirMedicationStatement.setStatus(MedicationStatement.MedicationStatementStatus.COMPLETED);
         }
 
         Long codeId = parser.getCodeId();
-        fhirMedication.setMedication(csvHelper.findMedication(codeId, csvProcessor));
+        fhirMedicationStatement.setMedication(csvHelper.findMedication(codeId));
 
         String dose = parser.getDosage();
-        MedicationStatement.MedicationStatementDosageComponent fhirDose = fhirMedication.addDosage();
+        MedicationStatement.MedicationStatementDosageComponent fhirDose = fhirMedicationStatement.addDosage();
         fhirDose.setText(dose);
 
         Double quantity = parser.getQuantity();
@@ -95,59 +92,65 @@ public class DrugRecordTransformer {
         Quantity fhirQuantity = new Quantity();
         fhirQuantity.setValue(BigDecimal.valueOf(quantity.doubleValue()));
         fhirQuantity.setUnit(quantityUnit);
-        fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_QUANTITY, fhirQuantity));
+        fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_QUANTITY, fhirQuantity));
 
         Integer issuesAuthorised = parser.getNumberOfIssuesAuthorised();
         if (issuesAuthorised != null) {
-            fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_NUMBER_OF_REPEATS_ALLOWED, new PositiveIntType(issuesAuthorised)));
+            fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_NUMBER_OF_REPEATS_ALLOWED, new PositiveIntType(issuesAuthorised)));
         }
 
         Integer issuesReceived = parser.getNumberOfIssues();
         if (issuesReceived != null) {
-            fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_NUMBER_OF_REPEATS_ISSUED, new PositiveIntType(issuesReceived)));
+            fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_NUMBER_OF_REPEATS_ISSUED, new PositiveIntType(issuesReceived)));
         }
 
         //if the Medication is linked to a Problem, then use the problem's Observation as the Medication reason
         String problemObservationGuid = parser.getProblemObservationGuid();
-        if (problemObservationGuid != null) {
-            fhirMedication.setReasonForUse(csvHelper.createObservationReference(problemObservationGuid, patientGuid));
+        if (!Strings.isNullOrEmpty(problemObservationGuid)) {
+            fhirMedicationStatement.setReasonForUse(csvHelper.createConditionReference(problemObservationGuid, patientGuid));
         }
 
         Date cancellationDate = parser.getCancellationDate();
         if (cancellationDate != null) {
             //the cancellation extension is a compound extension, so we have one extension inside another
-            Extension extension = ExtensionConverter.createExtension("performer", new DateType(cancellationDate));
-            fhirMedication.addExtension(ExtensionConverter.createCompoundExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_CANCELLATION, extension));
+            Extension extension = ExtensionConverter.createExtension("date", new DateType(cancellationDate));
+            fhirMedicationStatement.addExtension(ExtensionConverter.createCompoundExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_CANCELLATION, extension));
         }
 
-        DateTimeType mostRecentDate = csvHelper.getDrugRecordDate(drugRecordGuid, patientGuid);
+        DateType firstIssueDate = csvHelper.getDrugRecordFirstIssueDate(drugRecordGuid, patientGuid);
+        if (firstIssueDate != null) {
+            fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_FIRST_ISSUE_DATE, firstIssueDate));
+        }
+
+        DateType mostRecentDate = csvHelper.getDrugRecordLastIssueDate(drugRecordGuid, patientGuid);
         if (mostRecentDate != null) {
-            fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_MOST_RECENT_ISSUE_DATE, mostRecentDate));
+            fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_MOST_RECENT_ISSUE_DATE, mostRecentDate));
         }
 
         String enteredByGuid = parser.getEnteredByUserInRoleGuid();
         if (!Strings.isNullOrEmpty(enteredByGuid)) {
             Reference reference = csvHelper.createPractitionerReference(enteredByGuid);
-            fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
+            fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_BY, reference));
         }
 
-        Date enteredDateTime = parser.getEnteredDateTime();
+        //in the earliest version of the extract, we only got the entered date and not time
+        Date enteredDateTime = null;
+        if (version.equals(EmisCsvToFhirTransformer.VERSION_5_0)) {
+            enteredDateTime = parser.getEnteredDate();
+        } else {
+            enteredDateTime = parser.getEnteredDateTime();
+        }
+
         if (enteredDateTime != null) {
-            fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(enteredDateTime)));
+            fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(enteredDateTime)));
         }
 
         String authorisationType = parser.getPrescriptionType();
         MedicationAuthorisationType fhirAuthorisationType = MedicationAuthorisationType.fromDescription(authorisationType);
         Coding fhirCoding = CodingHelper.createCoding(fhirAuthorisationType);
-        fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE, fhirCoding));
+        fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE, fhirCoding));
 
-        csvProcessor.savePatientResource(patientGuid, fhirMedication);
-
-        //if this record is linked to a problem, store this relationship in the helper
-        csvHelper.cacheProblemRelationship(problemObservationGuid,
-                                            patientGuid,
-                                            drugRecordGuid,
-                                            fhirMedication.getResourceType());
+        fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirMedicationStatement);
     }
 
 }

@@ -2,8 +2,11 @@ package org.endeavourhealth.ui.endpoints;
 
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.models.*;
-import org.endeavourhealth.core.security.SecurityUtils;
-import org.endeavourhealth.core.security.annotations.RequiresAdmin;
+import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditAction;
+import org.endeavourhealth.core.data.audit.models.AuditModule;
+import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.ui.DependencyType;
 import org.endeavourhealth.ui.json.*;
 import org.slf4j.Logger;
@@ -22,6 +25,7 @@ import java.util.*;
 @Path("/folder")
 public final class FolderEndpoint extends AbstractItemEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(FolderEndpoint.class);
+    private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Folders);
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -30,6 +34,8 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     @RequiresAdmin
     public Response saveFolder(@Context SecurityContext sc, JsonFolder folderParameters) throws Exception {
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+            "Folder Parameters", folderParameters);
 
         UUID folderUuid = folderParameters.getUuid();
         String folderName = folderParameters.getFolderName();
@@ -118,6 +124,8 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     @RequiresAdmin
     public Response deleteFolder(@Context SecurityContext sc, JsonFolder folderParameters) throws Exception {
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete, "Folder",
+            "Parameters", folderParameters);
 
         UUID orgUuid = getOrganisationUuidFromToken(sc);
         UUID userUuid = SecurityUtils.getCurrentUserId(sc);
@@ -154,6 +162,10 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     @Path("/getFolders")
     public Response getFolders(@Context SecurityContext sc, @QueryParam("folderType") int folderType, @QueryParam("parentUuid") String parentUuidStr) throws Exception {
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "Folders",
+            "Folder Type", folderType,
+            "Parent Uuid", parentUuidStr);
 
         //convert the nominal folder type to the actual Item DefinitionType
         DefinitionItemType itemType = null;
@@ -282,6 +294,9 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     @Path("/getFolderContents")
     public Response getFolderContents(@Context SecurityContext sc, @QueryParam("folderUuid") String uuidStr) throws Exception {
         super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+            "FolderContents",
+            "Folder Id", uuidStr);
 
         LibraryRepository repository = new LibraryRepository();
 
@@ -351,6 +366,8 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
             } else if (itemType == DefinitionItemType.Protocol) {
 
             } else if (itemType == DefinitionItemType.System) {
+
+            } else if (itemType == DefinitionItemType.CountReport) {
 
             } else {
                 throw new RuntimeException("Unexpected content " + item + " in folder");

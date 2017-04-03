@@ -1,6 +1,7 @@
 package org.endeavourhealth.ui.framework.exceptions;
 
-import org.endeavourhealth.ui.endpoints.AbstractEndpoint;
+import org.endeavourhealth.coreui.framework.exceptions.MappedException;
+import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.ui.json.JsonServerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

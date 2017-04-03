@@ -18,9 +18,6 @@ public class PersonConsentProtocol {
     @Column(name = "protocol_id")
     private UUID protocolId = null;
     @ClusteringColumn(1)
-    @Column(name = "organisation_id")
-    private UUID organisationId = null;
-    @ClusteringColumn(2)
     @Column(name = "timestamp")
     private Date timestamp = null;
     @Column(name = "consent_given")
@@ -42,14 +39,6 @@ public class PersonConsentProtocol {
 
     public void setProtocolId(UUID protocolId) {
         this.protocolId = protocolId;
-    }
-
-    public UUID getOrganisationId() {
-        return organisationId;
-    }
-
-    public void setOrganisationId(UUID organisationId) {
-        this.organisationId = organisationId;
     }
 
     public Date getTimestamp() {

@@ -1,6 +1,6 @@
 package org.endeavourhealth.core.fhirStorage.metadata;
 
-import org.endeavourhealth.core.utility.StreamExtension;
+import org.endeavourhealth.common.utility.StreamExtension;
 import org.hl7.fhir.instance.model.Appointment;
 import org.hl7.fhir.instance.model.ResourceType;
 

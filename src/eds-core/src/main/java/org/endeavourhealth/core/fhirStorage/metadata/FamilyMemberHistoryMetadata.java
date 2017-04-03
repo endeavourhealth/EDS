@@ -1,6 +1,5 @@
 package org.endeavourhealth.core.fhirStorage.metadata;
 
-import org.hl7.fhir.instance.model.CodeableConcept;
 import org.hl7.fhir.instance.model.FamilyMemberHistory;
 import org.hl7.fhir.instance.model.ResourceType;
 

@@ -10,11 +10,16 @@
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
         <init-param>
             <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>org.endeavourhealth.ui.endpoints</param-value>
+            <param-value>io.swagger.jaxrs.listing,org.endeavourhealth.coreui.endpoints,org.endeavourhealth.ui.endpoints</param-value>
         </init-param>
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
-            <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.core.security.CustomRolesAllowedFeature,org.endeavourhealth.ui.framework.exceptions.BaseExceptionMapper</param-value>
+            <param-value>org.glassfish.jersey.jackson.JacksonFeature,
+                io.swagger.jaxrs.listing.ApiListingResource,
+                io.swagger.jaxrs.listing.SwaggerSerializers,
+                org.endeavourhealth.common.security.CustomRolesAllowedFeature,
+                org.endeavourhealth.ui.framework.exceptions.BaseExceptionMapper
+                </param-value>
         </init-param>
 
         <!-- enable directory listings -->
@@ -37,11 +42,12 @@
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
         <init-param>
             <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>org.endeavourhealth.ui.endpoints_public</param-value>
+            <param-value>org.endeavourhealth.coreui.endpoints_public,org.endeavourhealth.ui.endpoints_public</param-value>
         </init-param>
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
-            <param-value>org.glassfish.jersey.jackson.JacksonFeature,org.endeavourhealth.ui.framework.exceptions.BaseExceptionMapper</param-value>
+            <param-value>org.glassfish.jersey.jackson.JacksonFeature,
+                org.endeavourhealth.ui.framework.exceptions.BaseExceptionMapper</param-value>
         </init-param>
 
         <load-on-startup>1</load-on-startup>
@@ -53,10 +59,18 @@
     </servlet-mapping>
 
     <!--register our Startup class as a servlet listener so we can perform one-time setup-->
+    <context-param>
+        <param-name>app_id</param-name>
+        <param-value>eds-ui</param-value>
+    </context-param>
     <listener>
         <listener-class>
-            org.endeavourhealth.ui.framework.Startup
+            org.endeavourhealth.coreui.framework.StartupConfig
         </listener-class>
+    </listener>
+    
+    <listener>
+        <listener-class>org.endeavourhealth.common.cassandra.CassandraShutdownListener</listener-class>
     </listener>
 
     <filter>
@@ -77,13 +91,22 @@
     </filter-mapping>
 
     <!-- ============================================ -->
+    <!--                    Swagger                   -->
+    <!-- ============================================ -->
+    <servlet>
+        <servlet-name>swaggerBootstrap</servlet-name>
+        <servlet-class>org.endeavourhealth.ui.framework.SwaggerBootstrap</servlet-class>
+        <load-on-startup>2</load-on-startup>
+    </servlet>
+
+    <!-- ============================================ -->
     <!-- JEE security settings - Keycloak integration -->
     <!-- ============================================ -->
 
     <!-- set the class to provide keycloak.json -->
     <context-param>
         <param-name>keycloak.config.resolver</param-name>
-        <param-value>org.endeavourhealth.core.security.keycloak.KeycloakConfigResolverImpl</param-value>
+        <param-value>org.endeavourhealth.common.security.keycloak.KeycloakConfigResolverImpl</param-value>
     </context-param>
 
     <!-- API is private and requires the user to authenticate and be an EDS user -->
@@ -93,9 +116,21 @@
             <url-pattern>/api/*</url-pattern>
         </web-resource-collection>
         <auth-constraint>
-            <role-name>eds_user_professional</role-name>
+            <role-name>eds_user</role-name>
         </auth-constraint>
     </security-constraint>
+
+    <!-- API docs require an admin user -->
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>api-docs</web-resource-name>
+            <url-pattern>/api-docs/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>eds_user</role-name>
+        </auth-constraint>
+    </security-constraint>
+
 
     <!-- use Keycloak authentication valve installed in the container -->
     <login-config>
@@ -105,6 +140,6 @@
 
     <!-- all roles in the system MUST be specified here -->
     <security-role>
-        <role-name>eds_user_professional</role-name>
+        <role-name>eds_user</role-name>
     </security-role>
 </web-app>

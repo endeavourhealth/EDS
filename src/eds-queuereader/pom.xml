@@ -4,10 +4,6 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.endeavourhealth</groupId>
-    <artifactId>eds-queuereader</artifactId>
-    <version>1.0-SNAPSHOT</version>
-
     <parent>
         <groupId>org.endeavourhealth</groupId>
         <artifactId>eds</artifactId>
@@ -15,25 +11,23 @@
         <relativePath>../../</relativePath>
     </parent>
 
+    <artifactId>eds-queuereader</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
     <dependencies>
 
-        <!-- dependent on EDS-core and EDS-messaging-core -->
-        <dependency>
-            <groupId>org.endeavourhealth</groupId>
-            <artifactId>eds-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+        <!-- dependent on EDS-messaging-core -->
         <dependency>
             <groupId>org.endeavourhealth</groupId>
             <artifactId>eds-messaging-core</artifactId>
-            <version>${project.version}</version>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
 
-        <!-- rabbit MQ -->
+        <!--mySQL-->
         <dependency>
-            <groupId>com.rabbitmq</groupId>
-            <artifactId>amqp-client</artifactId>
-            <version>${amqp-client.version}</version>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${mysql.version}</version>
         </dependency>
 
     </dependencies>

@@ -1,14 +1,17 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.admin;
 
+import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.MedicalRecordType;
+import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.PersonCategoryType;
 import org.endeavourhealth.transform.emis.emisopen.schema.eommedicalrecord38.PersonType;
 import org.endeavourhealth.transform.emis.emisopen.transforms.common.AddressConverter;
-import org.endeavourhealth.transform.fhir.ContactPointCreater;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.endeavourhealth.transform.fhir.NameConverter;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.ContactPointHelper;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.endeavourhealth.common.fhir.NameConverter;
 import org.hl7.fhir.instance.model.*;
 
 import java.util.ArrayList;
@@ -16,24 +19,28 @@ import java.util.List;
 
 public class PractitionerTransformer
 {
-    public static List<Resource> transform(MedicalRecordType medicalRecordType, String organisationGuid) throws TransformException
+    public static void transform(MedicalRecordType medicalRecordType, String organisationGuid, List<Resource> resources) throws TransformException
     {
-        List<Resource> resources = new ArrayList<>();
-
         for (PersonType personType : medicalRecordType.getPeopleList().getPerson())
             resources.add(createPractitioner(personType, organisationGuid));
-
-        return resources;
     }
 
     private static Practitioner createPractitioner(PersonType personType, String organisationGuid) throws TransformException
     {
         Practitioner practitioner = new Practitioner();
-
-        practitioner.setId(personType.getGUID());
         practitioner.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_PRACTITIONER));
 
-        List<Identifier> identifiers = createIdentifiers(personType.getGmcCode().toString(), personType.getNationalCode(), personType.getPrescriptionCode());
+        practitioner.setId(personType.getGUID());
+
+        String prescribingCode = personType.getPrescriptionCode();
+        String nationalCode = personType.getNationalCode();
+
+        String gmcCode = null;
+        if (personType.getGmcCode() != null) {
+            gmcCode = personType.getGmcCode().toString();
+        }
+        List<Identifier> identifiers = createIdentifiers(gmcCode, nationalCode, prescribingCode);
+        //List<Identifier> identifiers = createIdentifiers(personType.getGmcCode().toString(), personType.getNationalCode(), personType.getPrescriptionCode());
 
         for (Identifier identifier : identifiers)
             practitioner.addIdentifier(identifier);
@@ -46,16 +53,21 @@ public class PractitionerTransformer
         if (personType.getAddress() != null)
             AddressConverter.convert(personType.getAddress(), Address.AddressUse.WORK);
 
-        List<ContactPoint> contactPoints = ContactPointCreater.createWorkContactPoints(personType.getTelephone1(), personType.getTelephone2(), personType.getFax(), personType.getEmail());
+        List<ContactPoint> contactPoints = ContactPointHelper.createWorkContactPoints(personType.getTelephone1(), personType.getTelephone2(), personType.getFax(), personType.getEmail());
 
         for (ContactPoint contactPoint : contactPoints)
             practitioner.addTelecom(contactPoint);
 
         Practitioner.PractitionerPractitionerRoleComponent practitionerPractitionerRoleComponent = new Practitioner.PractitionerPractitionerRoleComponent();
-        practitionerPractitionerRoleComponent.setManagingOrganization(ReferenceHelper.createReference(ResourceType.Organization, organisationGuid));
-        practitionerPractitionerRoleComponent.setRole(new CodeableConcept().setText(personType.getCategory().getDescription()));
+        practitionerPractitionerRoleComponent.setManagingOrganization(EmisOpenHelper.createOrganisationReference(organisationGuid));
 
-
+        PersonCategoryType category = personType.getCategory();
+        if (category != null
+                && !Strings.isNullOrEmpty(category.getDescription())) {
+            CodeableConcept codeableConcept = CodeableConceptHelper.createCodeableConcept(category.getDescription());
+            practitionerPractitionerRoleComponent.setRole(codeableConcept);
+        }
+        //practitionerPractitionerRoleComponent.setRole(new CodeableConcept().setText(personType.getCategory().getDescription()));
 
         return practitioner;
     }

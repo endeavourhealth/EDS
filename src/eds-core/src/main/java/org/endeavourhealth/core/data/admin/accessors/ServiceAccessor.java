@@ -6,8 +6,6 @@ import com.datastax.driver.mapping.annotations.Param;
 import com.datastax.driver.mapping.annotations.Query;
 import org.endeavourhealth.core.data.admin.models.Service;
 
-import java.util.UUID;
-
 @Accessor
 public interface ServiceAccessor {
 	@Query("SELECT * FROM admin.service")

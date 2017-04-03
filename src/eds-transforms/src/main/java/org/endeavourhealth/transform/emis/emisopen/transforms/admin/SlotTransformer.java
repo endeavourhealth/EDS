@@ -1,13 +1,14 @@
 package org.endeavourhealth.transform.emis.emisopen.transforms.admin;
 
 import org.apache.commons.lang3.StringUtils;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
+import org.endeavourhealth.transform.emis.emisopen.EmisOpenHelper;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomslotsforsession.SlotListStruct;
 import org.endeavourhealth.transform.emis.emisopen.schema.eomslotsforsession.SlotStruct;
-import org.endeavourhealth.transform.fhir.FhirUri;
-import org.hl7.fhir.instance.model.*;
+import org.endeavourhealth.transform.emis.emisopen.transforms.common.DateConverter;
+import org.endeavourhealth.common.fhir.FhirUri;
+import org.hl7.fhir.instance.model.Meta;
+import org.hl7.fhir.instance.model.Slot;
 
 import java.sql.Time;
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ public class SlotTransformer
         slot.setId(appointmentSlot.getGUID());
         slot.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_SLOT));
 
-        slot.setSchedule(ReferenceHelper.createReference(ResourceType.Schedule, appointmentSlot.getSessionGUID()));
+        slot.setSchedule(EmisOpenHelper.createScheduleReference(appointmentSlot.getSessionGUID()));
 
         String slotStatus = appointmentSlot.getStatus();
 

@@ -1,0 +1,93 @@
+<div class="module">
+	<div class="container-fluid">
+		<div class="module-heading">Administration</div>
+		<div class="module-body">
+			<div class="row">
+			<div class="col-md-3">
+				<div class="panel panel-primary">
+					<div class="panel-body">
+						<form>
+							<div class="form-group">
+								<div class="btn-group-vertical btn-block" [(ngModel)]="userType" name="userFilter">
+									<label class="btn btn-default">
+										<input type="radio" [value]="'all'" (click)="userFilter = {}">All users
+									</label>
+									<label class="btn btn-default">
+										<input type="radio" [value]="'active'" >Active users
+									</label>
+									<label class="btn btn-default">
+										<input type="radio" [value]="'admin'" (click)="userFilter = {forename:'John'}">Administrators
+									</label>
+									<label class="btn btn-default">
+										<input type="radio" [value]="'super'" (click)="userFilter = {isSuperUser:true}">Super users
+									</label>
+								</div>
+							</div>
+							<div class="form-group">
+								<div class="input-group">
+									<input type="text" placeholder="Name or email" class="form-control">
+									<span class="btn input-group-addon">
+										<i class="fa fa-search"></i>
+									</span>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+
+			<div class="col-md-9">
+				<div class="panel panel-primary">
+					<div class="panel-heading">
+						<label class="btn btn-xs btn-success pull-right">Add new</label>
+						Users
+					</div>
+					<div class="panel-body">
+						<div class="table">
+							<table class="table table-striped table-condensed">
+								<thead>
+									<tr>
+										<th class="col-md-4"  (click)="sortField='username'; sortReverse=!sortReverse">EMail
+											<span *ngIf="sortField == 'username'"
+														class="fa fa-sm"
+														[ngClass]="{'fa-chevron-down':!sortReverse, 'fa-chevron-up':sortReverse}"></span>
+
+										</th>
+										<th class="col-md-2" (click)="sortField='surname'; sortReverse=!sortReverse">Surname
+											<span *ngIf="sortField == 'surname'"
+														class="fa fa-sm"
+														[ngClass]="{'fa-chevron-down':!sortReverse, 'fa-chevron-up':sortReverse}"></span>
+										</th>
+										<th class="col-md-2" >Forename</th>
+										<th class="col-md-2" (click)="sortField='isSuperUser'; sortReverse=!sortReverse">Super
+											<span *ngIf="sortField == 'isSuperUser'"
+														class="fa fa-sm"
+														[ngClass]="{'fa-chevron-down':!sortReverse, 'fa-chevron-up':sortReverse}"></span>
+										</th>
+										<th class="col-md-2" >Actions</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr *ngFor="let user of getUserList()" class="hover-box show-child-on-hover">
+										<td><a (click)="viewUser(user)">{{user.username}}</a></td>
+										<td>{{user.surname}}</td>
+										<td>{{user.forename}}</td>
+										<td><span class="fa" [ngClass]="{'fa-check text-success': user.isSuperUser,'fa-times text-danger': !user.isSuperUser}"></span></td>
+										<td>
+											<span class="child-to-show">
+												<label class="btn btn-info btn-xs" (click)="viewUser(user)">View</label>
+												<label class="btn btn-success btn-xs" (click)="editUser(user)">Edit</label>
+												<label class="btn btn-danger btn-xs" (click)="deleteUser(user)">Delete</label>
+											</span>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		</div>
+	</div>
+</div>

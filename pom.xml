@@ -9,11 +9,13 @@
 
     <properties>
         <java.version>1.8</java.version>
+        <node.version>v6.10.1</node.version>
+        <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
+        <frontend-maven-plugin.version>1.4</frontend-maven-plugin.version>
+        <eds-common.version>2.53</eds-common.version>
 
         <amqp-client.version>3.6.2</amqp-client.version>
-        <bouncy-castle.version>1.54</bouncy-castle.version>
-        <c3p0.version>0.9.5.2</c3p0.version>
-        <cassandra-driver.version>3.0.1</cassandra-driver.version>
+        <cassandra-driver.version>3.1.1</cassandra-driver.version>
         <commons-codec.version>1.10</commons-codec.version>
         <commons-collections4.version>4.0</commons-collections4.version>
         <commons-csv.version>1.3</commons-csv.version>
@@ -22,35 +24,53 @@
         <fhir-dstu2.version>1.0.1.7108</fhir-dstu2.version>
         <gson.version>2.6.2</gson.version>
         <guava.version>19.0</guava.version>
-        <httpclient.version>4.0.2</httpclient.version>
+        <hapi.version>2.2</hapi.version>
+        <hibernate.version>5.2.5.Final</hibernate.version>
+        <hikari.version>2.5.1</hikari.version>
+        <httpclient.version>4.5.2</httpclient.version>
         <jackson.version>2.5.4</jackson.version>
         <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version>
         <javax.mail.version>1.5.5</javax.mail.version>
         <jcs.version>1.3</jcs.version>
         <jersey.version>2.22.1</jersey.version>
-        <jsch.version>0.1.53</jsch.version>
         <jtds.version>1.3.1</jtds.version>
-        <!--<keycloak.version>2.0.1.CR1-SNAPSHOT</keycloak.version>-->
         <keycloak.version>2.0.0.Final</keycloak.version>
         <logback-classic.version>1.1.3</logback-classic.version>
+        <resteasy.version>3.0.14.Final</resteasy.version>
         <servlet.version>3.1.0</servlet.version>
         <slf4j-log4j12.version>1.7.21</slf4j-log4j12.version>
         <javax.annotation-api.version>1.2</javax.annotation-api.version>
-        <postgresql.version>9.4.1208</postgresql.version>
+        <postgresql.version>9.4.1212.jre7</postgresql.version>
+        <mysql.version>6.0.5</mysql.version>
         <junit.version>4.12</junit.version>
+        <swagger.version>1.5.10</swagger.version>
+        <slack-integration.version>1.2.1</slack-integration.version>
+
     </properties>
 
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
     <modules>
         <module>src/eds-core</module>
+        <module>src/cassandra</module>
         <module>src/eds-messaging-api</module>
         <module>src/eds-messaging-core</module>
-        <module>src/eds-patient-ui</module>
         <module>src/eds-queuereader</module>
-        <module>src/eds-sftpreader</module>
+        <module>src/eds-subscriber</module>
         <module>src/eds-transforms</module>
         <module>src/eds-ui</module>
+        <module>src/eds-keycloak-providers</module>
         <module>src/eds-keycloak-theme</module>
         <module>src/eds-bootstrap</module>
+        <module>src/eds-ui-integration-test</module>
+        <module>src/utility-postcode-updater</module>
+        <module>src/utility-enterprise-age-updater</module>
+        <module>src/utility-enterprise-person-updater</module>
+        <module>src/eds-user-manager</module>
     </modules>
 </project>

@@ -10,7 +10,8 @@ public enum DefinitionItemType {
     DataSet(6),
     LibraryFolder(7),
     Protocol(8),
-    System(9);
+    System(9),
+    CountReport(10);
 
     private final int value;
 

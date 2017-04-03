@@ -17,7 +17,7 @@ public class ProcedureRequestTransformer extends AbstractTransformer {
 
         Encounter model = new Encounter();
 
-        model.setDiaryEvent(new Boolean(true));
+        model.setDiaryEvent(Boolean.valueOf(true));
         model.setPatientId(transformPatientId(fhir.getSubject()));
         model.setEventDate(transformDate(fhir.getScheduledDateTimeType()));
 

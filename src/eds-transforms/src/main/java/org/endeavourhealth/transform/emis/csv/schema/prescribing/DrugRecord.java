@@ -1,23 +1,46 @@
 package org.endeavourhealth.transform.emis.csv.schema.prescribing;
 
-import org.apache.commons.csv.CSVFormat;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
-import org.endeavourhealth.transform.emis.EmisCsvTransformer;
-import org.endeavourhealth.transform.emis.csv.EmisCsvTransformerWorker;
-import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvTransformer;
+import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 
+import java.io.File;
 import java.util.Date;
 
-public class DrugRecord extends AbstractCsvTransformer {
-    public DrugRecord(String version, String folderPath, CSVFormat csvFormat) throws Exception {
-        super(version, folderPath, csvFormat, EmisCsvTransformerWorker.DATE_FORMAT_YYYY_MM_DD, EmisCsvTransformerWorker.TIME_FORMAT);
+public class DrugRecord extends AbstractCsvParser {
+    public DrugRecord(String version, File f, boolean openParser) throws Exception {
+        super(version, f, openParser, EmisCsvToFhirTransformer.CSV_FORMAT, EmisCsvToFhirTransformer.DATE_FORMAT_YYYY_MM_DD, EmisCsvToFhirTransformer.TIME_FORMAT);
     }
 
     @Override
     protected String[] getCsvHeaders(String version) {
 
-        //have to handle a mis-spelt column name in the EMIS test pack
-        if (version.equals(EmisCsvTransformer.VERSION_TEST_PACK)) {
+        if (version.equals(EmisCsvToFhirTransformer.VERSION_5_0)) {
+            return new String[]{
+                    "DrugRecordGuid",
+                    "PatientGuid",
+                    "OrganisationGuid",
+                    "EffectiveDate",
+                    "EffectiveDatePrecision",
+                    "EnteredDate",
+                    //"EnteredTime", //not present in this older version
+                    "ClinicanUserInRoleGuid", //mis-spelled column name in this version
+                    "EnteredByUserInRoleGuid",
+                    "CodeId",
+                    "Dosage",
+                    "Quantity",
+                    "QuantityUnit",
+                    "ProblemObservationGuid",
+                    "PrescriptionType",
+                    "IsActive",
+                    "CancellationDate",
+                    "NumberOfIssues",
+                    "NumberOfIssuesAuthorised",
+                    "IsConfidential",
+                    "Deleted",
+                    "ProcessingId"
+            };
+        } else if (version.equals(EmisCsvToFhirTransformer.VERSION_5_1)) {
             return new String[]{
                     "DrugRecordGuid",
                     "PatientGuid",
@@ -26,7 +49,7 @@ public class DrugRecord extends AbstractCsvTransformer {
                     "EffectiveDatePrecision",
                     "EnteredDate",
                     "EnteredTime",
-                    "ClinicanUserInRoleGuid",
+                    "ClinicanUserInRoleGuid", //mis-spelled column name in this version
                     "EnteredByUserInRoleGuid",
                     "CodeId",
                     "Dosage",
@@ -84,6 +107,9 @@ public class DrugRecord extends AbstractCsvTransformer {
     }
     public String getEffectiveDatePrecision() {
         return super.getString("EffectiveDatePrecision");
+    }
+    public Date getEnteredDate() throws TransformException {
+        return super.getDate("EnteredDate");
     }
     public Date getEnteredDateTime() throws TransformException {
         return super.getDateTime("EnteredDate", "EnteredTime");

@@ -13,7 +13,7 @@ public class ResourceDeletedException extends TransformException {
         this(resourceType, resourceId, null);
     }
     public ResourceDeletedException(ResourceType resourceType, UUID resourceId, Throwable cause) {
-        super("Truing to use deleted " + resourceType + " with ID " + resourceId, cause);
+        super("Trying to use deleted " + resourceType + " with ID " + resourceId, cause);
         this.resourceType = resourceType;
         this.resourceId = resourceId;
     }

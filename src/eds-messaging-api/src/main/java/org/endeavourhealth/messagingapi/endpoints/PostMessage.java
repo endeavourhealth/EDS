@@ -1,7 +1,7 @@
 package org.endeavourhealth.messagingapi.endpoints;
 
+import org.endeavourhealth.core.configuration.ConfigWrapper;
 import org.endeavourhealth.core.configuration.Pipeline;
-import org.endeavourhealth.messagingapi.configuration.ConfigManager;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
@@ -22,7 +22,7 @@ public class PostMessage extends AbstractEndpoint {
 	@Path("/PostMessage")
 	@RolesAllowed({"eds_messaging_post"})
 	public Response postMessage(@Context HttpHeaders headers, String body) {
-		Pipeline pipeline = ConfigManager.getInstance().getPostMessage().getPipeline();
+		Pipeline pipeline = ConfigWrapper.getInstance().getPostMessage().getPipeline();
 		return Process(headers, body, pipeline);
 	}
 
@@ -32,7 +32,7 @@ public class PostMessage extends AbstractEndpoint {
 	@Path("/PostMessageAsync")
 	@RolesAllowed({"eds_messaging_post"})
 	public Response postMessageAsync(@Context HttpHeaders headers, String body) {
-		Pipeline pipeline = ConfigManager.getInstance().getPostMessageAsync().getPipeline();
+		Pipeline pipeline = ConfigWrapper.getInstance().getPostMessageAsync().getPipeline();
 		return Process(headers, body, pipeline);
 	}
 }

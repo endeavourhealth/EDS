@@ -1,20 +1,20 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.endeavourhealth.core.cache.ObjectMapperPool;
+import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.DetermineRelevantProtocolIdsConfig;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.PipelineComponent;
 import org.endeavourhealth.core.messaging.pipeline.PipelineException;
-import org.endeavourhealth.core.xml.QueryDocument.LibraryItem;
-import org.endeavourhealth.core.xml.QueryDocument.ServiceContractType;
+import org.endeavourhealth.core.xml.QueryDocument.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class DetermineRelevantProtocolIds extends PipelineComponent {
 	private static final Logger LOG = LoggerFactory.getLogger(DetermineRelevantProtocolIds.class);
@@ -30,38 +30,78 @@ public class DetermineRelevantProtocolIds extends PipelineComponent {
 		String serviceUuid = exchange.getHeader(HeaderKeys.SenderServiceUuid);
 
 		// Determine relevant publisher protocols
-		List<LibraryItem> protocols = getProtocolsForPublisherService(serviceUuid);
-		if (protocols.size() == 0)
-			throw new PipelineException("No publisher protocols found for service " + serviceUuid);
+		String protocolIdsJson = getProtocolIdsForPublisherService(serviceUuid);
+		exchange.setHeader(HeaderKeys.ProtocolIds, protocolIdsJson);
 
-		try {
-			String protocolsJson = ObjectMapperPool.getInstance().writeValueAsString(protocols.toArray());
-			exchange.setHeader(HeaderKeys.Protocols, protocolsJson);
-		} catch (JsonProcessingException e) {
-			LOG.error("Unable to serialize protocols to JSON");
-			throw new PipelineException(e.getMessage(), e);
-		}
+		//commit what we've just received to the DB
+		AuditWriter.writeExchange(exchange);
 
 		LOG.debug("Data distribution protocols identified");
 	}
 
-	private List<LibraryItem> getProtocolsForPublisherService(String serviceUuid) throws PipelineException {
-		List<LibraryItem> libraryItemList;
+	public static String getProtocolIdsForPublisherService(String serviceUuid) throws PipelineException {
 
-		// Get all protocols the service is involved in...
+		List<String> protocolIds = getProtocolsForPublisherService(serviceUuid);
+		if (protocolIds.size() == 0)
+			throw new PipelineException("No publisher protocols found for service " + serviceUuid);
+
 		try {
-			libraryItemList = LibraryRepositoryHelper.getProtocolsByServiceId(serviceUuid);
+			return ObjectMapperPool.getInstance().writeValueAsString(protocolIds.toArray());
+
+		} catch (JsonProcessingException e) {
+			LOG.error("Unable to serialize protocols to JSON");
+			throw new PipelineException(e.getMessage(), e);
+		}
+	}
+
+	private static List<String> getProtocolsForPublisherService(String serviceUuid) throws PipelineException {
+
+		try {
+			List<String> ret = new ArrayList<>();
+
+			List<LibraryItem> libraryItems = LibraryRepositoryHelper.getProtocolsByServiceId(serviceUuid);
+			for (LibraryItem libraryItem: libraryItems) {
+				Protocol protocol = libraryItem.getProtocol();
+				if (protocol.getEnabled() == ProtocolEnabled.TRUE) { //added missing check
+
+					for (ServiceContract serviceContract : protocol.getServiceContract()) {
+						if (serviceContract.getType().equals(ServiceContractType.PUBLISHER)
+								&& serviceContract.getService().getUuid().equals(serviceUuid)
+								&& serviceContract.getActive() == ServiceContractActive.TRUE) { //added missing check
+
+							ret.add(libraryItem.getUuid());
+							break;
+						}
+					}
+				}
+			}
+
+			return ret;
+
+		} catch (Exception ex) {
+			throw new PipelineException("Error getting protocols for service " + serviceUuid, ex);
+		}
+	}
+	/*private static List<String> getProtocolsForPublisherService(String serviceUuid) throws PipelineException {
+
+		try {
+			List<LibraryItem> libraryItemList = LibraryRepositoryHelper.getProtocolsByServiceId(serviceUuid);
+
+			// Get protocols where service is publisher
+			return libraryItemList.stream()
+					.filter(
+							libraryItem -> libraryItem.getProtocol().getServiceContract().stream()
+									.anyMatch(sc ->
+											sc.getType().equals(ServiceContractType.PUBLISHER)
+											&& sc.getService().getUuid().equals(serviceUuid)
+											&& sc.getActive() == ServiceContractActive.TRUE //added missing check
+									))
+					.map(t -> t.getUuid())
+					.collect(Collectors.toList());
 		} catch (Exception e) {
 			throw new PipelineException(e.getMessage(), e);
 		}
 
-		// Get protocols where service is publisher
-		return libraryItemList.stream()
-				.filter(
-						libraryItem -> libraryItem.getProtocol().getServiceContract().stream()
-								.anyMatch(sc ->
-										sc.getType().equals(ServiceContractType.PUBLISHER)
-										&& sc.getService().getUuid().equals(serviceUuid)))
-				.collect(Collectors.toList());
-	}
+	}*/
+
 }

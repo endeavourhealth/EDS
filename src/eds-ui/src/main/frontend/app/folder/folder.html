@@ -1,0 +1,26 @@
+<Tree [nodes]="treeData" [options]="options" (onActivate)="selectNode($event.node.data)" (onInitialized)="treeInitialized()">
+	<template #treeNodeTemplate let-node>
+		<div ngbDropdown class="show-child-on-hover folder-item">
+		<span>{{ node.data.folderName }}</span>
+			<button *ngIf="showMenu" type="button" class="btn btn-xs btn-default child-to-show pull-right" ngbDropdownToggle id="folderMenu">...</button>
+			<ul class="dropdown-menu" aria-labelledby="folderMenu">
+				<li *ngIf="folderType == 1"><a (click)="actionItem(node.data.uuid, 9, 'add')">Add system</a></li>
+				<li *ngIf="folderType == 1"><a (click)="actionItem(node.data.uuid, 8, 'add')">Add data protocol</a></li>
+				<li *ngIf="folderType == 1"><a (click)="actionItem(node.data.uuid, 2, 'add')">Add cohort</a></li>
+				<li *ngIf="folderType == 1"><a (click)="actionItem(node.data.uuid, 6, 'add')">Add data set</a></li>
+				<li *ngIf="folderType == 1"><a (click)="actionItem(node.data.uuid, 5, 'add')">Add code set</a></li>
+				<li *ngIf="folderType == 1"><a (click)="actionItem(node.data.uuid, 10, 'add')">Add validation report</a></li>
+
+				<li role="separator" class="divider"></li>
+				<li><a (click)="addChildFolder(node)">Add child folder</a></li>
+				<li role="separator" class="divider"></li>
+				<li [ngClass]="{'disabled': !node.data.parentFolderUuid}"><a (click)="!node.data.parentFolderUuid || renameFolder(node)">Rename</a></li>
+				<li [ngClass]="{'disabled': !node.data.parentFolderUuid}"><a (click)="!node.data.parentFolderUuid || deleteFolder(node)">Delete</a></li>
+				<li role="separator" class="divider"></li>
+				<li class="disabled"><a href="#">Cut</a></li>
+				<li class="disabled"><a href="#">Copy</a></li>
+				<li><a (click)="pasteItem(node)">Paste</a></li>
+			</ul>
+		</div>
+	</template>
+</Tree>

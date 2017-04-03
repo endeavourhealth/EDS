@@ -2,38 +2,44 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <resourceExtensions />
-    <wildcardResourcePatterns>
-      <entry name="!?*.java" />
-      <entry name="!?*.form" />
-      <entry name="!?*.class" />
-      <entry name="!?*.groovy" />
-      <entry name="!?*.scala" />
-      <entry name="!?*.flex" />
-      <entry name="!?*.kt" />
-      <entry name="!?*.clj" />
-      <entry name="!?*.aj" />
-    </wildcardResourcePatterns>
     <annotationProcessing>
       <profile default="true" name="Default" enabled="false">
         <processorPath useClasspath="true" />
+      </profile>
+      <profile default="false" name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="eds-keycloak-theme" />
       </profile>
       <profile default="false" name="Annotation profile for eds-messaging-api" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-      </profile>
-      <profile default="false" name="Annotation profile for eds-core" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
+        <module name="eds-messaging-api" />
       </profile>
       <profile default="false" name="Annotation profile for eds-messaging-core" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
+        <module name="eds-messaging-core" />
+      </profile>
+      <profile default="false" name="Annotation profile for eds-patient-ui" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="eds-patient-ui" />
+      </profile>
+      <profile default="false" name="Annotation profile for eds-queuereader" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="eds-queuereader" />
       </profile>
       <profile default="false" name="Annotation profile for eds-sftpreader" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
@@ -41,13 +47,7 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
       </profile>
-      <profile default="false" name="Annotation profile for eds-patient-ui" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-      </profile>
-      <profile default="false" name="Annotation profile for eds-ui" enabled="true">
+      <profile default="false" name="Annotation profile for eds-utilities" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -58,12 +58,42 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
+        <module name="eds-transforms" />
       </profile>
-      <profile default="false" name="Annotation profile for eds-queuereader" enabled="true">
+      <profile default="false" name="Annotation profile for eds-ui" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
+        <module name="eds-ui" />
+      </profile>
+      <profile default="false" name="Annotation profile for eds-bootstrap" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="eds-bootstrap" />
+      </profile>
+      <profile default="false" name="Annotation profile for eds-subscriber" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="eds-subscriber" />
+      </profile>
+      <profile default="false" name="Annotation profile for eds-keycloak-providers" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="eds-keycloak-providers" />
+      </profile>
+      <profile default="false" name="Annotation profile for eds-ui-integration-test" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="eds-ui-integration-test" />
       </profile>
       <profile default="false" name="Annotation profile for eds-admin" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
@@ -77,25 +107,18 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
       </profile>
-      <profile default="false" name="Annotation profile for eds-bootstrap" enabled="true">
+      <profile default="false" name="Annotation profile for eds-patient-explorer" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
+        <module name="eds-patient-explorer" />
       </profile>
-      <profile default="false" name="Annotation profile for eds-subscriber" enabled="true">
+      <profile default="false" name="Annotation profile for eds-hl7receiver" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="eds-subscriber" />
-      </profile>
-      <profile default="false" name="Maven default annotation processors profile" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="eds-keycloak-theme" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -104,15 +127,21 @@
       <module name="eds-bootstrap" target="1.8" />
       <module name="eds-clinical" target="1.8" />
       <module name="eds-core" target="1.8" />
+      <module name="eds-hl7receiver" target="1.8" />
+      <module name="eds-keycloak-providers" target="1.8" />
       <module name="eds-keycloak-theme" target="1.5" />
       <module name="eds-messaging-api" target="1.8" />
       <module name="eds-messaging-core" target="1.8" />
+      <module name="eds-patient-explorer" target="1.8" />
       <module name="eds-patient-ui" target="1.8" />
       <module name="eds-queuereader" target="1.8" />
       <module name="eds-sftpreader" target="1.8" />
       <module name="eds-subscriber" target="1.8" />
       <module name="eds-transforms" target="1.8" />
       <module name="eds-ui" target="1.8" />
+      <module name="eds-ui-core" target="1.8" />
+      <module name="eds-ui-integration-test" target="1.8" />
+      <module name="eds-utilities" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

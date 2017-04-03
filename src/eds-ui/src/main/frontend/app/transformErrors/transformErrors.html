@@ -1,0 +1,92 @@
+<div class="module">
+    <div class="module-heading">
+        Transform Errors
+        <div class="pull-right">
+            <button class="btn btn-sm btn-success"
+                    (click)="refreshSummaries()"
+                    title="Refresh">
+                Refresh
+            </button>
+        </div>
+    </div>
+    <div class="module-body">
+
+        <div class="container-fluid">
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="table">
+                        <table class="table table-striped table-condensed">
+                            <thead>
+                                <tr>
+                                    <th class="col-md-2">Service</th>
+                                    <th class="col-md-2">System</th>
+                                    <th class="col-md-1">Exchanges in Error</th>
+                                    <!--<th class="col-md-1">Rerun Exchange</th>-->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover-box show-child-on-hover"
+                                    *ngFor="let summary of transformErrorSummaries"
+                                    (click)="selectSummary(summary);"
+                                    [ngClass]="{'selection': summary == selectedSummary}">
+
+                                    <td>{{summary.serviceName}}</td>
+                                    <td>{{summary.systemName}}</td>
+                                    <td>{{summary.countExchanges}}</td>
+                                    <!--<td>
+                                        <button type="button" class="btn btn-primary btn-xs child-to-show" (click)="rerunFirst(summary)">First</button>
+                                        <button type="button" class="btn btn-primary btn-xs child-to-show" (click)="rerunAll(summary)">All</button>
+                                    </td>-->
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" *ngIf="selectedSummary">
+                <div class="col-md-12">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">Errors for {{selectedSummary.serviceName}}
+                            <div class="pull-right">
+                                <button class="btn btn-xs btn-default" [disabled]="busyPostingToExchange" (click)="rerunFirst(selectedSummary)" title="Rerun First Exchange">Re-run First Exchange</button>
+                                <button class="btn btn-xs btn-default" [disabled]="busyPostingToExchange" (click)="rerunAll(selectedSummary)" title="Rerun All Exchanges">Re-run All Exchanges</button>
+                                <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
+                            </div>
+                        </div>
+                        <div class="panel-body" style="overflow:hidden; height:100%;">
+
+                            <ngb-pagination [maxSize]="10" [boundaryLinks]="true" [collectionSize]="selectedSummary.countExchanges" [pageSize]="1" [(page)]="selectedExchangeIndex" (pageChange)="loadExchange()" name="pagination"></ngb-pagination>
+
+                            <div *ngIf="selectExchangeErrorDetail">
+                                <h4>Exchange {{selectExchangeErrorDetail.exchangeId}}, transformed on {{selectExchangeErrorDetail.transformStart | date:'dd-MMM-yyyy HH:mm:ss'}}</h4>
+                                <div *ngIf="selectExchangeErrorDetail.numberBatchIdsCreated">
+                                    {{selectExchangeErrorDetail.numberBatchIdsCreated}} batch IDs created and saved, despite the error(s)
+                                </div>
+
+                                <code>
+                                    <div *ngFor="let line of selectExchangeErrorDetail.lines">
+                                        <div *ngIf="line.length > 0">
+                                            {{line}}
+                                        </div>
+
+                                        <div *ngIf="line.length == 0">
+                                            &nbsp;
+                                        </div>
+
+                                    </div>
+                                </code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</div>
+
+

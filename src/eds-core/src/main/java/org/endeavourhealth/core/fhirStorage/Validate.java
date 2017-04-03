@@ -1,8 +1,8 @@
 package org.endeavourhealth.core.fhirStorage;
 
-import org.apache.commons.lang3.StringUtils;
 import org.endeavourhealth.core.fhirStorage.exceptions.UnprocessableEntityException;
 import org.endeavourhealth.core.fhirStorage.exceptions.VersionConflictException;
+import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.instance.model.Resource;
 
 import java.util.UUID;

@@ -1,8 +1,9 @@
 package org.endeavourhealth.transform.common.idmappers;
 
 import org.endeavourhealth.transform.common.IdHelper;
-import org.endeavourhealth.transform.fhir.ReferenceComponents;
-import org.endeavourhealth.transform.fhir.ReferenceHelper;
+import org.endeavourhealth.transform.common.exceptions.PatientResourceException;
+import org.endeavourhealth.common.fhir.ReferenceComponents;
+import org.endeavourhealth.common.fhir.ReferenceHelper;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,19 +14,54 @@ import java.util.UUID;
 public abstract class BaseIdMapper {
     private static final Logger LOG = LoggerFactory.getLogger(BaseIdMapper.class);
 
+
+    public abstract boolean mapIds(Resource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception;
+
+    public abstract String getPatientId(Resource resource) throws PatientResourceException;
+
+    /**
+     * maps the ID, extensions and contained resources in a FHIR resource
+     * returns true to indicate the resource is new to EDS, false if not new or we didn't map it's ID
+     */
+    protected boolean mapCommonResourceFields(DomainResource resource, UUID serviceId, UUID systemId, boolean mapResourceId) throws Exception {
+        boolean isNewResource = false;
+        if (mapResourceId) {
+            isNewResource = mapResourceId(resource, serviceId, systemId);
+        }
+        mapExtensions(resource, serviceId, systemId);
+        mapContainedResources(resource, serviceId, systemId);
+
+        return isNewResource;
+    }
+
     /**
      * maps the main ID of any resource
+     * returns true if the resource is new to EDS
      */
-    protected void mapResourceId(Resource resource, UUID serviceId, UUID systemId) {
+    private boolean mapResourceId(Resource resource, UUID serviceId, UUID systemId) {
 
-        String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, resource.getResourceType(), resource.getId());
-        resource.setId(newId);
+        if (!resource.hasId()) {
+            return false;
+        }
+
+        UUID existingEdsId = IdHelper.getEdsResourceId(serviceId, systemId, resource.getResourceType(), resource.getId());
+        if (existingEdsId == null) {
+            //if no existing ID was found, create a new one and return true
+            String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, resource.getResourceType(), resource.getId());
+            resource.setId(newId);
+            return true;
+
+        } else {
+            resource.setId(existingEdsId.toString());
+            return false;
+        }
     }
 
     /**
      * maps the IDs in any extensions of a resource
      */
-    protected void mapExtensions(DomainResource resource, UUID serviceId, UUID systemId) {
+    private void mapExtensions(DomainResource resource, UUID serviceId, UUID systemId) throws Exception {
+
         if (!resource.hasExtension()) {
             return;
         }
@@ -39,9 +75,25 @@ public abstract class BaseIdMapper {
     }
 
     /**
+     * maps the IDs in any extensions of a resource
+     */
+    private void mapContainedResources(DomainResource resource, UUID serviceId, UUID systemId) throws Exception {
+
+        if (!resource.hasContained()) {
+            return;
+        }
+
+        for (Resource contained: resource.getContained()) {
+            //pass in false so we don't map the ID of the contained resource, since it's not supposed to be a global ID
+            IdHelper.mapIds(serviceId, systemId, contained, false);
+        }
+    }
+
+
+    /**
      * maps the IDs in any identifiers of a resource
      */
-    protected void mapIdentifiers(List<Identifier> identifiers, Resource resource, UUID serviceId, UUID systemId) {
+    protected void mapIdentifiers(List<Identifier> identifiers, Resource resource, UUID serviceId, UUID systemId) throws Exception {
         for (Identifier identifier: identifiers) {
             if (identifier.hasAssigner()) {
                 mapReference(identifier.getAssigner(), resource, serviceId, systemId);
@@ -49,38 +101,37 @@ public abstract class BaseIdMapper {
         }
     }
 
+
     /**
      * maps the ID within any reference
      */
-    protected void mapReference(Reference reference, Resource resource, UUID serviceId, UUID systemId) {
+    protected void mapReference(Reference reference, Resource resource, UUID serviceId, UUID systemId) throws Exception {
         if (reference == null) {
             return;
         }
 
-        ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
+        if (reference.hasReference()) {
 
-        //if it's a reference to a patient resource, we perform an extra step to validate if the patient is known to us
-        //if not, it still continues, but it will log the error
-        if (comps.getResourceType() == ResourceType.Patient) {
-            UUID patientEdsId = IdHelper.getEdsResourceId(serviceId, systemId, comps.getResourceType(), comps.getId());
-            if (patientEdsId == null) {
-                LOG.error("Reference to unrecognised patient {} in {} {} for service {} and system {}",
-                        comps.getId(),
-                        resource.getResourceType(),
-                        resource.getId(),
-                        serviceId,
-                        systemId);
+            ReferenceComponents comps = ReferenceHelper.getReferenceComponents(reference);
+
+            //if the reference is to an internal contained resource, the above will return null
+            if (comps != null) {
+                String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, comps.getResourceType(), comps.getId());
+                reference.setReference(ReferenceHelper.createResourceReference(comps.getResourceType(), newId));
             }
-        }
 
-        String newId = IdHelper.getOrCreateEdsResourceIdString(serviceId, systemId, comps.getResourceType(), comps.getId());
-        reference.setReference(ReferenceHelper.createResourceReference(comps.getResourceType(), newId));
+        } else {
+
+            //if the reference doesn't have an actual reference, it will have an inline resource
+            Resource referredResource = (Resource)reference.getResource();
+            IdHelper.mapIds(serviceId, systemId, referredResource);
+        }
     }
 
     /**
      * maps the ID within any reference
      */
-    protected void mapReferences(List<Reference> references, Resource resource, UUID serviceId, UUID systemId) {
+    protected void mapReferences(List<Reference> references, Resource resource, UUID serviceId, UUID systemId) throws Exception {
         if (references == null
                 || references.isEmpty()) {
             return;
@@ -91,7 +142,7 @@ public abstract class BaseIdMapper {
         }
     }
 
-    public abstract void mapIds(Resource resource, UUID serviceId, UUID systemId);
+
 
 
 }

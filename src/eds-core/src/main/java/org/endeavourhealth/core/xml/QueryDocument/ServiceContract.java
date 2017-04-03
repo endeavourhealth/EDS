@@ -22,7 +22,8 @@ import javax.xml.bind.annotation.XmlType;
  *         &lt;element name="service" type="{}service"/>
  *         &lt;element name="system" type="{}system"/>
  *         &lt;element name="technicalInterface" type="{}technicalInterface"/>
- *         &lt;element name="active" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="active" type="{}serviceContractActive"/>
+ *         &lt;element name="definesCohort" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/>
  *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
@@ -37,7 +38,8 @@ import javax.xml.bind.annotation.XmlType;
     "service",
     "system",
     "technicalInterface",
-    "active"
+    "active",
+    "definesCohort"
 })
 public class ServiceContract {
 
@@ -51,7 +53,9 @@ public class ServiceContract {
     @XmlElement(required = true)
     protected TechnicalInterface technicalInterface;
     @XmlElement(required = true)
-    protected String active;
+    @XmlSchemaType(name = "string")
+    protected ServiceContractActive active;
+    protected Boolean definesCohort;
 
     /**
      * Gets the value of the type property.
@@ -154,10 +158,10 @@ public class ServiceContract {
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link ServiceContractActive }
      *     
      */
-    public String getActive() {
+    public ServiceContractActive getActive() {
         return active;
     }
 
@@ -166,11 +170,35 @@ public class ServiceContract {
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link ServiceContractActive }
      *     
      */
-    public void setActive(String value) {
+    public void setActive(ServiceContractActive value) {
         this.active = value;
+    }
+
+    /**
+     * Gets the value of the definesCohort property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link Boolean }
+     *     
+     */
+    public Boolean isDefinesCohort() {
+        return definesCohort;
+    }
+
+    /**
+     * Sets the value of the definesCohort property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link Boolean }
+     *     
+     */
+    public void setDefinesCohort(Boolean value) {
+        this.definesCohort = value;
     }
 
 }

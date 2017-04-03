@@ -1,87 +1,99 @@
 package org.endeavourhealth.transform.emis.csv.transforms.admin;
 
 import com.google.common.base.Strings;
-import org.apache.commons.csv.CSVFormat;
-import org.endeavourhealth.transform.common.CsvProcessor;
-import org.endeavourhealth.transform.common.exceptions.FutureException;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
+import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.schema.admin.Organisation;
-import org.endeavourhealth.transform.fhir.*;
-import org.endeavourhealth.transform.fhir.schema.OrganisationType;
+import org.endeavourhealth.common.fhir.schema.OrganisationType;
+import org.endeavourhealth.common.fhir.CodeableConceptHelper;
 import org.hl7.fhir.instance.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
+import java.util.Map;
 
 public class OrganisationTransformer {
 
+    private static final Logger LOG = LoggerFactory.getLogger(OrganisationTransformer.class);
+
     public static void transform(String version,
-                                 String folderPath,
-                                 CSVFormat csvFormat,
-                                 CsvProcessor csvProcessor,
+                                 Map<Class, AbstractCsvParser> parsers,
+                                 FhirResourceFiler fhirResourceFiler,
                                  EmisCsvHelper csvHelper) throws Exception {
 
-        Organisation parser = new Organisation(version, folderPath, csvFormat);
-        try {
-            while (parser.nextRecord()) {
-                createOrganisation(parser, csvProcessor, csvHelper);
-            }
-        } catch (FutureException fe) {
-            throw fe;
-        } catch (Exception ex) {
-            throw new TransformException(parser.getErrorLine(), ex);
-        } finally {
-            parser.close();
-        }
-    }
+        AbstractCsvParser parser = parsers.get(Organisation.class);
+        while (parser.nextRecord()) {
 
-    private static void createOrganisation(Organisation organisationParser,
-                                           CsvProcessor csvProcessor,
-                                           EmisCsvHelper csvHelper) throws Exception {
+            try {
+                createResource((Organisation)parser, fhirResourceFiler, csvHelper);
+            } catch (Exception ex) {
+                fhirResourceFiler.logTransformRecordError(ex, parser.getCurrentState());
+            }
+        }
+     }
+
+
+    private static void createResource(Organisation parser,
+                                       FhirResourceFiler fhirResourceFiler,
+                                       EmisCsvHelper csvHelper) throws Exception {
 
         Organization fhirOrganisation = new Organization();
         fhirOrganisation.setMeta(new Meta().addProfile(FhirUri.PROFILE_URI_ORGANIZATION));
 
-        String orgGuid = organisationParser.getOrganisationGuid();
+        String orgGuid = parser.getOrganisationGuid();
         fhirOrganisation.setId(orgGuid);
 
-        String odsCode = organisationParser.getODScode();
+        String odsCode = parser.getODScode();
         Identifier fhirIdentifier = IdentifierHelper.createOdsOrganisationIdentifier(odsCode);
         fhirOrganisation.addIdentifier(fhirIdentifier);
 
-        String name = organisationParser.getOrganisatioName();
+        String name = parser.getOrganisatioName();
         fhirOrganisation.setName(name);
 
-        Date openDate = organisationParser.getOpenDate();
-        Date closeDate = organisationParser.getCloseDate();
+        Date openDate = parser.getOpenDate();
+        Date closeDate = parser.getCloseDate();
         Period fhirPeriod = PeriodHelper.createPeriod(openDate, closeDate);
         fhirOrganisation.setActive(PeriodHelper.isActive(fhirPeriod));
         fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ACTIVE_PERIOD, fhirPeriod));
 
-        String parentOrganisationGuid = organisationParser.getParentOrganisationGuid();
+        String parentOrganisationGuid = parser.getParentOrganisationGuid();
         if (!Strings.isNullOrEmpty(parentOrganisationGuid)) {
             fhirOrganisation.setPartOf(csvHelper.createOrganisationReference(parentOrganisationGuid));
         }
 
-        String ccgOrganisationGuid = organisationParser.getCCGOrganisationGuid();
+        String ccgOrganisationGuid = parser.getCCGOrganisationGuid();
         if (!Strings.isNullOrEmpty(ccgOrganisationGuid)) {
             fhirOrganisation.setPartOf(csvHelper.createOrganisationReference(ccgOrganisationGuid));
         }
 
-        String organisationType = organisationParser.getOrganisationType();
-        OrganisationType fhirOrgType = convertOrganisationType(organisationType);
-        if (fhirOrgType != null) {
-            fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(fhirOrgType));
-        } else {
-            //if the org type from the CSV can't be mapped to one of the value set, store as a freetext type
-            fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(organisationType));
+        String organisationType = parser.getOrganisationType();
+        if (!Strings.isNullOrEmpty(organisationType)) {
+            OrganisationType fhirOrgType = convertOrganisationType(organisationType);
+            if (fhirOrgType != null) {
+                fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(fhirOrgType));
+            } else {
+                //if the org type from the CSV can't be mapped to one of the value set, store as a freetext type
+                //LOG.info("Unmapped organisation type " + organisationType);
+                fhirOrganisation.setType(CodeableConceptHelper.createCodeableConcept(organisationType));
+            }
         }
 
-        String mainLocationGuid = organisationParser.getMainLocationGuid();
-        Reference fhirReference = csvHelper.createLocationReference(mainLocationGuid);
-        fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ORGANISATION_MAIN_LOCATION, fhirReference));
+        String mainLocationGuid = parser.getMainLocationGuid();
 
-        csvProcessor.saveAdminResource(fhirOrganisation);
+        //latest Emis data (31 Jan 2017) has a null record for this value, so handle it being missing
+        if (!Strings.isNullOrEmpty(mainLocationGuid)) {
+            Reference fhirReference = csvHelper.createLocationReference(mainLocationGuid);
+            fhirOrganisation.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.ORGANISATION_MAIN_LOCATION, fhirReference));
+        }
+
+        fhirResourceFiler.saveAdminResource(parser.getCurrentState(), fhirOrganisation);
+
+        //this resource exists in our admin resource cache, so we can populate the
+        //main database when new practices come on, so we need to update that too
+        csvHelper.saveAdminResourceToCache(fhirOrganisation);
     }
 
     private static OrganisationType convertOrganisationType(String csvOrganisationType) {

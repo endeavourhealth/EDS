@@ -4,12 +4,6 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.endeavourhealth</groupId>
-    <artifactId>eds-ui</artifactId>
-    <version>1.0-SNAPSHOT</version>
-
-    <packaging>war</packaging>
-
     <parent>
         <groupId>org.endeavourhealth</groupId>
         <artifactId>eds</artifactId>
@@ -17,7 +11,18 @@
         <relativePath>../../</relativePath>
     </parent>
 
+    <artifactId>eds-ui</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <packaging>war</packaging>
+
     <dependencies>
+        <!-- dependent on EDS-core -->
+        <dependency>
+            <groupId>com.github.endeavourhealth.Common</groupId>
+            <artifactId>api</artifactId>
+            <version>${eds-common.version}</version>
+        </dependency>
 
         <!-- Jersey -->
         <dependency>
@@ -69,12 +74,6 @@
         </dependency>
         <!-- End JavaMail -->
 
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>${slf4j-log4j12.version}</version>
-        </dependency>
-
         <!-- Logback -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -90,14 +89,6 @@
             <version>${jtds.version}</version>
         </dependency>
         <!-- End Java SQL Server driver -->
-
-        <!-- C3P0 db connection pooling -->
-        <dependency>
-            <groupId>com.mchange</groupId>
-            <artifactId>c3p0</artifactId>
-            <version>${c3p0.version}</version>
-        </dependency>
-        <!-- End C3P0 db connection pooling -->
 
         <!-- Gson -->
         <dependency>
@@ -159,29 +150,100 @@
             <version>${keycloak.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client</artifactId>
+            <version>${keycloak.version}</version>
+            <exclusions>
+                <!-- exclude common jars included in Tomcat lib directory, but
+                     include them below as provided dependencies-->
+                <exclusion>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-common</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.2</version>
+        </dependency>
+        <!-- provided in the Tomcat lib directory -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-common</artifactId>
+            <version>${keycloak.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <version>${keycloak.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-authz-client</artifactId>
+            <version>${keycloak.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- End Keycloak -->
 
         <!-- https://mvnrepository.com/artifact/postgresql/postgresql -->
         <dependency>
-            <groupId>postgresql</groupId>
+            <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>9.1-901.jdbc4</version>
+            <version>${postgresql.version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.hibernate/hibernate-entitymanager -->
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-entitymanager</artifactId>
-            <version>5.1.0.Final</version>
+            <version>${hibernate.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-hikaricp</artifactId>
+            <version>${hibernate.version}</version>
+        </dependency>
 
-        <!-- dependent on EDS-core -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>${hikari.version}</version>
+        </dependency>
+
+        <!-- dependent on EDS-transforms -->
 
         <dependency>
             <groupId>org.endeavourhealth</groupId>
-            <artifactId>eds-core</artifactId>
-            <version>${project.version}</version>
+            <artifactId>eds-transforms</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
+
+        <!-- Swagger -->
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-jersey2-jaxrs</artifactId>
+            <version>${swagger.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.endeavourhealth</groupId>
+            <artifactId>eds-messaging-core</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.endeavourhealth</groupId>
+            <artifactId>eds-queuereader</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <!-- Swagger End-->
 
     </dependencies>
 
@@ -190,6 +252,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -198,7 +261,7 @@
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
-                <version>1.0</version>
+                <version>${frontend-maven-plugin.version}</version>
                 <configuration>
                     <installDirectory>src/main/frontend</installDirectory>
                     <workingDirectory>src/main/frontend</workingDirectory>
@@ -208,20 +271,12 @@
                         <id>install node and npm</id>
                         <goals><goal>install-node-and-npm</goal></goals>
                         <configuration>
-                            <nodeVersion>v4.4.7</nodeVersion>
-                            <npmVersion>2.15.9</npmVersion>
+                            <nodeVersion>${node.version}</nodeVersion>
                         </configuration>
                     </execution>
                     <execution>
                         <id>npm install</id>
                         <goals><goal>npm</goal></goals>
-                    </execution>
-                    <execution>
-                        <id>bower install</id>
-                        <goals><goal>bower</goal></goals>
-                        <configuration>
-                            <arguments>install --config.directory=../webapp/bower_components</arguments>
-                        </configuration>
                     </execution>
                     <execution>
                         <id>typings install</id>
@@ -234,7 +289,7 @@
                         <id>tsc</id>
                         <goals><goal>npm</goal></goals>
                         <configuration>
-                            <arguments>run tsc -- --outDir ../webapp</arguments>
+                            <arguments>run build</arguments>
                         </configuration>
                     </execution>
                 </executions>

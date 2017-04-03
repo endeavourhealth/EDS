@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <xs:element name="SubscriberConfiguration">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="PostgreSQLConnection" type="PostgreSQLConnection" minOccurs="1" maxOccurs="1"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="PostgreSQLConnection">
+        <xs:sequence>
+            <xs:element name="Hostname" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="Port" type="xs:integer" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="Database" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="Username" type="nonEmptyString" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="Password" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="Schema" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="nonEmptyString">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:pattern value=".*[^\s].*"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

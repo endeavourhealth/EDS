@@ -1,0 +1,189 @@
+<div class="module">
+    <div class="module-heading">
+        Exchange History for {{service.name}} ({{service.uuid}})
+        <div class="pull-right">
+
+            <button type="button" class="btn btn-sm btn-success" (click)="refreshExchanges()">Refresh</button>
+            <!--<button type="button" class="btn btn-sm btn-danger" (click)="createMissingData()">Create Data</button>-->
+            <button type="button" class="btn btn-sm btn-default" (click)="close()">Close</button>
+        </div>
+    </div>
+    <div class="module-body">
+
+        <div class="container-fluid">
+
+
+            <div class="row">
+                <div class="col-md-3">
+
+                    <div class="panel panel-primary">
+                        <div class="panel-body">
+
+                            <ngb-accordion #acc="ngbAccordion">
+                                <ngb-panel title="Show Search">
+                                    <template ngbPanelContent>
+
+                                        <ngb-tabset type="pills" activeId="tabId" (tabChange)="tabSelected($event.nextId)">
+
+                                            <ngb-tab id="tabId" title="ID">
+                                                <template ngbTabContent>
+                                                    <div class="form-group">
+                                                        <label>Exchange ID</label>
+                                                        <input name="ExchangeIdSearch" class="form-control" [(ngModel)]="exchangeIdSearch">
+                                                    </div>
+                                                </template>
+                                            </ngb-tab>
+
+                                            <ngb-tab id="tabDates" title="Dates">
+                                                <template ngbTabContent>
+
+                                                    <div class="form-group">
+                                                        <label>Search From:</label>
+                                                        <datetime [timepicker]="{ showMeridian: false }" [(ngModel)]="exchangeSearchFrom" [datepicker]="{ format: 'dd-M-yyyy', autoclose: true, todayHighlight: true }" (blur)="filterDateToChange(filterDateFrom)" placeholder="Select date to"></datetime>
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label>Search To:</label>
+                                                        <datetime [timepicker]="{ showMeridian: false }" [(ngModel)]="exchangeSearchTo" [datepicker]="{ format: 'dd-M-yyyy', autoclose: true, todayHighlight: true }" (blur)="filterDateToChange(filterDateFrom)" placeholder="Select date to"></datetime>
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label>Showing Last:</label>
+                                                        <input name="ExchangesToShow" type="number" class="form-control" [(ngModel)]="exchangesToShow" required>
+                                                    </div>
+
+                                                </template>
+                                            </ngb-tab>
+
+                                        </ngb-tabset>
+
+                                        <button type="button" class="btn btn-default" (click)="refreshExchanges()">Go</button>
+
+                                    </template>
+                                </ngb-panel>
+                            </ngb-accordion>
+
+                        </div>
+                    </div>
+
+                    <div class="table">
+                        <table class="table table-striped table-condensed">
+                            <thead>
+                                <tr>
+                                    <th class="col-md-2">Received</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover-box show-child-on-hover"
+                                    *ngFor="let exchange of exchanges"
+                                    (click)="selectExchange(exchange);"
+                                    [ngClass]="{'selection': exchange == selectedExchange}">
+
+                                    <td>{{exchange.timestamp | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="col-md-9" *ngIf="selectedExchange">
+
+                    <h4>Exchange {{selectedExchange.exchangeId}}</h4>
+
+                    <!--show the exchange headers in an accordion, so we don't have to see them all the time-->
+                    <ngb-accordion #acc="ngbAccordion">
+                        <ngb-panel title="View Headers">
+                            <template ngbPanelContent>
+                                <ul>
+                                    <li *ngFor="let item of getSelectedExchangeHeaderKeys()">
+                                        {{ item }} = {{selectedExchange.headers[item]}}
+                                    </li>
+                                </ul>
+                            </template>
+                        </ngb-panel>
+                    </ngb-accordion>
+
+                    <!--show the exchange body in an accordion, so we don't have to see it all the time-->
+                    <ngb-accordion #acc="ngbAccordion">
+                        <ngb-panel title="View Body">
+                            <template ngbPanelContent>
+                                <div *ngFor="let item of getSelectedExchangeHBodyLines()">
+                                    {{ item }}
+                                </div>
+                            </template>
+                        </ngb-panel>
+                    </ngb-accordion>
+
+                    <div class="panel panel-primary">
+                    <!--<div class="panel panel-primary">-->
+                        <div class="panel-body">
+                            Post to Exchange:
+                            <div>
+                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsInbound')">Inbound</button>
+                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsResponse')">Response</button>
+                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsProtocol')">Protocol</button>
+                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsTransform')">Transform</button>
+                                <button type="button" class="btn btn-sm btn-success" [disabled]="busyPostingToExchange" (click)="postToExchange('edsSubscriber')">Subscriber</button>
+
+                                <input type="checkbox" [(ngModel)]="postAllExchanges" [disabled]="busyPostingToExchange" (click)="checkboxChanged()">
+                                Do ALL Exchanges
+
+                                <span class="fa fa-sm fa-refresh fa-refresh-animate" *ngIf="busyPostingToExchange"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!--exchange events table-->
+                    <div class="table">
+                        <table class="table table-striped table-condensed">
+                            <thead>
+                                <tr>
+                                    <th class="col-md-2">Timestamp</th>
+                                    <th class="col-md-7">Event</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover-box show-child-on-hover" *ngFor="let event of selectedExchange.events">
+                                    <td>{{event.timestamp | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+                                    <td>{{event.event}}</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!--transform audits table-->
+                    <div class="table" *ngIf="selectedExchange.transformAudits">
+                        <table class="table table-striped table-condensed">
+                            <thead>
+                                <tr>
+                                    <th class="col-md-2">Started</th>
+                                    <th class="col-md-2">Ended</th>
+                                    <th class="col-md-1">#Batch IDs</th>
+                                    <th class="col-md-1">Errors</th>
+                                    <th class="col-md-1">Resubmitted</th>
+                                    <th class="col-md-2">Deleted</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover-box show-child-on-hover" *ngFor="let transformAudit of selectedExchange.transformAudits" (click)="showTransformErrors(transformAudit);">
+                                    <td>{{transformAudit.transformStart | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+                                    <td>{{transformAudit.transformEnd | date:'dd-MMM-yyyy HH:mm:ss'}}</td>
+                                    <td>{{transformAudit.numberBatchIdsCreated}}</td>
+                                    <td>{{transformAudit.hadErrors | formatBoolean}}</td>
+                                    <td>{{transformAudit.resubmitted | formatBoolean}}</td>
+                                    <td>{{transformAudit.deleted | date:'dd-MMM-yyyy'}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+

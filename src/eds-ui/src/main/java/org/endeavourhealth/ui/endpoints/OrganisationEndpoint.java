@@ -4,8 +4,13 @@ import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
 import org.endeavourhealth.core.data.admin.models.Service;
-import org.endeavourhealth.core.security.annotations.RequiresAdmin;
-import org.endeavourhealth.ui.json.JsonOrganisation;
+import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditAction;
+import org.endeavourhealth.core.data.audit.models.AuditModule;
+import org.endeavourhealth.common.security.SecurityUtils;
+import org.endeavourhealth.common.security.annotations.RequiresAdmin;
+import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
+import org.endeavourhealth.coreui.json.JsonOrganisation;
 import org.endeavourhealth.ui.json.JsonService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +25,10 @@ import java.util.*;
 @Path("/organisation")
 public final class OrganisationEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
-	private final OrganisationRepository repository = new OrganisationRepository();
-	private final ServiceRepository serviceRepository = new ServiceRepository();
+
+	private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Organisation);
+	private static final OrganisationRepository repository = new OrganisationRepository();
+	private static final ServiceRepository serviceRepository = new ServiceRepository();
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
@@ -30,6 +37,9 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@RequiresAdmin
 	public Response post(@Context SecurityContext sc, JsonOrganisation organisation) throws Exception {
 		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+				"Organisation",
+				"Organisation", organisation);
 
 		// Save the new
 		Organisation dbOrganisation = new Organisation();
@@ -58,6 +68,9 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@RequiresAdmin
 	public Response deleteOrganisation(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+				"Organisation",
+				"Organisation Id", uuid);
 
 		UUID organisationUuid = UUID.fromString(uuid);
 		Organisation dbOrganisation = repository.getById(organisationUuid);
@@ -75,6 +88,10 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/services")
 	public Response getOrganisationServices(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"Organisation Services",
+				"OrganisationId", uuid);
+
 		super.setLogbackMarkers(sc);
 		UUID organisationUuid = UUID.fromString(uuid);
 		Organisation organisation = repository.getById(organisationUuid);
@@ -96,15 +113,22 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/")
-	public Response getOrganisation(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+	public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
 		super.setLogbackMarkers(sc);
+		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"Organisation(s)",
+				"Organisation Id", uuid,
+				"SearchData", searchData);
 
-		if (uuid == null) {
+		if (uuid == null && searchData == null) {
 			LOG.trace("getOrganisation - list");
 			return getOrganisationList();
-		} else {
+		} else if (uuid != null){
 			LOG.trace("getOrganisation - single - " + uuid);
 			return getOrganisation(uuid);
+		} else {
+			LOG.trace("Search Organisations - " + searchData);
+			return search(searchData);
 		}
 	}
 
@@ -129,6 +153,22 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 		Organisation organisation = repository.getById(organisationUuid);
 
 		JsonOrganisation ret = new JsonOrganisation(organisation, false);
+
+		clearLogbackMarkers();
+		return Response
+				.ok()
+				.entity(ret)
+				.build();
+	}
+
+	private Response search(String searchData) {
+		Iterable<Organisation> organisations = repository.search(searchData);
+
+		List<JsonOrganisation> ret = new ArrayList<>();
+
+		for (Organisation organisation : organisations) {
+			ret.add(new JsonOrganisation(organisation, false));
+		}
 
 		clearLogbackMarkers();
 		return Response
