@@ -458,8 +458,9 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 		userRep.singleAttribute("Mobile", user.getMobile());
 		userRep.singleAttribute("Photo", user.getPhoto());
 		//Preserve v1 organisation-id as the keycloak API has a bug which deletes all attributes
-		if (user.getDefaultOrgId().trim()!="") {
-			userRep.singleAttribute("organisation-id", user.getDefaultOrgId());
+		String defaultOrgId = user.getDefaultOrgId();
+		if (defaultOrgId != null && defaultOrgId.trim()!="") {
+			userRep.singleAttribute("organisation-id", defaultOrgId);
 		}
 
 		//setting TOTP to true means the user needs to reconfigure TOTP on login
