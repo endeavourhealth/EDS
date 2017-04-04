@@ -51,13 +51,15 @@ export class UserManagerComponent {
 
 	private saveUser(user, editedUser : User) {
 		var vm = this;
-		vm.userService.saveUser(editedUser, (user != null))
+		var editMode = (user != null);
+		vm.userService.saveUser(editedUser, editMode)
 			.subscribe(
 				(response) => {
 					this.getUsersAndRoles();
-					this.selectedUser = editedUser;
+					editedUser.uuid = response.uuid;
+					this.selectedUser = response;
 					this.getUserRoles(editedUser);
-					var msg = (user == null) ? 'User added' : 'User edited';
+					var msg = (!editMode) ? 'User added' : 'User edited';
 					vm.log.info(msg);
 				},
 				(error) => vm.log.error('Error saving user', error, 'Error')

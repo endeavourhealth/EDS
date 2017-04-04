@@ -40,18 +40,6 @@ export class UserManagerUserViewComponent {
 			);
 	}
 
-	editUserEx(userId: string) {
-		var vm = this;
-
-		//get user object using userId
-
-		UserEditorDialog.open(vm.$modal, null, true)
-            .result.then(
-			(editedUser) => vm.saveUser(null, editedUser),
-			() => vm.log.info('User edit cancelled')
-		);
-	}
-
 	editUser(user:User) {
 		var vm = this;
 		UserEditorDialog.open(vm.$modal, user, true)
@@ -68,7 +56,7 @@ export class UserManagerUserViewComponent {
 				(response) => {
 					this.selectedUser = editedUser;
 					this.getUserRoles(editedUser);
-					var msg = (user == null) ? 'User added' : 'User edited';
+					var msg = 'User edited';
 					vm.log.info(msg);
 				},
 				(error) => vm.log.error('Error saving user', error, 'Error')
