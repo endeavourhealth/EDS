@@ -12,10 +12,12 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.security.KeycloakConfigUtils;
+import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.common.security.keycloak.client.KeycloakAdminClient;
 import org.endeavourhealth.common.security.keycloak.client.KeycloakClient;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
+import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.JsonClient;
@@ -30,12 +32,14 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Path("/usermanager")
 public final class UserManagerEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(UserManagerEndpoint.class);
-	private static final UserAuditRepository userAuditRepository = new UserAuditRepository(AuditModule.EdsUiModule.Audit);
+	private static final UserAuditRepository userAuditRepository = new UserAuditRepository(AuditModule.EdsUserManagerModule.UserManager);
 
 	private String keycloakRealm;
 	private String authServerBaseUrl;
@@ -217,9 +221,8 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response getUser(@Context SecurityContext sc, @QueryParam("userId") String userId) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		//TODO: Audit into MySQL?
-		//userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-		//		"Users");
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"User", "User Id", userId);
 
 		LOG.trace("getUser");
 
@@ -248,9 +251,8 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response getUsers(@Context SecurityContext sc, @QueryParam("searchData") String searchData) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		//TODO: Audit into MySQL?
-		//userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-		//		"Users");
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"Users", "Search Data", searchData);
 
 		LOG.trace("getUsers");
 
@@ -284,9 +286,8 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response getAvailableRealmRoles(@Context SecurityContext sc, @QueryParam("userId") String userId) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		//TODO: Audit into MySQL?
-		//userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-		//		"Users");
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"User roles available", "User Id", userId);
 
 		LOG.trace("getUserAvailableRealmRoles for userId: "+userId);
 
@@ -324,9 +325,8 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response getRealmClients(@Context SecurityContext sc) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		//TODO: Audit into MySQL?
-		//userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-		//		"Users");
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"Clients");
 
 		LOG.trace("getRealmClients");
 
@@ -351,8 +351,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 
 	private List<RoleRepresentation> getUserRealmRoles(String userId) {
 		//Firstly, get the mapping representation for the user
-		MappingsRepresentation userRoleMap = new MappingsRepresentation();
-		userRoleMap = keycloakGetUserRoleMappings(userId);
+		MappingsRepresentation userRoleMap = keycloakGetUserRoleMappings(userId);
 
 		//Get all available roles (Realm or for the user), removing the system roles
 		return removeSystemRoles(userRoleMap.getRealmMappings());
@@ -390,9 +389,8 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response getUserAssignedRoles(@Context SecurityContext sc, @QueryParam("userId") String userId) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		//TODO: Audit into MySQL?
-		//userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-		//		"Users");
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+				"User roles assigned", "User Id", userId);
 
 		LOG.trace("getUserAssignedRoles for userId: "+userId);
 
@@ -440,10 +438,6 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response saveUser(@Context SecurityContext sc, JsonEndUser user, @QueryParam("editMode") String editMode) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		//TODO: Audit into MySQL?
-		//userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-		//		"Users");
-
 		boolean editModeb = editMode.equalsIgnoreCase("1") ? true:false;
 
 		//Set the basic user profile info
@@ -479,6 +473,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 			userRep = keycloakClient.realms().users().postUser(userRep);
 			//This is the newly created userId
 			userId = userRep.getId();
+			user.setUuid(UUID.fromString(userId));  //new uuid to return to client
 		} else {
 			//This is the existing userId, so we set for update
 			userId = user.getUuid().toString();
@@ -515,11 +510,16 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 			keycloakClient.realms().users().addRealmRole(userId, roles);
 		}
 
+		//Blank out password for audit object
+		user.setPassword("*********");
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+				"User", "User", user);
+
 		clearLogbackMarkers();
 
 		return Response
 				.ok()
-				.entity(userRep)
+				.entity(user)
 				.build();
 	}
 
@@ -531,9 +531,8 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response saveRole(@Context SecurityContext sc, JsonEndUserRole userRole) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		//TODO: Audit into MySQL?
-		//userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-		//		"Users");
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+				"Roles", "Role", userRole);
 
 		//Create the top level realm role
 		RoleRepresentation roleRep = new RoleRepresentation();
@@ -581,9 +580,8 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response deleteUser(@Context SecurityContext sc, @QueryParam("userId") String userId) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		//TODO: Audit into MySQL?
-		//userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-		//		"Users");
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+				"User", "User Id", userId);
 
 		//Create the keycloak admin client and delete the user
 		KeycloakAdminClient keycloakClient = new KeycloakAdminClient();
@@ -603,9 +601,8 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	public Response deleteRealmRole(@Context SecurityContext sc, @QueryParam("roleName") String roleName) throws Exception {
 		super.setLogbackMarkers(sc);
 
-		//TODO: Audit into MySQL?
-		//userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-		//		"Users");
+		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Delete,
+				"Role", "Role", roleName);
 
 		//Create the keycloak admin client and delete the role
 		KeycloakAdminClient keycloakClient = new KeycloakAdminClient();

@@ -7,13 +7,15 @@ import java.util.List;
 public enum AuditModule implements IAuditModule{
 	EdsUi,
 	EdsPatientUi,
-	EdsPatientExplorer;
+	EdsPatientExplorer,
+	EdsUserManager;
 
 	public static List<IAuditModule> allSubModules() {
 		List<IAuditModule> subModules = new ArrayList<>();
 		Collections.addAll(subModules, EdsUiModule.values());
 		Collections.addAll(subModules, EdsPatientUiModule.values());
 		Collections.addAll(subModules, EdsPatientExplorerModule.values());
+		Collections.addAll(subModules, EdsUserManagerModule.values());
 		return subModules;
 	}
 
@@ -55,5 +57,13 @@ public enum AuditModule implements IAuditModule{
 		SqlEditor;
 
 		public IAuditModule getParent() { return AuditModule.EdsPatientExplorer; }
+	}
+
+	public enum EdsUserManagerModule implements IAuditModule {
+		UserManager,
+		RoleManager,
+		ClientManager;
+
+		public IAuditModule getParent() { return AuditModule.EdsUserManager; }
 	}
 }
