@@ -125,7 +125,9 @@ public class FhirToEnterpriseCsvTransformer extends FhirToXTransformerBase {
         if (!Strings.isNullOrEmpty(discoveryPatientId)) {
             enterprisePatientId = AbstractTransformer.findEnterpriseId(data.getPatients(), ResourceType.Patient.toString(), discoveryPatientId);
             if (enterprisePatientId == null) {
-                throw new TransformException("No enterprise patient ID found for discovery patient " + discoveryPatientId);
+                LOG.warn("No enterprise patient ID for patient " + discoveryPatientId + " so not doing patient resources");
+                return data;
+                //throw new TransformException("No enterprise patient ID found for discovery patient " + discoveryPatientId);
             }
 
             String discoveryPersonId = PatientLinkHelper.getPersonId(discoveryPatientId);
