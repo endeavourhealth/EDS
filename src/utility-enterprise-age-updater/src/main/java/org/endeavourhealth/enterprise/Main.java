@@ -90,6 +90,8 @@ public class Main {
         } catch (Exception ex) {
             LOG.error("", ex);
         }
+
+        System.exit(0);
     }
 
     private static Connection openConnection(JsonNode config) throws Exception {
@@ -145,7 +147,7 @@ public class Main {
 
         connection.commit();
 
-        LOG.info("Updated patient " + enterprisePatientId + " to ages " + ages[EnterpriseAgeUpdater.UNIT_YEARS] + "y, " + ages[EnterpriseAgeUpdater.UNIT_MONTHS] + "m " + ages[EnterpriseAgeUpdater.UNIT_WEEKS] + " wks");
+        LOG.info("Updated patient " + enterprisePatientId + " to ages " + ages[EnterpriseAgeUpdater.UNIT_YEARS] + " y, " + ages[EnterpriseAgeUpdater.UNIT_MONTHS] + " m " + ages[EnterpriseAgeUpdater.UNIT_WEEKS] + " wks");
     }
 
     private static List<EnterpriseAge> findAgesToUpdate(EntityManager entityManager) {

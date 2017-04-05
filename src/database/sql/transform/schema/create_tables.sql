@@ -46,15 +46,18 @@ ALTER TABLE public.enterprise_id_map
 
 CREATE TABLE public.enterprise_organisation_id_map
 (
-  ods_code character varying(100) NOT NULL,
+  service_id character(36) NOT NULL,
+  system_id character(36) NOT NULL,
+  enterprise_config_name character varying(255) NOT NULL,
   enterprise_id bigint NOT NULL,
-  CONSTRAINT pk_enterprise_organisation_id_map PRIMARY KEY (ods_code)
+  CONSTRAINT pk_enterprise_organisation_id_map PRIMARY KEY (service_id, system_id, enterprise_config_name)
 )
 WITH (
   OIDS=FALSE
 );
 ALTER TABLE public.enterprise_organisation_id_map
   OWNER TO postgres;
+
 
 -- Sequence: public.household_id_seq
 
@@ -94,8 +97,9 @@ ALTER TABLE public.household_id_map
 CREATE TABLE public.pseudo_id_map
 (
   patient_id character varying(255) NOT NULL,
+  enterprise_config_name character varying(255) NOT NULL,
   pseudo_id character varying(255) NOT NULL,
-  CONSTRAINT pk_pseudo_id_map PRIMARY KEY (patient_id)
+  CONSTRAINT pk_pseudo_id_map PRIMARY KEY (patient_id, enterprise_config_name)
 )
 WITH (
   OIDS=FALSE

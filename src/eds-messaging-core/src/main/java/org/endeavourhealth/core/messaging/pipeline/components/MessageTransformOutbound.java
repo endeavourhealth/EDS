@@ -125,12 +125,13 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
 
-			UUID senderOrganisationUuid = exchange.getHeaderAsUuid(HeaderKeys.SenderOrganisationUuid);
+			UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
+			UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SenderSystemUuid);
 
 			JsonNode config = ConfigManager.getConfigurationAsJson(endpoint, "enterprise");
 			boolean pseudonymised = config.get("pseudonymised").asBoolean();
 
-			String zippedCsvs = FhirToEnterpriseCsvTransformer.transformFromFhir(senderOrganisationUuid, batchId, resourceIds, pseudonymised, endpoint);
+			String zippedCsvs = FhirToEnterpriseCsvTransformer.transformFromFhir(serviceId, systemId, batchId, resourceIds, pseudonymised, endpoint);
 
 			return zippedCsvs;
 			/*//file the data directly, so return null to end the pipeline

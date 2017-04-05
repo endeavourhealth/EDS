@@ -16,6 +16,7 @@ import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -394,6 +395,18 @@ public class ResourceRepository extends Repository {
         ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
         Result<ResourceByService> result = accessor.getFirstResourceByService(serviceId, systemId, ResourceType.Patient.toString());
         return result.iterator().hasNext();
+    }
+
+    public ResourceByService getFirstResourceByService(UUID serviceId, UUID systemId, ResourceType resourceType) {
+
+        ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
+        Result<ResourceByService> result = accessor.getFirstResourceByService(serviceId, systemId, resourceType.toString());
+        Iterator<ResourceByService> it = result.iterator();
+        if (it.hasNext()) {
+            return it.next();
+        } else {
+            return null;
+        }
     }
 
     public List<ResourceByService> getResourcesByService(UUID serviceId, UUID systemId, String resourceType) {

@@ -9,16 +9,14 @@ import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkPair;
 import org.endeavourhealth.core.rdbms.reference.PostcodeHelper;
-import org.endeavourhealth.core.rdbms.reference.PostcodeReference;
+import org.endeavourhealth.core.rdbms.reference.PostcodeLookup;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseAgeUpdater;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseIdHelper;
 import org.endeavourhealth.core.rdbms.transform.HouseholdHelper;
 import org.endeavourhealth.core.rdbms.transform.PseudoIdHelper;
+import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
-import org.hl7.fhir.instance.model.Address;
-import org.hl7.fhir.instance.model.DateType;
-import org.hl7.fhir.instance.model.Enumerations;
-import org.hl7.fhir.instance.model.Patient;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,156 +38,171 @@ public class PatientTransformer extends AbstractTransformer {
 
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
+                          AbstractEnterpriseCsvWriter csvWriter,
                           Map<String, ResourceByExchangeBatch> otherResources,
                           Long enterpriseOrganisationId,
                           Long nullEnterprisePatientId,
                           Long nullEnterprisePersonId,
                           String configName) throws Exception {
 
-        org.endeavourhealth.transform.enterprise.outputModels.Patient model = data.getPatients();
-
-        Long enterpriseId = mapId(resource, model);
+        Long enterpriseId = mapId(resource, csvWriter, true);
         if (enterpriseId == null) {
             return;
 
         } else if (resource.getIsDeleted()) {
-            model.writeDelete(enterpriseId.longValue());
+            csvWriter.writeDelete(enterpriseId.longValue());
 
         } else {
-            Patient fhirPatient = (Patient)deserialiseResouce(resource);
+            Resource fhir = deserialiseResouce(resource);
+            transform(enterpriseId, fhir, data, csvWriter, otherResources, enterpriseOrganisationId, nullEnterprisePatientId, nullEnterprisePersonId, configName);
+        }
+    }
 
-            String discoveryPersonId = PatientLinkHelper.getPersonId(fhirPatient.getId());
+    public void transform(Long enterpriseId,
+                          Resource resource,
+                          OutputContainer data,
+                          AbstractEnterpriseCsvWriter csvWriter,
+                          Map<String, ResourceByExchangeBatch> otherResources,
+                          Long enterpriseOrganisationId,
+                          Long nullEnterprisePatientId,
+                          Long nullEnterprisePersonId,
+                          String configName) throws Exception {
 
-            //when the person ID table was populated, patients who had been deleted weren't added,
-            //so we'll occasionally get null for some patients. If this happens, just do what would have
-            //been done originally and assign an ID
-            if (Strings.isNullOrEmpty(discoveryPersonId)) {
-                PatientLinkPair pair = PatientLinkHelper.updatePersonId(fhirPatient);
-                discoveryPersonId = pair.getNewPersonId();
-            }
+        Patient fhirPatient = (Patient)resource;
 
-            Long enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, configName);
+        String discoveryPersonId = PatientLinkHelper.getPersonId(fhirPatient.getId());
 
-            long id;
-            long organizationId;
-            long personId;
-            int patientGenderId;
-            String pseudoId = null;
-            String nhsNumber = null;
-            Integer ageYears = null;
-            Integer ageMonths = null;
-            Integer ageWeeks = null;
-            Date dateOfBirth = null;
-            Date dateOfDeath = null;
-            String postcode = null;
-            String postcodePrefix = null;
-            Long householdId = null;
-            String lsoaCode = null;
-            String msoaCode = null;
-            BigDecimal townsendScore = null;
+        //when the person ID table was populated, patients who had been deleted weren't added,
+        //so we'll occasionally get null for some patients. If this happens, just do what would have
+        //been done originally and assign an ID
+        if (Strings.isNullOrEmpty(discoveryPersonId)) {
+            PatientLinkPair pair = PatientLinkHelper.updatePersonId(fhirPatient);
+            discoveryPersonId = pair.getNewPersonId();
+        }
 
-            id = enterpriseId.longValue();
-            organizationId = enterpriseOrganisationId.longValue();
-            personId = enterprisePersonId.longValue();
+        Long enterprisePersonId = EnterpriseIdHelper.findOrCreateEnterprisePersonId(discoveryPersonId, configName);
 
-            //Calendar cal = Calendar.getInstance();
+        long id;
+        long organizationId;
+        long personId;
+        int patientGenderId;
+        String pseudoId = null;
+        String nhsNumber = null;
+        Integer ageYears = null;
+        Integer ageMonths = null;
+        Integer ageWeeks = null;
+        Date dateOfBirth = null;
+        Date dateOfDeath = null;
+        String postcode = null;
+        String postcodePrefix = null;
+        Long householdId = null;
+        String lsoaCode = null;
+        String msoaCode = null;
+        BigDecimal townsendScore = null;
 
-            dateOfBirth = fhirPatient.getBirthDate();
-            /*cal.setTime(dob);
-            int yearOfBirth = cal.get(Calendar.YEAR);
-            model.setYearOfBirth(yearOfBirth);*/
+        id = enterpriseId.longValue();
+        organizationId = enterpriseOrganisationId.longValue();
+        personId = enterprisePersonId.longValue();
 
-            if (fhirPatient.hasDeceasedDateTimeType()) {
-                dateOfDeath = fhirPatient.getDeceasedDateTimeType().getValue();
-                /*cal.setTime(dod);
-                int yearOfDeath = cal.get(Calendar.YEAR);
-                model.setYearOfDeath(new Integer(yearOfDeath));*/
-            } else if (fhirPatient.hasDeceased()
-                    && fhirPatient.getDeceased() instanceof DateType) {
-                //should always be a DATE TIME type, but a bug in the CSV->FHIR transform
-                //means we've got data with a DATE type too
-                DateType d = (DateType)fhirPatient.getDeceased();
-                dateOfDeath = d.getValue();
-            }
+        //Calendar cal = Calendar.getInstance();
 
-            patientGenderId = fhirPatient.getGender().ordinal();
+        dateOfBirth = fhirPatient.getBirthDate();
+        /*cal.setTime(dob);
+        int yearOfBirth = cal.get(Calendar.YEAR);
+        model.setYearOfBirth(yearOfBirth);*/
+
+        if (fhirPatient.hasDeceasedDateTimeType()) {
+            dateOfDeath = fhirPatient.getDeceasedDateTimeType().getValue();
+            /*cal.setTime(dod);
+            int yearOfDeath = cal.get(Calendar.YEAR);
+            model.setYearOfDeath(new Integer(yearOfDeath));*/
+        } else if (fhirPatient.hasDeceased()
+                && fhirPatient.getDeceased() instanceof DateType) {
+            //should always be a DATE TIME type, but a bug in the CSV->FHIR transform
+            //means we've got data with a DATE type too
+            DateType d = (DateType)fhirPatient.getDeceased();
+            dateOfDeath = d.getValue();
+        }
+
+        patientGenderId = fhirPatient.getGender().ordinal();
 
 
-            if (fhirPatient.hasAddress()) {
-                for (Address address: fhirPatient.getAddress()) {
-                    if (address.getUse() != null //got Homerton data will null address use
-                            && address.getUse().equals(Address.AddressUse.HOME)) {
-                        postcode = address.getPostalCode();
-                        postcodePrefix = findPostcodePrefix(postcode);
-                        householdId = HouseholdHelper.findOrCreateHouseholdId(address);
-                        break;
-                    }
+        if (fhirPatient.hasAddress()) {
+            for (Address address: fhirPatient.getAddress()) {
+                if (address.getUse() != null //got Homerton data will null address use
+                        && address.getUse().equals(Address.AddressUse.HOME)) {
+                    postcode = address.getPostalCode();
+                    postcodePrefix = findPostcodePrefix(postcode);
+                    householdId = HouseholdHelper.findOrCreateHouseholdId(address);
+                    break;
                 }
             }
+        }
 
-            //if we've found a postcode, then get the LSOA etc. for it
-            if (!Strings.isNullOrEmpty(postcode)) {
-                PostcodeReference postcodeReference = PostcodeHelper.getPostcodeReference(postcode);
-                if (postcodeReference != null) {
-                    lsoaCode = postcodeReference.getLsoaCode();
-                    msoaCode = postcodeReference.getMsoaCode();
-                    townsendScore = postcodeReference.getTownsendScore();
-                }
+        //if we've found a postcode, then get the LSOA etc. for it
+        if (!Strings.isNullOrEmpty(postcode)) {
+            PostcodeLookup postcodeReference = PostcodeHelper.getPostcodeReference(postcode);
+            if (postcodeReference != null) {
+                lsoaCode = postcodeReference.getLsoaCode();
+                msoaCode = postcodeReference.getMsoaCode();
+                townsendScore = postcodeReference.getTownsendScore();
+            }
+        }
+
+        org.endeavourhealth.transform.enterprise.outputModels.Patient model = (org.endeavourhealth.transform.enterprise.outputModels.Patient)csvWriter;
+
+        if (model.isPseduonymised()) {
+
+            //if pseudonymised, all non-male/non-female genders should be treated as female
+            if (fhirPatient.getGender() != Enumerations.AdministrativeGender.FEMALE
+                    && fhirPatient.getGender() != Enumerations.AdministrativeGender.MALE) {
+                patientGenderId = Enumerations.AdministrativeGender.FEMALE.ordinal();
             }
 
-            if (model.isPseduonymised()) {
+            pseudoId = pseudonomise(fhirPatient);
 
-                //if pseudonymised, all non-male/non-female genders should be treated as female
-                if (fhirPatient.getGender() != Enumerations.AdministrativeGender.FEMALE
-                        && fhirPatient.getGender() != Enumerations.AdministrativeGender.MALE) {
-                    patientGenderId = Enumerations.AdministrativeGender.FEMALE.ordinal();
-                }
-
-                pseudoId = pseudonomise(fhirPatient);
-
-                //only persist the pseudo ID if it's non-null
-                if (!Strings.isNullOrEmpty(pseudoId)) {
-                    PseudoIdHelper.storePseudoId(fhirPatient.getId(), pseudoId);
-                }
-
-                Integer[] ageValues = EnterpriseAgeUpdater.calculateAgeValues(id, dateOfBirth, configName);
-                ageYears = ageValues[EnterpriseAgeUpdater.UNIT_YEARS];
-                ageMonths = ageValues[EnterpriseAgeUpdater.UNIT_MONTHS];
-                ageWeeks = ageValues[EnterpriseAgeUpdater.UNIT_WEEKS];
-
-                model.writeUpsertPseudonymised(id,
-                        organizationId,
-                        personId,
-                        patientGenderId,
-                        pseudoId,
-                        ageYears,
-                        ageMonths,
-                        ageWeeks,
-                        dateOfDeath,
-                        postcodePrefix,
-                        householdId,
-                        lsoaCode,
-                        msoaCode,
-                        townsendScore);
-
-            } else {
-
-                nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
-
-                model.writeUpsertIdentifiable(id,
-                        organizationId,
-                        personId,
-                        patientGenderId,
-                        nhsNumber,
-                        dateOfBirth,
-                        dateOfDeath,
-                        postcode,
-                        householdId,
-                        lsoaCode,
-                        msoaCode,
-                        townsendScore);
-
+            //only persist the pseudo ID if it's non-null
+            if (!Strings.isNullOrEmpty(pseudoId)) {
+                PseudoIdHelper.storePseudoId(fhirPatient.getId(), configName, pseudoId);
             }
+
+            Integer[] ageValues = EnterpriseAgeUpdater.calculateAgeValues(id, dateOfBirth, configName);
+            ageYears = ageValues[EnterpriseAgeUpdater.UNIT_YEARS];
+            ageMonths = ageValues[EnterpriseAgeUpdater.UNIT_MONTHS];
+            ageWeeks = ageValues[EnterpriseAgeUpdater.UNIT_WEEKS];
+
+            model.writeUpsertPseudonymised(id,
+                    organizationId,
+                    personId,
+                    patientGenderId,
+                    pseudoId,
+                    ageYears,
+                    ageMonths,
+                    ageWeeks,
+                    dateOfDeath,
+                    postcodePrefix,
+                    householdId,
+                    lsoaCode,
+                    msoaCode,
+                    townsendScore);
+
+        } else {
+
+            nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
+
+            model.writeUpsertIdentifiable(id,
+                    organizationId,
+                    personId,
+                    patientGenderId,
+                    nhsNumber,
+                    dateOfBirth,
+                    dateOfDeath,
+                    postcode,
+                    householdId,
+                    lsoaCode,
+                    msoaCode,
+                    townsendScore);
+
         }
     }
 

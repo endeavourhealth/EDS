@@ -95,7 +95,67 @@ public class EnterpriseIdHelper {
         }
     }
 
-    public static void saveEnterpriseOrganisationId(String odsCode, Long enterpriseId) throws Exception {
+    public static void saveEnterpriseOrganisationId(String serviceId, String systemId, String configName, Long enterpriseId) throws Exception {
+
+        EntityManager entityManager = TransformConnection.getEntityManager();
+
+        try {
+            EnterpriseOrganisationIdMap mapping = findEnterpriseOrganisationMapping(serviceId, systemId, configName, entityManager);
+            if (mapping != null) {
+                throw new Exception("EnterpriseOrganisationIdMap already exists for service " + serviceId + " system " + systemId + " config " + configName);
+            }
+
+            mapping = new EnterpriseOrganisationIdMap();
+            mapping.setServiceId(serviceId);
+            mapping.setSystemId(systemId);
+            mapping.setEnterpriseConfigName(configName);
+            mapping.setEnterpriseId(enterpriseId);
+
+            entityManager.getTransaction().begin();
+            entityManager.persist(mapping);
+            entityManager.getTransaction().commit();
+
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    private static EnterpriseOrganisationIdMap findEnterpriseOrganisationMapping(String serviceId, String systemId, String configName,  EntityManager entityManager) throws Exception {
+
+        String sql = "select c"
+                + " from"
+                + " EnterpriseOrganisationIdMap c"
+                + " where c.serviceId = :serviceId"
+                + " and c.systemId = :systemId"
+                + " and c.enterpriseConfigName = :enterpriseConfigName";
+
+        Query query = entityManager.createQuery(sql, EnterpriseOrganisationIdMap.class)
+                .setParameter("serviceId", serviceId)
+                .setParameter("systemId", systemId)
+                .setParameter("enterpriseConfigName", configName);
+
+        try {
+            EnterpriseOrganisationIdMap result = (EnterpriseOrganisationIdMap)query.getSingleResult();
+            return result;
+
+        } catch (NoResultException ex) {
+            return null;
+        }
+    }
+
+    public static Long findEnterpriseOrganisationId(String serviceId, String systemId, String configName) throws Exception {
+
+        EntityManager entityManager = TransformConnection.getEntityManager();
+        EnterpriseOrganisationIdMap mapping = findEnterpriseOrganisationMapping(serviceId, systemId, configName, entityManager);
+        entityManager.close();
+        if (mapping != null) {
+            return mapping.getEnterpriseId();
+        } else {
+            return null;
+        }
+    }
+
+    /*public static void saveEnterpriseOrganisationId(String odsCode, Long enterpriseId) throws Exception {
 
         EntityManager entityManager = TransformConnection.getEntityManager();
 
@@ -112,25 +172,6 @@ public class EnterpriseIdHelper {
             entityManager.close();
         }
     }
-
-    /*public static void saveEnterpriseOrganisationId(String odsCode, Long enterpriseId) throws Exception {
-
-        EntityManager entityManager = TransformConnection.getEntityManager();
-        EnterpriseOrganisationIdMap mapping = findEnterpriseOrganisationMapping(odsCode, entityManager);
-
-        if (mapping == null) {
-            mapping = new EnterpriseOrganisationIdMap();
-            mapping.setOdsCode(odsCode);
-        }
-
-        mapping.setEnterpriseId(enterpriseId);
-
-        entityManager.getTransaction().begin();
-        entityManager.persist(mapping);
-        entityManager.getTransaction().commit();
-
-        entityManager.close();
-    }*/
 
     private static EnterpriseOrganisationIdMap findEnterpriseOrganisationMapping(String odsCode,  EntityManager entityManager) throws Exception {
 
@@ -161,7 +202,7 @@ public class EnterpriseIdHelper {
         } else {
             return null;
         }
-    }
+    }*/
 
     public static Long findOrCreateEnterprisePersonId(String discoveryPersonId, String enterpriseConfigName) throws Exception {
 

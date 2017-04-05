@@ -158,6 +158,8 @@ public class Main {
         } catch (Exception ex) {
             LOG.error("", ex);
         }
+
+        System.exit(0);
     }
 
     private static void saveMsoaMappings(File msoaMapFile) throws Exception {
@@ -437,9 +439,9 @@ public class Main {
 
             EntityManager entityManager = ReferenceConnection.getEntityManager();
 
-            PostcodeReference postcodeReference = PostcodeHelper.getPostcodeReference(postcode, entityManager);
+            PostcodeLookup postcodeReference = PostcodeHelper.getPostcodeReference(postcode, entityManager);
             if (postcodeReference == null) {
-                postcodeReference = new PostcodeReference();
+                postcodeReference = new PostcodeLookup();
                 postcodeReference.setPostcodeNoSpace(postcodeNoSpace);
             }
 

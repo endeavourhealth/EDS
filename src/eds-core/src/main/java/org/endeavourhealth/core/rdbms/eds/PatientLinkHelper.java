@@ -154,28 +154,52 @@ public class PatientLinkHelper {
         Query query = entityManager.createQuery(sql, PatientLinkHistory.class)
                 .setParameter("timestamp", timestamp);
 
-        List<PatientLinkPair> ret = new ArrayList<>();
-
         List<PatientLinkHistory> links = query.getResultList();
-        for (PatientLinkHistory link: links) {
-            ret.add(new PatientLinkPair(link.getPatientId(), link.getNewPersonId(), link.getPreviousPersonId()));
-        }
 
         entityManager.close();
+
+        //sort the links by date, since we need them for the filtering
+        links.sort((a, b) -> a.getUpdated().compareTo(b.getUpdated()));
+        //TODO - ensure this sorting is correct
+
+        Map<String, List<PatientLinkHistory>> updatesByPatient = new HashMap<>();
+
+        for (PatientLinkHistory link: links) {
+            String patientId = link.getPatientId();
+            List<PatientLinkHistory> list = updatesByPatient.get(patientId);
+            if (list == null) {
+                list = new ArrayList<>();
+                updatesByPatient.put(patientId, list);
+            }
+            list.add(link);
+        }
+
+        List<PatientLinkPair> ret = new ArrayList<>();
 
         //if a patient was matched to different persons MULTIPLE times since the timestamp, our
         //results will have two records, for the patient A->B and B->C. To make it easier for consumers,
         //so they don't have to follow that chain, we sanitise the results, so it shows A->C and B->C
-        Map<String, String> map = new HashMap<>();
-        for (PatientLinkPair pair: ret) {
-            map.put(pair.getPreviousPersonId(), pair.getNewPersonId());
-        }
+        for (String patientId: updatesByPatient.keySet()) {
 
-        for (PatientLinkPair pair: ret) {
-            String newId = pair.getNewPersonId();
-            while (map.containsKey(newId)) {
-                newId = map.get(newId);
-                pair.setNewPersonId(newId);
+            List<PatientLinkHistory> updates = updatesByPatient.get(patientId);
+
+            PatientLinkHistory last = updates.get(updates.size()-1);
+            String latestPersonId = last.getNewPersonId();
+
+            HashSet<String> oldPersonIds = new HashSet<>();
+            for (PatientLinkHistory update: updates) {
+                String oldPersonId = update.getPreviousPersonId(); //note: this may be null
+
+                //sometimes the person ID changes back and forth, so if the old person ID is the same as the latest person ID, then skip it
+                if (oldPersonId != null && oldPersonId.equals(latestPersonId)) {
+                    continue;
+                }
+
+                oldPersonIds.add(oldPersonId);
+            }
+
+            for (String oldPersonId: oldPersonIds) {
+                ret.add(new PatientLinkPair(patientId, latestPersonId, oldPersonId));
             }
         }
 

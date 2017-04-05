@@ -7,8 +7,8 @@ import javax.persistence.Table;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "postcode_reference", schema = "public", catalog = "reference")
-public class PostcodeReference {
+@Table(name = "postcode_lookup", schema = "public", catalog = "reference")
+public class PostcodeLookup {
 
     private String postcodeNoSpace = null;
     private String postcode = null;
@@ -20,7 +20,7 @@ public class PostcodeReference {
     private BigDecimal townsendScore = null;
 
     @Id
-    @Column(name = "postcode_no_space")
+    @Column(name = "postcode_no_space", nullable = false)
     public String getPostcodeNoSpace() {
         return postcodeNoSpace;
     }

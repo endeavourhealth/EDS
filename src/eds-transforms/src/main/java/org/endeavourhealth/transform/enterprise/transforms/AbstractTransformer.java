@@ -5,13 +5,17 @@ import org.apache.jcs.access.exception.CacheException;
 import org.endeavourhealth.common.cache.ParserPool;
 import org.endeavourhealth.common.fhir.ReferenceComponents;
 import org.endeavourhealth.common.fhir.ReferenceHelper;
+import org.endeavourhealth.core.data.ehr.ResourceNotFoundException;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseIdHelper;
+import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.enterprise.FhirToEnterpriseCsvTransformer;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
 import org.hl7.fhir.instance.model.Reference;
 import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.hl7.fhir.instance.model.TemporalPrecisionEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,12 +49,22 @@ public abstract class AbstractTransformer {
 
     public abstract void transform(ResourceByExchangeBatch resource,
                                    OutputContainer data,
+                                   AbstractEnterpriseCsvWriter csvWriter,
                                    Map<String, ResourceByExchangeBatch> otherResources,
                                    Long enterpriseOrganisationId,
                                    Long enterprisePatientId,
                                    Long enterprisePersonId,
                                    String configName) throws Exception;
 
+    public abstract void transform(Long enterpriseId,
+                                   Resource resource,
+                                   OutputContainer data,
+                                   AbstractEnterpriseCsvWriter csvWriter,
+                                   Map<String, ResourceByExchangeBatch> otherResources,
+                                   Long enterpriseOrganisationId,
+                                   Long enterprisePatientId,
+                                   Long enterprisePersonId,
+                                   String configName) throws Exception;
 
     protected static Integer convertDatePrecision(TemporalPrecisionEnum precision) throws Exception {
         return Integer.valueOf(precision.getCalendarConstant());
@@ -91,7 +105,7 @@ public abstract class AbstractTransformer {
         return findOrCreateEnterpriseId(csvWriter, resourceType, resourceId);
     }
 
-    protected static Long findOrCreateEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, String resourceId) throws Exception {
+    public static Long findOrCreateEnterpriseId(AbstractEnterpriseCsvWriter csvWriter, String resourceType, String resourceId) throws Exception {
         String enterpriseTableName = csvWriter.getFileNameWithoutExtension();
         Long ret = checkCacheForId(enterpriseTableName, resourceType, resourceId);
         if (ret == null) {
@@ -113,8 +127,11 @@ public abstract class AbstractTransformer {
     }
 
     public static Resource deserialiseResouce(ResourceByExchangeBatch resourceByExchangeBatch) throws Exception {
-
         String json = resourceByExchangeBatch.getResourceData();
+        return deserialiseResouce(json);
+    }
+
+    public static Resource deserialiseResouce(String json) throws Exception {
         try {
             return PARSER_POOL.parse(json);
 
@@ -127,11 +144,11 @@ public abstract class AbstractTransformer {
     }
 
     protected static Resource findResource(Reference reference,
-                                           Map<String, ResourceByExchangeBatch> hsAllResources) throws Exception {
+                                           Map<String, ResourceByExchangeBatch> hmAllResources) throws Exception {
         String referenceStr = reference.getReference();
 
         //look in our resources map first
-        ResourceByExchangeBatch ret = hsAllResources.get(referenceStr);
+        ResourceByExchangeBatch ret = hmAllResources.get(referenceStr);
         if (ret != null) {
             if (ret.getIsDeleted()) {
                 return null;
@@ -146,7 +163,7 @@ public abstract class AbstractTransformer {
         }
     }
 
-    protected static Long mapId(ResourceByExchangeBatch resource, AbstractEnterpriseCsvWriter csvWriter) throws Exception {
+    protected static Long mapId(ResourceByExchangeBatch resource, AbstractEnterpriseCsvWriter csvWriter, boolean createIfNotFound) throws Exception {
 
         if (resource.getIsDeleted()) {
             //if it's a delete, then don't bother creating a new Enterprise ID if we've never previously sent it
@@ -154,7 +171,13 @@ public abstract class AbstractTransformer {
             return findEnterpriseId(csvWriter, resource);
 
         } else {
-            return findOrCreateEnterpriseId(csvWriter, resource);
+
+            if (createIfNotFound) {
+                return findOrCreateEnterpriseId(csvWriter, resource);
+
+            } else {
+                return findEnterpriseId(csvWriter, resource);
+            }
         }
     }
 
@@ -178,4 +201,37 @@ public abstract class AbstractTransformer {
         }
         return ai.incrementAndGet();
     }*/
+
+
+    protected Long transformOnDemand(Reference reference,
+                                     OutputContainer data,
+                                     Map<String, ResourceByExchangeBatch> hmAllResources,
+                                     Long enterpriseOrganisationId,
+                                     Long enterprisePatientId,
+                                     Long enterprisePersonId,
+                                     String configName) throws Exception {
+        Resource fhir = null;
+        try {
+            fhir = findResource(reference, hmAllResources);
+        } catch (ResourceNotFoundException ex) {
+            //we have some data that refers to non-existant resources, so if we get that, log it
+            LOG.warn("No resource found for reference " + reference.getReference());
+        }
+
+        if (fhir == null) {
+            return null;
+        }
+
+        ResourceType resourceType = fhir.getResourceType();
+        AbstractTransformer transformer = FhirToEnterpriseCsvTransformer.createTransformerForResourceType(resourceType);
+        if (transformer == null) {
+            throw new TransformException("No transformer found for resource " + reference.getReference());
+        }
+
+        AbstractEnterpriseCsvWriter csvWriter = FhirToEnterpriseCsvTransformer.findCsvWriterForResourceType(resourceType, data);
+        Long enterpriseId = findOrCreateEnterpriseId(csvWriter, resourceType.toString(), fhir.getId());
+        transformer.transform(enterpriseId, fhir, data, csvWriter, hmAllResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
+
+        return enterpriseId;
+    }
 }
