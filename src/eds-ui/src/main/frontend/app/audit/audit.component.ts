@@ -1,12 +1,12 @@
 import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-import {LoggerService} from "../common/logger.service";
 import {OrganisationService} from "../organisations/organisation.service";
 import {AuditService} from "./audit.service";
 import {User} from "../users/models/User";
 import {Organisation} from "../organisations/models/Organisation";
 import {AuditEvent} from "./models/AuditEvent";
 import {AuditEventDialog} from "./auditEvent.dialog";
+import {LoggerService} from "eds-common-js";
 
 @Component({
 	template : require('./audit.html')

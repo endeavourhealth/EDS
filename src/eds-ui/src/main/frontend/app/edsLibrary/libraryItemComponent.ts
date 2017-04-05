@@ -1,11 +1,9 @@
-import {AdminService} from "../administration/admin.service";
-import {LoggerService} from "../common/logger.service";
-import {LibraryItem} from "./models/LibraryItem";
-import {LibraryService} from "./library.service";
+import {AdminService, LibraryService, LoggerService} from "eds-common-js";
 import {Transition, StateService} from "ui-router-ng2";
+import {EdsLibraryItem} from "./models/EdsLibraryItem";
 
 export class LibraryItemComponent {
-	protected libraryItem : LibraryItem = <LibraryItem>{};
+	protected libraryItem : EdsLibraryItem = <EdsLibraryItem>{};
 
 	constructor(
 		protected libraryService : LibraryService,
@@ -34,12 +32,12 @@ export class LibraryItemComponent {
 			name : '',
 			description : '',
 			folderUuid : folderUuid,
-		} as LibraryItem;
+		} as EdsLibraryItem;
 	}
 
 	load(uuid : string) {
 		var vm = this;
-		vm.libraryService.getLibraryItem(uuid)
+		vm.libraryService.getLibraryItem<EdsLibraryItem>(uuid)
 			.subscribe(
 				(libraryItem) => vm.libraryItem = libraryItem,
 				(error) => vm.log.error('Error loading', error, 'Error')

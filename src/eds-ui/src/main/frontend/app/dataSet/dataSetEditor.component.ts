@@ -2,22 +2,20 @@ import {Composition} from "./models/Composition";
 import {Section} from "./models/Section";
 import {Resource} from "./models/Resource";
 import {EntityMap} from "./models/EntityMap";
-import {LibraryService} from "../library/library.service";
-import {LoggerService} from "../common/logger.service";
-import {AdminService} from "../administration/admin.service";
+import {AdminService, LibraryService, LoggerService} from "eds-common-js";
 import {Test} from "../tests/models/Test";
 import {TestEditDialog} from "../tests/testEditor.dialog";
 import {Component} from "@angular/core";
 import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-import {LibraryItem} from "../library/models/LibraryItem";
 import {DataSetService} from "./dataSet.service";
+import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 
 @Component({
 	template : require('./dataSetEditor.html')
 })
 export class DataSetEditComponent {
-	libraryItem : LibraryItem;
+	libraryItem : EdsLibraryItem;
 	selectedComposition: Composition;
 	selectedSection: Section;
 	selectedResource: Resource;
@@ -186,14 +184,14 @@ export class DataSetEditComponent {
 			dataSet: {
 				composition: []
 			}
-		} as LibraryItem;
+		} as EdsLibraryItem;
 	}
 
 
 	load(uuid : string) {
 		var vm = this;
 		this.create(null);
-		vm.libraryService.getLibraryItem(uuid)
+		vm.libraryService.getLibraryItem<EdsLibraryItem>(uuid)
 			.subscribe(
 				(libraryItem) => vm.libraryItem = libraryItem,
 				(data) => vm.logger.error('Error loading', data, 'Error')

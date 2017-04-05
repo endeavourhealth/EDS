@@ -1,9 +1,8 @@
 import {Component, Input} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-import {AdminService} from "../administration/admin.service";
 import {StateService} from "ui-router-ng2";
 import {DataSharingSummary} from "./models/DataSharingSummary";
-import {LoggerService} from "../common/logger.service";
+import {AdminService, LoggerService} from "eds-common-js";
 import {DataSharingSummaryService} from "./dataSharingSummary.service";
 import {Region} from "../region/models/Region";
 import {OrganisationManagerStatistics} from "../organisationManager/models/OrganisationManagerStatistics";

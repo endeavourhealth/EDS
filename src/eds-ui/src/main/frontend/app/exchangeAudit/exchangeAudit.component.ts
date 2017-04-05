@@ -2,17 +2,7 @@ import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService, Transition} from "ui-router-ng2";
 import {Service} from "../services/models/Service";
-import {Organisation} from "../organisations/models/Organisation";
-import {System} from "../system/models/System";
-import {TechnicalInterface} from "../system/models/TechnicalInterface";
-import {AdminService} from "../administration/admin.service";
-import {OrganisationPickerDialog} from "../organisations/organisationPicker.dialog";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
-import {LoggerService} from "../common/logger.service";
-import {SystemService} from "../system/system.service";
-
-import {ExchangeAuditTransformErrorSummary} from "./ExchangeAuditTransformErrorSummary";
-import {ExchangeAuditTransformErrorDetail} from "./ExchangeAuditTransformErrorDetail";
+import {LoggerService} from "eds-common-js";
 import {ExchangeAuditService} from "./exchangeAudit.service";
 import {Exchange} from "./Exchange";
 import {ServiceService} from "../services/service.service";

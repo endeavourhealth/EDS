@@ -4,12 +4,9 @@ import {DataSet} from "../../dataSet/models/Dataset";
 import {CodeSet} from "../../tests/models/CodeSet";
 import {Query} from "../../query/models/Query";
 import {CountReport} from "../../countReport/models/CountReport";
+import {LibraryItem} from "eds-common-js/dist/library/models/LibraryItem";
 
-export class LibraryItem {
-	uuid:string;
-	name:string;
-	description:string;
-	folderUuid:string;
+export class EdsLibraryItem  extends LibraryItem {
 	query:Query;
 	// resource:Resource;
 	// test:Test;

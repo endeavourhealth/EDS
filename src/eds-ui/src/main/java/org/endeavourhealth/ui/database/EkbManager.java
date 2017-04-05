@@ -9,7 +9,7 @@ import java.util.List;
 
 public class EkbManager {
     public static List<ConceptEntity> search(String term, int maxResultsSize, int start) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = CodingDb.INSTANCE.getEntityManager();
 
         String sql = "select c" +
                     " from " +
@@ -32,7 +32,7 @@ public class EkbManager {
     }
 
     public static ConceptEntity getConcept(String code) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = CodingDb.INSTANCE.getEntityManager();
 
         String sql = "select c" +
             " from " +
@@ -54,7 +54,7 @@ public class EkbManager {
     }
 
     public static List<ConceptEntity> getChildren(String code) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = CodingDb.INSTANCE.getEntityManager();
 
         String sql = "select r" +
             " from ConceptEntity c" +
@@ -75,7 +75,7 @@ public class EkbManager {
 
 
     public static List<ConceptEntity> getParents(String code) throws Exception {
-        EntityManager entityManager = PersistenceManager.INSTANCE.getEntityManager();
+        EntityManager entityManager = CodingDb.INSTANCE.getEntityManager();
 
         String sql = "select r" +
             " from ConceptEntity c" +

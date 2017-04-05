@@ -1,4 +1,4 @@
-import {BaseHttp2Service} from "../core/baseHttp2.service";
+import {BaseHttp2Service} from "eds-common-js";
 import {Http, URLSearchParams} from "@angular/http";
 import {Observable} from "rxjs";
 import {Injectable} from "@angular/core";

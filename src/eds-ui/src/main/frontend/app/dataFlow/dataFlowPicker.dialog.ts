@@ -1,8 +1,8 @@
 import {Component, Input} from "@angular/core";
 import {DataFlow} from "./models/DataFlow";
 import {DataFlowService} from "./dataFlow.service";
-import {LoggerService} from "../common/logger.service";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
+import {LoggerService} from "eds-common-js";
 
 @Component({
     selector: 'ngbd-modal-content',

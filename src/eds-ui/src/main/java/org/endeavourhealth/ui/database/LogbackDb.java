@@ -12,9 +12,9 @@ import javax.persistence.Persistence;
 import java.util.HashMap;
 import java.util.Map;
 
-public enum PersistenceManager {
+public enum LogbackDb {
     INSTANCE;
-    private static final Logger LOG = LoggerFactory.getLogger(PersistenceManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LogbackDb.class);
 
     private EntityManagerFactory emFactory;
 

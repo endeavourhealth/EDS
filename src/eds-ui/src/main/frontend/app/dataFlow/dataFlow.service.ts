@@ -1,7 +1,7 @@
 import {Injectable} from "@angular/core";
 import {URLSearchParams, Http} from "@angular/http";
 import {Observable} from "rxjs";
-import {BaseHttp2Service} from "../core/baseHttp2.service";
+import {BaseHttp2Service} from "eds-common-js";
 import {DataFlow} from "./models/DataFlow";
 import {Dpa} from "../dpa/models/Dpa";
 import {Dsa} from "../dsa/models/Dsa";

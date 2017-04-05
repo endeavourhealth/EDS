@@ -1,7 +1,5 @@
 import {Component} from "@angular/core";
-import {AdminService} from "../administration/admin.service";
 import {DataFlowService} from "./dataFlow.service";
-import {LoggerService} from "../common/logger.service";
 import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {DataFlow} from "./models/DataFlow";
@@ -9,6 +7,7 @@ import {DsaPickerDialog} from "../dsa/dsaPicker.dialog";
 import {DpaPickerDialog} from "../dpa/dpaPicker.dialog";
 import {Dsa} from "../dsa/models/Dsa";
 import {Dpa} from "../dpa/models/Dpa";
+import {AdminService, LoggerService} from "eds-common-js";
 
 @Component({
     template: require('./dataFlowEditor.html')

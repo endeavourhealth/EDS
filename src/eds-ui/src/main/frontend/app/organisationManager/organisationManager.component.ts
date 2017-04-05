@@ -2,11 +2,8 @@ import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService, Transition} from "ui-router-ng2";
 import {Organisation} from "./models/Organisation";
-import {LoggerService} from "../common/logger.service";
+import {LoggerService, MessageBoxDialog} from "eds-common-js";
 import {OrganisationManagerService} from "./organisationManager.service";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
-
-import * as _ from 'underscore';
 import { PaginationService } from '../pagination/pagination.service';
 
 @Component({

@@ -1,13 +1,11 @@
 import {Component} from "@angular/core";
-import {Organisation} from "../organisationManager/models/Organisation";
-import {AdminService} from "../administration/admin.service";
 import {CohortService} from "./cohort.service";
-import {LoggerService} from "../common/logger.service";
 import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Cohort} from "./models/Cohort";
 import {DpaPickerDialog} from "../dpa/dpaPicker.dialog";
 import {Dpa} from "../dpa/models/Dpa";
+import {AdminService, LoggerService} from "eds-common-js";
 
 @Component({
     template: require('./cohortEditor.html')

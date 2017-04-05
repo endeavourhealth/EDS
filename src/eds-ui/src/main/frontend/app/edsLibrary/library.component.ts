@@ -1,14 +1,12 @@
 import {Component} from "@angular/core";
 import {StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-import {LibraryService} from "./library.service";
-import {LoggerService} from "../common/logger.service";
-import {ModuleStateService} from "../common/moduleState.service";
-import {ItemType} from "./models/ItemType";
-import {FolderItem} from "./models/FolderContent";
-import {LibraryItem} from "./models/LibraryItem";
-import {FolderNode} from "../folder/models/FolderNode";
-import {ItemSummaryList} from "./models/ItemSummaryList";
+import {LibraryService, LoggerService, ModuleStateService} from "eds-common-js";
+import {FolderNode} from "eds-common-js/dist/folder/models/FolderNode";
+import {ItemSummaryList} from "eds-common-js/dist/library/models/ItemSummaryList";
+import {ItemType} from "eds-common-js/dist/folder/models/ItemType";
+import {FolderItem} from "eds-common-js/dist/folder/models/FolderContent";
+import {LibraryItem} from "eds-common-js/dist/library/models/LibraryItem";
 
 @Component({
 	template : require('./library.html')

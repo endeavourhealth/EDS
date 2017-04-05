@@ -3,10 +3,7 @@ import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService} from "ui-router-ng2";
 import {Service} from "./models/Service";
 import {ServiceService} from "./service.service";
-import {LoggerService} from "../common/logger.service";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
-import {services} from "ui-router-ng2/ng2";
-/*import {Observable} from 'rxjs/Rx';*/
+import {LoggerService, MessageBoxDialog} from "eds-common-js";
 import {Observable} from "rxjs";
 
 @Component({

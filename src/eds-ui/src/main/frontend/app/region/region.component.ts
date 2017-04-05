@@ -2,9 +2,8 @@ import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService} from "ui-router-ng2";
 import {Organisation} from "../organisationManager/models/Organisation";
-import {LoggerService} from "../common/logger.service";
+import {LoggerService, MessageBoxDialog} from "eds-common-js";
 import {RegionService} from "./region.service";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
 import {Region} from "../region/models/Region";
 
 @Component({

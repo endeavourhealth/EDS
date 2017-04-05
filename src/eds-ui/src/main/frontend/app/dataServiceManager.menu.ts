@@ -1,8 +1,12 @@
 import {Injectable} from "@angular/core";
-import {MenuOption} from "./models/MenuOption";
+import {MenuService} from "eds-common-js";
+import {MenuOption} from "eds-common-js/dist/layout/models/MenuOption";
 
 @Injectable()
-export class LayoutService {
+export class DataServiceManagerMenuService implements  MenuService {
+	getApplicationTitle(): string {
+		return 'Data Service Manager';
+	}
 	getMenuOptions():MenuOption[] {
 		return [
 			{caption: 'Dashboard', state: 'app.dashboard', icon: 'fa fa-tachometer'},

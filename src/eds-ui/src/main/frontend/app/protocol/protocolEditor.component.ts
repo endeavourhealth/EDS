@@ -2,32 +2,29 @@ import {Protocol} from "./models/Protocol";
 import {ServiceContract} from "./models/ServiceContract";
 import {Service} from "../services/models/Service";
 import {System} from "../system/models/System";
-import {Cohort} from "./models/Cohort";
-import {LibraryItem} from "../library/models/LibraryItem";
 import {TechnicalInterface} from "../system/models/TechnicalInterface";
-import {LibraryService} from "../library/library.service";
 import {DataSet} from "../dataSet/models/Dataset";
 import {ServiceService} from "../services/service.service";
-import {LoggerService} from "../common/logger.service";
-import {AdminService} from "../administration/admin.service";
+import {AdminService, LibraryService, LoggerService} from "eds-common-js";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Transition, StateService} from "ui-router-ng2";
 import {Component} from "@angular/core";
 import {SystemService} from "../system/system.service";
 import {DataSetService} from "../dataSet/dataSet.service";
 import {ProtocolService} from "./protocol.service";
+import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 
 @Component({
 	template : require('./protocolEditor.html')
 })
 export class ProtocolEditComponent {
-	libraryItem : LibraryItem;
+	libraryItem : EdsLibraryItem;
 	protected protocol : Protocol;
 	selectedContract : ServiceContract;
 	services : Service[];
 	systems : System[];
 	dataSets : DataSet[];
-	protocols : LibraryItem[];
+	protocols : EdsLibraryItem[];
 	technicalInterfaces : TechnicalInterface[];
 
 	//hard-code two cohort strings until the cohort editor is implemented
@@ -50,7 +47,7 @@ export class ProtocolEditComponent {
 		protected state : StateService,
 		protected transition : Transition) {
 
-		this.libraryItem = <LibraryItem>{
+		this.libraryItem = <EdsLibraryItem>{
 			protocol: {}
 		};
 
@@ -81,7 +78,7 @@ export class ProtocolEditComponent {
 
 	load(uuid : string) {
 		var vm = this;
-		vm.libraryService.getLibraryItem(uuid)
+		vm.libraryService.getLibraryItem<EdsLibraryItem>(uuid)
 			.subscribe(
 				(libraryItem) => vm.libraryItem = libraryItem,
 				(data) => vm.logger.error('Error loading', data, 'Error')
@@ -124,7 +121,7 @@ export class ProtocolEditComponent {
 			description: '',
 			folderUuid: folderUuid,
 			protocol: this.protocol
-		} as LibraryItem;
+		} as EdsLibraryItem;
 
 	}
 

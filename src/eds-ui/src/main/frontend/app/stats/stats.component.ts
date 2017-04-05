@@ -2,7 +2,7 @@ import {ServicePickerDialog} from "../services/servicePicker.dialog";
 import {Service} from "../services/models/Service";
 import {StorageStatistics} from "./StorageStatistics";
 import {StatsService} from "./stats.service";
-import {LoggerService} from "../common/logger.service";
+import {LoggerService} from "eds-common-js";
 import {ServiceService} from "../services/service.service";
 import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";

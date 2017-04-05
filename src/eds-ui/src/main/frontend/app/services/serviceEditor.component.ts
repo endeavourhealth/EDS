@@ -6,11 +6,9 @@ import {Organisation} from "../organisations/models/Organisation";
 import {System} from "../system/models/System";
 import {TechnicalInterface} from "../system/models/TechnicalInterface";
 import {Endpoint} from "./models/Endpoint";
-import {AdminService} from "../administration/admin.service";
 import {ServiceService} from "./service.service";
 import {OrganisationPickerDialog} from "../organisations/organisationPicker.dialog";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
-import {LoggerService} from "../common/logger.service";
+import {AdminService, LoggerService, MessageBoxDialog} from "eds-common-js";
 import {SystemService} from "../system/system.service";
 
 @Component({

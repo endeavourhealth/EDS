@@ -1,10 +1,9 @@
 import {Component} from "@angular/core";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {StateService} from "ui-router-ng2";
-import {LoggerService} from "../common/logger.service";
 import {CohortService} from "./cohort.service";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
 import {Cohort} from "./models/Cohort";
+import {LoggerService, MessageBoxDialog} from "eds-common-js";
 
 @Component({
     template: require('./cohort.html')

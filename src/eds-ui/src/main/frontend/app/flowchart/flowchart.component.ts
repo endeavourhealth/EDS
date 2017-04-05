@@ -1,7 +1,7 @@
 import {flowchart} from "./flowchart.viewmodel";
-import {SvgElement} from "../common/svg.helper";
 import {Component, Input, Output, EventEmitter} from "@angular/core";
 import {DraggingService} from "../mouseCapture/dragging.service";
+import {SvgElement} from "eds-common-js";
 
 @Component({
 	selector : 'flow-chart',

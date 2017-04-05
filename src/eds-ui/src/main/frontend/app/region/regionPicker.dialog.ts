@@ -1,7 +1,7 @@
 import {Component, Input} from "@angular/core";
 import {Region} from "./models/Region";
 import {RegionService} from "./region.service";
-import {LoggerService} from "../common/logger.service";
+import {LoggerService} from "eds-common-js";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 
 @Component({

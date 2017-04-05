@@ -1,10 +1,12 @@
+// Styling
+import "../content/css/index.css";
+import "../content/less/index.less";
 // Core
 import {NgModule} from "@angular/core";
-import {Application} from "./application";
 // Modules
 import {FlowchartModule} from "./flowchart/flowchart.module";
 import {DashboardModule} from "./dashboard/dashboard.module";
-import {LibraryModule} from "./library/library.module";
+import {EdsLibraryModule} from "./edsLibrary/library.module";
 import {OrganisationsModule} from "./organisations/organisations.module";
 import {ServicesModule} from "./services/services.module";
 import {QueueingModule} from "./queueing/queueing.module";
@@ -12,7 +14,6 @@ import {LoggingModule} from "./logging/logging.module";
 import {TransformErrorsModule} from "./transformErrors/transformErrors.module";
 import {StatsModule} from "./stats/stats.module";
 import {AuditModule} from "./audit/audit.module";
-import {AdminModule} from "./administration/admin.module";
 import {UserModule} from "./users/user.module";
 import {SystemModule} from "./system/system.module";
 import {QueryModule} from "./query/query.module";
@@ -40,7 +41,7 @@ import {AuditComponent} from "./audit/audit.component";
 import {LoggingComponent} from "./logging/logging.component";
 import {QueueingListComponent} from "./queueing/queueingList.component";
 import {StatsComponent} from "./stats/stats.component";
-import {LibraryComponent} from "./library/library.component";
+import {LibraryComponent} from "./edsLibrary/library.component";
 import {SystemEditComponent} from "./system/systemEditor.component";
 import {QueryEditComponent} from "./query/queryEditor.component";
 import {ProtocolEditComponent} from "./protocol/protocolEditor.component";
@@ -65,6 +66,8 @@ import {DpaEditorComponent} from "./dpa/dpaEditor.component";
 import {DataSharingSummaryOverviewComponent} from "./dataSharingSummary/dataSharingSummaryOverview.component";
 import {DataSharingSummaryComponent} from "./dataSharingSummary/dataSharingSummary.component";
 import {DataSharingSummaryEditorComponent} from "./dataSharingSummary/dataSharingSummaryEditor.component";
+import {Application, AdminModule} from "eds-common-js";
+import {DataServiceManagerMenuService} from "./dataServiceManager.menu";
 
 @NgModule(
 	Application.Define({
@@ -72,7 +75,7 @@ import {DataSharingSummaryEditorComponent} from "./dataSharingSummary/dataSharin
 			FlowchartModule,
 
 			DashboardModule,
-			LibraryModule,
+			EdsLibraryModule,
 			OrganisationsModule,
 			ServicesModule,
 			QueueingModule,
@@ -135,7 +138,8 @@ import {DataSharingSummaryEditorComponent} from "./dataSharingSummary/dataSharin
 			{name: 'app.dataSharingSummary', url: '/dataSharingSummary', component: DataSharingSummaryComponent},
 			{name: 'app.dataSharingSummaryEditor', url: '/dataSharingSummary/:itemAction/:itemUuid', component: DataSharingSummaryEditorComponent}
 		],
-		defaultState : { state: 'app.dashboard', params: {} }
+		defaultState : { state: 'app.dashboard', params: {} },
+		menuManager : DataServiceManagerMenuService
 	})
 )
 export class AppModule {}

@@ -1,7 +1,7 @@
 import {Component, Input} from "@angular/core";
 import {Dsa} from "./models/Dsa";
 import {DsaService} from "./dsa.service";
-import {LoggerService} from "../common/logger.service";
+import {LoggerService} from "eds-common-js";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 
 @Component({

@@ -1,7 +1,6 @@
 import {Component} from "@angular/core";
-import {AdminService} from "../administration/admin.service";
 import {DpaService} from "./dpa.service";
-import {LoggerService} from "../common/logger.service";
+import {AdminService, LoggerService} from "eds-common-js";
 import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
 import {Dpa} from "./models/Dpa";

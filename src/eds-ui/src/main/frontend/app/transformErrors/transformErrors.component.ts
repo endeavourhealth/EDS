@@ -1,6 +1,6 @@
 import {TransformErrorSummary} from "./../exchangeAudit/TransformErrorSummary";
 import {TransformErrorDetail} from "./../exchangeAudit/TransformErrorDetail";
-import {LoggerService} from "../common/logger.service";
+import {LoggerService} from "eds-common-js";
 import {StateService} from "ui-router-ng2";
 import {Component} from "@angular/core";
 import {ExchangeAuditService} from "../exchangeAudit/exchangeAudit.service";

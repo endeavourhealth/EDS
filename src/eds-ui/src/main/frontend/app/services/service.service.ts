@@ -3,7 +3,7 @@ import {Observable} from "rxjs";
 import {Service} from "./models/Service";
 import {Organisation} from "../organisations/models/Organisation";
 import {System} from "../system/models/System";
-import {BaseHttp2Service} from "../core/baseHttp2.service";
+import {BaseHttp2Service} from "eds-common-js";
 import {Http, URLSearchParams} from "@angular/http";
 
 @Injectable()

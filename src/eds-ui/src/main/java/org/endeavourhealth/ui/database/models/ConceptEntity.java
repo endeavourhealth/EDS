@@ -3,20 +3,20 @@ package org.endeavourhealth.ui.database.models;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "trm_concept", schema = "\"public\"", catalog = "logback")
+@Table(name = "trm_concept", schema = "\"public\"", catalog = "coding")
 public class ConceptEntity {
-    private int pid;
+    private long pid;
     private String code;
-    private int codesystem_pid;
+    private long codesystem_pid;
     private String display;
-    private int index_status;
+    private long index_status;
 
     @Id
     @Column(name = "pid")
-    public int getPid() {
+    public long getPid() {
         return pid;
     }
-    public void setPid(int pid) {
+    public void setPid(long pid) {
         this.pid = pid;
     }
 
@@ -31,10 +31,10 @@ public class ConceptEntity {
 
     @Basic
     @Column(name = "codesystem_pid")
-    public int getCodesystem_pid() {
+    public long getCodesystem_pid() {
         return codesystem_pid;
     }
-    public void setCodesystem_pid(int codesystem_pid) {
+    public void setCodesystem_pid(long codesystem_pid) {
         this.codesystem_pid = codesystem_pid;
     }
 
@@ -49,10 +49,10 @@ public class ConceptEntity {
 
     @Basic
     @Column(name = "index_status")
-    public int getIndex_status() {
+    public long getIndex_status() {
         return index_status;
     }
-    public void setIndex_status(int index_status) {
+    public void setIndex_status(long index_status) {
         this.index_status = index_status;
     }
 
@@ -76,9 +76,9 @@ public class ConceptEntity {
     public int hashCode() {
         int result = (int) (pid ^ (pid >>> 32));
         result = 31 * result + (code != null ? code.hashCode() : 0);
-        result = 31 * result + (codesystem_pid ^ (codesystem_pid >>> 32));
+        result = (int) (31 * result + (codesystem_pid ^ (codesystem_pid >>> 32)));
         result = 31 * result + (display != null ? display.hashCode() : 0);
-        result = 31 * result + (index_status ^ (index_status >>> 32));
+        result = (int) (31 * result + (index_status ^ (index_status >>> 32)));
         return result;
     }
 }
