@@ -54,10 +54,9 @@ export class UserManagerUserViewComponent {
 		vm.userService.saveUser(editedUser, true)
 			.subscribe(
 				(response) => {
-					this.selectedUser = editedUser;
-					this.getUserRoles(editedUser);
-					var msg = 'User edited';
-					vm.log.info(msg);
+					this.selectedUser = response;
+					this.getUserRoles(response);
+					vm.log.success('User saved', response, 'Edit user');
 				},
 				(error) => vm.log.error('Error saving user', error, 'Error')
 			);

@@ -24,7 +24,7 @@ export class RoleManagerComponent {
 
 	editRole(role:UserRole) {
 		var vm = this;
-		RoleEditorDialog.open(vm.$modal, role, true)
+		RoleEditorDialog.open(vm.$modal, role, true, vm.roleList)
 			.result.then(
 			(editedUser) => vm.saveRole(role, editedUser),
 			() => vm.log.info('Role edit cancelled')
@@ -33,7 +33,7 @@ export class RoleManagerComponent {
 
 	addRole() {
 		var vm = this;
-		RoleEditorDialog.open(vm.$modal, null, false)
+		RoleEditorDialog.open(vm.$modal, null, false, vm.roleList)
             .result.then(
 			(editedRole) => vm.saveRole(null, editedRole),
 			() => vm.log.info('Role add cancelled')
@@ -42,12 +42,14 @@ export class RoleManagerComponent {
 
 	private saveRole(role, editedRole : UserRole) {
 		var vm = this;
-		vm.userService.saveRole(editedRole)
+		var editMode = (role != null);
+		vm.userService.saveRole(editedRole, editMode)
 			.subscribe(
 				(response) => {
 					this.getRealmRoles();
 					this.selectedRole = editedRole;
-					vm.log.success('Role saved', editedRole, 'Edit role');
+					var msg = (!editMode) ? 'Add role' : 'Edit role';
+					vm.log.success('Role saved', editedRole, msg);
 				},
 				(error) => vm.log.error('Error saving role', error, 'Error')
 			);
@@ -93,5 +95,7 @@ export class RoleManagerComponent {
 	setSelectedRole(role) {
 		this.selectedRole = role;
 	}
+
+
 }
 

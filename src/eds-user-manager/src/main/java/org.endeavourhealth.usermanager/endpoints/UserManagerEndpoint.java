@@ -498,7 +498,7 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 			roles.add(role);
 		}
 
-		//If adding, just add the roles, else, delete existing roles and then add the new roles (edit)
+		//If adding a new user, just add the roles, else, delete existing roles and then add the new roles (edit)
 		if(!editModeb){
 			//Save the roles to the user (add)
 			keycloakClient.realms().users().addRealmRole(userId, roles);
@@ -528,47 +528,66 @@ public final class UserManagerEndpoint extends AbstractEndpoint {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Path("/users/roles/save")
 	@RequiresAdmin
-	public Response saveRole(@Context SecurityContext sc, JsonEndUserRole userRole) throws Exception {
+	public Response saveRole(@Context SecurityContext sc, JsonEndUserRole userRole, @QueryParam("editMode") String editMode) throws Exception {
 		super.setLogbackMarkers(sc);
 
 		userAuditRepository.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
 				"Roles", "Role", userRole);
 
+		boolean editModeb = editMode.equalsIgnoreCase("1") ? true:false;
+
 		//Create the top level realm role
 		RoleRepresentation roleRep = new RoleRepresentation();
-		//Strip out spaces and replace with underscore to prevent composite crashes when using rolename as key!
-		roleRep.setName(userRole.getName().replaceAll(" ","_").trim());
+		roleRep.setName(userRole.getName().trim());
 		roleRep.setDescription(userRole.getDescription());
 		roleRep.setComposite(true);
 
 		//Create the keycloak admin client and file the realm role
 		KeycloakAdminClient keycloakClient = new KeycloakAdminClient();
-		roleRep = keycloakClient.realms().roles().postRealmRole(roleRep);
+
+		String roleId = "";
+		if (!editModeb) {
+			roleRep = keycloakClient.realms().roles().postRealmRole(roleRep);
+			roleId = roleRep.getId();
+			userRole.setUuid(UUID.fromString(roleId));
+		} else {
+			roleId = userRole.getUuid().toString();
+			roleRep.setId(roleId);
+			roleRep = keycloakClient.realms().roles().putRealmRole(roleRep);
+		}
 
 		//This is the new Id - file against organisation
-		String roleId = roleRep.getId();
+		//String roleId = roleRep.getId();
 		//TODO: File RoleId against OrganisationId: userRole.getOrganisation();
-
-		//This is the newly created role name, should be same as what was passed in!
-		String roleName = roleRep.getName();
 
 		//Get all the linked role composites
 		List<RoleRepresentation> clientRoles = new ArrayList<>();
-
 		for (JsonEndUserRole jsonEndUserRole: userRole.getClientRoles()) {
 			RoleRepresentation clientRole = new RoleRepresentation(jsonEndUserRole.getName(), jsonEndUserRole.getDescription(),false);
 			clientRole.setId(jsonEndUserRole.getUuid().toString());
 			clientRoles.add(clientRole);
 		}
 
-		//Save the role composites to the new role
-		keycloakClient.realms().roles().composites().postComposite(roleName, clientRoles);
+		//This is the newly created role name, should be same as what was passed in!
+		String roleName = roleRep.getName();
+
+		//If adding a new role, just add the role composites, else, delete existing role composites and then add the new role composites (edit)
+		if(!editModeb){
+			//Save the roles to the user (add)
+			keycloakClient.realms().roles().composites().postComposite(roleName, clientRoles);
+		} else {
+			//Delete the existing roles from the edited user
+			List<RoleRepresentation> existingRoleComposites = keycloakGetRoleComposites(roleName);
+			keycloakClient.realms().roles().composites().deleteComposite(roleName, existingRoleComposites);
+			//Save the new role composites to the role
+			keycloakClient.realms().roles().composites().postComposite(roleName, clientRoles);
+		}
 
 		clearLogbackMarkers();
 
 		return Response
 				.ok()
-				.entity(roleRep)
+				.entity(userRole)
 				.build();
 	}
 
