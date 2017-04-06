@@ -18,14 +18,14 @@ import {UserManagerUserViewComponent} from "./users/userManagerUserView.componen
 			UserModule
 		],
 		states: [
-			//For v1, only enable the User View and User Editor components
-			//{name: 'app.userManager', url: '/users/userManager', component: UserManagerComponent},
+			//For v1, only enable the User View and User Editor components - consider settable for superuser
+			{name: 'app.userManager', url: '/users/userManager', component: UserManagerComponent},
 			{name: 'app.userManagerViewUser', url: '/users/userManagerUserView', component: UserManagerUserViewComponent},
 			{name: 'app.userEditor', url: '/users/userEditor', component: UserEditorDialog},
-			//{name: 'app.roleManager', url: '/users/roleManager', component: RoleManagerComponent},
-			//{name: 'app.roleEditor', url: '/users/roleEditor', component: RoleEditorDialog},
+			{name: 'app.roleManager', url: '/users/roleManager', component: RoleManagerComponent},
+			{name: 'app.roleEditor', url: '/users/roleEditor', component: RoleEditorDialog},
 		],
-		defaultState : { state: 'app.userManagerUserView', params: {} }
+		defaultState : { state: 'app.userManager', params: {} }
 	})
 )
 export class AppModule {}
