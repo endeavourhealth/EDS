@@ -6,8 +6,6 @@ module.exports = {
 	entry: {
 		// Components
 		'pipes' : './app/pipes/pipes.module.ts',
-		'flowchart' : './app/flowchart/flowchart.module.ts',
-		'mouseCapture' : './app/mouseCapture/mouseCapture.module.ts',
 
 		// Dialogs
 		'codeSet' : './app/codeSet/codeSet.module.ts',

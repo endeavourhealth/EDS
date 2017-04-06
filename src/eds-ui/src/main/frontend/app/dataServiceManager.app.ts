@@ -4,7 +4,6 @@ import "../content/less/index.less";
 // Core
 import {NgModule} from "@angular/core";
 // Modules
-import {FlowchartModule} from "./flowchart/flowchart.module";
 import {DashboardModule} from "./dashboard/dashboard.module";
 import {EdsLibraryModule} from "./edsLibrary/library.module";
 import {OrganisationsModule} from "./organisations/organisations.module";
@@ -72,8 +71,6 @@ import {DataServiceManagerMenuService} from "./dataServiceManager.menu";
 @NgModule(
 	Application.Define({
 		modules: [
-			FlowchartModule,
-
 			DashboardModule,
 			EdsLibraryModule,
 			OrganisationsModule,

@@ -1,7 +1,7 @@
 import {Component} from "@angular/core";
 import {Transition, StateService} from "ui-router-ng2";
 import {NgbModal} from "@ng-bootstrap/ng-bootstrap";
-import {AdminService, LibraryService, LoggerService, MessageBoxDialog} from "eds-common-js";
+import {AdminService, flowchart, LibraryService, LoggerService, MessageBoxDialog} from "eds-common-js";
 import {ExpressionType} from "./models/ExpressionType";
 import {ExpressionEditDialog} from "../expressions/expressionEditor.dialog";
 import {TestEditDialog} from "../tests/testEditor.dialog";
@@ -10,7 +10,6 @@ import {Test} from "../tests/models/Test";
 import {QuerySelection} from "./models/QuerySelection";
 import {StartingRules} from "./models/StartingRules";
 import {Query} from "./models/Query";
-import {flowchart} from "../flowchart/flowchart.viewmodel";
 import {EdsLibraryItem} from "../edsLibrary/models/EdsLibraryItem";
 
 @Component({
