@@ -1,12 +1,10 @@
 import {User} from "./models/User";
 import {UserEditorDialog} from "./userEditor.dialog";
-import {LoggerService} from "../common/logger.service";
 import {NgbModal, NgbTabChangeEvent} from "@ng-bootstrap/ng-bootstrap";
 import {Component} from "@angular/core";
 import {UserService} from "./user.service";
 import {UserRole} from "./models/UserRole";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
-import {SecurityService} from "../security/security.service";
+import {LoggerService, SecurityService, MessageBoxDialog} from "eds-common-js";
 
 @Component({
 	template : require('./userManagerUserView.html')

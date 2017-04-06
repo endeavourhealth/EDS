@@ -2,7 +2,7 @@ import {Injectable} from "@angular/core";
 import {User} from "./models/User";
 import {Observable} from "rxjs/Observable";
 import {Http, Response, URLSearchParams} from "@angular/http";
-import {BaseHttp2Service} from "../core/baseHttp2.service";
+import {BaseHttp2Service} from "eds-common-js";
 import {UserRole} from "./models/UserRole";
 import {Client} from "./models/Client";
 

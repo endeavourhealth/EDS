@@ -2,8 +2,7 @@ import {Component, Input, ViewChild, Pipe, PipeTransform} from "@angular/core";
 import {NgbModal, NgbActiveModal} from "@ng-bootstrap/ng-bootstrap";
 import {UserService} from "./user.service";
 import {UserRole} from "./models/UserRole";
-import {LoggerService} from "../common/logger.service";
-import {MessageBoxDialog} from "../dialogs/messageBox/messageBox.dialog";
+import {LoggerService, MessageBoxDialog} from "eds-common-js";
 import {Organisation} from "./models/Organisation";
 import {Client} from "./models/Client";
 

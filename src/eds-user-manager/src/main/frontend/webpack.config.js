@@ -3,13 +3,7 @@ var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
 	entry: {
-		'common' : './app/common/common.module.ts',
-		'security' : './app/security/security.module.ts',
-		'dialogs' : './app/dialogs/dialogs.module.ts',
-
 		'users' : './app/users/user.module.ts',
-
-		'layout' : './app/layout/layout.module.ts',
 
 		'app' : './app/usermanager.app.ts',
 
