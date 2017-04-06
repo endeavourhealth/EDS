@@ -31,7 +31,7 @@
 				<div class="table scroll-box-350 form-control" style="min-height: 220px">
 					<loadingIndicator [done]="availableClients">
 						<ul class="list-group" *ngFor="let client of availableClients" >
-							<h4 class="list-group-item-heading">{{client.name}}</h4>
+							<h4 *ngIf="client.clientRoles.length>0" class="list-group-item-heading">{{client.name}}</h4>
 							<li class="list-group-item" *ngFor="let clientRole of client.clientRoles" #clientlist>
 								<div class="check-box">
 									<input type="checkbox" [checked]="isClientRoleAssigned(clientRole)" (change)="processCheckedClientRole($event, clientRole)" name="optChecked" value="{{clientRole}}">  {{clientRole.name}}
