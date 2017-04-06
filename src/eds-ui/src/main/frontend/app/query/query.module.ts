@@ -2,12 +2,11 @@ import {NgModule} from "@angular/core";
 import {BrowserModule} from "@angular/platform-browser";
 import {FormsModule} from "@angular/forms";
 import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
-import {FlowchartModule} from "../flowchart/flowchart.module";
 import {QueryEditComponent} from "./queryEditor.component";
 import {QueryPickerDialog} from "./queryPicker.dialog";
 import {TestsModule} from "../tests/tests.module";
 import {ExpressionsModule} from "../expressions/expressions.module";
-import {DialogsModule, FolderModule, LibraryModule} from "eds-common-js";
+import {DialogsModule, FlowchartModule, FolderModule, LibraryModule} from "eds-common-js";
 
 @NgModule({
 	imports : [
