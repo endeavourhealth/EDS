@@ -4,7 +4,7 @@ import '../content/less/index.less';
 
 // Core
 import {NgModule} from "@angular/core";
-import {Application} from "eds-common-js";
+import {Application, DialogsModule} from "eds-common-js";
 
 // Modules
 import {UserModule} from "./users/user.module";
@@ -20,6 +20,7 @@ import {UserManagerMenuService} from "./usermanager.menu";
 @NgModule(
 	Application.Define({
 		modules: [
+			DialogsModule,
 			UserModule
 		],
 		states: [
