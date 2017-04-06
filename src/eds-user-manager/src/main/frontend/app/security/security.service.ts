@@ -89,7 +89,7 @@ export class SecurityService {
 			}
 
 			user.isSuperUser = false;                                   // TODO: design session needed on RBAC roles / ABAC attributes!
-			for(var permission in user.permissions) {
+			for(var permission of user.permissions) {
 				if(permission == 'eds_superuser') {
 					user.isSuperUser = true;
 					break;
