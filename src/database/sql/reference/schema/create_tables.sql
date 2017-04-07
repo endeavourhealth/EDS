@@ -11,7 +11,6 @@ CREATE TABLE public.postcode_lookup
   ward character varying(9),
   ward_1998 character varying(6),
   ccg character varying(3),
-  townsend_score real,
   CONSTRAINT pk_postcode_lookup PRIMARY KEY (postcode_no_space)
 )
 WITH (
@@ -61,7 +60,7 @@ ALTER TABLE public.msoa_lookup
 CREATE TABLE public.deprivation_lookup
 (
   lsoa_code character varying(255) NOT NULL,
-  imd_score real,
+  imd_rank integer,
   imd_decile integer,
   CONSTRAINT pk_deprivation_lookup PRIMARY KEY (lsoa_code)
 )

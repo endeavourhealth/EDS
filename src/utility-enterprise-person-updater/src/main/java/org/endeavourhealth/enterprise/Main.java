@@ -1,7 +1,7 @@
 package org.endeavourhealth.enterprise;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.core.enterprise.EnterpriseConnector;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkPair;
 import org.endeavourhealth.core.rdbms.transform.EnterpriseIdHelper;
@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.util.*;
 
@@ -60,8 +59,7 @@ public class Main {
             for (String enterpriseConfigName: changesMap.keySet()) {
 
                 List<UpdateJob> updates = changesMap.get(enterpriseConfigName);
-                JsonNode config = ConfigManager.getConfigurationAsJson(enterpriseConfigName, "enterprise");
-                Connection connection = openConnection(config);
+                Connection connection = EnterpriseConnector.openConnection(enterpriseConfigName);
 
                 LOG.info("Updating " + updates.size() + " person IDs on " + enterpriseConfigName);
 
@@ -86,21 +84,6 @@ public class Main {
         System.exit(0);
     }
 
-    private static Connection openConnection(JsonNode config) throws Exception {
-
-        String driverClass = config.get("driverClass").asText();
-        String url = config.get("url").asText();
-        String username = config.get("username").asText();
-        String password = config.get("password").asText();
-
-        //force the driver to be loaded
-        Class.forName(driverClass);
-
-        Connection conn = DriverManager.getConnection(url, username, password);
-        conn.setAutoCommit(false);
-
-        return conn;
-    }
 
     private static Map<String, List<UpdateJob>> convertChangesToEnterprise(List<PatientLinkPair> changes) throws Exception {
         Map<String, List<UpdateJob>> map = new HashMap<>();

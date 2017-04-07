@@ -145,7 +145,7 @@ public class PatientTransformer extends AbstractTransformer {
             if (postcodeReference != null) {
                 lsoaCode = postcodeReference.getLsoaCode();
                 msoaCode = postcodeReference.getMsoaCode();
-                townsendScore = postcodeReference.getTownsendScore();
+                //townsendScore = postcodeReference.getTownsendScore();
             }
         }
 

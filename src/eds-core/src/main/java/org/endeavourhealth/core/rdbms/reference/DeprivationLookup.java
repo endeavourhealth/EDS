@@ -4,14 +4,13 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "deprivation_lookup", schema = "public", catalog = "reference")
 public class DeprivationLookup {
 
     private String lsoaCode = null;
-    private BigDecimal imdScore = null;
+    private Integer imdRank = null;
     private Integer imdDecile = null;
 
     @Id
@@ -24,13 +23,13 @@ public class DeprivationLookup {
         this.lsoaCode = lsoaCode;
     }
 
-    @Column(name = "imd_score", nullable = false)
-    public BigDecimal getImdScore() {
-        return imdScore;
+    @Column(name = "imd_rank", nullable = false)
+    public Integer getImdRank() {
+        return imdRank;
     }
 
-    public void setImdScore(BigDecimal imdScore) {
-        this.imdScore = imdScore;
+    public void setImdRank(Integer imdRank) {
+        this.imdRank = imdRank;
     }
 
     @Column(name = "imd_decile", nullable = false)

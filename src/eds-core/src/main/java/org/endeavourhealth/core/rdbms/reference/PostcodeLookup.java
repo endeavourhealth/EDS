@@ -4,7 +4,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "postcode_lookup", schema = "public", catalog = "reference")
@@ -17,7 +16,7 @@ public class PostcodeLookup {
     private String ward = null;
     private String ward1998 = null;
     private String ccg = null;
-    private BigDecimal townsendScore = null;
+    //private BigDecimal townsendScore = null;
 
     @Id
     @Column(name = "postcode_no_space", nullable = false)
@@ -83,12 +82,12 @@ public class PostcodeLookup {
         this.ccg = ccg;
     }
 
-    @Column(name = "townsend_score")
+    /*@Column(name = "townsend_score")
     public BigDecimal getTownsendScore() {
         return townsendScore;
     }
 
     public void setTownsendScore(BigDecimal townsendScore) {
         this.townsendScore = townsendScore;
-    }
+    }*/
 }
