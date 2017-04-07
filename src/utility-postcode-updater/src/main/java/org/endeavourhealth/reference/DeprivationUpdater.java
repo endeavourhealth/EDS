@@ -25,7 +25,21 @@ public class DeprivationUpdater {
     private static final String LA_NAME = "Local Authority District name (2013)";
     private static final String DEPRIVATION_RANK = "Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)";
     private static final String DEPRIVATION_DECILE = "Index of Multiple Deprivation (IMD) Decile (where 1 is most deprived 10% of LSOAs)";
-
+    private static final String INCOME_RANK = "Income Rank (where 1 is most deprived)";
+    private static final String INCOME_DECILE = "Income Decile (where 1 is most deprived 10% of LSOAs)";
+    private static final String EMPLOYMENT_RANK = "Employment Rank (where 1 is most deprived)";
+    private static final String EMPLOYMENT_DECILE = "Employment Decile (where 1 is most deprived 10% of LSOAs)";
+    private static final String EDUCATION_RANK = "Education, Skills and Training Rank (where 1 is most deprived)";
+    private static final String EDUCATION_DECILE = "Education, Skills and Training Decile (where 1 is most deprived 10% of LSOAs)";
+    private static final String HEALTH_RANK = "Health Deprivation and Disability Rank (where 1 is most deprived)";
+    private static final String HEALTH_DECILE = "Health Deprivation and Disability Decile (where 1 is most deprived 10% of LSOAs)";
+    private static final String CRIME_RANK = "Crime Rank (where 1 is most deprived)";
+    private static final String CRIME_DECILE = "Crime Decile (where 1 is most deprived 10% of LSOAs)";
+    private static final String HOUSING_AND_SERVICES_BARRIERS_RANK = "Barriers to Housing and Services Rank (where 1 is most deprived)";
+    private static final String HOUSING_AND_SERVICES_BARRIERS_DECILE = "Barriers to Housing and Services Decile (where 1 is most deprived 10% of LSOAs)";
+    private static final String LIVING_ENVIRONMENT_RANK = "Living Environment Rank (where 1 is most deprived)";
+    private static final String LIVING_ENVIRONMENT_DECILE = "Living Environment Decile (where 1 is most deprived 10% of LSOAs)";
+    
     /**
      * updates the deprivation_lookup table in the reference DB from ONS data
      *
@@ -100,12 +114,24 @@ public class DeprivationUpdater {
     private static void updateDeprivationScore(EntityManager entityManager, CSVRecord record) {
 
         String lsoaCode = record.get(LSOA_CODE);
-        String rank = record.get(DEPRIVATION_RANK);
-        String decile = record.get(DEPRIVATION_DECILE);
 
-        //the file has numbes in the format "1,234", so remove the commas
-        rank = rank.replace(",", "");
-        decile = decile.replace(",", "");
+        //the file has numbers in the format "1,234", so remove the commas before creating the Integers
+        Integer rank = new Integer(record.get(DEPRIVATION_RANK).replace(",", ""));
+        Integer decile = new Integer(record.get(DEPRIVATION_DECILE).replace(",", ""));
+        Integer incomeRank = new Integer(record.get(INCOME_RANK).replace(",", ""));
+        Integer incomeDecile = new Integer(record.get(INCOME_DECILE).replace(",", ""));
+        Integer employmentRank = new Integer(record.get(EMPLOYMENT_RANK).replace(",", ""));
+        Integer employmentDecile = new Integer(record.get(EMPLOYMENT_DECILE).replace(",", ""));
+        Integer educationRank = new Integer(record.get(EDUCATION_RANK).replace(",", ""));
+        Integer educationDecile = new Integer(record.get(EDUCATION_DECILE).replace(",", ""));
+        Integer healthRank = new Integer(record.get(HEALTH_RANK).replace(",", ""));
+        Integer healthDecile = new Integer(record.get(HEALTH_DECILE).replace(",", ""));
+        Integer crimeRank = new Integer(record.get(CRIME_RANK).replace(",", ""));
+        Integer crimeDecile = new Integer(record.get(CRIME_DECILE).replace(",", ""));
+        Integer housingAndServicesBarriersRank = new Integer(record.get(HOUSING_AND_SERVICES_BARRIERS_RANK).replace(",", ""));
+        Integer housingAndServicesBarriersDecile = new Integer(record.get(HOUSING_AND_SERVICES_BARRIERS_DECILE).replace(",", ""));
+        Integer livingEnvironmentRank = new Integer(record.get(LIVING_ENVIRONMENT_RANK).replace(",", ""));
+        Integer livingEnvironmentDecile = new Integer(record.get(LIVING_ENVIRONMENT_DECILE).replace(",", ""));
 
         String sql = "select r"
                 + " from DeprivationLookup r"
@@ -123,8 +149,22 @@ public class DeprivationUpdater {
             lookup.setLsoaCode(lsoaCode);
         }
 
-        lookup.setImdRank(new Integer(rank));
-        lookup.setImdDecile(new Integer(decile));
+        lookup.setImdRank(rank);
+        lookup.setImdDecile(decile);
+        lookup.setIncomeRank(incomeRank);
+        lookup.setIncomeDecile(incomeDecile);
+        lookup.setEmploymentRank(employmentRank);
+        lookup.setEmploymentDecile(employmentDecile);
+        lookup.setEducationRank(educationRank);
+        lookup.setEducationDecile(educationDecile);
+        lookup.setHealthRank(healthRank);
+        lookup.setHealthDecile(healthDecile);
+        lookup.setCrimeRank(crimeRank);
+        lookup.setCrimeDecile(crimeDecile);
+        lookup.setHousingAndServicesBarriersRank(housingAndServicesBarriersRank);
+        lookup.setHousingAndServicesBarriersDecile(housingAndServicesBarriersDecile);
+        lookup.setLivingEnvironmentRank(livingEnvironmentRank);
+        lookup.setLivingEnvironmentDecile(livingEnvironmentDecile);
 
         entityManager.getTransaction().begin();
         entityManager.persist(lookup);
@@ -138,7 +178,21 @@ public class DeprivationUpdater {
                 LA_CODE,
                 LA_NAME,
                 DEPRIVATION_RANK,
-                DEPRIVATION_DECILE
+                DEPRIVATION_DECILE,
+                INCOME_RANK,
+                INCOME_DECILE,
+                EMPLOYMENT_RANK,
+                EMPLOYMENT_DECILE,
+                EDUCATION_RANK,
+                EDUCATION_DECILE,
+                HEALTH_RANK,
+                HEALTH_DECILE,
+                CRIME_RANK,
+                CRIME_DECILE,
+                HOUSING_AND_SERVICES_BARRIERS_RANK,
+                HOUSING_AND_SERVICES_BARRIERS_DECILE,
+                LIVING_ENVIRONMENT_RANK,
+                LIVING_ENVIRONMENT_DECILE
         };
     }
 }

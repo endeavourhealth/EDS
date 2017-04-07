@@ -60,8 +60,22 @@ ALTER TABLE public.msoa_lookup
 CREATE TABLE public.deprivation_lookup
 (
   lsoa_code character varying(255) NOT NULL,
-  imd_rank integer,
-  imd_decile integer,
+  imd_rank integer NOT NULL,
+  imd_decile integer NOT NULL,
+  income_rank integer NOT NULL,
+  income_decile integer NOT NULL,
+  employment_rank integer NOT NULL,
+  employment_decile integer NOT NULL,
+  education_rank integer NOT NULL,
+  education_decile integer NOT NULL,
+  health_rank integer NOT NULL,
+  health_decile integer NOT NULL,
+  crime_rank integer NOT NULL,
+  crime_decile integer NOT NULL,
+  housing_and_services_barriers_rank integer NOT NULL,
+  housing_and_services_barriers_decile integer NOT NULL,
+  living_environment_rank integer NOT NULL,
+  living_environment_decile integer NOT NULL,
   CONSTRAINT pk_deprivation_lookup PRIMARY KEY (lsoa_code)
 )
 WITH (

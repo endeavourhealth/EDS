@@ -173,7 +173,7 @@ public class LsoaUpdater {
 
             done ++;
             if (done % 1000 == 0) {
-                LOG.info("Done " + done + " LSOA mappings (out of approx 40K)");
+                LOG.info("Done " + done + " LSOA mappings (out of approx 35K)");
             }
         }
 
