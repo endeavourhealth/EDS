@@ -4,7 +4,7 @@ import {NgbModal, NgbTabChangeEvent} from "@ng-bootstrap/ng-bootstrap";
 import {Component} from "@angular/core";
 import {UserService} from "./user.service";
 import {UserRole} from "./models/UserRole";
-import {LoggerService, SecurityService, MessageBoxDialog} from "eds-common-js";
+import {SecurityService, MessageBoxDialog, LoggerService} from "eds-common-js";
 
 @Component({
 	template : require('./userManager.html')
@@ -19,7 +19,7 @@ export class UserManagerComponent {
 	userRoleList : UserRole[];
 	loggedOnUserUuid : string;
 
-	constructor(private log:LoggerService,
+	constructor(public log:LoggerService,
 							private userService : UserService,
 							private securityService : SecurityService,
 							private $modal : NgbModal) {

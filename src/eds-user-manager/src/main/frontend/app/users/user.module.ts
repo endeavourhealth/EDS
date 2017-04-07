@@ -8,13 +8,14 @@ import {NgbModule} from "@ng-bootstrap/ng-bootstrap";
 import {RoleManagerComponent} from "./roleManager.component";
 import {RoleEditorDialog} from "./roleEditor.dialog";
 import {UserManagerUserViewComponent} from "./userManagerUserView.component";
-import {LoadingIndicatorComponent} from "eds-common-js";
+import {LoadingIndicatorComponent, LoggerModule} from "eds-common-js";
 
 @NgModule({
 	imports:[
 		BrowserModule,
 		FormsModule,
 		NgbModule,
+		LoggerModule,
 	],
 	declarations:[
 		UserManagerComponent,

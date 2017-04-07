@@ -21,6 +21,7 @@ import {UserManagerMenuService} from "./usermanager.menu";
 	Application.Define({
 		modules: [
 			DialogsModule,
+
 			UserModule
 		],
 		states: [
