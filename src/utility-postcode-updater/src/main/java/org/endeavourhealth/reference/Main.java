@@ -48,9 +48,6 @@ public class Main {
                 LOG.error("Unknown first argument " + type);
             }
 
-            //TODO - test postcode update
-            //TODO - test deprivation copying
-
         } catch (Exception ex) {
             LOG.error("", ex);
         }
