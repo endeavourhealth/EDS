@@ -1,6 +1,6 @@
--- Table: public.postcode_reference
+-- Table: public.postcode_lookup
 
--- DROP TABLE public.postcode_reference;
+-- DROP TABLE public.postcode_lookup;
 
 CREATE TABLE public.postcode_lookup
 (

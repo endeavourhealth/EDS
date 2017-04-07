@@ -1,6 +1,5 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -9,7 +8,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
-import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.PostToSubscriberWebServiceConfig;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -63,8 +61,7 @@ public class PostToSubscriberWebService extends PipelineComponent {
 	private void sendToSubscriber(String payload, UUID exchangeId, UUID batchId, String software, String softwareVersion, String endpoint) throws Exception {
 
 		if (software.equals(MessageFormat.ENTERPRISE_CSV)) {
-			JsonNode config = ConfigManager.getConfigurationAsJson(endpoint, "enterprise");
-			EnterpriseFiler.file(batchId, payload, config);
+			EnterpriseFiler.file(batchId, payload, endpoint);
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
 			sendHttpPost(payload, endpoint);
