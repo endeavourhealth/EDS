@@ -135,6 +135,19 @@ public final class RegionEndpoint extends AbstractEndpoint {
         return getChildRegions(uuid);
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/sharingAgreements")
+    public Response getSharingAgreements(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Child Region(s)",
+                "Region Id", uuid);
+
+        return getSharingAgreements(uuid);
+    }
+
     private Response getRegionList() throws Exception {
 
         List<RegionEntity> regions = RegionEntity.getAllRegions();
@@ -203,6 +216,21 @@ public final class RegionEndpoint extends AbstractEndpoint {
 
         if (regionUuids.size() > 0)
             ret = RegionEntity.getRegionsFromList(regionUuids);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private Response getSharingAgreements(String regionUuid) throws Exception {
+
+        List<String> sharingAgreementUuids = MasterMappingEntity.getChildMappings(regionUuid, MapType.REGION.getMapType(), MapType.DATASHARINGAGREEMENT.getMapType());
+        List<DataSharingAgreementEntity> ret = new ArrayList<>();
+
+        if (sharingAgreementUuids.size() > 0)
+            ret = DataSharingAgreementEntity.getDSAsFromList(sharingAgreementUuids);
 
         clearLogbackMarkers();
         return Response

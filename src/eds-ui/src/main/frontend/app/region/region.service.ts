@@ -4,6 +4,7 @@ import {Observable} from "rxjs";
 import {BaseHttp2Service} from "eds-common-js";
 import {Organisation} from "../organisationManager/models/Organisation";
 import {Region} from "./models/Region";
+import {Dsa} from "../dsa/models/Dsa";
 
 @Injectable()
 export class RegionService extends BaseHttp2Service  {
@@ -35,6 +36,12 @@ export class RegionService extends BaseHttp2Service  {
         let params = new URLSearchParams();
         params.set('uuid',uuid);
         return this.httpGet('api/region/childRegions', { search : params });
+    }
+
+    getSharingAgreements(uuid : string) :  Observable<Dsa[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/region/sharingAgreements', { search : params });
     }
 
     saveRegion(region : Region) : Observable<any> {

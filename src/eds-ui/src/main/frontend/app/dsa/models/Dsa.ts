@@ -10,4 +10,5 @@ export class Dsa {
     dsaStatusId : number;
     consentModel : string;
     dataFlows : { [key:string]:string; };
+    regions : { [key:string]:string; };
 }

@@ -15,6 +15,7 @@ public final class JsonRegion {
     private Map<UUID, String> organisations = null;
     private Map<UUID, String> parentRegions = null;
     private Map<UUID, String> childRegions = null;
+    private Map<UUID, String> sharingAgreements = null;
 
     public Map<UUID, String> getOrganisations() {
         return organisations;
@@ -49,10 +50,6 @@ public final class JsonRegion {
         this.uuid = reg.getUuid();
     }
 
-    /**
-     * gets/sets
-     */
-
     public String getName() {
         return name;
     }
@@ -85,4 +82,11 @@ public final class JsonRegion {
         this.organisationCount = id;
     }
 
+    public Map<UUID, String> getSharingAgreements() {
+        return sharingAgreements;
+    }
+
+    public void setSharingAgreements(Map<UUID, String> sharingAgreements) {
+        this.sharingAgreements = sharingAgreements;
+    }
 }

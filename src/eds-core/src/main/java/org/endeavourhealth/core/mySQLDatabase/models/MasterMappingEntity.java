@@ -172,6 +172,11 @@ public class MasterMappingEntity {
             Map<UUID, String> organisations = region.getOrganisations();
             saveChildMappings(organisations, MapType.ORGANISATION.getMapType(), region.getUuid(), MapType.REGION.getMapType());
         }
+
+        if (region.getSharingAgreements() != null) {
+            Map<UUID, String> sharingAgreements = region.getSharingAgreements();
+            saveChildMappings(sharingAgreements, MapType.DATASHARINGAGREEMENT.getMapType(), region.getUuid(), MapType.REGION.getMapType());
+        }
     }
 
     public static void saveDataSharingAgreementMappings(JsonDSA dsa) throws Exception {
@@ -179,6 +184,11 @@ public class MasterMappingEntity {
         if (dsa.getDataFlows() != null) {
             Map<UUID, String> dataFlows = dsa.getDataFlows();
             saveChildMappings(dataFlows, MapType.DATAFLOW.getMapType(), dsa.getUuid(), MapType.DATASHARINGAGREEMENT.getMapType());
+        }
+
+        if (dsa.getRegions() != null) {
+            Map<UUID, String> regions = dsa.getRegions();
+            saveParentMappings(regions, MapType.REGION.getMapType(), dsa.getUuid(), MapType.DATASHARINGAGREEMENT.getMapType());
         }
     }
 
