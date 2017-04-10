@@ -122,16 +122,11 @@ public class IssueRecordTransformer {
             fhirMedication.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.RECORDED_DATE, new DateTimeType(enteredDateTime)));
         }
 
+        if (parser.getIsConfidential()) {
+            fhirMedication.addExtension(ExtensionConverter.createBooleanExtension(FhirExtensionUri.IS_CONFIDENTIAL, true));
+        }
+
         fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirMedication);
-
-/*
-        //if this record is linked to a problem, store this relationship in the helper
-        csvHelper.cacheProblemRelationship(problemObservationGuid,
-                patientGuid,
-                issueRecordGuid,
-                fhirMedication.getResourceType());
-*/
-
     }
 
 }

@@ -234,15 +234,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 "Exchange Name", request.getExchangeName(),
                 "Post All", request.isPostAllExchanges());
 
-        /*LOG.info("-----posting to exchange");
-        Throwable t = new RuntimeException();
-        t.fillInStackTrace();
-        t.printStackTrace();
-        for (int i=0; i<20; i++) {
-            Thread.sleep(1000 * 60);
-            LOG.info("Sleeping " + i);
-        }*/
-
         UUID selectedExchangeId = request.getExchangeId();
         UUID serviceId = request.getServiceId();
         String exchangeName = request.getExchangeName();
@@ -292,10 +283,25 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
             }
         }
 
-        postToExchange(exchangeConfig, exchange);
+        //re-post back into Rabbit using the same pipeline component as used by the messaging API
+        PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
+        component.process(exchange);
 
         //write an event for the exchange, so we can see this happened
         AuditWriter.writeExchangeEvent(exchange, "Manually pushed into " + exchangeName + " exchange");
+
+        //if pushed into the Inbound queue, and it previously had an error in there, mark it as resubmitted
+        /*if (exchangeName.equals("EdsInbound")) {
+
+            UUID serviceId = exchange.getHeaderAsUuid(HeaderKeys.SenderServiceUuid);
+            UUID systemId = exchange.getHeaderAsUuid(HeaderKeys.SystemVersion);
+
+            ExchangeTransformAudit audit = auditRepository.getMostRecentExchangeTransform(serviceId, systemId, exchangeId);
+            if (!audit.isResubmitted()) {
+                audit.setResubmitted(true);
+                auditRepository.save(audit);
+            }
+        }*/
     }
 
     private void populateMulticastHeader(org.endeavourhealth.core.messaging.exchange.Exchange exchange, String multicastHeader) throws Exception {
@@ -461,14 +467,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
 
         return exchange;
     }*/
-
-    private void postToExchange(PostMessageToExchangeConfig exchangeConfig, org.endeavourhealth.core.messaging.exchange.Exchange exchange) throws Exception {
-
-        //re-post back into Rabbit using the same pipeline component as used by the messaging API
-        PostMessageToExchange component = new PostMessageToExchange(exchangeConfig);
-        component.process(exchange);
-
-    }
 
 
     @GET
@@ -790,7 +788,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
                 .build();
     }
 
-    @POST
+    /*@POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/postTest")
@@ -816,6 +814,6 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         return Response
                 .ok()
                 .build();
-    }
+    }*/
 }
 

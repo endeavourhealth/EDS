@@ -386,6 +386,12 @@ public class EnterpriseFiler {
             }
         }
 
+        //if the updates all went through ok, just return out
+        if (trueInserts.isEmpty()
+                && laterUpdates.isEmpty()) {
+            return;
+        }
+
         fileInserts(trueInserts, columns, columnClasses, tableName, connection, keywordEscapeChar);
         recordsUpdated = fileUpdates(laterUpdates, columns, columnClasses, tableName, connection, keywordEscapeChar);
 

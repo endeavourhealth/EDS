@@ -68,21 +68,6 @@ public class ResourceRepository extends Repository {
         resourceByService.setResourceData(resourceEntry.getResourceData());
         save(resourceByService);
 
-        //test manual insert rather than materialised view
-        /*if (resourceEntry.getPatientId() != null) {
-            ResourceByPatient resourceByPatient = new ResourceByPatient();
-            resourceByPatient.setServiceId(resourceEntry.getServiceId());
-            resourceByPatient.setSystemId(resourceEntry.getSystemId());
-            resourceByPatient.setPatientId(resourceEntry.getPatientId());
-            resourceByPatient.setResourceType(resourceEntry.getResourceType());
-            resourceByPatient.setResourceId(resourceEntry.getResourceId());
-            resourceByPatient.setSchemaVersion(resourceEntry.getSchemaVersion());
-            resourceByPatient.setResourceMetadata(resourceEntry.getResourceMetadata());
-            resourceByPatient.setResourceData(resourceEntry.getResourceData());
-            Mapper<ResourceByPatient> mapperResourceByPatient = getMappingManager().mapper(ResourceByPatient.class);
-            mapperResourceByPatient.save(resourceByPatient);
-        }*/
-
         if (resourceEntry.getExchangeId() != null && resourceEntry.getBatchId() != null) {
             ResourceByExchangeBatch resourceByExchangeBatch = new ResourceByExchangeBatch();
             resourceByExchangeBatch.setBatchId(resourceEntry.getBatchId());
@@ -96,67 +81,7 @@ public class ResourceRepository extends Repository {
             save(resourceByExchangeBatch);
         }
     }
-    /*public void save(ResourceEntry resourceEntry, UUID exchangeId, UUID batchId){
-        if (resourceEntry == null) throw new IllegalArgumentException("resourceEntry is null");
 
-        BatchStatement batch = new BatchStatement();
-
-        ResourceHistory resourceHistory = new ResourceHistory();
-        resourceHistory.setResourceId(resourceEntry.getResourceId());
-        resourceHistory.setResourceType(resourceEntry.getResourceType());
-        resourceHistory.setVersion(resourceEntry.getVersion());
-        resourceHistory.setCreatedAt(resourceEntry.getCreatedAt());
-        resourceHistory.setServiceId(resourceEntry.getServiceId());
-        resourceHistory.setSystemId(resourceEntry.getSystemId());
-        resourceHistory.setIsDeleted(false);
-        resourceHistory.setSchemaVersion(resourceEntry.getSchemaVersion());
-        resourceHistory.setResourceData(resourceEntry.getResourceData());
-        Mapper<ResourceHistory> mapperResourceHistory = getMappingManager().mapper(ResourceHistory.class);
-        batch.add(mapperResourceHistory.saveQuery(resourceHistory));
-
-        ResourceHistoryByService resourceHistoryByService = new ResourceHistoryByService();
-        resourceHistoryByService.setResourceId(resourceEntry.getResourceId());
-        resourceHistoryByService.setResourceType(resourceEntry.getResourceType());
-        resourceHistoryByService.setVersion(resourceEntry.getVersion());
-        resourceHistoryByService.setCreatedAt(resourceEntry.getCreatedAt());
-        resourceHistoryByService.setServiceId(resourceEntry.getServiceId());
-        resourceHistoryByService.setSystemId(resourceEntry.getSystemId());
-        resourceHistoryByService.setIsDeleted(false);
-        resourceHistoryByService.setSchemaVersion(resourceEntry.getSchemaVersion());
-        resourceHistoryByService.setResourceData(resourceEntry.getResourceData());
-        Mapper<ResourceHistoryByService> mapperResourceHistoryByService = getMappingManager().mapper(ResourceHistoryByService.class);
-        batch.add(mapperResourceHistoryByService.saveQuery(resourceHistoryByService));
-
-        ResourceByService resourceByService = new ResourceByService();
-        resourceByService.setServiceId(resourceEntry.getServiceId());
-        resourceByService.setSystemId(resourceEntry.getSystemId());
-        resourceByService.setResourceType(resourceEntry.getResourceType());
-        resourceByService.setResourceId(resourceEntry.getResourceId());
-        resourceByService.setCurrentVersion(resourceEntry.getVersion());
-        resourceByService.setUpdatedAt(resourceEntry.getCreatedAt());
-        resourceByService.setPatientId(resourceEntry.getPatientId());
-        resourceByService.setSchemaVersion(resourceEntry.getSchemaVersion());
-        resourceByService.setResourceMetadata(resourceEntry.getResourceMetadata());
-        resourceByService.setResourceData(resourceEntry.getResourceData());
-        Mapper<ResourceByService> mapperResourceByService = getMappingManager().mapper(ResourceByService.class);
-        batch.add(mapperResourceByService.saveQuery(resourceByService));
-
-        if (exchangeId != null && batchId != null) {
-            ResourceByExchangeBatch resourceByExchangeBatch = new ResourceByExchangeBatch();
-            resourceByExchangeBatch.setBatchId(batchId);
-            resourceByExchangeBatch.setExchangeId(exchangeId);
-            resourceByExchangeBatch.setResourceType(resourceEntry.getResourceType());
-            resourceByExchangeBatch.setResourceId(resourceEntry.getResourceId());
-            resourceByExchangeBatch.setVersion(resourceEntry.getVersion());
-            resourceByExchangeBatch.setIsDeleted(false);
-            resourceByExchangeBatch.setSchemaVersion(resourceEntry.getSchemaVersion());
-            resourceByExchangeBatch.setResourceData(resourceEntry.getResourceData());
-            Mapper<ResourceByExchangeBatch> mapperResourceByExchangeBatch = getMappingManager().mapper(ResourceByExchangeBatch.class);
-            batch.add(mapperResourceByExchangeBatch.saveQuery(resourceByExchangeBatch));
-        }
-
-        getSession().execute(batch);
-    }*/
 
     public void delete(ResourceEntry resourceEntry){
         if (resourceEntry == null) throw new IllegalArgumentException("resourceEntry is null");
@@ -192,18 +117,6 @@ public class ResourceRepository extends Repository {
         resourceByService.setUpdatedAt(resourceEntry.getCreatedAt()); //was missing - so it wasn't clear when something was deleted
         save(resourceByService);
 
-        //test manual insert rather than materialised view
-        /*if (resourceEntry.getPatientId() != null) {
-            ResourceByPatient resourceByPatient = new ResourceByPatient();
-            resourceByPatient.setServiceId(resourceEntry.getServiceId());
-            resourceByPatient.setSystemId(resourceEntry.getSystemId());
-            resourceByPatient.setPatientId(resourceEntry.getPatientId());
-            resourceByPatient.setResourceType(resourceEntry.getResourceType());
-            resourceByPatient.setResourceId(resourceEntry.getResourceId());
-            Mapper<ResourceByPatient> mapperResourceByPatient = getMappingManager().mapper(ResourceByPatient.class);
-            mapperResourceByPatient.save(resourceByPatient);
-        }*/
-
         if (resourceEntry.getExchangeId() != null && resourceEntry.getBatchId() != null) {
             ResourceByExchangeBatch resourceByExchangeBatch = new ResourceByExchangeBatch();
             resourceByExchangeBatch.setBatchId(resourceEntry.getBatchId());
@@ -215,55 +128,6 @@ public class ResourceRepository extends Repository {
             save(resourceByExchangeBatch);
         }
     }
-    /*public void delete(ResourceEntry resourceEntry, UUID exchangeId, UUID batchId){
-        if (resourceEntry == null) throw new IllegalArgumentException("resourceEntry is null");
-
-        BatchStatement batch = new BatchStatement();
-
-        ResourceHistory resourceHistory = new ResourceHistory();
-        resourceHistory.setResourceId(resourceEntry.getResourceId());
-        resourceHistory.setResourceType(resourceEntry.getResourceType());
-        resourceHistory.setVersion(resourceEntry.getVersion());
-        resourceHistory.setCreatedAt(resourceEntry.getCreatedAt());
-        resourceHistory.setServiceId(resourceEntry.getServiceId());
-        resourceHistory.setSystemId(resourceEntry.getSystemId());
-        resourceHistory.setIsDeleted(true);
-        Mapper<ResourceHistory> mapperResourceHistory = getMappingManager().mapper(ResourceHistory.class);
-        batch.add(mapperResourceHistory.saveQuery(resourceHistory));
-
-        ResourceHistoryByService resourceHistoryByService = new ResourceHistoryByService();
-        resourceHistoryByService.setResourceId(resourceEntry.getResourceId());
-        resourceHistoryByService.setResourceType(resourceEntry.getResourceType());
-        resourceHistoryByService.setVersion(resourceEntry.getVersion());
-        resourceHistoryByService.setCreatedAt(resourceEntry.getCreatedAt());
-        resourceHistoryByService.setServiceId(resourceEntry.getServiceId());
-        resourceHistoryByService.setSystemId(resourceEntry.getSystemId());
-        resourceHistoryByService.setIsDeleted(true);
-        Mapper<ResourceHistoryByService> mapperResourceHistoryByService = getMappingManager().mapper(ResourceHistoryByService.class);
-        batch.add(mapperResourceHistoryByService.saveQuery(resourceHistoryByService));
-
-        ResourceByService resourceByService = new ResourceByService();
-        resourceByService.setServiceId(resourceEntry.getServiceId());
-        resourceByService.setSystemId(resourceEntry.getSystemId());
-        resourceByService.setResourceType(resourceEntry.getResourceType());
-        resourceByService.setResourceId(resourceEntry.getResourceId());
-        Mapper<ResourceByService> mapperResourceMetadata = getMappingManager().mapper(ResourceByService.class);
-        batch.add(mapperResourceMetadata.deleteQuery(resourceByService));
-
-        if (exchangeId != null && batchId != null) {
-            ResourceByExchangeBatch resourceByExchangeBatch = new ResourceByExchangeBatch();
-            resourceByExchangeBatch.setBatchId(batchId);
-            resourceByExchangeBatch.setExchangeId(exchangeId);
-            resourceByExchangeBatch.setResourceType(resourceEntry.getResourceType());
-            resourceByExchangeBatch.setResourceId(resourceEntry.getResourceId());
-            resourceByExchangeBatch.setVersion(resourceEntry.getVersion());
-            resourceByExchangeBatch.setIsDeleted(true);
-            Mapper<ResourceByExchangeBatch> mapperResourceByExchangeBatch = getMappingManager().mapper(ResourceByExchangeBatch.class);
-            batch.add(mapperResourceByExchangeBatch.saveQuery(resourceByExchangeBatch));
-        }
-
-        getSession().execute(batch);
-    }*/
 
     public void save(ResourceHistory resourceHistory) {
         Mapper<ResourceHistory> mapper = getMappingManager().mapper(ResourceHistory.class);
@@ -345,6 +209,11 @@ public class ResourceRepository extends Repository {
     public List<ResourceByExchangeBatch> getResourcesForBatch(UUID batchId, String resourceType) {
         ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
         return Lists.newArrayList(accessor.getResourcesForBatch(batchId, resourceType));
+    }
+
+    public List<ResourceByExchangeBatch> getResourcesForBatch(UUID batchId, String resourceType, UUID resourceId) {
+        ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
+        return Lists.newArrayList(accessor.getResourcesForBatch(batchId, resourceType, resourceId));
     }
 
     public long getResourceCountByService(UUID serviceId, UUID systemId, String resourceType) {

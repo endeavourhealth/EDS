@@ -136,38 +136,6 @@ public class ProblemTransformer {
         csvHelper.cacheProblem(observationGuid, patientGuid, fhirProblem);
     }
 
-    /*private static List<Reference> findPreviousLinkedReferences(EmisCsvHelper csvHelper, FhirResourceFiler fhirResourceFiler, String problemId) throws Exception {
-        try {
-
-            //ResourceIdMapRepository repository = new ResourceIdMapRepository();
-            List<Reference> ret = new ArrayList<>();
-
-            Condition previousVersion = (Condition)csvHelper.retrieveResource(problemId, ResourceType.Condition, fhirResourceFiler);
-
-            if (previousVersion.hasContained()) {
-                for (Resource contained: previousVersion.getContained()) {
-                    if (contained instanceof List_) {
-                        List_ list = (List_)contained;
-                        for (List_.ListEntryComponent entry: list.getEntry()) {
-                            Reference previousReference = entry.getItem();
-
-                            //the reference we have has already been mapped to an EDS ID, so we need to un-map it
-                            //back to the source ID, so the ID mapper can safely map it when we save the resource
-                            Reference unmappedReference = IdHelper.convertEdsReferenceToLocallyUniqueReference(previousReference, fhirResourceFiler);
-                            ret.add(unmappedReference);
-                        }
-                    }
-                }
-            }
-
-            return ret;
-
-        } catch (ResourceNotFoundException|ResourceDeletedException ex) {
-            //if this is the first time, then we'll get this exception raised
-            return null;
-        }
-    }*/
-
 
     private static ProblemRelationshipType convertRelationshipType(String relationshipType) throws Exception {
 
@@ -196,16 +164,6 @@ public class ProblemTransformer {
             return ProblemSignificance.UNSPECIIED;
         }
     }
-    /*private static ProblemSignificance convertSignificance(String significance) {
-        significance = significance.toLowerCase();
-        if (significance.indexOf("major") > -1) {
-            return ProblemSignificance.SIGNIFICANT;
-        } else if (significance.indexOf("minor") > -1) {
-            return ProblemSignificance.NOT_SIGNIFICANT;
-        } else {
-            return ProblemSignificance.UNSPECIIED;
-        }
-    }*/
 
 
 }

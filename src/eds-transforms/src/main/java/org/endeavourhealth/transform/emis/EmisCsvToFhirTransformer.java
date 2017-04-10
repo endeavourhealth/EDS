@@ -81,17 +81,8 @@ public abstract class EmisCsvToFhirTransformer {
         Map<Class, AbstractCsvParser> allParsers = new HashMap<>();
 
         try {
-
-            List<AbstractCsvParser> parsers = new ArrayList<>();
-
             //validate the files and, if this the first batch, open the parsers to validate the file contents (columns)
-            validateAndOpenParsers(orgDirectory, version, true, parsers);
-
-            //add the parsers to the larger map, keyed on class
-            for (AbstractCsvParser parser: parsers) {
-                Class cls = parser.getClass();
-                allParsers.put(cls, parser);
-            }
+            validateAndOpenParsers(orgDirectory, version, true, allParsers);
 
             LOG.trace("Transforming EMIS CSV content in {}", orgDirectory);
             transformParsers(version, allParsers, processor, previousErrors, maxFilingThreads);
@@ -127,7 +118,7 @@ public abstract class EmisCsvToFhirTransformer {
 
         for (String version: versions) {
 
-            List<AbstractCsvParser> parsers = new ArrayList<>();
+            Map<Class, AbstractCsvParser> parsers = new HashMap<>();
             try {
                 validateAndOpenParsers(dir, version, true, parsers);
 
@@ -140,7 +131,7 @@ public abstract class EmisCsvToFhirTransformer {
 
             } finally {
                 //make sure to close any parsers that we opened
-                closeParsers(parsers);
+                closeParsers(parsers.values());
             }
         }
 
@@ -179,7 +170,7 @@ public abstract class EmisCsvToFhirTransformer {
     }
 
 
-    private static void validateAndOpenParsers(File dir, String version, boolean openParser, List<AbstractCsvParser> parsers) throws Exception {
+    private static void validateAndOpenParsers(File dir, String version, boolean openParser, Map<Class, AbstractCsvParser> parsers) throws Exception {
 
         findFileAndOpenParser(Location.class, dir, version, openParser, parsers);
         findFileAndOpenParser(Organisation.class, dir, version, openParser, parsers);
@@ -211,6 +202,7 @@ public abstract class EmisCsvToFhirTransformer {
         //Set<File> sh = new HashSet<>(parsers);
 
         Set<File> expectedFiles = parsers
+                .values()
                 .stream()
                 .map(T -> T.getFile())
                 .collect(Collectors.toSet());
@@ -225,7 +217,7 @@ public abstract class EmisCsvToFhirTransformer {
         }
     }
 
-    public static void findFileAndOpenParser(Class parserCls, File dir, String version, boolean openParser, List<AbstractCsvParser> ret) throws Exception {
+    public static void findFileAndOpenParser(Class parserCls, File dir, String version, boolean openParser, Map<Class, AbstractCsvParser> ret) throws Exception {
 
         Package p = parserCls.getPackage();
         String[] packages = p.getName().split("\\.");
@@ -255,7 +247,7 @@ public abstract class EmisCsvToFhirTransformer {
             Constructor<AbstractCsvParser> constructor = parserCls.getConstructor(String.class, File.class, Boolean.TYPE);
             AbstractCsvParser parser = constructor.newInstance(version, f, openParser);
 
-            ret.add(parser);
+            ret.put(parserCls, parser);
             return;
         }
 
@@ -272,6 +264,10 @@ public abstract class EmisCsvToFhirTransformer {
                 .next()
                 .getFile();
 
+        return findDataSharingAgreementGuid(f);
+    }
+
+    public static String findDataSharingAgreementGuid(File f) throws Exception {
         String name = Files.getNameWithoutExtension(f.getName());
         String[] toks = name.split("_");
         if (toks.length != 5) {
@@ -299,6 +295,7 @@ public abstract class EmisCsvToFhirTransformer {
         DrugCodeTransformer.transform(version, parsers, fhirResourceFiler, csvHelper, maxFilingThreads);
         OrganisationLocationTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
         SessionUserTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
+        ProblemPreTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
         ObservationPreTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
         DrugRecordPreTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);
         IssueRecordPreTransformer.transform(version, parsers, fhirResourceFiler, csvHelper);

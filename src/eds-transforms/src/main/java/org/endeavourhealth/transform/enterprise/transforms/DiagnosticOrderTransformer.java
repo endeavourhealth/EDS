@@ -1,14 +1,13 @@
 package org.endeavourhealth.transform.enterprise.transforms;
 
 import org.endeavourhealth.common.fhir.CodeableConceptHelper;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.transform.common.exceptions.TransformException;
 import org.endeavourhealth.transform.enterprise.outputModels.AbstractEnterpriseCsvWriter;
 import org.endeavourhealth.transform.enterprise.outputModels.OutputContainer;
-import org.hl7.fhir.instance.model.DateTimeType;
-import org.hl7.fhir.instance.model.DiagnosticOrder;
-import org.hl7.fhir.instance.model.Reference;
-import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +67,7 @@ public class DiagnosticOrderTransformer extends AbstractTransformer {
         String originalCode = null;
         boolean isProblem = false;
         String originalTerm = null;
+        boolean isReview = false;
 
         id = enterpriseId.longValue();
         organisationId = enterpriseOrganisationId.longValue();
@@ -108,6 +108,14 @@ public class DiagnosticOrderTransformer extends AbstractTransformer {
         //add original term too, for easy display of results
         originalTerm = item.getCode().getText();
 
+        Extension reviewExtension = ExtensionConverter.findExtension(fhir, FhirExtensionUri.IS_REVIEW);
+        if (reviewExtension != null) {
+            BooleanType b = (BooleanType)reviewExtension.getValue();
+            if (b.getValue() != null) {
+                isReview = b.getValue();
+            }
+        }
+
         org.endeavourhealth.transform.enterprise.outputModels.Observation model = (org.endeavourhealth.transform.enterprise.outputModels.Observation)csvWriter;
         model.writeUpsert(id,
                 organisationId,
@@ -122,7 +130,8 @@ public class DiagnosticOrderTransformer extends AbstractTransformer {
                 units,
                 originalCode,
                 isProblem,
-                originalTerm);
+                originalTerm,
+                isReview);
     }
 }
 

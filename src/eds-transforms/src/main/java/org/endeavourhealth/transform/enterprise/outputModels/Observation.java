@@ -30,8 +30,9 @@ public class Observation extends AbstractEnterpriseCsvWriter {
                             String units,
                             String originalCode,
                             boolean isProblem,
-                            String originalTerm) throws Exception {
-
+                            String originalTerm,
+                            boolean isReview) throws Exception {
+//TODO - use isReview boolean
         super.printRecord(OutputContainer.UPSERT,
                 "" + id,
                 "" + organisationId,

@@ -1,34 +1,58 @@
 package org.endeavourhealth.queuereader;
 
+import com.datastax.driver.core.utils.UUIDs;
+import com.datastax.driver.mapping.Mapper;
+import com.datastax.driver.mapping.MappingManager;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.common.io.Files;
+import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
+import org.endeavourhealth.common.cassandra.CassandraConnector;
 import org.endeavourhealth.common.config.ConfigManager;
+import org.endeavourhealth.common.fhir.ExtensionConverter;
+import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.utility.JsonSerializer;
+import org.endeavourhealth.common.utility.StreamExtension;
 import org.endeavourhealth.core.audit.AuditWriter;
+import org.endeavourhealth.core.configuration.Pipeline;
+import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
 import org.endeavourhealth.core.data.audit.AuditRepository;
+import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
+import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
+import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.data.ehr.models.ResourceByService;
+import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
+import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.fhirStorage.metadata.MetadataFactory;
+import org.endeavourhealth.core.fhirStorage.metadata.PatientCompartment;
+import org.endeavourhealth.core.fhirStorage.metadata.ResourceMetadata;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
+import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.messaging.slack.SlackHelper;
+import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
+import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
-import org.endeavourhealth.transform.common.exceptions.TransformException;
+import org.endeavourhealth.transform.common.IdHelper;
+import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
 import org.endeavourhealth.transform.emis.csv.transforms.admin.PatientTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ConsultationTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.DiaryTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.careRecord.*;
+import org.endeavourhealth.transform.emis.csv.transforms.prescribing.DrugRecordPreTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.prescribing.DrugRecordTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.prescribing.IssueRecordPreTransformer;
 import org.endeavourhealth.transform.emis.csv.transforms.prescribing.IssueRecordTransformer;
-import org.hl7.fhir.instance.model.Resource;
+import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,11 +78,29 @@ public class Main {
 			}
 		}
 
-		if (args.length == 2
+		if (args.length >= 2
 				&& args[0].equalsIgnoreCase("FixConfidentialPatients")) {
-			fixConfidentialPatients(args[1]);
+
+			String path = args[1];
+			UUID justThisService = null;
+			if (args.length > 2) {
+				justThisService = UUID.fromString(args[2]);
+			}
+
+			fixConfidentialPatients(path, justThisService);
 		}
 
+		if (args.length >= 2
+				&& args[0].equalsIgnoreCase("FixReivews")) {
+
+			String path = args[1];
+			UUID justThisService = null;
+			if (args.length > 2) {
+				justThisService = UUID.fromString(args[2]);
+			}
+
+			fixReviews(path, justThisService);
+		}
 
 		if (args.length != 1) {
 			LOG.error("Usage: queuereader config_id");
@@ -1286,23 +1328,48 @@ public class Main {
 		}
 	}*/
 
-	private static void fixConfidentialPatients(String sharedStoragePath) {
+	private static void fixConfidentialPatients(String sharedStoragePath, UUID justThisService) {
 		LOG.info("Fixing Confidential Patients");
 
 		ResourceRepository resourceRepository = new ResourceRepository();
+		ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+		ParserPool parserPool = new ParserPool();
+		MappingManager mappingManager = CassandraConnector.getInstance().getMappingManager();
+		Mapper<ResourceHistory> mapperResourceHistory = mappingManager.mapper(ResourceHistory.class);
+		Mapper<ResourceByExchangeBatch> mapperResourceByExchangeBatch = mappingManager.mapper(ResourceByExchangeBatch.class);
 
 		try {
 			Iterable<Service> iterable = new ServiceRepository().getAll();
 			for (Service service : iterable) {
 				UUID serviceId = service.getId();
+
+				if (justThisService != null
+						&& !service.equals(justThisService)) {
+					continue;
+				}
+
 				LOG.info("Doing service " + service.getName());
 
-				List<ResourceFiler> filers = new ArrayList<>();
+				List<UUID> systemIds = findSystemIds(service);
+
+				Map<String, ResourceHistory> resourcesFixed = new HashMap<>();
+				Map<UUID, Set<UUID>> exchangeBatchesToPutInProtocolQueue = new HashMap<>();
 
 				List<UUID> exchangeIds = new AuditRepository().getExchangeIdsForService(serviceId);
 				for (UUID exchangeId: exchangeIds) {
 
 					Exchange exchange = AuditWriter.readExchange(exchangeId);
+
+					String software = exchange.getHeader(HeaderKeys.SourceSystem);
+					if (!software.equalsIgnoreCase(MessageFormat.EMIS_CSV)) {
+						continue;
+					}
+
+					if (systemIds.size() > 1) {
+						throw new Exception("Multiple system IDs for service " + serviceId);
+					}
+					UUID systemId = systemIds.get(0);
+
 					String body = exchange.getBody();
 					String[] files = body.split(java.lang.System.lineSeparator());
 
@@ -1310,75 +1377,345 @@ public class Main {
 						continue;
 					}
 
+					LOG.info("Doing Emis CSV exchange " + exchangeId);
+
+					Set<UUID> batchIdsToPutInProtocolQueue = new HashSet<>();
+
+					Map<UUID, List<UUID>> batchesPerPatient = new HashMap<>();
+					List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
+					for (ExchangeBatch batch: batches) {
+						UUID patientId = batch.getEdsPatientId();
+						if (patientId != null) {
+							List<UUID> batchIds = batchesPerPatient.get(patientId);
+							if (batchIds == null) {
+								batchIds = new ArrayList<>();
+								batchesPerPatient.put(patientId, batchIds);
+							}
+							batchIds.add(batch.getBatchId());
+						}
+					}
+
 					File f = new File(sharedStoragePath, files[0]);
 					File dir = f.getParentFile();
 
 					String version = EmisCsvToFhirTransformer.determineVersion(dir);
 
-					String name = Files.getNameWithoutExtension(f.getName());
-					String[] toks = name.split("_");
-					if (toks.length != 5) {
-						throw new TransformException("Failed to extract data sharing agreement GUID from filename " + f.getName());
-					}
-					String dataSharingAgreementId = toks[4];
+					String dataSharingAgreementId = EmisCsvToFhirTransformer.findDataSharingAgreementGuid(f);
 
 					EmisCsvHelper helper = new EmisCsvHelper(dataSharingAgreementId);
-					ResourceFiler filer = new ResourceFiler(exchangeId, null, null, null, null, 1);
+					ResourceFiler filer = new ResourceFiler(exchangeId, serviceId, systemId, null, null, 1);
 
-					List<AbstractCsvParser> parsers = new ArrayList<>();
+					Map<Class, AbstractCsvParser> parsers = new HashMap<>();
 
 					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.admin.Patient.class, dir, version, true, parsers);
 					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation.class, dir, version, true, parsers);
+					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem.class, dir, version, true, parsers);
 					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation.class, dir, version, true, parsers);
 					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary.class, dir, version, true, parsers);
 					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord.class, dir, version, true, parsers);
 					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord.class, dir, version, true, parsers);
 
-					try {
-						for (AbstractCsvParser parser : parsers) {
-							if (parser instanceof org.endeavourhealth.transform.emis.csv.schema.admin.Patient) {
-//check for confidential!!!
+					ProblemPreTransformer.transform(version, parsers, filer, helper);
+					ObservationPreTransformer.transform(version, parsers, filer, helper);
+					DrugRecordPreTransformer.transform(version, parsers, filer, helper);
+					IssueRecordPreTransformer.transform(version, parsers, filer, helper);
+					DiaryPreTransformer.transform(version, parsers, filer, helper);
 
-								PatientTransformer.createResource((org.endeavourhealth.transform.emis.csv.schema.admin.Patient) parser, filer, helper, version);
+					org.endeavourhealth.transform.emis.csv.schema.admin.Patient patientParser = (org.endeavourhealth.transform.emis.csv.schema.admin.Patient)parsers.get(org.endeavourhealth.transform.emis.csv.schema.admin.Patient.class);
+					while (patientParser.nextRecord()) {
+						if (patientParser.getIsConfidential()
+								&& !patientParser.getDeleted()) {
+							PatientTransformer.createResource(patientParser, filer, helper, version);
+						}
+					}
+					patientParser.close();
 
-							} else if (parser instanceof org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation) {
-								ConsultationTransformer.createResource((org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation) parser, filer, helper, version);
+					org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation consultationParser = (org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation)parsers.get(org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation.class);
+					while (consultationParser.nextRecord()) {
+						if (consultationParser.getIsConfidential()
+								&& !consultationParser.getDeleted()) {
+							ConsultationTransformer.createResource(consultationParser, filer, helper, version);
+						}
+					}
+					consultationParser.close();
 
-							} else if (parser instanceof org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation) {
-								ObservationTransformer.createResource((org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation) parser, filer, helper, version);
+					org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation observationParser = (org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation)parsers.get(org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation.class);
+					while (observationParser.nextRecord()) {
+						if (observationParser.getIsConfidential()
+								&& !observationParser.getDeleted()) {
+							ObservationTransformer.createResource(observationParser, filer, helper, version);
+						}
+					}
+					observationParser.close();
 
-							} else if (parser instanceof org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary) {
-								DiaryTransformer.createResource((org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary) parser, filer, helper, version);
+					org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary diaryParser = (org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary)parsers.get(org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary.class);
+					while (diaryParser.nextRecord()) {
+						if (diaryParser.getIsConfidential()
+								&& !diaryParser.getDeleted()) {
+							DiaryTransformer.createResource(diaryParser, filer, helper, version);
+						}
+					}
+					diaryParser.close();
 
-							} else if (parser instanceof org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord) {
-								DrugRecordTransformer.createResource((org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord) parser, filer, helper, version);
+					org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord drugRecordParser = (org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord)parsers.get(org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord.class);
+					while (drugRecordParser.nextRecord()) {
+						if (drugRecordParser.getIsConfidential()
+								&& !drugRecordParser.getDeleted()) {
+							DrugRecordTransformer.createResource(drugRecordParser, filer, helper, version);
+						}
+					}
+					drugRecordParser.close();
 
-							} else if (parser instanceof org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord) {
-								IssueRecordTransformer.createResource((org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord) parser, filer, helper, version);
+					org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord issueRecordParser = (org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord)parsers.get(org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord.class);
+					while (issueRecordParser.nextRecord()) {
+						if (issueRecordParser.getIsConfidential()
+								&& !issueRecordParser.getDeleted()) {
+							IssueRecordTransformer.createResource(issueRecordParser, filer, helper, version);
+						}
+					}
+					issueRecordParser.close();
 
-							} else {
-								throw new Exception("Unexpected parser class " + parser.getClass());
+					filer.waitToFinish(); //just to close the thread pool, even though it's not been used
+					List<Resource> resources = filer.getNewResources();
+					for (Resource resource: resources) {
+
+						String patientId = IdHelper.getPatientId(resource);
+						UUID edsPatientId = UUID.fromString(patientId);
+
+						ResourceType resourceType = resource.getResourceType();
+						UUID resourceId = UUID.fromString(resource.getId());
+
+						boolean foundResourceInDbBatch = false;
+
+						List<UUID> batchIds = batchesPerPatient.get(edsPatientId);
+						if (batches != null) {
+							for (UUID batchId : batchIds) {
+
+								List<ResourceByExchangeBatch> resourceByExchangeBatches = resourceRepository.getResourcesForBatch(batchId, resourceType.toString(), resourceId);
+								if (resourceByExchangeBatches.isEmpty()) {
+									//if we've deleted data, this will be null
+									continue;
+								}
+
+								foundResourceInDbBatch = true;
+
+								for (ResourceByExchangeBatch resourceByExchangeBatch : resourceByExchangeBatches) {
+
+									String json = resourceByExchangeBatch.getResourceData();
+									if (!Strings.isNullOrEmpty(json)) {
+
+batchIdsToPutInProtocolQueue.add(batchId);
+										LOG.warn("JSON already in resource " + resourceType + " " + resourceId);
+									} else {
+
+										json = parserPool.composeString(resource);
+										resourceByExchangeBatch.setResourceData(json);
+										resourceByExchangeBatch.setIsDeleted(false);
+										resourceByExchangeBatch.setSchemaVersion("0.1");
+
+										LOG.info("Saved resource by batch " + resourceType + " " + resourceId + " in batch " + batchId);
+
+										UUID versionUuid = resourceByExchangeBatch.getVersion();
+										ResourceHistory resourceHistory = resourceRepository.getResourceHistoryByKey(resourceId, resourceType.toString(), versionUuid);
+										if (resourceHistory == null) {
+											throw new Exception("Failed to find resource history for " + resourceType + " " + resourceId + " and version " + versionUuid);
+										}
+										resourceHistory.setIsDeleted(false);
+										resourceHistory.setResourceData(json);
+										resourceHistory.setResourceChecksum(FhirStorageService.generateChecksum(json));
+										resourceHistory.setSchemaVersion("0.1");
+
+										resourceRepository.save(resourceByExchangeBatch);
+										resourceRepository.save(resourceHistory);
+										batchIdsToPutInProtocolQueue.add(batchId);
+
+										String key = resourceType.toString() + ":" + resourceId;
+										resourcesFixed.put(key, resourceHistory);
+									}
+
+									//if a patient became confidential, we will have deleted all resources for that
+									//patient, so we need to undo that too
+									//to undelete WHOLE patient record
+									//1. if THIS resource is a patient
+									//2. get all other deletes from the same exchange batch
+									//3. delete those from resource_by_exchange_batch (the deleted ones only)
+									//4. delete same ones from resource_history
+									//5. retrieve most recent resource_history
+									//6. if not deleted, add to resources fixed
+									if (resourceType == ResourceType.Patient) {
+
+										List<ResourceByExchangeBatch> resourcesInSameBatch = resourceRepository.getResourcesForBatch(batchId);
+										LOG.info("Undeleting " + resourcesInSameBatch.size() + " resources for batch " + batchId);
+										for (ResourceByExchangeBatch resourceInSameBatch: resourcesInSameBatch) {
+											if (!resourceInSameBatch.getIsDeleted()) {
+												continue;
+											}
+
+											//patient and episode resources will be restored by the above stuff, so don't try
+											//to do it again
+											if (resourceInSameBatch.getResourceType().equals(ResourceType.Patient.toString())
+													|| resourceInSameBatch.getResourceType().equals(ResourceType.EpisodeOfCare.toString())) {
+												continue;
+											}
+
+											ResourceHistory deletedResourceHistory = resourceRepository.getResourceHistoryByKey(resourceInSameBatch.getResourceId(), resourceInSameBatch.getResourceType(), resourceInSameBatch.getVersion());
+
+											mapperResourceByExchangeBatch.delete(resourceInSameBatch);
+											mapperResourceHistory.delete(deletedResourceHistory);
+											batchIdsToPutInProtocolQueue.add(batchId);
+
+											//check the most recent version of our resource, and if it's not deleted, add to the list to update the resource_by_service table
+											ResourceHistory mostRecentDeletedResourceHistory = resourceRepository.getCurrentVersion(resourceInSameBatch.getResourceType(), resourceInSameBatch.getResourceId());
+											if (mostRecentDeletedResourceHistory != null
+													&& !mostRecentDeletedResourceHistory.getIsDeleted()) {
+
+												String key2 = mostRecentDeletedResourceHistory.getResourceType().toString() + ":" + mostRecentDeletedResourceHistory.getResourceId();
+												resourcesFixed.put(key2, mostRecentDeletedResourceHistory);
+											}
+										}
+									}
+								}
 							}
 						}
 
-						filer.waitToFinish();
+						//if we didn't find records in the DB to update, then
+						if (!foundResourceInDbBatch) {
 
-						if (!filer.isEmpty()) {
-							filers.add(filer);
-						}
+							//we can't generate a back-dated time UUID, but we need one so the resource_history
+							//table is in order. To get a suitable time UUID, we just pull out the first exchange batch for our exchange,
+							//and the batch ID is actually a time UUID that was allocated around the right time
+							ExchangeBatch firstBatch = exchangeBatchRepository.retrieveFirstForExchangeId(exchangeId);
+							UUID versionUuid = firstBatch.getBatchId();
 
-					} finally {
-						for (AbstractCsvParser parser: parsers) {
-							parser.close();
+							//find suitable batch ID
+							UUID batchId = null;
+							if (batchIds != null
+									&& batchIds.size() > 0) {
+								batchId = batchIds.get(batchIds.size()-1);
+
+							} else {
+								//create new batch ID if not found
+								ExchangeBatch exchangeBatch = new ExchangeBatch();
+								exchangeBatch.setBatchId(UUIDs.timeBased());
+								exchangeBatch.setExchangeId(exchangeId);
+								exchangeBatch.setInsertedAt(new Date());
+								exchangeBatch.setEdsPatientId(edsPatientId);
+								exchangeBatchRepository.save(exchangeBatch);
+
+								batchId = exchangeBatch.getBatchId();
+
+								//add to map for next resource
+								if (batchIds == null) {
+									batchIds = new ArrayList<>();
+								}
+								batchIds.add(batchId);
+								batchesPerPatient.put(edsPatientId, batchIds);
+							}
+
+							String json = parserPool.composeString(resource);
+
+							ResourceHistory resourceHistory = new ResourceHistory();
+							resourceHistory.setResourceId(resourceId);
+							resourceHistory.setResourceType(resourceType.toString());
+							resourceHistory.setVersion(versionUuid);
+							resourceHistory.setCreatedAt(new Date());
+							resourceHistory.setServiceId(serviceId);
+							resourceHistory.setSystemId(systemId);
+							resourceHistory.setIsDeleted(false);
+							resourceHistory.setSchemaVersion("0.1");
+							resourceHistory.setResourceData(json);
+							resourceHistory.setResourceChecksum(FhirStorageService.generateChecksum(json));
+
+							ResourceByExchangeBatch resourceByExchangeBatch = new ResourceByExchangeBatch();
+							resourceByExchangeBatch.setBatchId(batchId);
+							resourceByExchangeBatch.setExchangeId(exchangeId);
+							resourceByExchangeBatch.setResourceType(resourceType.toString());
+							resourceByExchangeBatch.setResourceId(resourceId);
+							resourceByExchangeBatch.setVersion(versionUuid);
+							resourceByExchangeBatch.setIsDeleted(false);
+							resourceByExchangeBatch.setSchemaVersion("0.1");
+							resourceByExchangeBatch.setResourceData(json);
+
+							resourceRepository.save(resourceHistory);
+							resourceRepository.save(resourceByExchangeBatch);
+
+							batchIdsToPutInProtocolQueue.add(batchId);
 						}
+					}
+
+					if (!batchIdsToPutInProtocolQueue.isEmpty()) {
+						exchangeBatchesToPutInProtocolQueue.put(exchangeId, batchIdsToPutInProtocolQueue);
 					}
 				}
 
-				if (filers.isEmpty()) {
-					continue;
+				//update the resource_by_service table (and the resource_by_patient view)
+				for (ResourceHistory resourceHistory: resourcesFixed.values()) {
+					UUID latestVersionUpdatedUuid = resourceHistory.getVersion();
+
+					ResourceHistory latestVersion = resourceRepository.getCurrentVersion(resourceHistory.getResourceType(), resourceHistory.getResourceId());
+					UUID latestVersionUuid = latestVersion.getVersion();
+
+					//if there have been subsequent updates to the resource, then skip it
+					if (!latestVersionUuid.equals(latestVersionUpdatedUuid)) {
+						continue;
+					}
+
+					Resource resource = parserPool.parse(resourceHistory.getResourceData());
+					ResourceMetadata metadata = MetadataFactory.createMetadata(resource);
+					UUID patientId = ((PatientCompartment)metadata).getPatientId();
+
+					ResourceByService resourceByService = new ResourceByService();
+					resourceByService.setServiceId(resourceHistory.getServiceId());
+					resourceByService.setSystemId(resourceHistory.getSystemId());
+					resourceByService.setResourceType(resourceHistory.getResourceType());
+					resourceByService.setResourceId(resourceHistory.getResourceId());
+					resourceByService.setCurrentVersion(resourceHistory.getVersion());
+					resourceByService.setUpdatedAt(resourceHistory.getCreatedAt());
+					resourceByService.setPatientId(patientId);
+					resourceByService.setSchemaVersion(resourceHistory.getSchemaVersion());
+					resourceByService.setResourceMetadata(JsonSerializer.serialize(metadata));
+
+					resourceRepository.save(resourceByService);
+
+					//call out to our patient search and person matching services
+					if (resource instanceof Patient) {
+						PatientLinkHelper.updatePersonId((Patient)resource);
+						PatientSearchHelper.update(serviceId, resourceHistory.getSystemId(), (Patient)resource);
+
+					} else if (resource instanceof EpisodeOfCare) {
+						PatientSearchHelper.update(serviceId, resourceHistory.getSystemId(), (EpisodeOfCare)resource);
+					}
 				}
 
+				if (!exchangeBatchesToPutInProtocolQueue.isEmpty()) {
+					//find the config for our protocol queue
+					String configXml = ConfigManager.getConfiguration("inbound", "queuereader");
 
+					//the config XML may be one of two serialised classes, so we use a try/catch to safely try both if necessary
+					QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
+					Pipeline pipeline = configuration.getPipeline();
+
+					PostMessageToExchangeConfig config = pipeline
+							.getPipelineComponents()
+							.stream()
+							.filter(t -> t instanceof PostMessageToExchangeConfig)
+							.map(t -> (PostMessageToExchangeConfig) t)
+							.filter(t -> t.getExchange().equalsIgnoreCase("EdsProtocol"))
+							.collect(StreamExtension.singleOrNullCollector());
+
+					//post to the protocol exchange
+					for (UUID exchangeId : exchangeBatchesToPutInProtocolQueue.keySet()) {
+						Set<UUID> batchIds = exchangeBatchesToPutInProtocolQueue.get(exchangeId);
+
+						org.endeavourhealth.core.messaging.exchange.Exchange exchange = AuditWriter.readExchange(exchangeId);
+
+						String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIds);
+						exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+
+						PostMessageToExchange component = new PostMessageToExchange(config);
+						component.process(exchange);
+					}
+				}
 			}
 
 			LOG.info("Finished Fixing Confidential Patients");
@@ -1388,6 +1725,219 @@ public class Main {
 		}
 	}
 
+
+	private static void fixReviews(String sharedStoragePath, UUID justThisService) {
+		LOG.info("Fixing Reviews");
+
+		ResourceRepository resourceRepository = new ResourceRepository();
+		ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+		ParserPool parserPool = new ParserPool();
+
+		try {
+			Iterable<Service> iterable = new ServiceRepository().getAll();
+			for (Service service : iterable) {
+				UUID serviceId = service.getId();
+
+				if (justThisService != null
+						&& !service.equals(justThisService)) {
+					continue;
+				}
+
+				LOG.info("Doing service " + service.getName());
+
+				List<UUID> systemIds = findSystemIds(service);
+
+				Map<String, Long> problemCodes = new HashMap<>();
+
+				List<UUID> exchangeIds = new AuditRepository().getExchangeIdsForService(serviceId);
+				for (UUID exchangeId: exchangeIds) {
+
+					Exchange exchange = AuditWriter.readExchange(exchangeId);
+
+					String software = exchange.getHeader(HeaderKeys.SourceSystem);
+					if (!software.equalsIgnoreCase(MessageFormat.EMIS_CSV)) {
+						continue;
+					}
+
+					String body = exchange.getBody();
+					String[] files = body.split(java.lang.System.lineSeparator());
+
+					if (files.length == 0) {
+						continue;
+					}
+
+					LOG.info("Doing Emis CSV exchange " + exchangeId);
+
+					Map<UUID, List<UUID>> batchesPerPatient = new HashMap<>();
+					List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
+					for (ExchangeBatch batch: batches) {
+						UUID patientId = batch.getEdsPatientId();
+						if (patientId != null) {
+							List<UUID> batchIds = batchesPerPatient.get(patientId);
+							if (batchIds == null) {
+								batchIds = new ArrayList<>();
+								batchesPerPatient.put(patientId, batchIds);
+							}
+							batchIds.add(batch.getBatchId());
+						}
+					}
+
+					File f = new File(sharedStoragePath, files[0]);
+					File dir = f.getParentFile();
+
+					String version = EmisCsvToFhirTransformer.determineVersion(dir);
+
+					Map<Class, AbstractCsvParser> parsers = new HashMap<>();
+					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem.class, dir, version, true, parsers);
+					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation.class, dir, version, true, parsers);
+
+					org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem problemParser = (org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem)parsers.get(org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem.class);
+					org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation observationParser = (org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation)parsers.get(org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation.class);
+
+					while (problemParser.nextRecord()) {
+						String patientGuid = problemParser.getPatientGuid();
+						String observationGuid = problemParser.getObservationGuid();
+						String key = patientGuid + ":" + observationGuid;
+						if (!problemCodes.containsKey(key)) {
+							problemCodes.put(key, null);
+						}
+					}
+					problemParser.close();
+
+					while (observationParser.nextRecord()) {
+						String patientGuid = observationParser.getPatientGuid();
+						String observationGuid = observationParser.getObservationGuid();
+						String key = patientGuid + ":" + observationGuid;
+						if (problemCodes.containsKey(key)) {
+							Long codeId = observationParser.getCodeId();
+							if (codeId == null) {
+								continue;
+							}
+							problemCodes.put(key, codeId);
+						}
+					}
+					observationParser.close();
+
+					String dataSharingAgreementId = EmisCsvToFhirTransformer.findDataSharingAgreementGuid(f);
+
+					EmisCsvHelper helper = new EmisCsvHelper(dataSharingAgreementId);
+
+					while (observationParser.nextRecord()) {
+						String problemGuid = observationParser.getProblemGuid();
+						if (!Strings.isNullOrEmpty(problemGuid)) {
+							String patientGuid = observationParser.getPatientGuid();
+							Long codeId = observationParser.getCodeId();
+							if (codeId == null) {
+								continue;
+							}
+
+							String key = patientGuid + ":" + problemGuid;
+							Long problemCodeId = problemCodes.get(key);
+							if (problemCodeId == null
+									|| problemCodeId.longValue() != codeId.longValue()) {
+								continue;
+							}
+
+							//if here, our code is the same as the problem, so it's a review
+							String locallyUniqueId = patientGuid + ":" + observationParser.getObservationGuid();
+							ResourceType resourceType = ObservationTransformer.getTargetResourceType(observationParser, helper);
+
+							for (UUID systemId: systemIds) {
+
+								UUID edsPatientId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Patient, patientGuid);
+								if (edsPatientId == null) {
+									throw new Exception("Failed to find patient ID for service " + serviceId + " system " + systemId + " resourceType " + ResourceType.Patient + " local ID " + patientGuid);
+								}
+
+								UUID edsObservationId = IdHelper.getEdsResourceId(serviceId, systemId, resourceType, locallyUniqueId);
+								if (edsObservationId == null) {
+									throw new Exception("Failed to find observation ID for service " + serviceId + " system " + systemId + " resourceType " + resourceType + " local ID " + locallyUniqueId);
+								}
+
+								List<UUID> batchIds = batchesPerPatient.get(edsPatientId);
+								if (batches == null) {
+									throw new Exception("Failed to find batch ID for patient " + edsPatientId + " in exchange " + exchangeId);
+								}
+								for (UUID batchId: batchIds) {
+
+									List<ResourceByExchangeBatch> resourceByExchangeBatches = resourceRepository.getResourcesForBatch(batchId, resourceType.toString(), edsObservationId);
+									if (resourceByExchangeBatches.isEmpty()) {
+										//if we've deleted data, this will be null
+										continue;
+										//throw new Exception("No resources found for batch " + batchId + " resource type " + resourceType + " and resource id " + edsObservationId);
+									}
+
+									for (ResourceByExchangeBatch resourceByExchangeBatch: resourceByExchangeBatches) {
+
+										String json = resourceByExchangeBatch.getResourceData();
+										if (Strings.isNullOrEmpty(json)) {
+											throw new Exception("No JSON in resource " + resourceType + " " + edsObservationId);
+										}
+										Resource resource = parserPool.parse(json);
+										if (addReviewExtension((DomainResource)resource)) {
+											json = parserPool.composeString(resource);
+											resourceByExchangeBatch.setResourceData(json);
+											LOG.info("Changed " + resourceType + " " + edsObservationId + " to have extension");
+
+											resourceRepository.save(resourceByExchangeBatch);
+
+											UUID versionUuid = resourceByExchangeBatch.getVersion();
+											ResourceHistory resourceHistory = resourceRepository.getResourceHistoryByKey(edsObservationId, resourceType.toString(), versionUuid);
+											if (resourceHistory == null) {
+												throw new Exception("Failed to find resource history for " + resourceType + " " + edsObservationId + " and version " + versionUuid);
+											}
+											resourceHistory.setResourceData(json);
+											resourceHistory.setResourceChecksum(FhirStorageService.generateChecksum(json));
+											resourceRepository.save(resourceHistory);
+
+											ResourceByService resourceByService = resourceRepository.getResourceByServiceByKey(serviceId, systemId, resourceType.toString(), edsObservationId);
+											if (resourceByService != null) {
+												UUID serviceVersionUuid = resourceByService.getCurrentVersion();
+												if (serviceVersionUuid.equals(versionUuid)) {
+
+													resourceByService.setResourceData(json);
+													resourceRepository.save(resourceByService);
+												}
+											}
+										} else {
+											LOG.info("" + resourceType + " " + edsObservationId + " already has extension");
+										}
+									}
+
+								}
+							}
+
+							//1. find out resource type originall saved from
+							//2. retrieve from resource_by_exchange_batch
+							//3. update resource in resource_by_exchange_batch
+							//4. retrieve from resource_history
+							//5. update resource_history
+							//6. retrieve record from resource_by_service
+							//7. if resource_by_service version UUID matches the resource_history updated, then update that too
+						}
+					}
+					observationParser.close();
+				}
+			}
+
+			LOG.info("Finished Fixing Reviews");
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+	}
+
+	private static boolean addReviewExtension(DomainResource resource) {
+
+		if (ExtensionConverter.hasExtension(resource, FhirExtensionUri.IS_REVIEW)) {
+			return false;
+		}
+
+		Extension extension = ExtensionConverter.createExtension(FhirExtensionUri.IS_REVIEW, new BooleanType(true));
+		resource.addExtension(extension);
+
+		return true;
+	}
 }
 
 class ResourceFiler extends FhirResourceFiler {
@@ -1396,10 +1946,10 @@ class ResourceFiler extends FhirResourceFiler {
 		super(exchangeId, serviceId, systemId, transformError, batchIdsCreated, maxFilingThreads);
 	}
 
-	private Map<String, List<ResourceWrapper>> map = new HashMap<>();
+	private List<Resource> newResources = new ArrayList<>();
 
-	public boolean isEmpty() {
-		return map.isEmpty();
+	public List<Resource> getNewResources() {
+		return newResources;
 	}
 
 	@Override
@@ -1414,52 +1964,17 @@ class ResourceFiler extends FhirResourceFiler {
 
 	@Override
 	public void savePatientResource(CsvCurrentState parserState, boolean mapIds, String patientId, Resource... resources) throws Exception {
-		/*for (Resource resource: resources) {
-			List<ResourceWrapper> wrappers = map.get(patientId);
-			if (wrappers == null) {
-				wrappers = new ArrayList<>();
-				map.put(patientId, wrappers);
+
+		for (Resource resource: resources) {
+			if (mapIds) {
+				IdHelper.mapIds(getServiceId(), getSystemId(), resource);
 			}
-			ResourceWrapper wrapper = new ResourceWrapper();
-			wrapper.setResource(resource);
-			wrapper.setMapIds(mapIds);
-
-
-
-			ResourceType resourceType = resource.getResourceType();
-			Map<String, Resource> map2 = map.get(resourceType);
-			if (map2 == null) {
-				map2 = new HashMap<>();
-				map.put(resourceType, map2);
-			}
-			String resourceId = resource.getId();
-			map2.put(resourceId, resource);
-		}*/
+			newResources.add(resource);
+		}
 	}
 
 	@Override
 	public void deletePatientResource(CsvCurrentState parserState, boolean mapIds, String patientId, Resource... resources) throws Exception {
 		throw new Exception("shouldn't be calling deletePatientResource");
-	}
-}
-
-class ResourceWrapper {
-	private Resource resource;
-	private boolean mapIds;
-
-	public Resource getResource() {
-		return resource;
-	}
-
-	public void setResource(Resource resource) {
-		this.resource = resource;
-	}
-
-	public boolean isMapIds() {
-		return mapIds;
-	}
-
-	public void setMapIds(boolean mapIds) {
-		this.mapIds = mapIds;
 	}
 }

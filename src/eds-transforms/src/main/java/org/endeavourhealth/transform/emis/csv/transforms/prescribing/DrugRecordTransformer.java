@@ -150,6 +150,10 @@ public class DrugRecordTransformer {
         Coding fhirCoding = CodingHelper.createCoding(fhirAuthorisationType);
         fhirMedicationStatement.addExtension(ExtensionConverter.createExtension(FhirExtensionUri.MEDICATION_AUTHORISATION_TYPE, fhirCoding));
 
+        if (parser.getIsConfidential()) {
+            fhirMedicationStatement.addExtension(ExtensionConverter.createBooleanExtension(FhirExtensionUri.IS_CONFIDENTIAL, true));
+        }
+
         fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirMedicationStatement);
     }
 

@@ -28,7 +28,7 @@ export class ExchangeAuditComponent {
 	exchanges: Exchange[];
 	selectedExchange: Exchange;
 	busyPostingToExchange: Subscription;
-	busyTestingPost: Subscription;
+	//busyTestingPost: Subscription;
 
 	postAllExchanges: boolean;
 
@@ -238,7 +238,7 @@ export class ExchangeAuditComponent {
 		console.log('checkbox changed = ' + this.postAllExchanges);
 	}
 
-	postTest() {
+	/*postTest() {
 		var vm = this;
 		var serviceId = this.service.uuid;
 		console.log("Post test in component class");
@@ -255,5 +255,5 @@ export class ExchangeAuditComponent {
 				this.busyPostingToExchange = null;
 			}
 		)
-	}
+	}*/
 }

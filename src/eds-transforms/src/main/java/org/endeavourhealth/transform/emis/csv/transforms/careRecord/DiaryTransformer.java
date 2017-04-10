@@ -124,6 +124,10 @@ public class DiaryTransformer {
             fhirRequest.setStatus(ProcedureRequest.ProcedureRequestStatus.SUSPENDED);
         }
 
+        if (parser.getIsConfidential()) {
+            fhirRequest.addExtension(ExtensionConverter.createBooleanExtension(FhirExtensionUri.IS_CONFIDENTIAL, true));
+        }
+
         fhirResourceFiler.savePatientResource(parser.getCurrentState(), patientGuid, fhirRequest);
     }
 }
