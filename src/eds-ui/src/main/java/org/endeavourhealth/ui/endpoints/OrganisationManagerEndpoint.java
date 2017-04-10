@@ -1,5 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.*;
+import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -14,6 +16,7 @@ import org.endeavourhealth.core.mySQLDatabase.MapType;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.*;
+import org.endeavourhealth.ui.metrics.EdsInstrumentedFilterContextListener;
 import org.endeavourhealth.ui.utility.CsvHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,32 +39,43 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Organisation);
 
 
+    private static final MetricRegistry metricRegistry = EdsInstrumentedFilterContextListener.REGISTRY;
+
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData, @QueryParam("searchType") String searchType) throws Exception {
-        super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-                "Organisation(s)",
-                "Organisation Id", uuid,
-                "SearchData", searchData);
+        final Timer timer = metricRegistry.timer(MetricRegistry.name(OrganisationManagerEndpoint.class, "get"));
 
-        boolean searchServices = false;
-        if (searchType != null && searchType.equals("services"))
-            searchServices = true;
+        final Timer.Context context = timer.time();
+        try {
+            super.setLogbackMarkers(sc);
+            userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                    "Organisation(s)",
+                    "Organisation Id", uuid,
+                    "SearchData", searchData);
 
-        if (uuid == null && searchData == null) {
-            LOG.trace("getOrganisation - list");
+            boolean searchServices = false;
+            if (searchType != null && searchType.equals("services"))
+                searchServices = true;
 
-            return getOrganisationList(searchServices);
-        } else if (uuid != null){
-            LOG.trace("getOrganisation - single - " + uuid);
-            return getSingleOrganisation(uuid);
-        } else {
-            LOG.trace("Search Organisations - " + searchData + searchType);
-            return search(searchData, searchServices);
+            if (uuid == null && searchData == null) {
+                LOG.trace("getOrganisation - list");
+
+                return getOrganisationList(searchServices);
+            } else if (uuid != null) {
+                LOG.trace("getOrganisation - single - " + uuid);
+                return getSingleOrganisation(uuid);
+            } else {
+                LOG.trace("Search Organisations - " + searchData + searchType);
+                return search(searchData, searchServices);
+            }
+        } finally {
+            context.stop();
         }
+
     }
 
     @POST
@@ -258,12 +272,20 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @Path("/organisationStatistics")
     @RequiresAdmin
     public Response getOrganisationsStatistics(@Context SecurityContext sc) throws Exception {
-        super.setLogbackMarkers(sc);
-        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
-                "Organisation Statistics",
-                "Organisation", null);
+        final Timer timer = metricRegistry.timer(MetricRegistry.name(OrganisationManagerEndpoint.class, "getStatistics"));
 
-        return generateStatistics(OrganisationEntity.getStatistics("getOrganisationStatistics"));
+        final Timer.Context context = timer.time();
+        try {
+            super.setLogbackMarkers(sc);
+            userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                    "Organisation Statistics",
+                    "Organisation", null);
+
+            LOG.trace("Statistics obtained");
+            return generateStatistics(OrganisationEntity.getStatistics("getOrganisationStatistics"));
+        } finally {
+            context.stop();
+        }
     }
 
     @GET

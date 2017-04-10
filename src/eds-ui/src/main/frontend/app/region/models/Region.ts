@@ -6,4 +6,5 @@ export class Region {
     organisations : { [key:string]:string; };
     parentRegions : { [key:string]:string; };
     childRegions : { [key:string]:string; };
+    sharingAgreements : { [key:string]:string; };
 }

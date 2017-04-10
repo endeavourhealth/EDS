@@ -4,6 +4,7 @@ import {Observable} from "rxjs";
 import {BaseHttp2Service} from "eds-common-js";
 import {Dsa} from "./models/Dsa";
 import {DataFlow} from "../dataFlow/models/DataFlow";
+import {Region} from "../region/models/Region";
 
 @Injectable()
 export class DsaService extends BaseHttp2Service  {
@@ -39,5 +40,11 @@ export class DsaService extends BaseHttp2Service  {
         let params = new URLSearchParams();
         params.set('uuid',uuid);
         return this.httpGet('api/dsa/dataflows', { search : params });
+    }
+
+    getLinkedRegions(uuid : string) :  Observable<Region[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/dsa/regions', { search : params });
     }
 }

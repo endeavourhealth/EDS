@@ -107,6 +107,19 @@ public final class DsaEndpoint extends AbstractEndpoint {
         return getLinkedDataFlows(uuid);
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/regions")
+    public Response getLinkedRegions(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "dataflow(s)",
+                "DSA Id", uuid);
+
+        return getLinkedRegions(uuid);
+    }
+
     private Response getDSAList() throws Exception {
 
         List<DataSharingAgreementEntity> dsas = DataSharingAgreementEntity.getAllDSAs();
@@ -146,6 +159,22 @@ public final class DsaEndpoint extends AbstractEndpoint {
 
         if (dataFlowUuids.size() > 0)
             ret = DataFlowEntity.getDataFlowsFromList(dataFlowUuids);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
+
+    private Response getLinkedRegions(String dsaUuid) throws Exception {
+
+        List<String> regionUuids = MasterMappingEntity.getParentMappings(dsaUuid, MapType.DATASHARINGAGREEMENT.getMapType(), MapType.REGION.getMapType());
+
+        List<RegionEntity> ret = new ArrayList<>();
+
+        if (regionUuids.size() > 0)
+            ret = RegionEntity.getRegionsFromList(regionUuids);
 
         clearLogbackMarkers();
         return Response

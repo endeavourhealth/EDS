@@ -18,6 +18,7 @@ public class JsonDSA {
     private Short dsaStatusId = null;
     private String consentModel = null;
     private Map<UUID, String> dataFlows = null;
+    private Map<UUID, String> regions = null;
 
     public String getUuid() {
         return uuid;
@@ -105,5 +106,13 @@ public class JsonDSA {
 
     public void setDataFlows(Map<UUID, String> dataFlows) {
         this.dataFlows = dataFlows;
+    }
+
+    public Map<UUID, String> getRegions() {
+        return regions;
+    }
+
+    public void setRegions(Map<UUID, String> regions) {
+        this.regions = regions;
     }
 }
