@@ -144,6 +144,7 @@ export class OrganisationManagerComponent {
         var vm = this;
         if (vm.searchData.length < 3) {
             vm.allItems = vm.organisations;
+            vm.setPage(1)
             return;
         }
         vm.organisationManagerService.search(vm.searchData, vm.searchType)
