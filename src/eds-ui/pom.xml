@@ -299,6 +299,7 @@
                 <artifactId>aspectj-maven-plugin</artifactId>
                 <version>1.10</version>
                 <configuration>
+                    <complianceLevel>${java.version}</complianceLevel>
                     <aspectLibraries>
                         <aspectLibrary>
                             <groupId>io.astefanutti.metrics.aspectj</groupId>
@@ -311,10 +312,6 @@
                         <goals>
                             <goal>compile</goal>
                         </goals>
-                        <configuration>
-                            <source>${java.version}</source>
-                            <target>${java.version}</target>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
