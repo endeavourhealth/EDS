@@ -1,7 +1,6 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.*;
-import com.codahale.metrics.Timer;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.JsonElement;
@@ -18,7 +17,6 @@ import org.endeavourhealth.core.mySQLDatabase.MapType;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.*;
-import org.endeavourhealth.ui.aspects.LoggingAnnotation;
 import org.endeavourhealth.ui.metrics.EdsInstrumentedFilterContextListener;
 import org.endeavourhealth.ui.utility.CsvHelper;
 import org.slf4j.Logger;
