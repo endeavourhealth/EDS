@@ -1673,6 +1673,7 @@ public class Main {
 					resourceByService.setPatientId(patientId);
 					resourceByService.setSchemaVersion(resourceHistory.getSchemaVersion());
 					resourceByService.setResourceMetadata(JsonSerializer.serialize(metadata));
+					resourceByService.setResourceData(resourceHistory.getResourceData());
 
 					resourceRepository.save(resourceByService);
 
