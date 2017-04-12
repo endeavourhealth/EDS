@@ -9,7 +9,7 @@
 					<div class="row">
 
 						<div class="col-md-3">
-							<library-folder [showMenu]="true" (selectionChange)="folderChanged($event)" (itemActioned)="actionItem($event)"></library-folder>
+							<library-folder [showMenu]="true" [actionMenuItems]="actionMenuItems" (selectionChange)="folderChanged($event)" (itemActioned)="actionItem($event)"></library-folder>
 						</div>
 
 						<div class="col-md-9">

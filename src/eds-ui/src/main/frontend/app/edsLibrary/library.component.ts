@@ -7,6 +7,7 @@ import {ItemSummaryList} from "eds-common-js/dist/library/models/ItemSummaryList
 import {ItemType} from "eds-common-js/dist/folder/models/ItemType";
 import {FolderItem} from "eds-common-js/dist/folder/models/FolderContent";
 import {LibraryItem} from "eds-common-js/dist/library/models/LibraryItem";
+import {ActionMenuItem} from "eds-common-js/dist/folder/models/ActionMenuItem";
 
 @Component({
 	template : require('./library.html')
@@ -14,6 +15,7 @@ import {LibraryItem} from "eds-common-js/dist/library/models/LibraryItem";
 export class LibraryComponent {
 	selectedFolder : FolderNode;
 	itemSummaryList : ItemSummaryList;
+	actionMenuItems : ActionMenuItem[];
 
 	constructor(
 		protected libraryService:LibraryService,
@@ -21,6 +23,14 @@ export class LibraryComponent {
 		protected moduleStateService : ModuleStateService,
 		protected $modal : NgbModal,
 		protected $state : StateService) {
+		this.actionMenuItems = [
+			{ type: ItemType.System, text: 'Add system' },
+			{ type: ItemType.Protocol, text: 'Add data protocol' },
+			{ type: ItemType.Query, text: 'Add cohort' },
+			{ type: ItemType.DataSet, text: 'Add data set' },
+			{ type: ItemType.CodeSet, text: 'Add code set' },
+			{ type: ItemType.CountReport, text: 'Add validation report' }
+		];
 	}
 
 	folderChanged($event) {
