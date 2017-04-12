@@ -1329,7 +1329,7 @@ public class Main {
 	}*/
 
 	private static void fixConfidentialPatients(String sharedStoragePath, UUID justThisService) {
-		LOG.info("Fixing Confidential Patients");
+		LOG.info("Fixing Confidential Patients using path " + sharedStoragePath + " and service " + justThisService);
 
 		ResourceRepository resourceRepository = new ResourceRepository();
 		ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
@@ -1344,7 +1344,8 @@ public class Main {
 				UUID serviceId = service.getId();
 
 				if (justThisService != null
-						&& !service.equals(justThisService)) {
+						&& !service.getId().equals(justThisService)) {
+					LOG.info("Skipping service " + service.getName());
 					continue;
 				}
 
@@ -1503,8 +1504,6 @@ public class Main {
 
 									String json = resourceByExchangeBatch.getResourceData();
 									if (!Strings.isNullOrEmpty(json)) {
-
-batchIdsToPutInProtocolQueue.add(batchId);
 										LOG.warn("JSON already in resource " + resourceType + " " + resourceId);
 									} else {
 
@@ -1727,7 +1726,7 @@ batchIdsToPutInProtocolQueue.add(batchId);
 
 
 	private static void fixReviews(String sharedStoragePath, UUID justThisService) {
-		LOG.info("Fixing Reviews");
+		LOG.info("Fixing Reviews using path " + sharedStoragePath + " and service " + justThisService);
 
 		ResourceRepository resourceRepository = new ResourceRepository();
 		ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
@@ -1739,7 +1738,8 @@ batchIdsToPutInProtocolQueue.add(batchId);
 				UUID serviceId = service.getId();
 
 				if (justThisService != null
-						&& !service.equals(justThisService)) {
+						&& !service.getId().equals(justThisService)) {
+					LOG.info("Skipping service " + service.getName());
 					continue;
 				}
 
