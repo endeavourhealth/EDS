@@ -1489,7 +1489,7 @@ public class Main {
 						boolean foundResourceInDbBatch = false;
 
 						List<UUID> batchIds = batchesPerPatient.get(edsPatientId);
-						if (batches != null) {
+						if (batchIds != null) {
 							for (UUID batchId : batchIds) {
 
 								List<ResourceByExchangeBatch> resourceByExchangeBatches = resourceRepository.getResourcesForBatch(batchId, resourceType.toString(), resourceId);
