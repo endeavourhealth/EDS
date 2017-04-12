@@ -299,6 +299,8 @@
                 <artifactId>aspectj-maven-plugin</artifactId>
                 <version>1.10</version>
                 <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                     <aspectLibraries>
                         <aspectLibrary>
                             <groupId>io.astefanutti.metrics.aspectj</groupId>
