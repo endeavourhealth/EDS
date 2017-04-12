@@ -1,5 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
@@ -20,6 +22,7 @@ import javax.ws.rs.core.SecurityContext;
 import java.util.*;
 
 @Path("/region")
+@Metrics(registry = "EdsRegistry")
 public final class RegionEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
 
@@ -28,6 +31,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="Region.Get")
     @Path("/")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
         super.setLogbackMarkers(sc);
@@ -51,6 +55,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="Region.Post")
     @Path("/")
     @RequiresAdmin
     public Response post(@Context SecurityContext sc, JsonRegion region) throws Exception {
@@ -80,6 +85,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="Region.Delete")
     @Path("/")
     @RequiresAdmin
     public Response deleteRegion(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
@@ -99,6 +105,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="Region.GetOrganisations")
     @Path("/organisations")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -112,6 +119,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="Region.GetParentRegions")
     @Path("/parentRegions")
     public Response getParentRegions(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -125,6 +133,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="Region.GetChildRegions")
     @Path("/childRegions")
     public Response getChildRegions(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -138,6 +147,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="Region.GetSharingAgreements")
     @Path("/sharingAgreements")
     public Response getSharingAgreements(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);

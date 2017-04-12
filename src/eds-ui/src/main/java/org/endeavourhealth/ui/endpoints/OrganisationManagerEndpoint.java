@@ -2,10 +2,12 @@ package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.*;
 import com.codahale.metrics.Timer;
+import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
@@ -16,6 +18,7 @@ import org.endeavourhealth.core.mySQLDatabase.MapType;
 import org.endeavourhealth.core.mySQLDatabase.models.*;
 import org.endeavourhealth.coreui.endpoints.AbstractEndpoint;
 import org.endeavourhealth.coreui.json.*;
+import org.endeavourhealth.ui.aspects.LoggingAnnotation;
 import org.endeavourhealth.ui.metrics.EdsInstrumentedFilterContextListener;
 import org.endeavourhealth.ui.utility.CsvHelper;
 import org.slf4j.Logger;
@@ -33,6 +36,7 @@ import java.time.ZoneId;
 import java.util.*;
 
 @Path("/organisationManager")
+@Metrics(registry = "EdsRegistry")
 public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
 
@@ -45,42 +49,37 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.Get")
     @Path("/")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData, @QueryParam("searchType") String searchType) throws Exception {
-        final Timer timer = metricRegistry.timer(MetricRegistry.name(OrganisationManagerEndpoint.class, "get"));
 
-        final Timer.Context context = timer.time();
-        try {
-            super.setLogbackMarkers(sc);
-            userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-                    "Organisation(s)",
-                    "Organisation Id", uuid,
-                    "SearchData", searchData);
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Organisation(s)",
+                "Organisation Id", uuid,
+                "SearchData", searchData);
 
-            boolean searchServices = false;
-            if (searchType != null && searchType.equals("services"))
-                searchServices = true;
+        boolean searchServices = false;
+        if (searchType != null && searchType.equals("services"))
+            searchServices = true;
 
-            if (uuid == null && searchData == null) {
-                LOG.trace("getOrganisation - list");
+        if (uuid == null && searchData == null) {
+            LOG.trace("getOrganisation - list");
 
-                return getOrganisationList(searchServices);
-            } else if (uuid != null) {
-                LOG.trace("getOrganisation - single - " + uuid);
-                return getSingleOrganisation(uuid);
-            } else {
-                LOG.trace("Search Organisations - " + searchData + searchType);
-                return search(searchData, searchServices);
-            }
-        } finally {
-            context.stop();
+            return getOrganisationList(searchServices);
+        } else if (uuid != null) {
+            LOG.trace("getOrganisation - single - " + uuid);
+            return getSingleOrganisation(uuid);
+        } else {
+            LOG.trace("Search Organisations - " + searchData + searchType);
+            return search(searchData, searchServices);
         }
-
     }
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.Post")
     @Path("/")
     @RequiresAdmin
     public Response post(@Context SecurityContext sc, JsonOrganisationManager organisationManager) throws Exception {
@@ -129,6 +128,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.Delete")
     @Path("/")
     @RequiresAdmin
     public Response deleteOrganisation(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
@@ -148,6 +148,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.GetRegions")
     @Path("/regions")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -161,6 +162,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.GetChildOrganisations")
     @Path("/childOrganisations")
     public Response getChildOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -174,6 +176,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.GetServices")
     @Path("/services")
     public Response getServices(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -187,6 +190,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.GetParentOrganisations")
     @Path("/parentOrganisations")
     public Response getParentOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("isService") String isService) throws Exception {
         super.setLogbackMarkers(sc);
@@ -205,6 +209,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.GetAddresses")
     @Path("/addresses")
     public Response getAddresses(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -218,6 +223,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.GetMarkers")
     @Path("/markers")
     public Response getMarkers(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -231,6 +237,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.GetEditedBulks")
     @Path("/editedBulks")
     @RequiresAdmin
     public Response getUpdatedBulkOrganisations(@Context SecurityContext sc) throws Exception {
@@ -250,6 +257,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.GetConflicts")
     @Path("/conflicts")
     @RequiresAdmin
     public Response getConflictedOrganisations(@Context SecurityContext sc) throws Exception {
@@ -269,28 +277,23 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.GetOrganisationStatistics")
     @Path("/organisationStatistics")
     @RequiresAdmin
     public Response getOrganisationsStatistics(@Context SecurityContext sc) throws Exception {
-        final Timer timer = metricRegistry.timer(MetricRegistry.name(OrganisationManagerEndpoint.class, "getStatistics"));
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
+                "Organisation Statistics",
+                "Organisation", null);
 
-        final Timer.Context context = timer.time();
-        try {
-            super.setLogbackMarkers(sc);
-            userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Save,
-                    "Organisation Statistics",
-                    "Organisation", null);
-
-            LOG.trace("Statistics obtained");
-            return generateStatistics(OrganisationEntity.getStatistics("getOrganisationStatistics"));
-        } finally {
-            context.stop();
-        }
+        LOG.trace("Statistics obtained");
+        return generateStatistics(OrganisationEntity.getStatistics("getOrganisationStatistics"));
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.GetServiceStatistics")
     @Path("/serviceStatistics")
     @RequiresAdmin
     public Response getServiceStatistics(@Context SecurityContext sc) throws Exception {
@@ -305,6 +308,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.GetRegionStatistics")
     @Path("/regionStatistics")
     @RequiresAdmin
     public Response getRegionStatistics(@Context SecurityContext sc) throws Exception {
@@ -319,6 +323,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="OrganisationManager.DeleteBulks")
     @Path("/deleteBulks")
     @RequiresAdmin
     public Response deleteBulks(@Context SecurityContext sc) throws Exception {
@@ -338,6 +343,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.TEXT_PLAIN)
+    @Timed(absolute = true, name="OrganisationManager.UploadBulkOrganisations")
     @Path("/upload")
     @RequiresAdmin
     public Response post(@Context SecurityContext sc, String csvFile) throws Exception {
