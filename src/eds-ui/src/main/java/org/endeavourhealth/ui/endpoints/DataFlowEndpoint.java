@@ -1,5 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
@@ -17,6 +19,7 @@ import javax.ws.rs.core.*;
 import java.util.*;
 
 @Path("/dataFlow")
+@Metrics(registry = "EdsRegistry")
 public final class DataFlowEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
 
@@ -26,6 +29,7 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DataFlowEndpoint.Get")
     @Path("/")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
         super.setLogbackMarkers(sc);
@@ -51,6 +55,7 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DataFlowEndpoint.Post")
     @Path("/")
     @RequiresAdmin
     public Response post(@Context SecurityContext sc, JsonDataFlow dataFlow) throws Exception {
@@ -79,6 +84,7 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DataFlowEndpoint.Delete")
     @Path("/")
     @RequiresAdmin
     public Response deleteOrganisation(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
@@ -98,6 +104,7 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DataFlowEndpoint.GetDataProcessingAgreements")
     @Path("/dpas")
     public Response getLinkedDpas(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -111,6 +118,7 @@ public final class DataFlowEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DataFlowEndpoint.GetDataSharingAgreements")
     @Path("/dsas")
     public Response getLinkedDsas(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);

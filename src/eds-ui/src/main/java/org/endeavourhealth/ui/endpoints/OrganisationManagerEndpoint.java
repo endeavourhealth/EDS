@@ -47,7 +47,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="OrganisationManager.Get")
+    @Timed(absolute = true, name="EDS-UI.OrganisationManagerEndpoint.Get")
     @Path("/")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData, @QueryParam("searchType") String searchType) throws Exception {
 
@@ -77,7 +77,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="OrganisationManager.Post")
+    @Timed(absolute = true, name="EDS-UI.OrganisationManagerEndpoint.Post")
     @Path("/")
     @RequiresAdmin
     public Response post(@Context SecurityContext sc, JsonOrganisationManager organisationManager) throws Exception {
@@ -126,7 +126,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="OrganisationManager.Delete")
+    @Timed(absolute = true, name="EDS-UI.OrganisationManagerEndpoint.Delete")
     @Path("/")
     @RequiresAdmin
     public Response deleteOrganisation(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
@@ -146,7 +146,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="OrganisationManager.GetRegions")
+    @Timed(absolute = true, name="EDS-UI.OrganisationManagerEndpoint.GetRegions")
     @Path("/regions")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -160,7 +160,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="OrganisationManager.GetChildOrganisations")
+    @Timed(absolute = true, name="EDS-UI.OrganisationManagerEndpoint.GetChildOrganisations")
     @Path("/childOrganisations")
     public Response getChildOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -174,7 +174,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="OrganisationManager.GetServices")
+    @Timed(absolute = true, name="EDS-UI.OrganisationManagerEndpoint.GetServices")
     @Path("/services")
     public Response getServices(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -188,7 +188,7 @@ public final class OrganisationManagerEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="OrganisationManager.GetParentOrganisations")
+    @Timed(absolute = true, name="EDS-UI.OrganisationManagerEndpoint.GetParentOrganisations")
     @Path("/parentOrganisations")
     public Response getParentOrganisations(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("isService") String isService) throws Exception {
         super.setLogbackMarkers(sc);

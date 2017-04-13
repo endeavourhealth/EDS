@@ -31,7 +31,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="Region.Get")
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.Get")
     @Path("/")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
         super.setLogbackMarkers(sc);
@@ -55,7 +55,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="Region.Post")
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.Post")
     @Path("/")
     @RequiresAdmin
     public Response post(@Context SecurityContext sc, JsonRegion region) throws Exception {
@@ -85,7 +85,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="Region.Delete")
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.Delete")
     @Path("/")
     @RequiresAdmin
     public Response deleteRegion(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
@@ -105,7 +105,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="Region.GetOrganisations")
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.GetOrganisations")
     @Path("/organisations")
     public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -119,7 +119,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="Region.GetParentRegions")
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.GetParentRegions")
     @Path("/parentRegions")
     public Response getParentRegions(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -133,7 +133,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="Region.GetChildRegions")
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.GetChildRegions")
     @Path("/childRegions")
     public Response getChildRegions(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
@@ -147,7 +147,7 @@ public final class RegionEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Timed(absolute = true, name="Region.GetSharingAgreements")
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.GetSharingAgreements")
     @Path("/sharingAgreements")
     public Response getSharingAgreements(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);

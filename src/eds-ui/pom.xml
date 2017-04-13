@@ -274,12 +274,12 @@
         <dependency>
             <groupId>io.astefanutti.metrics.aspectj</groupId>
             <artifactId>metrics-aspectj</artifactId>
-            <version>1.2.0</version>
+            <version>${metrics-aspectj.version}</version>
         </dependency>
         <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjrt</artifactId>
-            <version>1.8.9</version>
+            <version>${aspectjrt.version}</version>
         </dependency>
     </dependencies>
 
