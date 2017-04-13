@@ -1,6 +1,8 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.security.SecurityUtils;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Path("/resources")
+@Metrics(registry = "EdsRegistry")
 public class ResourceEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(ResourceEndpoint.class);
 
@@ -77,6 +80,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ResourceEndpoint.GetAllResourceTypes")
     @Path("/allResourceTypes")
     public Response getAllResourceTypes(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -98,6 +102,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ResourceEndpoint.GetForId")
     @Path("/forId")
     public Response forId(@Context SecurityContext sc,
                           @QueryParam("resourceType") String resourceType,
@@ -134,6 +139,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ResourceEndpoint.GetForPatient")
     @Path("/forPatient")
     public Response forPatient(@Context SecurityContext sc,
                                @QueryParam("resourceType") String resourceType,
@@ -179,6 +185,7 @@ public class ResourceEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ResourceEndpoint.GetResourceHistory")
     @Path("/resourceHistory")
     public Response resourceHistory(@Context SecurityContext sc,
                                     @QueryParam("resourceType") String resourceType,

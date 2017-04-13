@@ -1,5 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.models.ActiveItem;
 import org.endeavourhealth.core.data.admin.models.Audit;
@@ -21,6 +23,7 @@ import javax.ws.rs.core.SecurityContext;
 import java.util.*;
 
 @Path("/dashboard")
+@Metrics(registry = "EdsRegistry")
 public final class DashboardEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(DashboardEndpoint.class);
 	private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Dashboard);
@@ -28,6 +31,7 @@ public final class DashboardEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.DashboardEndpoint.GetRecentDocuments")
 	@Path("/getRecentDocuments")
 	public Response getRecentDocuments(@Context SecurityContext sc, @QueryParam("count") int count) throws Exception {
 		super.setLogbackMarkers(sc);

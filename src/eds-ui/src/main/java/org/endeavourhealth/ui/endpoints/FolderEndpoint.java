@@ -1,5 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.models.*;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
@@ -23,6 +25,7 @@ import java.util.*;
  * Endpoint for functions related to creating and managing folders
  */
 @Path("/folder")
+@Metrics(registry = "EdsRegistry")
 public final class FolderEndpoint extends AbstractItemEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(FolderEndpoint.class);
     private static final UserAuditRepository userAudit = new UserAuditRepository(AuditModule.EdsUiModule.Folders);
@@ -30,6 +33,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.FolderEndpoint.SaveFolder")
     @Path("/saveFolder")
     @RequiresAdmin
     public Response saveFolder(@Context SecurityContext sc, JsonFolder folderParameters) throws Exception {
@@ -120,6 +124,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.FolderEndpoint.DeleteFolder")
     @Path("/deleteFolder")
     @RequiresAdmin
     public Response deleteFolder(@Context SecurityContext sc, JsonFolder folderParameters) throws Exception {
@@ -159,6 +164,7 @@ public final class FolderEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.FolderEndpoint.GetFolders")
     @Path("/getFolders")
     public Response getFolders(@Context SecurityContext sc, @QueryParam("folderType") int folderType, @QueryParam("parentUuid") String parentUuidStr) throws Exception {
         super.setLogbackMarkers(sc);

@@ -1,8 +1,10 @@
 
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Strings;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.SecurityUtils;
@@ -51,6 +53,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Path("/exchangeAudit")
+@Metrics(registry = "EdsRegistry")
 public class ExchangeAuditEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(ExchangeAuditEndpoint .class);
 
@@ -63,6 +66,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeList")
     @Path("/getExchangeList")
     public Response getExchangeList(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr,
                                                                  @QueryParam("maxRows") int maxRows,
@@ -124,6 +128,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeById")
     @Path("/getExchangeById")
     public Response getExchangeById(@Context SecurityContext sc, @QueryParam("serviceId") String serviceIdStr, @QueryParam("exchangeId") String exchangeIdStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -191,6 +196,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetExchangeEvents")
     @Path("/getExchangeEvents")
     public Response getExchangeEvents(@Context SecurityContext sc, @QueryParam("exchangeId") String exchangeIdStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -223,6 +229,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.PostToExchange")
     @Path("/postToExchange")
     @RequiresAdmin
     public Response postToExchange(@Context SecurityContext sc, JsonPostToExchangeRequest request) throws Exception {
@@ -472,6 +479,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetTransformErrorSummaries")
     @Path("/getTransformErrorSummaries")
     public Response getTransformErrorSummaries(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -530,6 +538,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetTransformErrorDetails")
     @Path("/getTransformErrorDetails")
     public Response getTransformErrorDetails(@Context SecurityContext sc,
                                     @QueryParam("serviceId") String serviceIdStr,
@@ -674,6 +683,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.RerunFirstExchangeInError")
     @Path("/rerunFirstExchangeInError")
     @RequiresAdmin
     public Response rerunFirstExchangeInError(@Context SecurityContext sc, JsonTransformRerunRequest request) throws Exception {
@@ -700,6 +710,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.RerunAllExchangeInError")
     @Path("/rerunAllExchangesInError")
     @RequiresAdmin
     public Response rerunAllExchangesInError(@Context SecurityContext sc, JsonTransformRerunRequest request) throws Exception {
@@ -756,6 +767,7 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.ExchangeAuditEndpoint.GetTransformErrorLines")
     @Path("/getTransformErrorLines")
     public Response getTransformErrorLines(@Context SecurityContext sc,
                                              @QueryParam("serviceId") String serviceIdStr,

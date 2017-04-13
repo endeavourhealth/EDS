@@ -1,5 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
@@ -23,6 +25,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Path("/stats")
+@Metrics(registry = "EdsRegistry")
 public final class StatsEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(StatsEndpoint.class);
 
@@ -31,6 +34,7 @@ public final class StatsEndpoint extends AbstractEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.StatsEndpoint.GetStorageStatistics")
     @Path("/getStorageStatistics")
     public Response getStorageStatistics(@Context SecurityContext sc,
                                          @QueryParam("serviceList") List<String> services,

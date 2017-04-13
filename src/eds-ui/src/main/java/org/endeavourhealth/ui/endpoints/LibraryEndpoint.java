@@ -1,5 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.core.data.admin.LibraryRepository;
 import org.endeavourhealth.core.data.admin.LibraryRepositoryHelper;
 import org.endeavourhealth.core.data.admin.models.*;
@@ -32,6 +34,7 @@ import java.io.StringReader;
 import java.util.*;
 
 @Path("/library")
+@Metrics(registry = "EdsRegistry")
 public final class LibraryEndpoint extends AbstractItemEndpoint {
 
     private static final Logger LOG = LoggerFactory.getLogger(LibraryEndpoint.class);
@@ -41,6 +44,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetFolderContents")
 	@Path("/getFolderContents")
 	public Response getFolderContents(@Context SecurityContext sc, @QueryParam("folderUuid") String uuidStr) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -139,6 +143,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
 	@GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetLibraryItem")
     @Path("/getLibraryItem")
     public Response getLibraryItem(@Context SecurityContext sc, @QueryParam("uuid") String uuidStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -169,6 +174,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.SaveLibraryItem")
     @Path("/saveLibraryItem")
     @RequiresAdmin
     public Response saveLibraryItem(@Context SecurityContext sc, LibraryItem libraryItem) throws Exception {
@@ -269,6 +275,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.DeleteLibraryItem")
     @Path("/deleteLibraryItem")
     @RequiresAdmin
     public Response deleteLibraryItem(@Context SecurityContext sc, LibraryItem libraryItem) throws Exception {
@@ -296,6 +303,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetContentNamesForReportLibraryItem")
     @Path("/getContentNamesForReportLibraryItem")
     public Response getContentNamesForReportLibraryItem(@Context SecurityContext sc, @QueryParam("uuid") String uuidStr) throws Exception {
         super.setLogbackMarkers(sc);
@@ -335,6 +343,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.MoveLibraryItems")
     @Path("/moveLibraryItems")
     @RequiresAdmin
     public Response moveLibraryItems(@Context SecurityContext sc, JsonMoveItems parameters) throws Exception {
@@ -360,6 +369,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetSystems")
     @Path("/getSystems")
     public Response getSystems(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -445,6 +455,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetQueries")
     @Path("/getQueries") // queries define cohorts
     public Response getQueries(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -492,6 +503,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetDataSets")
     @Path("/getDataSets")
     public Response getDataSets(@Context SecurityContext sc) throws Exception {
         super.setLogbackMarkers(sc);
@@ -539,6 +551,7 @@ public final class LibraryEndpoint extends AbstractItemEndpoint {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.LibraryEndpoint.GetProtocols")
     @Path("/getProtocols")
     public Response getProtocols(@Context SecurityContext sc, @QueryParam("serviceId") String serviceId) throws Exception {
         super.setLogbackMarkers(sc);

@@ -1,5 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.core.data.admin.OrganisationRepository;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Organisation;
@@ -23,6 +25,7 @@ import javax.ws.rs.core.SecurityContext;
 import java.util.*;
 
 @Path("/organisation")
+@Metrics(registry = "EdsRegistry")
 public final class OrganisationEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(OrganisationEndpoint.class);
 
@@ -33,6 +36,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.OrganisationEndpoint.Post")
 	@Path("/")
 	@RequiresAdmin
 	public Response post(@Context SecurityContext sc, JsonOrganisation organisation) throws Exception {
@@ -64,6 +68,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.OrganisationEndpoint.DeleteOrganisation")
 	@Path("/")
 	@RequiresAdmin
 	public Response deleteOrganisation(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
@@ -86,6 +91,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.OrganisationEndpoint.GetServices")
 	@Path("/services")
 	public Response getOrganisationServices(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
 		userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
@@ -112,6 +118,7 @@ public final class OrganisationEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.OrganisationEndpoint.Get")
 	@Path("/")
 	public Response get(@Context SecurityContext sc, @QueryParam("uuid") String uuid, @QueryParam("searchData") String searchData) throws Exception {
 		super.setLogbackMarkers(sc);

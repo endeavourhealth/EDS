@@ -1,7 +1,9 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Path("/rabbit")
+@Metrics(registry = "EdsRegistry")
 public final class RabbitEndpoint extends AbstractEndpoint {
 	private static final Logger LOG = LoggerFactory.getLogger(RabbitEndpoint.class);
 
@@ -57,6 +60,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.GetRoutings")
 	@Path("/routings")
 	public Response getRoutings(@Context SecurityContext sc) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -73,6 +77,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.PostRoutings")
 	@Path("/routings")
 	public Response getRoutings(@Context SecurityContext sc, String routings) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -88,6 +93,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.GetRabbitNodes")
 	@Path("/nodes")
 	public Response getRabbitNodes(@Context SecurityContext sc) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -122,6 +128,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.PingRabbitNodes")
 	@Path("/ping")
 	public Response pingRabbitNode(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -167,6 +174,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.GetRabbitQueues")
 	@Path("/queues")
 	public Response getRabbitQueues(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -201,6 +209,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.GetRabbitExchanges")
 	@Path("/exchanges")
 	public Response getRabbitExchanges(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -235,6 +244,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.GetRabbitBindings")
 	@Path("/bindings")
 	public Response getRabbitBindings(@Context SecurityContext sc, @QueryParam("address") String address) throws Exception {
 		super.setLogbackMarkers(sc);
@@ -257,6 +267,7 @@ public final class RabbitEndpoint extends AbstractEndpoint {
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.TEXT_PLAIN)
+	@Timed(absolute = true, name="EDS-UI.RabbitEndpoint.SynchronizeRabbit")
 	@Path("/synchronize")
 	@RequiresAdmin
 	public Response synchronizeRabbit(@Context SecurityContext sc, String address) throws Exception {

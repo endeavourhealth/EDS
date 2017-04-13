@@ -1,5 +1,7 @@
 package org.endeavourhealth.ui.endpoints;
 
+import com.codahale.metrics.annotation.Timed;
+import io.astefanutti.metrics.aspectj.Metrics;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
 import org.endeavourhealth.core.data.audit.models.AuditModule;
@@ -20,6 +22,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 
 @Path("/user")
+@Metrics(registry = "EdsRegistry")
 public final class UserEndpoint extends AbstractEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(UserEndpoint.class);
 
@@ -27,6 +30,7 @@ public final class UserEndpoint extends AbstractEndpoint {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.UserEndpoint.GetUserDetails")
     @Path("/details")
     public Response userDetails(@Context SecurityContext sc) throws Exception {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
@@ -39,6 +43,7 @@ public final class UserEndpoint extends AbstractEndpoint {
 
     @GET
     @Path("/account")
+    @Timed(absolute = true, name="EDS-UI.UserEndpoint.GetUserAccount")
     public Response userAccount(@Context SecurityContext sc) throws Exception {
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
             "User Account");
@@ -53,6 +58,7 @@ public final class UserEndpoint extends AbstractEndpoint {
 
     @GET
     @Path("/logout")
+    @Timed(absolute = true, name="EDS-UI.UserEndpoint.Logout")
     public Response logout(@Context SecurityContext sc) throws Exception {
 
         LOG.info("Logout: {}", SecurityUtils.getCurrentUser(sc));
