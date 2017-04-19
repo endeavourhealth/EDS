@@ -15,10 +15,10 @@ export class DataFlowComponent {
                 private dataFlowService : DataFlowService,
                 private log : LoggerService,
                 protected $state : StateService) {
-        this.getCohorts();
+        this.getDataFlows();
     }
 
-    getCohorts() {
+    getDataFlows() {
 
         var vm = this;
         vm.dataFlowService.getAllDataFlows()

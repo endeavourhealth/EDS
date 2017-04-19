@@ -66,24 +66,25 @@ export class CohortEditorComponent {
         vm.cohortService.saveCohort(vm.cohort)
             .subscribe(saved => {
                     vm.adminService.clearPendingChanges();
-                    vm.log.success('Item saved', vm.cohort, 'Saved');
-                    if (close) { vm.$state.go('app.dataSharingSummaryOverview'); }
+                    vm.log.success('Cohort saved', vm.cohort, 'Saved');
+                    if (close) { vm.close(); }
                 },
-                error => vm.log.error('Error saving', error, 'Error')
+                error => vm.log.error('Error saving Cohort', error, 'Error')
             );
     }
 
     close() {
         this.adminService.clearPendingChanges();
-        this.$state.go('app.dataSharingSummaryOverview');
+        window.history.back();
     }
 
     private editDataProcessingAgreements() {
         var vm = this;
         DpaPickerDialog.open(vm.$modal, vm.dpas)
-            .result.then(function (result : Dpa[]) {
-            vm.dpas = result;
-        });
+            .result.then(function
+                (result : Dpa[]) { vm.dpas = result; },
+                () => vm.log.info('Edit Data Processing Agreements cancelled')
+        );
     }
 
     private editDataProcessingAgreement(item : Dpa) {

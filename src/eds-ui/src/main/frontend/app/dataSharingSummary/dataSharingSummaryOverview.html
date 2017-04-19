@@ -64,7 +64,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-3">
                     <div class="panel panel-primary">
                         <div class="panel-heading">Cohorts</div>
                         <div class="panel-body">
@@ -79,6 +79,25 @@
                             <br>
                             <div class="pull-right">
                                 <button type="button" class="btn btn-sm btn-primary" (click)="goToCohorts()">View Cohorts</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">Datasets</div>
+                        <div class="panel-body">
+                            <div class="row" *ngFor="let dataset of datasetStats">
+                                <div class="col-md-10">
+                                    {{dataset.label}}
+                                </div>
+                                <div class="col-md-2">
+                                    {{dataset.value}}
+                                </div>
+                            </div>
+                            <br>
+                            <div class="pull-right">
+                                <button type="button" class="btn btn-sm btn-primary" (click)="goToDataSets()">View Datasets</button>
                             </div>
                         </div>
                     </div>

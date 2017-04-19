@@ -81,24 +81,25 @@ export class DsaEditorComponent {
         vm.dsaService.saveDsa(vm.dsa)
             .subscribe(saved => {
                     vm.adminService.clearPendingChanges();
-                    vm.log.success('Item saved', vm.dsa, 'Saved');
-                    if (close) { vm.$state.go('app.dataSharingSummaryOverview'); }
+                    vm.log.success('Data Sharing Agreement saved', vm.dsa, 'Saved');
+                    if (close) { vm.close();}
                 },
-                error => vm.log.error('Error saving', error, 'Error')
+                error => vm.log.error('Error saving Data Sharing Agreement', error, 'Error')
             );
     }
 
     close() {
         this.adminService.clearPendingChanges();
-        this.$state.go('app.dataSharingSummaryOverview');
+        window.history.back();
     }
 
     private editDataFlows() {
         var vm = this;
         DataFlowPickerDialog.open(vm.$modal, vm.dataFlows)
-            .result.then(function (result : DataFlow[]) {
-            vm.dataFlows = result;
-        });
+            .result.then(function
+                (result : DataFlow[]) { vm.dataFlows = result;},
+                () => vm.log.info('Edit Data Flows cancelled')
+        );
     }
 
     private editRegion(item : DataFlow) {
@@ -108,9 +109,10 @@ export class DsaEditorComponent {
     private editRegions() {
         var vm = this;
         RegionPickerDialog.open(vm.$modal, vm.regions)
-            .result.then(function (result : Region[]) {
-            vm.regions = result;
-        });
+            .result.then(function
+                (result : Region[]) { vm.regions = result; },
+                () => vm.log.info('Edit Regions cancelled')
+        );
     }
 
     private editDataFlow(item : DataFlow) {

@@ -12,6 +12,7 @@
         <class>org.endeavourhealth.core.mySQLDatabase.models.DataSharingAgreementEntity</class>
         <class>org.endeavourhealth.core.mySQLDatabase.models.DataSharingSummaryEntity</class>
         <class>org.endeavourhealth.core.mySQLDatabase.models.MasterMappingEntity</class>
+        <class>org.endeavourhealth.core.mySQLDatabase.models.DatasetEntity</class>
         <properties>
             <property name="hibernate.connection.driver_class" value="com.mysql.jdbc.Driver"/>
             <property name="hibernate.archive.autodetection" value="class"/>

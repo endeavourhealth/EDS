@@ -67,6 +67,7 @@ import {DataSharingSummaryComponent} from "./dataSharingSummary/dataSharingSumma
 import {DataSharingSummaryEditorComponent} from "./dataSharingSummary/dataSharingSummaryEditor.component";
 import {Application, AdminModule} from "eds-common-js";
 import {DataServiceManagerMenuService} from "./dataServiceManager.menu";
+import {DataSetComponent} from "./dataSet/dataSet.component";
 
 @NgModule(
 	Application.Define({
@@ -96,7 +97,7 @@ import {DataServiceManagerMenuService} from "./dataServiceManager.menu";
 			DsaModule,
 			DpaModule,
 			DataSharingSummaryModule,
-			PaginationModule
+			PaginationModule,
 		],
 		states: [
 			{name: 'app.dashboard', url: '/dashboard', component: DashboardComponent},
@@ -127,6 +128,8 @@ import {DataServiceManagerMenuService} from "./dataServiceManager.menu";
 			{name: 'app.cohortEditor', url: '/cohort/:itemAction/:itemUuid', component: CohortEditorComponent},
 			{name: 'app.dataFlow', url: '/dataFlow', component: DataFlowComponent},
 			{name: 'app.dataFlowEditor', url: '/dataFlow/:itemAction/:itemUuid', component: DataFlowEditorComponent},
+			{name: 'app.dataSet', url: '/dataSet', component: DataSetComponent},
+			{name: 'app.dataSetEditor', url: '/dataSet/:itemAction/:itemUuid', component: DataSetEditComponent},
 			{name: 'app.dsa', url: '/dsa', component: DsaComponent},
 			{name: 'app.dsaEditor', url: '/dsa/:itemAction/:itemUuid', component: DsaEditorComponent},
 			{name: 'app.dpa', url: '/dpa', component: DpaComponent},

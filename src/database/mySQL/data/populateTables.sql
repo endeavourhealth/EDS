@@ -99,7 +99,7 @@ values (1, "Inactive");
 
 /*OrganisationManager.DataSharingAgreement*/
 insert into OrganisationManager.DataSharingAgreement (Uuid, Name, Description, DSAStatusId)
-values ("e8340789-0a61-11e7-bc48-80fa5b27a530", "National Data Sharing Agreement", "Full country sharing agreement", 1)
+values ("e8340789-0a61-11e7-bc48-80fa5b27a530", "National Data Sharing Agreement", "Full country sharing agreement", 1);
 
 /*OrganisationManager.StorageProtocol*/
 insert into OrganisationManager.StorageProtocol (Id, StorageProtocol)
@@ -171,4 +171,7 @@ values (5, "Data Processing Agreement");
 
 insert into OrganisationManager.MapType (Id, MapType)
 values (6, "Cohort");
+
+insert into OrganisationManager.MapType (Id, MapType)
+values (7, "Data Set");
 

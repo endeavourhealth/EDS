@@ -128,6 +128,20 @@ public final class DpaEndpoint extends AbstractEndpoint {
         return getLinkedCohorts(uuid);
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.DpaEndpoint.GetDataSets")
+    @Path("/datasets")
+    public Response getLinkedDataSets(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "Data Sets(s)",
+                "DPA Id", uuid);
+
+        return getLinkedDataSets(uuid);
+    }
+
     private Response getDPAList() throws Exception {
 
         List<DataProcessingAgreementEntity> dpas = DataProcessingAgreementEntity.getAllDPAs();
@@ -189,4 +203,18 @@ public final class DpaEndpoint extends AbstractEndpoint {
                 .build();
     }
 
+    private Response getLinkedDataSets(String dpaUuid) throws Exception {
+        List<String> datasets = MasterMappingEntity.getChildMappings(dpaUuid, MapType.DATAPROCESSINGAGREEMENT.getMapType(), MapType.DATASET.getMapType());
+
+        List<DatasetEntity> ret = new ArrayList<>();
+
+        if (datasets.size() > 0)
+            ret = DatasetEntity.getDataSetsFromList(datasets);
+
+        clearLogbackMarkers();
+        return Response
+                .ok()
+                .entity(ret)
+                .build();
+    }
 }

@@ -5,6 +5,7 @@ import {BaseHttp2Service} from "eds-common-js";
 import {Dpa} from "./models/Dpa";
 import {DataFlow} from "../dataFlow/models/DataFlow";
 import {Cohort} from "../cohort/models/Cohort";
+import {DataSet} from "../dataSet/models/Dataset";
 
 @Injectable()
 export class DpaService extends BaseHttp2Service  {
@@ -46,5 +47,11 @@ export class DpaService extends BaseHttp2Service  {
         let params = new URLSearchParams();
         params.set('uuid',uuid);
         return this.httpGet('api/dpa/cohorts', { search : params });
+    }
+
+    getLinkedDataSets(uuid : string) :  Observable<DataSet[]> {
+        let params = new URLSearchParams();
+        params.set('uuid',uuid);
+        return this.httpGet('api/dpa/datasets', { search : params });
     }
 }

@@ -94,6 +94,17 @@ create table OrganisationManager.Cohort (
     
 );
 
+drop table if exists OrganisationManager.Dataset;
+
+create table OrganisationManager.Dataset (
+	Uuid char(36) not null primary key,
+    Name varchar(100) not null,
+    Description varchar(100) null,
+    Attributes text not null,
+    QueryDefinition varchar(100) null
+
+);
+
 drop table if exists OrganisationManager.DataFlow;
 
 create table OrganisationManager.DataFlow (
