@@ -1584,6 +1584,12 @@ public class Main {
 							//table is in order. To get a suitable time UUID, we just pull out the first exchange batch for our exchange,
 							//and the batch ID is actually a time UUID that was allocated around the right time
 							ExchangeBatch firstBatch = exchangeBatchRepository.retrieveFirstForExchangeId(exchangeId);
+
+							//if there was no batch for the exchange, then the exchange wasn't processed at all. So skip this exchange
+							//and we'll pick up the same patient data in a following exchange
+							if (firstBatch == null) {
+								continue;
+							}
 							UUID versionUuid = firstBatch.getBatchId();
 
 							//find suitable batch ID
@@ -1856,8 +1862,8 @@ public class Main {
 								}
 
 								List<UUID> batchIds = batchesPerPatient.get(edsPatientId);
-								if (batches == null) {
-									throw new Exception("Failed to find batch ID for patient " + edsPatientId + " in exchange " + exchangeId);
+								if (batchIds != null) {
+									throw new Exception("Failed to find batch ID for patient " + edsPatientId + " in exchange " + exchangeId + " for resource " + resourceType + " " + edsObservationId);
 								}
 								for (UUID batchId: batchIds) {
 
@@ -1872,13 +1878,13 @@ public class Main {
 
 										String json = resourceByExchangeBatch.getResourceData();
 										if (Strings.isNullOrEmpty(json)) {
-											throw new Exception("No JSON in resource " + resourceType + " " + edsObservationId);
+											throw new Exception("No JSON in resource " + resourceType + " " + edsObservationId + " in batch " + batchId);
 										}
 										Resource resource = parserPool.parse(json);
 										if (addReviewExtension((DomainResource)resource)) {
 											json = parserPool.composeString(resource);
 											resourceByExchangeBatch.setResourceData(json);
-											LOG.info("Changed " + resourceType + " " + edsObservationId + " to have extension");
+											LOG.info("Changed your pre" + resourceType + " " + edsObservationId + " to have extension in batch " + batchId);
 
 											resourceRepository.save(resourceByExchangeBatch);
 
