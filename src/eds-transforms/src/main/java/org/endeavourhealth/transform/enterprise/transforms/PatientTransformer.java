@@ -151,7 +151,7 @@ public class PatientTransformer extends AbstractTransformer {
 
         //check if our patient demographics also should be used as the person demographics. This is typically
         //true if our patient record is at a GP practice.
-        boolean shouldWritePersonRecord = shouldWritePersonRecord(fhirPatient, personId);
+        boolean shouldWritePersonRecord = shouldWritePersonRecord(fhirPatient);
 
         org.endeavourhealth.transform.enterprise.outputModels.Patient patientWriter = (org.endeavourhealth.transform.enterprise.outputModels.Patient)csvWriter;
         org.endeavourhealth.transform.enterprise.outputModels.Person personWriter = data.getPersons();
@@ -236,7 +236,7 @@ public class PatientTransformer extends AbstractTransformer {
         }
     }
 
-    private boolean shouldWritePersonRecord(Patient fhirPatient, long personId) throws Exception {
+    private boolean shouldWritePersonRecord(Patient fhirPatient) throws Exception {
 
         //TODO - remove this
         if (true) {
@@ -297,6 +297,10 @@ public class PatientTransformer extends AbstractTransformer {
         }
 
         //TODO - check just if is active and NOT gp practice elsewhere
+        String personId = PatientLinkHelper.getPersonId(patientUuid.toString());
+        List<String> otherPatientIds = PatientLinkHelper.getPatientIds(personId);
+
+        //TODO - how to work out what other services are in the protocol????
 
 
         return false;

@@ -1832,7 +1832,9 @@ public class Main {
 
 								List<UUID> batchIds = batchesPerPatient.get(edsPatientId);
 								if (batchIds == null) {
-									throw new Exception("Failed to find batch ID for patient " + edsPatientId + " in exchange " + exchangeId + " for resource " + resourceType + " " + edsObservationId);
+									//if there are no batches for this patient, we'll be handling this data in another exchange
+									continue;
+									//throw new Exception("Failed to find batch ID for patient " + edsPatientId + " in exchange " + exchangeId + " for resource " + resourceType + " " + edsObservationId);
 								}
 								for (UUID batchId: batchIds) {
 
