@@ -11,7 +11,10 @@ import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
 import org.endeavourhealth.common.utility.JsonSerializer;
+import org.endeavourhealth.common.utility.StreamExtension;
 import org.endeavourhealth.core.audit.AuditWriter;
+import org.endeavourhealth.core.configuration.Pipeline;
+import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
@@ -30,6 +33,7 @@ import org.endeavourhealth.core.fhirStorage.metadata.PatientCompartment;
 import org.endeavourhealth.core.fhirStorage.metadata.ResourceMetadata;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
+import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.messaging.slack.SlackHelper;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
@@ -79,6 +83,8 @@ public class Main {
 			fixDeletedAppointments(path, saveChanges, justThisService);
 		}
 
+
+
 		if (args.length >= 2
 				&& args[0].equalsIgnoreCase("FixReivews")) {
 
@@ -89,6 +95,18 @@ public class Main {
 			}
 
 			fixReviews(path, justThisService);
+		}
+
+		if (args.length >= 2
+				&& args[0].equalsIgnoreCase("RunProtocols")) {
+
+			String path = args[1];
+			UUID justThisService = null;
+			if (args.length > 2) {
+				justThisService = UUID.fromString(args[2]);
+			}
+
+			runProtocolsForConfidentialPatients(path, justThisService);
 		}
 
 		if (args.length != 1) {
@@ -2121,6 +2139,204 @@ public class Main {
 		resource.addExtension(extension);
 
 		return true;
+	}
+
+
+	private static void runProtocolsForConfidentialPatients(String sharedStoragePath, UUID justThisService) {
+		LOG.info("Running Protocols for Confidential Patients using path " + sharedStoragePath + " and service " + justThisService);
+
+		ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+
+		try {
+			Iterable<Service> iterable = new ServiceRepository().getAll();
+			for (Service service : iterable) {
+				UUID serviceId = service.getId();
+
+				if (justThisService != null
+						&& !service.getId().equals(justThisService)) {
+					LOG.info("Skipping service " + service.getName());
+					continue;
+				}
+
+				LOG.info("Doing service " + service.getName());
+
+				List<UUID> systemIds = findSystemIds(service);
+				if (systemIds.size() > 1) {
+					throw new Exception("Multiple system IDs for service " + serviceId);
+				}
+				UUID systemId = systemIds.get(0);
+
+				List<String> interestingPatientGuids = new ArrayList<>();
+				Map<UUID, Map<UUID, List<UUID>>> batchesPerPatientPerExchange = new HashMap<>();
+
+				List<UUID> exchangeIds = new AuditRepository().getExchangeIdsForService(serviceId);
+				for (UUID exchangeId: exchangeIds) {
+
+					Exchange exchange = AuditWriter.readExchange(exchangeId);
+
+					String software = exchange.getHeader(HeaderKeys.SourceSystem);
+					if (!software.equalsIgnoreCase(MessageFormat.EMIS_CSV)) {
+						continue;
+					}
+
+					String body = exchange.getBody();
+					String[] files = body.split(java.lang.System.lineSeparator());
+
+					if (files.length == 0) {
+						continue;
+					}
+
+					LOG.info("Doing Emis CSV exchange " + exchangeId);
+
+					Map<UUID, List<UUID>> batchesPerPatient = new HashMap<>();
+
+					List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
+					for (ExchangeBatch batch : batches) {
+						UUID patientId = batch.getEdsPatientId();
+						if (patientId != null) {
+							List<UUID> batchIds = batchesPerPatient.get(patientId);
+							if (batchIds == null) {
+								batchIds = new ArrayList<>();
+								batchesPerPatient.put(patientId, batchIds);
+							}
+							batchIds.add(batch.getBatchId());
+						}
+					}
+
+					batchesPerPatientPerExchange.put(exchangeId, batchesPerPatient);
+
+					File f = new File(sharedStoragePath, files[0]);
+					File dir = f.getParentFile();
+
+					String version = EmisCsvToFhirTransformer.determineVersion(dir);
+
+					Map<Class, AbstractCsvParser> parsers = new HashMap<>();
+
+					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.admin.Patient.class, dir, version, true, parsers);
+					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation.class, dir, version, true, parsers);
+					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.careRecord.Problem.class, dir, version, true, parsers);
+					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation.class, dir, version, true, parsers);
+					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary.class, dir, version, true, parsers);
+					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord.class, dir, version, true, parsers);
+					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord.class, dir, version, true, parsers);
+
+					org.endeavourhealth.transform.emis.csv.schema.admin.Patient patientParser = (org.endeavourhealth.transform.emis.csv.schema.admin.Patient) parsers.get(org.endeavourhealth.transform.emis.csv.schema.admin.Patient.class);
+					while (patientParser.nextRecord()) {
+						if (patientParser.getIsConfidential() || patientParser.getDeleted()) {
+							interestingPatientGuids.add(patientParser.getPatientGuid());
+						}
+					}
+					patientParser.close();
+
+					org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation consultationParser = (org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation) parsers.get(org.endeavourhealth.transform.emis.csv.schema.careRecord.Consultation.class);
+					while (consultationParser.nextRecord()) {
+						if (consultationParser.getIsConfidential()
+								&& !consultationParser.getDeleted()) {
+							interestingPatientGuids.add(consultationParser.getPatientGuid());
+						}
+					}
+					consultationParser.close();
+
+					org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation observationParser = (org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation) parsers.get(org.endeavourhealth.transform.emis.csv.schema.careRecord.Observation.class);
+					while (observationParser.nextRecord()) {
+						if (observationParser.getIsConfidential()
+								&& !observationParser.getDeleted()) {
+							interestingPatientGuids.add(observationParser.getPatientGuid());
+						}
+					}
+					observationParser.close();
+
+					org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary diaryParser = (org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary) parsers.get(org.endeavourhealth.transform.emis.csv.schema.careRecord.Diary.class);
+					while (diaryParser.nextRecord()) {
+						if (diaryParser.getIsConfidential()
+								&& !diaryParser.getDeleted()) {
+							interestingPatientGuids.add(diaryParser.getPatientGuid());
+						}
+					}
+					diaryParser.close();
+
+					org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord drugRecordParser = (org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord) parsers.get(org.endeavourhealth.transform.emis.csv.schema.prescribing.DrugRecord.class);
+					while (drugRecordParser.nextRecord()) {
+						if (drugRecordParser.getIsConfidential()
+								&& !drugRecordParser.getDeleted()) {
+							interestingPatientGuids.add(drugRecordParser.getPatientGuid());
+						}
+					}
+					drugRecordParser.close();
+
+					org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord issueRecordParser = (org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord) parsers.get(org.endeavourhealth.transform.emis.csv.schema.prescribing.IssueRecord.class);
+					while (issueRecordParser.nextRecord()) {
+						if (issueRecordParser.getIsConfidential()
+								&& !issueRecordParser.getDeleted()) {
+							interestingPatientGuids.add(issueRecordParser.getPatientGuid());
+						}
+					}
+					issueRecordParser.close();
+				}
+
+				Map<UUID, Set<UUID>> exchangeBatchesToPutInProtocolQueue = new HashMap<>();
+
+				for (String interestingPatientGuid: interestingPatientGuids) {
+
+					UUID edsPatientId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Patient, interestingPatientGuid);
+					if (edsPatientId == null) {
+						throw new Exception("Failed to find patient ID for service " + serviceId + " system " + systemId + " resourceType " + ResourceType.Patient + " local ID " + interestingPatientGuid);
+					}
+
+					for (UUID exchangeId: batchesPerPatientPerExchange.keySet()) {
+						Map<UUID, List<UUID>> batchesPerPatient = batchesPerPatientPerExchange.get(exchangeId);
+						List<UUID> batches = batchesPerPatient.get(edsPatientId);
+						if (batches != null) {
+
+							Set<UUID> batchesForExchange = exchangeBatchesToPutInProtocolQueue.get(exchangeId);
+							if (batchesForExchange == null) {
+								batchesForExchange = new HashSet<>();
+								exchangeBatchesToPutInProtocolQueue.put(exchangeId, batchesForExchange);
+							}
+
+							batchesForExchange.addAll(batches);
+						}
+					}
+				}
+
+
+				if (!exchangeBatchesToPutInProtocolQueue.isEmpty()) {
+					//find the config for our protocol queue
+					String configXml = ConfigManager.getConfiguration("inbound", "queuereader");
+
+					//the config XML may be one of two serialised classes, so we use a try/catch to safely try both if necessary
+					QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
+					Pipeline pipeline = configuration.getPipeline();
+
+					PostMessageToExchangeConfig config = pipeline
+							.getPipelineComponents()
+							.stream()
+							.filter(t -> t instanceof PostMessageToExchangeConfig)
+							.map(t -> (PostMessageToExchangeConfig) t)
+							.filter(t -> t.getExchange().equalsIgnoreCase("EdsProtocol"))
+							.collect(StreamExtension.singleOrNullCollector());
+
+					//post to the protocol exchange
+					for (UUID exchangeId : exchangeBatchesToPutInProtocolQueue.keySet()) {
+						Set<UUID> batchIds = exchangeBatchesToPutInProtocolQueue.get(exchangeId);
+
+						org.endeavourhealth.core.messaging.exchange.Exchange exchange = AuditWriter.readExchange(exchangeId);
+
+						String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIds);
+						exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+						LOG.info("Posting exchange " + exchangeId + " batch " + batchIdString);
+
+						PostMessageToExchange component = new PostMessageToExchange(config);
+						component.process(exchange);
+					}
+				}
+			}
+
+			LOG.info("Finished Running Protocols for Confidential Patients");
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
 	}
 }
 
