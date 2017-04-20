@@ -1,12 +1,16 @@
 package org.endeavourhealth.queuereader;
 
+import com.datastax.driver.mapping.Mapper;
+import com.datastax.driver.mapping.MappingManager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
+import org.endeavourhealth.common.cassandra.CassandraConnector;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
+import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
@@ -21,6 +25,9 @@ import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
+import org.endeavourhealth.core.fhirStorage.metadata.MetadataFactory;
+import org.endeavourhealth.core.fhirStorage.metadata.PatientCompartment;
+import org.endeavourhealth.core.fhirStorage.metadata.ResourceMetadata;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.slack.SlackHelper;
@@ -57,6 +64,19 @@ public class Main {
 			} catch (IllegalArgumentException iae) {
 				//fine, just let it continue to below
 			}
+		}
+
+		if (args.length >= 3
+				&& args[0].equalsIgnoreCase("FixAppts")) {
+
+			String path = args[1];
+			boolean saveChanges = Boolean.parseBoolean(args[2]);
+			UUID justThisService = null;
+			if (args.length > 3) {
+				justThisService = UUID.fromString(args[3]);
+			}
+
+			fixDeletedAppointments(path, saveChanges, justThisService);
 		}
 
 		if (args.length >= 2
@@ -1700,6 +1720,183 @@ public class Main {
 		}
 	}*/
 
+	private static void fixDeletedAppointments(String sharedStoragePath, boolean saveChanges, UUID justThisService) {
+		LOG.info("Fixing Deleted Appointments using path " + sharedStoragePath + " and service " + justThisService);
+
+		ResourceRepository resourceRepository = new ResourceRepository();
+		ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+		ParserPool parserPool = new ParserPool();
+		MappingManager mappingManager = CassandraConnector.getInstance().getMappingManager();
+		Mapper<ResourceHistory> mapperResourceHistory = mappingManager.mapper(ResourceHistory.class);
+		Mapper<ResourceByExchangeBatch> mapperResourceByExchangeBatch = mappingManager.mapper(ResourceByExchangeBatch.class);
+
+		try {
+			Iterable<Service> iterable = new ServiceRepository().getAll();
+			for (Service service : iterable) {
+				UUID serviceId = service.getId();
+
+				if (justThisService != null
+						&& !service.getId().equals(justThisService)) {
+					LOG.info("Skipping service " + service.getName());
+					continue;
+				}
+
+				LOG.info("Doing service " + service.getName());
+
+				List<UUID> systemIds = findSystemIds(service);
+
+				List<UUID> exchangeIds = new AuditRepository().getExchangeIdsForService(serviceId);
+				for (UUID exchangeId: exchangeIds) {
+
+					Exchange exchange = AuditWriter.readExchange(exchangeId);
+
+					String software = exchange.getHeader(HeaderKeys.SourceSystem);
+					if (!software.equalsIgnoreCase(MessageFormat.EMIS_CSV)) {
+						continue;
+					}
+
+					if (systemIds.size() > 1) {
+						throw new Exception("Multiple system IDs for service " + serviceId);
+					}
+					UUID systemId = systemIds.get(0);
+
+					String body = exchange.getBody();
+					String[] files = body.split(java.lang.System.lineSeparator());
+
+					if (files.length == 0) {
+						continue;
+					}
+
+					LOG.info("Doing Emis CSV exchange " + exchangeId);
+
+					Map<UUID, List<UUID>> batchesPerPatient = new HashMap<>();
+					List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
+					for (ExchangeBatch batch : batches) {
+						UUID patientId = batch.getEdsPatientId();
+						if (patientId != null) {
+							List<UUID> batchIds = batchesPerPatient.get(patientId);
+							if (batchIds == null) {
+								batchIds = new ArrayList<>();
+								batchesPerPatient.put(patientId, batchIds);
+							}
+							batchIds.add(batch.getBatchId());
+						}
+					}
+
+					File f = new File(sharedStoragePath, files[0]);
+					File dir = f.getParentFile();
+
+					String version = EmisCsvToFhirTransformer.determineVersion(dir);
+
+					Map<Class, AbstractCsvParser> parsers = new HashMap<>();
+
+					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.admin.Patient.class, dir, version, true, parsers);
+					EmisCsvToFhirTransformer.findFileAndOpenParser(org.endeavourhealth.transform.emis.csv.schema.appointment.Slot.class, dir, version, true, parsers);
+
+					//find any deleted patients
+					List<UUID> deletedPatientUuids = new ArrayList<>();
+
+					org.endeavourhealth.transform.emis.csv.schema.admin.Patient patientParser = (org.endeavourhealth.transform.emis.csv.schema.admin.Patient) parsers.get(org.endeavourhealth.transform.emis.csv.schema.admin.Patient.class);
+					while (patientParser.nextRecord()) {
+						if (patientParser.getDeleted()) {
+							//find the EDS patient ID for this local guid
+							String patientGuid = patientParser.getPatientGuid();
+							UUID edsPatientId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Patient, patientGuid);
+							if (edsPatientId == null) {
+								throw new Exception("Failed to find patient ID for service " + serviceId + " system " + systemId + " resourceType " + ResourceType.Patient + " local ID " + patientGuid);
+							}
+							deletedPatientUuids.add(edsPatientId);
+						}
+					}
+					patientParser.close();
+
+					//go through the appts file to find properly deleted appt GUIDS
+					List<UUID> deletedApptUuids = new ArrayList<>();
+
+					org.endeavourhealth.transform.emis.csv.schema.appointment.Slot apptParser = (org.endeavourhealth.transform.emis.csv.schema.appointment.Slot) parsers.get(org.endeavourhealth.transform.emis.csv.schema.appointment.Slot.class);
+					while (apptParser.nextRecord()) {
+						if (apptParser.getDeleted()) {
+							String patientGuid = apptParser.getPatientGuid();
+							String slotGuid = apptParser.getSlotGuid();
+							if (!Strings.isNullOrEmpty(patientGuid)) {
+								String uniqueLocalId = EmisCsvHelper.createUniqueId(patientGuid, slotGuid);
+								UUID edsApptId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Appointment, uniqueLocalId);
+								deletedApptUuids.add(edsApptId);
+							}
+						}
+					}
+					apptParser.close();
+
+					for (UUID edsPatientId : deletedPatientUuids) {
+
+						List<UUID> batchIds = batchesPerPatient.get(edsPatientId);
+						if (batchIds == null) {
+							//if there are no batches for this patient, we'll be handling this data in another exchange
+							continue;
+						}
+
+						for (UUID batchId : batchIds) {
+							List<ResourceByExchangeBatch> apptWrappers = resourceRepository.getResourcesForBatch(batchId, ResourceType.Appointment.toString());
+							for (ResourceByExchangeBatch apptWrapper : apptWrappers) {
+
+								//ignore non-deleted appts
+								if (!apptWrapper.getIsDeleted()) {
+									continue;
+								}
+
+								//if the appt was deleted legitamately, then skip it
+								UUID apptId = apptWrapper.getResourceId();
+								if (deletedApptUuids.contains(apptId)) {
+									continue;
+								}
+
+								ResourceHistory deletedResourceHistory = resourceRepository.getResourceHistoryByKey(apptWrapper.getResourceId(), apptWrapper.getResourceType(), apptWrapper.getVersion());
+
+								if (saveChanges) {
+									mapperResourceByExchangeBatch.delete(apptWrapper);
+									mapperResourceHistory.delete(deletedResourceHistory);
+								}
+								LOG.info("Un-deleted " + apptWrapper.getResourceType() + " " + apptWrapper.getResourceId() + " in batch " + batchId + " patient " + edsPatientId);
+
+								//now get the most recent instance of the appointment, and if it's NOT deleted, insert into the resource_by_service table
+								ResourceHistory mostRecentResourceHistory = resourceRepository.getCurrentVersion(apptWrapper.getResourceType(), apptWrapper.getResourceId());
+								if (mostRecentResourceHistory != null
+										&& !mostRecentResourceHistory.getIsDeleted()) {
+
+									Resource resource = parserPool.parse(mostRecentResourceHistory.getResourceData());
+									ResourceMetadata metadata = MetadataFactory.createMetadata(resource);
+									UUID patientId = ((PatientCompartment) metadata).getPatientId();
+
+									ResourceByService resourceByService = new ResourceByService();
+									resourceByService.setServiceId(mostRecentResourceHistory.getServiceId());
+									resourceByService.setSystemId(mostRecentResourceHistory.getSystemId());
+									resourceByService.setResourceType(mostRecentResourceHistory.getResourceType());
+									resourceByService.setResourceId(mostRecentResourceHistory.getResourceId());
+									resourceByService.setCurrentVersion(mostRecentResourceHistory.getVersion());
+									resourceByService.setUpdatedAt(mostRecentResourceHistory.getCreatedAt());
+									resourceByService.setPatientId(patientId);
+									resourceByService.setSchemaVersion(mostRecentResourceHistory.getSchemaVersion());
+									resourceByService.setResourceMetadata(JsonSerializer.serialize(metadata));
+									resourceByService.setResourceData(mostRecentResourceHistory.getResourceData());
+
+									if (saveChanges) {
+										resourceRepository.save(resourceByService);
+									}
+									LOG.info("Restored " + apptWrapper.getResourceType() + " " + apptWrapper.getResourceId() + " to resource_by_service table");
+								}
+							}
+						}
+					}
+				}
+			}
+
+			LOG.info("Finished Deleted Appointments Patients");
+
+		} catch (Exception ex) {
+			LOG.error("", ex);
+		}
+	}
+
 
 	private static void fixReviews(String sharedStoragePath, UUID justThisService) {
 		LOG.info("Fixing Reviews using path " + sharedStoragePath + " and service " + justThisService);
@@ -1827,7 +2024,16 @@ public class Main {
 
 								UUID edsObservationId = IdHelper.getEdsResourceId(serviceId, systemId, resourceType, locallyUniqueId);
 								if (edsObservationId == null) {
-									throw new Exception("Failed to find observation ID for service " + serviceId + " system " + systemId + " resourceType " + resourceType + " local ID " + locallyUniqueId);
+
+									//try observations as diagnostic reports, because it could be one of those instead
+									if (resourceType == ResourceType.Observation) {
+										resourceType = ResourceType.DiagnosticReport;
+										edsObservationId = IdHelper.getEdsResourceId(serviceId, systemId, resourceType, locallyUniqueId);
+									}
+
+									if (edsObservationId == null) {
+										throw new Exception("Failed to find observation ID for service " + serviceId + " system " + systemId + " resourceType " + resourceType + " local ID " + locallyUniqueId);
+									}
 								}
 
 								List<UUID> batchIds = batchesPerPatient.get(edsPatientId);
