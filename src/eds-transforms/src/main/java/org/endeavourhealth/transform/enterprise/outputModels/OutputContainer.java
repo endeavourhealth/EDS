@@ -24,6 +24,7 @@ public class OutputContainer {
     private final Organization organisations;
     private final Practitioner practitioners;
     private final Schedule schedules;
+    private final Person persons;
     private final Patient patients;
     private final EpisodeOfCare episodesOfCare;
     private final Appointment appointments;
@@ -45,6 +46,7 @@ public class OutputContainer {
         organisations = new Organization("organization.csv", csvFormat, dateFormat, timeFormat);
         practitioners = new Practitioner("practitioner.csv", csvFormat, dateFormat, timeFormat);
         schedules = new Schedule("schedule.csv", csvFormat, dateFormat, timeFormat);
+        persons = new Person("person.csv", csvFormat, dateFormat, timeFormat, pseduonymised);
         patients = new Patient("patient.csv", csvFormat, dateFormat, timeFormat, pseduonymised);
         episodesOfCare = new EpisodeOfCare("episode_of_care.csv", csvFormat, dateFormat, timeFormat);
         appointments = new Appointment("appointment.csv", csvFormat, dateFormat, timeFormat);
@@ -71,6 +73,7 @@ public class OutputContainer {
         writeColumnClassMappings(organisations, columnClassMappingJson);
         writeColumnClassMappings(practitioners, columnClassMappingJson);
         writeColumnClassMappings(schedules, columnClassMappingJson);
+        writeColumnClassMappings(persons, columnClassMappingJson);
         writeColumnClassMappings(patients, columnClassMappingJson);
         writeColumnClassMappings(episodesOfCare, columnClassMappingJson);
         writeColumnClassMappings(appointments, columnClassMappingJson);
@@ -91,6 +94,7 @@ public class OutputContainer {
         writeZipEntry(organisations, zos);
         writeZipEntry(practitioners, zos);
         writeZipEntry(schedules, zos);
+        writeZipEntry(persons, zos);
         writeZipEntry(patients, zos);
         writeZipEntry(episodesOfCare, zos);
         writeZipEntry(appointments, zos);
@@ -160,6 +164,10 @@ public class OutputContainer {
 
     public Schedule getSchedules() {
         return schedules;
+    }
+
+    public Person getPersons() {
+        return persons;
     }
 
     public Patient getPatients() {

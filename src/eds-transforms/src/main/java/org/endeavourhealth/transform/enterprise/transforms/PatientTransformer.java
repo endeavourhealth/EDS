@@ -2,10 +2,13 @@ package org.endeavourhealth.transform.enterprise.transforms;
 
 import OpenPseudonymiser.Crypto;
 import com.google.common.base.Strings;
-import org.endeavourhealth.common.fhir.FhirUri;
-import org.endeavourhealth.common.fhir.IdentifierHelper;
+import org.endeavourhealth.common.fhir.*;
+import org.endeavourhealth.common.fhir.schema.OrganisationType;
 import org.endeavourhealth.common.utility.Resources;
+import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
+import org.endeavourhealth.core.data.ehr.models.ResourceByPatient;
+import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
 import org.endeavourhealth.core.rdbms.eds.PatientLinkPair;
 import org.endeavourhealth.core.rdbms.reference.PostcodeHelper;
@@ -20,11 +23,8 @@ import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 public class PatientTransformer extends AbstractTransformer {
     private static final Logger LOG = LoggerFactory.getLogger(PatientTransformer.class);
@@ -35,6 +35,7 @@ public class PatientTransformer extends AbstractTransformer {
     private static final String PSEUDO_SALT_RESOURCE = "Endeavour Enterprise - East London.EncryptedSalt";
 
     private static byte[] saltBytes = null;
+    private static ResourceRepository resourceRepository = new ResourceRepository();
 
     public void transform(ResourceByExchangeBatch resource,
                           OutputContainer data,
@@ -98,7 +99,6 @@ public class PatientTransformer extends AbstractTransformer {
         Long householdId = null;
         String lsoaCode = null;
         String msoaCode = null;
-        BigDecimal townsendScore = null;
 
         id = enterpriseId.longValue();
         organizationId = enterpriseOrganisationId.longValue();
@@ -149,9 +149,14 @@ public class PatientTransformer extends AbstractTransformer {
             }
         }
 
-        org.endeavourhealth.transform.enterprise.outputModels.Patient model = (org.endeavourhealth.transform.enterprise.outputModels.Patient)csvWriter;
+        //check if our patient demographics also should be used as the person demographics. This is typically
+        //true if our patient record is at a GP practice.
+        boolean shouldWritePersonRecord = shouldWritePersonRecord(fhirPatient, personId);
 
-        if (model.isPseduonymised()) {
+        org.endeavourhealth.transform.enterprise.outputModels.Patient patientWriter = (org.endeavourhealth.transform.enterprise.outputModels.Patient)csvWriter;
+        org.endeavourhealth.transform.enterprise.outputModels.Person personWriter = data.getPersons();
+
+        if (patientWriter.isPseduonymised()) {
 
             //if pseudonymised, all non-male/non-female genders should be treated as female
             if (fhirPatient.getGender() != Enumerations.AdministrativeGender.FEMALE
@@ -171,7 +176,7 @@ public class PatientTransformer extends AbstractTransformer {
             ageMonths = ageValues[EnterpriseAgeUpdater.UNIT_MONTHS];
             ageWeeks = ageValues[EnterpriseAgeUpdater.UNIT_WEEKS];
 
-            model.writeUpsertPseudonymised(id,
+            patientWriter.writeUpsertPseudonymised(id,
                     organizationId,
                     personId,
                     patientGenderId,
@@ -183,14 +188,28 @@ public class PatientTransformer extends AbstractTransformer {
                     postcodePrefix,
                     householdId,
                     lsoaCode,
-                    msoaCode,
-                    townsendScore);
+                    msoaCode);
+
+            //if our patient record is the one that should define the person record, then write that too
+            if (shouldWritePersonRecord) {
+                personWriter.writeUpsertPseudonymised(personId,
+                        patientGenderId,
+                        pseudoId,
+                        ageYears,
+                        ageMonths,
+                        ageWeeks,
+                        dateOfDeath,
+                        postcodePrefix,
+                        householdId,
+                        lsoaCode,
+                        msoaCode);
+            }
 
         } else {
 
             nhsNumber = IdentifierHelper.findNhsNumber(fhirPatient);
 
-            model.writeUpsertIdentifiable(id,
+            patientWriter.writeUpsertIdentifiable(id,
                     organizationId,
                     personId,
                     patientGenderId,
@@ -200,10 +219,87 @@ public class PatientTransformer extends AbstractTransformer {
                     postcode,
                     householdId,
                     lsoaCode,
-                    msoaCode,
-                    townsendScore);
+                    msoaCode);
 
+            //if our patient record is the one that should define the person record, then write that too
+            if (shouldWritePersonRecord) {
+                personWriter.writeUpsertIdentifiable(personId,
+                        patientGenderId,
+                        nhsNumber,
+                        dateOfBirth,
+                        dateOfDeath,
+                        postcode,
+                        householdId,
+                        lsoaCode,
+                        msoaCode);
+            }
         }
+    }
+
+    private boolean shouldWritePersonRecord(Patient fhirPatient, long personId) throws Exception {
+
+        //TODO - remove this
+        if (true) {
+            return false;
+        }
+
+        //if our FHIR record is for an active patient at a GP practice, then it should be the defining demographics for the Person record
+        UUID patientUuid = UUID.fromString(fhirPatient.getId());
+        ResourceHistory patientResourceHistory = resourceRepository.getCurrentVersion(ResourceType.Patient.toString(), patientUuid);
+        UUID serviceUuid = patientResourceHistory.getServiceId();
+        UUID systemUuid = patientResourceHistory.getSystemId();
+
+        boolean activePatient = false;
+
+
+        List<ResourceByPatient> episodeResourceWrappers = resourceRepository.getResourcesByPatient(serviceUuid, systemUuid, patientUuid, ResourceType.EpisodeOfCare.toString());
+        for (ResourceByPatient resourceByPatient: episodeResourceWrappers) {
+            EpisodeOfCare episodeOfCare = (EpisodeOfCare)deserialiseResouce(resourceByPatient.getResourceData());
+
+            //if the FHIR episode doesn't have an organisation, there's no point checking it
+            if (!episodeOfCare.hasManagingOrganization()) {
+                continue;
+            }
+
+            boolean active = false;
+
+            //episode is active if we have no end date or a future-dated end date
+            if (episodeOfCare.hasPeriod()) {
+                Period period = episodeOfCare.getPeriod();
+                if (!period.hasEnd()
+                    || (period.hasEnd() && period.getEnd().after(new Date()))) {
+                    active = true;
+                }
+            }
+
+            //episode is active if we're explicitly told it is
+            if (episodeOfCare.hasStatus()
+                    && episodeOfCare.getStatus() == EpisodeOfCare.EpisodeOfCareStatus.ACTIVE) {
+                active = true;
+            }
+
+            //if the episode is active, we check the managing organisation to see if it's a GP practice
+            if (active) {
+                Reference orgReference = episodeOfCare.getManagingOrganization();
+                ReferenceComponents comps = ReferenceHelper.getReferenceComponents(orgReference);
+                Organization fhirOrganization = (Organization)resourceRepository.getCurrentVersionAsResource(comps.getResourceType(), comps.getId());
+                if (fhirOrganization != null
+                        && fhirOrganization.hasType()) {
+
+                    CodeableConcept codeableConcept = fhirOrganization.getType();
+                    String orgTypeCode = CodeableConceptHelper.findCodingCode(codeableConcept, FhirValueSetUri.VALUE_SET_ORGANISATION_TYPE);
+                    if (!Strings.isNullOrEmpty(orgTypeCode)
+                            && orgTypeCode.equals(OrganisationType.GP_PRACTICE.getCode())) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        //TODO - check just if is active and NOT gp practice elsewhere
+
+
+        return false;
     }
 
     private static final String findPostcodePrefix(String postcode) {
@@ -227,146 +323,6 @@ public class PatientTransformer extends AbstractTransformer {
 
         return postcode.substring(0, len-3);
     }
-
-    /**
-     * We've had a bug that resulted in deleted patient resources where the dependent resources we're also deleted
-     * This is now fixed in the inbound Emis transform, but the existing data is in a state that the need to handle below
-     * Update 21/02/2017 - data in AIMES has been fixed, so this isn't required any more
-     */
-    /*private void deleteAllDependentEntities(OutputContainer data, ResourceByExchangeBatch resourceBatchEntry) throws Exception {
-
-        //retrieve all past versions, to find the EDS patient ID
-        ResourceRepository resourceRepository = new ResourceRepository();
-        UUID patientResourceId = resourceBatchEntry.getResourceId();
-        String patientResourceType = resourceBatchEntry.getResourceType();
-        //LOG.trace("Deleting patient " + patientResourceId);
-
-        ResourceHistory resourceHistory = resourceRepository.getCurrentVersion(patientResourceType, patientResourceId);
-        UUID serviceId = resourceHistory.getServiceId();
-        UUID systemId = resourceHistory.getSystemId();
-
-        //retrieve all non-deleted resources
-        List<ResourceByPatient> resourceByPatients = resourceRepository.getResourcesByPatient(serviceId, systemId, patientResourceId);
-        //LOG.trace("Found " + resourceByPatients.size() + " resources for service " + serviceId + " system " + systemId + " and patient " + patientResourceId);
-        for (ResourceByPatient resourceByPatient: resourceByPatients) {
-
-            String resourceTypeStr = resourceByPatient.getResourceType();
-            UUID resourceId = resourceByPatient.getResourceId();
-            ResourceType resourceType = ResourceType.valueOf(resourceTypeStr);
-
-            AbstractEnterpriseCsvWriter csvWriter = null;
-            if (resourceType == ResourceType.Organization) {
-                csvWriter = data.getOrganisations();
-            } else if (resourceType == ResourceType.Practitioner) {
-                csvWriter = data.getPractitioners();
-            } else if (resourceType == ResourceType.Schedule) {
-                csvWriter = data.getSchedules();
-            } else if (resourceType == ResourceType.Patient) {
-                csvWriter = data.getPatients();
-            } else if (resourceType == ResourceType.EpisodeOfCare) {
-                csvWriter = data.getEpisodesOfCare();
-            } else if (resourceType == ResourceType.Appointment) {
-                csvWriter = data.getAppointments();
-            } else if (resourceType == ResourceType.Encounter) {
-                csvWriter = data.getEncounters();
-            } else if (resourceType == ResourceType.ReferralRequest) {
-                csvWriter = data.getReferralRequests();
-            } else if (resourceType == ResourceType.ProcedureRequest) {
-                csvWriter = data.getProcedureRequests();
-            } else if (resourceType == ResourceType.Observation) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.MedicationStatement) {
-                csvWriter = data.getMedicationStatements();
-            } else if (resourceType == ResourceType.MedicationOrder) {
-                csvWriter = data.getMedicationOrders();
-            } else if (resourceType == ResourceType.AllergyIntolerance) {
-                csvWriter = data.getAllergyIntolerances();
-            } else if (resourceType == ResourceType.Condition) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.Procedure) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.Immunization) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.FamilyMemberHistory) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.DiagnosticOrder) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.DiagnosticReport) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.Specimen) {
-                csvWriter = data.getObservations();
-            } else if (resourceType == ResourceType.Slot) {
-                //these aren't sent to Enterprise
-                continue;
-            } else if (resourceType == ResourceType.Location) {
-                //these aren't sent to Enterprise
-                continue;
-            } else {
-                throw new Exception("Unhandlded resource type " + resourceType);
-            }
-
-            Integer enterpriseId = findEnterpriseId(csvWriter, resourceTypeStr, resourceId);
-            //LOG.trace("Writing delete for " + csvWriter.getClass().getSimpleName() + " " + enterpriseId);
-            if (enterpriseId != null) {
-                csvWriter.writeDelete(enterpriseId.intValue());
-            }
-        }
-    }*/
-
-    /*public void transform(ResourceByExchangeBatch resource,
-                          EnterpriseData data,
-                          Map<String, ResourceByExchangeBatch> otherResources,
-                          Integer enterpriseOrganisationUuid) throws Exception {
-
-        org.endeavourhealth.core.xml.enterprise.Patient model = new org.endeavourhealth.core.xml.enterprise.Patient();
-
-        if (!mapIdAndMode(resource, model)) {
-            return;
-        }
-
-        //if it will be passed to Enterprise as an Insert or Update, then transform the remaining fields
-        if (model.getSaveMode() == SaveMode.UPSERT) {
-
-            Patient fhirPatient = (Patient)deserialiseResouce(resource);
-
-            model.setOrganizationId(enterpriseOrganisationUuid);
-
-            //Calendar cal = Calendar.getInstance();
-
-            Date dob = fhirPatient.getBirthDate();
-            model.setDateOfBirth(convertDate(dob));
-            *//*cal.setTime(dob);
-            int yearOfBirth = cal.get(Calendar.YEAR);
-            model.setYearOfBirth(yearOfBirth);*//*
-
-            if (fhirPatient.hasDeceasedDateTimeType()) {
-                Date dod = fhirPatient.getDeceasedDateTimeType().getValue();
-                model.setDateOfDeath(convertDate(dod));
-                *//*cal.setTime(dod);
-                int yearOfDeath = cal.get(Calendar.YEAR);
-                model.setYearOfDeath(new Integer(yearOfDeath));*//*
-            }
-
-            model.setPatientGenderId(fhirPatient.getGender().ordinal());
-
-            if (fhirPatient.hasAddress()) {
-                for (Address address: fhirPatient.getAddress()) {
-                    if (address.getUse().equals(Address.AddressUse.HOME)) {
-                        String postcode = address.getPostalCode();
-                        model.setPostcode(postcode);
-                    }
-                }
-            }
-
-            model.setPseudoId(pseudonomise(fhirPatient));
-
-            //adding NHS number to allow data checking
-            String nhsNumber = findNhsNumber(fhirPatient);
-            model.setNhsNumber(nhsNumber);
-        }
-
-        data.getPatient().add(model);
-    }*/
 
     private static String pseudonomise(Patient fhirPatient) throws Exception {
 

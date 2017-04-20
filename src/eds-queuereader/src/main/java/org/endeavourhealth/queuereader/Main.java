@@ -1,21 +1,13 @@
 package org.endeavourhealth.queuereader;
 
-import com.datastax.driver.core.utils.UUIDs;
-import com.datastax.driver.mapping.Mapper;
-import com.datastax.driver.mapping.MappingManager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
-import org.endeavourhealth.common.cassandra.CassandraConnector;
 import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.fhir.ExtensionConverter;
 import org.endeavourhealth.common.fhir.FhirExtensionUri;
-import org.endeavourhealth.common.utility.JsonSerializer;
-import org.endeavourhealth.common.utility.StreamExtension;
 import org.endeavourhealth.core.audit.AuditWriter;
-import org.endeavourhealth.core.configuration.Pipeline;
-import org.endeavourhealth.core.configuration.PostMessageToExchangeConfig;
 import org.endeavourhealth.core.configuration.QueueReaderConfiguration;
 import org.endeavourhealth.core.data.admin.ServiceRepository;
 import org.endeavourhealth.core.data.admin.models.Service;
@@ -29,15 +21,9 @@ import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
 import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
-import org.endeavourhealth.core.fhirStorage.metadata.MetadataFactory;
-import org.endeavourhealth.core.fhirStorage.metadata.PatientCompartment;
-import org.endeavourhealth.core.fhirStorage.metadata.ResourceMetadata;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
-import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.messaging.slack.SlackHelper;
-import org.endeavourhealth.core.rdbms.eds.PatientLinkHelper;
-import org.endeavourhealth.core.rdbms.eds.PatientSearchHelper;
 import org.endeavourhealth.core.xml.transformError.TransformError;
 import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.IdHelper;
@@ -46,12 +32,7 @@ import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
-import org.endeavourhealth.transform.emis.csv.transforms.admin.PatientTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.*;
-import org.endeavourhealth.transform.emis.csv.transforms.prescribing.DrugRecordPreTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.prescribing.DrugRecordTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.prescribing.IssueRecordPreTransformer;
-import org.endeavourhealth.transform.emis.csv.transforms.prescribing.IssueRecordTransformer;
+import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,18 +57,6 @@ public class Main {
 			} catch (IllegalArgumentException iae) {
 				//fine, just let it continue to below
 			}
-		}
-
-		if (args.length >= 2
-				&& args[0].equalsIgnoreCase("FixConfidentialPatients")) {
-
-			String path = args[1];
-			UUID justThisService = null;
-			if (args.length > 2) {
-				justThisService = UUID.fromString(args[2]);
-			}
-
-			fixConfidentialPatients(path, justThisService);
 		}
 
 		if (args.length >= 2
@@ -1328,7 +1297,7 @@ public class Main {
 		}
 	}*/
 
-	private static void fixConfidentialPatients(String sharedStoragePath, UUID justThisService) {
+	/*private static void fixConfidentialPatients(String sharedStoragePath, UUID justThisService) {
 		LOG.info("Fixing Confidential Patients using path " + sharedStoragePath + " and service " + justThisService);
 
 		ResourceRepository resourceRepository = new ResourceRepository();
@@ -1729,7 +1698,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 
 	private static void fixReviews(String sharedStoragePath, UUID justThisService) {
@@ -1773,10 +1742,9 @@ public class Main {
 						continue;
 					}
 
-					LOG.info("Doing Emis CSV exchange " + exchangeId);
-
 					Map<UUID, List<UUID>> batchesPerPatient = new HashMap<>();
 					List<ExchangeBatch> batches = exchangeBatchRepository.retrieveForExchangeId(exchangeId);
+					LOG.info("Doing Emis CSV exchange " + exchangeId + " with " + batches.size() + " batches");
 					for (ExchangeBatch batch: batches) {
 						UUID patientId = batch.getEdsPatientId();
 						if (patientId != null) {
@@ -1824,6 +1792,7 @@ public class Main {
 						}
 					}
 					observationParser.close();
+					LOG.info("Found " + problemCodes.size() + " problem codes so far");
 
 					String dataSharingAgreementId = EmisCsvToFhirTransformer.findDataSharingAgreementGuid(f);
 
@@ -1862,7 +1831,7 @@ public class Main {
 								}
 
 								List<UUID> batchIds = batchesPerPatient.get(edsPatientId);
-								if (batchIds != null) {
+								if (batchIds == null) {
 									throw new Exception("Failed to find batch ID for patient " + edsPatientId + " in exchange " + exchangeId + " for resource " + resourceType + " " + edsObservationId);
 								}
 								for (UUID batchId: batchIds) {
@@ -1884,7 +1853,7 @@ public class Main {
 										if (addReviewExtension((DomainResource)resource)) {
 											json = parserPool.composeString(resource);
 											resourceByExchangeBatch.setResourceData(json);
-											LOG.info("Changed your pre" + resourceType + " " + edsObservationId + " to have extension in batch " + batchId);
+											LOG.info("Changed " + resourceType + " " + edsObservationId + " to have extension in batch " + batchId);
 
 											resourceRepository.save(resourceByExchangeBatch);
 

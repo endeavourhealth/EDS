@@ -469,14 +469,25 @@ public class EnterpriseFiler {
             return;
         }
 
-
         int tableColumns = columns.size()-1; //substract one because we don't save the save_mode
         String parameters = createParameters(tableColumns);
 
+        StringBuilder sb = new StringBuilder();
+        for (String column: columns) {
+            if (!column.equals(COL_SAVE_MODE)) {
+                if (sb.length() > 0) {
+                    sb.append(", ");
+                }
+                sb.append(keywordEscapeChar + column + keywordEscapeChar);
+            }
+        }
+        String columnStr = sb.toString();
+
+        PreparedStatement insert = connection.prepareStatement("insert into " + tableName + " (" + columnStr + ") values (" + parameters + ")");
+
         //the version with the named columns doesn't seem to work on all versions of MySQL, so removing until can fix
         //but we need it for the episode_of_care table, which has additional columns
-        PreparedStatement insert = null;
-
+        /*PreparedStatement insert = null;
         if (!tableName.equalsIgnoreCase("episode_of_care")) {
             insert = connection.prepareStatement("insert into " + tableName + " values (" + parameters + ")");
 
@@ -494,7 +505,7 @@ public class EnterpriseFiler {
             String columnStr = sb.toString();
 
             insert = connection.prepareStatement("insert into " + tableName + " (" + columnStr + ") values (" + parameters + ")");
-        }
+        }*/
 
 
         for (CSVRecord csvRecord: csvRecords) {

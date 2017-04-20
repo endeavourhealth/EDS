@@ -4,11 +4,11 @@ import org.apache.commons.csv.CSVFormat;
 
 import java.util.Date;
 
-public class Patient extends AbstractEnterpriseCsvWriter {
+public class Person extends AbstractEnterpriseCsvWriter {
 
     private boolean pseduonymised = false;
 
-    public Patient(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat, boolean pseduonymised) throws Exception {
+    public Person(String fileName, CSVFormat csvFormat, String dateFormat, String timeFormat, boolean pseduonymised) throws Exception {
         super(fileName, csvFormat, dateFormat, timeFormat);
 
         this.pseduonymised = pseduonymised;
@@ -26,39 +26,33 @@ public class Patient extends AbstractEnterpriseCsvWriter {
 
 
     public void writeUpsertPseudonymised(long id,
-                            long organizationId,
-                            long personId,
-                            int patientGenderId,
-                            String pseudoId,
-                            Integer ageYears,
-                            Integer ageMonths,
-                            Integer ageWeeks,
-                            Date dateOfDeath,
-                            String postcodePrefix,
-                            Long householdId,
-                            String lsoaCode,
-                            String msoaCode) throws Exception {
+                                         int patientGenderId,
+                                         String pseudoId,
+                                         Integer ageYears,
+                                         Integer ageMonths,
+                                         Integer ageWeeks,
+                                         Date dateOfDeath,
+                                         String postcodePrefix,
+                                         Long householdId,
+                                         String lsoaCode,
+                                         String msoaCode) throws Exception {
 
         super.printRecord(OutputContainer.UPSERT,
-                        "" + id,
-                        "" + organizationId,
-                        "" + personId,
-                        "" + patientGenderId,
-                        pseudoId,
-                        convertInt(ageYears),
-                        convertInt(ageMonths),
-                        convertInt(ageWeeks),
-                        convertDate(dateOfDeath),
-                        postcodePrefix,
-                        convertLong(householdId),
-                        lsoaCode,
-                        msoaCode);
+                "" + id,
+                "" + patientGenderId,
+                pseudoId,
+                convertInt(ageYears),
+                convertInt(ageMonths),
+                convertInt(ageWeeks),
+                convertDate(dateOfDeath),
+                postcodePrefix,
+                convertLong(householdId),
+                lsoaCode,
+                msoaCode);
     }
 
 
     public void writeUpsertIdentifiable(long id,
-                                        long organizationId,
-                                        long personId,
                                         int patientGenderId,
                                         String nhsNumber,
                                         Date dateOfBirth,
@@ -70,8 +64,6 @@ public class Patient extends AbstractEnterpriseCsvWriter {
 
         super.printRecord(OutputContainer.UPSERT,
                 "" + id,
-                "" + organizationId,
-                "" + personId,
                 "" + patientGenderId,
                 nhsNumber,
                 convertDate(dateOfBirth),
@@ -88,8 +80,6 @@ public class Patient extends AbstractEnterpriseCsvWriter {
             return new String[] {
                     "save_mode",
                     "id",
-                    "organization_id",
-                    "person_id",
                     "patient_gender_id",
                     "pseudo_id",
                     "age_years",
@@ -105,8 +95,6 @@ public class Patient extends AbstractEnterpriseCsvWriter {
             return new String[]{
                     "save_mode",
                     "id",
-                    "organization_id",
-                    "person_id",
                     "patient_gender_id",
                     "nhs_number",
                     "date_of_birth",
@@ -125,8 +113,6 @@ public class Patient extends AbstractEnterpriseCsvWriter {
             return new Class[] {
                     String.class,
                     Long.TYPE,
-                    Long.TYPE,
-                    Long.TYPE,
                     Integer.TYPE,
                     String.class,
                     Integer.class,
@@ -141,8 +127,6 @@ public class Patient extends AbstractEnterpriseCsvWriter {
         } else {
             return new Class[] {
                     String.class,
-                    Long.TYPE,
-                    Long.TYPE,
                     Long.TYPE,
                     Integer.TYPE,
                     String.class,
