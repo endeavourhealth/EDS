@@ -25,8 +25,6 @@ import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceByService;
 import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
-import org.endeavourhealth.core.fhirStorage.FhirDeletionService;
-import org.endeavourhealth.core.fhirStorage.FhirStorageService;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
 import org.endeavourhealth.core.fhirStorage.metadata.MetadataFactory;
 import org.endeavourhealth.core.fhirStorage.metadata.PatientCompartment;
@@ -43,7 +41,6 @@ import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
 import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
 import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
-import org.endeavourhealth.transform.emis.csv.transforms.careRecord.ObservationTransformer;
 import org.hl7.fhir.instance.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,16 +57,6 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.Initialize("queuereader");
 
-		if (args.length == 2
-				&& args[0].equalsIgnoreCase("DeleteData")) {
-			try {
-				UUID serviceId = UUID.fromString(args[1]);
-				deleteDataForService(serviceId);
-			} catch (IllegalArgumentException iae) {
-				//fine, just let it continue to below
-			}
-		}
-
 		if (args.length >= 3
 				&& args[0].equalsIgnoreCase("FixAppts")) {
 
@@ -81,20 +68,6 @@ public class Main {
 			}
 
 			fixDeletedAppointments(path, saveChanges, justThisService);
-		}
-
-
-
-		if (args.length >= 2
-				&& args[0].equalsIgnoreCase("FixReivews")) {
-
-			String path = args[1];
-			UUID justThisService = null;
-			if (args.length > 2) {
-				justThisService = UUID.fromString(args[2]);
-			}
-
-			fixReviews(path, justThisService);
 		}
 
 		if (args.length >= 2
@@ -136,7 +109,7 @@ public class Main {
 	}
 
 
-	private static void deleteDataForService(UUID serviceId) {
+	/*private static void deleteDataForService(UUID serviceId) {
 
 		Service dbService = new ServiceRepository().getById(serviceId);
 
@@ -150,7 +123,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("Error deleting service " + dbService.getName() + " " + dbService.getId(), ex);
 		}
-	}
+	}*/
 
 	/*private static void fixProblems(UUID serviceId, String sharedStoragePath, boolean testMode) {
 		LOG.info("Fixing problems for service " + serviceId);
@@ -1916,7 +1889,7 @@ public class Main {
 	}
 
 
-	private static void fixReviews(String sharedStoragePath, UUID justThisService) {
+	/*private static void fixReviews(String sharedStoragePath, UUID justThisService) {
 		LOG.info("Fixing Reviews using path " + sharedStoragePath + " and service " + justThisService);
 
 		ResourceRepository resourceRepository = new ResourceRepository();
@@ -2127,7 +2100,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 	private static boolean addReviewExtension(DomainResource resource) {
 
