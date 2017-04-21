@@ -2131,13 +2131,13 @@ public class Main {
 					continue;
 				}
 
+				//once we match the servce, set this to null to do all other services
+				justThisService = null;
+
 				LOG.info("Doing service " + service.getName());
 
 				List<UUID> systemIds = findSystemIds(service);
-				if (systemIds.size() > 1) {
-					throw new Exception("Multiple system IDs for service " + serviceId);
-				}
-				UUID systemId = systemIds.get(0);
+
 
 				List<String> interestingPatientGuids = new ArrayList<>();
 				Map<UUID, Map<UUID, List<UUID>>> batchesPerPatientPerExchange = new HashMap<>();
@@ -2250,6 +2250,11 @@ public class Main {
 				Map<UUID, Set<UUID>> exchangeBatchesToPutInProtocolQueue = new HashMap<>();
 
 				for (String interestingPatientGuid: interestingPatientGuids) {
+
+					if (systemIds.size() > 1) {
+						throw new Exception("Multiple system IDs for service " + serviceId);
+					}
+					UUID systemId = systemIds.get(0);
 
 					UUID edsPatientId = IdHelper.getEdsResourceId(serviceId, systemId, ResourceType.Patient, interestingPatientGuid);
 					if (edsPatientId == null) {
