@@ -59,4 +59,8 @@ export class RegionService extends BaseHttp2Service  {
         params.set('searchData',searchData);
         return this.httpGet('api/region', { search : params });
     }
+
+    getAPIKey() : Observable<any> {
+        return this.httpGet('api/region/getApiKey');
+    }
 }

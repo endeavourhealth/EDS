@@ -1,7 +1,9 @@
 package org.endeavourhealth.ui.endpoints;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.astefanutti.metrics.aspectj.Metrics;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.common.security.annotations.RequiresAdmin;
 import org.endeavourhealth.core.data.audit.UserAuditRepository;
 import org.endeavourhealth.core.data.audit.models.AuditAction;
@@ -152,12 +154,29 @@ public final class RegionEndpoint extends AbstractEndpoint {
     public Response getSharingAgreements(@Context SecurityContext sc, @QueryParam("uuid") String uuid) throws Exception {
         super.setLogbackMarkers(sc);
         userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
-                "Child Region(s)",
+                "Sharing Agreement(s)",
                 "Region Id", uuid);
 
         return getSharingAgreements(uuid);
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Timed(absolute = true, name="EDS-UI.RegionEndpoint.getApiKey")
+    @Path("/getApiKey")
+    public Response getApiKey(@Context SecurityContext sc) throws Exception {
+        super.setLogbackMarkers(sc);
+        userAudit.save(SecurityUtils.getCurrentUserId(sc), getOrganisationUuidFromToken(sc), AuditAction.Load,
+                "get Api Key");
+
+        JsonNode json = ConfigManager.getConfigurationAsJson("GoogleMapsAPI");
+       // String apiKey = json.get("apiKey").asText();
+        return Response
+                .ok()
+                .entity(json)
+                .build();
+    }
     private Response getRegionList() throws Exception {
 
         List<RegionEntity> regions = RegionEntity.getAllRegions();

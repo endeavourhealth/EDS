@@ -1,4 +1,4 @@
-import {Component} from "@angular/core";
+import {Component, Injectable} from "@angular/core";
 import {Organisation} from "../organisationManager/models/Organisation";
 import {RegionService} from "./region.service";
 import {AdminService, LoggerService} from "eds-common-js";
@@ -162,7 +162,7 @@ export class RegionEditorComponent {
         vm.organisationManagerService.getOrganisationMarkers(vm.region.uuid)
             .subscribe(
                 result => vm.markers = result,
-                error => vm.log.error('Failed to load oranisation markers', error, 'Load organisation Markers')
+                error => vm.log.error('Failed to load organisation markers', error, 'Load organisation Markers')
             );
     }
 
@@ -210,3 +210,4 @@ export class RegionEditorComponent {
         this.$state.go('app.dsaEditor', {itemUuid: item.uuid, itemAction: 'edit'});
     }
 }
+
