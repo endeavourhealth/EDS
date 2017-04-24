@@ -58,7 +58,7 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
         Date dateRegistered = null;
         Date dateRegisteredEnd = null;
         Long usualGpPractitionerId = null;
-        Long managingOrganisationId = null;
+        //Long managingOrganisationId = null;
 
         id = enterpriseId.longValue();
         organisationId = enterpriseOrganisationId.longValue();
@@ -85,13 +85,13 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
             }
         }
 
-        if (fhirEpisode.hasManagingOrganization()) {
+        /*if (fhirEpisode.hasManagingOrganization()) {
             Reference orgReference = fhirEpisode.getManagingOrganization();
             managingOrganisationId = findEnterpriseId(data.getOrganisations(), orgReference);
             if (managingOrganisationId == null) {
                 managingOrganisationId = transformOnDemand(orgReference, data, otherResources, enterpriseOrganisationId, enterprisePatientId, enterprisePersonId, configName);
             }
-        }
+        }*/
 
         Period period = fhirEpisode.getPeriod();
         if (period.hasStart()) {
@@ -109,8 +109,7 @@ public class EpisodeOfCareTransformer extends AbstractTransformer {
             registrationTypeId,
             dateRegistered,
             dateRegisteredEnd,
-            usualGpPractitionerId,
-            managingOrganisationId);
+            usualGpPractitionerId);
     }
 }
 

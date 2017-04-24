@@ -63,4 +63,8 @@ public interface ResourceAccessor {
     Result<ResourceByService> getResourcesByService(@Param("service_id") UUID serviceId,
                                                         @Param("system_id") UUID systemId,
                                                         @Param("resource_type") String resourceType);
+
+    @Query("SELECT * FROM ehr.resource_by_exchange_batch WHERE resource_type = :resource_type AND resource_id = :resource_id LIMIT 1 ALLOW FILTERING")
+    public ResourceByExchangeBatch getFirstResourceByExchangeBatch(@Param("resource_type") String resourceType,
+                                                                           @Param("resource_id") UUID resourceId);
 }

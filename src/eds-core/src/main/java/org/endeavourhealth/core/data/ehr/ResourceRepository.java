@@ -282,4 +282,10 @@ public class ResourceRepository extends Repository {
         ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
         return Lists.newArrayList(accessor.getResourcesByService(serviceId, systemId, resourceType));
     }
+
+    //TODO - to be removed
+    public ResourceByExchangeBatch getFirstResourceByExchangeBatch(String resourceType, UUID resourceId) {
+        ResourceAccessor accessor = getMappingManager().createAccessor(ResourceAccessor.class);
+        return accessor.getFirstResourceByExchangeBatch(resourceType, resourceId);
+    }
 }

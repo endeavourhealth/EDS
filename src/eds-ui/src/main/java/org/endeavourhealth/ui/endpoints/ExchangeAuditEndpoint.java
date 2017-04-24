@@ -162,7 +162,16 @@ public class ExchangeAuditEndpoint extends AbstractEndpoint {
         String exchangeServiceIdStr = headers.get(HeaderKeys.SenderServiceUuid);
         if (exchangeServiceIdStr == null
                 || !exchangeServiceIdStr.equals(serviceIdStr)) {
-            throw new BadRequestException("Exchange isn't for this service");
+            String err = "Exchange isn't for this service";
+
+            if (!Strings.isNullOrEmpty(exchangeServiceIdStr)) {
+                Service service = serviceRepository.getById(UUID.fromString(serviceIdStr));
+                if (service != null) {
+                    err += " (" + service.getName() + ")";
+                }
+            }
+
+            throw new BadRequestException(err);
         }
 
         JsonExchange jsonExchange = new JsonExchange(exchangeUuid, serviceUuid, timestamp, headers, bodyLines);

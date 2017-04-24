@@ -15,6 +15,9 @@ public interface ExchangeBatchAccessor {
     Result<ExchangeBatch> getForExchangeId(@Param("exchange_id") UUID exchangeId);
 
     @Query("SELECT * FROM ehr.exchange_batch WHERE exchange_id = :exchange_id LIMIT 1")
-    Result<ExchangeBatch> getFirstForExchangeId(@Param("exchange_id") UUID exchangeId);
+    ExchangeBatch getFirstForExchangeId(@Param("exchange_id") UUID exchangeId);
+
+    @Query("SELECT * FROM ehr.exchange_batch WHERE batch_id = :batch_id LIMIT 1 ALLOW FILTERING")
+    ExchangeBatch getFirstForBatchId(@Param("batch_id") UUID batchId);
 
 }

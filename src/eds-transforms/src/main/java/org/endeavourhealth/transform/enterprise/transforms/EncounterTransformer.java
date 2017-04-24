@@ -64,6 +64,7 @@ public class EncounterTransformer extends AbstractTransformer {
         String originalCode = null;
         String originalTerm = null;
         Long episodeOfCareId = null;
+        Long serviceProviderOrganisationId = null;
 
         id = enterpriseId.longValue();
         organisationId = enterpriseOrganisationId.longValue();
@@ -130,6 +131,14 @@ public class EncounterTransformer extends AbstractTransformer {
             episodeOfCareId = findEnterpriseId(data.getEpisodesOfCare(), episodeReference);
         }
 
+        if (fhir.hasServiceProvider()) {
+            Reference orgReference = fhir.getServiceProvider();
+            serviceProviderOrganisationId = findEnterpriseId(data.getOrganisations(), orgReference);
+        }
+        if (serviceProviderOrganisationId == null) {
+            serviceProviderOrganisationId = enterpriseOrganisationId;
+        }
+
         org.endeavourhealth.transform.enterprise.outputModels.Encounter model = (org.endeavourhealth.transform.enterprise.outputModels.Encounter)csvWriter;
         model.writeUpsert(id,
             organisationId,
@@ -142,7 +151,8 @@ public class EncounterTransformer extends AbstractTransformer {
             snomedConceptId,
             originalCode,
             originalTerm,
-            episodeOfCareId);
+            episodeOfCareId,
+            serviceProviderOrganisationId);
     }
 
 }

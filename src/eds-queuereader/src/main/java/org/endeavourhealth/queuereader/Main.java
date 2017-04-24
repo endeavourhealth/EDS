@@ -1,16 +1,9 @@
 package org.endeavourhealth.queuereader;
 
-import com.datastax.driver.mapping.Mapper;
-import com.datastax.driver.mapping.MappingManager;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.common.base.Strings;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
 import org.endeavourhealth.common.cache.ParserPool;
-import org.endeavourhealth.common.cassandra.CassandraConnector;
 import org.endeavourhealth.common.config.ConfigManager;
-import org.endeavourhealth.common.fhir.ExtensionConverter;
-import org.endeavourhealth.common.fhir.FhirExtensionUri;
-import org.endeavourhealth.common.utility.JsonSerializer;
 import org.endeavourhealth.common.utility.StreamExtension;
 import org.endeavourhealth.core.audit.AuditWriter;
 import org.endeavourhealth.core.configuration.Pipeline;
@@ -23,25 +16,16 @@ import org.endeavourhealth.core.data.ehr.ExchangeBatchRepository;
 import org.endeavourhealth.core.data.ehr.ResourceRepository;
 import org.endeavourhealth.core.data.ehr.models.ExchangeBatch;
 import org.endeavourhealth.core.data.ehr.models.ResourceByExchangeBatch;
-import org.endeavourhealth.core.data.ehr.models.ResourceByService;
-import org.endeavourhealth.core.data.ehr.models.ResourceHistory;
 import org.endeavourhealth.core.fhirStorage.JsonServiceInterfaceEndpoint;
-import org.endeavourhealth.core.fhirStorage.metadata.MetadataFactory;
-import org.endeavourhealth.core.fhirStorage.metadata.PatientCompartment;
-import org.endeavourhealth.core.fhirStorage.metadata.ResourceMetadata;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
 import org.endeavourhealth.core.messaging.exchange.HeaderKeys;
 import org.endeavourhealth.core.messaging.pipeline.components.PostMessageToExchange;
 import org.endeavourhealth.core.messaging.slack.SlackHelper;
-import org.endeavourhealth.core.xml.transformError.TransformError;
-import org.endeavourhealth.transform.common.FhirResourceFiler;
 import org.endeavourhealth.transform.common.IdHelper;
 import org.endeavourhealth.transform.common.MessageFormat;
 import org.endeavourhealth.transform.emis.EmisCsvToFhirTransformer;
-import org.endeavourhealth.transform.emis.csv.CsvCurrentState;
-import org.endeavourhealth.transform.emis.csv.EmisCsvHelper;
 import org.endeavourhealth.transform.emis.csv.schema.AbstractCsvParser;
-import org.hl7.fhir.instance.model.*;
+import org.hl7.fhir.instance.model.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,17 +41,9 @@ public class Main {
 		LOG.info("Initialising config manager");
 		ConfigManager.Initialize("queuereader");
 
-		if (args.length >= 3
-				&& args[0].equalsIgnoreCase("FixAppts")) {
-
-			String path = args[1];
-			boolean saveChanges = Boolean.parseBoolean(args[2]);
-			UUID justThisService = null;
-			if (args.length > 3) {
-				justThisService = UUID.fromString(args[3]);
-			}
-
-			fixDeletedAppointments(path, saveChanges, justThisService);
+		if (args.length >= 0
+				&& args[0].equalsIgnoreCase("FixOrgs")) {
+			fixOrgs();
 		}
 
 		if (args.length >= 2
@@ -1711,7 +1687,7 @@ public class Main {
 		}
 	}*/
 
-	private static void fixDeletedAppointments(String sharedStoragePath, boolean saveChanges, UUID justThisService) {
+	/*private static void fixDeletedAppointments(String sharedStoragePath, boolean saveChanges, UUID justThisService) {
 		LOG.info("Fixing Deleted Appointments using path " + sharedStoragePath + " and service " + justThisService);
 
 		ResourceRepository resourceRepository = new ResourceRepository();
@@ -1886,7 +1862,7 @@ public class Main {
 		} catch (Exception ex) {
 			LOG.error("", ex);
 		}
-	}
+	}*/
 
 
 	/*private static void fixReviews(String sharedStoragePath, UUID justThisService) {
@@ -2102,7 +2078,7 @@ public class Main {
 		}
 	}*/
 
-	private static boolean addReviewExtension(DomainResource resource) {
+	/*private static boolean addReviewExtension(DomainResource resource) {
 
 		if (ExtensionConverter.hasExtension(resource, FhirExtensionUri.IS_REVIEW)) {
 			return false;
@@ -2112,7 +2088,7 @@ public class Main {
 		resource.addExtension(extension);
 
 		return true;
-	}
+	}*/
 
 
 	private static void runProtocolsForConfidentialPatients(String sharedStoragePath, UUID justThisService) {
@@ -2316,9 +2292,131 @@ public class Main {
 			LOG.error("", ex);
 		}
 	}
+
+	private static void fixOrgs() {
+
+		LOG.info("Posting orgs to protocol queue");
+
+		String[] orgIds = new String[]{
+		"0c0ecce3-a45e-405a-b00b-66e6712f0d34",
+		"0e874e35-4e62-4954-85ac-f7ada954c6ba",
+		"0ee45118-940e-4aaa-aabe-0cbc60a3d08f",
+		"1090e75c-65ba-4628-a08c-e531cb75af52",
+		"23ea07f3-f918-4b0b-b1b8-56895d25a5c5",
+		"2c6b7262-68b2-4629-930c-608fff2b5d77",
+		"331d74ff-a572-4bc9-ae61-a12271eaad6d",
+		"332f31a2-7b28-47cb-af6f-18f65440d43d",
+		"3fd1f53d-5ad4-42cc-816e-db3886400391",
+		"4020e194-ac2f-4075-9aaa-606fc75c54ee",
+		"41658e8a-f6a8-464b-9063-7fa12c3461f3",
+		"49582da8-abe1-4396-9d2a-446edeaee96d",
+		"4ffd33d6-138a-4446-8396-c715879e288e",
+		"53f667e4-066f-4047-b52b-422ad8eab4fb",
+		"60bda636-a135-4d3c-9567-9de850357ad9",
+		"65dadb8e-722e-47f0-94c0-32fc0cec1c2d",
+		"66991ce0-88bb-468d-abe6-44c29799eb98",
+		"708e8cc1-b26c-4735-b7e0-d46752194598",
+		"716a5c91-2a27-4c25-814a-8b3a4f9481d3",
+		"7adc13e8-24ba-4670-a293-07b27cf79627",
+		"8102faba-3630-4ba0-a6ee-cfe01a824c6e",
+		"81b337d5-9e64-4bcf-8934-3f2ade7d76d7",
+		"87b8b345-8af2-4396-a4e1-993d3dfc70b0",
+		"88fd071c-165c-466b-907e-33ef61a1202a",
+		"8c8ec3ec-11f8-488e-b0b7-6449215147ac",
+		"8f465517-729b-4ad9-b405-92b487047f19",
+		"8fd14ab7-2c40-4af8-a086-6ed6c4eec270",
+		"999bbf21-1140-4b11-808a-7a6241862268",
+		"999f0d9e-bff1-4d9a-92d0-9c0d3024574f",
+		"9f37b008-a6ee-4b83-86ea-681a7367a279",
+		"a1ab7357-c2b3-496f-853c-b9d741e38dd5",
+		"a64b4bf5-2518-40e4-9bd6-73f751de4f48",
+		"a7d13f61-948d-44e7-a218-4c2d3595afb0",
+		"bc158ac2-6ea9-470d-9377-9d76bfa2c157",
+		"c893d66b-eb89-4657-9f53-94c5867e7ed9",
+		"cf69a3f3-3c43-4d94-a5ae-92496507019d",
+		"d15cb85c-c712-4a62-be6e-f9249db512ae",
+		"d39d0b09-a845-49c7-996b-da15b5fffc09",
+		"d430969e-c65c-4c87-8a4c-53370a702d23",
+		"ddac9c91-6f63-455e-a6a6-7bee051c01b2",
+		"e6a50706-5d89-4b16-8aba-cbaf71f13aa3",
+		"f34632c2-d9ac-4f69-92fe-9149bc359043",
+		"f4e1affe-2c46-472e-bb8a-ea0aa7f46a6d"};
+
+		ExchangeBatchRepository exchangeBatchRepository = new ExchangeBatchRepository();
+		ResourceRepository resourceRepository = new ResourceRepository();
+
+		Map<UUID, Set<UUID>> exchangeBatches = new HashMap<>();
+
+		for (String orgId: orgIds) {
+
+			LOG.info("Doing org ID " + orgId);
+			UUID orgUuid = UUID.fromString(orgId);
+
+			try {
+
+				//select batch_id from ehr.resource_by_exchange_batch where resource_type = 'Organization' and resource_id = 8f465517-729b-4ad9-b405-92b487047f19 LIMIT 1 ALLOW FILTERING;
+				ResourceByExchangeBatch resourceByExchangeBatch = resourceRepository.getFirstResourceByExchangeBatch(ResourceType.Organization.toString(), orgUuid);
+				UUID batchId = resourceByExchangeBatch.getBatchId();
+
+				//select exchange_id from ehr.exchange_batch where batch_id = 1a940e10-1535-11e7-a29d-a90b99186399 LIMIT 1 ALLOW FILTERING;
+				ExchangeBatch exchangeBatch = exchangeBatchRepository.retrieveFirstForBatchId(batchId);
+				UUID exchangeId = exchangeBatch.getExchangeId();
+
+				Set<UUID> list = exchangeBatches.get(exchangeId);
+				if (list == null) {
+					list = new HashSet<>();
+					exchangeBatches.put(exchangeId, list);
+				}
+				list.add(batchId);
+
+			} catch (Exception ex) {
+				LOG.error("", ex);
+				break;
+			}
+		}
+
+		try {
+			//find the config for our protocol queue (which is in the inbound config)
+			String configXml = ConfigManager.getConfiguration("inbound", "queuereader");
+
+			//the config XML may be one of two serialised classes, so we use a try/catch to safely try both if necessary
+			QueueReaderConfiguration configuration = ConfigDeserialiser.deserialise(configXml);
+			Pipeline pipeline = configuration.getPipeline();
+
+			PostMessageToExchangeConfig config = pipeline
+					.getPipelineComponents()
+					.stream()
+					.filter(t -> t instanceof PostMessageToExchangeConfig)
+					.map(t -> (PostMessageToExchangeConfig) t)
+					.filter(t -> t.getExchange().equalsIgnoreCase("EdsProtocol"))
+					.collect(StreamExtension.singleOrNullCollector());
+
+			//post to the protocol exchange
+			for (UUID exchangeId : exchangeBatches.keySet()) {
+				Set<UUID> batchIds = exchangeBatches.get(exchangeId);
+
+				org.endeavourhealth.core.messaging.exchange.Exchange exchange = AuditWriter.readExchange(exchangeId);
+
+				String batchIdString = ObjectMapperPool.getInstance().writeValueAsString(batchIds);
+				exchange.setHeader(HeaderKeys.BatchIdsJson, batchIdString);
+				LOG.info("Posting exchange " + exchangeId + " batch " + batchIdString);
+
+				PostMessageToExchange component = new PostMessageToExchange(config);
+				component.process(exchange);
+			}
+
+		} catch (Exception ex) {
+
+			LOG.error("", ex);
+			return;
+		}
+
+
+		LOG.info("Finished posting orgs to protocol queue");
+	}
 }
 
-class ResourceFiler extends FhirResourceFiler {
+/*class ResourceFiler extends FhirResourceFiler {
 	public ResourceFiler(UUID exchangeId, UUID serviceId, UUID systemId, TransformError transformError,
 							 List<UUID> batchIdsCreated, int maxFilingThreads) {
 		super(exchangeId, serviceId, systemId, transformError, batchIdsCreated, maxFilingThreads);
@@ -2355,4 +2453,4 @@ class ResourceFiler extends FhirResourceFiler {
 	public void deletePatientResource(CsvCurrentState parserState, boolean mapIds, String patientId, Resource... resources) throws Exception {
 		throw new Exception("shouldn't be calling deletePatientResource");
 	}
-}
+}*/
