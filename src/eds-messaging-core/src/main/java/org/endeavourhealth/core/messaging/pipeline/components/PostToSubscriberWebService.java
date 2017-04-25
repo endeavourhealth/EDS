@@ -1,5 +1,6 @@
 package org.endeavourhealth.core.messaging.pipeline.components;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -8,6 +9,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.endeavourhealth.common.cache.ObjectMapperPool;
+import org.endeavourhealth.common.config.ConfigManager;
 import org.endeavourhealth.core.configuration.PostToSubscriberWebServiceConfig;
 import org.endeavourhealth.core.data.admin.QueuedMessageRepository;
 import org.endeavourhealth.core.messaging.exchange.Exchange;
@@ -71,11 +73,14 @@ public class PostToSubscriberWebService extends PipelineComponent {
 		}
 	}
 
-	private static void sendHttpPost(String payload, String url) throws Exception {
+	private static void sendHttpPost(String payload, String configName) throws Exception {
 
 		//String url = "http://127.0.0.1:8002/notify";
 		//String url = "http://localhost:8002";
 		//String url = "http://posttestserver.com/post.php";
+
+		JsonNode config = ConfigManager.getConfigurationAsJson(configName, "vitruCare");
+		String url = config.get("url").asText();
 
 		if (url == null || url.length() <= "http://".length()) {
 			LOG.trace("No/invalid url : [" + url + "]");

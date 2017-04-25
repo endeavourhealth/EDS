@@ -142,7 +142,7 @@ public class MessageTransformOutbound extends PipelineComponent {
 
 		} else if (software.equals(MessageFormat.VITRUICARE_XML)) {
 
-			return FhirToVitruCareXmlTransformer.transformFromFhir(batchId, resourceIds);
+			return FhirToVitruCareXmlTransformer.transformFromFhir(batchId, resourceIds, endpoint);
 
 		} else {
 			throw new PipelineException("Unsupported outbound software " + software + " for exchange " + exchange.getExchangeId());
